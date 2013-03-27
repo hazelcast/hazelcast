@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.management;
+package com.hazelcast.management.request;
 
 public final class ConsoleRequestConstants {
 

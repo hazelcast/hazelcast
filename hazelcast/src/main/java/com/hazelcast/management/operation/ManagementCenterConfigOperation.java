@@ -14,48 +14,65 @@
  * limitations under the License.
  */
 
-package com.hazelcast.management;
+package com.hazelcast.management.operation;
 
-import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
-import java.util.concurrent.Callable;
 
-public class ManagementCenterConfigCallable extends ClusterServiceCallable implements Callable<Void>, DataSerializable {
+/**
+ * User: sancar
+ * Date: 3/27/13
+ * Time: 10:37 AM
+ */
+public class ManagementCenterConfigOperation extends Operation {
 
-    private String newUrl;
     private int redoCount = 10;
+    private String newUrl;
 
-    public ManagementCenterConfigCallable() {
+    public ManagementCenterConfigOperation() {
+
     }
 
-    public ManagementCenterConfigCallable(String newUrl) {
-        super();
+    public ManagementCenterConfigOperation(String newUrl) {
         this.newUrl = newUrl;
     }
 
-    public Void call() throws Exception {
-        HazelcastInstanceImpl factory = (HazelcastInstanceImpl) hazelcastInstance;
-        ManagementCenterService service = factory.node.getManagementCenterService();
+    public void beforeRun() throws Exception {
+    }
+
+    public void run() throws Exception {
+        ManagementCenterService service = ((NodeEngineImpl) getNodeEngine()).getManagementCenterService();
         int count = 0;
         while (service == null && count < redoCount) {
             Thread.sleep(1000);
             count++;
-            service = factory.node.getManagementCenterService();
+            service = ((NodeEngineImpl) getNodeEngine()).getManagementCenterService();
         }
-        if(service != null)
+        if (service != null)
             service.changeWebServerUrl(newUrl);
+    }
+
+    public void afterRun() throws Exception {
+    }
+
+    public boolean returnsResponse() {
+        return false;
+    }
+
+    public Object getResponse() {
         return null;
     }
 
-    public void writeData(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(newUrl);
     }
 
-    public void readData(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         newUrl = in.readUTF();
     }
 }

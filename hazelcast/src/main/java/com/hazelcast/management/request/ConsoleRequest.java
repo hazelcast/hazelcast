@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.management;
+package com.hazelcast.management.request;
 
+import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;

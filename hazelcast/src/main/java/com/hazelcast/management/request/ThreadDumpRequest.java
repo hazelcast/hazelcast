@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.management;
+package com.hazelcast.management.request;
 
+import com.hazelcast.management.ManagementCenterService;
+import com.hazelcast.management.operation.ThreadDumpOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -43,7 +45,7 @@ public class ThreadDumpRequest implements ConsoleRequest {
     }
 
     public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
-        String threadDump = (String) mcs.call(target, new ThreadDumpCallable(isDeadlock));
+        String threadDump = (String) mcs.call(target, new ThreadDumpOperation(isDeadlock));
         if (threadDump != null) {
             dos.writeBoolean(true);
             writeLongString(dos, threadDump);

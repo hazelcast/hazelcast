@@ -14,23 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.management;
+package com.hazelcast.management.request;
 
-import com.hazelcast.config.ConfigXmlGenerator;
+import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-// author: sancar - 11.12.2012
-public class MemberConfigRequest implements ConsoleRequest {
+// author: sancar - 12.12.2012
+public class GetLogLevelRequest implements ConsoleRequest {
 
-    public MemberConfigRequest() {
+    public GetLogLevelRequest() {
         super();
     }
 
     public int getType() {
-        return ConsoleRequestConstants.REQUEST_TYPE_MEMBER_CONFIG;
+        return ConsoleRequestConstants.REQUEST_TYPE_LOG_LEVEL;
     }
 
     public Object readResponse(ObjectDataInput in) throws IOException {
@@ -38,14 +38,14 @@ public class MemberConfigRequest implements ConsoleRequest {
     }
 
     public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
-        String clusterXml;
-        clusterXml = new ConfigXmlGenerator(true).generate(mcs.getHazelcastInstance().getConfig());
-        dos.writeUTF(clusterXml);
+        dos.writeUTF(mcs.getHazelcastInstance().node.getSystemLogService().getCurrentLevel());
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
+
     }
 
     public void readData(ObjectDataInput in) throws IOException {
+
     }
 }

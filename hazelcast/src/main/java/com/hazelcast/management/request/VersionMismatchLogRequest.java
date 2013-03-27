@@ -14,40 +14,48 @@
  * limitations under the License.
  */
 
-package com.hazelcast.management;
+package com.hazelcast.management.request;
 
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
+import java.util.logging.Level;
 
-// author: sancar - 21.12.2012
-public class ShutdownMemberRequest implements ConsoleRequest {
+// author: sancar - 17.12.2012
+public class VersionMismatchLogRequest implements ConsoleRequest {
 
-    public ShutdownMemberRequest() {
+    private String manCenterVersion;
 
+    public VersionMismatchLogRequest(String manCenterVersion) {
+        this.manCenterVersion = manCenterVersion;
+    }
+
+    public VersionMismatchLogRequest() {
+        super();
     }
 
     public int getType() {
-        return ConsoleRequestConstants.REQUEST_TYPE_MEMBER_SHUTDOWN;
+        return ConsoleRequestConstants.REQUEST_TYPE_LOG_VERSION_MISMATCH;
     }
 
     public Object readResponse(ObjectDataInput in) throws IOException {
-        return in.readUTF();
+        return "SUCCESS";
     }
 
     public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
-        mcs.getHazelcastInstance().getLifecycleService().shutdown();
-        dos.writeUTF("successful");
+        final ILogger logger = mcs.getHazelcastInstance().node.getLogger(VersionMismatchLogRequest.class.getName());
+        mcs.setVersionMismatch(true);
+        logger.log(Level.SEVERE, "The version of the management center is " + manCenterVersion);
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
-
+        out.writeUTF(manCenterVersion);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
-
+        manCenterVersion = in.readUTF();
     }
 }

@@ -14,47 +14,32 @@
  * limitations under the License.
  */
 
-package com.hazelcast.management;
+package com.hazelcast.management.request;
 
+import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Properties;
 
-// author: sancar - 12.12.2012
-public class GetMemberSystemPropertiesRequest implements ConsoleRequest {
+// author: sancar - 21.12.2012
+public class ShutdownMemberRequest implements ConsoleRequest {
 
-    public GetMemberSystemPropertiesRequest() {
-        super();
+    public ShutdownMemberRequest() {
+
     }
 
     public int getType() {
-        return ConsoleRequestConstants.REQUEST_TYPE_MEMBER_SYSTEM_PROPERTIES;
+        return ConsoleRequestConstants.REQUEST_TYPE_MEMBER_SHUTDOWN;
     }
 
     public Object readResponse(ObjectDataInput in) throws IOException {
-        Map<String, String> properties = new LinkedHashMap<String, String>();
-        int size = in.readInt();
-        String[] temp;
-        for (int i = 0; i < size; i++) {
-            temp = in.readUTF().split(":#");
-            properties.put(temp[0], temp.length == 1 ? "" : temp[1]);
-        }
-        return properties;
+        return in.readUTF();
     }
 
     public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
-        Properties properties = System.getProperties();
-        dos.writeInt(properties.size());
-
-        for (Object property : properties.keySet()) {
-            dos.writeUTF((String) property + ":#" + (String) properties.get(property));
-        }
+        mcs.getHazelcastInstance().getLifecycleService().shutdown();
+        dos.writeUTF("successful");
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {

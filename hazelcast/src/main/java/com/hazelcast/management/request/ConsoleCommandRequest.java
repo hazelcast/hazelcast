@@ -14,48 +14,53 @@
  * limitations under the License.
  */
 
-package com.hazelcast.management;
+package com.hazelcast.management.request;
 
+import com.hazelcast.management.ConsoleCommandHandler;
+import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public class EvictLocalMapRequest implements ConsoleRequest {
+import static com.hazelcast.nio.IOUtil.readLongString;
+import static com.hazelcast.nio.IOUtil.writeLongString;
 
-    String map;
-    int percent;
+public class ConsoleCommandRequest implements ConsoleRequest {
 
-    public EvictLocalMapRequest() {
+    private String command;
+
+    public ConsoleCommandRequest() {
     }
 
-    public EvictLocalMapRequest(String map, int percent) {
+    public ConsoleCommandRequest(String command) {
         super();
-        this.map = map;
-        this.percent = percent;
+        this.command = command;
     }
 
     public int getType() {
-        return ConsoleRequestConstants.REQUEST_TYPE_EVICT_LOCAL_MAP;
+        return ConsoleRequestConstants.REQUEST_TYPE_CONSOLE_COMMAND;
     }
 
     public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
-//        EvictLocalMapEntriesCallable call = new EvictLocalMapEntriesCallable(map, percent);
-//        call.setHazelcastInstance(mcs.getHazelcastInstance());
-//        mcs.callOnAllMembers(call);
+        ConsoleCommandHandler handler = mcs.getCommandHandler();
+        try {
+            final String output = handler.handleCommand(command);
+            writeLongString(dos, output);
+        } catch (Throwable e) {
+            writeLongString(dos, "Error: " + e.getClass().getSimpleName() + "[" + e.getMessage() + "]");
+        }
     }
 
     public Object readResponse(ObjectDataInput in) throws IOException {
-        return null;
+        return readLongString(in);
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(map);
-        out.writeInt(percent);
+        out.writeUTF(command);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
-        map = in.readUTF();
-        percent = in.readInt();
+        command = in.readUTF();
     }
 }

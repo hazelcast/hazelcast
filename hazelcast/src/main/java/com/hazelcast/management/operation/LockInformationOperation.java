@@ -14,39 +14,45 @@
  * limitations under the License.
  */
 
-package com.hazelcast.management;
+package com.hazelcast.management.operation;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.Operation;
 
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 
-// author: sancar - 12.12.2012
-public class RunGcRequest implements ConsoleRequest {
+/**
+ * User: sancar
+ * Date: 3/27/13
+ * Time: 4:15 PM
+ */
+public class LockInformationOperation extends Operation {
 
-    public RunGcRequest() {
-        super();
-    }
-
-    public int getType() {
-        return ConsoleRequestConstants.REQUEST_TYPE_RUN_GC;
-    }
-
-    public Object readResponse(ObjectDataInput in) throws IOException {
-        return "Successfully garbage collected.";
-    }
-
-    public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
-        System.gc();
-    }
-
-    public void writeData(ObjectDataOutput out) throws IOException {
+    LockInformationOperation() {
 
     }
 
-    public void readData(ObjectDataInput in) throws IOException {
+    public void beforeRun() throws Exception {
+    }
 
+    public void run() throws Exception {
+    }
+
+    public void afterRun() throws Exception {
+    }
+
+    public boolean returnsResponse() {
+        return false;
+    }
+
+    public Object getResponse() {
+        return null;
+    }
+
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    }
+
+    protected void readInternal(ObjectDataInput in) throws IOException {
     }
 }

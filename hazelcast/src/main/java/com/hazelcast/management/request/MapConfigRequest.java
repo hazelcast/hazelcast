@@ -14,9 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.management;
+package com.hazelcast.management.request;
 
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.management.ManagementCenterService;
+import com.hazelcast.management.operation.GetMapConfigOperation;
+import com.hazelcast.management.operation.UpdateMapConfigOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -55,7 +59,7 @@ public class MapConfigRequest implements ConsoleRequest {
         this.target = target;
     }
 
-  
+
     public int getType() {
         return ConsoleRequestConstants.REQUEST_TYPE_MAP_CONFIG;
     }
@@ -63,12 +67,11 @@ public class MapConfigRequest implements ConsoleRequest {
     public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos)
             throws Exception {
         dos.writeBoolean(update);
-
         if (update) {
-            mcs.callOnAllMembers(new UpdateMapConfigCallable(map, config));
+            mcs.callOnAllMembers(new UpdateMapConfigOperation(map, config));
             dos.writeUTF("success");
         } else {
-            MapConfig cfg = (MapConfig) mcs.call(target, new GetMapConfigCallable(map));
+            MapConfig cfg = (MapConfig) mcs.call(target, new GetMapConfigOperation(map));
             if (cfg != null) {
                 dos.writeBoolean(true);
                 cfg.writeData(dos);
@@ -86,8 +89,7 @@ public class MapConfigRequest implements ConsoleRequest {
                 MapConfig cfg = new MapConfig();
                 cfg.readData(in);
                 return cfg;
-            }
-            else {
+            } else {
                 return null;
             }
         }

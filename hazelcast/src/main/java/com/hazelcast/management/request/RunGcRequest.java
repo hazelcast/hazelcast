@@ -14,46 +14,40 @@
  * limitations under the License.
  */
 
-package com.hazelcast.management;
+package com.hazelcast.management.request;
 
-import com.hazelcast.config.MapConfig;
+import com.hazelcast.management.ManagementCenterService;
+import com.hazelcast.management.request.ConsoleRequest;
+import com.hazelcast.management.request.ConsoleRequestConstants;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-public class UpdateMapConfigCallable extends GetMapConfigCallable {
+// author: sancar - 12.12.2012
+public class RunGcRequest implements ConsoleRequest {
 
-    private static final long serialVersionUID = -7634684790969633350L;
-
-    private MapConfig mapConfig;
-
-    public UpdateMapConfigCallable() {
+    public RunGcRequest() {
+        super();
     }
 
-    public UpdateMapConfigCallable(String mapName, MapConfig mapConfig) {
-        super(mapName);
-        this.mapConfig = mapConfig;
+    public int getType() {
+        return ConsoleRequestConstants.REQUEST_TYPE_RUN_GC;
     }
 
-    public MapConfig call() throws Exception {
-//        getClusterService().enqueueAndReturn(new Processable() {
-//            public void process() {
-//                final CMap cmap = getCMap(mapName);
-//                cmap.setRuntimeConfig(mapConfig);
-//            }
-//        });
-        return null;
+    public Object readResponse(ObjectDataInput in) throws IOException {
+        return "Successfully garbage collected.";
+    }
+
+    public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
+        System.gc();
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
-        super.writeData(out);
-        mapConfig.writeData(out);
+
     }
 
     public void readData(ObjectDataInput in) throws IOException {
-        super.readData(in);
-        mapConfig = new MapConfig();
-        mapConfig.readData(in);
+
     }
 }

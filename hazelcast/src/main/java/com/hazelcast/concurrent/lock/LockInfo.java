@@ -24,7 +24,7 @@ import com.hazelcast.util.Clock;
 import java.io.IOException;
 import java.util.*;
 
-class LockInfo implements DataSerializable {
+public class LockInfo implements DataSerializable {
 
     private Data key;
     private String owner = null;

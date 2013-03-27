@@ -14,41 +14,58 @@
  * limitations under the License.
  */
 
-package com.hazelcast.management;
+package com.hazelcast.management.operation;
 
+import com.hazelcast.management.ThreadDumpGenerator;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
-import java.util.concurrent.Callable;
 
-public class ThreadDumpCallable implements Callable<String>, DataSerializable {
-
-    private static final long serialVersionUID = -1910495089344606344L;
+/**
+ * User: sancar
+ * Date: 3/27/13
+ * Time: 11:09 AM
+ */
+public class ThreadDumpOperation extends Operation {
 
     private boolean isDeadlock;
+    private String result;
 
-    public ThreadDumpCallable() {
+    public ThreadDumpOperation() {
         this(false);
     }
 
-    public ThreadDumpCallable(boolean deadlock) {
+    public ThreadDumpOperation(boolean deadlock) {
         super();
         this.isDeadlock = deadlock;
     }
 
-    public String call() throws Exception {
+    public void beforeRun() throws Exception {
+    }
+
+    public void run() throws Exception {
         ThreadDumpGenerator gen = ThreadDumpGenerator.newInstance();
-        String result = isDeadlock ? gen.dumpDeadlocks() : gen.dumpAllThreads();
+        result = isDeadlock ? gen.dumpDeadlocks() : gen.dumpAllThreads();
+    }
+
+    public void afterRun() throws Exception {
+    }
+
+    public boolean returnsResponse() {
+        return true;
+    }
+
+    public Object getResponse() {
         return result;
     }
 
-    public void writeData(ObjectDataOutput out) throws IOException {
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeBoolean(isDeadlock);
     }
 
-    public void readData(ObjectDataInput in) throws IOException {
+    protected void readInternal(ObjectDataInput in) throws IOException {
         isDeadlock = in.readBoolean();
     }
 }

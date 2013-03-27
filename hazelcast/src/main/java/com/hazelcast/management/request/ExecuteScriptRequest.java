@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.management;
+package com.hazelcast.management.request;
 
+import com.hazelcast.management.ManagementCenterService;
+import com.hazelcast.management.operation.ScriptExecutorOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -64,17 +66,15 @@ public class ExecuteScriptRequest implements ConsoleRequest {
 
     public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
         Object result = null;
-        ScriptExecutorCallable callable = new ScriptExecutorCallable(engine, script);
-        callable.setHazelcastInstance(mcs.getHazelcastInstance());
-        callable.setBindings(bindings);
+        ScriptExecutorOperation operation = new ScriptExecutorOperation(engine, script, bindings);
         if (targetAllMembers) {
-            result = mcs.callOnAllMembers(callable);
+            result = mcs.callOnAllMembers(operation);
         } else if (targets.isEmpty()) {
-            result = mcs.call(callable);
+            result = NULL;   //TODO @msk ?????
         } else if (targets.size() == 1) {
-            result = mcs.call(targets.iterator().next(), callable);
+            result = mcs.call(targets.iterator().next(), operation);
         } else {
-            result = mcs.callOnMembers(targets, callable);
+            result = mcs.callOnAddresses(targets, operation);
         }
         if (result != null) {
             if (result instanceof Map) {

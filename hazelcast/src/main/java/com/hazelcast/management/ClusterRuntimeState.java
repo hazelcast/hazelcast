@@ -19,7 +19,6 @@ package com.hazelcast.management;
 import com.hazelcast.cluster.MemberInfo;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.map.Record;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -50,7 +49,7 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
                                final PartitionInfo[] partitions,
                                final MigrationInfo migrationInfo,
                                final Map<Address, Connection> connections,
-                               final Collection<Record> lockedRecords) {
+                               final Collection<com.hazelcast.concurrent.lock.LockInfo> lockedRecords) {
         super();
         final Map<Address, Integer> addressIndexes = new HashMap<Address, Integer>(members.size());
         int memberIndex = 0;
@@ -74,20 +73,21 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
             memberIndex++;
         }
         setPartitions(partitions, addressIndexes);
-        setLocks(lockedRecords, addressIndexes);
+//        setLocks(lockedRecords, addressIndexes);
     }
 
-    private void setLocks(final Collection<Record> lockedRecords, final Map<Address, Integer> addressIndexes) {
-//        final long now = Clock.currentTimeMillis();  //TODO @msk ???
-//        for (Record record : lockedRecords) {
-//            if (record.isActive() && record.isValid(now) && record.isLocked()) {
-//                Address owner = record.getLockAddress();
+//    private void setLocks(final Collection<com.hazelcast.concurrent.lock.LockInfo> lockedRecords, final Map<Address, Integer> addressIndexes) {  //TODO @msk ???
+////        final long now = Clock.currentTimeMillis();
+//        for (com.hazelcast.concurrent.lock.LockInfo lockedRecord : lockedRecords) {
+//            if (lockedRecord.isLocked()) {
+////                Address owner = lockedRecord.getOwner();
+//                final String owner = lockedRecord.getOwner();
 //                Integer index = addressIndexes.get(owner);
 //                if (index == null) {
 //                    index = -1;
 //                }
-//                lockInfos.add(new LockInfo(record.getName(), String.valueOf(record.getKey()),
-//                        record.getLockAcquireTime(), index, record.getScheduledActionCount()));
+//                lockInfos.add(new LockInfo(lockedRecord.getOwner(), String.valueOf(lockedRecord.getKey()),
+//                        lockedRecord.getAcquireTime(), index, lockedRecord.getLockCount()));
 //            }
 //        }
 //        lockTotalNum = lockInfos.size();
@@ -100,7 +100,7 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
 //            }
 //        });
 //        lockInfos = lockInfos.subList(0, Math.min(LOCK_MAX_SIZE, lockInfos.size()));
-    }
+//    }
 
     public MemberInfo getMember(int index) {
         return members.get(index);

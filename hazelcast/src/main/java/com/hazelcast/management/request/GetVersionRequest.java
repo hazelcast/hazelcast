@@ -14,43 +14,38 @@
  * limitations under the License.
  */
 
-package com.hazelcast.management;
+package com.hazelcast.management.request;
 
+import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
 // author: sancar - 12.12.2012
-public class SetLogLevelRequest implements ConsoleRequest {
+public class GetVersionRequest implements ConsoleRequest {
 
-    public String logLevel;
-
-    public SetLogLevelRequest() {
+    public GetVersionRequest() {
         super();
     }
 
-    public SetLogLevelRequest(String logLevel) {
-        this.logLevel = logLevel;
-    }
-
     public int getType() {
-        return ConsoleRequestConstants.REQUEST_TYPE_SET_LOG_LEVEL;
+        return ConsoleRequestConstants.REQUEST_TYPE_GET_VERSION;
     }
 
     public Object readResponse(ObjectDataInput in) throws IOException {
-        return "success";
+        return in.readUTF();
     }
 
     public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
-        mcs.getHazelcastInstance().node.getSystemLogService().setCurrentLevel(logLevel);
+        dos.writeUTF(mcs.getHazelcastInstance().node.initializer.getVersion());
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(logLevel);
+
     }
 
     public void readData(ObjectDataInput in) throws IOException {
-        logLevel = in.readUTF();
+
     }
 }

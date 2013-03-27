@@ -14,22 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.management;
+package com.hazelcast.management.request;
 
 import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.instance.Node;
-import com.hazelcast.map.Record;
+import com.hazelcast.management.ClusterRuntimeState;
+import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.PartitionServiceImpl;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
@@ -39,7 +37,6 @@ import java.util.concurrent.TimeUnit;
 public class RuntimeStateRequest implements ConsoleRequest, Callable<ClusterRuntimeState>, HazelcastInstanceAware {
 
     private static final long LOCK_TIME_THRESHOLD = TimeUnit.SECONDS.toMillis(300);
-
     private transient HazelcastInstance hazelcastInstance;
 
     public int getType() {
@@ -54,31 +51,24 @@ public class RuntimeStateRequest implements ConsoleRequest, Callable<ClusterRunt
     private ClusterRuntimeState createState(final HazelcastInstanceImpl factory) {
         final ClusterServiceImpl cluster = factory.node.getClusterService();
         final PartitionServiceImpl pm = factory.node.partitionService;
-        final Collection<Record> lockedRecords = collectLockState(factory);
+        final Collection<com.hazelcast.concurrent.lock.LockInfo> lockedRecords = null;
+//        final Collection<com.hazelcast.concurrent.lock.LockInfo> lockedRecords = collectLockState(factory);
         return new ClusterRuntimeState(cluster.getMembers(), pm.getPartitions(), null,
-                                  factory.node.connectionManager.getReadonlyConnectionMap(), lockedRecords);
+                factory.node.connectionManager.getReadonlyConnectionMap(), lockedRecords);
     }
 
-    private Collection<Record> collectLockState(final HazelcastInstanceImpl factory) {
-        final List<String> mapNames = new LinkedList<String>();
-//        mapNames.add(Prefix.LOCKS_MAP_HAZELCAST);
-//        for (DistributedObject distributedObject : factory.getDistributedObjects()) {
-//            if (distributedObject.getInstanceType().isMap()) {
-//                IMap imap = (IMap) distributedObject;
-//                mapNames.add(Prefix.MAP + imap.getName());
+//    private Collection<com.hazelcast.concurrent.lock.LockInfo> collectLockState(final HazelcastInstanceImpl instance) {
+//
+//        final Collection<com.hazelcast.concurrent.lock.LockInfo> lockedRecords = new LinkedList<com.hazelcast.concurrent.lock.LockInfo>();
+//        final LockService lockService = instance.node.nodeEngine.getService(LockService.SERVICE_NAME);
+//        for (LockStoreContainer lockStoreContainer : lockService.getLockontainers()) {
+//            for (LockStoreImpl lockStore : lockStoreContainer.getLockStores()) {
+//                    lockedRecords.addAll(lockStore.getLocks().values());
 //            }
+//
 //        }
-        final Node node = factory.node;
-        final Collection<Record> lockedRecords = new LinkedList<Record>();
-//        for (final String mapName : mapNames) {
-//            final CMap cmap = node.concurrentMapManager.getMap(mapName);
-//            if (cmap != null) {
-//                Collection<Record> records = cmap.getLockedRecordsFor(LOCK_TIME_THRESHOLD);
-//                lockedRecords.addAll(records);
-//            }
-//        }
-        return lockedRecords;
-    }
+//        return lockedRecords;
+//    }
 
     public void writeResponse(final ManagementCenterService mcs, final ObjectDataOutput dos) throws Exception {
         ClusterRuntimeState clusterRuntimeState = createState(mcs.getHazelcastInstance());
