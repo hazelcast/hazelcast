@@ -23,7 +23,7 @@ import java.util.Iterator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-public interface IQueue<E> extends XQueue<E>, ICollection<E>, BlockingQueue<E>, DistributedObject {
+public interface IQueue<E> extends BaseQueue<E>, ICollection<E>, BlockingQueue<E>, DistributedObject {
 
     LocalQueueStats getLocalQueueStats();
 

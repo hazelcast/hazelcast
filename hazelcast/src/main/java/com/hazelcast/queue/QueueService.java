@@ -31,9 +31,9 @@ import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.queue.client.*;
 import com.hazelcast.queue.proxy.DataQueueProxy;
 import com.hazelcast.queue.proxy.ObjectQueueProxy;
+import com.hazelcast.queue.tx.TransactionalQueueProxy;
 import com.hazelcast.spi.*;
 import com.hazelcast.transaction.Transaction;
-import com.hazelcast.transaction.TransactionalObject;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -230,7 +230,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         return operationsCounter;
     }
 
-    public <T extends TransactionalObject> T createTransactionalObject(Object id, Transaction transaction) {
-        return null;
+    public TransactionalQueueProxy createTransactionalObject(Object id, Transaction transaction) {
+        return new TransactionalQueueProxy(nodeEngine, this, String.valueOf(id), transaction);
     }
 }

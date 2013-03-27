@@ -23,6 +23,7 @@ import com.hazelcast.core.IQueue;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.TransactionalTaskContext;
 import org.junit.After;
@@ -32,6 +33,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
@@ -65,12 +67,12 @@ public class TransactionQueueTest {
                 TransactionalQueue<String> q = context.getQueue(name);
                 assertTrue(q.offer("ali"));
                 String s = q.poll();
-                assertEquals("ali", s);
+                assertNull(s);
                 return true;
             }
         });
         assertTrue(b);
-        assertEquals(0, getQueue(instances, name).size());
+        assertEquals(1, getQueue(instances, name).size());
     }
 
     @Test
@@ -91,23 +93,23 @@ public class TransactionQueueTest {
             }
         }.start();
 
-//        boolean b = instances[0].executeTransaction(new TransactionalTask<Boolean>() {
-//            public Boolean execute(TransactionContext context) throws TransactionException {
-//                TransactionalQueue<String> q0 = context.getQueue(name0);
-//                TransactionalQueue<String> q1 = context.getQueue(name1);
-//                String s = null;
-//                try {
-//                    s = q0.poll(6, TimeUnit.SECONDS);
-//                } catch (InterruptedException e) {
-//                    Assert.fail(e.getMessage());
-//                    e.printStackTrace();
-//                }
-//                assertEquals("item0", s);
-//                q1.offer(s);
-//                return true;
-//            }
-//        });
-//        assertTrue(b);
+        boolean b = instances[0].executeTransaction(new TransactionalTask<Boolean>() {
+            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
+                TransactionalQueue<String> q0 = context.getQueue(name0);
+                TransactionalQueue<String> q1 = context.getQueue(name1);
+                String s = null;
+                try {
+                    s = q0.poll(6, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    fail(e.getMessage());
+                    e.printStackTrace();
+                }
+                assertEquals("item0", s);
+                q1.offer(s);
+                return true;
+            }
+        });
+        assertTrue(b);
         assertEquals(0, getQueue(instances, name0).size());
         assertEquals("item0", getQueue(instances, name1).poll());
     }
@@ -121,19 +123,19 @@ public class TransactionQueueTest {
         final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
         instances[0].getMap(mapName).lock("lock1");
 
-//        try {
-//            instances[1].executeTransaction(new TransactionalTask<Object>() {
-//                public Object execute(TransactionContext context) throws TransactionException {
-//                    boolean offered = context.getQueue(queueName).offer("item1");
-//                    assertTrue(offered);
-//                    context.getMap(mapName).put("lock1","value1");
-//                    return null;
-//                }
-//            }, new TransactionOptions().setTimeout(5, TimeUnit.SECONDS));
-//        }
-//        catch (TransactionException ex){
-//            ex.printStackTrace();
-//        }
+        try {
+            instances[1].executeTransaction(new TransactionalTask<Object>() {
+                public Object execute(TransactionalTaskContext context) throws TransactionException {
+                    boolean offered = context.getQueue(queueName).offer("item1");
+                    assertTrue(offered);
+                    context.getMap(mapName).put("lock1","value1");
+                    return null;
+                }
+            }, new TransactionOptions().setTimeout(5, TimeUnit.SECONDS));
+        }
+        catch (TransactionException ex){
+            ex.printStackTrace();
+        }
 
 
         assertEquals(0, instances[0].getQueue(queueName).size());

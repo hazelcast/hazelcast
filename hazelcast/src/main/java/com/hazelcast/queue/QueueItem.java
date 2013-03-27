@@ -36,7 +36,10 @@ public class QueueItem implements DataSerializable, Comparable<QueueItem> {
 
     private long creationTime;
 
-    private final transient QueueContainer container;
+    private transient QueueContainer container;
+
+    public QueueItem() {
+    }
 
     QueueItem(QueueContainer container) {
         this.container = container;
@@ -54,7 +57,7 @@ public class QueueItem implements DataSerializable, Comparable<QueueItem> {
     }
 
     public Data getData() {
-        if (data == null) {
+        if (data == null && container != null) {
             data = container.getDataFromMap(itemId);
         }
         return data;
