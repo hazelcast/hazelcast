@@ -37,8 +37,6 @@ public class TxnReserveOfferOperation extends QueueOperation implements WaitSupp
         QueueContainer container = getOrCreateContainer();
         if (container.hasEnoughCapacity()) {
             response = container.txnOfferReserve();
-        } else {
-            response = -1;
         }
     }
 
@@ -52,7 +50,7 @@ public class TxnReserveOfferOperation extends QueueOperation implements WaitSupp
     }
 
     public void onWaitExpire() {
-        getResponseHandler().sendResponse(-1);
+        getResponseHandler().sendResponse(null);
     }
 
 }

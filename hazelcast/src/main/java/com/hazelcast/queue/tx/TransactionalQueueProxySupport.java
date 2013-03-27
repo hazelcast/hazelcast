@@ -26,7 +26,6 @@ import com.hazelcast.transaction.Transaction;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.util.LinkedList;
 import java.util.concurrent.Future;
 
 /**
@@ -37,7 +36,6 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
     protected final String name;
     protected final Transaction tx;
     protected final int partitionId;
-    protected final LinkedList<QueueItem> offerQueue = new LinkedList<QueueItem>();
 
     protected TransactionalQueueProxySupport(NodeEngine nodeEngine, QueueService service, String name, Transaction tx) {
         super(nodeEngine, service);
@@ -47,16 +45,16 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
     }
 
     public boolean offerInternal(Data data, long timeout){
+        throwExceptionIfNull(data);
         TxnReserveOfferOperation operation = new TxnReserveOfferOperation(name, timeout);
         try {
             Invocation invocation = getNodeEngine().getOperationService().createInvocationBuilder(QueueService.SERVICE_NAME, operation, partitionId).build();
             Future<Long> f = invocation.invoke();
-            long itemId = f.get();
-            if (itemId != -1){
-                offerQueue.offer(new QueueItem(null, itemId, data));
+            Long itemId = f.get();
+            if (itemId != null){
                 tx.addTransactionLog(new QueueTransactionLog(itemId, name, partitionId, new TxnOfferOperation(name, itemId, data)));
+                return true;
             }
-            return itemId != -1;
         } catch (Throwable t) {
             ExceptionUtil.rethrow(t);
         }
@@ -89,5 +87,11 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
 
     public final String getServiceName() {
         return QueueService.SERVICE_NAME;
+    }
+
+    private void throwExceptionIfNull(Object o){
+        if (o == null){
+            throw new NullPointerException("Object is null");
+        }
     }
 }
