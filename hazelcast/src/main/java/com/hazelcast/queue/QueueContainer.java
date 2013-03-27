@@ -25,6 +25,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
@@ -39,8 +40,7 @@ public class QueueContainer implements DataSerializable {
 
     private LinkedList<QueueItem> itemQueue = null;
     private HashMap<Long, QueueItem> itemMap = new HashMap<Long, QueueItem>(1000);
-    private final LinkedHashMap<String, List<QueueItem>> txOfferMap = new LinkedHashMap<String, List<QueueItem>>();
-    private final LinkedHashMap<String, List<QueueItem>> txPollMap = new LinkedHashMap<String, List<QueueItem>>();
+    private final Map<Long, QueueItem> txMap = new HashMap<Long, QueueItem>();
     private final HashMap<Long, Data> dataMap = new HashMap<Long, Data>();
 
     private int partitionId;
@@ -83,79 +83,125 @@ public class QueueContainer implements DataSerializable {
 
     //TX Methods
 
-    public void commit(String txId){
-        List<QueueItem> list = txOfferMap.remove(txId);
-        if (list != null){
-            for (QueueItem item: list){
-                item.setItemId(nextId());
-                getItemQueue().offer(item);
-            }
+    public boolean txnEnsureReserve(long itemId){
+        if (txMap.get(itemId) == null){
+            throw new TransactionException("No reserve for itemId: " + itemId);
         }
-        list = txPollMap.remove(txId);
-        if (list != null){
-            long current = Clock.currentTimeMillis();
-            for (QueueItem item: list){
-                age(item, current);
-            }
-        }
+        return true;
     }
 
-    public void rollback(String txId){
-        List<QueueItem> list = txPollMap.remove(txId);
-        if (list != null){
-            ListIterator<QueueItem> iter = list.listIterator(list.size());
-            while (iter.hasPrevious()){
-                QueueItem item = iter.previous();
-                if (item.getItemId() != -1){//TODO
-                    getItemQueue().offerFirst(item);
-                }
-            }
-        }
-        txOfferMap.remove(txId);
-    }
+    //TX Poll
 
-    public long txOffer(String txId, Data data){
-        List<QueueItem> list = getTxList(txId, txOfferMap);
-        long itemId = nextId();
-        list.add(new QueueItem(this, nextId(), data));
-        return itemId;
-    }
-
-    public QueueItem txPoll(String txId){
+    public QueueItem txnPollReserve(){
         QueueItem item = getItemQueue().poll();
-        if (item == null ){
-            List<QueueItem> list = getTxList(txId, txOfferMap);
-            if (list.size() > 0){
-                item = list.remove(0);
+        if (item == null) {
+            return null;
+        }
+        if (store.isEnabled() && item.getData() == null) {
+            try {
+                load(item);
+            } catch (Exception e) {
+                throw new HazelcastException(e);
             }
         }
-        if (item != null){
-            List<QueueItem> list = getTxList(txId, txPollMap);
-            list.add(item);
-            return item;
+        QueueItem removed = itemMap.remove(item.getItemId());
+        if (removed == null || removed.getItemId() != item.getItemId()){
+            System.err.println("something wrong!!!");
         }
-        return null;
+        txMap.put(item.getItemId(), item);
+        return new QueueItem(null, item.getItemId(), item.getData());
     }
 
-    public Data txPeek(String txId){
-        QueueItem item = getItemQueue().peek();
+    public boolean txnPollBackupReserve(long itemId){
+        QueueItem item = itemMap.remove(itemId);
         if (item == null){
-            List<QueueItem> list = getTxList(txId, txOfferMap);
-            if (list.size() > 0){
-                item = list.get(0);
-            }
+            throw new TransactionException("Backup reserve failed: " + itemId);
         }
-        return item == null ? null : item.getData();
+        txMap.put(itemId, item);
+        return true;
     }
 
-    private List<QueueItem> getTxList(String txId, Map<String, List<QueueItem>> map){
-        List<QueueItem> list = map.get(txId);
-        if (list == null){
-            list = new ArrayList<QueueItem>(3);
-            map.put(txId, list);
+    public Data txnCommitPoll(long itemId){
+        QueueItem item = txMap.remove(itemId);
+        if (item == null){
+            System.err.println("something wrong!!!");
+            return null;
         }
-        return list;
+        if (store.isEnabled()) {
+            try {
+                store.delete(item.getItemId());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return item.getData();
     }
+
+    public boolean txnRollbackPoll(long itemId, boolean backup){
+        QueueItem item = txMap.remove(itemId);
+        if (item == null){
+            System.err.println("something wrong!!!");
+            return false;
+        }
+        if (!backup){
+            getItemQueue().offerFirst(item);
+        }
+        QueueItem replaced = itemMap.put(itemId, item);
+        if (replaced != null){
+            System.err.println("something wrong!!!");
+        }
+        return true;
+    }
+
+    //TX Offer
+    public long txnOfferReserve(){
+        QueueItem item = new QueueItem(this, nextId());
+        txMap.put(item.getItemId(), item);
+        return item.getItemId();
+    }
+
+    public void txnOfferBackupReserve(long itemId){
+        QueueItem item = new QueueItem(this, itemId);
+        Object o = txMap.put(itemId, item);
+        if (o != null){
+            System.err.println("something wrong!!!");
+        }
+    }
+
+    public boolean txnCommitOffer(long itemId, Data data, boolean backup){
+        QueueItem item = txMap.remove(itemId);
+        if (item == null){
+            System.err.println("something wrong!!!");
+            return false;
+        }
+        item.setData(data);
+        if (!backup){
+            getItemQueue().offer(item);
+        }
+        QueueItem replaced = itemMap.put(item.getItemId(), item);
+        if (replaced != null){
+            System.err.println("something wrong!!!");
+        }
+        if (store.isEnabled()) {
+            try {
+                store.store(item.getItemId(), data);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return true;
+    }
+
+    public boolean txnRollbackOffer(long itemId){
+        QueueItem item = txMap.remove(itemId);
+        if (item == null){
+            System.err.println("something wrong!!!");
+            return false;
+        }
+        return true;
+    }
+    //TX Methods Ends
+
 
 
     public long offer(Data data) {
@@ -317,6 +363,7 @@ public class QueueContainer implements DataSerializable {
     }
 
     public int size() {
+        //TODO check tx
         return getItemQueue().size(); //TODO check max size
     }
 
@@ -552,27 +599,10 @@ public class QueueContainer implements DataSerializable {
         for (QueueItem item : getItemQueue()) {
             item.writeData(out);
         }
-        out.writeInt(txOfferMap.size());
-        for (Map.Entry<String, List<QueueItem>> entry: txOfferMap.entrySet()){
-            String txId = entry.getKey();
-            out.writeUTF(txId);
-            List<QueueItem> list = entry.getValue();
-            out.writeInt(list.size());
-            for (QueueItem item: list){
-                item.writeData(out);
-            }
+        out.writeInt(txMap.size());
+        for (QueueItem item : txMap.values()) {
+            item.writeData(out);
         }
-        out.writeInt(txPollMap.size());
-        for (Map.Entry<String, List<QueueItem>> entry: txPollMap.entrySet()){
-            String txId = entry.getKey();
-            out.writeUTF(txId);
-            List<QueueItem> list = entry.getValue();
-            out.writeInt(list.size());
-            for (QueueItem item: list){
-                item.writeData(out);
-            }
-        }
-
     }
 
     public void readData(ObjectDataInput in) throws IOException {
@@ -584,29 +614,12 @@ public class QueueContainer implements DataSerializable {
             getItemQueue().offer(item);
             setId(item.getItemId());
         }
-        int offerMapSize = in.readInt();
-        for (int i=0; i<offerMapSize; i++){
-            String txId = in.readUTF();
-            int listSize = in.readInt();
-            List<QueueItem> list = new ArrayList<QueueItem>(listSize);
-            for (int j = 0; j < listSize; j++) {
-                QueueItem item = new QueueItem(this);
-                item.readData(in);
-                list.add(item);
-            }
-            txOfferMap.put(txId, list);
-        }
-        int pollMapSize = in.readInt();
-        for (int i=0; i<pollMapSize; i++){
-            String txId = in.readUTF();
-            int listSize = in.readInt();
-            List<QueueItem> list = new ArrayList<QueueItem>(listSize);
-            for (int j = 0; j < listSize; j++) {
-                QueueItem item = new QueueItem(this);
-                item.readData(in);
-                list.add(item);
-            }
-            txPollMap.put(txId, list);
+        int txSize = in.readInt();
+        for (int j = 0; j < txSize; j++) {
+            QueueItem item = new QueueItem(this);
+            item.readData(in);
+            txMap.put(item.getItemId(), item);
+            setId(item.getItemId());
         }
     }
 }

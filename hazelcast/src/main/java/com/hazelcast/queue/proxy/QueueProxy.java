@@ -16,7 +16,6 @@
 
 package com.hazelcast.queue.proxy;
 
-import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.IQueue;
 
 /**
@@ -24,7 +23,7 @@ import com.hazelcast.core.IQueue;
  * Date: 11/14/12
  * Time: 12:51 AM
  */
-public interface QueueProxy<E> extends IQueue<E>, DistributedObject {
+public interface QueueProxy<E> extends IQueue<E> {
 
 
 }
