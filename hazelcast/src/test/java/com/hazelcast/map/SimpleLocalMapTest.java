@@ -109,7 +109,7 @@ public class SimpleLocalMapTest {
 
         StaticNodeFactory factory = new StaticNodeFactory(instanceCount);
         Config cfg = new Config();
-        cfg.getMapConfig("default").setInMemoryFormat(MapConfig.InMemoryFormat.DATA);
+        cfg.getMapConfig("default").setInMemoryFormat(MapConfig.InMemoryFormat.BINARY);
         for (int i = 0; i < instanceCount; i++) {
             SimpleLocalMapTest test = new SimpleLocalMapTest(factory.newHazelcastInstance(cfg), threadCount, entryCount, valueSize,
                     getPercentage, putPercentage, load);
