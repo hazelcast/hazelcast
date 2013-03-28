@@ -31,7 +31,7 @@ import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
 
-public class TxnLockAndGetOperation extends LockAwareOperation implements BackupAwareOperation {
+public class TxnLockAndGetOperation extends LockAwareOperation {
 
     private long timeout;
     private VersionedValue response;
@@ -91,19 +91,4 @@ public class TxnLockAndGetOperation extends LockAwareOperation implements Backup
                 '}';
     }
 
-    public boolean shouldBackup() {
-        return true;
-    }
-
-    public final Operation getBackupOperation() {
-        return new TxnLockBackupOperation(name, dataKey, -1, getCallerUuid(), getThreadId());
-    }
-
-    public final int getAsyncBackupCount() {
-        return mapContainer.getAsyncBackupCount();
-    }
-
-    public final int getSyncBackupCount() {
-        return mapContainer.getBackupCount();
-    }
 }
