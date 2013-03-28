@@ -442,7 +442,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         MapContainer mapContainer = getMapContainer(name);
         final MapConfig.InMemoryFormat inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
         boolean statisticsEnabled = mapContainer.getMapConfig().isStatisticsEnabled();
-        if (inMemoryFormat == MapConfig.InMemoryFormat.DATA) {
+        if (inMemoryFormat == MapConfig.InMemoryFormat.BINARY) {
             record = new DataRecord(dataKey, toData(value), statisticsEnabled);
         } else if (inMemoryFormat == MapConfig.InMemoryFormat.OBJECT) {
             record = new ObjectRecord(dataKey, toObject(value), statisticsEnabled);
@@ -776,7 +776,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         }
 
         MapContainer mapContainer = getMapContainer(mapName);
-        if (mapContainer.getMapConfig().getInMemoryFormat().equals(MapConfig.InMemoryFormat.DATA)) {
+        if (mapContainer.getMapConfig().getInMemoryFormat().equals(MapConfig.InMemoryFormat.BINARY)) {
             return toData(value1).equals(toData(value2));
         } else if (mapContainer.getMapConfig().getInMemoryFormat().equals(MapConfig.InMemoryFormat.OBJECT)) {
             return toObject(value1).equals(toObject(value2));
