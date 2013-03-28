@@ -60,19 +60,24 @@ final class TransactionImpl implements Transaction {
 
     // used by tx backups
     TransactionImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngine nodeEngine,
-                    String txnId, List<TransactionLog> txLogs, long timeoutMillis) {
+                    String txnId, List<TransactionLog> txLogs, long timeoutMillis, long startTime) {
         this.transactionManagerService = transactionManagerService;
         this.nodeEngine = nodeEngine;
         this.txnId = txnId;
         this.timeoutMillis = timeoutMillis;
+        this.startTime = startTime;
         this.durability = 0;
         this.transactionType = TransactionType.TWO_PHASE;
         this.txLogs.addAll(txLogs);
-        this.state = ACTIVE;
+        this.state = PREPARED;
     }
 
     public String getTxnId() {
         return txnId;
+    }
+
+    public TransactionType getTransactionType() {
+        return transactionType;
     }
 
     public void addTransactionLog(TransactionLog transactionLog) {
@@ -103,11 +108,7 @@ final class TransactionImpl implements Transaction {
         state = ACTIVE;
     }
 
-    void prepareAndReplicate() throws InterruptedException, ExecutionException, TimeoutException {
-
-    }
-
-    void commit() throws TransactionException, IllegalStateException {
+    void prepare() throws TransactionException {
         if (state != ACTIVE) {
             throw new IllegalStateException("Transaction is not active");
         }
@@ -115,7 +116,6 @@ final class TransactionImpl implements Transaction {
         checkTimeout();
         try {
             final List<Future> futures = new ArrayList<Future>(txLogs.size());
-            if (transactionType.equals(TransactionType.TWO_PHASE)){
                 state = PREPARING;
                 for (TransactionLog txLog : txLogs) {
                     futures.add(txLog.prepare(nodeEngine));
@@ -125,14 +125,13 @@ final class TransactionImpl implements Transaction {
                 }
                 futures.clear();
                 state = PREPARED;
-            }
             // replicate tx log
-            if (durability > 0 && transactionType.equals(TransactionType.TWO_PHASE)) {
+            if (durability > 0) {
                 final OperationService operationService = nodeEngine.getOperationService();
                 for (Address backupAddress : backupAddresses) {
                     if (nodeEngine.getClusterService().getMember(backupAddress) != null){
                         final Invocation inv = operationService.createInvocationBuilder(TransactionManagerServiceImpl.SERVICE_NAME,
-                                new ReplicateTxOperation(txLogs, nodeEngine.getLocalMember().getUuid(), txnId, timeoutMillis),
+                                new ReplicateTxOperation(txLogs, nodeEngine.getLocalMember().getUuid(), txnId, timeoutMillis, startTime),
                                 backupAddress).build();
                         futures.add(inv.invoke());
                     }
@@ -142,6 +141,23 @@ final class TransactionImpl implements Transaction {
                 }
                 futures.clear();
             }
+
+        } catch (Throwable e) {
+            if (e instanceof ExecutionException && e.getCause() instanceof TransactionException) {
+                throw (TransactionException) e.getCause();
+            }
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
+
+    void commit() throws TransactionException, IllegalStateException {
+        if (state != PREPARED) {
+            throw new IllegalStateException("Transaction is not prepared");
+        }
+        checkThread();
+        checkTimeout();
+        try {
+            final List<Future> futures = new ArrayList<Future>(txLogs.size());
 
             for (int i = 0; i < 11; i++) {
                 System.out.println("COMMITTING" + (10- i));

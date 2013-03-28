@@ -37,7 +37,7 @@ class TransactionContextImpl implements TransactionContext {
 
     public TransactionContextImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngineImpl nodeEngine, TransactionOptions options) {
         this.nodeEngine = nodeEngine;
-        this.transaction  = new TransactionImpl(transactionManagerService, nodeEngine, options);
+        this.transaction = new TransactionImpl(transactionManagerService, nodeEngine, options);
     }
 
     public void beginTransaction() {
@@ -45,6 +45,9 @@ class TransactionContextImpl implements TransactionContext {
     }
 
     public void commitTransaction() throws TransactionException {
+        if (transaction.getTransactionType().equals(TransactionOptions.TransactionType.TWO_PHASE)) {
+            transaction.prepare();
+        }
         transaction.commit();
     }
 
@@ -69,13 +72,12 @@ class TransactionContextImpl implements TransactionContext {
         }
         TransactionalObjectKey key = new TransactionalObjectKey(MapService.SERVICE_NAME, id);
         TransactionalObject obj = txnObjectMap.get(key);
-        if (obj == null){
+        if (obj == null) {
             final Object service = nodeEngine.getService(serviceName);
             if (service instanceof TransactionalService) {
                 obj = ((TransactionalService) service).createTransactionalObject(id, transaction);
                 txnObjectMap.put(key, obj);
-            }
-            else {
+            } else {
                 throw new IllegalArgumentException("Service[" + serviceName + "] is not transactional!");
             }
         }
@@ -83,7 +85,7 @@ class TransactionContextImpl implements TransactionContext {
 
     }
 
-    class TransactionalObjectKey{
+    class TransactionalObjectKey {
 
         private final String serviceName;
         private final Object id;

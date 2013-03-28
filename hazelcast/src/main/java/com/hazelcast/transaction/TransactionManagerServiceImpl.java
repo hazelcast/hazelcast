@@ -99,7 +99,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         if (!txBackupLogs.isEmpty()) {
             for (TxBackupLog log : txBackupLogs.values()) {
                 if (uuid.equals(log.callerUuid)) {
-                    TransactionImpl tx = new TransactionImpl(this, nodeEngine, log.txnId, log.txLogs, log.timeoutMillis);
+                    TransactionImpl tx = new TransactionImpl(this, nodeEngine, log.txnId, log.txLogs, log.timeoutMillis, log.startTime);
                     if (log.state == Transaction.State.COMMITTING) {
                         try {
                             tx.commit();
@@ -135,8 +135,8 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         return addresses;
     }
 
-    void putTxBackupLog(List<TransactionLog> txLogs, String callerUuid, String txnId, long timeoutMillis) {
-        if (txBackupLogs.putIfAbsent(txnId, new TxBackupLog(txLogs, callerUuid, txnId, timeoutMillis)) != null) {
+    void putTxBackupLog(List<TransactionLog> txLogs, String callerUuid, String txnId, long timeoutMillis, long startTime) {
+        if (txBackupLogs.putIfAbsent(txnId, new TxBackupLog(txLogs, callerUuid, txnId, timeoutMillis, startTime)) != null) {
             throw new TransactionException("TxLog already exists!");
         }
     }
@@ -159,14 +159,16 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         private final String callerUuid;
         private final String txnId;
         private final long timeoutMillis;
+        private final long startTime;
 
         private volatile Transaction.State state = Transaction.State.COMMITTING;
 
-        private TxBackupLog(List<TransactionLog> txLogs, String callerUuid, String txnId, long timeoutMillis) {
+        private TxBackupLog(List<TransactionLog> txLogs, String callerUuid, String txnId, long timeoutMillis, long startTime) {
             this.txLogs = txLogs;
             this.callerUuid = callerUuid;
             this.txnId = txnId;
             this.timeoutMillis = timeoutMillis;
+            this.startTime = startTime;
         }
     }
 }
