@@ -65,7 +65,7 @@ import java.util.concurrent.TimeUnit;
  * @see java.util.concurrent.ConcurrentMap
  * @see java.util.IdentityHashMap
  */
-public interface IMap<K, V> extends ConcurrentMap<K, V>, XMap<K, V> {
+public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
 
     /**
      * {@inheritDoc}

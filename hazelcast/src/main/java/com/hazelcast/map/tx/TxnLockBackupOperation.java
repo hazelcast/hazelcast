@@ -25,33 +25,34 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
 
-public class TxnLockAndGetOperation extends LockAwareOperation implements BackupAwareOperation {
+public class TxnLockBackupOperation extends LockAwareOperation implements BackupOperation {
 
     private long timeout;
-    private VersionedValue response;
+    private String callerId;
+    private int threadId;
 
-    public TxnLockAndGetOperation() {
+    public TxnLockBackupOperation() {
     }
 
-    public TxnLockAndGetOperation(String name, Data dataKey, long timeout) {
+    public TxnLockBackupOperation(String name, Data dataKey, long timeout, String callerId, int threadId) {
         super(name, dataKey, -1);
         this.timeout = timeout;
+        this.callerId = callerId;
+        this.threadId = threadId;
     }
 
     @Override
     public void run() throws Exception {
-        if (!recordStore.lock(getKey(), getCallerUuid(), getThreadId(), ttl)) {
+        if (!recordStore.lock(getKey(), callerId, threadId, ttl)) {
             throw new TransactionException("Lock failed.");
         }
-        Record record = recordStore.getRecords().get(dataKey);
-        Data value = record == null ? null : mapService.toData(record.getValue());
-        response = new VersionedValue(value, record == null ? 0 : record.getVersion());
     }
 
     @Override
@@ -67,43 +68,32 @@ public class TxnLockAndGetOperation extends LockAwareOperation implements Backup
 
     @Override
     public Object getResponse() {
-        return response;
+        return true;
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(timeout);
+        out.writeInt(threadId);
+        out.writeUTF(callerId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         timeout = in.readLong();
+        threadId = in.readInt();
+        callerId = in.readUTF();
     }
 
 
     @Override
     public String toString() {
-        return "TxnLockAndGetOperation{" +
+        return "TxnLockBackupOperation{" +
                 "timeout=" + timeout +
                 ", thread=" + getThreadId() +
                 '}';
     }
 
-    public boolean shouldBackup() {
-        return true;
-    }
-
-    public final Operation getBackupOperation() {
-        return new TxnLockBackupOperation(name, dataKey, -1, getCallerUuid(), getThreadId());
-    }
-
-    public final int getAsyncBackupCount() {
-        return mapContainer.getAsyncBackupCount();
-    }
-
-    public final int getSyncBackupCount() {
-        return mapContainer.getBackupCount();
-    }
 }
