@@ -183,7 +183,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
 
 //    public List<Edge> detectDeadlock() {
 //        Collection<Map<String, MapLockState>> collection =
-//                (Collection<Map<String, MapLockState>>) callOnAllMembers(new LockInformationCallable());   //TODO @msk
+//                (Collection<Map<String, MapLockState>>) callOnAllMembers(new LockInformationCallable());
 //        List<Vertex> graph = new ArrayList<Vertex>();
 //        for (Map<String, MapLockState> mapLockStateMap : collection) {
 //            for (MapLockState map : mapLockStateMap.values()) {
@@ -274,38 +274,38 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     }
 
     private void createMemState(MemberStateImpl memberState,
-                                Collection<DistributedObject> proxyObjects) {
+                                Collection<DistributedObject> distributedObjects) {
         int count = 0;
-        for (DistributedObject proxyObject : proxyObjects) {
+        for (DistributedObject distributedObject : distributedObjects) {
             if (count < maxVisibleInstanceCount) {
-                if (proxyObject instanceof MapProxy) {
-                    MapProxy mapProxy = (MapProxy) proxyObject;
-                    if (instanceFilterMap.visible(mapProxy.getName())) {
-                        memberState.putLocalMapStats(mapProxy.getName(), (LocalMapStatsImpl) mapProxy.getLocalMapStats());
+                if (distributedObject instanceof IMap) {
+                    IMap map = (IMap) distributedObject;
+                    if (instanceFilterMap.visible(map.getName())) {
+                        memberState.putLocalMapStats(map.getName(), (LocalMapStatsImpl) map.getLocalMapStats());
                         count++;
                     }
-                } else if (proxyObject instanceof QueueProxy) {
-                    QueueProxy qProxy = (QueueProxy) proxyObject;
-                    if (instanceFilterQueue.visible(qProxy.getName())) {
-                        memberState.putLocalQueueStats(qProxy.getName(), (LocalQueueStatsImpl) qProxy.getLocalQueueStats());
+                } else if (distributedObject instanceof IQueue) {
+                    IQueue queue = (IQueue) distributedObject;
+                    if (instanceFilterQueue.visible(queue.getName())) {
+                        memberState.putLocalQueueStats(queue.getName(), (LocalQueueStatsImpl) queue.getLocalQueueStats());
                         count++;
                     }
-                } else if (proxyObject instanceof TopicProxy) {
-                    TopicProxy topicProxy = (TopicProxy) proxyObject;
-                    if (instanceFilterTopic.visible(topicProxy.getName())) {
-                        memberState.putLocalTopicStats(topicProxy.getName(), (LocalTopicStatsImpl) topicProxy.getLocalTopicStats());
+                } else if (distributedObject instanceof ITopic) {
+                    ITopic topic = (ITopic) distributedObject;
+                    if (instanceFilterTopic.visible(topic.getName())) {
+                        memberState.putLocalTopicStats(topic.getName(), (LocalTopicStatsImpl) topic.getLocalTopicStats());
                         count++;
                     }
-                } else if (proxyObject instanceof ObjectMultiMapProxy) {
-                    ObjectMultiMapProxy multiMapProxy = (ObjectMultiMapProxy) proxyObject;
-                    if (instanceFilterTopic.visible(multiMapProxy.getName())) {
-                        memberState.putLocalMultiMapStats(multiMapProxy.getName(), (LocalMapStatsImpl) multiMapProxy.getLocalMultiMapStats());
+                } else if (distributedObject instanceof MultiMap) {
+                    MultiMap multiMap = (MultiMap) distributedObject;
+                    if (instanceFilterTopic.visible(multiMap.getName())) {
+                        memberState.putLocalMultiMapStats(multiMap.getName(), (LocalMapStatsImpl) multiMap.getLocalMultiMapStats());
                         count++;
                     }
-                } else if (proxyObject instanceof ExecutorServiceProxy) {
-                    ExecutorServiceProxy executorServiceProxy = (ExecutorServiceProxy) proxyObject;
+                } else if (distributedObject instanceof IExecutorService) {
+                    IExecutorService executorService = (IExecutorService) distributedObject;
 //                    if (instanceFilterTopic.visible(multiMapProxy.getName())) {
-                    memberState.putLocalExecutorStats(executorServiceProxy.getName(), (LocalExecutorStatsImpl) executorServiceProxy.getLocalExecutorStats());
+                    memberState.putLocalExecutorStats(executorService.getName(), (LocalExecutorStatsImpl) executorService.getLocalExecutorStats());
                     count++;
 //                    }
                 }
@@ -322,38 +322,38 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
 
     //
     private void collectInstanceNames(Set<String> setLongInstanceNames,
-                                      Collection<DistributedObject> proxyObjects) {
+                                      Collection<DistributedObject> distributedObjects) {
         int count = 0;
-        for (DistributedObject proxyObject : proxyObjects) {
+        for (DistributedObject distributedObject : distributedObjects) {
             if (count < maxVisibleInstanceCount) {
-                if (proxyObject instanceof ObjectMultiMapProxy) {
-                    ObjectMultiMapProxy multiMapProxy = (ObjectMultiMapProxy) proxyObject;
-                    if (instanceFilterMap.visible(multiMapProxy.getName())) {
-                        setLongInstanceNames.add("m:" + multiMapProxy.getName());
+                if (distributedObject instanceof MultiMap) {
+                    MultiMap multiMap = (MultiMap) distributedObject;
+                    if (instanceFilterMap.visible(multiMap.getName())) {
+                        setLongInstanceNames.add("m:" + multiMap.getName());
                         count++;
                     }
-                } else if (proxyObject instanceof MapProxy) {
-                    MapProxy mapProxy = (MapProxy) proxyObject;
-                    if (instanceFilterMap.visible(mapProxy.getName())) {
-                        setLongInstanceNames.add("c:" + mapProxy.getName());
+                } else if (distributedObject instanceof IMap) {
+                    IMap map = (IMap) distributedObject;
+                    if (instanceFilterMap.visible(map.getName())) {
+                        setLongInstanceNames.add("c:" + map.getName());
                         count++;
                     }
-                } else if (proxyObject instanceof QueueProxy) {
-                    QueueProxy qProxy = (QueueProxy) proxyObject;
-                    if (instanceFilterQueue.visible(qProxy.getName())) {
-                        setLongInstanceNames.add("q:" + qProxy.getName());
+                } else if (distributedObject instanceof IQueue) {
+                    IQueue queue = (IQueue) distributedObject;
+                    if (instanceFilterQueue.visible(queue.getName())) {
+                        setLongInstanceNames.add("q:" + queue.getName());
                         count++;
                     }
-                } else if (proxyObject instanceof TopicProxy) {
-                    TopicProxy topicProxy = (TopicProxy) proxyObject;
-                    if (instanceFilterTopic.visible(topicProxy.getName())) {
-                        setLongInstanceNames.add("t:" + topicProxy.getName());
+                } else if (distributedObject instanceof ITopic) {
+                    ITopic topic = (ITopic) distributedObject;
+                    if (instanceFilterTopic.visible(topic.getName())) {
+                        setLongInstanceNames.add("t:" + topic.getName());
                         count++;
                     }
-                } else if (proxyObject instanceof ExecutorServiceProxy) {
-                    ExecutorServiceProxy executorServiceProxy = (ExecutorServiceProxy) proxyObject;
+                } else if (distributedObject instanceof IExecutorService) {
+                    IExecutorService executorService = (IExecutorService) distributedObject;
 //                    if (instanceFilterTopic.visible(topicProxy.getName())) {
-                    setLongInstanceNames.add("e:" + executorServiceProxy.getName());
+                    setLongInstanceNames.add("e:" + executorService.getName());
                     count++;
 //                    }
                 }

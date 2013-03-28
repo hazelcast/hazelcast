@@ -34,7 +34,7 @@ public class LockStoreContainer {
     private final ConcurrentMap<ILockNamespace, LockStoreImpl> lockStores = new ConcurrentHashMap<ILockNamespace, LockStoreImpl>();
 
     private final ConstructorFunction<ILockNamespace, LockStoreImpl> lockStoreConstructor
-                = new ConstructorFunction<ILockNamespace, LockStoreImpl>() {
+            = new ConstructorFunction<ILockNamespace, LockStoreImpl>() {
         public LockStoreImpl createNew(ILockNamespace key) {
             return new LockStoreImpl(key, 1, 0);
         }
@@ -69,7 +69,7 @@ public class LockStoreContainer {
         return ConcurrencyUtil.getOrPutIfAbsent(lockStores, namespace, lockStoreConstructor);
     }
 
-    Collection<LockStoreImpl> getLockStores() {
+    public Collection<LockStoreImpl> getLockStores() {
         return Collections.unmodifiableCollection(lockStores.values());
     }
 

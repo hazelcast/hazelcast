@@ -24,7 +24,7 @@ import com.hazelcast.util.Clock;
 import java.io.IOException;
 import java.util.*;
 
-public class LockInfo implements DataSerializable {
+public class DistributedLock implements DataSerializable {
 
     private Data key;
     private String owner = null;
@@ -37,10 +37,10 @@ public class LockInfo implements DataSerializable {
     private List<ConditionKey> signalKeys;
     private List<AwaitOperation> expiredAwaitOps;
 
-    public LockInfo() {
+    public DistributedLock() {
     }
 
-    public LockInfo(Data key) {
+    public DistributedLock(Data key) {
         this.key = key;
     }
 
@@ -243,7 +243,7 @@ public class LockInfo implements DataSerializable {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        LockInfo that = (LockInfo) o;
+        DistributedLock that = (DistributedLock) o;
         if (threadId != that.threadId) return false;
         if (owner != null ? !owner.equals(that.owner) : that.owner != null) return false;
         return true;

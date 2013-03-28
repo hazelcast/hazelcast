@@ -31,12 +31,11 @@ import java.util.*;
  */
 public class PartitionRuntimeState implements DataSerializable {
 
-    private long masterTime = Clock.currentTimeMillis();
-    private int version;
     protected ArrayList<MemberInfo> members = new ArrayList<MemberInfo>(100);
     protected Collection<ShortPartitionInfo> partitionInfos = new LinkedList<ShortPartitionInfo>();
+    private long masterTime = Clock.currentTimeMillis();
+    private int version;
     private Collection<MigrationInfo> completedMigrations;
-
     private transient Address endpoint;
 
     public PartitionRuntimeState() {
@@ -58,6 +57,14 @@ public class PartitionRuntimeState implements DataSerializable {
         setPartitions(partitions, addressIndexes);
 
         completedMigrations = migrationInfos != null ? migrationInfos : new ArrayList<MigrationInfo>(0);
+    }
+
+    private static String print(PartitionInfo[] partitions) {
+        StringBuilder s = new StringBuilder();
+        for (PartitionInfo partition : partitions) {
+            s.append(partition).append('\n');
+        }
+        return s.toString();
     }
 
     protected void addMemberInfo(MemberInfo memberInfo, Map<Address, Integer> addressIndexes, int memberIndex) {
@@ -161,10 +168,14 @@ public class PartitionRuntimeState implements DataSerializable {
             spi.writeData(out);
         }
 
-        int k = completedMigrations.size();
-        out.writeInt(k);
-        for (MigrationInfo cm : completedMigrations) {
-            cm.writeData(out);
+        if (completedMigrations != null) {
+            int k = completedMigrations.size();
+            out.writeInt(k);
+            for (MigrationInfo cm : completedMigrations) {
+                cm.writeData(out);
+            }
+        } else {
+            out.writeInt(0);
         }
     }
 
@@ -208,13 +219,5 @@ public class PartitionRuntimeState implements DataSerializable {
                 addressIndexes[i] = in.readInt();
             }
         }
-    }
-
-    private static String print(PartitionInfo[] partitions) {
-        StringBuilder s =  new StringBuilder();
-        for (PartitionInfo partition : partitions) {
-            s.append(partition).append('\n');
-        }
-        return s.toString();
     }
 }

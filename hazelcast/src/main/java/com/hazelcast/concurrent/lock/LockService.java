@@ -78,6 +78,10 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
         return containers[partitionId];
     }
 
+    public LockStoreContainer[] getLockContainers() {
+        return containers;
+    }
+
     public LockStoreImpl getLockStore(int partitionId, ILockNamespace namespace) {
         return getLockContainer(partitionId).getLockStore(namespace);
     }
@@ -94,10 +98,10 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
     private void releaseLocksOf(final String uuid) {
         for (LockStoreContainer container : containers) {
             for (LockStoreImpl lockStore : container.getLockStores()) {
-                Map<Data, LockInfo> locks = lockStore.getLocks();
-                for (Map.Entry<Data, LockInfo> entry : locks.entrySet()) {
+                Map<Data, DistributedLock> locks = lockStore.getLocks();
+                for (Map.Entry<Data, DistributedLock> entry : locks.entrySet()) {
                     final Data key = entry.getKey();
-                    final LockInfo lock = entry.getValue();
+                    final DistributedLock lock = entry.getValue();
                     if (uuid.equals(lock.getOwner())) {
                         UnlockOperation op = new UnlockOperation(lockStore.getNamespace(), key, -1, true);
                         op.setNodeEngine(nodeEngine);
