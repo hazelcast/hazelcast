@@ -23,9 +23,12 @@ import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.Transaction;
+import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.util.ExceptionUtil;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.Future;
 
 /**
@@ -36,6 +39,7 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
     protected final String name;
     protected final Transaction tx;
     protected final int partitionId;
+    private final Set<Long> itemIdSet = new HashSet<Long>();
 
     protected TransactionalQueueProxySupport(NodeEngine nodeEngine, QueueService service, String name, Transaction tx) {
         super(nodeEngine, service);
@@ -52,6 +56,10 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
             Future<Long> f = invocation.invoke();
             Long itemId = f.get();
             if (itemId != null){
+                System.err.println("--------------itemId: "+itemId + " size: " + itemIdSet.size());
+                if(!itemIdSet.add(itemId)){
+                    throw new TransactionException("Duplicate itemId: " + itemId);
+                }
                 tx.addTransactionLog(new QueueTransactionLog(itemId, name, partitionId, new TxnOfferOperation(name, itemId, data)));
                 return true;
             }
@@ -68,6 +76,9 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
             Future<QueueItem> f = invocation.invoke();
             QueueItem item = f.get();
             if (item != null){
+                if(!itemIdSet.add(item.getItemId())){
+                    throw new TransactionException("Duplicate itemId: " + item.getItemId());
+                }
                 tx.addTransactionLog(new QueueTransactionLog(item.getItemId(), name, partitionId, new TxnPollOperation(name, item.getItemId())));
                 return item.getData();
             }

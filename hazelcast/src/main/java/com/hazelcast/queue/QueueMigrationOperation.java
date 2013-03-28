@@ -49,7 +49,7 @@ public class QueueMigrationOperation extends AbstractOperation {
             String name = entry.getKey();
             QueueContainer container = entry.getValue();
             QueueConfig conf = getNodeEngine().getConfig().getQueueConfig(name);
-            container.setConfig(conf, getNodeEngine().getSerializationService());
+            container.setConfig(conf, getNodeEngine());
             service.addContainer(name, container);
         }
     }

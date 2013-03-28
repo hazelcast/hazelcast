@@ -19,12 +19,13 @@ package com.hazelcast.queue;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.util.Clock;
 
@@ -46,6 +47,8 @@ public class QueueContainer implements DataSerializable {
     private int partitionId;
     private QueueConfig config;
     private QueueStoreWrapper store;
+    private NodeEngine nodeEngine;
+    private ILogger logger;
 
     private long idGenerator = 0;
 
@@ -60,15 +63,16 @@ public class QueueContainer implements DataSerializable {
 
     private volatile long totalAgedCount;
 
+
     public QueueContainer(String name) {
         pollWaitNotifyKey = new QueueWaitNotifyKey(name, "poll");
         offerWaitNotifyKey = new QueueWaitNotifyKey(name, "offer");
     }
 
-    public QueueContainer(String name, int partitionId, QueueConfig config, SerializationService serializationService, boolean fromBackup) throws Exception {
+    public QueueContainer(String name, int partitionId, QueueConfig config, NodeEngine nodeEngine, boolean fromBackup) throws Exception {
         this(name);
         this.partitionId = partitionId;
-        setConfig(config, serializationService);
+        setConfig(config, nodeEngine);
         if (!fromBackup && store.isEnabled()) {
             Set<Long> keys = store.loadAllKeys();
             if (keys != null) {
@@ -170,9 +174,11 @@ public class QueueContainer implements DataSerializable {
 
     public boolean txnCommitOffer(long itemId, Data data, boolean backup){
         QueueItem item = txMap.remove(itemId);
-        if (item == null){
-            System.err.println("something wrong!!!");
-            return false;
+        if (item == null && !backup){
+            throw new TransactionException("No reserve :" + itemId);
+        }
+        else if(item == null){
+            item = new QueueItem(this, itemId, data);
         }
         item.setData(data);
         if (!backup){
@@ -533,8 +539,10 @@ public class QueueContainer implements DataSerializable {
         return dataMap.remove(itemId);
     }
 
-    public void setConfig(QueueConfig config, SerializationService serializationService) {
-        store = new QueueStoreWrapper(serializationService);
+    public void setConfig(QueueConfig config, NodeEngine nodeEngine) {
+        this.nodeEngine = nodeEngine;
+        logger = nodeEngine.getLogger(QueueContainer.class);
+        store = new QueueStoreWrapper(nodeEngine.getSerializationService());
         this.config = new QueueConfig(config);
         QueueStoreConfig storeConfig = config.getQueueStoreConfig();
         store.setConfig(storeConfig);

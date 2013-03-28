@@ -120,10 +120,12 @@ final class TransactionImpl implements Transaction {
             if (durability > 0) {
                 final OperationService operationService = nodeEngine.getOperationService();
                 for (Address backupAddress : backupAddresses) {
-                    final Invocation inv = operationService.createInvocationBuilder(TransactionManagerServiceImpl.SERVICE_NAME,
-                            new ReplicateTxOperation(txLogs, nodeEngine.getLocalMember().getUuid(), txnId, timeoutMillis),
-                            backupAddress).build();
-                    futures.add(inv.invoke());
+                    if (nodeEngine.getClusterService().getMember(backupAddress) != null){
+                        final Invocation inv = operationService.createInvocationBuilder(TransactionManagerServiceImpl.SERVICE_NAME,
+                                new ReplicateTxOperation(txLogs, nodeEngine.getLocalMember().getUuid(), txnId, timeoutMillis),
+                                backupAddress).build();
+                        futures.add(inv.invoke());
+                    }
                 }
                 for (Future future : futures) {
                     future.get(timeoutMillis, TimeUnit.MILLISECONDS);
@@ -176,9 +178,11 @@ final class TransactionImpl implements Transaction {
             // rollback tx backup
             if (durability > 0) {
                 for (Address backupAddress : backupAddresses) {
-                    final Invocation inv = operationService.createInvocationBuilder(TransactionManagerServiceImpl.SERVICE_NAME,
-                            new RollbackTxBackupOperation(txnId), backupAddress).build();
-                    futures.add(inv.invoke());
+                    if (nodeEngine.getClusterService().getMember(backupAddress) != null){
+                        final Invocation inv = operationService.createInvocationBuilder(TransactionManagerServiceImpl.SERVICE_NAME,
+                                new RollbackTxBackupOperation(txnId), backupAddress).build();
+                        futures.add(inv.invoke());
+                    }
                 }
                 for (Future future : futures) {
                     try {
@@ -216,12 +220,14 @@ final class TransactionImpl implements Transaction {
         if (durability > 0) {
             final OperationService operationService = nodeEngine.getOperationService();
             for (Address backupAddress : backupAddresses) {
-                try {
-                    final Invocation inv = operationService.createInvocationBuilder(TransactionManagerServiceImpl.SERVICE_NAME,
-                            new PurgeTxBackupOperation(txnId), backupAddress).build();
-                    inv.invoke();
-                } catch (Throwable e) {
-                    nodeEngine.getLogger(getClass()).log(Level.WARNING, "Error during purging backups!", e);
+                if (nodeEngine.getClusterService().getMember(backupAddress) != null){
+                    try {
+                        final Invocation inv = operationService.createInvocationBuilder(TransactionManagerServiceImpl.SERVICE_NAME,
+                                new PurgeTxBackupOperation(txnId), backupAddress).build();
+                        inv.invoke();
+                    } catch (Throwable e) {
+                        nodeEngine.getLogger(getClass()).log(Level.WARNING, "Error during purging backups!", e);
+                    }
                 }
             }
         }
