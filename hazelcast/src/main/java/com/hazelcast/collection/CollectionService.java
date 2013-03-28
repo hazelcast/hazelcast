@@ -23,8 +23,6 @@ import com.hazelcast.collection.list.ObjectListProxy;
 import com.hazelcast.collection.list.client.*;
 import com.hazelcast.collection.multimap.ObjectMultiMapProxy;
 import com.hazelcast.collection.multimap.client.*;
-import com.hazelcast.collection.multimap.tx.TransactionalMultimapProxy;
-import com.hazelcast.collection.multimap.tx.TransactionalMultimapProxySupport;
 import com.hazelcast.collection.set.ObjectSetProxy;
 import com.hazelcast.collection.set.client.*;
 import com.hazelcast.core.*;
@@ -41,6 +39,7 @@ import com.hazelcast.partition.MigrationType;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
 import com.hazelcast.transaction.Transaction;
+import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.*;
@@ -404,7 +403,7 @@ public class CollectionService implements ManagedService, RemoteService, Members
         return operationsCounter;
     }
 
-    public TransactionalMultimapProxySupport createTransactionalObject(Object id, Transaction transaction) {
-        return new TransactionalMultimapProxy((CollectionProxyId)id, nodeEngine, this, transaction);
+    public <T extends TransactionalObject> T createTransactionalObject(Object id, Transaction transaction) {
+        return null;
     }
 }

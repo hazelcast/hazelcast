@@ -45,7 +45,7 @@
     <xs:element name="map">
         <xs:complexType>
             <xs:sequence>
-                <xs:element ref="record-type" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="in-memory-format" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="backup-count" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="async-backup-count" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="time-to-live-seconds" minOccurs="0" maxOccurs="1"/>
@@ -807,11 +807,12 @@
             </xs:restriction>
         </xs:simpleType>
     </xs:element>
-    <xs:element name="record-type" default="DATA">
+    <xs:element name="in-memory-format" default="BINARY">
         <xs:simpleType>
             <xs:restriction base="non-space-string">
-                <xs:enumeration value="DATA"/>
+                <xs:enumeration value="BINARY"/>
                 <xs:enumeration value="OBJECT"/>
+                <xs:enumeration value="CACHED"/>
             </xs:restriction>
         </xs:simpleType>
     </xs:element>

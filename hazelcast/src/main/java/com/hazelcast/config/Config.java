@@ -65,7 +65,7 @@ public class Config implements DataSerializable {
 
     private Map<String, WanReplicationConfig> wanReplicationConfigs = new ConcurrentHashMap<String, WanReplicationConfig>();
 
-    private ServicesConfig servicesConfigConfig = new ServicesConfig();
+    private ServicesConfig servicesConfig = new ServicesConfig();
 
     private SecurityConfig securityConfig = new SecurityConfig();
 
@@ -670,8 +670,8 @@ public class Config implements DataSerializable {
         return managementCenterConfig;
     }
 
-    public ServicesConfig getServicesConfigConfig() {
-        return servicesConfigConfig;
+    public ServicesConfig getServicesConfig() {
+        return servicesConfig;
     }
 
     @Override

@@ -16,17 +16,12 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.Clock;
 
-import java.io.IOException;
+public final class GetOperation extends KeyBasedMapOperation implements IdentifiedDataSerializable {
 
-public class GetOperation extends KeyBasedMapOperation implements IdentifiedDataSerializable {
-
-    private String txnId;
     private transient Data result;
 
     public GetOperation() {
@@ -36,23 +31,7 @@ public class GetOperation extends KeyBasedMapOperation implements IdentifiedData
         super(name, dataKey);
     }
 
-    public GetOperation(String name, Data dataKey, String txnId) {
-        super(name, dataKey);
-        this.txnId = txnId;
-    }
-
     public void run() {
-        if (txnId != null) {
-            final TransactionItem item = partitionContainer.getTransactionItem(new TransactionKey(txnId, name, dataKey));
-            if (item != null) {
-                if (item.isRemoved()) {
-                    result = null;
-                } else {
-                    result = item.getValue();
-                }
-                return;
-            }
-        }
         result = mapService.toData(recordStore.get(dataKey));
     }
 
@@ -75,17 +54,5 @@ public class GetOperation extends KeyBasedMapOperation implements IdentifiedData
 
     public int getId() {
         return DataSerializerMapHook.GET;
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeUTF(txnId);
-    }
-
-    @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        txnId = in.readUTF();
     }
 }

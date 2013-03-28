@@ -17,6 +17,7 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.transaction.TransactionLog;
 import com.hazelcast.transaction.Transaction;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.transaction.TransactionOptions;
@@ -58,6 +59,11 @@ public class TransactionClientProxy implements Transaction {
     }
 
     public void addPartition(int partitionId) {
+
+    }
+
+    @Override
+    public void addTransactionLog(TransactionLog transactionLog) {
 
     }
 

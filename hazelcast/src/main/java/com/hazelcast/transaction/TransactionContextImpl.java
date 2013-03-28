@@ -23,6 +23,9 @@ import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.TransactionalService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * @mdogan 2/26/13
  */
@@ -30,10 +33,11 @@ class TransactionContextImpl implements TransactionContext {
 
     private final NodeEngineImpl nodeEngine;
     private final TransactionImpl transaction;
+    private final Map<TransactionalObjectKey, TransactionalObject> txnObjectMap = new HashMap<TransactionalObjectKey, TransactionalObject>(2);
 
-    public TransactionContextImpl(NodeEngineImpl nodeEngine, TransactionOptions options) {
+    public TransactionContextImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngineImpl nodeEngine, TransactionOptions options) {
         this.nodeEngine = nodeEngine;
-        this.transaction  = new TransactionImpl(this.nodeEngine, options.getTimeoutMillis());
+        this.transaction = new TransactionImpl(transactionManagerService, nodeEngine, options);
     }
 
     public void beginTransaction() {
@@ -41,6 +45,9 @@ class TransactionContextImpl implements TransactionContext {
     }
 
     public void commitTransaction() throws TransactionException {
+        if (transaction.getTransactionType().equals(TransactionOptions.TransactionType.TWO_PHASE)) {
+            transaction.prepare();
+        }
         transaction.commit();
     }
 
@@ -63,10 +70,47 @@ class TransactionContextImpl implements TransactionContext {
         if (transaction.getState() != Transaction.State.ACTIVE) {
             throw new IllegalStateException("Transaction is not active!");
         }
-        final Object service = nodeEngine.getService(serviceName);
-        if (service instanceof TransactionalService) {
-            return ((TransactionalService) service).createTransactionalObject(id, transaction);
+        TransactionalObjectKey key = new TransactionalObjectKey(MapService.SERVICE_NAME, id);
+        TransactionalObject obj = txnObjectMap.get(key);
+        if (obj == null) {
+            final Object service = nodeEngine.getService(serviceName);
+            if (service instanceof TransactionalService) {
+                obj = ((TransactionalService) service).createTransactionalObject(id, transaction);
+                txnObjectMap.put(key, obj);
+            } else {
+                throw new IllegalArgumentException("Service[" + serviceName + "] is not transactional!");
+            }
         }
-        throw new IllegalArgumentException("Service[" + serviceName + "] is not transactional!");
+        return obj;
+
+    }
+
+    class TransactionalObjectKey {
+
+        private final String serviceName;
+        private final Object id;
+
+        TransactionalObjectKey(String serviceName, Object id) {
+            this.serviceName = serviceName;
+            this.id = id;
+        }
+
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof TransactionalObjectKey)) return false;
+
+            TransactionalObjectKey that = (TransactionalObjectKey) o;
+
+            if (!id.equals(that.id)) return false;
+            if (!serviceName.equals(that.serviceName)) return false;
+
+            return true;
+        }
+
+        public int hashCode() {
+            int result = serviceName.hashCode();
+            result = 31 * result + id.hashCode();
+            return result;
+        }
     }
 }

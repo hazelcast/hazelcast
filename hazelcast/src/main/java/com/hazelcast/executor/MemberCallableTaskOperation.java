@@ -25,8 +25,7 @@ import java.util.concurrent.Callable;
 /**
  * @mdogan 1/18/13
  */
-public class MemberCallableTaskOperation<V> extends CallableTaskOperation<V> implements IdentifiedDataSerializable {
-
+public final class MemberCallableTaskOperation<V> extends BaseCallableTaskOperation<V> implements IdentifiedDataSerializable {
 
     public MemberCallableTaskOperation() {
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,78 +17,74 @@
 package com.hazelcast.queue.tx;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.queue.QueueItem;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.Transaction;
+import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.util.ExceptionUtil;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 /**
- * @mdogan 3/8/13
+ * @ali 3/25/13
  */
-public abstract class TransactionalQueueProxySupport<E> extends AbstractDistributedObject<QueueService> implements TransactionalObject {
+public abstract class TransactionalQueueProxySupport extends AbstractDistributedObject<QueueService> implements TransactionalObject {
 
     protected final String name;
     protected final Transaction tx;
     protected final int partitionId;
+    private final Set<Long> itemIdSet = new HashSet<Long>();
 
-    public TransactionalQueueProxySupport(String name, NodeEngine nodeEngine, QueueService service, Transaction tx) {
+    protected TransactionalQueueProxySupport(NodeEngine nodeEngine, QueueService service, String name, Transaction tx) {
         super(nodeEngine, service);
         this.name = name;
         this.tx = tx;
-        this.partitionId = nodeEngine.getPartitionService().getPartitionId(nodeEngine.toData(name));
+        partitionId = nodeEngine.getPartitionService().getPartitionId(name);
     }
 
-    public boolean offerInternal(Data data, long timeout, TimeUnit unit) throws InterruptedException {
-        tx.addPartition(partitionId);
-        TxOfferOperation operation = new TxOfferOperation(name, tx.getTxnId(), getTimeout(timeout, unit) , data);
-        final NodeEngine nodeEngine = getNodeEngine();
+    public boolean offerInternal(Data data, long timeout){
+        throwExceptionIfNull(data);
+        TxnReserveOfferOperation operation = new TxnReserveOfferOperation(name, timeout);
         try {
-            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(getServiceName(), operation, partitionId).build();
-            Future f = inv.invoke();
-            return (Boolean) f.get();
-        } catch (Throwable throwable) {
-            throw ExceptionUtil.rethrowAllowInterrupted(throwable);
+            Invocation invocation = getNodeEngine().getOperationService().createInvocationBuilder(QueueService.SERVICE_NAME, operation, partitionId).build();
+            Future<Long> f = invocation.invoke();
+            Long itemId = f.get();
+            if (itemId != null){
+                if(!itemIdSet.add(itemId)){
+                    throw new TransactionException("Duplicate itemId: " + itemId);
+                }
+                tx.addTransactionLog(new QueueTransactionLog(itemId, name, partitionId, new TxnOfferOperation(name, itemId, data)));
+                return true;
+            }
+        } catch (Throwable t) {
+            ExceptionUtil.rethrow(t);
         }
+        return false;
     }
 
-    private long getTimeout(long timeout, TimeUnit unit) {
-        final long timeoutMillis = unit.toMillis(timeout);
-        return timeoutMillis > tx.getTimeoutMillis() ? tx.getTimeoutMillis() : timeoutMillis;
-    }
-
-    public Data pollInternal(long timeout, TimeUnit unit) throws InterruptedException {
-        tx.addPartition(partitionId);
-        TxPollOperation operation = new TxPollOperation(name, tx.getTxnId(), getTimeout(timeout, unit));
-        final NodeEngine nodeEngine = getNodeEngine();
+    public Data pollInternal(long timeout){
+        TxnReservePollOperation operation = new TxnReservePollOperation(name, timeout);
         try {
-            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(getServiceName(), operation, partitionId).build();
-            Future f = inv.invoke();
-            return (Data) f.get();
-        } catch (Throwable throwable) {
-            throw ExceptionUtil.rethrowAllowInterrupted(throwable);
+            Invocation invocation = getNodeEngine().getOperationService().createInvocationBuilder(QueueService.SERVICE_NAME, operation, partitionId).build();
+            Future<QueueItem> f = invocation.invoke();
+            QueueItem item = f.get();
+            if (item != null){
+                if(!itemIdSet.add(item.getItemId())){
+                    throw new TransactionException("Duplicate itemId: " + item.getItemId());
+                }
+                tx.addTransactionLog(new QueueTransactionLog(item.getItemId(), name, partitionId, new TxnPollOperation(name, item.getItemId())));
+                return item.getData();
+            }
+        } catch (Throwable t) {
+            ExceptionUtil.rethrow(t);
         }
-    }
-
-    public Data peekInternal() {
-        if (tx.getState() != Transaction.State.ACTIVE) {
-            throw new IllegalStateException("Transaction is not active!");
-        }
-        tx.addPartition(partitionId);
-        TxPeekOperation operation = new TxPeekOperation(name, tx.getTxnId());
-        final NodeEngine nodeEngine = getNodeEngine();
-        try {
-            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(getServiceName(), operation, partitionId).build();
-            Future f = inv.invoke();
-            return (Data) f.get();
-        } catch (Throwable throwable) {
-            throw ExceptionUtil.rethrow(throwable);
-        }
+        return null;
     }
 
     public Object getId() {
@@ -99,7 +95,13 @@ public abstract class TransactionalQueueProxySupport<E> extends AbstractDistribu
         return name;
     }
 
-    public String getServiceName() {
+    public final String getServiceName() {
         return QueueService.SERVICE_NAME;
+    }
+
+    private void throwExceptionIfNull(Object o){
+        if (o == null){
+            throw new NullPointerException("Object is null");
+        }
     }
 }

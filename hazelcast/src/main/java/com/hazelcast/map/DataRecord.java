@@ -19,10 +19,11 @@ package com.hazelcast.map;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
-public class DataRecord extends AbstractRecord implements Record<Data> {
+public final class DataRecord extends AbstractRecord<Data> implements Record<Data>, IdentifiedDataSerializable {
 
     private volatile Data value;
 

@@ -33,7 +33,7 @@ public interface Transaction {
         ROLLED_BACK
     }
 
-    void addPartition(int partitionId);
+    void addTransactionLog(TransactionLog transactionLog);
 
     String getTxnId();
 

@@ -19,28 +19,29 @@ package com.hazelcast.map.finalTest;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
-import com.hazelcast.core.*;
-import com.hazelcast.impl.GroupProperties;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.StaticNodeFactory;
-import com.hazelcast.map.*;
-import com.hazelcast.query.*;
+import com.hazelcast.instance.TestUtil;
+import com.hazelcast.query.EntryObject;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.util.Clock;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.Serializable;
 import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-
-import com.hazelcast.instance.TestUtil;
-
 
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 
 public class QueryTest extends TestUtil {
 

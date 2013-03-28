@@ -33,6 +33,11 @@ public class DeleteOperation extends BaseRemoveOperation {
         success = recordStore.remove(dataKey) != null;
     }
 
+    @Override
+    public Object getResponse() {
+        return success;
+    }
+
     public void afterRun() {
         if (success)
             super.afterRun();
@@ -44,7 +49,7 @@ public class DeleteOperation extends BaseRemoveOperation {
 
     @Override
     public void onWaitExpire() {
-        getResponseHandler().sendResponse(null);
+        getResponseHandler().sendResponse(false);
     }
 
     @Override

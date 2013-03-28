@@ -79,7 +79,7 @@ public final class LockNamespace implements ILockNamespace {
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        sb.append("Lock");
+        sb.append("LockNamespace");
         sb.append("{service='").append(service).append('\'');
         sb.append(", objectId=").append(objectId);
         sb.append('}');

@@ -16,49 +16,39 @@
 
 package com.hazelcast.transaction;
 
+import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.partition.MigrationEndpoint;
-import com.hazelcast.partition.MigrationType;
-import com.hazelcast.partition.PartitionService;
-import com.hazelcast.spi.*;
+import com.hazelcast.nio.Address;
+import com.hazelcast.spi.ManagedService;
+import com.hazelcast.spi.MembershipAwareService;
+import com.hazelcast.spi.MembershipServiceEvent;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.ResponseHandlerFactory;
-import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.scheduler.EntryTaskScheduler;
-import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
-import com.hazelcast.util.scheduler.ScheduledEntry;
-import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.logging.Level;
 
 /**
  * @mdogan 2/26/13
  */
-public class TransactionManagerServiceImpl implements TransactionManagerService, ManagedService, MigrationAwareService {
+public class TransactionManagerServiceImpl implements TransactionManagerService, ManagedService, MembershipAwareService {
 
     public static final String SERVICE_NAME = "hz:core:txManagerService";
 
-    private static final int ONE_MIN_MS = 60 * 1000;
-
-    private static final Object DUMMY_OBJECT = new Object();
-
     private final NodeEngineImpl nodeEngine;
-
-    private final ConcurrentMap<TransactionKey, TransactionLog> txLogs = new ConcurrentHashMap<TransactionKey, TransactionLog>();
-
-    private final EntryTaskScheduler<TransactionKey, Object> scheduler;
 
     private final ILogger logger;
 
+    private final ConcurrentMap<String, TxBackupLog> txBackupLogs = new ConcurrentHashMap<String, TxBackupLog>();
+
     public TransactionManagerServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
-        final ScheduledExecutorService scheduledExecutor = nodeEngine.getExecutionService().getScheduledExecutor();
-        this.scheduler = EntryTaskSchedulerFactory.newScheduler(scheduledExecutor, new FutureTransactionProcessor(), true);
         logger = nodeEngine.getLogger(TransactionManagerService.class);
     }
 
@@ -67,7 +57,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
     }
 
     public <T> T executeTransaction(TransactionalTask<T> task, TransactionOptions options) throws TransactionException {
-        final TransactionContextImpl context = new TransactionContextImpl(nodeEngine, options);
+        final TransactionContextImpl context = new TransactionContextImpl(this, nodeEngine, options);
         context.beginTransaction();
         try {
             final T value = task.execute(context);
@@ -86,67 +76,41 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
     }
 
     public TransactionContext newTransactionContext(TransactionOptions options) {
-        return new TransactionContextImpl(nodeEngine, options);
+        return new TransactionContextImpl(this, nodeEngine, options);
     }
 
-    ConcurrencyUtil.ConstructorFunction<TransactionKey, TransactionLog> logConstructor = new ConcurrencyUtil.ConstructorFunction<TransactionKey, TransactionLog>() {
-        public TransactionLog createNew(TransactionKey key) {
-            return new TransactionLog(key.txnId, key.partitionId);
-        }
-    };
-
-    void addTransactionalOperation(int partitionId, TransactionalOperation transactionalOperation) throws TransactionException {
-        final TransactionKey key = new TransactionKey(transactionalOperation.getTransactionId(), partitionId);
-        final TransactionLog transactionLog = ConcurrencyUtil.getOrPutIfAbsent(txLogs, key, logConstructor);
-        if (transactionLog.getState() != Transaction.State.ACTIVE) {
-            throw new TransactionException("Tx is not active!");
-        }
-        transactionLog.addOperationRecord(transactionalOperation);
+    public void init(NodeEngine nodeEngine, Properties properties) {
     }
 
-    private class FutureTransactionProcessor implements ScheduledEntryProcessor<TransactionKey, Object> {
-        public void process(EntryTaskScheduler<TransactionKey, Object> scheduler, Collection<ScheduledEntry<TransactionKey, Object>> scheduledEntries) {
-            for (ScheduledEntry<TransactionKey, Object> entry : scheduledEntries) {
-                final TransactionLog log = txLogs.get(entry.getKey());
-                final PartitionService partitionService = nodeEngine.getPartitionService();
-                if (log != null) {
-                    if (log.isBeingProcessed() || partitionService.isPartitionMigrating(log.getPartitionId())) {
-                        scheduler.schedule(ONE_MIN_MS / 2, entry.getKey(), DUMMY_OBJECT);
-                    } else if (nodeEngine.getClusterService().getMember(log.getCallerUuid()) == null) {
-                        txLogs.remove(entry.getKey());
-                        final OperationService operationService = nodeEngine.getOperationService();
-                        Operation op = null;
-                        boolean broadcast = false;
-                        switch (log.getState()) {
-                            case PREPARED:
-                                logger.log(Level.WARNING, "Rolling-back previously prepared transaction[" + log.getTxnId()
-                                        + "], because caller is not a member of the cluster anymore!");
-                                rollbackTransactionLog(log);
-                                break;
-                            case COMMITTED:
-                                logger.log(Level.INFO, "Broadcasting COMMIT message for transaction[" + log.getTxnId()
-                                        + "], because caller is not a member of the cluster anymore!");
-                                op = new BroadcastCommitOperation(log.getTxnId());
-                                broadcast = true;
-                                break;
-                            case ROLLED_BACK:
-                                logger.log(Level.INFO, "Broadcasting ROLLBACK message for transaction[" + log.getTxnId()
-                                        + "], because caller is not a member of the cluster anymore!");
-                                op = new BroadcastRollbackOperation(log.getTxnId());
-                                broadcast = true;
+    public void reset() {
+        txBackupLogs.clear();
+    }
+
+    public void shutdown() {
+        reset();
+    }
+
+    public void memberAdded(MembershipServiceEvent event) {
+    }
+
+    public void memberRemoved(MembershipServiceEvent event) {
+        final MemberImpl member = event.getMember();
+        String uuid = member.getUuid();
+        if (!txBackupLogs.isEmpty()) {
+            for (TxBackupLog log : txBackupLogs.values()) {
+                if (uuid.equals(log.callerUuid)) {
+                    TransactionImpl tx = new TransactionImpl(this, nodeEngine, log.txnId, log.txLogs, log.timeoutMillis, log.startTime);
+                    if (log.state == Transaction.State.COMMITTING) {
+                        try {
+                            tx.commit();
+                        } catch (Throwable e) {
+                            logger.log(Level.WARNING, "Error during committing from tx backup!", e);
                         }
-                        if (broadcast) {
-                            op.setNodeEngine(nodeEngine).setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
-                            final Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
-                            for (MemberImpl member : members) {
-                                if (member.localMember()) {
-                                    operationService.executeOperation(op);
-                                } else {
-                                    final Invocation inv = operationService.createInvocationBuilder(SERVICE_NAME,
-                                            op, member.getAddress()).build();
-                                    inv.invoke();
-                                }
-                            }
+                    } else {
+                        try {
+                            tx.rollback();
+                        } catch (Throwable e) {
+                            logger.log(Level.WARNING, "Error during rolling-back from tx backup!", e);
                         }
                     }
                 }
@@ -154,222 +118,57 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         }
     }
 
-    void prepare(String caller, String txnId, int partitionId) throws TransactionException {
-        final TransactionKey key = new TransactionKey(txnId, partitionId);
-        final TransactionLog log = txLogs.get(key);
-        if (log == null) {
-            throw new TransactionException("No tx available!");
+    public void clientDisconnected(String clientUuid) {
+        // TODO: !!!
+    }
+
+    Address[] pickBackupAddresses(int durability) {
+        final ClusterService clusterService = nodeEngine.getClusterService();
+        final List<MemberImpl> members = new ArrayList<MemberImpl>(clusterService.getMemberList());
+        members.remove(nodeEngine.getLocalMember());
+        final int c = Math.min(members.size(), durability);
+        Collections.shuffle(members);
+        Address[] addresses = new Address[c];
+        for (int i = 0; i < c; i++) {
+            addresses[i] = members.get(i).getAddress();
         }
-        if (!log.beginProcess()) {
-            throw new TransactionException("Tx log is already being processed!");
-        }
-        try {
-            log.setCallerUuid(caller);
-            log.setState(Transaction.State.PREPARED);
-            for (TransactionalOperation op : log.getOperationRecords()) {
-                op.doPrepare();
-            }
-            scheduler.schedule(ONE_MIN_MS * 2, key, DUMMY_OBJECT);
-            log.setScheduled(true);
-        } finally {
-            log.endProcess();
+        return addresses;
+    }
+
+    void putTxBackupLog(List<TransactionLog> txLogs, String callerUuid, String txnId, long timeoutMillis, long startTime) {
+        if (txBackupLogs.putIfAbsent(txnId, new TxBackupLog(txLogs, callerUuid, txnId, timeoutMillis, startTime)) != null) {
+            throw new TransactionException("TxLog already exists!");
         }
     }
 
-    void commit(String caller, String txnId, int partitionId) throws TransactionException {
-        final TransactionKey key = new TransactionKey(txnId, partitionId);
-        final TransactionLog log = txLogs.get(key);
-        if (log == null) {
-            throw new TransactionException("No tx available!");
-        }
-        if (!log.beginProcess()) {
-            throw new TransactionException("Tx log is already being processed!");
-        }
-        try {
-            log.setCallerUuid(caller);
-            log.setState(Transaction.State.COMMITTED);
-            commitTransactionLog(log);
-            scheduler.schedule(ONE_MIN_MS, key, DUMMY_OBJECT);
-            log.setScheduled(true);
-        } finally {
-            log.endProcess();
+    void rollbackTxBackupLog(String txnId) {
+        final TxBackupLog log = txBackupLogs.get(txnId);
+        if (log != null) {
+            log.state = Transaction.State.ROLLING_BACK;
+        } else {
+            logger.log(Level.WARNING, "No tx backup log is found, tx -> " + txnId);
         }
     }
 
-    void rollback(String caller, String txnId, int partitionId) throws TransactionException {
-        final TransactionKey key = new TransactionKey(txnId, partitionId);
-        final TransactionLog log = txLogs.get(key);
-        if (log == null) {
-            logger.log(Level.WARNING, "Ignoring roll-back, no transaction available!");
-            return;
-        }
-        if (!log.beginProcess()) {
-            throw new TransactionException("Tx log is already being processed!");
-        }
-        try {
-            log.setCallerUuid(caller);
-            log.setState(Transaction.State.ROLLED_BACK);
-            rollbackTransactionLog(log);
-            scheduler.schedule(ONE_MIN_MS, key, DUMMY_OBJECT);
-            log.setScheduled(true);
-        } finally {
-            log.endProcess();
-        }
+    void purgeTxBackupLog(String txnId) {
+        txBackupLogs.remove(txnId);
     }
 
-    public void commitAll(String txnId) {
-        final Iterator<TransactionLog> iter = txLogs.values().iterator();
-        while (iter.hasNext()) {
-            final TransactionLog log = iter.next();
-            if (txnId.equals(log.getTxnId())) {
-                iter.remove();
-                commitTransactionLog(log);
-            }
-        }
-    }
-
-    private void commitTransactionLog(TransactionLog log) {
-        String txnId = log.getTxnId();
-        for (TransactionalOperation op : log.getOperationRecords()) {
-            try {
-                op.doCommit();
-            } catch (Throwable e) {
-                logger.log(Level.WARNING, "Problem while committing the transaction[" + txnId + "]!", e);
-            }
-        }
-    }
-
-    public void rollbackAll(String txnId) {
-        final Iterator<TransactionLog> iter = txLogs.values().iterator();
-        while (iter.hasNext()) {
-            final TransactionLog log = iter.next();
-            if (txnId.equals(log.getTxnId())) {
-                iter.remove();
-                rollbackTransactionLog(log);
-            }
-        }
-    }
-
-    private void rollbackTransactionLog(TransactionLog log) {
-        final List<TransactionalOperation> ops = log.getOperationRecords();
-        // Rollback should be done in reverse order!
-        final ListIterator<TransactionalOperation> iter = ops.listIterator(ops.size());
-        while (iter.hasPrevious()) {
-            final TransactionalOperation op = iter.previous();
-            try {
-                op.doRollback();
-            } catch (Throwable e) {
-                logger.log(Level.WARNING, "Problem while rolling-back the transaction[" + log.getTxnId() + "]!", e);
-            }
-        }
-    }
-
-    private int getTimeout(Transaction.State state) {
-        return state == Transaction.State.PREPARED ? 2 * ONE_MIN_MS : ONE_MIN_MS;
-    }
-
-    void addLog(TransactionLog log) {
-        txLogs.put(new TransactionKey(log.getTxnId(), log.getPartitionId()), log);
-    }
-
-    public void init(NodeEngine nodeEngine, Properties properties) {
-    }
-
-    public void reset() {
-        scheduler.cancelAll();
-        txLogs.clear();
-    }
-
-    public void shutdown() {
-        reset();
-    }
-
-    public void beforeMigration(MigrationServiceEvent event) {
-    }
-
-    public Operation prepareMigrationOperation(MigrationServiceEvent event) {
-        if (event.getReplicaIndex() != 0) {
-            return null;
-        }
-        if (txLogs.isEmpty()) {
-            return null;
-        }
-        final Collection<TransactionLog> logs = new LinkedList<TransactionLog>();
-        for (TransactionLog log : txLogs.values()) {
-            if (log.getPartitionId() == event.getPartitionId()) {
-                logs.add(log);
-            }
-        }
-        if (logs.isEmpty()) {
-            return null;
-        }
-        return new TxLogMigrationOperation(logs);
-    }
-
-    public void commitMigration(MigrationServiceEvent event) {
-        if (event.getReplicaIndex() != 0) {
-            return;
-        }
-        if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE
-                && event.getMigrationType() == MigrationType.MOVE) {
-            clearPartition(event.getPartitionId());
-        } else if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
-            for (Map.Entry<TransactionKey, TransactionLog> entry : txLogs.entrySet()) {
-                final TransactionLog log = entry.getValue();
-                if (!log.isScheduled()) {
-                    scheduler.schedule(getTimeout(log.getState()), entry.getKey(), DUMMY_OBJECT);
-                }
-            }
-        }
-    }
-
-    public void rollbackMigration(MigrationServiceEvent event) {
-        if (event.getReplicaIndex() != 0) {
-            return;
-        }
-        if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
-            clearPartition(event.getPartitionId());
-        }
-    }
-
-    private void clearPartition(int partitionId) {
-        final Iterator<TransactionKey> iter = txLogs.keySet().iterator();
-        while (iter.hasNext()) {
-            final TransactionKey key = iter.next();
-            if (key.partitionId == partitionId) {
-                iter.remove();
-                scheduler.cancel(key);
-            }
-        }
-    }
-
-    private static class TransactionKey {
+    private class TxBackupLog {
+        private final List<TransactionLog> txLogs;
+        private final String callerUuid;
         private final String txnId;
-        private final int partitionId;
+        private final long timeoutMillis;
+        private final long startTime;
 
-        private TransactionKey(String txnId, int partitionId) {
+        private volatile Transaction.State state = Transaction.State.COMMITTING;
+
+        private TxBackupLog(List<TransactionLog> txLogs, String callerUuid, String txnId, long timeoutMillis, long startTime) {
+            this.txLogs = txLogs;
+            this.callerUuid = callerUuid;
             this.txnId = txnId;
-            this.partitionId = partitionId;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            TransactionKey that = (TransactionKey) o;
-
-            if (partitionId != that.partitionId) return false;
-            if (txnId != null ? !txnId.equals(that.txnId) : that.txnId != null) return false;
-
-            return true;
-        }
-
-        @Override
-        public int hashCode() {
-            int result = txnId != null ? txnId.hashCode() : 0;
-            result = 31 * result + partitionId;
-            return result;
+            this.timeoutMillis = timeoutMillis;
+            this.startTime = startTime;
         }
     }
 }

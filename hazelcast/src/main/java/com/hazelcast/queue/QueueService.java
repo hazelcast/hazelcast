@@ -20,6 +20,7 @@ import com.hazelcast.client.ClientCommandHandler;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.monitor.impl.QueueOperationsCounter;
@@ -57,9 +58,11 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     private final ConcurrentMap<String, QueueContainer> containerMap = new ConcurrentHashMap<String, QueueContainer>();
     private final ConcurrentMap<String, QueueOperationsCounter> counterMap = new ConcurrentHashMap<String, QueueOperationsCounter>(1000);
     private final ConcurrentMap<ListenerKey, String> eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
+    private final ILogger logger;
 
     public QueueService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
+        logger = nodeEngine.getLogger(QueueService.class);
     }
 
     public void init(NodeEngine nodeEngine, Properties properties) {
@@ -78,7 +81,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         QueueContainer container = containerMap.get(name);
         if (container == null) {
             container = new QueueContainer(name, nodeEngine.getPartitionService().getPartitionId(nodeEngine.toData(name)), nodeEngine.getConfig().getQueueConfig(name),
-                    nodeEngine.getSerializationService(), fromBackup);
+                    nodeEngine, fromBackup);
             QueueContainer existing = containerMap.putIfAbsent(name, container);
             if (existing != null) {
                 container = existing;
@@ -231,6 +234,6 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     }
 
     public TransactionalQueueProxy createTransactionalObject(Object id, Transaction transaction) {
-        return new TransactionalQueueProxy(String.valueOf(id), nodeEngine, this, transaction);
+        return new TransactionalQueueProxy(nodeEngine, this, String.valueOf(id), transaction);
     }
 }

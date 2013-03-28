@@ -112,6 +112,10 @@ public class PartitionRecordStore implements RecordStore {
         return lockStore != null && lockStore.unlock(key, caller, threadId);
     }
 
+    public boolean forceUnlock(Data dataKey) {
+        return lockStore != null && lockStore.forceUnlock(dataKey);
+    }
+
     public boolean isLocked(Data dataKey) {
         return lockStore != null && lockStore.isLocked(dataKey);
     }
@@ -215,6 +219,7 @@ public class PartitionRecordStore implements RecordStore {
     public void reset() {
         records.clear();
     }
+
 
     public Object remove(Data dataKey) {
         Record record = records.get(dataKey);
@@ -377,6 +382,25 @@ public class PartitionRecordStore implements RecordStore {
         return oldValue;
     }
 
+    public void set(Data dataKey, Object value, long ttl) {
+        Record record = records.get(dataKey);
+        if (record == null) {
+            value = mapService.interceptPut(name, null, value);
+            record = mapService.createRecord(name, dataKey, value, ttl);
+            mapStoreWrite(record, dataKey, value);
+            records.put(dataKey, record);
+        } else {
+            value = mapService.interceptPut(name, record.getValue(), value);
+            mapStoreWrite(record, dataKey, value);
+            setRecordValue(record, value);
+            updateTtl(record, ttl);
+        }
+        saveIndex(record);
+
+    }
+
+
+
     public boolean merge(Data dataKey, EntryView mergingEntry, MapMergePolicy mergePolicy) {
         Record record = records.get(dataKey);
         Object newValue = null;
@@ -401,17 +425,7 @@ public class PartitionRecordStore implements RecordStore {
         return newValue != null;
     }
 
-    private void saveIndex(Record record) {
-        Data dataKey = record.getKey();
-        final IndexService indexService = mapContainer.getIndexService();
-        if (indexService.hasIndex()) {
-            SerializationService ss = mapService.getSerializationService();
-            QueryableEntry queryableEntry = new QueryEntry(ss, dataKey, dataKey, record.getValue());
-            indexService.saveEntryIndex(queryableEntry);
-        }
-    }
-
-    public Object replace(Data dataKey, Object value) {
+      public Object replace(Data dataKey, Object value) {
         Record record = records.get(dataKey);
         Object oldValue = null;
         if (record != null) {
@@ -441,23 +455,6 @@ public class PartitionRecordStore implements RecordStore {
         saveIndex(record);
 
         return true;
-    }
-
-    public void set(Data dataKey, Object value, long ttl) {
-        Record record = records.get(dataKey);
-        if (record == null) {
-            value = mapService.interceptPut(name, null, value);
-            record = mapService.createRecord(name, dataKey, value, ttl);
-            mapStoreWrite(record, dataKey, value);
-            records.put(dataKey, record);
-        } else {
-            value = mapService.interceptPut(name, record.getValue(), value);
-            mapStoreWrite(record, dataKey, value);
-            setRecordValue(record, value);
-            updateTtl(record, ttl);
-        }
-        saveIndex(record);
-
     }
 
     public void putTransient(Data dataKey, Object value, long ttl) {
@@ -524,6 +521,16 @@ public class PartitionRecordStore implements RecordStore {
         if (maxIdleSeconds > 0) {
             record.getState().updateIdleExpireTime(maxIdleSeconds * 1000);
             mapService.scheduleIdleEviction(name, record.getKey(), maxIdleSeconds * 1000);
+        }
+    }
+
+    private void saveIndex(Record record) {
+        Data dataKey = record.getKey();
+        final IndexService indexService = mapContainer.getIndexService();
+        if (indexService.hasIndex()) {
+            SerializationService ss = mapService.getSerializationService();
+            QueryableEntry queryableEntry = new QueryEntry(ss, dataKey, dataKey, record.getValue());
+            indexService.saveEntryIndex(queryableEntry);
         }
     }
 

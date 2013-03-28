@@ -47,7 +47,7 @@ public class SimpleEntryView<K,V> implements EntryView<K,V>, DataSerializable {
         lastAccessTime = statistics == null ? -1 : statistics.getLastAccessTime();
         lastStoredTime = statistics == null ? -1 : statistics.getLastStoredTime();
         lastUpdateTime = statistics == null ? -1 : statistics.getLastUpdateTime();
-        version = statistics == null ? -1 : statistics.getVersion();
+        version = record.getVersion();
     }
 
     public SimpleEntryView() {

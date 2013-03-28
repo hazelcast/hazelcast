@@ -19,7 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-public class PutOperation extends BasePutOperation implements IdentifiedDataSerializable {
+public final class PutOperation extends BasePutOperation implements IdentifiedDataSerializable {
 
     public PutOperation(String name, Data dataKey, Data value, long ttl) {
         super(name, dataKey, value, ttl);

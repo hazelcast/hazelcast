@@ -18,18 +18,6 @@ package com.hazelcast.core;
 
 import com.hazelcast.transaction.TransactionalObject;
 
-import java.util.concurrent.TimeUnit;
-
-public interface TransactionalQueue<E> extends TransactionalObject, XQueue<E> {
-
-    boolean offer(E e);
-
-    boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException;
-
-    E poll();
-
-    E poll(long timeout, TimeUnit unit) throws InterruptedException;
-
-    E peek();
+public interface TransactionalQueue<E> extends TransactionalObject, BaseQueue<E> {
 
 }

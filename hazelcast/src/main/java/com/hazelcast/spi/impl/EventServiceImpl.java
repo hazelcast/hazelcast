@@ -555,7 +555,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         }
     }
 
-    public static class EventPacket implements IdentifiedDataSerializable {
+    public final static class EventPacket implements IdentifiedDataSerializable {
 
         private String id;
         private String serviceName;

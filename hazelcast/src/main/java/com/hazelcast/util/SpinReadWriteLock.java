@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * @mdogan 12/3/12
  */
-public class SpinReadWriteLock {
+public final class SpinReadWriteLock {
 
     private final long spinInterval; // in ms
 
@@ -87,7 +87,7 @@ public class SpinReadWriteLock {
         }
     }
 
-    private class ReadLock implements SpinLock {
+    private final class ReadLock implements SpinLock {
 
         public void lock() {
             try {
@@ -95,7 +95,7 @@ public class SpinReadWriteLock {
                     throw new HazelcastException();
                 }
             } catch (InterruptedException e) {
-                throw new HazelcastException();
+                throw new HazelcastException(e);
             }
         }
 
@@ -108,13 +108,13 @@ public class SpinReadWriteLock {
         }
     }
 
-    private class WriteLock implements SpinLock {
+    private final class WriteLock implements SpinLock {
 
         public void lock() {
             try {
                 acquireWriteLock();
             } catch (InterruptedException e) {
-                throw new HazelcastException();
+                throw new HazelcastException(e);
             }
         }
 

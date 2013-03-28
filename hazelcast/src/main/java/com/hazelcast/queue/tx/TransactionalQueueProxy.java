@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,42 +25,39 @@ import com.hazelcast.transaction.Transaction;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @mdogan 3/8/13
+ * @ali 3/25/13
  */
 public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport implements TransactionalQueue<E> {
 
-    public TransactionalQueueProxy(String name, NodeEngine nodeEngine, QueueService service, Transaction tx) {
-        super(name, nodeEngine, service, tx);
+
+    public TransactionalQueueProxy(NodeEngine nodeEngine, QueueService service, String name, Transaction tx) {
+        super(nodeEngine, service, name, tx);
     }
 
     public boolean offer(E e) {
         try {
             return offer(e, 0, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e1) {
-            return false;
+        } catch (InterruptedException ignored) {
         }
+        return false;
     }
 
     public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
-        final NodeEngine nodeEngine = getNodeEngine();
-        final Data data = nodeEngine.toData(e);
-        return offerInternal(data, timeout, unit);
+        Data data = getNodeEngine().toData(e);
+        return offerInternal(data, unit.toMillis(timeout));
     }
 
     public E poll() {
         try {
             return poll(0, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            return null;
+        } catch (InterruptedException ignored) {
         }
+        return null;
     }
 
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
-        return getNodeEngine().toObject(pollInternal(timeout, unit));
-    }
-
-    public E peek() {
-        return getNodeEngine().toObject(peekInternal());
+        Data data = pollInternal(unit.toMillis(timeout));
+        return getNodeEngine().toObject(data);
     }
 
 }

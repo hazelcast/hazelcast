@@ -16,7 +16,9 @@
 
 package com.hazelcast.transaction;
 
-public class TransactionException extends Exception {
+import com.hazelcast.core.HazelcastException;
+
+public class TransactionException extends HazelcastException {
 
     public TransactionException() {
     }

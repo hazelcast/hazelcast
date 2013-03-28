@@ -21,7 +21,7 @@ import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.impl.GroupProperties;
+import com.hazelcast.instance.GroupProperties;
 import org.junit.BeforeClass;
 import org.junit.Test;
 

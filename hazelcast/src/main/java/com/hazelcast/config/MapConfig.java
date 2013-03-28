@@ -40,7 +40,7 @@ public class MapConfig implements DataSerializable {
     public final static int DEFAULT_MAX_IDLE_SECONDS = 0;
     public final static int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
     public final static EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.NONE;
-    public final static InMemoryFormat DEFAULT_IN_MEMORY_FORMAT = InMemoryFormat.DATA;
+    public final static InMemoryFormat DEFAULT_IN_MEMORY_FORMAT = InMemoryFormat.BINARY;
 
     private String name = null;
 
@@ -81,7 +81,7 @@ public class MapConfig implements DataSerializable {
     private boolean statisticsEnabled = false;
 
     public enum InMemoryFormat {
-        DATA, OBJECT, CACHED
+        BINARY, OBJECT, CACHED
     }
 
     public enum StorageType {
@@ -141,7 +141,7 @@ public class MapConfig implements DataSerializable {
     /**
      * Data type that will be used for storing records.
      * Possible values:
-     * DATA (default): keys and values will be stored as binary data
+     * BINARY (default): keys and values will be stored as binary data
      * OBJECT : values will be stored in their object forms
      * CACHED: object form of values will be cached
      *

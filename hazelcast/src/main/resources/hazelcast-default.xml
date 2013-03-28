@@ -118,11 +118,11 @@
         <!--
            Data type that will be used for storing recordMap.
            Possible values:
-           DATA (default): keys and values will be stored as binary data
+           BINARY (default): keys and values will be stored as binary data
            OBJECT : values will be stored in their object forms
            CACHED: object form of values will be cached
         -->
-        <record-type>DATA</record-type>
+        <in-memory-format>BINARY</in-memory-format>
 
         <!--
             Number of backups. If 1 is set as the backup-count for example,
