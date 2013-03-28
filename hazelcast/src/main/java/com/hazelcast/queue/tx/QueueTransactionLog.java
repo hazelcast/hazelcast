@@ -61,7 +61,6 @@ public class QueueTransactionLog implements TransactionLog {
     }
 
     public Future commit(NodeEngine nodeEngine) {
-        System.err.println("asdad");
         try {
             Invocation invocation = nodeEngine.getOperationService()
                     .createInvocationBuilder(QueueService.SERVICE_NAME, op, partitionId).build();

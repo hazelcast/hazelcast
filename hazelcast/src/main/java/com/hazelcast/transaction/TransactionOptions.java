@@ -29,8 +29,19 @@ public final class TransactionOptions implements DataSerializable {
 
     private int durability;
 
+    private TransactionType transactionType;
+
     public TransactionOptions() {
-        setTimeout(2, TimeUnit.MINUTES).setDurability(1);
+        setTimeout(2, TimeUnit.MINUTES).setDurability(1).setTransactionType(TransactionType.TWO_PHASE);
+    }
+
+    public TransactionType getTransactionType() {
+        return transactionType;
+    }
+
+    public TransactionOptions setTransactionType(TransactionType transactionType) {
+        this.transactionType = transactionType;
+        return this;
     }
 
     public long getTimeoutMillis() {
@@ -64,11 +75,13 @@ public final class TransactionOptions implements DataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(timeoutMillis);
         out.writeInt(durability);
+        out.writeInt(transactionType.value);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
         timeoutMillis = in.readLong();
         durability = in.readInt();
+        transactionType = TransactionType.getByValue(in.readInt());
     }
 
 
@@ -78,7 +91,28 @@ public final class TransactionOptions implements DataSerializable {
         sb.append("TransactionOptions");
         sb.append("{timeoutMillis=").append(timeoutMillis);
         sb.append(", durability=").append(durability);
+        sb.append(", txType=").append(transactionType.value);
         sb.append('}');
         return sb.toString();
+    }
+
+    public enum TransactionType {
+        TWO_PHASE(1), LOCAL(2);
+
+        final int value;
+
+        TransactionType(int value){
+            this.value = value;
+        }
+
+        public static TransactionType getByValue(int value){
+            for (TransactionType type: values()){
+                if (type.value == value){
+                    return type;
+                }
+            }
+            return TWO_PHASE;
+        }
+
     }
 }

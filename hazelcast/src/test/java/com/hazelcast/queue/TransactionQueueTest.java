@@ -55,7 +55,6 @@ public class TransactionQueueTest {
     @Test
     public void testTransactionalOfferPoll() throws Exception {
         Config config = new Config();
-        final int count = 100;
         final int insCount = 4;
         final String name = "defQueue";
         final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
@@ -68,7 +67,8 @@ public class TransactionQueueTest {
                 assertNull(s);
                 return true;
             }
-        });
+        }
+        , new TransactionOptions().setTransactionType(TransactionOptions.TransactionType.LOCAL));
         assertTrue(b);
         assertEquals(1, getQueue(instances, name).size());
     }
@@ -106,7 +106,9 @@ public class TransactionQueueTest {
                 q1.offer(s);
                 return true;
             }
-        });
+        }
+        , new TransactionOptions().setTransactionType(TransactionOptions.TransactionType.LOCAL)
+        );
         assertTrue(b);
         assertEquals(0, getQueue(instances, name0).size());
         assertEquals("item0", getQueue(instances, name1).poll());
@@ -130,7 +132,7 @@ public class TransactionQueueTest {
                     fail();
                     return null;
                 }
-            }, new TransactionOptions().setTimeout(5, TimeUnit.SECONDS));
+            }, new TransactionOptions().setTimeout(5, TimeUnit.SECONDS).setTransactionType(TransactionOptions.TransactionType.LOCAL));
         } catch (TransactionException ex) {
             ex.printStackTrace();
         }
@@ -151,7 +153,7 @@ public class TransactionQueueTest {
         final CountDownLatch latch = new CountDownLatch(1);
         new Thread() {
             public void run() {
-                TransactionContext context = ins1.newTransactionContext();
+                TransactionContext context = ins1.newTransactionContext(new TransactionOptions().setTransactionType(TransactionOptions.TransactionType.LOCAL));
                 try {
                     context.beginTransaction();
                     for (int i = 0; i < 100; i++) {

@@ -27,9 +27,11 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 
 import static com.hazelcast.transaction.Transaction.State.*;
+import static com.hazelcast.transaction.TransactionOptions.TransactionType;
 
 final class TransactionImpl implements Transaction {
 
@@ -42,6 +44,7 @@ final class TransactionImpl implements Transaction {
     private final long threadId = Thread.currentThread().getId();
     private final long timeoutMillis;
     private final int durability;
+    private final TransactionType transactionType;
     private State state = NO_TXN;
     private long startTime = 0L;
     private Address[] backupAddresses;
@@ -52,6 +55,7 @@ final class TransactionImpl implements Transaction {
         this.txnId = UUID.randomUUID().toString();
         this.timeoutMillis = options.getTimeoutMillis();
         this.durability = options.getDurability();
+        this.transactionType = options.getTransactionType();
     }
 
     // used by tx backups
@@ -62,6 +66,7 @@ final class TransactionImpl implements Transaction {
         this.txnId = txnId;
         this.timeoutMillis = timeoutMillis;
         this.durability = 0;
+        this.transactionType = TransactionType.TWO_PHASE;
         this.txLogs.addAll(txLogs);
         this.state = ACTIVE;
     }
@@ -98,6 +103,10 @@ final class TransactionImpl implements Transaction {
         state = ACTIVE;
     }
 
+    void prepareAndReplicate() throws InterruptedException, ExecutionException, TimeoutException {
+
+    }
+
     void commit() throws TransactionException, IllegalStateException {
         if (state != ACTIVE) {
             throw new IllegalStateException("Transaction is not active");
@@ -105,19 +114,20 @@ final class TransactionImpl implements Transaction {
         checkThread();
         checkTimeout();
         try {
-            state = PREPARING;
             final List<Future> futures = new ArrayList<Future>(txLogs.size());
-            for (TransactionLog txLog : txLogs) {
-                futures.add(txLog.prepare(nodeEngine));
+            if (transactionType.equals(TransactionType.TWO_PHASE)){
+                state = PREPARING;
+                for (TransactionLog txLog : txLogs) {
+                    futures.add(txLog.prepare(nodeEngine));
+                }
+                for (Future future : futures) {
+                    future.get(timeoutMillis, TimeUnit.MILLISECONDS);
+                }
+                futures.clear();
+                state = PREPARED;
             }
-            for (Future future : futures) {
-                future.get(timeoutMillis, TimeUnit.MILLISECONDS);
-            }
-            futures.clear();
-            state = PREPARED;
-
             // replicate tx log
-            if (durability > 0) {
+            if (durability > 0 && transactionType.equals(TransactionType.TWO_PHASE)) {
                 final OperationService operationService = nodeEngine.getOperationService();
                 for (Address backupAddress : backupAddresses) {
                     if (nodeEngine.getClusterService().getMember(backupAddress) != null){
@@ -176,7 +186,7 @@ final class TransactionImpl implements Transaction {
             final OperationService operationService = nodeEngine.getOperationService();
 
             // rollback tx backup
-            if (durability > 0) {
+            if (durability > 0 && transactionType.equals(TransactionType.TWO_PHASE)) {
                 for (Address backupAddress : backupAddresses) {
                     if (nodeEngine.getClusterService().getMember(backupAddress) != null){
                         final Invocation inv = operationService.createInvocationBuilder(TransactionManagerServiceImpl.SERVICE_NAME,
@@ -217,7 +227,7 @@ final class TransactionImpl implements Transaction {
     }
 
     private void purgeTxBackups() {
-        if (durability > 0) {
+        if (durability > 0 && transactionType.equals(TransactionType.TWO_PHASE)) {
             final OperationService operationService = nodeEngine.getOperationService();
             for (Address backupAddress : backupAddresses) {
                 if (nodeEngine.getClusterService().getMember(backupAddress) != null){
@@ -247,6 +257,7 @@ final class TransactionImpl implements Transaction {
         sb.append("Transaction");
         sb.append("{txnId='").append(txnId).append('\'');
         sb.append(", state=").append(state);
+        sb.append(", txType=").append(transactionType.value);
         sb.append(", timeoutMillis=").append(timeoutMillis);
         sb.append('}');
         return sb.toString();

@@ -56,7 +56,6 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
             Future<Long> f = invocation.invoke();
             Long itemId = f.get();
             if (itemId != null){
-                System.err.println("--------------itemId: "+itemId + " size: " + itemIdSet.size());
                 if(!itemIdSet.add(itemId)){
                     throw new TransactionException("Duplicate itemId: " + itemId);
                 }
