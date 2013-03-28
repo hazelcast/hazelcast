@@ -99,10 +99,6 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         if (!txBackupLogs.isEmpty()) {
             for (TxBackupLog log : txBackupLogs.values()) {
                 if (uuid.equals(log.callerUuid)) {
-                    System.out.println("backing up txns");
-                    System.out.println("backing up txns");
-                    System.out.println("backing up txns");
-                    System.out.println("backing up txns");
                     TransactionImpl tx = new TransactionImpl(this, nodeEngine, log.txnId, log.txLogs, log.timeoutMillis);
                     if (log.state == Transaction.State.COMMITTING) {
                         try {

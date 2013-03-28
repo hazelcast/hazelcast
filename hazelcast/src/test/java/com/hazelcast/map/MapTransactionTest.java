@@ -125,36 +125,44 @@ public class MapTransactionTest {
     public void testTxnOwnerDies() throws TransactionException {
         Config config = new Config();
         StaticNodeFactory factory = new StaticNodeFactory(3);
-        HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
         HazelcastInstance h2 = factory.newHazelcastInstance(config);
         HazelcastInstance h3 = factory.newHazelcastInstance(config);
         final IMap map1 = h1.getMap("default");
-        final int size = 100;
-        final CountDownLatch latch = new CountDownLatch(size);
+        final int size = 50;
 
-        boolean b = h1.executeTransaction(new TransactionalTask<Boolean>() {
-            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
-                final TransactionalMap<Object, Object> txMap = context.getMap("default");
-                for (int i = 0; i < size; i++) {
-                    txMap.put(i, i);
-                    try {
-                        Thread.sleep(100);
-                        System.out.println("turn:" + i);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    latch.countDown();
+        Runnable runnable = new Runnable() {
+            public void run() {
+                try {
+                    boolean b = h1.executeTransaction(new TransactionalTask<Boolean>() {
+                        public Boolean execute(TransactionalTaskContext context) throws TransactionException {
+                            final TransactionalMap<Object, Object> txMap = context.getMap("default");
+                            for (int i = 0; i < size; i++) {
+                                txMap.put(i, i);
+                                try {
+                                    Thread.sleep(100);
+                                    System.out.println("turn:" + i);
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                            return true;
+                        }
+                    });
+                    fail();
+                } catch (TransactionException e) {
                 }
-                return true;
             }
-        });
+        };
         try {
+            Thread thread = new Thread(runnable);
+            thread.start();
             Thread.sleep(200);
             h1.getLifecycleService().shutdown();
-            latch.await();
+            thread.join();
             final IMap map2 = h2.getMap("default");
             for (int i = 0; i < size; i++) {
-                assertEquals(i, map2.get(i));
+                assertNull(map2.get(i));
             }
         } catch (InterruptedException e) {
         }
