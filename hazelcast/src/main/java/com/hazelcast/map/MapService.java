@@ -29,7 +29,7 @@ import com.hazelcast.map.client.*;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.map.proxy.ObjectMapProxy;
-import com.hazelcast.map.tx.TransactionalMapProxy;
+import com.hazelcast.map.tx.TxnMapProxy;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -442,7 +442,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         MapContainer mapContainer = getMapContainer(name);
         final MapConfig.InMemoryFormat inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
         boolean statisticsEnabled = mapContainer.getMapConfig().isStatisticsEnabled();
-        if (inMemoryFormat == MapConfig.InMemoryFormat.DATA) {
+        if (inMemoryFormat == MapConfig.InMemoryFormat.BINARY) {
             record = new DataRecord(dataKey, toData(value), statisticsEnabled);
         } else if (inMemoryFormat == MapConfig.InMemoryFormat.OBJECT) {
             record = new ObjectRecord(dataKey, toObject(value), statisticsEnabled);
@@ -470,8 +470,8 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     @SuppressWarnings("unchecked")
-    public TransactionalMapProxy createTransactionalObject(Object id, Transaction transaction) {
-        return new TransactionalMapProxy(String.valueOf(id), this, nodeEngine, transaction);
+    public TxnMapProxy createTransactionalObject(Object id, Transaction transaction) {
+        return new TxnMapProxy(String.valueOf(id), this, nodeEngine, transaction);
     }
 
     private final ConstructorFunction<String, NearCache> nearCacheConstructor = new ConstructorFunction<String, NearCache>() {
@@ -776,7 +776,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         }
 
         MapContainer mapContainer = getMapContainer(mapName);
-        if (mapContainer.getMapConfig().getInMemoryFormat().equals(MapConfig.InMemoryFormat.DATA)) {
+        if (mapContainer.getMapConfig().getInMemoryFormat().equals(MapConfig.InMemoryFormat.BINARY)) {
             return toData(value1).equals(toData(value2));
         } else if (mapContainer.getMapConfig().getInMemoryFormat().equals(MapConfig.InMemoryFormat.OBJECT)) {
             return toObject(value1).equals(toObject(value2));

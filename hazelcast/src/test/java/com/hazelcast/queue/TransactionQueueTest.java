@@ -22,9 +22,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.instance.StaticNodeFactory;
-import com.hazelcast.transaction.TransactionException;
-import com.hazelcast.transaction.TransactionalTask;
-import com.hazelcast.transaction.TransactionalTaskContext;
+import com.hazelcast.transaction.*;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -32,6 +30,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
@@ -55,7 +55,6 @@ public class TransactionQueueTest {
     @Test
     public void testTransactionalOfferPoll() throws Exception {
         Config config = new Config();
-        final int count = 100;
         final int insCount = 4;
         final String name = "defQueue";
         final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
@@ -65,12 +64,13 @@ public class TransactionQueueTest {
                 TransactionalQueue<String> q = context.getQueue(name);
                 assertTrue(q.offer("ali"));
                 String s = q.poll();
-                assertEquals("ali", s);
+                assertNull(s);
                 return true;
             }
-        });
+        }
+        , new TransactionOptions().setTransactionType(TransactionOptions.TransactionType.LOCAL));
         assertTrue(b);
-        assertEquals(0, getQueue(instances, name).size());
+        assertEquals(1, getQueue(instances, name).size());
     }
 
     @Test
@@ -80,7 +80,7 @@ public class TransactionQueueTest {
         final String name0 = "defQueue0";
         final String name1 = "defQueue1";
         final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
-        new Thread(){
+        new Thread() {
             public void run() {
                 try {
                     Thread.sleep(2000);
@@ -91,23 +91,25 @@ public class TransactionQueueTest {
             }
         }.start();
 
-//        boolean b = instances[0].executeTransaction(new TransactionalTask<Boolean>() {
-//            public Boolean execute(TransactionContext context) throws TransactionException {
-//                TransactionalQueue<String> q0 = context.getQueue(name0);
-//                TransactionalQueue<String> q1 = context.getQueue(name1);
-//                String s = null;
-//                try {
-//                    s = q0.poll(6, TimeUnit.SECONDS);
-//                } catch (InterruptedException e) {
-//                    Assert.fail(e.getMessage());
-//                    e.printStackTrace();
-//                }
-//                assertEquals("item0", s);
-//                q1.offer(s);
-//                return true;
-//            }
-//        });
-//        assertTrue(b);
+        boolean b = instances[0].executeTransaction(new TransactionalTask<Boolean>() {
+            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
+                TransactionalQueue<String> q0 = context.getQueue(name0);
+                TransactionalQueue<String> q1 = context.getQueue(name1);
+                String s = null;
+                try {
+                    s = q0.poll(6, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    fail(e.getMessage());
+                    e.printStackTrace();
+                }
+                assertEquals("item0", s);
+                q1.offer(s);
+                return true;
+            }
+        }
+        , new TransactionOptions().setTransactionType(TransactionOptions.TransactionType.LOCAL)
+        );
+        assertTrue(b);
         assertEquals(0, getQueue(instances, name0).size());
         assertEquals("item0", getQueue(instances, name1).poll());
     }
@@ -121,24 +123,57 @@ public class TransactionQueueTest {
         final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
         instances[0].getMap(mapName).lock("lock1");
 
-//        try {
-//            instances[1].executeTransaction(new TransactionalTask<Object>() {
-//                public Object execute(TransactionContext context) throws TransactionException {
-//                    boolean offered = context.getQueue(queueName).offer("item1");
-//                    assertTrue(offered);
-//                    context.getMap(mapName).put("lock1","value1");
-//                    return null;
-//                }
-//            }, new TransactionOptions().setTimeout(5, TimeUnit.SECONDS));
-//        }
-//        catch (TransactionException ex){
-//            ex.printStackTrace();
-//        }
+        try {
+            instances[1].executeTransaction(new TransactionalTask<Object>() {
+                public Object execute(TransactionalTaskContext context) throws TransactionException {
+                    boolean offered = context.getQueue(queueName).offer("item1");
+                    assertTrue(offered);
+                    context.getMap(mapName).put("lock1", "value1");
+                    fail();
+                    return null;
+                }
+            }, new TransactionOptions().setTimeout(5, TimeUnit.SECONDS).setTransactionType(TransactionOptions.TransactionType.LOCAL));
+        } catch (TransactionException ex) {
+            ex.printStackTrace();
+        }
 
 
         assertEquals(0, instances[0].getQueue(queueName).size());
         assertNull(instances[0].getMap(mapName).get("lock1"));
+    }
 
+    @Test
+    public void testFail() throws Exception {
+        Config config = new Config();
+        final int insCount = 2;
+        final String queueName = "defQueue";
+        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
+        final HazelcastInstance ins1 = instances[0];
+        final HazelcastInstance ins2 = instances[1];
+        final CountDownLatch latch = new CountDownLatch(1);
+        new Thread() {
+            public void run() {
+                TransactionContext context = ins1.newTransactionContext(new TransactionOptions().setTransactionType(TransactionOptions.TransactionType.LOCAL));
+                try {
+                    context.beginTransaction();
+                    for (int i = 0; i < 100; i++) {
+                        context.getQueue(queueName).offer("item" + i);
+                        Thread.sleep(50);
+                    }
+                    context.commitTransaction();
+                    latch.countDown();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    context.rollbackTransaction();
+                    latch.countDown();
+                }
+            }
+        }.start();
+        ins2.getLifecycleService().shutdown();
+
+        assertTrue(latch.await(20, TimeUnit.SECONDS));
+
+        assertEquals(100, ins1.getQueue(queueName).size());
 
     }
 

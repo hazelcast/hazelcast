@@ -42,4 +42,6 @@ public interface Record<V> extends DataSerializable, Map.Entry<Data,V>, Cloneabl
     void onStore();
 
     long getCost();
+
+    long getVersion();
 }

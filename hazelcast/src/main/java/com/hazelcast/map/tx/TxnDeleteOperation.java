@@ -16,13 +16,15 @@
 
 package com.hazelcast.map.tx;
 
-import com.hazelcast.concurrent.lock.LockNamespace;
-import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
-import com.hazelcast.map.BasePutOperation;
-import com.hazelcast.map.MapService;
+import com.hazelcast.map.BaseRemoveOperation;
+import com.hazelcast.map.PutBackupOperation;
+import com.hazelcast.map.Record;
+import com.hazelcast.map.RemoveBackupOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
@@ -30,23 +32,32 @@ import java.io.IOException;
 /**
  * @mdogan 3/25/13
  */
-public class TxnPutOperation extends BasePutOperation implements MapTxnOperation {
+public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOperation {
 
     private long version;
+    private boolean shouldBackup = false;
 
-    public TxnPutOperation() {
+    public TxnDeleteOperation() {
     }
 
-    public TxnPutOperation(String name, Data dataKey, Data value, long ttl) {
-        super(name, dataKey, value, ttl);
+    public TxnDeleteOperation(String name, Data dataKey, long version) {
+        super(name, dataKey);
+        this.version = version;
     }
 
     @Override
     public void run() {
-        // if version == record.version {
-            mapService.toData(recordStore.put(dataKey, dataValue, ttl));
-            recordStore.forceUnlock(dataKey);
-        // }
+        recordStore.unlock(dataKey, getCallerUuid(), getThreadId());
+        Record record = recordStore.getRecords().get(dataKey);
+        if (record == null || version == record.getVersion()){
+            shouldBackup = recordStore.remove(dataKey) != null;
+        }
+    }
+
+    @Override
+    public void onWaitExpire() {
+        final ResponseHandler responseHandler = getResponseHandler();
+        responseHandler.sendResponse(false);
     }
 
     public long getVersion() {
@@ -66,8 +77,17 @@ public class TxnPutOperation extends BasePutOperation implements MapTxnOperation
         return true;
     }
 
+    public Operation getBackupOperation() {
+        return new RemoveBackupOperation(name, dataKey, true);
+    }
+
+    @Override
+    public boolean shouldBackup() {
+        return shouldBackup;
+    }
+
     public WaitNotifyKey getNotifiedKey() {
-        return new LockWaitNotifyKey(new LockNamespace(MapService.SERVICE_NAME, name), dataKey);
+        return getWaitKey();
     }
 
     @Override

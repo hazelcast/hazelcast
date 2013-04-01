@@ -27,6 +27,8 @@ public interface LockStore {
 
     boolean lock(Data key, String caller, int threadId, long ttl);
 
+    boolean txnLock(Data key, String caller, int threadId, long ttl);
+
     boolean extendTTL(Data key, String caller, int threadId, long ttl);
 
     boolean unlock(Data key, String caller, int threadId);

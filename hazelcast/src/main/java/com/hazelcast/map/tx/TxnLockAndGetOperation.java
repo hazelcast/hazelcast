@@ -16,10 +16,16 @@
 
 package com.hazelcast.map.tx;
 
+import com.hazelcast.concurrent.lock.LockBackupOperation;
+import com.hazelcast.concurrent.lock.LockNamespace;
 import com.hazelcast.map.LockAwareOperation;
+import com.hazelcast.map.MapService;
+import com.hazelcast.map.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.transaction.TransactionException;
 
@@ -33,19 +39,19 @@ public class TxnLockAndGetOperation extends LockAwareOperation {
     public TxnLockAndGetOperation() {
     }
 
-    public TxnLockAndGetOperation(String name, Data dataKey, long ttl, long timeout) {
+    public TxnLockAndGetOperation(String name, Data dataKey, long timeout, long ttl) {
         super(name, dataKey, ttl);
         this.timeout = timeout;
     }
 
     @Override
     public void run() throws Exception {
-        if (!recordStore.lock(getKey(), getCallerUuid(), getThreadId(), ttl)) {
-            throw new TransactionException(getCallerUuid() + " Lock failed " + getThreadId());
+        if (!recordStore.txnLock(getKey(), getCallerUuid(), getThreadId(), ttl)) {
+            throw new TransactionException("Lock failed.");
         }
-        Data value = mapService.toData(recordStore.get(dataKey));
-        // TODO: inc version!
-        response = new VersionedValue(value, 1);
+        Record record = recordStore.getRecords().get(dataKey);
+        Data value = record == null ? null : mapService.toData(record.getValue());
+        response = new VersionedValue(value, record == null ? 0 : record.getVersion());
     }
 
     @Override
@@ -75,4 +81,14 @@ public class TxnLockAndGetOperation extends LockAwareOperation {
         super.readInternal(in);
         timeout = in.readLong();
     }
+
+
+    @Override
+    public String toString() {
+        return "TxnLockAndGetOperation{" +
+                "timeout=" + timeout +
+                ", thread=" + getThreadId() +
+                '}';
+    }
+
 }

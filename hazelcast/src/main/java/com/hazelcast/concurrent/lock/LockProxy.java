@@ -49,6 +49,10 @@ public class LockProxy extends AbstractDistributedObject<LockService> implements
         lockSupport.lock(getNodeEngine(), key);
     }
 
+    public void lock(long ttl, TimeUnit timeUnit) {
+        lockSupport.lock(getNodeEngine(), key, timeUnit.toMillis(ttl));
+    }
+
     public void lockInterruptibly() throws InterruptedException {
         lock();
     }

@@ -52,7 +52,7 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
         return true;
     }
 
-    public final Operation getBackupOperation() {
+    public Operation getBackupOperation() {
         return new PutBackupOperation(name, dataKey, dataValue, ttl);
     }
 

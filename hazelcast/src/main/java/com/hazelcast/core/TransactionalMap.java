@@ -18,7 +18,7 @@ package com.hazelcast.core;
 
 import com.hazelcast.transaction.TransactionalObject;
 
-public interface TransactionalMap<K, V> extends TransactionalObject, XMap<K, V> {
+public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, V> {
 
     boolean containsKey(Object key);
 

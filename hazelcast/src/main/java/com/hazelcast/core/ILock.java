@@ -18,6 +18,7 @@ package com.hazelcast.core;
 
 import com.hazelcast.monitor.LocalLockStats;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
 public interface ILock extends Lock, DistributedObject {
@@ -32,6 +33,20 @@ public interface ILock extends Lock, DistributedObject {
     LocalLockStats getLocalLockStats();
 
     boolean isLocked();
+
+    /**
+     * Acquires the lock for the specified lease time.
+     * <p>After lease time, lock will be released..
+     * <p/>
+     * <p>If the lock is not available then
+     * the current thread becomes disabled for thread scheduling
+     * purposes and lies dormant until the lock has been acquired.
+     * <p/>
+     *
+     * @param leaseTime time to wait before releasing the lock.
+     * @param timeUnit unit of time to specify lease time.
+     */
+    void lock(long leaseTime, TimeUnit timeUnit);
 
     /**
      * Releases the lock regardless of the lock owner.

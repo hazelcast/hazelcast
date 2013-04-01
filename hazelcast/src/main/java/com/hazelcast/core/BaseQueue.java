@@ -19,7 +19,7 @@ package com.hazelcast.core;
 import java.util.concurrent.TimeUnit;
 
 // TODO: @mm - Rename!!!
-public interface XQueue<E> extends DistributedObject {
+public interface BaseQueue<E> extends DistributedObject {
 
     boolean offer(E e);
 
@@ -28,7 +28,5 @@ public interface XQueue<E> extends DistributedObject {
     E poll();
 
     E poll(long timeout, TimeUnit unit) throws InterruptedException;
-
-    E peek();
 
 }

@@ -35,15 +35,17 @@ public final class ReplicateTxOperation extends Operation {
     private String callerUuid;
     private String txnId;
     private long timeoutMillis;
+    private long startTime;
 
     public ReplicateTxOperation() {
     }
 
-    public ReplicateTxOperation(List<TransactionLog> logs, String callerUuid, String txnId, long timeoutMillis) {
+    public ReplicateTxOperation(List<TransactionLog> logs, String callerUuid, String txnId, long timeoutMillis, long startTime) {
         txLogs.addAll(logs);
         this.callerUuid = callerUuid;
         this.txnId = txnId;
         this.timeoutMillis = timeoutMillis;
+        this.startTime = startTime;
     }
 
     @Override
@@ -53,7 +55,7 @@ public final class ReplicateTxOperation extends Operation {
     @Override
     public final void run() throws Exception {
         TransactionManagerServiceImpl txManagerService = getService();
-        txManagerService.putTxBackupLog(txLogs, callerUuid, txnId, timeoutMillis);
+        txManagerService.putTxBackupLog(txLogs, callerUuid, txnId, timeoutMillis, startTime);
     }
 
     @Override
@@ -83,6 +85,7 @@ public final class ReplicateTxOperation extends Operation {
         out.writeUTF(callerUuid);
         out.writeUTF(txnId);
         out.writeLong(timeoutMillis);
+        out.writeLong(startTime);
         int len = txLogs.size();
         out.writeInt(len);
         if (len > 0) {
@@ -97,6 +100,7 @@ public final class ReplicateTxOperation extends Operation {
         callerUuid = in.readUTF();
         txnId = in.readUTF();
         timeoutMillis = in.readLong();
+        startTime = in.readLong();
         int len = in.readInt();
         if (len > 0) {
             for (int i = 0; i < len; i++) {

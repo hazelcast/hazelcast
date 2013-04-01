@@ -22,9 +22,15 @@ import com.hazelcast.spi.BackupOperation;
 
 public final class RemoveBackupOperation extends KeyBasedMapOperation implements BackupOperation, IdentifiedDataSerializable {
 
+    private boolean unlockKey = false;
 
     public RemoveBackupOperation(String name, Data dataKey) {
         super(name, dataKey);
+    }
+
+    public RemoveBackupOperation(String name, Data dataKey, boolean unlockKey) {
+        super(name, dataKey);
+        this.unlockKey = unlockKey;
     }
 
     public RemoveBackupOperation() {
@@ -38,6 +44,8 @@ public final class RemoveBackupOperation extends KeyBasedMapOperation implements
         if (record != null) {
             recordStore.getRecords().remove(dataKey);
         }
+        if(unlockKey)
+            recordStore.forceUnlock(dataKey);
     }
 
     @Override

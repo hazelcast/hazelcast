@@ -19,15 +19,22 @@ package com.hazelcast.concurrent.lock;
 import com.hazelcast.client.ClientCommandHandler;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.map.EvictionProcessor;
+import com.hazelcast.map.MapStoreDeleteProcessor;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationType;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
+import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.util.scheduler.EntryTaskScheduler;
+import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @mdogan 2/12/13
@@ -37,6 +44,7 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
 
     private final NodeEngine nodeEngine;
     private final LockStoreContainer[] containers;
+    private final ConcurrentHashMap<ILockNamespace, EntryTaskScheduler> evictionProcessors = new ConcurrentHashMap<ILockNamespace, EntryTaskScheduler>();
 
     public LockService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -74,6 +82,22 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
         container.clearLockStore(namespace);
     }
 
+    private final ConcurrencyUtil.ConstructorFunction<ILockNamespace, EntryTaskScheduler> schedulerConstructor = new ConcurrencyUtil.ConstructorFunction<ILockNamespace, EntryTaskScheduler>() {
+        public EntryTaskScheduler createNew(ILockNamespace namespace) {
+            return EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new LockEvictionProcessor(nodeEngine, namespace) , true);
+        }
+    };
+
+    public void scheduleEviction(ILockNamespace namespace, Data key, long delay) {
+        EntryTaskScheduler scheduler = ConcurrencyUtil.getOrPutSynchronized(evictionProcessors, namespace, evictionProcessors, schedulerConstructor);
+        scheduler.schedule(delay, key, null);
+    }
+
+    public void cancelEviction(ILockNamespace namespace, Data key) {
+        EntryTaskScheduler scheduler = ConcurrencyUtil.getOrPutSynchronized(evictionProcessors, namespace, evictionProcessors, schedulerConstructor);
+        scheduler.cancel(key);
+    }
+
     LockStoreContainer getLockContainer(int partitionId) {
         return containers[partitionId];
     }
@@ -98,7 +122,7 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
                 for (Map.Entry<Data, LockInfo> entry : locks.entrySet()) {
                     final Data key = entry.getKey();
                     final LockInfo lock = entry.getValue();
-                    if (uuid.equals(lock.getOwner())) {
+                    if (uuid.equals(lock.getOwner()) && !lock.isTransactional()) {
                         UnlockOperation op = new UnlockOperation(lockStore.getNamespace(), key, -1, true);
                         op.setNodeEngine(nodeEngine);
                         op.setServiceName(SERVICE_NAME);

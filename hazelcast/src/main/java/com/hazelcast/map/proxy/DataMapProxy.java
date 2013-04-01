@@ -144,6 +144,10 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
         lockSupport.lock(getNodeEngine(), key);
     }
 
+    public void lock(final Data key, final long leaseTime, final TimeUnit timeUnit) {
+        lockSupport.lock(getNodeEngine(), key, timeUnit.toMillis(leaseTime));
+    }
+
     public boolean isLocked(final Data key) {
         return lockSupport.isLocked(getNodeEngine(), key);
     }

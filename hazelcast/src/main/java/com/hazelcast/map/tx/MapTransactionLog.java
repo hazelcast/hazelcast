@@ -29,10 +29,14 @@ import com.hazelcast.transaction.TransactionLog;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 public class MapTransactionLog implements TransactionLog {
 
+    // todo remove version as it is already defined in operation
     long version;
     String name;
     Data key;
@@ -104,6 +108,7 @@ public class MapTransactionLog implements TransactionLog {
             key.writeData(out);
         }
         out.writeInt(threadId);
+        out.writeObject(op);
     }
 
     @Override
@@ -116,5 +121,6 @@ public class MapTransactionLog implements TransactionLog {
             key.readData(in);
         }
         threadId = in.readInt();
+        op = in.readObject();
     }
 }

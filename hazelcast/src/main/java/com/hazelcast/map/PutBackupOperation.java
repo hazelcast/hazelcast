@@ -16,14 +16,23 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupOperation;
 
 public final class PutBackupOperation extends KeyBasedMapOperation implements BackupOperation, IdentifiedDataSerializable {
 
+    private boolean unlockKey = false;
+
     public PutBackupOperation(String name, Data dataKey, Data dataValue, long ttl) {
         super(name, dataKey, dataValue, ttl);
+    }
+
+    public PutBackupOperation(String name, Data dataKey, Data dataValue, long ttl, boolean unlockKey) {
+        super(name, dataKey, dataValue, ttl);
+        this.unlockKey = unlockKey;
     }
 
     public PutBackupOperation() {
@@ -40,7 +49,8 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
             else if (record instanceof ObjectRecord)
                 ((ObjectRecord) record).setValue(mapService.toObject(dataValue));
         }
-        recordStore.forceUnlock(dataKey);
+        if(unlockKey)
+            recordStore.forceUnlock(dataKey);
     }
 
     @Override

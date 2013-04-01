@@ -16,8 +16,7 @@
 
 package com.hazelcast.core;
 
-// TODO: @mm - Rename!!!
-public interface XMap<K, V> extends DistributedObject {
+public interface BaseMap<K, V> extends DistributedObject {
 
     boolean containsKey(Object key);
 
