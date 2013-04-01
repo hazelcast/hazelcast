@@ -122,16 +122,12 @@ public class SimpleMapTest {
 
     private void run(ExecutorService es) {
         final IMap<String, Object> map = instance.getMap(NAMESPACE);
-        final int entryPerThread = entryCount / threadCount + 1;
-
         for (int i = 0; i < threadCount; i++) {
-            final int finalI = i;
             es.execute(new Runnable() {
                 public void run() {
                     try {
-                        final int offset = finalI * entryPerThread;
                         while (true) {
-                            int key = (int) (Math.random() * entryPerThread) + offset;
+                            int key = (int) (Math.random() * entryCount);
                             int operation = ((int) (Math.random() * 100));
                             if (operation < getPercentage) {
                                 map.get(String.valueOf(key));

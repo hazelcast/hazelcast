@@ -20,7 +20,6 @@ import com.hazelcast.config.AsymmetricEncryptionConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.spi.Connection;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;

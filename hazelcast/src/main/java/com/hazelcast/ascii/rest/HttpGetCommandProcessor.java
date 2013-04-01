@@ -18,7 +18,7 @@ package com.hazelcast.ascii.rest;
 
 import com.hazelcast.ascii.TextCommandService;
 import com.hazelcast.instance.Node;
-import com.hazelcast.spi.ConnectionManager;
+import com.hazelcast.nio.ConnectionManager;
 
 public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand> {
 

@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
-
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ConnectionListener;
+package com.hazelcast.nio;
 
 import java.util.Map;
 

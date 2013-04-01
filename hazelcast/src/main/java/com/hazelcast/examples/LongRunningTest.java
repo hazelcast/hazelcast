@@ -16,8 +16,12 @@
 
 package com.hazelcast.examples;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.logging.ILogger;
 
 import java.util.List;
 import java.util.Map;
@@ -38,7 +42,6 @@ public class LongRunningTest {
     private int starts, stops, restarts = 0;
 
     public static void main(String[] args) {
-        System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
         LongRunningTest t = new LongRunningTest();
         t.run();
     }
@@ -76,7 +79,7 @@ public class LongRunningTest {
                 }
             }
             try {
-                int nextSeconds = random(60, 260);
+                int nextSeconds = random(90, 180);
                 log("Next Action after " + nextSeconds + " seconds.");
                 log("members:" + nodes.size() + ", starts: " + starts + ", stops:" + stops + ", restart:" + restarts);
                 Thread.sleep(nextSeconds * 1000);
@@ -145,7 +148,8 @@ public class LongRunningTest {
             this.valueSize = valueSize;
             this.nodeId = nodeId;
             es = Executors.newFixedThreadPool(threadCount);
-            hazelcast = Hazelcast.newHazelcastInstance(null);
+            Config cfg = new XmlConfigBuilder().build();
+            hazelcast = Hazelcast.newHazelcastInstance(cfg);
             esStats = Executors.newSingleThreadExecutor();
             createTime = System.currentTimeMillis();
         }
@@ -182,7 +186,9 @@ public class LongRunningTest {
                                     map.remove(String.valueOf(key));
                                     stats.mapRemoves.incrementAndGet();
                                 }
-                            } catch (Throwable ignored) {
+                            } catch (HazelcastInstanceNotActiveException ignored) {
+                            } catch (Throwable e) {
+                                e.printStackTrace();
                             }
                         }
                     }
@@ -190,13 +196,15 @@ public class LongRunningTest {
             }
             esStats.submit(new Runnable() {
                 public void run() {
+                    final ILogger logger = hazelcast.getLoggingService().getLogger(hazelcast.getName());
                     while (running) {
                         try {
                             Thread.sleep(STATS_SECONDS * 1000);
                             int clusterSize = hazelcast.getCluster().getMembers().size();
                             Stats currentStats = stats.getAndReset();
-                            log("Cluster size: " + clusterSize + ", Operations per Second: "
+                            logger.log(Level.INFO, "Cluster size: " + clusterSize + ", Operations per Second: "
                                     + (currentStats.total() / STATS_SECONDS));
+                        } catch (HazelcastInstanceNotActiveException ignored) {
                         } catch (Exception e) {
                             e.printStackTrace();
                         }
@@ -242,5 +250,11 @@ public class LongRunningTest {
             return "total= " + total() + ", puts:" + mapPuts.get() + ", gets:" + mapGets.get()
                     + ", remove:" + mapRemoves.get();
         }
+    }
+
+    static {
+        System.setProperty("hazelcast.version.check.enabled", "false");
+        System.setProperty("hazelcast.socket.bind.any", "false");
+        System.setProperty("hazelcast.partition.migration.interval", "0");
     }
 }

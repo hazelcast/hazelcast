@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.spi.exception;
 
-/**
- * @mdogan 1/25/13
- */
-public interface MultiPartitionAwareOperation {
+import com.hazelcast.nio.Address;
 
-    int[] getPartitionIds();
+public class CallerNotMemberException extends RetryableHazelcastException {
 
+    public CallerNotMemberException(Address target, int partitionId, String operationName, String serviceName) {
+        super("Not Member! caller:" + target + ", partitionId: " + partitionId
+                + ", operation: " + operationName + ", service: " + serviceName);
+    }
 }

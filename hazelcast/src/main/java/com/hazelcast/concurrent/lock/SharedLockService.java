@@ -27,5 +27,5 @@ public interface SharedLockService extends SharedService {
 
     LockStore createLockStore(int partitionId, ILockNamespace namespace, int backupCount, int asyncBackupCount);
 
-    void destroyLockStore(int partitionId, ILockNamespace namespace);
+    void clearLockStore(int partitionId, ILockNamespace namespace);
 }
