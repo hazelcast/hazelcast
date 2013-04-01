@@ -18,6 +18,7 @@ package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
+import com.hazelcast.collection.CollectionWrapper;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -31,7 +32,7 @@ import java.util.Collection;
  */
 public abstract class CollectionKeyBasedOperation extends CollectionOperation implements KeyBasedOperation {
 
-    Data dataKey;
+    protected Data dataKey;
 
     protected CollectionKeyBasedOperation() {
     }
@@ -45,12 +46,12 @@ public abstract class CollectionKeyBasedOperation extends CollectionOperation im
         return dataKey == null ? 0 : dataKey.getPartitionHash();
     }
 
-    public final Collection<CollectionRecord> getOrCreateCollection() {
-        return getOrCreateContainer().getOrCreateCollection(dataKey);
+    public final CollectionWrapper getOrCreateCollectionWrapper() {
+        return getOrCreateContainer().getOrCreateCollectionWrapper(dataKey);
     }
 
-    public final Collection<CollectionRecord> getCollection() {
-        return getOrCreateContainer().getCollection(dataKey);
+    public final CollectionWrapper getCollectionWrapper() {
+        return getOrCreateContainer().getCollectionWrapper(dataKey);
     }
 
     public final Collection<CollectionRecord> removeCollection() {

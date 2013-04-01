@@ -18,7 +18,7 @@ package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.collection.CollectionWrapper;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -26,43 +26,50 @@ import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Iterator;
 
 /**
  * @ali 1/16/13
  */
 public class RemoveBackupOperation extends CollectionKeyBasedOperation implements BackupOperation {
 
-    Data value;
+    long recordId;
 
     public RemoveBackupOperation() {
     }
 
-    public RemoveBackupOperation(CollectionProxyId proxyId, Data dataKey, Data value) {
+    public RemoveBackupOperation(CollectionProxyId proxyId, Data dataKey, long recordId) {
         super(proxyId, dataKey);
-        this.value = value;
+        this.recordId = recordId;
     }
 
     public void run() throws Exception {
-        Collection<CollectionRecord> coll = getCollection();
-        if (coll == null) {
-            response = false;
+        CollectionWrapper wrapper = getCollectionWrapper();
+        response = false;
+        if (wrapper == null) {
             return;
         }
-        CollectionRecord record = new CollectionRecord(isBinary() ? value : toObject(value));
-        response = coll.remove(record);
-        if (coll.isEmpty()) {
-            removeCollection();
+        Collection<CollectionRecord> coll = wrapper.getCollection();
+        Iterator<CollectionRecord> iter = coll.iterator();
+        while (iter.hasNext()){
+            if(iter.next().getRecordId() == recordId){
+                iter.remove();
+                response = true;
+                if (coll.isEmpty()) {
+                    removeCollection();
+                }
+            }
         }
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        value.writeData(out);
+        out.writeLong(recordId);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        value = IOUtil.readData(in);
+        recordId = in.readLong();
     }
 
 }

@@ -32,20 +32,22 @@ import java.util.List;
 public class SetBackupOperation extends CollectionKeyBasedOperation implements BackupOperation {
 
     int index;
+    long recordId;
     Data value;
 
     public SetBackupOperation() {
     }
 
-    public SetBackupOperation(CollectionProxyId proxyId, Data dataKey, int index, Data value) {
+    public SetBackupOperation(CollectionProxyId proxyId, Data dataKey, long recordId, int index, Data value) {
         super(proxyId, dataKey);
         this.index = index;
+        this.recordId = recordId;
         this.value = value;
     }
 
     public void run() throws Exception {
-        CollectionRecord record = new CollectionRecord(isBinary() ? value : toObject(value));
-        List<CollectionRecord> list = (List<CollectionRecord>) getOrCreateCollection();
+        CollectionRecord record = new CollectionRecord(recordId, isBinary() ? value : toObject(value));
+        List<CollectionRecord> list = (List<CollectionRecord>) getOrCreateCollectionWrapper();
         list.set(index, record);
         response = true;
     }
@@ -53,12 +55,14 @@ public class SetBackupOperation extends CollectionKeyBasedOperation implements B
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(index);
+        out.writeLong(recordId);
         value.writeData(out);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         index = in.readInt();
+        recordId = in.readLong();
         value = new Data();
         value.readData(in);
     }

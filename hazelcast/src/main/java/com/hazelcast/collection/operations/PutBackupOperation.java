@@ -33,6 +33,8 @@ import java.util.List;
  */
 public class PutBackupOperation extends CollectionKeyBasedOperation implements BackupOperation {
 
+    long recordId;
+
     Data value;
 
     int index;
@@ -40,15 +42,17 @@ public class PutBackupOperation extends CollectionKeyBasedOperation implements B
     public PutBackupOperation() {
     }
 
-    public PutBackupOperation(CollectionProxyId proxyId, Data dataKey, Data value, int index) {
+    public PutBackupOperation(CollectionProxyId proxyId, Data dataKey, Data value, long recordId, int index) {
         super(proxyId, dataKey);
         this.value = value;
+        this.recordId = recordId;
         this.index = index;
     }
 
     public void run() throws Exception {
-        CollectionRecord record = new CollectionRecord(isBinary() ? value : toObject(value));
-        Collection<CollectionRecord> coll = getOrCreateCollection();
+
+        CollectionRecord record = new CollectionRecord(recordId, isBinary() ? value : toObject(value));
+        Collection<CollectionRecord> coll = getOrCreateCollectionWrapper().getCollection();
         if (index == -1) {
             response = coll.add(record);
         } else {
@@ -63,12 +67,14 @@ public class PutBackupOperation extends CollectionKeyBasedOperation implements B
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
+        out.writeLong(recordId);
         out.writeInt(index);
         value.writeData(out);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
+        recordId = in.readLong();
         index = in.readInt();
         value = IOUtil.readData(in);
     }

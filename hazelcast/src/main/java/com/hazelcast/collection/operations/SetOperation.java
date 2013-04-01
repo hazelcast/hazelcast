@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.operations;
 
+import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.nio.ObjectDataInput;
@@ -32,9 +33,9 @@ import java.util.List;
 public class SetOperation extends CollectionBackupAwareOperation {
 
     int index;
-
     Data value;
 
+    transient long recordId;
     transient boolean shouldBackup;
 
     public SetOperation() {
@@ -47,8 +48,10 @@ public class SetOperation extends CollectionBackupAwareOperation {
     }
 
     public void run() throws Exception {
-        CollectionRecord record = new CollectionRecord(isBinary() ? value : toObject(value));
-        List<CollectionRecord> list = (List<CollectionRecord>) getOrCreateCollection();
+        CollectionContainer container = getOrCreateContainer();
+        recordId = container.nextId();
+        CollectionRecord record = new CollectionRecord(recordId, isBinary() ? value : toObject(value));
+        List<CollectionRecord> list = (List<CollectionRecord>)container.getOrCreateCollectionWrapper(dataKey).getCollection();
         try {
             record = list.set(index, record);
             response = record == null ? null : record.getObject();
@@ -59,7 +62,7 @@ public class SetOperation extends CollectionBackupAwareOperation {
     }
 
     public Operation getBackupOperation() {
-        return new SetBackupOperation(proxyId, dataKey, index, value);
+        return new SetBackupOperation(proxyId, dataKey, recordId, index, value);
     }
 
     public boolean shouldBackup() {

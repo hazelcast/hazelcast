@@ -82,19 +82,14 @@ public class CollectionContainer {
         return idGen.getAndIncrement();
     }
 
-    public Collection<CollectionRecord> getOrCreateCollection(Data dataKey) {
+    public CollectionWrapper getOrCreateCollectionWrapper(Data dataKey) {
         CollectionWrapper wrapper = collections.get(dataKey);
         if (wrapper == null) {
             Collection<CollectionRecord> coll = service.createNew(proxyId);
             wrapper = new CollectionWrapper(coll);
             collections.put(dataKey, wrapper);
         }
-        return wrapper.getCollection();
-    }
-
-    public Collection<CollectionRecord> getCollection(Data dataKey) {
-        CollectionWrapper wrapper = collections.get(dataKey);
-        return wrapper != null ? wrapper.getCollection() : null;
+        return wrapper;
     }
 
     public CollectionWrapper getCollectionWrapper(Data dataKey) {
