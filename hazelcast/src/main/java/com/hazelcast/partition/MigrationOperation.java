@@ -22,6 +22,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.*;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
@@ -46,8 +47,11 @@ public final class MigrationOperation extends BaseMigrationOperation {
         this.zippedTaskData = taskData;
     }
 
-    public void run() {
+    public void run() throws Exception {
         NodeEngine nodeEngine = getNodeEngine();
+        if (!nodeEngine.getMasterAddress().equals(migrationInfo.getMaster())) {
+            throw new RetryableHazelcastException("Migration initiator is not master node! => " + toString());
+        }
         SerializationService serializationService = nodeEngine.getSerializationService();
         ObjectDataInput in = null;
         if (migrationInfo.startProcessing()) {
@@ -102,9 +106,10 @@ public final class MigrationOperation extends BaseMigrationOperation {
 
         for (Operation op : tasks) {
             try {
-                op.setNodeEngine(nodeEngine).setCallerAddress(migrationInfo.getFromAddress())
+                op.setNodeEngine(nodeEngine)
                         .setPartitionId(getPartitionId()).setReplicaIndex(getReplicaIndex());
                 op.setResponseHandler(ERROR_RESPONSE_HANDLER);
+                OperationAccessor.setCallerAddress(op, migrationInfo.getFromAddress());
                 MigrationAwareService service = op.getService();
                 service.beforeMigration(new MigrationServiceEvent(MigrationEndpoint.DESTINATION, migrationInfo));
                 op.beforeRun();

@@ -19,7 +19,7 @@ package com.hazelcast.spi;
 /**
  * @mdogan 12/6/12
  */
-public interface BackupAwareOperation {
+public interface BackupAwareOperation extends PartitionAwareOperation {
 
     boolean shouldBackup();
 

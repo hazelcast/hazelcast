@@ -19,7 +19,6 @@ package com.hazelcast.nio;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataWriter;
 import com.hazelcast.nio.serialization.SerializationContext;
-import com.hazelcast.spi.Connection;
 
 import java.nio.ByteBuffer;
 
@@ -29,6 +28,7 @@ public final class Packet extends DataWriter implements SocketWritable {
 
     public static final int HEADER_OP = 0;
     public static final int HEADER_EVENT = 1;
+    public static final int HEADER_MIGRATION = 2;
 
     private byte header;
 
@@ -59,6 +59,10 @@ public final class Packet extends DataWriter implements SocketWritable {
 
     public boolean isHeaderSet(int bit) {
         return (header & 1 << bit) != 0;
+    }
+
+    public byte getHeader() {
+        return header;
     }
 
     public void onEnqueue() {

@@ -42,7 +42,8 @@ public class AsyncInvocationServiceImpl implements AsyncInvocationService {
         this.nodeEngine = nodeEngine;
         String executorName = "hz:async-service";
         final ExecutionServiceImpl executionService = (ExecutionServiceImpl) nodeEngine.getExecutionService();
-        this.executor = executionService.register(executorName, 20, 10000);  // TODO: @mm - both sizes should be configurable.
+        final int coreSize = Runtime.getRuntime().availableProcessors();
+        this.executor = executionService.register(executorName, coreSize * 10, coreSize * 100000);  // TODO: @mm - both sizes should be configurable.
         logger = nodeEngine.getLogger(AsyncInvocationService.class.getName());
     }
 
@@ -72,7 +73,7 @@ public class AsyncInvocationServiceImpl implements AsyncInvocationService {
     }
 
     private boolean waitAndSetResult(InvocationImpl invocation, Callback<Object> responseCallback, long timeout) {
-        Object result = null;
+        Object result;
         try {
             result = invocation.doGet(timeout, TimeUnit.MILLISECONDS);
         } catch (Throwable e) {

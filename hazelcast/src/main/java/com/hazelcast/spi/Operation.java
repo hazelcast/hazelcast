@@ -17,7 +17,9 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -146,7 +148,8 @@ public abstract class Operation implements DataSerializable {
         return callerAddress;
     }
 
-    public final Operation setCallerAddress(Address callerAddress) {
+    // Accessed using OperationAccessor
+    final Operation setCallerAddress(Address callerAddress) {
         this.callerAddress = callerAddress;
         return this;
     }
@@ -155,7 +158,8 @@ public abstract class Operation implements DataSerializable {
         return connection;
     }
 
-    public final Operation setConnection(Connection connection) {
+    // Accessed using OperationAccessor
+    final Operation setConnection(Connection connection) {
         this.connection = connection;
         return this;
     }
@@ -200,6 +204,9 @@ public abstract class Operation implements DataSerializable {
     }
 
     public InvocationAction onException(Throwable throwable) {
+        if (this instanceof BackupOperation && throwable instanceof MemberLeftException) {
+            return InvocationAction.THROW_EXCEPTION;
+        }
         return (throwable instanceof RetryableException)
                 ? InvocationAction.RETRY_INVOCATION : InvocationAction.THROW_EXCEPTION;
     }
@@ -219,16 +226,19 @@ public abstract class Operation implements DataSerializable {
             throw new IOException("Cannot call writeData() from a sub-class!");
         }
         writeDataFlag = true;
-        out.writeUTF(serviceName);
-        out.writeInt(partitionId);
-        out.writeInt(replicaIndex);
-        out.writeLong(callId);
-        out.writeBoolean(validateTarget);
-        out.writeLong(invocationTime);
-        out.writeLong(callTimeout);
-        out.writeUTF(callerUuid);
-        writeInternal(out);
-        writeDataFlag = false;
+        try {
+            out.writeUTF(serviceName);
+            out.writeInt(partitionId);
+            out.writeInt(replicaIndex);
+            out.writeLong(callId);
+            out.writeBoolean(validateTarget);
+            out.writeLong(invocationTime);
+            out.writeLong(callTimeout);
+            out.writeUTF(callerUuid);
+            writeInternal(out);
+        } finally {
+            writeDataFlag = false;
+        }
     }
 
     private transient boolean readDataFlag = false;
@@ -237,16 +247,19 @@ public abstract class Operation implements DataSerializable {
             throw new IOException("Cannot call readData() from a sub-class!");
         }
         readDataFlag = true;
-        serviceName = in.readUTF();
-        partitionId = in.readInt();
-        replicaIndex = in.readInt();
-        callId = in.readLong();
-        validateTarget = in.readBoolean();
-        invocationTime = in.readLong();
-        callTimeout = in.readLong();
-        callerUuid = in.readUTF();
-        readInternal(in);
-        readDataFlag = false;
+        try {
+            serviceName = in.readUTF();
+            partitionId = in.readInt();
+            replicaIndex = in.readInt();
+            callId = in.readLong();
+            validateTarget = in.readBoolean();
+            invocationTime = in.readLong();
+            callTimeout = in.readLong();
+            callerUuid = in.readUTF();
+            readInternal(in);
+        } finally {
+            readDataFlag = false;
+        }
     }
 
     protected abstract void writeInternal(ObjectDataOutput out) throws IOException;

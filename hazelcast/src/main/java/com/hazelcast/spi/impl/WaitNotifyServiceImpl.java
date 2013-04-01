@@ -41,13 +41,11 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
     private final DelayQueue delayQueue = new DelayQueue();
     private final ExecutorService expirationService;
     private final Future expirationTask;
-    private final WaitingOpProcessor waitingOpProcessor;
     private final NodeEngine nodeEngine;
     private final ILogger logger;
 
-    public WaitNotifyServiceImpl(final NodeEngineImpl nodeEngine, final WaitingOpProcessor waitingOpProcessor) {
+    public WaitNotifyServiceImpl(final NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
-        this.waitingOpProcessor = waitingOpProcessor;
         final Node node = nodeEngine.getNode();
         logger = node.getLogger(WaitNotifyService.class.getName());
 
@@ -71,7 +69,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
                             WaitingOp waitingOp = (WaitingOp) delayQueue.poll(waitTime, TimeUnit.MILLISECONDS);
                             if (waitingOp != null) {
                                 if (waitingOp.isValid()) {
-                                    waitingOpProcessor.invalidate(waitingOp);
+                                    invalidate(waitingOp);
                                 }
                             }
                             long end = System.currentTimeMillis();
@@ -87,7 +85,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
                                 }
                                 if (waitingOp.isValid()) {
                                     if (waitingOp.needsInvalidation()) {
-                                        waitingOpProcessor.invalidate(waitingOp);
+                                        invalidate(waitingOp);
                                     }
                                 }
                             }
@@ -100,6 +98,10 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
                 }
             }
         });
+    }
+
+    private void invalidate(final WaitingOp waitingOp) throws Exception {
+        nodeEngine.getOperationService().executeOperation(waitingOp);
     }
 
     private final ConstructorFunction<WaitNotifyKey, Queue<WaitingOp>> waitQueueConstructor
@@ -129,7 +131,8 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
         if (q == null) return;
         WaitingOp waitingOp = q.peek();
         while (waitingOp != null) {
-            if (notifier == waitingOp.getOperation()) {
+            final Operation op = waitingOp.getOperation();
+            if (notifier == op) {
                 throw new IllegalStateException("Found cyclic wait-notify! -> " + notifier);
             }
             if (waitingOp.isValid()) {
@@ -140,13 +143,17 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
                     if (waitingOp.shouldWait()) {
                         return;
                     }
-                    waitingOpProcessor.processUnderExistingLock(waitingOp.getOperation());
+                    processUnderExistingLock(op);
                 }
                 waitingOp.setValid(false);
             }
             q.poll(); // consume
             waitingOp = q.peek();
         }
+    }
+
+    private void processUnderExistingLock(Operation op) {
+        nodeEngine.getOperationService().runOperationUnderExistingLock(op);
     }
 
     // invalidated waiting ops will removed from queue eventually by notifiers.
@@ -204,13 +211,6 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
                 }
             }
         }
-    }
-
-    interface WaitingOpProcessor {
-
-        void invalidate(WaitingOp so) throws Exception;
-
-        void processUnderExistingLock(Operation operation);
     }
 
     void shutdown() {

@@ -76,7 +76,7 @@ public class PartitionRecordStore implements RecordStore {
     void clear() {
         final SharedLockService lockService = mapService.getNodeEngine().getSharedService(SharedLockService.SERVICE_NAME);
         if (lockService != null) {
-            lockService.destroyLockStore(partitionContainer.partitionId, new LockNamespace(MapService.SERVICE_NAME, name));
+            lockService.clearLockStore(partitionContainer.partitionId, new LockNamespace(MapService.SERVICE_NAME, name));
         }
         records.clear();
     }

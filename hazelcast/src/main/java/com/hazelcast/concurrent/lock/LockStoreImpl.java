@@ -205,4 +205,15 @@ class LockStoreImpl implements DataSerializable, LockStore {
             }
         }
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("LockStoreImpl");
+        sb.append("{namespace=").append(namespace);
+        sb.append(", backupCount=").append(backupCount);
+        sb.append(", asyncBackupCount=").append(asyncBackupCount);
+        sb.append('}');
+        return sb.toString();
+    }
 }

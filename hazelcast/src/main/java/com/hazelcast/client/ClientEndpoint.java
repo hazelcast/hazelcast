@@ -21,7 +21,7 @@ import com.hazelcast.core.ClientType;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.TcpIpConnection;
-import com.hazelcast.spi.Connection;
+import com.hazelcast.nio.Connection;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
