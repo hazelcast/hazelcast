@@ -20,21 +20,21 @@ import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 
-final class Call {
+final class RemoteCall {
 
     private final Address target;
-    private final InvocationImpl callback;
+    private final Callback<Object> callback;
 
-    public Call(Address target, InvocationImpl callback) {
+    RemoteCall(Address target, Callback<Object> callback) {
         this.target = target;
         this.callback = callback;
     }
 
-    public void offerResponse(Object response) {
+    void offerResponse(Object response) {
         callback.notify(response);
     }
 
-    public void onMemberLeft(MemberImpl leftMember) {
+    void onMemberLeft(MemberImpl leftMember) {
         if (leftMember.getAddress().equals(target)) {
             callback.notify(new MemberLeftException(leftMember));
         }
@@ -42,7 +42,7 @@ final class Call {
 
     @Override
     public String toString() {
-        return "Call{" +
+        return "RemoteCall{" +
                "target=" + target +
                ", callback=" + callback +
                '}';

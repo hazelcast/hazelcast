@@ -54,7 +54,7 @@ public final class Response extends AbstractOperation implements ResponseOperati
         } else {
             response = result;
         }
-        nodeEngine.operationService.notifyCall(callId, response);
+        nodeEngine.operationService.notifyRemoteCall(callId, response);
     }
 
     @Override

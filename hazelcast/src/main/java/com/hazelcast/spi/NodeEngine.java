@@ -53,6 +53,8 @@ public interface NodeEngine {
 
     TransactionManagerService getTransactionManagerService();
 
+    Address getMasterAddress();
+
     Address getThisAddress();
 
     MemberImpl getLocalMember();
@@ -74,4 +76,5 @@ public interface NodeEngine {
     HazelcastInstance getHazelcastInstance();
 
     <T extends SharedService> T getSharedService(String serviceName);
+
 }
