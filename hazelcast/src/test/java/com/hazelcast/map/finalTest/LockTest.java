@@ -46,7 +46,7 @@ public class LockTest {
         StaticNodeFactory factory = new StaticNodeFactory(2);
         final HazelcastInstance h1 = factory.newHazelcastInstance(config);
         final HazelcastInstance h2 = factory.newHazelcastInstance(config);
-        final IMap map1 = h1.getMap("default");
+        final IMap map1 = h1.getMap("testBackupDies");
         final int size = 50;
         final CountDownLatch latch = new CountDownLatch(size + 1);
 
@@ -144,7 +144,7 @@ public class LockTest {
         final AtomicInteger integer = new AtomicInteger(0);
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
 
-        final String name = "testLockEviction";
+        final String name = "testLockMigration";
         final IMap map = instance1.getMap(name);
         for (int i = 0; i < 1000; i++) {
             map.lock(i);
@@ -174,7 +174,7 @@ public class LockTest {
         final Config config = new Config();
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
 
-        final String name = "testLockEviction";
+        final String name = "testLockEvictionWithMigration";
         final IMap map = instance1.getMap(name);
         for (int i = 0; i < 1000; i++) {
             map.lock(i, 10, TimeUnit.SECONDS);

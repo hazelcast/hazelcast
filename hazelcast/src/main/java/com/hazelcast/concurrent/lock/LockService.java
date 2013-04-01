@@ -122,7 +122,7 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
                 for (Map.Entry<Data, LockInfo> entry : locks.entrySet()) {
                     final Data key = entry.getKey();
                     final LockInfo lock = entry.getValue();
-                    if (uuid.equals(lock.getOwner())) {
+                    if (uuid.equals(lock.getOwner()) && !lock.isTransactional()) {
                         UnlockOperation op = new UnlockOperation(lockStore.getNamespace(), key, -1, true);
                         op.setNodeEngine(nodeEngine);
                         op.setServiceName(SERVICE_NAME);

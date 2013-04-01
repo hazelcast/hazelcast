@@ -32,6 +32,7 @@ class LockInfo implements DataSerializable {
     private int lockCount;
     private long expirationTime = -1;
     private long acquireTime = -1L;
+    private boolean transactional = false;
 
     private Map<String, ConditionInfo> conditions;
     private List<ConditionKey> signalKeys;
@@ -69,18 +70,25 @@ class LockInfo implements DataSerializable {
     }
 
     public boolean lock(String owner, int threadId, long ttl) {
+        return lock(owner, threadId, ttl, false);
+    }
+
+    public boolean lock(String owner, int threadId, long ttl, boolean transactional) {
         if (lockCount == 0) {
             this.owner = owner;
             this.threadId = threadId;
             lockCount++;
             acquireTime = Clock.currentTimeMillis();
             setExpirationTime(ttl);
+            this.transactional = transactional;
             return true;
         } else if (isLockedBy(owner, threadId)) {
             lockCount++;
             setExpirationTime(ttl);
+            this.transactional = transactional;
             return true;
         }
+        this.transactional = false;
         return false;
     }
 
@@ -230,6 +238,10 @@ class LockInfo implements DataSerializable {
         return owner;
     }
 
+    public boolean isTransactional() {
+        return transactional;
+    }
+
     public int getThreadId() {
         return threadId;
     }
@@ -272,6 +284,7 @@ class LockInfo implements DataSerializable {
         out.writeInt(lockCount);
         out.writeLong(expirationTime);
         out.writeLong(acquireTime);
+        out.writeBoolean(transactional);
 
         int len = conditions == null ? 0 : conditions.size();
         out.writeInt(len);
@@ -304,6 +317,7 @@ class LockInfo implements DataSerializable {
         lockCount = in.readInt();
         expirationTime = in.readLong();
         acquireTime = in.readLong();
+        transactional = in.readBoolean();
 
         int len = in.readInt();
         if (len > 0) {

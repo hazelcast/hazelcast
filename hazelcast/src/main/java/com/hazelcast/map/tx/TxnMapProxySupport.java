@@ -153,7 +153,7 @@ public abstract class TxnMapProxySupport extends AbstractDistributedObject<MapSe
 
     private VersionedValue lockAndGet(Data key, long timeout) {
         final NodeEngine nodeEngine = getNodeEngine();
-        TxnLockAndGetOperation operation = new TxnLockAndGetOperation(name, key, -timeout);
+        TxnLockAndGetOperation operation = new TxnLockAndGetOperation(name, key, timeout, timeout);
         operation.setThreadId(ThreadContext.getThreadId());
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);

@@ -104,6 +104,10 @@ public class PartitionRecordStore implements RecordStore {
         return lockStore != null && lockStore.lock(key, caller, threadId, ttl);
     }
 
+    public boolean txnLock(Data key, String caller, int threadId, long ttl) {
+        return lockStore != null && lockStore.txnLock(key, caller, threadId, ttl);
+    }
+
     public boolean extendLock(Data key, String caller, int threadId, long ttl) {
         return lockStore != null && lockStore.extendTTL(key, caller, threadId, ttl);
     }

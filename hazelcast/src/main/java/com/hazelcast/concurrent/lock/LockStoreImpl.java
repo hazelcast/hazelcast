@@ -64,6 +64,11 @@ class LockStoreImpl implements DataSerializable, LockStore {
         return lock.lock(caller, threadId, ttl);
     }
 
+    public boolean txnLock(Data key, String caller, int threadId, long ttl) {
+        final LockInfo lock = getLock(key);
+        return lock.lock(caller, threadId, ttl, true);
+    }
+
     public boolean extendTTL(Data key, String caller, int threadId, long ttl) {
         final LockInfo lock = locks.get(key);
         return lock != null && lock.extendTTL(caller, threadId, ttl);

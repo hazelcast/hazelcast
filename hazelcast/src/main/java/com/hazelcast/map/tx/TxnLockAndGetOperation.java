@@ -39,14 +39,14 @@ public class TxnLockAndGetOperation extends LockAwareOperation {
     public TxnLockAndGetOperation() {
     }
 
-    public TxnLockAndGetOperation(String name, Data dataKey, long timeout) {
-        super(name, dataKey, -1);
+    public TxnLockAndGetOperation(String name, Data dataKey, long timeout, long ttl) {
+        super(name, dataKey, ttl);
         this.timeout = timeout;
     }
 
     @Override
     public void run() throws Exception {
-        if (!recordStore.lock(getKey(), getCallerUuid(), getThreadId(), ttl)) {
+        if (!recordStore.txnLock(getKey(), getCallerUuid(), getThreadId(), ttl)) {
             throw new TransactionException("Lock failed.");
         }
         Record record = recordStore.getRecords().get(dataKey);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package com.hazelcast.client.proxy.listener;
@@ -25,6 +24,7 @@ import com.hazelcast.core.ILock;
 import com.hazelcast.monitor.LocalLockStats;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
+import com.sun.tools.javac.comp.Todo;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
@@ -46,6 +46,11 @@ public class LockClientProxy implements ILock {
     @Override
     public void lock() {
         proxyHelper.doCommand(dKey, Command.LOCK, null, dKey);
+    }
+
+    @Override
+    public void lock(long leaseTime, TimeUnit timeUnit) {
+        // todo to be implemented
     }
 
     @Override
