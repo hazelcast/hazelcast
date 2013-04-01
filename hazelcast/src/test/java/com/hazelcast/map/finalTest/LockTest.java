@@ -18,15 +18,21 @@ package com.hazelcast.map.finalTest;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.TransactionalTaskContext;
+import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static junit.framework.Assert.assertFalse;
 import static org.junit.Assert.assertEquals;
@@ -42,13 +48,13 @@ public class LockTest {
         final HazelcastInstance h2 = factory.newHazelcastInstance(config);
         final IMap map1 = h1.getMap("default");
         final int size = 50;
-        final CountDownLatch latch = new CountDownLatch(size+1);
+        final CountDownLatch latch = new CountDownLatch(size + 1);
 
         Runnable runnable = new Runnable() {
             public void run() {
                 for (int i = 0; i < size; i++) {
                     map1.lock(i);
-                    System.out.println("turn:"+i);
+                    System.out.println("turn:" + i);
                     try {
                         Thread.sleep(100);
                     } catch (InterruptedException e) {
@@ -78,6 +84,118 @@ public class LockTest {
             }
         } catch (InterruptedException e) {
         }
+    }
+
+    @Test(timeout = 10000)
+    public void testLockEviction() throws Exception {
+        final StaticNodeFactory nodeFactory = new StaticNodeFactory(2);
+        final Config config = new Config();
+        final AtomicInteger integer = new AtomicInteger(0);
+        final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+
+        final String name = "testLockEviction";
+        final IMap map = instance1.getMap(name);
+        map.lock(1, 1, TimeUnit.SECONDS);
+        Assert.assertEquals(true, map.isLocked(1));
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                map.lock(1);
+                integer.incrementAndGet();
+            }
+        });
+        t.start();
+        Assert.assertEquals(0, integer.get());
+        Thread.sleep(2000);
+        Assert.assertEquals(1, integer.get());
+    }
+
+    @Test(timeout = 100000)
+    public void testLockEviction2() throws Exception {
+        final StaticNodeFactory nodeFactory = new StaticNodeFactory(2);
+        final Config config = new Config();
+        final AtomicInteger integer = new AtomicInteger(0);
+        final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+
+        final String name = "testLockEviction2";
+        final IMap map = instance1.getMap(name);
+        Random rand = new Random(System.currentTimeMillis());
+        for (int i = 0; i < 5; i++) {
+            map.lock(i, rand.nextInt(5), TimeUnit.SECONDS);
+        }
+        final CountDownLatch latch = new CountDownLatch(5);
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                for (int i = 0; i < 5; i++) {
+                    map.lock(i);
+                    latch.countDown();
+                }
+            }
+        });
+        t.start();
+        assertTrue(latch.await(15, TimeUnit.SECONDS));
+    }
+
+    @Test(timeout = 100000)
+    public void testLockMigration() throws Exception {
+        final StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
+        final Config config = new Config();
+        final AtomicInteger integer = new AtomicInteger(0);
+        final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
+
+        final String name = "testLockEviction";
+        final IMap map = instance1.getMap(name);
+        for (int i = 0; i < 1000; i++) {
+            map.lock(i);
+        }
+
+        final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(config);
+        Thread.sleep(3000);
+        final CountDownLatch latch = new CountDownLatch(1000);
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                for (int i = 0; i < 1000; i++) {
+                    if (map.isLocked(i)) {
+                        latch.countDown();
+                    }
+                }
+            }
+        });
+        t.start();
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
+    }
+
+
+    @Test(timeout = 100000)
+    public void testLockEvictionWithMigration() throws Exception {
+        final StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
+        final Config config = new Config();
+        final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
+
+        final String name = "testLockEviction";
+        final IMap map = instance1.getMap(name);
+        for (int i = 0; i < 1000; i++) {
+            map.lock(i, 10, TimeUnit.SECONDS);
+        }
+        final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(config);
+        Thread.sleep(3000);
+        for (int i = 0; i < 1000; i++) {
+            assertTrue(map.isLocked(i));
+        }
+        final CountDownLatch latch = new CountDownLatch(1000);
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                for (int i = 0; i < 1000; i++) {
+                    map.lock(i);
+                    latch.countDown();
+                }
+            }
+        });
+        t.start();
+        assertTrue(latch.await(15, TimeUnit.SECONDS));
     }
 
 

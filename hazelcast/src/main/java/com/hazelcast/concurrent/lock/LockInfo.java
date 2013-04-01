@@ -36,36 +36,39 @@ class LockInfo implements DataSerializable {
     private Map<String, ConditionInfo> conditions;
     private List<ConditionKey> signalKeys;
     private List<AwaitOperation> expiredAwaitOps;
+    private transient LockService lockService;
+    private transient ILockNamespace namespace;
 
     public LockInfo() {
     }
 
-    public LockInfo(Data key) {
+    public LockInfo(Data key, LockService lockService, ILockNamespace namespace) {
         this.key = key;
+        this.lockService = lockService;
+        this.namespace = namespace;
     }
 
     public Data getKey() {
         return key;
     }
 
+    public void setLockService(LockService lockService) {
+        this.lockService = lockService;
+    }
+
+    public void setNamespace(ILockNamespace namespace) {
+        this.namespace = namespace;
+    }
+
     public boolean isLocked() {
-        checkTTL();
         return lockCount > 0;
     }
 
     public boolean isLockedBy(String owner, int threadId) {
-        checkTTL();
         return (this.threadId == threadId && owner != null && owner.equals(this.owner));
     }
 
-    void checkTTL() {
-        if (lockCount > 0 && Clock.currentTimeMillis() >= expirationTime) {
-            clear();
-        }
-    }
-
     public boolean lock(String owner, int threadId, long ttl) {
-        checkTTL();
         if (lockCount == 0) {
             this.owner = owner;
             this.threadId = threadId;
@@ -85,6 +88,7 @@ class LockInfo implements DataSerializable {
         if (isLockedBy(caller, threadId)) {
             if (expirationTime < Long.MAX_VALUE) {
                 setExpirationTime(expirationTime - Clock.currentTimeMillis() + ttl);
+                lockService.scheduleEviction(namespace, key, ttl);
             }
             return true;
         }
@@ -98,12 +102,13 @@ class LockInfo implements DataSerializable {
             expirationTime = Clock.currentTimeMillis() + ttl;
             if (expirationTime < 0) {
                 expirationTime = Long.MAX_VALUE;
+            } else {
+                lockService.scheduleEviction(namespace, key, ttl);
             }
         }
     }
 
     public boolean unlock(String owner, int threadId) {
-        checkTTL();
         if (lockCount == 0) {
             return false;
         } else {
@@ -119,7 +124,6 @@ class LockInfo implements DataSerializable {
     }
 
     public boolean canAcquireLock(String caller, int threadId) {
-        checkTTL();
         return lockCount == 0 || getThreadId() == threadId && getOwner().equals(caller);
     }
 
@@ -209,6 +213,11 @@ class LockInfo implements DataSerializable {
         owner = null;
         expirationTime = 0;
         acquireTime = -1L;
+        cancelEviction();
+    }
+
+    public void cancelEviction() {
+        lockService.cancelEviction(namespace, key);
     }
 
     public boolean isEvictable() {

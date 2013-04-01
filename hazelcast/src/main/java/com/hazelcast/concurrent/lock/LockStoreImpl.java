@@ -16,11 +16,14 @@
 
 package com.hazelcast.concurrent.lock;
 
+import com.hazelcast.map.EvictionProcessor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.util.scheduler.EntryTaskScheduler;
+import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 
 import java.io.IOException;
 import java.util.*;
@@ -32,23 +35,24 @@ class LockStoreImpl implements DataSerializable, LockStore {
     private final ConcurrencyUtil.ConstructorFunction<Data, LockInfo> lockConstructor
             = new ConcurrencyUtil.ConstructorFunction<Data, LockInfo>() {
         public LockInfo createNew(Data key) {
-            return new LockInfo(key);
+            return new LockInfo(key, lockService, namespace);
         }
     };
 
     private final ConcurrentMap<Data, LockInfo> locks = new ConcurrentHashMap<Data, LockInfo>();
-
     private ILockNamespace namespace;
     private int backupCount;
     private int asyncBackupCount;
+    private transient LockService lockService;
 
     public LockStoreImpl() {
     }
 
-    public LockStoreImpl(ILockNamespace name, int backupCount, int asyncBackupCount) {
+    public LockStoreImpl(ILockNamespace name, int backupCount, int asyncBackupCount, LockService lockService) {
         this.namespace = name;
         this.backupCount = backupCount;
         this.asyncBackupCount = asyncBackupCount;
+        this.lockService = lockService;
     }
 
     public boolean lock(Data key, String caller, int threadId) {
@@ -107,6 +111,7 @@ class LockStoreImpl implements DataSerializable, LockStore {
         else {
             if (lock.isEvictable()) {
                 locks.remove(key);
+                lock.cancelEviction();
             } else {
                 lock.clear();
             }
@@ -120,6 +125,10 @@ class LockStoreImpl implements DataSerializable, LockStore {
 
     public Set<Data> getLockedKeys() {
         return Collections.unmodifiableSet(locks.keySet());
+    }
+
+    public void setLockService(LockService lockService) {
+        this.lockService = lockService;
     }
 
     public void clear() {

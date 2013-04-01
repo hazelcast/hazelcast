@@ -36,7 +36,7 @@ public class LockStoreContainer {
     private final ConstructorFunction<ILockNamespace, LockStoreImpl> lockStoreConstructor
                 = new ConstructorFunction<ILockNamespace, LockStoreImpl>() {
         public LockStoreImpl createNew(ILockNamespace key) {
-            return new LockStoreImpl(key, 1, 0);
+            return new LockStoreImpl(key, 1, 0, lockService);
         }
     };
 
@@ -46,7 +46,7 @@ public class LockStoreContainer {
     }
 
     public LockStoreImpl createLockStore(ILockNamespace namespace, int backupCount, int asyncBackupCount) {
-        final LockStoreImpl ls = new LockStoreImpl(namespace, backupCount, asyncBackupCount);
+        final LockStoreImpl ls = new LockStoreImpl(namespace, backupCount, asyncBackupCount, lockService);
         final LockStoreImpl current;
         if ((current = lockStores.putIfAbsent(namespace, ls)) != null) {
             if (current.getBackupCount() != ls.getBackupCount()
@@ -85,6 +85,12 @@ public class LockStoreContainer {
     }
 
     void put(LockStoreImpl ls) {
+        Collection<LockInfo> lockInfos = ls.getLocks().values();
+        for (LockInfo lockInfo : lockInfos) {
+            lockInfo.setLockService(lockService);
+            lockInfo.setNamespace(ls.getNamespace());
+        }
+        ls.setLockService(lockService);
         lockStores.put(ls.getNamespace(), ls);
     }
 }
