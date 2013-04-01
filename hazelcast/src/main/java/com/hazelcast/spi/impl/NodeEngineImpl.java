@@ -24,6 +24,8 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationContext;
@@ -63,7 +65,7 @@ public class NodeEngineImpl implements NodeEngine {
         operationService = new OperationServiceImpl(this);
         eventService = new EventServiceImpl(this);
         asyncInvocationService = new AsyncInvocationServiceImpl(this);
-        waitNotifyService = new WaitNotifyServiceImpl(this, new WaitingOpProcessorImpl());
+        waitNotifyService = new WaitNotifyServiceImpl(this);
         transactionManagerService = new TransactionManagerServiceImpl(this);
     }
 
@@ -75,6 +77,10 @@ public class NodeEngineImpl implements NodeEngine {
 
     public Address getThisAddress() {
         return node.getThisAddress();
+    }
+
+    public Address getMasterAddress() {
+        return node.getMasterAddress();
     }
 
     public MemberImpl getLocalMember() {
@@ -214,12 +220,14 @@ public class NodeEngineImpl implements NodeEngine {
 
     @PrivateApi
     public void handlePacket(Packet packet) {
-        if (packet.isHeaderSet(Packet.HEADER_OP)) {
+        if (packet.isHeaderSet(Packet.HEADER_MIGRATION)) {
+            node.partitionService.handleMigration(packet);
+        } else if (packet.isHeaderSet(Packet.HEADER_OP)) {
             operationService.handleOperation(packet);
         } else if (packet.isHeaderSet(Packet.HEADER_EVENT)) {
             eventService.handleEvent(packet);
         } else {
-            throw new IllegalArgumentException("Unknown packet type !");
+            logger.log(Level.SEVERE, "Unknown packet type! Header: " + packet.getHeader());
         }
     }
 
@@ -306,16 +314,5 @@ public class NodeEngineImpl implements NodeEngine {
         asyncInvocationService.shutdown();
         eventService.shutdown();
         operationService.shutdown();
-    }
-
-    private class WaitingOpProcessorImpl implements WaitNotifyServiceImpl.WaitingOpProcessor {
-
-        public void invalidate(final WaitNotifyServiceImpl.WaitingOp so) throws Exception {
-            operationService.executeOperation(so);
-        }
-
-        public void processUnderExistingLock(Operation operation) {
-            operationService.runOperationUnderExistingLock(operation);
-        }
     }
 }

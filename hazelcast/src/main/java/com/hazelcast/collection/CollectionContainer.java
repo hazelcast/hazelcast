@@ -183,7 +183,7 @@ public class CollectionContainer {
     public void destroy() {
         final SharedLockService lockService = nodeEngine.getSharedService(SharedLockService.SERVICE_NAME);
         if (lockService != null) {
-            lockService.destroyLockStore(partitionId, lockNamespace);
+            lockService.clearLockStore(partitionId, lockNamespace);
         }
         collections.clear();
     }

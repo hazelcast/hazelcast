@@ -39,6 +39,11 @@ public final class LockStoreProxy implements LockStore {
     }
 
     @Override
+    public boolean txnLock(Data key, String caller, int threadId, long ttl) {
+        return getLockStore().txnLock(key, caller, threadId, ttl);
+    }
+
+    @Override
     public boolean extendTTL(Data key, String caller, int threadId, long ttl) {
         return getLockStore().extendTTL(key, caller, threadId, ttl);
     }

@@ -76,7 +76,7 @@ public class SystemLogService {
 
     public SystemLogService(Node node) {
         this.node = node;
-        systemLogEnabled = node.groupProperties.SYSTEM_LOG_ENABLED.getBoolean();
+        systemLogEnabled = node != null && node.groupProperties.SYSTEM_LOG_ENABLED.getBoolean();
     }
 
     public String getCurrentLevel() {

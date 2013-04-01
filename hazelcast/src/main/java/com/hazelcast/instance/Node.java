@@ -40,7 +40,7 @@ import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.PartitionServiceImpl;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
-import com.hazelcast.spi.ConnectionManager;
+import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.ProxyServiceImpl;
 import com.hazelcast.util.Clock;

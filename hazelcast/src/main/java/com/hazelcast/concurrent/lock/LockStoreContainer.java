@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * @mdogan 2/12/13
  */
-public class LockStoreContainer {
+class LockStoreContainer {
 
     private final LockService lockService;
     private final int partitionId;
@@ -36,7 +36,7 @@ public class LockStoreContainer {
     private final ConstructorFunction<ILockNamespace, LockStoreImpl> lockStoreConstructor
                 = new ConstructorFunction<ILockNamespace, LockStoreImpl>() {
         public LockStoreImpl createNew(ILockNamespace key) {
-            return new LockStoreImpl(key, 1, 0);
+            return new LockStoreImpl(key, 1, 0, lockService);
         }
     };
 
@@ -46,27 +46,32 @@ public class LockStoreContainer {
     }
 
     public LockStoreImpl createLockStore(ILockNamespace namespace, int backupCount, int asyncBackupCount) {
-        final LockStoreImpl ls = new LockStoreImpl(namespace, backupCount, asyncBackupCount);
+        final LockStoreImpl ls = new LockStoreImpl(namespace, backupCount, asyncBackupCount, lockService);
         final LockStoreImpl current;
         if ((current = lockStores.putIfAbsent(namespace, ls)) != null) {
             if (current.getBackupCount() != ls.getBackupCount()
                     || current.getAsyncBackupCount() != ls.getAsyncBackupCount()) {
-                throw new IllegalStateException("LockStore for namespace[" + namespace + "] is already created!");
+                throw new IllegalStateException("LockStore for namespace[" + namespace + "] is already created! " +
+                        current + " - VS - " + ls);
             }
             return current;
         }
         return ls;
     }
 
-    public void destroyLockStore(ILockNamespace namespace) {
-        final LockStoreImpl lockStore = lockStores.remove(namespace);
+    void clearLockStore(ILockNamespace namespace) {
+        final LockStoreImpl lockStore = lockStores.get(namespace);
         if (lockStore != null) {
             lockStore.clear();
         }
     }
 
-    public LockStoreImpl getLockStore(ILockNamespace namespace) {
+    LockStoreImpl getOrCreateDefaultLockStore(ILockNamespace namespace) {
         return ConcurrencyUtil.getOrPutIfAbsent(lockStores, namespace, lockStoreConstructor);
+    }
+
+    LockStoreImpl getLockStore(ILockNamespace namespace) {
+        return lockStores.get(namespace);
     }
 
     Collection<LockStoreImpl> getLockStores() {
@@ -85,6 +90,12 @@ public class LockStoreContainer {
     }
 
     void put(LockStoreImpl ls) {
+        Collection<LockInfo> lockInfos = ls.getLocks().values();
+        for (LockInfo lockInfo : lockInfos) {
+            lockInfo.setLockService(lockService);
+            lockInfo.setNamespace(ls.getNamespace());
+        }
+        ls.setLockService(lockService);
         lockStores.put(ls.getNamespace(), ls);
     }
 }

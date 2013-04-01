@@ -18,7 +18,6 @@ package com.hazelcast.nio;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.SystemLogService;
-import com.hazelcast.spi.Connection;
 
 import java.io.IOException;
 import java.net.Socket;
