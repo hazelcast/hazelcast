@@ -21,11 +21,13 @@ import com.hazelcast.core.HazelcastException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReadWriteLock;
 
 /**
  * @mdogan 12/3/12
  */
-public final class SpinReadWriteLock {
+public final class SpinReadWriteLock implements ReadWriteLock {
 
     private final long spinInterval; // in ms
 
@@ -51,11 +53,12 @@ public final class SpinReadWriteLock {
     }
 
     private boolean acquireReadLock(final long time, TimeUnit unit) throws InterruptedException {
-        final long timeInMillis = unit.toMillis(time);
+        final long timeInMillis = unit.toMillis(time > 0 ? time : 0);
+        final long spin = spinInterval;
         long elapsed = 0L;
         while (locked.get()) {
-            Thread.sleep(spinInterval);
-            if ((elapsed += spinInterval) > timeInMillis) {
+            Thread.sleep(spin);
+            if ((elapsed += spin) > timeInMillis) {
                 return false;
             }
         }
@@ -71,14 +74,24 @@ public final class SpinReadWriteLock {
         readCount.decrementAndGet();
     }
 
-    private void acquireWriteLock() throws InterruptedException {
+    private boolean acquireWriteLock(final long time, TimeUnit unit) throws InterruptedException {
+        final long spin = spinInterval;
+        final long timeInMillis = unit.toMillis(time > 0 ? time : 0);
+        long elapsed = 0L;
         while (!locked.compareAndSet(false, true)) {
-            Thread.sleep(spinInterval);
+            Thread.sleep(spin);
+            if ((elapsed += spin) > timeInMillis) {
+                return false;
+            }
         }
         while (readCount.get() > 0) {
-            Thread.sleep(spinInterval);
+            Thread.sleep(spin);
+            if ((elapsed += spin) > timeInMillis) {
+                locked.set(false);
+                return false;
+            }
         }
-        // go on ...
+        return true;
     }
 
     private void releaseWriteLock() {
@@ -91,11 +104,23 @@ public final class SpinReadWriteLock {
 
         public void lock() {
             try {
-                if (!tryLock(Long.MAX_VALUE, TimeUnit.MILLISECONDS)) {
-                    throw new HazelcastException();
-                }
+                lockInterruptibly();
             } catch (InterruptedException e) {
                 throw new HazelcastException(e);
+            }
+        }
+
+        public void lockInterruptibly() throws InterruptedException {
+            if (!tryLock(Long.MAX_VALUE, TimeUnit.MILLISECONDS)) {
+                throw new HazelcastException();
+            }
+        }
+
+        public boolean tryLock() {
+            try {
+                return tryLock(0, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                return false;
             }
         }
 
@@ -106,25 +131,48 @@ public final class SpinReadWriteLock {
         public void unlock() {
             releaseReadLock();
         }
+
+        public Condition newCondition() {
+            throw new UnsupportedOperationException();
+        }
     }
 
     private final class WriteLock implements SpinLock {
 
         public void lock() {
             try {
-                acquireWriteLock();
+                lockInterruptibly();
             } catch (InterruptedException e) {
                 throw new HazelcastException(e);
             }
         }
 
+        public void lockInterruptibly() throws InterruptedException {
+            if (!tryLock(Long.MAX_VALUE, TimeUnit.MILLISECONDS)) {
+                throw new HazelcastException();
+            }
+        }
+
+        public boolean tryLock() {
+            try {
+                acquireWriteLock(0, TimeUnit.MILLISECONDS);
+                return true;
+            } catch (InterruptedException e) {
+                return false;
+            }
+        }
+
         public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
-            acquireWriteLock();
-            return true;
+            return acquireWriteLock(time, unit);
         }
 
         public void unlock() {
             releaseWriteLock();
+        }
+
+        @Override
+        public Condition newCondition() {
+            throw new UnsupportedOperationException();
         }
     }
 
