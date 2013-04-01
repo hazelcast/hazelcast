@@ -65,6 +65,11 @@ public abstract class BaseMigrationOperation extends AbstractOperation
         return true;
     }
 
+    @Override
+    public final boolean validatesTarget() {
+        return false;
+    }
+
     protected ILogger getLogger() {
         return getNodeEngine().getLogger(getClass().getName());
     }

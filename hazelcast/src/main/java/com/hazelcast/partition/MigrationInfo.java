@@ -33,6 +33,7 @@ public class MigrationInfo implements DataSerializable {
     private MigrationType migrationType;
     private int copyBackReplicaIndex = -1;
     private Address master;
+    private String masterUuid;
 
     private transient final AtomicBoolean processing = new AtomicBoolean(false);
 
@@ -84,16 +85,28 @@ public class MigrationInfo implements DataSerializable {
         this.migrationType = migrationType;
     }
 
-    void setMaster(Address address) {
-        master = address;
+    void setMasterUuid(String uuid) {
+        masterUuid = uuid;
+    }
+
+    String getMasterUuid() {
+        return masterUuid;
     }
 
     Address getMaster() {
         return master;
     }
 
+    void setMaster(Address master) {
+        this.master = master;
+    }
+
     boolean startProcessing() {
         return processing.compareAndSet(false, true);
+    }
+
+    boolean isProcessing() {
+        return processing.get();
     }
 
     void doneProcessing() {
@@ -112,6 +125,7 @@ public class MigrationInfo implements DataSerializable {
         }
         to.writeData(out);
         master.writeData(out);
+        out.writeUTF(masterUuid);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
@@ -128,6 +142,7 @@ public class MigrationInfo implements DataSerializable {
         to.readData(in);
         master = new Address();
         master.readData(in);
+        masterUuid = in.readUTF();
     }
 
     @Override
@@ -158,13 +173,14 @@ public class MigrationInfo implements DataSerializable {
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         sb.append("MigrationInfo");
-        sb.append("{copyBackReplicaIndex=").append(copyBackReplicaIndex);
-        sb.append(", partitionId=").append(partitionId);
-        sb.append(", from=").append(from);
-        sb.append(", to=").append(to);
+        sb.append("{ partitionId=").append(partitionId);
         sb.append(", replicaIndex=").append(replicaIndex);
+        sb.append(", copyBackReplicaIndex=").append(copyBackReplicaIndex);
         sb.append(", migrationType=").append(migrationType);
+        sb.append(", source=").append(from);
+        sb.append(", destination=").append(to);
         sb.append(", master=").append(master);
+        sb.append(", processing=").append(processing.get());
         sb.append('}');
         return sb.toString();
     }
