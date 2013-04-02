@@ -282,7 +282,6 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 sendingDiffs.set(true);
                 logger.log(Level.INFO, "Starting to send partition replica diffs...");
                 int diffCount = 0;
-//                final int maxBackupCount = getMaxBackupCount();
                 for (int partitionId = 0; partitionId < indexesOfDead.length; partitionId++) {
                     final int indexOfDead = indexesOfDead[partitionId];
                     if (indexOfDead != -1) {
@@ -309,13 +308,6 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                                 }
                             }
                         }
-                        // if index of dead member is equal to or less than maxBackupCount
-                        // clear indexes greater than maxBackupCount of partition.
-//                        if (indexOfDead <= maxBackupCount) {
-//                            for (int index = maxBackupCount + 1; index < PartitionInfo.MAX_REPLICA_COUNT; index++) {
-//                                partition.setReplicaAddress(index, null);
-//                            }
-//                        }
                     }
                 }
                 sendPartitionRuntimeState();
@@ -332,17 +324,6 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             }
         }
     }
-
-//    private int getMaxBackupCount() {
-//        final Collection<MigrationAwareService> services = nodeEngine.getServices(MigrationAwareService.class);
-//        int max = 1;
-//        if (services != null && !services.isEmpty()) {
-//            for (MigrationAwareService service : services) {
-//                max = Math.max(max, service.getMaxBackupCount());
-//            }
-//        }
-//        return max;
-//    }
 
     private void sendPartitionRuntimeState() {
         if (!initialized) {
@@ -606,8 +587,6 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
 
     public boolean hasActiveBackupTask() {
         if (!initialized) return false;
-//        int maxBackupCount = getMaxBackupCount();
-//        if (maxBackupCount == 0) return false;
         MemberGroupFactory mgf = PartitionStateGeneratorFactory.newMemberGroupFactory(node.config.getPartitionGroupConfig());
         if (mgf.createMemberGroups(node.getClusterService().getMembers()).size() < 2) return false;
         final int size = immediateTasksQueue.size();

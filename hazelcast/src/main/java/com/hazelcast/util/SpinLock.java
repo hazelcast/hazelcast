@@ -16,19 +16,73 @@
 
 package com.hazelcast.util;
 
+import com.hazelcast.core.HazelcastException;
+
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 
 /**
- * @mdogan 12/13/12
+ * @mdogan 3/29/13
  */
-public interface SpinLock extends Lock {
+public final class SpinLock implements Lock {
 
-    void lock();
+    private final long spinInterval; // in ms
 
-    boolean tryLock();
+    private final AtomicBoolean locked = new AtomicBoolean(false);
 
-    boolean tryLock(final long time, TimeUnit unit) throws InterruptedException;
+    public SpinLock() {
+        spinInterval = 1;
+    }
 
-    void unlock();
+    public SpinLock(int spinInterval, TimeUnit unit) {
+        final long millis = unit.toMillis(spinInterval);
+        this.spinInterval = millis > 0 ? millis : 1;
+    }
+
+    public void lock() {
+        try {
+            lockInterruptibly();
+        } catch (InterruptedException e) {
+            throw new HazelcastException(e);
+        }
+    }
+
+    public void lockInterruptibly() throws InterruptedException {
+        if (!tryLock(Long.MAX_VALUE, TimeUnit.MILLISECONDS)) {
+            throw new HazelcastException();
+        }
+    }
+
+    public boolean tryLock() {
+        try {
+            return tryLock(0, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            return false;
+        }
+    }
+
+    public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
+        final long timeInMillis = unit.toMillis(time > 0 ? time : 0);
+        final long spin = spinInterval;
+        long elapsed = 0L;
+        while (!locked.compareAndSet(false, true)) {
+            Thread.sleep(spin);
+            if ((elapsed += spin) > timeInMillis) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public void unlock() {
+        if (!locked.getAndSet(false)) {
+            throw new IllegalMonitorStateException("Current thread is not owner of the lock!");
+        }
+    }
+
+    public Condition newCondition() {
+        throw new UnsupportedOperationException();
+    }
 }

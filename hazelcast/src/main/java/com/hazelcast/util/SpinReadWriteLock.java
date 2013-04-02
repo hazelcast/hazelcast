@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
 /**
@@ -44,11 +45,11 @@ public final class SpinReadWriteLock implements ReadWriteLock {
         this.spinInterval = millis > 0 ? millis : 1;
     }
 
-    public SpinLock readLock() {
+    public Lock readLock() {
         return new ReadLock();
     }
 
-    public SpinLock writeLock() {
+    public Lock writeLock() {
         return new WriteLock();
     }
 
@@ -100,7 +101,7 @@ public final class SpinReadWriteLock implements ReadWriteLock {
         }
     }
 
-    private final class ReadLock implements SpinLock {
+    private final class ReadLock implements Lock {
 
         public void lock() {
             try {
@@ -137,7 +138,7 @@ public final class SpinReadWriteLock implements ReadWriteLock {
         }
     }
 
-    private final class WriteLock implements SpinLock {
+    private final class WriteLock implements Lock {
 
         public void lock() {
             try {

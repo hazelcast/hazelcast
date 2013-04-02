@@ -167,20 +167,11 @@ final class OperationServiceImpl implements OperationService {
                 }
                 final ReadWriteLock migrationLock = partitionLocks[partitionId];
                 if (op instanceof PartitionLevelOperation) {
-                    final Lock tmpPartitionLock = migrationLock.writeLock();
-//                    if (!tmpPartitionLock.tryLock(60, TimeUnit.SECONDS)) {
-//                        throw new IllegalStateException("COULD NOT ACQUIRE MIGRATION LOCK!");
-//                    }
-                    final long t = System.currentTimeMillis();
-                    tmpPartitionLock.lockInterruptibly();
-                    final long elapsed = System.currentTimeMillis() - t;
-                    if (elapsed > 10) {
-                        System.err.println("LOCK ACQ: " + elapsed /*+ " -> " + op*/);
-                    }
-                    partitionLock = tmpPartitionLock;
+                    partitionLock = migrationLock.writeLock();
+                    partitionLock.lockInterruptibly();
                 } else {
                     final Lock tmpPartitionLock = migrationLock.readLock();
-                    if (!tmpPartitionLock.tryLock(100, TimeUnit.MILLISECONDS)) {
+                    if (!tmpPartitionLock.tryLock(250, TimeUnit.MILLISECONDS)) {
                         throw new PartitionMigratingException(node.getThisAddress(), partitionId, op.getClass().getName(), op.getServiceName());
                     }
                     partitionLock = tmpPartitionLock;
@@ -305,71 +296,53 @@ final class OperationServiceImpl implements OperationService {
                 ? Math.min(maxBackups, backupAwareOp.getSyncBackupCount()) : 0;
         final int asyncBackupCount = (backupAwareOp.getAsyncBackupCount() > 0 && maxBackups > syncBackupCount)
                 ? Math.min(maxBackups - syncBackupCount, backupAwareOp.getAsyncBackupCount()) : 0;
+        final int totalBackupCount = syncBackupCount + asyncBackupCount;
+
+        final Operation op = (Operation) backupAwareOp;
         Collection<BackupFuture> syncBackups = null;
         Collection<BackupFuture> asyncBackups = null;
-        final Operation op = (Operation) backupAwareOp;
-        Operation backupResponse = null;
-        if (syncBackupCount + asyncBackupCount > 0) {
+
+        if (totalBackupCount > 0) {
             final String serviceName = op.getServiceName();
             final int partitionId = op.getPartitionId();
             final PartitionInfo partitionInfo = nodeEngine.getPartitionService().getPartitionInfo(partitionId);
             if (syncBackupCount > 0) {
                 syncBackups = new ArrayList<BackupFuture>(syncBackupCount);
-                for (int replicaIndex = 1; replicaIndex <= syncBackupCount; replicaIndex++) {
-                    final Address target = partitionInfo.getReplicaAddress(replicaIndex);
-                    if (target != null) {
-                        final Operation backupOp = backupAwareOp.getBackupOperation();
-                        if (backupOp == null) {
-                            throw new IllegalArgumentException("Backup operation should not be null!");
-                        }
-                        final boolean returnsResponse = backupOp.returnsResponse();
-                        if (target.equals(node.getThisAddress())) {
-                            throw new IllegalStateException("Normally shouldn't happen!!");
-                        } else {
-                            // disabled optimization...
-                            if (false && op.returnsResponse() && target.equals(op.getCallerAddress())) {
-//                                TODO: @mm - FIX ME! what if backup migrates after response is returned?
-                                backupOp.setServiceName(serviceName).setReplicaIndex(replicaIndex).setPartitionId(partitionId);
-                                backupResponse = backupOp;
-                            } else {
-                                final Future f = createInvocationBuilder(serviceName, backupOp, partitionId)
-                                        .setReplicaIndex(replicaIndex).setTryCount(maxRetryCount).build().invoke();
-                                if (returnsResponse) {
-                                    syncBackups.add(new BackupFuture(f, partitionInfo, replicaIndex, maxRetryCount));
-                                }
-                            }
-                        }
-                    }
-                }
             }
             if (asyncBackupCount > 0) {
                 asyncBackups = new ArrayList<BackupFuture>(asyncBackupCount);
-                for (int replicaIndex = syncBackupCount + 1; replicaIndex <= asyncBackupCount; replicaIndex++) {
-                    final Address target = partitionInfo.getReplicaAddress(replicaIndex);
-                    if (target != null) {
-                        final Operation backupOp = backupAwareOp.getBackupOperation();
-                        if (backupOp == null) {
-                            throw new IllegalArgumentException("Backup operation should not be null!");
-                        }
+            }
+            for (int replicaIndex = 1; replicaIndex <= totalBackupCount; replicaIndex++) {
+                final Address target = partitionInfo.getReplicaAddress(replicaIndex);
+                if (target != null) {
+                    final Operation backupOp = backupAwareOp.getBackupOperation();
+                    if (backupOp == null) {
+                        throw new IllegalArgumentException("Backup operation should not be null!");
+                    }
+                    if (target.equals(node.getThisAddress())) {
+                        throw new IllegalStateException("Normally shouldn't happen!!");
+                    } else {
                         final boolean returnsResponse = backupOp.returnsResponse();
-                        if (target.equals(node.getThisAddress())) {
-                            throw new IllegalStateException("Normally shouldn't happen!!");
-                        } else {
+                        if (returnsResponse) {
                             final Future f = createInvocationBuilder(serviceName, backupOp, partitionId)
                                     .setReplicaIndex(replicaIndex).setTryCount(maxRetryCount).build().invoke();
-                            if (returnsResponse) {
-                                asyncBackups.add(new BackupFuture(f, partitionInfo, replicaIndex, maxRetryCount));
+
+                            final BackupFuture backupFuture = new BackupFuture(f, partitionInfo, replicaIndex, maxRetryCount);
+                            if (replicaIndex <= syncBackupCount) {
+                                syncBackups.add(backupFuture);
+                            } else {
+                                asyncBackups.add(backupFuture);
                             }
+                        } else {
+                            backupOp.setPartitionId(partitionId).setReplicaIndex(replicaIndex).setServiceName(serviceName);
+                            send(backupOp, target);
                         }
                     }
                 }
             }
         }
-        final Object response = op.returnsResponse()
-                ? (backupResponse == null ? op.getResponse() :
-                new MultiResponse(nodeEngine.getSerializationService(), backupResponse, op.getResponse())) : null;
         waitBackupResponses(syncBackups);
-        sendResponse(op, response);
+        sendResponse(op, null);
         waitBackupResponses(asyncBackups);
     }
 
@@ -379,6 +352,7 @@ final class OperationServiceImpl implements OperationService {
         final int replicaIndex;
         final int retryCount;
         int retries;
+        ExecutionException error = null;
 
         BackupFuture(Future future, PartitionInfo partition, int replicaIndex, int retryCount) {
             this.future = future;
@@ -403,17 +377,16 @@ final class OperationServiceImpl implements OperationService {
     private void waitBackupResponses(final Collection<BackupFuture> futures) throws ExecutionException {
         while (futures != null && !futures.isEmpty()) {
             final Iterator<BackupFuture> iter = futures.iterator();
-            ExecutionException lastError = null;
             while (iter.hasNext()) {
                 final BackupFuture f = iter.next();
                 try {
                     if (f.canRetry()) {
                         f.get(500, TimeUnit.MILLISECONDS);
-                        lastError = null;
+                        f.error = null;
                     }
                     iter.remove();
-                    if (lastError != null) {
-                        logger.log(Level.WARNING, "While backing up -> " + lastError.getMessage(), lastError);
+                    if (f.error != null) {
+                        logger.log(Level.WARNING, "While backing up -> " + f.error.getMessage(), f.error);
                     }
                 } catch (InterruptedException ignored) {
                 } catch (TimeoutException ignored) {
@@ -422,10 +395,9 @@ final class OperationServiceImpl implements OperationService {
                     if (!(t instanceof RetryableException)) {
                         throw e;
                     } else if (t instanceof MemberLeftException || f.targetLeft()) {
-                        System.err.println("Backup target left! -> " + e.getClass().getSimpleName() + ": " + e.getMessage());
                         iter.remove();
                     } else {
-                        lastError = e;
+                        f.error = e;
                     }
                 }
             }
@@ -448,13 +420,13 @@ final class OperationServiceImpl implements OperationService {
         }
     }
 
-    private void sendResponse(Operation op, Object response) {
+    private void sendResponse(Operation op, Throwable error) {
         if (op.returnsResponse()) {
             ResponseHandler responseHandler = op.getResponseHandler();
             if (responseHandler == null) {
                 throw new IllegalStateException("ResponseHandler should not be null!");
             }
-            responseHandler.sendResponse(response == null ? op.getResponse() : response);
+            responseHandler.sendResponse(error == null ? op.getResponse() : error);
         }
     }
 
