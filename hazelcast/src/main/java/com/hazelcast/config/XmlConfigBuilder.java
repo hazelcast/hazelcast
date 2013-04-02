@@ -718,7 +718,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                     final String wanChildName = cleanNodeName(wanChild.getNodeName());
                     final String wanChildValue = getValue(n);
                     if ("merge-policy".equals(wanChildName)) {
-                        wanReplicationRef.setMergePolicy(wanChildValue);
+                        wanReplicationRef.setMergePolicyClassName(wanChildValue);
                     }
                 }
                 mapConfig.setWanReplicationRef(wanReplicationRef);

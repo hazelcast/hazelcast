@@ -158,15 +158,6 @@ final class TransactionImpl implements Transaction {
         checkTimeout();
         try {
             final List<Future> futures = new ArrayList<Future>(txLogs.size());
-
-            for (int i = 0; i < 11; i++) {
-                System.out.println("COMMITTING" + (10- i));
-                Thread.sleep(1000);
-            }
-
-            System.out.println("COMMIT STARTS!!!");
-
-
             state = COMMITTING;
             for (TransactionLog txLog : txLogs) {
                 futures.add(txLog.commit(nodeEngine));

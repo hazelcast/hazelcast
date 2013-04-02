@@ -17,12 +17,14 @@
 package com.hazelcast.wan;
 
 import com.hazelcast.cluster.AuthorizationOperation;
+import com.hazelcast.core.EntryView;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.Record;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.TcpIpConnection;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Connection;
 import com.hazelcast.spi.ConnectionManager;
 import com.hazelcast.spi.Operation;
@@ -57,9 +59,8 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
         node.nodeEngine.getExecutionService().execute("hz:wan", this);
     }
 
-    public void recordUpdated(Record record) {
-//        DataRecordEntry dataRecordEntry = new DataRecordEntry(record);
-//        RecordUpdate ru = (new RecordUpdate(dataRecordEntry, record.toString()));
+    public void recordUpdated(Record entry) {
+//        System.out.println("record updated:"+node.nodeEngine.toObject(record.getKey()));
 //        if (!q.offer(ru)) {
 //            q.poll();
 //            q.offer(ru);
@@ -144,13 +145,13 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
     }
 
     class RecordUpdate {
-//        final DataRecordEntry dataRecordEntry;
-//        final String name;
-//
-//        RecordUpdate(DataRecordEntry dataRecordEntry, String name) {
-//            this.dataRecordEntry = dataRecordEntry;
-//            this.name = name;
-//        }
+        final EntryView<Data,Data> entry;
+        final String name;
+
+        RecordUpdate(EntryView entry, String name) {
+            this.entry = entry;
+            this.name = name;
+        }
 
         public Packet toNewPacket() {
             Packet packet = new Packet(null);

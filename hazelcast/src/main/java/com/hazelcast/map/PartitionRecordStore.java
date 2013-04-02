@@ -403,8 +403,6 @@ public class PartitionRecordStore implements RecordStore {
 
     }
 
-
-
     public boolean merge(Data dataKey, EntryView mergingEntry, MapMergePolicy mergePolicy) {
         Record record = records.get(dataKey);
         Object newValue = null;
