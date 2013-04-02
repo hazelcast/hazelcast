@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
@@ -33,7 +34,6 @@ import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.exception.*;
 import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.BlockingFastExecutor;
 import com.hazelcast.util.executor.FastExecutor;
 import com.hazelcast.util.executor.PoolExecutorThreadFactory;
@@ -171,7 +171,12 @@ final class OperationServiceImpl implements OperationService {
 //                    if (!tmpPartitionLock.tryLock(60, TimeUnit.SECONDS)) {
 //                        throw new IllegalStateException("COULD NOT ACQUIRE MIGRATION LOCK!");
 //                    }
+                    final long t = System.currentTimeMillis();
                     tmpPartitionLock.lockInterruptibly();
+                    final long elapsed = System.currentTimeMillis() - t;
+                    if (elapsed > 10) {
+                        System.err.println("LOCK ACQ: " + elapsed /*+ " -> " + op*/);
+                    }
                     partitionLock = tmpPartitionLock;
                 } else {
                     final Lock tmpPartitionLock = migrationLock.readLock();
@@ -390,8 +395,8 @@ final class OperationServiceImpl implements OperationService {
             return retries++ < retryCount;
         }
 
-        boolean hasTarget() {
-            return partition.getReplicaAddress(replicaIndex) != null;
+        boolean targetLeft() {
+            return partition.getReplicaAddress(replicaIndex) == null;
         }
     }
 
@@ -413,9 +418,11 @@ final class OperationServiceImpl implements OperationService {
                 } catch (InterruptedException ignored) {
                 } catch (TimeoutException ignored) {
                 } catch (ExecutionException e) {
-                    if (!ExceptionUtil.isRetryableException(e)) {
+                    final Throwable t = e.getCause() != null ? e.getCause() : e;
+                    if (!(t instanceof RetryableException)) {
                         throw e;
-                    } else if (!f.hasTarget()) {
+                    } else if (t instanceof MemberLeftException || f.targetLeft()) {
+                        System.err.println("Backup target left! -> " + e.getClass().getSimpleName() + ": " + e.getMessage());
                         iter.remove();
                     } else {
                         lastError = e;

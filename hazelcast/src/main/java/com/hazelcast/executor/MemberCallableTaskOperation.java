@@ -35,11 +35,11 @@ public final class MemberCallableTaskOperation<V> extends BaseCallableTaskOperat
     }
 
     @Override
-    public InvocationAction onException(Throwable throwable) {
+    public InvocationAction getActionOnException(Throwable throwable) {
         if (throwable instanceof MemberLeftException) {
             return InvocationAction.THROW_EXCEPTION;
         }
-        return super.onException(throwable);
+        return super.getActionOnException(throwable);
     }
 
     public int getId() {
