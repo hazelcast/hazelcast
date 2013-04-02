@@ -61,8 +61,7 @@ public class CollectionMigrationOperation extends AbstractOperation {
                 Collection<CollectionRecord> coll = wrapper.getCollection();
                 out.writeInt(coll.size());
                 for (CollectionRecord record : coll) {
-                    out.writeLong(record.getRecordId());
-                    out.writeObject(record.getObject());
+                    record.writeData(out);
                 }
             }
         }
@@ -82,9 +81,9 @@ public class CollectionMigrationOperation extends AbstractOperation {
                 int collSize = in.readInt();
                 Collection<CollectionRecord> coll = new ArrayList<CollectionRecord>(collSize);
                 for (int k = 0; k < collSize; k++) {
-                    long recordId = in.readLong();
-                    Object obj = in.readObject();
-                    coll.add(new CollectionRecord(recordId, obj));
+                    CollectionRecord record = new CollectionRecord();
+                    record.readData(in);
+                    coll.add(record);
                 }
                 collections.put(key, new CollectionWrapper(coll));
 

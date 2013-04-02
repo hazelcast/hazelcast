@@ -41,7 +41,7 @@ public class GetOperation extends CollectionKeyBasedOperation {
     }
 
     public void run() throws Exception {
-        List<CollectionRecord> list = (List<CollectionRecord>) getCollection();
+        List<CollectionRecord> list = (List<CollectionRecord>) getCollectionWrapper();
         try {
             CollectionRecord record = list.get(index);
             response = isBinary() ? (Data) record.getObject() : toData(record.getObject());

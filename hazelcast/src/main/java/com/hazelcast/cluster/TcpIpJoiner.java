@@ -26,7 +26,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.Connection;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.AddressUtil;
@@ -153,13 +153,14 @@ public class TcpIpJoiner extends AbstractJoiner {
                 node.setAsMaster();
             } else {
                 if (!node.joined()) {
-                    if (connectionTimeoutSeconds - numberOfSeconds > 0) {
-                        logger.log(Level.FINEST, "Sleeping for " + (connectionTimeoutSeconds - numberOfSeconds) + " seconds.");
-                        Thread.sleep((connectionTimeoutSeconds - numberOfSeconds) * 1000L);
+                    final int totalSleep = connectionTimeoutSeconds - numberOfSeconds;
+                    for (int i = 0; i < totalSleep * 2 && !joined.get(); i++) {
+                        logger.log(Level.FINEST, "Sleeping for 500 ms.");
+                        Thread.sleep(500L);
                     }
                     colPossibleAddresses.removeAll(node.getFailedConnections());
                     if (colPossibleAddresses.size() == 0) {
-                        logger.log(Level.FINEST, "This node will assume master role since all possible members didn't accept join request");
+                        logger.log(Level.FINEST, "This node will assume master role since none of the possible members accepted join request.");
                         node.setAsMaster();
                     } else {
                         boolean masterCandidate = true;
@@ -202,7 +203,9 @@ public class TcpIpJoiner extends AbstractJoiner {
                                 }
                             }
                             if (allApprovedAsMaster) {
-                                logger.log(Level.FINEST, node.getThisAddress() + " Setting myself as master! group " + node.getConfig().getGroupConfig().getName() + " possible addresses " + colPossibleAddresses.size() + "" + colPossibleAddresses);
+                                logger.log(Level.FINEST, node.getThisAddress() + " Setting myself as master! group "
+                                        + node.getConfig().getGroupConfig().getName() + " possible addresses "
+                                        + colPossibleAddresses.size() + " " + colPossibleAddresses);
                                 node.setAsMaster();
                                 return;
                             } else {
@@ -233,7 +236,8 @@ public class TcpIpJoiner extends AbstractJoiner {
         colPossibleAddresses.removeAll(node.getFailedConnections());
         if (colPossibleAddresses.size() == 0) {
             node.setAsMaster();
-            logger.log(Level.FINEST, node.getThisAddress() + " Setting myself as master! group " + node.getConfig().getGroupConfig().getName() + " no possible addresses without failed connection");
+            logger.log(Level.FINEST, node.getThisAddress() + " Setting myself as master! group " + node.getConfig().getGroupConfig().getName()
+                    + " no possible addresses without failed connection");
             return;
         }
         logger.log(Level.FINEST, node.getThisAddress() + " joining to master " + node.getMasterAddress() + ", group " + node.getConfig().getGroupConfig().getName());

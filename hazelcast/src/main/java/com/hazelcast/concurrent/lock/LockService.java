@@ -77,9 +77,9 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
         return new LockStoreProxy(container, namespace);
     }
 
-    public void destroyLockStore(int partitionId, ILockNamespace namespace) {
+    public void clearLockStore(int partitionId, ILockNamespace namespace) {
         final LockStoreContainer container = getLockContainer(partitionId);
-        container.destroyLockStore(namespace);
+        container.clearLockStore(namespace);
     }
 
     private final ConcurrencyUtil.ConstructorFunction<ILockNamespace, EntryTaskScheduler> schedulerConstructor = new ConcurrencyUtil.ConstructorFunction<ILockNamespace, EntryTaskScheduler>() {
@@ -102,8 +102,8 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
         return containers[partitionId];
     }
 
-    public LockStoreImpl getLockStore(int partitionId, ILockNamespace namespace) {
-        return getLockContainer(partitionId).getLockStore(namespace);
+    LockStoreImpl getLockStore(int partitionId, ILockNamespace namespace) {
+        return getLockContainer(partitionId).getOrCreateDefaultLockStore(namespace);
     }
 
     public void memberAdded(MembershipServiceEvent event) {
@@ -149,7 +149,9 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
             final LockStoreContainer container = containers[event.getPartitionId()];
             if (event.getMigrationType() == MigrationType.MOVE) {
-                container.clear();
+                for (LockStoreImpl ls : container.getLockStores()) {
+                    ls.clear();
+                }
             } else if (event.getMigrationType() == MigrationType.MOVE_COPY_BACK) {
                 for (LockStoreImpl ls : container.getLockStores()) {
                     if (ls.getTotalBackupCount() < event.getCopyBackReplicaIndex()) {
@@ -163,7 +165,9 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
     public void rollbackMigration(MigrationServiceEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
             final LockStoreContainer container = containers[event.getPartitionId()];
-            container.clear();
+            for (LockStoreImpl ls : container.getLockStores()) {
+                ls.clear();
+            }
         }
     }
 
@@ -182,7 +186,7 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
     public void destroyDistributedObject(Object objectId) {
         final Data key = nodeEngine.getSerializationService().toData(objectId);
         for (LockStoreContainer container : containers) {
-            final LockStoreImpl lockStore = container.getLockStore(new InternalLockNamespace());
+            final LockStoreImpl lockStore = container.getOrCreateDefaultLockStore(new InternalLockNamespace());
             lockStore.forceUnlock(key);
         }
     }

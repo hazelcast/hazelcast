@@ -16,17 +16,16 @@
 
 package com.hazelcast.concurrent.lock;
 
-import com.hazelcast.map.EvictionProcessor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.scheduler.EntryTaskScheduler;
-import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -218,5 +217,16 @@ class LockStoreImpl implements DataSerializable, LockStore {
                 locks.put(lock.getKey(), lock);
             }
         }
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("LockStoreImpl");
+        sb.append("{namespace=").append(namespace);
+        sb.append(", backupCount=").append(backupCount);
+        sb.append(", asyncBackupCount=").append(asyncBackupCount);
+        sb.append('}');
+        return sb.toString();
     }
 }

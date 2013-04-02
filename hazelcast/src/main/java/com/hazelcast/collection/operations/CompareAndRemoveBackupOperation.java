@@ -18,13 +18,13 @@ package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
+import com.hazelcast.collection.CollectionWrapper;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -45,12 +45,12 @@ public class CompareAndRemoveBackupOperation extends CollectionKeyBasedOperation
     }
 
     public void run() throws Exception {
-        Collection<CollectionRecord> coll = getCollection();
-        if (coll == null){
+        CollectionWrapper wrapper = getCollectionWrapper();
+        if (wrapper == null){
             response = false;
             return;
         }
-        Iterator<CollectionRecord> iter = coll.iterator();
+        Iterator<CollectionRecord> iter = wrapper.getCollection().iterator();
         while (iter.hasNext()) {
             CollectionRecord record = iter.next();
             if (idSet.contains(record.getRecordId())) {

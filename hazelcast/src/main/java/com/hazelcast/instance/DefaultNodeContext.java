@@ -19,7 +19,7 @@ package com.hazelcast.instance;
 import com.hazelcast.cluster.Joiner;
 import com.hazelcast.nio.NodeIOService;
 import com.hazelcast.nio.TcpIpConnectionManager;
-import com.hazelcast.spi.ConnectionManager;
+import com.hazelcast.nio.ConnectionManager;
 
 import java.nio.channels.ServerSocketChannel;
 

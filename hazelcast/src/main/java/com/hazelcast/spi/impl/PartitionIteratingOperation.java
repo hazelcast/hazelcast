@@ -51,11 +51,11 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
                 ResponseQueue responseQueue = new ResponseQueue();
                 final Operation op = operationFactory.createOperation();
                 op.setNodeEngine(nodeEngine)
-                        .setCallerAddress(getCallerAddress())
                         .setPartitionId(partitionId)
                         .setReplicaIndex(getReplicaIndex())
                         .setResponseHandler(responseQueue)
                         .setService(getService());
+                OperationAccessor.setCallerAddress(op, getCallerAddress());
                 responses.put(partitionId, responseQueue);
 
                 nodeEngine.getExecutionService().execute("hz:system", new Runnable() {

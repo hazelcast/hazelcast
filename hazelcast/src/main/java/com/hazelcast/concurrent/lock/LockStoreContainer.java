@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * @mdogan 2/12/13
  */
-public class LockStoreContainer {
+class LockStoreContainer {
 
     private final LockService lockService;
     private final int partitionId;
@@ -51,22 +51,27 @@ public class LockStoreContainer {
         if ((current = lockStores.putIfAbsent(namespace, ls)) != null) {
             if (current.getBackupCount() != ls.getBackupCount()
                     || current.getAsyncBackupCount() != ls.getAsyncBackupCount()) {
-                throw new IllegalStateException("LockStore for namespace[" + namespace + "] is already created!");
+                throw new IllegalStateException("LockStore for namespace[" + namespace + "] is already created! " +
+                        current + " - VS - " + ls);
             }
             return current;
         }
         return ls;
     }
 
-    public void destroyLockStore(ILockNamespace namespace) {
-        final LockStoreImpl lockStore = lockStores.remove(namespace);
+    void clearLockStore(ILockNamespace namespace) {
+        final LockStoreImpl lockStore = lockStores.get(namespace);
         if (lockStore != null) {
             lockStore.clear();
         }
     }
 
-    public LockStoreImpl getLockStore(ILockNamespace namespace) {
+    LockStoreImpl getOrCreateDefaultLockStore(ILockNamespace namespace) {
         return ConcurrencyUtil.getOrPutIfAbsent(lockStores, namespace, lockStoreConstructor);
+    }
+
+    LockStoreImpl getLockStore(ILockNamespace namespace) {
+        return lockStores.get(namespace);
     }
 
     Collection<LockStoreImpl> getLockStores() {

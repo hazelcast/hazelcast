@@ -17,6 +17,7 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
 
 import java.util.List;
 import java.util.Map;

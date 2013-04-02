@@ -19,7 +19,7 @@ package com.hazelcast.cluster;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.Connection;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;

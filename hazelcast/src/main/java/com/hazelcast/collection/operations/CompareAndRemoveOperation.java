@@ -18,6 +18,7 @@ package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
+import com.hazelcast.collection.CollectionWrapper;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -47,15 +48,15 @@ public class CompareAndRemoveOperation extends CollectionBackupAwareOperation {
     }
 
     public void run() throws Exception {
-        Collection<CollectionRecord> coll = getCollection();
-        if (coll == null){
+        CollectionWrapper wrapper = getCollectionWrapper();
+        if (wrapper == null){
             response = false;
             return;
         }
         idSet = new HashSet<Long>();
         for (Data data : dataList) {
             Object obj = isBinary() ? data : toObject(data);
-            Iterator<CollectionRecord> iter = coll.iterator();
+            Iterator<CollectionRecord> iter = wrapper.getCollection().iterator();
             while (iter.hasNext()) {
                 CollectionRecord record = iter.next();
                 boolean equals = obj.equals(record.getObject());

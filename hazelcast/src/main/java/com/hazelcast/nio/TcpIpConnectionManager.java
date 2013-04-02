@@ -25,8 +25,6 @@ import com.hazelcast.nio.serialization.SerializationContext;
 import com.hazelcast.nio.ssl.BasicSSLContextFactory;
 import com.hazelcast.nio.ssl.SSLContextFactory;
 import com.hazelcast.nio.ssl.SSLSocketChannelWrapper;
-import com.hazelcast.spi.Connection;
-import com.hazelcast.spi.ConnectionManager;
 import com.hazelcast.util.ConcurrencyUtil;
 
 import java.io.IOException;

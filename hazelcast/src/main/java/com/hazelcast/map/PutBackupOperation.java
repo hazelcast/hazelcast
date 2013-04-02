@@ -60,7 +60,7 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
 
     @Override
     public String toString() {
-        return "PutBackupOperation{}";
+        return "PutBackupOperation{" + name + "}";
     }
 
     public int getId() {

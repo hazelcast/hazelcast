@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.cluster.JoinOperation;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.OperationTimeoutException;
@@ -27,7 +26,10 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
-import com.hazelcast.spi.exception.*;
+import com.hazelcast.spi.exception.RetryableException;
+import com.hazelcast.spi.exception.RetryableIOException;
+import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -35,7 +37,7 @@ import java.io.IOException;
 import java.util.concurrent.*;
 import java.util.logging.Level;
 
-abstract class InvocationImpl implements Future, Invocation {
+abstract class InvocationImpl implements Future, Invocation, Callback<Object> {
     static final Object NULL_RESPONSE = new Object() {
         public String toString() {
             return "Invocation::NULL_RESPONSE";
@@ -107,7 +109,8 @@ abstract class InvocationImpl implements Future, Invocation {
         try {
             final ThreadContext threadContext = ThreadContext.getOrCreate();
             OperationAccessor.setCallTimeout(op, callTimeout);
-            op.setNodeEngine(nodeEngine).setServiceName(serviceName).setCallerAddress(nodeEngine.getThisAddress())
+            OperationAccessor.setCallerAddress(op, nodeEngine.getThisAddress());
+            op.setNodeEngine(nodeEngine).setServiceName(serviceName)
                     .setPartitionId(partitionId).setReplicaIndex(replicaIndex);
             if (op.getCallerUuid() == null) {
                 op.setCallerUuid(threadContext.getCallerUuid());
@@ -142,7 +145,7 @@ abstract class InvocationImpl implements Future, Invocation {
             } else {
                 setResult(new HazelcastInstanceNotActiveException());
             }
-        } else if (!isJoinOperation(op) && nodeEngine.getClusterService().getMember(target) == null) {
+        } else if (!OperationAccessor.isJoinOperation(op) && nodeEngine.getClusterService().getMember(target) == null) {
             setResult(new TargetNotMemberException(target, partitionId, op.getClass().getName(), serviceName));
         } else {
             if (op.getPartitionId() != partitionId) {
@@ -163,8 +166,8 @@ abstract class InvocationImpl implements Future, Invocation {
                 operationService.runOperation(op);
             } else {
                 remote = true;
-                Call call = new Call(target, this);
-                final long callId = operationService.registerCall(call);
+                RemoteCall call = new RemoteCall(target, this);
+                final long callId = operationService.registerRemoteCall(call);
                 OperationAccessor.setCallId(op, callId);
                 boolean sent = operationService.send(op, target);
                 if (!sent) {
@@ -178,11 +181,11 @@ abstract class InvocationImpl implements Future, Invocation {
         return nodeEngine.getNode().isActive();
     }
 
-    private void setResult(Object obj) {
-        if (obj == null) {
-            obj = NULL_RESPONSE;
+    private void setResult(Object result) {
+        if (result == null) {
+            result = NULL_RESPONSE;
         }
-        responseQ.offer(obj);
+        responseQ.offer(result);
     }
 
     public Object get() throws InterruptedException, ExecutionException {
@@ -421,6 +424,14 @@ abstract class InvocationImpl implements Future, Invocation {
         return partitionId;
     }
 
+    public int getInvokeCount() {
+        return invokeCount;
+    }
+
+    public int getTryCount() {
+        return tryCount;
+    }
+
     public boolean isDone() {
         return done;
     }
@@ -463,13 +474,6 @@ abstract class InvocationImpl implements Future, Invocation {
             super.writeInternal(out);
             out.writeLong(operationCallId);
         }
-    }
-
-    private static final ClassLoader thisClassLoader = InvocationImpl.class.getClassLoader();
-
-    private static boolean isJoinOperation(Operation op) {
-        return op instanceof JoinOperation
-                && op.getClass().getClassLoader() == thisClassLoader;
     }
 
 

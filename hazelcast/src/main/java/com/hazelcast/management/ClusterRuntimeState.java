@@ -27,7 +27,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.partition.PartitionRuntimeState;
-import com.hazelcast.spi.Connection;
+import com.hazelcast.nio.Connection;
 
 import java.io.IOException;
 import java.util.*;

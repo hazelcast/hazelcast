@@ -46,7 +46,6 @@ public class ManagementService implements DistributedObjectListener {
     public void init() {
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         try {
-            //TODO cluster bean
             InstanceMBean instanceMBean = new InstanceMBean(instance, this);
             mbs.registerMBean(instanceMBean, instanceMBean.objectName);
         } catch (Exception e) {
@@ -97,9 +96,6 @@ public class ManagementService implements DistributedObjectListener {
                 }
             }
         }
-        else {
-            //TODO
-        }
     }
 
     private void unregisterDistributedObject(DistributedObject distributedObject){
@@ -113,9 +109,6 @@ public class ManagementService implements DistributedObjectListener {
                     e.printStackTrace();
                 }
             }
-        }
-        else {
-            //TODO
         }
     }
 

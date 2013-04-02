@@ -17,13 +17,16 @@
 package com.hazelcast.util;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
 
 /**
  * @mdogan 12/13/12
  */
-public interface SpinLock {
+public interface SpinLock extends Lock {
 
     void lock();
+
+    boolean tryLock();
 
     boolean tryLock(final long time, TimeUnit unit) throws InterruptedException;
 

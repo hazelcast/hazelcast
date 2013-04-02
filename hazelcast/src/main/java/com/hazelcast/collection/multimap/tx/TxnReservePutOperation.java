@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,56 +14,50 @@
  * limitations under the License.
  */
 
-package com.hazelcast.collection.operations;
+package com.hazelcast.collection.multimap.tx;
 
+import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
+import com.hazelcast.collection.CollectionWrapper;
+import com.hazelcast.collection.operations.CollectionKeyBasedOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
-import java.util.List;
 
 /**
- * @ali 1/17/13
+ * @ali 3/29/13
  */
-public class SetBackupOperation extends CollectionKeyBasedOperation implements BackupOperation {
+public class TxnReservePutOperation extends CollectionKeyBasedOperation {
 
-    int index;
-    long recordId;
-    Data value;
+    Data dataValue;
 
-    public SetBackupOperation() {
+    public TxnReservePutOperation() {
     }
 
-    public SetBackupOperation(CollectionProxyId proxyId, Data dataKey, long recordId, int index, Data value) {
+    public TxnReservePutOperation(CollectionProxyId proxyId, Data dataKey, Data dataValue) {
         super(proxyId, dataKey);
-        this.index = index;
-        this.recordId = recordId;
-        this.value = value;
+        this.dataValue = dataValue;
     }
 
     public void run() throws Exception {
-        CollectionRecord record = new CollectionRecord(recordId, isBinary() ? value : toObject(value));
-        List<CollectionRecord> list = (List<CollectionRecord>) getOrCreateCollectionWrapper();
-        list.set(index, record);
-        response = true;
+        CollectionContainer container = getOrCreateContainer();
+        CollectionRecord record = new CollectionRecord(container.nextId(), isBinary() ? dataValue : toObject(dataValue));
+        CollectionWrapper wrapper = container.getOrCreateCollectionWrapper(dataKey);
+        wrapper.reservePut(record);
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeInt(index);
-        out.writeLong(recordId);
-        value.writeData(out);
+        dataValue.writeData(out);
     }
 
+    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        index = in.readInt();
-        recordId = in.readLong();
-        value = new Data();
-        value.readData(in);
+        dataValue = new Data();
+        dataValue.readData(in);
     }
 }
