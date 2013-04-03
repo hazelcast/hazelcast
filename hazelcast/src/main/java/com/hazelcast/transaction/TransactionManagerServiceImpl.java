@@ -56,7 +56,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         return SERVICE_NAME;
     }
 
-    public <T> T executeTransaction(TransactionalTask<T> task, TransactionOptions options) throws TransactionException {
+    public <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException {
         final TransactionContextImpl context = new TransactionContextImpl(this, nodeEngine, options);
         context.beginTransaction();
         try {
@@ -70,6 +70,12 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
             }
             if (e.getCause() instanceof TransactionException) {
                 throw (TransactionException) e.getCause();
+            }
+            if (e instanceof RuntimeException) {
+                throw (RuntimeException) e;
+            }
+            if (e instanceof Error) {
+                throw (Error) e;
             }
             throw new TransactionException(e);
         }

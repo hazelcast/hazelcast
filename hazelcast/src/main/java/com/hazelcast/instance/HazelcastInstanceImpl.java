@@ -136,11 +136,11 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException {
-        return executeTransaction(task, TransactionOptions.getDefault());
+        return executeTransaction(TransactionOptions.getDefault(), task);
     }
 
-    public <T> T executeTransaction(TransactionalTask<T> task, TransactionOptions options) throws TransactionException {
-        return node.nodeEngine.getTransactionManagerService().executeTransaction(task, options);
+    public <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException {
+        return node.nodeEngine.getTransactionManagerService().executeTransaction(options, task);
     }
 
     public TransactionContext newTransactionContext() {

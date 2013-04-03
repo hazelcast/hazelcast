@@ -193,7 +193,7 @@ public class HazelcastClient implements HazelcastInstance {
         return null;
     }
 
-    public <T> T executeTransaction(TransactionalTask<T> task, TransactionOptions options) throws TransactionException {
+    public <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException {
         return null;
     }
 

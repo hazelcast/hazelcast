@@ -68,9 +68,10 @@ class TransactionContextImpl implements TransactionContext {
     @SuppressWarnings("unchecked")
     public TransactionalObject getTransactionalObject(String serviceName, Object id) {
         if (transaction.getState() != Transaction.State.ACTIVE) {
-            throw new IllegalStateException("Transaction is not active!");
+            throw new TransactionNotActiveException("No transaction is found while accessing " +
+                    "transactional object -> " + serviceName + "[" + id + "]!");
         }
-        TransactionalObjectKey key = new TransactionalObjectKey(MapService.SERVICE_NAME, id);
+        TransactionalObjectKey key = new TransactionalObjectKey(serviceName, id);
         TransactionalObject obj = txnObjectMap.get(key);
         if (obj == null) {
             final Object service = nodeEngine.getService(serviceName);
@@ -85,7 +86,7 @@ class TransactionContextImpl implements TransactionContext {
 
     }
 
-    class TransactionalObjectKey {
+    private class TransactionalObjectKey {
 
         private final String serviceName;
         private final Object id;

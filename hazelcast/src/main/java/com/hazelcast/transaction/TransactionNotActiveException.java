@@ -16,13 +16,15 @@
 
 package com.hazelcast.transaction;
 
-/**
- * @mdogan 2/26/13
- */
-public interface TransactionManagerService  {
+import com.hazelcast.core.HazelcastException;
 
-    <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException;
+public class TransactionNotActiveException extends HazelcastException {
 
-    TransactionContext newTransactionContext(TransactionOptions options);
+    public TransactionNotActiveException() {
+    }
+
+    public TransactionNotActiveException(String message) {
+        super(message);
+    }
 
 }
