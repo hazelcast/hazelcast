@@ -24,7 +24,6 @@ import com.hazelcast.core.ILock;
 import com.hazelcast.monitor.LocalLockStats;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
-import com.sun.tools.javac.comp.Todo;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
