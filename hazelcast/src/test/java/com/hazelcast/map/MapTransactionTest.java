@@ -22,10 +22,10 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.instance.StaticNodeFactory;
-import com.hazelcast.transaction.TransactionalTaskContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
+import com.hazelcast.transaction.TransactionalTaskContext;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -89,7 +89,7 @@ public class MapTransactionTest {
         Runnable runnable = new Runnable() {
             public void run() {
                 try {
-                    boolean b = h1.executeTransaction(new TransactionalTask<Boolean>() {
+                    boolean b = h1.executeTransaction(new TransactionOptions().setDurability(1), new TransactionalTask<Boolean>() {
                         public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                             final TransactionalMap<Object, Object> txMap = context.getMap("default");
                             for (int i = 0; i < size; i++) {
@@ -102,7 +102,7 @@ public class MapTransactionTest {
                             }
                             return true;
                         }
-                    }, new TransactionOptions().setDurability(1));
+                    });
                     fail();
                 } catch (Exception e) {
                 }
@@ -348,7 +348,7 @@ public class MapTransactionTest {
         HazelcastInstance h2 = factory.newHazelcastInstance(config);
         final IMap map2 = h2.getMap("default");
 
-        boolean b = h1.executeTransaction(new TransactionalTask<Boolean>() {
+        boolean b = h1.executeTransaction(new TransactionOptions().setTimeout(1, TimeUnit.SECONDS), new TransactionalTask<Boolean>() {
             public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                 final TransactionalMap<Object, Object> txMap = context.getMap("default");
                 assertNull(txMap.replace("1", "value"));
@@ -359,7 +359,7 @@ public class MapTransactionTest {
                 assertNull(map2.get("2"));
                 return true;
             }
-        }, new TransactionOptions().setTimeout(1, TimeUnit.SECONDS));
+        });
         assertTrue(b);
 
         IMap map1 = h1.getMap("default");
