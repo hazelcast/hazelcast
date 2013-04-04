@@ -213,6 +213,11 @@ public class ProxyHelper {
         return Integer.valueOf(protocol.args[0]);
     }
 
+    public long doCommandAsLong(Command command, String[] args, Data... datas) {
+        Protocol protocol = doCommand(command, args, datas);
+        return Long.valueOf(protocol.args[0]);
+    }
+
     public <E> List<E> doCommandAsList(Command command, String[] args, Data... datas) {
         return doCommandAsList(null, command, args, datas);
     }

@@ -30,7 +30,7 @@ public class Context {
 
     static final ThreadLocal<Context> threadLocal = new ThreadLocal<Context>();
 
-    //Context will be accessed using threadlocal. Here I am using AtomicInteger as a mutable Integer. 
+    //Context will be accessed using threadLocal. Here I am using AtomicInteger as a mutable Integer.
     // Not for being thread safe.
     private Map<String, AtomicInteger> counterMap = new HashMap<String, AtomicInteger>(0);
     private Transaction transaction;

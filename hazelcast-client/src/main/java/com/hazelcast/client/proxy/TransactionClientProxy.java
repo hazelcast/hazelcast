@@ -80,10 +80,6 @@ public class TransactionClientProxy implements Transaction {
         return 0;
     }
 
-    public TransactionOptions getOptions() {
-        return null;
-    }
-
     public void rollback() throws IllegalStateException {
         Context context = Context.get();
         checkNull(context);

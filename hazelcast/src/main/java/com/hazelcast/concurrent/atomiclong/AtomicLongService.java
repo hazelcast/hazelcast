@@ -16,9 +16,12 @@
 
 package com.hazelcast.concurrent.atomiclong;
 
+import com.hazelcast.client.ClientCommandHandler;
+import com.hazelcast.concurrent.atomiclong.client.CompareAndSetHandler;
+import com.hazelcast.concurrent.atomiclong.client.GetAndSetHandler;
 import com.hazelcast.concurrent.atomiclong.proxy.AtomicLongProxy;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.DistributedObject;
+import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.MigrationType;
 import com.hazelcast.spi.*;
@@ -33,7 +36,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 // author: sancar - 21.12.2012
-public class AtomicLongService implements ManagedService, RemoteService, MigrationAwareService {
+public class AtomicLongService implements ManagedService, RemoteService, MigrationAwareService, ClientProtocolService {
 
     public static final String SERVICE_NAME = "hz:impl:atomicLongService";
     private NodeEngine nodeEngine;
@@ -73,11 +76,11 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
         return SERVICE_NAME;
     }
 
-    public DistributedObject createDistributedObject(Object objectId) {
+    public AtomicLongProxy createDistributedObject(Object objectId) {
         return new AtomicLongProxy(String.valueOf(objectId), nodeEngine, this);
     }
 
-    public DistributedObject createDistributedObjectForClient(Object objectId) {
+    public AtomicLongProxy createDistributedObjectForClient(Object objectId) {
         return createDistributedObject(objectId);
     }
 
@@ -135,4 +138,16 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
             }
         }
     }
+
+    @Override
+    public Map<Command, ClientCommandHandler> getCommandsAsMap() {
+        Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
+        commandHandlers.put(Command.ALADDANDGET, new GetAndSetHandler(this));
+        commandHandlers.put(Command.ALGETANDADD, new GetAndSetHandler(this));
+        commandHandlers.put(Command.ALGETANDSET, new GetAndSetHandler(this));
+        commandHandlers.put(Command.ALCOMPAREANDSET, new CompareAndSetHandler(this));
+        return commandHandlers ;
+    }
+
+
 }

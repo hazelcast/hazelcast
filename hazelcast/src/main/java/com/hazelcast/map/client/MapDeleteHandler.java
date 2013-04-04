@@ -21,35 +21,18 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.Predicate;
 
-import java.util.Map;
-import java.util.Set;
-
-public class MapEntrySetHandler extends MapCommandHandler {
-    public MapEntrySetHandler(MapService mapService) {
+public class MapDeleteHandler extends MapCommandHandler {
+    public MapDeleteHandler(MapService mapService) {
         super(mapService);
     }
 
     @Override
     public Protocol processCall(Node node, Protocol protocol) {
         String name = protocol.args[0];
-        Predicate predicate = null;
-        if(protocol.buffers.length > 0){
-            predicate = (Predicate) node.serializationService.toObject(protocol.buffers[0]);
-        }
+        Data key = protocol.buffers[0];
         DataMapProxy dataMapProxy = getMapProxy(name);
-        Set<Map.Entry<Data, Data>> entries;
-        if(predicate == null)
-            entries= dataMapProxy.entrySet();
-        else
-            entries = dataMapProxy.entrySet(predicate);
-        Data[] arrayEntries = new Data[entries.size() * 2];
-        int i = 0;
-        for (Map.Entry<Data, Data> entry : entries) {
-            arrayEntries[i++] = entry.getKey();
-            arrayEntries[i++] = entry.getValue();
-        }
-        return protocol.success(arrayEntries);
+        dataMapProxy.delete(key);
+        return protocol.success();
     }
 }
