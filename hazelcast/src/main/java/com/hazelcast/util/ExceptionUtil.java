@@ -18,7 +18,6 @@ package com.hazelcast.util;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
-import com.hazelcast.spi.exception.RetryableException;
 
 import java.util.concurrent.ExecutionException;
 
@@ -95,7 +94,4 @@ public final class ExceptionUtil {
         remoteCause.setStackTrace(newStackTrace);
     }
 
-    public static boolean isRetryableException(Throwable t) {
-        return t instanceof RetryableException || t.getCause() instanceof RetryableException;
-    }
 }

@@ -74,11 +74,11 @@ public abstract class BaseMigrationOperation extends AbstractOperation
         return getNodeEngine().getLogger(getClass().getName());
     }
 
-    public InvocationAction onException(Throwable throwable) {
+    public InvocationAction getActionOnException(Throwable throwable) {
         if (throwable instanceof MemberLeftException) {
             return InvocationAction.THROW_EXCEPTION;
         }
-        return super.onException(throwable);
+        return super.getActionOnException(throwable);
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

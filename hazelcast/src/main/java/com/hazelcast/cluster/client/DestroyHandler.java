@@ -38,7 +38,6 @@ public class DestroyHandler extends ClientCommandHandler {
             proxyService.destroyDistributedObject(CollectionService.SERVICE_NAME, id);
         }
         else {
-
             proxyService.destroyDistributedObject(serviceName, name);
         }
         return protocol.success();

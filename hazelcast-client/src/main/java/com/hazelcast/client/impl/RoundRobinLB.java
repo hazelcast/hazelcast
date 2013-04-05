@@ -18,6 +18,7 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.client.LoadBalancer;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.*;
 
 import java.util.Arrays;
@@ -30,7 +31,7 @@ public class RoundRobinLB implements LoadBalancer, MembershipListener {
     final AtomicReference<Member[]> memberRef = new AtomicReference(new Member[]{});
 
     @Override
-    public void init(HazelcastInstance h) {
+    public void init(HazelcastInstance h, ClientConfig config) {
         Cluster cluster = h.getCluster();
         for (Member member : cluster.getMembers()) {
             addMember(member);
@@ -41,7 +42,9 @@ public class RoundRobinLB implements LoadBalancer, MembershipListener {
     @Override
     public Member next() {
         Member[] members = memberRef.get();
-        if (members.length == 0) return null;
+        if (members.length == 0) {
+            return null;
+        }
         Member member = members[(int) (index.getAndAdd(1) % members.length)];
         return member;
     }

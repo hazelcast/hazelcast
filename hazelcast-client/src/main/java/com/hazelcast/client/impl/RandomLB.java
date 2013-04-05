@@ -18,6 +18,7 @@
 package com.hazelcast.client.impl;
 
 import com.hazelcast.client.LoadBalancer;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.*;
 
 import java.util.LinkedList;
@@ -33,7 +34,7 @@ public class RandomLB implements LoadBalancer, MembershipListener {
     final Random random = new Random(System.currentTimeMillis());
 
     @Override
-    public void init(HazelcastInstance h) {
+    public void init(HazelcastInstance h, ClientConfig config) {
         Cluster cluster = h.getCluster();
         cluster.addMembershipListener(this);
         List<Member> members = new LinkedList<Member>();

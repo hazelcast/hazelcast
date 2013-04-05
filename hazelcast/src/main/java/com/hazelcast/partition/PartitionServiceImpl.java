@@ -280,14 +280,13 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             lock.lock();
             try {
                 sendingDiffs.set(true);
-                logger.log(Level.INFO, "Starting to send partition replica diffs..." + sendingDiffs.get());
+                logger.log(Level.INFO, "Starting to send partition replica diffs...");
                 int diffCount = 0;
-//                final int maxBackupCount = getMaxBackupCount();
                 for (int partitionId = 0; partitionId < indexesOfDead.length; partitionId++) {
-                    int indexOfDead = indexesOfDead[partitionId];
+                    final int indexOfDead = indexesOfDead[partitionId];
                     if (indexOfDead != -1) {
-                        PartitionInfo partition = partitions[partitionId];
-                        Address owner = partition.getOwner();
+                        final PartitionInfo partition = partitions[partitionId];
+                        final Address owner = partition.getOwner();
                         if (owner == null) {
                             logger.log(Level.FINEST, "Owner of one of the replicas of Partition[" + partitionId
                                     + "] is dead, but partition owner could not be found either!");
@@ -296,7 +295,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                         }
                         // send replica diffs to new replica owners after partition table shift.
                         for (int replicaIndex = indexOfDead; replicaIndex < PartitionInfo.MAX_REPLICA_COUNT; replicaIndex++) {
-                            Address target = partition.getReplicaAddress(replicaIndex);
+                            final Address target = partition.getReplicaAddress(replicaIndex);
                             if (target != null && !target.equals(owner)) {
                                 if (getMember(target) != null) {
                                     // TODO: @mm - we can reduce copied data size by only selecting diffs.
@@ -309,13 +308,6 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                                 }
                             }
                         }
-                        // if index of dead member is equal to or less than maxBackupCount
-                        // clear indexes greater than maxBackupCount of partition.
-//                        if (indexOfDead <= maxBackupCount) {
-//                            for (int index = maxBackupCount + 1; index < PartitionInfo.MAX_REPLICA_COUNT; index++) {
-//                                partition.setReplicaAddress(index, null);
-//                            }
-//                        }
                     }
                 }
                 sendPartitionRuntimeState();
@@ -332,17 +324,6 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             }
         }
     }
-
-//    private int getMaxBackupCount() {
-//        final Collection<MigrationAwareService> services = nodeEngine.getServices(MigrationAwareService.class);
-//        int max = 1;
-//        if (services != null && !services.isEmpty()) {
-//            for (MigrationAwareService service : services) {
-//                max = Math.max(max, service.getMaxBackupCount());
-//            }
-//        }
-//        return max;
-//    }
 
     private void sendPartitionRuntimeState() {
         if (!initialized) {
@@ -606,8 +587,6 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
 
     public boolean hasActiveBackupTask() {
         if (!initialized) return false;
-//        int maxBackupCount = getMaxBackupCount();
-//        if (maxBackupCount == 0) return false;
         MemberGroupFactory mgf = PartitionStateGeneratorFactory.newMemberGroupFactory(node.config.getPartitionGroupConfig());
         if (mgf.createMemberGroups(node.getClusterService().getMembers()).size() < 2) return false;
         final int size = immediateTasksQueue.size();
@@ -758,23 +737,25 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
 
         void doRun() {
             prepareMigrationTasks();
-            logger.log(Level.INFO, "Re-partitioning cluster data... Immediate-Tasks: "
-                    + immediateQ.size() + ", Scheduled-Tasks: " + scheduledQ.size());
+            final int immediateSize = immediateQ.size();
+            final int scheduledSize = scheduledQ.size();
+            if (immediateSize + scheduledSize > 0) {
+                logger.log(Level.INFO, "Re-partitioning cluster data... Immediate-Tasks: "
+                        + immediateSize + ", Scheduled-Tasks: " + scheduledSize);
+            }
             fillMigrationQueues();
         }
 
         void prepareMigrationTasks() {
             PartitionStateGenerator psg = getPartitionStateGenerator();
-            psg.reArrange(partitions, node.getClusterService().getMembers(),
-                    partitionCount, lostQ, immediateQ, scheduledQ);
+            psg.reArrange(partitions, node.getClusterService().getMembers(), partitionCount, lostQ, immediateQ, scheduledQ);
         }
 
         void fillMigrationQueues() {
             lastRepartitionTime.set(Clock.currentTimeMillis());
             if (!lostQ.isEmpty()) {
                 immediateTasksQueue.offer(new AssignLostPartitions(lostQ));
-                logger.log(Level.WARNING, "Assigning new owners for " + lostQ.size() +
-                        " LOST partitions!");
+                logger.log(Level.WARNING, "Assigning new owners for " + lostQ.size() + " LOST partitions!");
             }
             for (MigrationInfo migrationInfo : immediateQ) {
                 immediateTasksQueue.offer(new Migrator(migrationInfo));

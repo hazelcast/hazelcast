@@ -74,7 +74,7 @@ public class HazelcastClient implements HazelcastInstance {
         connectionPool = new ConnectionManager(config, serializationService);
         clusterClientProxy = new ClusterClientProxy(this);
         partitionClientProxy = new PartitionClientProxy(this);
-        connectionPool.init(this);
+        connectionPool.init(this, config);
         partitionClientProxy.initInternalPartitionTable();
         lifecycleService.fireLifecycleEvent(STARTED);
         lsClients.add(HazelcastClient.this);
@@ -193,7 +193,7 @@ public class HazelcastClient implements HazelcastInstance {
         return null;
     }
 
-    public <T> T executeTransaction(TransactionalTask<T> task, TransactionOptions options) throws TransactionException {
+    public <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException {
         return null;
     }
 

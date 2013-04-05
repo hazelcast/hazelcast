@@ -114,6 +114,7 @@ public class MapConfig implements DataSerializable {
         this.readBackupData = config.readBackupData;
         this.statisticsEnabled = config.statisticsEnabled;
         this.mergePolicyConfig = config.mergePolicyConfig;
+        this.wanReplicationRef = config.wanReplicationRef;
     }
 
     /**

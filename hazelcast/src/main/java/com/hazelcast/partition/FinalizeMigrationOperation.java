@@ -29,6 +29,7 @@ import java.util.LinkedList;
 import java.util.logging.Level;
 
 // runs locally...
+// can be PartitionLevelOperation if partition lock is re-entrant!
 final class FinalizeMigrationOperation extends AbstractOperation
         implements /*PartitionLevelOperation, */ MigrationCycleOperation {
 

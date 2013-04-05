@@ -59,16 +59,16 @@ public class TransactionQueueTest {
         final String name = "defQueue";
         final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
 
-        boolean b = instances[0].executeTransaction(new TransactionalTask<Boolean>() {
-            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
-                TransactionalQueue<String> q = context.getQueue(name);
-                assertTrue(q.offer("ali"));
-                String s = q.poll();
-                assertNull(s);
-                return true;
-            }
-        }
-        , new TransactionOptions().setTransactionType(TransactionOptions.TransactionType.LOCAL));
+        boolean b = instances[0].executeTransaction(new TransactionOptions().setTransactionType(TransactionOptions.TransactionType.LOCAL),
+                new TransactionalTask<Boolean>() {
+                    public Boolean execute(TransactionalTaskContext context) throws TransactionException {
+                        TransactionalQueue<String> q = context.getQueue(name);
+                        assertTrue(q.offer("ali"));
+                        String s = q.poll();
+                        assertNull(s);
+                        return true;
+                    }
+                });
         assertTrue(b);
         assertEquals(1, getQueue(instances, name).size());
     }
@@ -91,24 +91,23 @@ public class TransactionQueueTest {
             }
         }.start();
 
-        boolean b = instances[0].executeTransaction(new TransactionalTask<Boolean>() {
-            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
-                TransactionalQueue<String> q0 = context.getQueue(name0);
-                TransactionalQueue<String> q1 = context.getQueue(name1);
-                String s = null;
-                try {
-                    s = q0.poll(6, TimeUnit.SECONDS);
-                } catch (InterruptedException e) {
-                    fail(e.getMessage());
-                    e.printStackTrace();
-                }
-                assertEquals("item0", s);
-                q1.offer(s);
-                return true;
-            }
-        }
-        , new TransactionOptions().setTransactionType(TransactionOptions.TransactionType.LOCAL)
-        );
+        boolean b = instances[0].executeTransaction(new TransactionOptions().setTransactionType(TransactionOptions.TransactionType.LOCAL),
+                new TransactionalTask<Boolean>() {
+                    public Boolean execute(TransactionalTaskContext context) throws TransactionException {
+                        TransactionalQueue<String> q0 = context.getQueue(name0);
+                        TransactionalQueue<String> q1 = context.getQueue(name1);
+                        String s = null;
+                        try {
+                            s = q0.poll(6, TimeUnit.SECONDS);
+                        } catch (InterruptedException e) {
+                            fail(e.getMessage());
+                            e.printStackTrace();
+                        }
+                        assertEquals("item0", s);
+                        q1.offer(s);
+                        return true;
+                    }
+                });
         assertTrue(b);
         assertEquals(0, getQueue(instances, name0).size());
         assertEquals("item0", getQueue(instances, name1).poll());
@@ -124,15 +123,17 @@ public class TransactionQueueTest {
         instances[0].getMap(mapName).lock("lock1");
 
         try {
-            instances[1].executeTransaction(new TransactionalTask<Object>() {
-                public Object execute(TransactionalTaskContext context) throws TransactionException {
-                    boolean offered = context.getQueue(queueName).offer("item1");
-                    assertTrue(offered);
-                    context.getMap(mapName).put("lock1", "value1");
-                    fail();
-                    return null;
-                }
-            }, new TransactionOptions().setTimeout(5, TimeUnit.SECONDS).setTransactionType(TransactionOptions.TransactionType.LOCAL));
+            instances[1].executeTransaction(new TransactionOptions().setTimeout(5, TimeUnit.SECONDS)
+                    .setTransactionType(TransactionOptions.TransactionType.LOCAL),
+                    new TransactionalTask<Object>() {
+                        public Object execute(TransactionalTaskContext context) throws TransactionException {
+                            boolean offered = context.getQueue(queueName).offer("item1");
+                            assertTrue(offered);
+                            context.getMap(mapName).put("lock1", "value1");
+                            fail();
+                            return null;
+                        }
+                    });
         } catch (TransactionException ex) {
             ex.printStackTrace();
         }

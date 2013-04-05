@@ -15,26 +15,21 @@
  *
  */
 
-package com.hazelcast.client.impl;
+package com.hazelcast.concurrent.atomiclong.client;
 
-import com.hazelcast.client.LoadBalancer;
-import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Member;
+import com.hazelcast.client.ClientCommandHandler;
+import com.hazelcast.concurrent.atomiclong.AtomicLongService;
+import com.hazelcast.concurrent.atomiclong.proxy.AtomicLongProxy;
 
-public class StaticLB implements LoadBalancer {
-    final Member member;
+public abstract class AtomicLongCommandHandler extends ClientCommandHandler {
 
-    StaticLB(Member member) {
-        this.member = member;
+    AtomicLongService als;
+
+    public AtomicLongCommandHandler(AtomicLongService als) {
+        this.als = als;
     }
 
-    @Override
-    public void init(HazelcastInstance h, ClientConfig config) {
-    }
-
-    @Override
-    public Member next() {
-        return member;
+    protected final AtomicLongProxy getAtomicLongProxy(String name) {
+        return als.createDistributedObject(name);
     }
 }

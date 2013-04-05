@@ -218,9 +218,13 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K, V> {
     }
 
     public void addInterceptor(MapInterceptor interceptor) {
+        Data dInterceptor = proxyHelper.toData(interceptor);
+        proxyHelper.doCommand(Command.MADDINTERCEPTOR, new String[]{getName()}, dInterceptor);
     }
 
     public void removeInterceptor(MapInterceptor interceptor) {
+        Data dInterceptor = proxyHelper.toData(interceptor);
+        proxyHelper.doCommand(Command.MREMOVEINTERCEPTOR, new String[]{getName()}, dInterceptor);
     }
 
     public void addLocalEntryListener(EntryListener<K, V> listener) {
@@ -313,45 +317,6 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K, V> {
         Boolean evicted = Boolean.valueOf(protocol.args[0]);
         return evicted;
     }
-//    public EntryView<K, V> getMapEntry(final K key) {
-//        check(key);
-//        Data dKey = proxyHelper.toData(key);
-//        Protocol protocol = proxyHelper.doCommand(dKey, Command.MGETENTRY, new String[]{getName()}, dKey);
-//        if (!protocol.hasBuffer()) {
-//            return null;
-//        }
-//        final long cost = Long.valueOf(protocol.args[0]);
-//        final long creationTime = Long.valueOf(protocol.args[1]);
-//        final long expTime = Long.valueOf(protocol.args[2]);
-//        final int hits = Integer.valueOf(protocol.args[3]);
-//        final long lastAccessTime = Long.valueOf(protocol.args[4]);
-//        final long lastStoredTime = Long.valueOf(protocol.args[5]);
-//        final long lastUpdateTime = Long.valueOf(protocol.args[6]);
-//        final long version = Long.valueOf(protocol.args[7]);
-//        final boolean valid = Boolean.valueOf(protocol.args[7]);
-//        final V v = (V) proxyHelper.toObject(protocol.buffers[0]);
-//        return new EntryView<K, V>() {
-//            public long getCreationTime() {
-//                return creationTime;
-//            }
-//
-//            public long getLastAccessTime() {
-//                return lastAccessTime;
-//            }
-//
-//            public K getKey() {
-//                return key;
-//            }
-//
-//            public V getValue() {
-//                return v;
-//            }
-//
-//            public V setValue(V value) {
-//                return MapClientProxy.this.put(key, value);
-//            }
-//        };
-//    }
 
     public EntryView<K, V> getEntryView(K key) {
         return null;
@@ -438,6 +403,9 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K, V> {
     }
 
     public void delete(Object key) {
+        check(key);
+        Data dKey = proxyHelper.toData(key);
+        proxyHelper.doCommand(dKey, Command.MDELETE, new String[]{getName()}, dKey);
     }
 
     public V replace(K key, V value) {
@@ -530,11 +498,14 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K, V> {
     }
 
     public Object executeOnKey(K key, EntryProcessor entryProcessor) {
-        return null;
+        Data dKey = proxyHelper.toData(key);
+        Data dEntryProcessor = proxyHelper.toData(entryProcessor);
+        return proxyHelper.doCommandAsObject(dKey, Command.MEXECUTEONKEY, new String[]{getName()}, dKey, dEntryProcessor);
     }
 
     public void executeOnAllKeys(EntryProcessor entryProcessor) {
-        // todo to be implemented
+        Data dEntryProcessor = proxyHelper.toData(entryProcessor);
+        proxyHelper.doCommandAsObject(Command.MEXECUTEONALLKEYS, new String[]{getName()}, dEntryProcessor);
     }
 
     public Set<K> keySet() {
@@ -565,6 +536,10 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K, V> {
     }
 
     public void set(K key, V value) {
+        check(key);
+        check(value);
+        Data dKey = proxyHelper.toData(key);
+        proxyHelper.doCommand(dKey, Command.MSET, new String[]{getName()}, dKey, proxyHelper.toData(value));
     }
 
     public V put(K key, V value, long ttl, TimeUnit timeunit) {

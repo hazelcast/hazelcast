@@ -56,9 +56,10 @@ public class LongRunningTest {
             }
         });
         while (true) {
-            if (nodes.size() > 4) {
+            if (nodes.size() >= 4) {
                 removeNode();
             } else if (nodes.size() == 0) {
+                addNode();
                 addNode();
                 addNode();
                 addNode();

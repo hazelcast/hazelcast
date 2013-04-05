@@ -63,8 +63,8 @@ public class ConnectionManager {
         heartbeat = new HeartBeatChecker(config, serializationService);
     }
 
-    public void init(HazelcastInstance hazelcast) {
-        router.init(hazelcast);
+    public void init(HazelcastInstance hazelcast, ClientConfig config) {
+        router.init(hazelcast, config);
         initialized.set(true);
     }
 
@@ -73,7 +73,7 @@ public class ConnectionManager {
         int attempt = 0;
         Connection initialConnection = null;
         while (initialConnection == null) {
-            final long timeoutTime = Clock.currentTimeMillis() + config.getReConnectionTimeOut();
+            final long nextTry = Clock.currentTimeMillis() + config.getAttemptPeriod();
             for (InetSocketAddress isa : config.getAddressList()) {
                 try {
                     Address address = new Address(isa);
@@ -89,17 +89,15 @@ public class ConnectionManager {
                 break;
             }
             attempt++;
-            final long remainingTimeout = timeoutTime - Clock.currentTimeMillis();
+            final long remainingTime = nextTry - Clock.currentTimeMillis();
             System.out.println(
                     format("Unable to get alive cluster connection," +
                             " try in %d ms later, attempt %d of %d.",
-                            Math.max(0, remainingTimeout), attempt, config.getInitialConnectionAttemptLimit()));
+                            Math.max(0, remainingTime), attempt, config.getInitialConnectionAttemptLimit()));
             
-            if( remainingTimeout > 0){
-
-
+            if( remainingTime > 0){
                 try {
-                    Thread.sleep(remainingTimeout);
+                    Thread.sleep(remainingTime);
                 } catch (InterruptedException e) {
                 }
             }

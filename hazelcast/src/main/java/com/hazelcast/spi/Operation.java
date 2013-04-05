@@ -203,10 +203,15 @@ public abstract class Operation implements DataSerializable {
         return this;
     }
 
-    public InvocationAction onException(Throwable throwable) {
+    public final InvocationAction onException(Throwable throwable) {
         if (this instanceof BackupOperation && throwable instanceof MemberLeftException) {
             return InvocationAction.THROW_EXCEPTION;
         }
+        final InvocationAction action = getActionOnException(throwable);
+        return action != null ? action : InvocationAction.THROW_EXCEPTION;
+    }
+
+    protected InvocationAction getActionOnException(Throwable throwable) {
         return (throwable instanceof RetryableException)
                 ? InvocationAction.RETRY_INVOCATION : InvocationAction.THROW_EXCEPTION;
     }

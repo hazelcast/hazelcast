@@ -16,14 +16,16 @@
 
 package com.hazelcast.executor;
 
+import com.hazelcast.client.ClientCommandHandler;
+import com.hazelcast.concurrent.atomiclong.client.GetAndSetHandler;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.executor.client.ExecuteHandler;
+import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.spi.*;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 
-import java.util.Collections;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
@@ -31,7 +33,7 @@ import java.util.logging.Level;
 /**
  * @mdogan 1/18/13
  */
-public class DistributedExecutorService implements ManagedService, RemoteService {
+public class DistributedExecutorService implements ManagedService, RemoteService, ClientProtocolService {
 
     public static final String SERVICE_NAME = "hz:impl:executorService";
 
@@ -76,13 +78,13 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         return SERVICE_NAME;
     }
 
-    public DistributedObject createDistributedObject(Object objectId) {
+    public ExecutorServiceProxy createDistributedObject(Object objectId) {
         final String name = String.valueOf(objectId);
         return new ExecutorServiceProxy(name, nodeEngine, this);
     }
 
-    public DistributedObject createDistributedObjectForClient(Object objectId) {
-        return null;
+    public ExecutorServiceProxy createDistributedObjectForClient(Object objectId) {
+        return createDistributedObject(objectId);
     }
 
     public void destroyDistributedObject(Object objectId) {
@@ -105,6 +107,13 @@ public class DistributedExecutorService implements ManagedService, RemoteService
 
     private void startPending(String name) {
         getExecutorServiceStatsContainer(name).startPending();
+    }
+
+    @Override
+    public Map<Command, ClientCommandHandler> getCommandsAsMap() {
+        Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
+        commandHandlers.put(Command.EXECUTE, new ExecuteHandler(this));
+        return commandHandlers;
     }
 
     private class CallableProcessor implements Runnable {

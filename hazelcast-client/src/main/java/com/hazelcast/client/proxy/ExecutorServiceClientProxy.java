@@ -76,7 +76,7 @@ public class ExecutorServiceClientProxy implements IExecutorService {
             public T call() throws Exception {
                 Data dKey = proxyHelper.toData(key);
                 return (T) proxyHelper.doCommandAsObject(dKey, Command.EXECUTE,
-                        new String[]{}, proxyHelper.toData(task), dKey);
+                        new String[]{getName()}, proxyHelper.toData(task), dKey);
             }
         });
     }
@@ -85,7 +85,7 @@ public class ExecutorServiceClientProxy implements IExecutorService {
         return executorService.submit(new Callable<T>() {
             public T call() throws Exception {
                 InetSocketAddress address = member.getInetSocketAddress();
-                String[] args = new String[]{address.getHostName(), String.valueOf(address.getPort())};
+                String[] args = new String[]{getName(), address.getHostName(), String.valueOf(address.getPort())};
                 Protocol response = proxyHelper.doCommand(member, Command.EXECUTE, args, proxyHelper.toData(task));
                 return (T) proxyHelper.getSingleObjectFromResponse(response);
             }

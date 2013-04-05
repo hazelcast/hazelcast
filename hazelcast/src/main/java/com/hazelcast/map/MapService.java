@@ -575,6 +575,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         commandHandlers.put(Command.MUNLOCK, new MapUnlockHandler(this));
         commandHandlers.put(Command.MPUTALL, new MapPutAllHandler(this));
         commandHandlers.put(Command.MREMOVE, new MapRemoveHandler(this));
+        commandHandlers.put(Command.MDELETE, new MapDeleteHandler(this));
         commandHandlers.put(Command.MCONTAINSKEY, new MapContainsKeyHandler(this));
         commandHandlers.put(Command.MCONTAINSVALUE, new MapContainsValueHandler(this));
         commandHandlers.put(Command.MPUTIFABSENT, new MapPutIfAbsentHandler(this));
@@ -588,6 +589,10 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         commandHandlers.put(Command.MGETENTRY, new MapGetEntryHandler(this));
         commandHandlers.put(Command.MFORCEUNLOCK, new MapForceUnlockHandler(this));
         commandHandlers.put(Command.MLISTEN, new MapListenHandler(this));
+        commandHandlers.put(Command.MADDINTERCEPTOR, new MapAddInterceptorHandler(this));
+        commandHandlers.put(Command.MREMOVEINTERCEPTOR, new MapExecuteOnKeyHandler(this));
+        commandHandlers.put(Command.MEXECUTEONKEY, new MapExecuteOnKeyHandler(this));
+        commandHandlers.put(Command.MEXECUTEONALLKEYS, new MapExecuteOnAllKeysHandler(this));
         return commandHandlers;
     }
 
