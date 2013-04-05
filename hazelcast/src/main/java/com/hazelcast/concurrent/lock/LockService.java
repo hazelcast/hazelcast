@@ -19,8 +19,6 @@ package com.hazelcast.concurrent.lock;
 import com.hazelcast.client.ClientCommandHandler;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.map.EvictionProcessor;
-import com.hazelcast.map.MapStoreDeleteProcessor;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.MigrationEndpoint;
@@ -34,7 +32,6 @@ import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @mdogan 2/12/13

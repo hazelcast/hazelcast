@@ -218,11 +218,17 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             return;
         }
         clearTaskQueues();
-        migrationManagerThread.onMemberRemove(deadAddress);
         lock.lock();
         try {
-            if (!activeMigrations.isEmpty() && node.isMaster()) {
-                rollbackActiveMigrationsFromPreviousMaster(node.getLocalMember().getUuid());
+            if (!activeMigrations.isEmpty()) {
+                if (node.isMaster()) {
+                    rollbackActiveMigrationsFromPreviousMaster(node.getLocalMember().getUuid());
+                }
+                for (MigrationInfo migrationInfo : activeMigrations.values()) {
+                    if (deadAddress.equals(migrationInfo.getFromAddress()) || deadAddress.equals(migrationInfo.getToAddress())) {
+                        migrationInfo.invalidate();
+                    }
+                }
             }
             // inactivate migration and sending of PartitionRuntimeState (@see #sendPartitionRuntimeState)
             // let all members notice the dead and fix their own records and indexes.
@@ -836,7 +842,6 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
     private class Migrator implements Runnable {
         final MigrationRequestOperation migrationRequestOp;
         final MigrationInfo migrationInfo;
-        volatile boolean valid = true;
 
         Migrator(MigrationInfo migrationInfo) {
             this.migrationInfo = migrationInfo;
@@ -844,12 +849,6 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             migrationInfo.setMasterUuid(masterMember.getUuid());
             migrationInfo.setMaster(masterMember.getAddress());
             this.migrationRequestOp = new MigrationRequestOperation(migrationInfo);
-        }
-
-        void onMemberRemove(Address address) {
-            if (address.equals(migrationInfo.getFromAddress()) || address.equals(migrationInfo.getToAddress())) {
-                valid = false;
-            }
         }
 
         public void run() {
@@ -878,15 +877,14 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                     if (fromMember != null) {
                         migrationInfo.setFromAddress(fromMember.getAddress());
                         Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME,
-                                migrationRequestOp, migrationInfo.getFromAddress())
-                                .setTryCount(10).setTryPauseMillis(1000)
+                                migrationRequestOp, migrationInfo.getFromAddress()).setTryPauseMillis(1000)
                                 .setReplicaIndex(migrationRequestOp.getReplicaIndex()).build();
 
                         Future future = inv.invoke();
                         try {
                             result = (Boolean) nodeEngine.toObject(future.get(partitionMigrationTimeout, TimeUnit.SECONDS));
                         } catch (Throwable e) {
-                            final Level level = node.isActive() && valid ? Level.WARNING : Level.FINEST;
+                            final Level level = node.isActive() && migrationInfo.isValid() ? Level.WARNING : Level.FINEST;
                             logger.log(level, "Failed migrating from " + fromMember, e);
                         }
                     } else {
@@ -899,13 +897,13 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                         processMigrationResult();
                     } else {
                         // remove active partition migration
-                        final Level level = valid ? Level.WARNING : Level.FINEST;
+                        final Level level = migrationInfo.isValid() ? Level.WARNING : Level.FINEST;
                         logger.log(level, "Migration task has failed => " + migrationRequestOp);
                         migrationTaskFailed();
                     }
                 }
             } catch (Throwable t) {
-                final Level level = valid ? Level.WARNING : Level.FINEST;
+                final Level level = migrationInfo.isValid() ? Level.WARNING : Level.FINEST;
                 logger.log(level, "Error [" + t.getClass() + ": " + t.getMessage() + "] " +
                         "while executing " + migrationRequestOp);
                 logger.log(Level.FINEST, t.getMessage(), t);
@@ -982,7 +980,6 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         private final Thread thread;
         private boolean running = true;
         private boolean migrating = false;
-        private volatile Runnable activeTask;
 
         MigrationManagerThread(Node node) {
             thread = new Thread(node.threadGroup, this, node.getThreadNamePrefix("migration-manager"));
@@ -1042,12 +1039,10 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             if (r == null || !running) return false;
             try {
                 migrating = (r instanceof Migrator);
-                activeTask = r;
                 r.run();
             } catch (Throwable t) {
                 logger.log(Level.WARNING, t.getMessage(), t);
             } finally {
-                activeTask = null;
             }
             return true;
         }
@@ -1055,13 +1050,6 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         void safeRunImmediate(final Runnable r) throws InterruptedException {
             if (safeRun(r) && immediateBackupInterval > 0) {
                 Thread.sleep(immediateBackupInterval);
-            }
-        }
-
-        void onMemberRemove(Address address) {
-            final Runnable r = activeTask;
-            if (r != null && r instanceof Migrator) {
-                ((Migrator) r).onMemberRemove(address);
             }
         }
 
