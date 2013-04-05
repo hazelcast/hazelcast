@@ -108,7 +108,6 @@ public class SpinningFastExecutor extends FastExecutorSupport implements FastExe
                         spinningThreads.decrementAndGet();
                         signalWorker.await(timeout, TimeUnit.MILLISECONDS);
                         task = queue.poll();
-                        System.err.println("DEBUG: Awaken from sleep -> " + currentThread.getName() + " TASK: " + task);
                         if (task == null && removeWorker(currentThread)) {
                             return;
                         }
@@ -146,7 +145,6 @@ public class SpinningFastExecutor extends FastExecutorSupport implements FastExe
                             break;
                         }
                         try {
-                            System.err.println("DEBUG: Signalling a worker thread!");
                             signalWorker.signal();
                         } finally {
                             lock.unlock();

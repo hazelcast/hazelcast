@@ -84,8 +84,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
                         final byte[] data = IOUtil.compress(out.toByteArray());
                         final MigrationOperation migrationOperation = new MigrationOperation(migrationInfo, data, tasks.size());
                         Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(PartitionServiceImpl.SERVICE_NAME,
-                                migrationOperation, to)
-                                .setTryCount(10).setTryPauseMillis(1000).setReplicaIndex(getReplicaIndex()).build();
+                                migrationOperation, to).setTryPauseMillis(1000).setReplicaIndex(getReplicaIndex()).build();
                         Future future = inv.invoke();
                         success = (Boolean) nodeEngine.toObject(future.get(timeout, TimeUnit.SECONDS));
                     } finally {

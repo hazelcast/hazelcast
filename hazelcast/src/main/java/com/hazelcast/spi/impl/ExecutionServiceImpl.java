@@ -26,6 +26,8 @@ import com.hazelcast.util.executor.ExecutorThreadFactory;
 import com.hazelcast.util.executor.ManagedExecutorService;
 import com.hazelcast.util.executor.PoolExecutorThreadFactory;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.*;
@@ -66,10 +68,21 @@ public final class ExecutionServiceImpl implements ExecutionService {
                         return scheduledThreadName;
                     }
                 });
+        enableRemoveOnCancelIfAvailable();
 
         // default executors
         register("hz:system", 30, Integer.MAX_VALUE);
         register("hz:scheduled", 20, Integer.MAX_VALUE);
+    }
+
+    private void enableRemoveOnCancelIfAvailable() {
+        try {
+            final Method m = scheduledExecutorService.getClass().getMethod("setRemoveOnCancelPolicy", boolean.class);
+            m.invoke(scheduledExecutorService, true);
+        } catch (NoSuchMethodException ignored) {
+        } catch (InvocationTargetException ignored) {
+        } catch (IllegalAccessException ignored) {
+        }
     }
 
     ExecutorService register(String name, int maxThreadSize, int queueSize) {
