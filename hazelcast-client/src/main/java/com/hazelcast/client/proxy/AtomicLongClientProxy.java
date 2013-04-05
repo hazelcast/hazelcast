@@ -17,10 +17,8 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.proxy.ProxyHelper;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.core.IAtomicLong;
-import com.hazelcast.monitor.LocalAtomicLongStats;
 import com.hazelcast.nio.protocol.Command;
 
 public class AtomicLongClientProxy implements IAtomicLong {
@@ -33,13 +31,11 @@ public class AtomicLongClientProxy implements IAtomicLong {
     }
 
     public long addAndGet(long delta) {
-//        return (Long) proxyHelper.doOp(ATOMIC_NUMBER_ADD_AND_GET, 0L, delta);
-        return 0;
+        return proxyHelper.doCommandAsLong(Command.ALADDANDGET, new String[]{getName(), String.valueOf(delta)});
     }
 
     public boolean compareAndSet(long expect, long update) {
-//        return (Boolean) proxyHelper.doOp(ATOMIC_NUMBER_COMPARE_AND_SET, expect, update);
-        return false;
+        return proxyHelper.doCommandAsBoolean(Command.ALCOMPAREANDSET, new String[]{getName(), String.valueOf(expect), String.valueOf(update)});
     }
 
 
@@ -52,14 +48,13 @@ public class AtomicLongClientProxy implements IAtomicLong {
     }
 
     public long getAndAdd(long delta) {
-//        return (Long) proxyHelper.doOp(ATOMIC_NUMBER_GET_AND_ADD, 0L, delta);
-        return 0;
+       return proxyHelper.doCommandAsLong(Command.ALGETANDADD, new String[]{getName(), String.valueOf(delta)});
     }
 
     public long getAndSet(long newValue) {
-//        return (Long) proxyHelper.doOp(ATOMIC_NUMBER_GET_AND_SET, 0L, newValue);
-        return 0;
+        return proxyHelper.doCommandAsLong(Command.ALGETANDSET, new String[]{getName(), String.valueOf(newValue)});
     }
+
 
     public long incrementAndGet() {
         return addAndGet(1L);
@@ -83,9 +78,5 @@ public class AtomicLongClientProxy implements IAtomicLong {
 
     public String getName() {
         return name;
-    }
-
-    public LocalAtomicLongStats getLocalAtomicLongStats() {
-        throw new UnsupportedOperationException();
     }
 }

@@ -134,6 +134,6 @@ public class PartitionClientProxy implements PartitionService {
     }
 
     public boolean hasOngoingMigration() {
-        return false;
+        throw new UnsupportedOperationException("Client doesn't support this operation");
     }
 }

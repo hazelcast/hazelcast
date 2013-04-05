@@ -17,11 +17,19 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 
+/**
+ *
+ * {@link LoadBalancer} allows you to send operations to one of a number of endpoints(Members).
+ * It is up to the implementation to use different load balancing policies. If Client is {@link ClientConfig#smart},
+ * only the operations that are not key based will be router to the endpoint returned by the Load Balancer.
+ * If it is not {@link ClientConfig#smart}, {@link LoadBalancer} will be used for all operations.
+ */
 public interface LoadBalancer {
-    public void init(HazelcastInstance h);
+    public void init(HazelcastInstance h, ClientConfig config);
 
     /**
      * Returns the next member to route to

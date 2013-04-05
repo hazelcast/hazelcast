@@ -34,7 +34,7 @@ public class ClientConfigTest {
         Assert.assertEquals("dev-pass", config.getGroupConfig().getPassword());
         Assert.assertEquals(30000, config.getConnectionTimeout());
         Assert.assertEquals(3, config.getInitialConnectionAttemptLimit());
-        Assert.assertEquals(5000, config.getReConnectionTimeOut());
+        Assert.assertEquals(5000, config.getAttemptPeriod());
         Assert.assertEquals(5, config.getReconnectionAttemptLimit());
         Assert.assertEquals(2, config.getAddressList().size());
 

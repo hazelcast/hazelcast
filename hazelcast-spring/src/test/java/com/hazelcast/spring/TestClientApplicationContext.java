@@ -100,7 +100,7 @@ public class TestClientApplicationContext {
         assertEquals(3, config.getInitialConnectionAttemptLimit());
         assertEquals(2, config.getReconnectionAttemptLimit());
         assertEquals(1000, config.getConnectionTimeout());
-        assertEquals(3000, config.getReConnectionTimeOut());
+        assertEquals(3000, config.getAttemptPeriod());
 
         ClientConfig config2 = client2.getClientConfig();
         assertEquals(credentials, config2.getCredentials());
