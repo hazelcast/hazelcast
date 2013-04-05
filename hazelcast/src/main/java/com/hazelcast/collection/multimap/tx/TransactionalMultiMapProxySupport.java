@@ -49,7 +49,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         throwExceptionIfNull(value);
         long timeout = tx.getTimeoutMillis();
         long ttl = timeout*3/2;
-        Long recordId = (Long)lockAndGet(key, value, timeout, ttl);
+        Long recordId = (Long)lockAndGet(key, value, timeout, ttl, TxnMultiMapOperation.PUT_OPERATION);
         if (recordId == null){
             throw new ConcurrentModificationException("Transaction couldn't obtain lock " + getThreadId());
         }
@@ -81,9 +81,10 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         return ThreadContext.getThreadId();
     }
 
-    private Object lockAndGet(Data key, Data value, long timeout, long ttl) {
+    private Object lockAndGet(Data key, Data value, long timeout, long ttl, int operationType) {
         final NodeEngine nodeEngine = getNodeEngine();
         TxnLockAndGetOperation operation = new TxnLockAndGetOperation(proxyId, key, value, timeout, ttl, getThreadId());
+        operation.setOperationType(operationType);
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
             Invocation invocation = nodeEngine.getOperationService()

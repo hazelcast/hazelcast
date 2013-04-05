@@ -56,6 +56,10 @@ public class TxnLockAndGetOperation extends CollectionKeyBasedOperation implemen
         this.threadId = threadId;
     }
 
+    public void setOperationType(int operationType){
+        this.operationType = operationType;
+    }
+
     public void run() throws Exception {
         CollectionContainer container =  getOrCreateContainer();
         if (!container.txnLock(dataKey, getCallerUuid(), threadId, ttl)) {

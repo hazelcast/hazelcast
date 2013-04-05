@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.collection.operations;
+package com.hazelcast.collection.multimap.tx;
 
+import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.collection.CollectionWrapper;
+import com.hazelcast.collection.operations.CollectionBackupAwareOperation;
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
@@ -32,42 +35,43 @@ import java.util.Collection;
 import java.util.Iterator;
 
 /**
- * @ali 1/16/13
+ * @ali 4/5/13
  */
-public class RemoveOperation extends CollectionBackupAwareOperation {
+public class TxnRemoveOperation extends CollectionBackupAwareOperation implements Notifier {
 
+    long recordId;
     Data value;
-
-    transient long recordId;
     transient long begin = -1;
+    transient boolean notify = false;
 
-    public RemoveOperation() {
+    public TxnRemoveOperation() {
     }
 
-    public RemoveOperation(CollectionProxyId proxyId, Data dataKey, int threadId, Data value) {
+    public TxnRemoveOperation(CollectionProxyId proxyId, Data dataKey, int threadId, long recordId, Data value) {
         super(proxyId, dataKey, threadId);
+        this.recordId = recordId;
         this.value = value;
     }
 
     public void run() throws Exception {
         begin = Clock.currentTimeMillis();
+        CollectionContainer container = getOrCreateContainer();
+        CollectionWrapper wrapper = container.getCollectionWrapper(dataKey);
         response = false;
-        CollectionWrapper wrapper = getCollectionWrapper();
-        if (wrapper == null) {
+        if (wrapper == null || !wrapper.containsRecordId(recordId)) {
             return;
         }
         Collection<CollectionRecord> coll = wrapper.getCollection();
-        CollectionRecord record = new CollectionRecord(isBinary() ? value : toObject(value));
         Iterator<CollectionRecord> iter = coll.iterator();
         while (iter.hasNext()){
-            CollectionRecord r = iter.next();
-            if (r.equals(record)){
+            if (iter.next().getRecordId() == recordId){
                 iter.remove();
-                recordId = r.getRecordId();
                 response = true;
+                notify = true;
                 if (coll.isEmpty()) {
                     removeCollection();
                 }
+                container.unlock(dataKey, getCallerUuid(), threadId);
                 break;
             }
         }
@@ -82,25 +86,29 @@ public class RemoveOperation extends CollectionBackupAwareOperation {
         }
     }
 
-    public boolean shouldBackup() {
-        return Boolean.TRUE.equals(response);
-    }
-
     public Operation getBackupOperation() {
-        return new RemoveBackupOperation(proxyId, dataKey, recordId);
+        return new TxnRemoveBackupOperation(proxyId,dataKey,recordId,value,threadId,getCallerUuid());
     }
 
-    public void onWaitExpire() {
-        getResponseHandler().sendResponse(false);
+    public boolean shouldNotify() {
+        return notify;
+    }
+
+    public WaitNotifyKey getNotifiedKey() {
+        return getWaitKey();
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
+        out.writeLong(recordId);
         value.writeData(out);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        value = IOUtil.readData(in);
+        recordId = in.readLong();
+        value = new Data();
+        value.readData(in);
     }
+
 }

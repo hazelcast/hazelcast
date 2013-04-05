@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.collection.operations;
+package com.hazelcast.collection.multimap.tx;
 
+import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.collection.CollectionWrapper;
+import com.hazelcast.collection.operations.CollectionKeyBasedOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -29,35 +31,43 @@ import java.util.Collection;
 import java.util.Iterator;
 
 /**
- * @ali 1/16/13
+ * @ali 4/5/13
  */
-public class RemoveBackupOperation extends CollectionKeyBasedOperation implements BackupOperation {
+public class TxnRemoveBackupOperation extends CollectionKeyBasedOperation implements BackupOperation {
 
     long recordId;
+    Data value;
+    int threadId;
+    String caller;
 
-    public RemoveBackupOperation() {
+    public TxnRemoveBackupOperation() {
     }
 
-    public RemoveBackupOperation(CollectionProxyId proxyId, Data dataKey, long recordId) {
+    public TxnRemoveBackupOperation(CollectionProxyId proxyId, Data dataKey, long recordId, Data value, int threadId, String caller) {
         super(proxyId, dataKey);
         this.recordId = recordId;
+        this.value = value;
+        this.threadId = threadId;
+        this.caller = caller;
     }
 
     public void run() throws Exception {
-        CollectionWrapper wrapper = getCollectionWrapper();
+        CollectionContainer container = getOrCreateContainer();
+        CollectionWrapper wrapper = container.getCollectionWrapper(dataKey);
         response = false;
-        if (wrapper == null) {
+        if (wrapper == null || !wrapper.containsRecordId(recordId)) {
             return;
         }
         Collection<CollectionRecord> coll = wrapper.getCollection();
         Iterator<CollectionRecord> iter = coll.iterator();
         while (iter.hasNext()){
-            if(iter.next().getRecordId() == recordId){
+            if (iter.next().getRecordId() == recordId){
                 iter.remove();
                 response = true;
                 if (coll.isEmpty()) {
                     removeCollection();
                 }
+                container.unlock(dataKey, caller, threadId);
                 break;
             }
         }
@@ -66,11 +76,17 @@ public class RemoveBackupOperation extends CollectionKeyBasedOperation implement
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(recordId);
+        out.writeInt(threadId);
+        out.writeUTF(caller);
+        value.writeData(out);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         recordId = in.readLong();
+        threadId = in.readInt();
+        caller = in.readUTF();
+        value = new Data();
+        value.readData(in);
     }
-
 }
