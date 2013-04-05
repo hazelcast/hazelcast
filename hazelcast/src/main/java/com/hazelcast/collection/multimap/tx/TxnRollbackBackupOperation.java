@@ -18,46 +18,49 @@ package com.hazelcast.collection.multimap.tx;
 
 import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionProxyId;
-import com.hazelcast.collection.CollectionRecord;
-import com.hazelcast.collection.CollectionWrapper;
 import com.hazelcast.collection.operations.CollectionKeyBasedOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
 
 /**
- * @ali 3/29/13
+ * @ali 4/5/13
  */
-public class TxnReservePutOperation extends CollectionKeyBasedOperation {
+public class TxnRollbackBackupOperation extends CollectionKeyBasedOperation implements BackupOperation {
 
-    Data dataValue;
+    String caller;
+    int threadId;
 
-    public TxnReservePutOperation() {
+    public TxnRollbackBackupOperation() {
     }
 
-    public TxnReservePutOperation(CollectionProxyId proxyId, Data dataKey, Data dataValue) {
+    public TxnRollbackBackupOperation(CollectionProxyId proxyId, Data dataKey, String caller, int threadId) {
         super(proxyId, dataKey);
-        this.dataValue = dataValue;
+        this.caller = caller;
+        this.threadId = threadId;
     }
 
     public void run() throws Exception {
         CollectionContainer container = getOrCreateContainer();
-        CollectionRecord record = new CollectionRecord(container.nextId(), isBinary() ? dataValue : toObject(dataValue));
-        CollectionWrapper wrapper = container.getOrCreateCollectionWrapper(dataKey);
-        wrapper.reservePut(record);
+        if (container.isLocked(dataKey) && !container.unlock(dataKey, caller, threadId)){
+            throw new TransactionException("Lock is not owned by the transaction !");
+        }
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        dataValue.writeData(out);
+        out.writeUTF(caller);
+        out.writeInt(threadId);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        dataValue = new Data();
-        dataValue.readData(in);
+        caller = in.readUTF();
+        threadId = in.readInt();
     }
 }

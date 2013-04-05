@@ -16,50 +16,82 @@
 
 package com.hazelcast.collection.multimap.tx;
 
+import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionService;
+import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;
+import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.Transaction;
 import com.hazelcast.transaction.TransactionalObject;
+import com.hazelcast.util.ExceptionUtil;
+
+import java.util.ConcurrentModificationException;
+import java.util.concurrent.Future;
 
 /**
  * @ali 3/29/13
  */
-public abstract class TransactionalMultiMapProxySupport extends AbstractDistributedObject<CollectionService> implements TransactionalObject{
+public abstract class TransactionalMultiMapProxySupport extends AbstractDistributedObject<CollectionService> implements TransactionalObject {
 
-    protected final String name;
+    protected final CollectionProxyId proxyId;
     protected final Transaction tx;
 
-    protected TransactionalMultiMapProxySupport(NodeEngine nodeEngine, CollectionService service, String name, Transaction tx) {
+    protected TransactionalMultiMapProxySupport(NodeEngine nodeEngine, CollectionService service, CollectionProxyId proxyId, Transaction tx) {
         super(nodeEngine, service);
-        this.name = name;
+        this.proxyId = proxyId;
         this.tx = tx;
     }
 
-    public boolean putInternal(Data key, Data value){
+    public boolean putInternal(Data key, Data value) {
         throwExceptionIfNull(key);
         throwExceptionIfNull(value);
-
-        return false;
+        long timeout = tx.getTimeoutMillis();
+        long ttl = timeout*3/2;
+        Long recordId = (Long)lockAndGet(key, value, timeout, ttl);
+        if (recordId == null){
+            throw new ConcurrentModificationException("Transaction couldn't obtain lock " + getThreadId());
+        }
+        TxnPutOperation operation = new TxnPutOperation(proxyId, key, value, recordId, getThreadId());
+        tx.addTransactionLog(new MultiMapTransactionLog(key, recordId, proxyId, ttl, getThreadId(), operation));
+        return recordId != -1;
     }
 
 
     public Object getId() {
-        return name;
+        return proxyId;
     }
 
     public String getName() {
-        return name;
+        return proxyId.getName();
     }
 
     public final String getServiceName() {
         return CollectionService.SERVICE_NAME;
     }
 
-    private void throwExceptionIfNull(Object o){
-        if (o == null){
+    private void throwExceptionIfNull(Object o) {
+        if (o == null) {
             throw new NullPointerException("Object is null");
+        }
+    }
+
+    private int getThreadId() {
+        return ThreadContext.getThreadId();
+    }
+
+    private Object lockAndGet(Data key, Data value, long timeout, long ttl) {
+        final NodeEngine nodeEngine = getNodeEngine();
+        TxnLockAndGetOperation operation = new TxnLockAndGetOperation(proxyId, key, value, timeout, ttl, getThreadId());
+        try {
+            int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+            Invocation invocation = nodeEngine.getOperationService()
+                    .createInvocationBuilder(CollectionService.SERVICE_NAME, operation, partitionId).build();
+            Future f = invocation.invoke();
+            return f.get();
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
         }
     }
 }

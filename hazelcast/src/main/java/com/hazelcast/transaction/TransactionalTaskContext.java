@@ -17,6 +17,7 @@
 package com.hazelcast.transaction;
 
 import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.core.TransactionalQueue;
 
 public interface TransactionalTaskContext {
@@ -38,6 +39,15 @@ public interface TransactionalTaskContext {
      * @return transactional queue instance with the specified name
      */
     <E> TransactionalQueue<E> getQueue(String name);
+
+    /**
+     * Returns the transactional multimap instance with the specified name.
+     *
+     *
+     * @param name name of the queue
+     * @return transactional queue instance with the specified name
+     */
+    <K, V> TransactionalMultiMap<K, V> getMultiMap(String name);
 
 
     <T extends TransactionalObject> T getTransactionalObject(String serviceName, Object id);

@@ -16,8 +16,96 @@
 
 package com.hazelcast.collection.multimap.tx;
 
+import com.hazelcast.collection.CollectionProxyId;
+import com.hazelcast.collection.CollectionService;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.Invocation;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.transaction.TransactionLog;
+import com.hazelcast.util.ExceptionUtil;
+
+import java.io.IOException;
+import java.util.concurrent.Future;
+
 /**
  * @ali 3/29/13
  */
-public class MultiMapTransactionLog {
+public class MultiMapTransactionLog implements TransactionLog {
+
+    CollectionProxyId proxyId;
+    Operation op;
+    Data key;
+    long recordId;
+    long ttl;
+    int threadId;
+
+    public MultiMapTransactionLog() {
+    }
+
+    public MultiMapTransactionLog(Data key, long recordId, CollectionProxyId proxyId, long ttl, int threadId, Operation op) {
+        this.key = key;
+        this.recordId = recordId;
+        this.proxyId = proxyId;
+        this.ttl = ttl;
+        this.threadId = threadId;
+        this.op = op;
+    }
+
+    public Future prepare(NodeEngine nodeEngine) {
+        TxnPrepareOperation operation = new TxnPrepareOperation(proxyId, key, ttl, threadId);
+        try {
+            int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+            Invocation invocation = nodeEngine.getOperationService()
+                    .createInvocationBuilder(CollectionService.SERVICE_NAME, operation, partitionId).build();
+            return invocation.invoke();
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
+    }
+
+    public Future commit(NodeEngine nodeEngine) {
+        try {
+            int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+            Invocation invocation = nodeEngine.getOperationService()
+                    .createInvocationBuilder(CollectionService.SERVICE_NAME, op, partitionId).build();
+            return invocation.invoke();
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
+    }
+
+    public Future rollback(NodeEngine nodeEngine) {
+        TxnRollbackOperation operation = new TxnRollbackOperation(proxyId, key, threadId);
+        try {
+            int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+            Invocation invocation = nodeEngine.getOperationService()
+                    .createInvocationBuilder(CollectionService.SERVICE_NAME, operation, partitionId).build();
+            return invocation.invoke();
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
+    }
+
+    public void writeData(ObjectDataOutput out) throws IOException {
+        proxyId.writeData(out);
+        out.writeObject(op);
+        key.writeData(out);
+        out.writeLong(recordId);
+        out.writeLong(ttl);
+        out.writeInt(threadId);
+    }
+
+    public void readData(ObjectDataInput in) throws IOException {
+        proxyId = new CollectionProxyId();
+        proxyId.readData(in);
+        op = in.readObject();
+        key = new Data();
+        key.readData(in);
+        recordId = in.readLong();
+        ttl = in.readLong();
+        threadId = in.readInt();
+    }
 }

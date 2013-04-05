@@ -55,6 +55,10 @@ public class CollectionRecord implements DataSerializable {
         return object;
     }
 
+    public void setObject(Object object) {
+        this.object = object;
+    }
+
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof CollectionRecord)) return false;

@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.multimap.tx;
 
+import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.nio.serialization.Data;
@@ -30,8 +31,8 @@ import java.util.Collection;
  */
 public class TransactionalMultiMapProxy<K,V> extends TransactionalMultiMapProxySupport implements TransactionalMultiMap<K, V> {
 
-    public TransactionalMultiMapProxy(NodeEngine nodeEngine, CollectionService service, String name, Transaction tx) {
-        super(nodeEngine, service, name, tx);
+    public TransactionalMultiMapProxy(NodeEngine nodeEngine, CollectionService service, CollectionProxyId proxyId, Transaction tx) {
+        super(nodeEngine, service, proxyId, tx);
     }
 
     public boolean put(K key, V value) throws TransactionException {

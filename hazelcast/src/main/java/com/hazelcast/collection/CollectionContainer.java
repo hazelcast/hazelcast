@@ -78,6 +78,22 @@ public class CollectionContainer {
         return lockStore != null && lockStore.isLocked(dataKey);
     }
 
+    public boolean txnLock(Data key, String caller, int threadId, long ttl){
+        return lockStore != null && lockStore.txnLock(key, caller, threadId, ttl);
+    }
+
+    public boolean unlock(Data key, String caller, int threadId){
+        return lockStore != null && lockStore.unlock(key, caller, threadId);
+    }
+
+    public boolean forceUnlock(Data key){
+        return lockStore != null && lockStore.forceUnlock(key);
+    }
+
+    public boolean extendLock(Data key, String caller, int threadId, long ttl) {
+        return lockStore != null && lockStore.extendTTL(key, caller, threadId, ttl);
+    }
+
     public long nextId() {
         return idGen.getAndIncrement();
     }

@@ -23,6 +23,7 @@ import com.hazelcast.collection.list.ObjectListProxy;
 import com.hazelcast.collection.list.client.*;
 import com.hazelcast.collection.multimap.ObjectMultiMapProxy;
 import com.hazelcast.collection.multimap.client.*;
+import com.hazelcast.collection.multimap.tx.TransactionalMultiMapProxy;
 import com.hazelcast.collection.set.ObjectSetProxy;
 import com.hazelcast.collection.set.client.*;
 import com.hazelcast.core.*;
@@ -404,6 +405,18 @@ public class CollectionService implements ManagedService, RemoteService, Members
     }
 
     public <T extends TransactionalObject> T createTransactionalObject(Object id, Transaction transaction) {
-        return null;
+        CollectionProxyId collectionProxyId = (CollectionProxyId) id;
+        final CollectionProxyType type = collectionProxyId.type;
+        switch (type) {
+            case MULTI_MAP:
+                return (T) new TransactionalMultiMapProxy(nodeEngine, this, collectionProxyId, transaction);
+            case LIST:
+                return null;
+            case SET:
+                return null;
+            case QUEUE:
+                return null;
+        }
+        throw new IllegalArgumentException();
     }
 }
