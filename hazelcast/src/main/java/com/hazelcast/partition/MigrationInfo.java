@@ -36,6 +36,7 @@ public class MigrationInfo implements DataSerializable {
     private String masterUuid;
 
     private transient final AtomicBoolean processing = new AtomicBoolean(false);
+    private transient volatile boolean valid = true;
 
     public MigrationInfo() {
     }
@@ -111,6 +112,14 @@ public class MigrationInfo implements DataSerializable {
 
     void doneProcessing() {
         processing.set(false);
+    }
+
+    boolean isValid() {
+        return valid;
+    }
+
+    void invalidate() {
+        valid = false;
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {

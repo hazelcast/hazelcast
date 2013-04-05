@@ -29,13 +29,20 @@ public final class ThreadContext {
 
     private static final ConcurrentMap<Thread, ThreadContext> contexts = new ConcurrentHashMap<Thread, ThreadContext>(1000);
 
+    private static ThreadContext lastThreadContext = null;
+
     public static ThreadContext get() {
         Thread currentThread = Thread.currentThread();
-        return contexts.get(currentThread);
+        ThreadContext context = lastThreadContext;
+        return (context != null && context.thread == currentThread) ? context : contexts.get(currentThread);
     }
 
     public static ThreadContext getOrCreate() {
         Thread currentThread = Thread.currentThread();
+        ThreadContext context = lastThreadContext;
+        if (context != null && context.thread == currentThread) {
+            return context;
+        }
         ThreadContext threadContext = contexts.get(currentThread);
         if (threadContext == null) {
             try {
@@ -59,7 +66,7 @@ public final class ThreadContext {
                 Logger.getLogger(ThreadContext.class.getName()).log(Level.WARNING, msg);
             }
         }
-        return threadContext;
+        return (lastThreadContext = threadContext);
     }
 
     public static int getThreadId() {
@@ -67,6 +74,7 @@ public final class ThreadContext {
     }
 
     public static void shutdownAll() {
+        lastThreadContext = null;
         contexts.clear();
     }
 
@@ -74,6 +82,7 @@ public final class ThreadContext {
         ThreadContext threadContext = contexts.remove(thread);
         if (threadContext != null) {
             threadContext.destroy();
+            lastThreadContext = null;
         }
     }
 
@@ -104,10 +113,7 @@ public final class ThreadContext {
     }
 
     private void destroy() {
-    }
-
-    public Thread getThread() {
-        return thread;
+        currentOperation = null;
     }
 
     @Override

@@ -74,8 +74,11 @@ public abstract class BaseMigrationOperation extends AbstractOperation
         return getNodeEngine().getLogger(getClass().getName());
     }
 
-    public InvocationAction getActionOnException(Throwable throwable) {
+    public final InvocationAction getActionOnException(Throwable throwable) {
         if (throwable instanceof MemberLeftException) {
+            return InvocationAction.THROW_EXCEPTION;
+        }
+        if (!migrationInfo.isValid()) {
             return InvocationAction.THROW_EXCEPTION;
         }
         return super.getActionOnException(throwable);

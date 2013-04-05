@@ -89,7 +89,7 @@ public final class DataSerializer implements TypeSerializer<DataSerializable> {
                 id = in.readInt();
                 final DataSerializableFactory dsf = factories.get(id);
                 if (dsf == null) {
-                    throw new IllegalArgumentException("No DataSerializer factory for id: " + id);
+                    throw new HazelcastSerializationException("No DataSerializer factory for id: " + id);
                 }
                 ds = dsf.create();
             } else {

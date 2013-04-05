@@ -188,11 +188,8 @@ final class OperationServiceImpl implements OperationService {
                     if (op instanceof KeyBasedOperation && !(op instanceof BackupOperation)) {
                         final int hash = ((KeyBasedOperation) op).getKeyHash();
                         final Lock[] locks = ownerLocks;
-                        final Lock tmpKeyLock = locks[Math.abs(hash) % locks.length];
-                        if (!tmpKeyLock.tryLock(100, TimeUnit.MILLISECONDS)) {
-                            throw new RetryableHazelcastException("Key lock cannot be acquired!");
-                        }
-                        keyLock = tmpKeyLock;
+                        keyLock = locks[Math.abs(hash) % locks.length];
+                        keyLock.lockInterruptibly();
                     }
                 }
             }
