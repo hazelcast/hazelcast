@@ -65,6 +65,8 @@ public interface RecordStore {
 
     boolean lock(Data key, String caller, int threadId, long ttl);
 
+    boolean txnLock(Data key, String caller, int threadId, long ttl);
+
     boolean extendLock(Data key, String caller, int threadId, long ttl);
 
     boolean unlock(Data key, String caller, int threadId);

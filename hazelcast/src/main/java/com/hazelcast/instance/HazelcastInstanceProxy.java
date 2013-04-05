@@ -80,8 +80,8 @@ public final class HazelcastInstanceProxy implements HazelcastInstance {
         return getOriginal().executeTransaction(task);
     }
 
-    public <T> T executeTransaction(TransactionalTask<T> task, TransactionOptions options) throws TransactionException {
-        return getOriginal().executeTransaction(task, options);
+    public <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException {
+        return getOriginal().executeTransaction(options, task);
     }
 
     public TransactionContext newTransactionContext() {

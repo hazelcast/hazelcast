@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.operations;
 
+import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.core.EntryEventType;
@@ -40,6 +41,7 @@ public class PutOperation extends CollectionBackupAwareOperation {
     int index;
 
     transient long begin = -1;
+    transient long recordId;
 
     public PutOperation() {
     }
@@ -52,8 +54,10 @@ public class PutOperation extends CollectionBackupAwareOperation {
 
     public void run() throws Exception {
         begin = Clock.currentTimeMillis();
+        CollectionContainer container = getOrCreateContainer();
+        recordId = container.nextId();
         CollectionRecord record = new CollectionRecord(isBinary() ? value : toObject(value));
-        Collection<CollectionRecord> coll = getOrCreateCollection();
+        Collection<CollectionRecord> coll = container.getOrCreateCollectionWrapper(dataKey).getCollection();
         if (index == -1) {
             response = coll.add(record);
         } else {
@@ -64,6 +68,7 @@ public class PutOperation extends CollectionBackupAwareOperation {
                 response = e;
             }
         }
+        record.setRecordId(recordId);
     }
 
     public void afterRun() throws Exception {
@@ -75,7 +80,7 @@ public class PutOperation extends CollectionBackupAwareOperation {
     }
 
     public Operation getBackupOperation() {
-        return new PutBackupOperation(proxyId, dataKey, value, index);
+        return new PutBackupOperation(proxyId, dataKey, value, recordId, index);
     }
 
     public boolean shouldBackup() {

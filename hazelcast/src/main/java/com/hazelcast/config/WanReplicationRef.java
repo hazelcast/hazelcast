@@ -16,9 +16,10 @@
 
 package com.hazelcast.config;
 
+
 public class WanReplicationRef {
     String name;
-    String mergePolicy;
+    String mergePolicyClassName;
 
     public String getName() {
         return name;
@@ -29,20 +30,20 @@ public class WanReplicationRef {
         return this;
     }
 
-    public String getMergePolicy() {
-        return mergePolicy;
+
+    public String getMergePolicyClassName() {
+        return mergePolicyClassName;
     }
 
-    public WanReplicationRef setMergePolicy(String mergePolicy) {
-        this.mergePolicy = mergePolicy;
-        return this;
+    public void setMergePolicyClassName(String mergePolicyClassName) {
+        this.mergePolicyClassName = mergePolicyClassName;
     }
 
     @Override
     public String toString() {
         return "WanReplicationRef{" +
                 "name='" + name + '\'' +
-                ", mergePolicy='" + mergePolicy + '\'' +
+                ", mergePolicy='" + mergePolicyClassName + '\'' +
                 '}';
     }
 }

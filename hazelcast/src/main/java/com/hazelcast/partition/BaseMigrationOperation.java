@@ -65,15 +65,20 @@ public abstract class BaseMigrationOperation extends AbstractOperation
         return true;
     }
 
+    @Override
+    public final boolean validatesTarget() {
+        return false;
+    }
+
     protected ILogger getLogger() {
         return getNodeEngine().getLogger(getClass().getName());
     }
 
-    public InvocationAction onException(Throwable throwable) {
+    public InvocationAction getActionOnException(Throwable throwable) {
         if (throwable instanceof MemberLeftException) {
             return InvocationAction.THROW_EXCEPTION;
         }
-        return super.onException(throwable);
+        return super.getActionOnException(throwable);
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

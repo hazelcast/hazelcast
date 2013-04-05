@@ -74,7 +74,7 @@ public class HazelcastInstanceFactory {
         return "_hzInstance_" + factoryIdGen.incrementAndGet() + "_" + config.getGroupConfig().getName();
     }
 
-    static HazelcastInstance newHazelcastInstance(Config config, String instanceName, NodeContext nodeContext) {
+    public static HazelcastInstance newHazelcastInstance(Config config, String instanceName, NodeContext nodeContext) {
         if (instanceName == null || instanceName.trim().length() == 0) {
             instanceName = createInstanceName(config);
         }

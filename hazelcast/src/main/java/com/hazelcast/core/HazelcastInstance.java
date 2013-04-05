@@ -146,7 +146,7 @@ public interface HazelcastInstance {
 
     <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException;
 
-    <T> T executeTransaction(TransactionalTask<T> task, TransactionOptions options) throws TransactionException;
+    <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException;
 
     TransactionContext newTransactionContext();
 

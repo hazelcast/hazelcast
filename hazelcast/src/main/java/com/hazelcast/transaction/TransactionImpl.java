@@ -27,7 +27,6 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 
 import static com.hazelcast.transaction.Transaction.State.*;
@@ -82,7 +81,7 @@ final class TransactionImpl implements Transaction {
 
     public void addTransactionLog(TransactionLog transactionLog) {
         if (state != Transaction.State.ACTIVE) {
-            throw new IllegalStateException("Transaction is not active!");
+            throw new TransactionNotActiveException("Transaction is not active!");
         }
         checkThread();
         txLogs.add(transactionLog);
@@ -110,7 +109,7 @@ final class TransactionImpl implements Transaction {
 
     void prepare() throws TransactionException {
         if (state != ACTIVE) {
-            throw new IllegalStateException("Transaction is not active");
+            throw new TransactionNotActiveException("Transaction is not active");
         }
         checkThread();
         checkTimeout();
@@ -158,15 +157,6 @@ final class TransactionImpl implements Transaction {
         checkTimeout();
         try {
             final List<Future> futures = new ArrayList<Future>(txLogs.size());
-
-            for (int i = 0; i < 11; i++) {
-                System.out.println("COMMITTING" + (10- i));
-                Thread.sleep(1000);
-            }
-
-            System.out.println("COMMIT STARTS!!!");
-
-
             state = COMMITTING;
             for (TransactionLog txLog : txLogs) {
                 futures.add(txLog.commit(nodeEngine));

@@ -76,7 +76,7 @@ public class PartitionRecordStore implements RecordStore {
     void clear() {
         final SharedLockService lockService = mapService.getNodeEngine().getSharedService(SharedLockService.SERVICE_NAME);
         if (lockService != null) {
-            lockService.destroyLockStore(partitionContainer.partitionId, new LockNamespace(MapService.SERVICE_NAME, name));
+            lockService.clearLockStore(partitionContainer.partitionId, new LockNamespace(MapService.SERVICE_NAME, name));
         }
         records.clear();
     }
@@ -102,6 +102,10 @@ public class PartitionRecordStore implements RecordStore {
 
     public boolean lock(Data key, String caller, int threadId, long ttl) {
         return lockStore != null && lockStore.lock(key, caller, threadId, ttl);
+    }
+
+    public boolean txnLock(Data key, String caller, int threadId, long ttl) {
+        return lockStore != null && lockStore.txnLock(key, caller, threadId, ttl);
     }
 
     public boolean extendLock(Data key, String caller, int threadId, long ttl) {
@@ -398,8 +402,6 @@ public class PartitionRecordStore implements RecordStore {
         saveIndex(record);
 
     }
-
-
 
     public boolean merge(Data dataKey, EntryView mergingEntry, MapMergePolicy mergePolicy) {
         Record record = records.get(dataKey);

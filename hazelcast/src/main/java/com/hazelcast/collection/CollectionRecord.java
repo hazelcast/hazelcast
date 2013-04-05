@@ -16,14 +16,23 @@
 
 package com.hazelcast.collection;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
+
+import java.io.IOException;
+
 /**
  * @ali 1/23/13
  */
-public class CollectionRecord {
+public class CollectionRecord implements DataSerializable {
 
     private long recordId = -1;
 
-    private final Object object;
+    private Object object;
+
+    public CollectionRecord() {
+    }
 
     public CollectionRecord(Object object) {
         this.object = object;
@@ -38,28 +47,36 @@ public class CollectionRecord {
         return recordId;
     }
 
+    public void setRecordId(long recordId) {
+        this.recordId = recordId;
+    }
+
     public Object getObject() {
         return object;
     }
 
-    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof CollectionRecord)) return false;
 
-        CollectionRecord that = (CollectionRecord) o;
-        if (recordId != -1 && that.recordId != -1) {
-            if (recordId != that.recordId) return false;
-        }
-        if (!object.equals(that.object)) return false;
+        CollectionRecord record = (CollectionRecord) o;
+
+        if (!object.equals(record.object)) return false;
 
         return true;
     }
 
-    @Override
     public int hashCode() {
-        int result = (int) (recordId ^ (recordId >>> 32));
-        result = 31 * result + object.hashCode();
-        return result;
+        return object.hashCode();
+    }
+
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeLong(recordId);
+        out.writeObject(object);
+    }
+
+    public void readData(ObjectDataInput in) throws IOException {
+        recordId = in.readLong();
+        object = in.readObject();
     }
 }

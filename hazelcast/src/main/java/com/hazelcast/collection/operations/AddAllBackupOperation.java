@@ -16,10 +16,8 @@
 
 package com.hazelcast.collection.operations;
 
-import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -35,27 +33,21 @@ import java.util.List;
  */
 public class AddAllBackupOperation extends CollectionKeyBasedOperation implements BackupOperation {
 
-    List<Data> dataList;
+    Collection<CollectionRecord> recordList;
 
     int index;
 
     public AddAllBackupOperation() {
     }
 
-    public AddAllBackupOperation(CollectionProxyId proxyId, Data dataKey, List<Data> dataList, int index) {
+    public AddAllBackupOperation(CollectionProxyId proxyId, Data dataKey, Collection<CollectionRecord> recordList, int index) {
         super(proxyId, dataKey);
-        this.dataList = dataList;
+        this.recordList = recordList;
         this.index = index;
     }
 
     public void run() throws Exception {
-        CollectionContainer container = getOrCreateContainer();
-        Collection<CollectionRecord> coll = getOrCreateCollection();
-        Collection<CollectionRecord> recordList = new ArrayList<CollectionRecord>(dataList.size());
-        for (Data data : dataList) {
-            recordList.add(new CollectionRecord(container.nextId(), isBinary() ? data : toObject(data)));
-        }
-
+        Collection<CollectionRecord> coll = getOrCreateCollectionWrapper().getCollection();
         if (index == -1) {
             response = coll.addAll(recordList);
         } else {
@@ -71,9 +63,9 @@ public class AddAllBackupOperation extends CollectionKeyBasedOperation implement
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(index);
-        out.writeInt(dataList.size());
-        for (Data data : dataList) {
-            data.writeData(out);
+        out.writeInt(recordList.size());
+        for (CollectionRecord record : recordList) {
+            record.writeData(out);
         }
     }
 
@@ -81,10 +73,11 @@ public class AddAllBackupOperation extends CollectionKeyBasedOperation implement
         super.readInternal(in);
         index = in.readInt();
         int size = in.readInt();
-        dataList = new ArrayList<Data>(size);
+        recordList = new ArrayList<CollectionRecord>(size);
         for (int i = 0; i < size; i++) {
-            Data data = IOUtil.readData(in);
-            dataList.add(data);
+            CollectionRecord rec = new CollectionRecord();
+            rec.readData(in);
+            recordList.add(rec);
         }
     }
 }

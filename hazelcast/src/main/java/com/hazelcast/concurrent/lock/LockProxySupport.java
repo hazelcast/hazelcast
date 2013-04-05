@@ -52,8 +52,12 @@ public final class LockProxySupport {
     }
 
     public void lock(NodeEngine nodeEngine, Data key) {
+        lock(nodeEngine, key, -1);
+    }
+
+    public void lock(NodeEngine nodeEngine, Data key, long ttl) {
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        LockOperation operation = new LockOperation(namespace, key, ThreadContext.getThreadId());
+        LockOperation operation = new LockOperation(namespace, key, ThreadContext.getThreadId(), ttl, -1);
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                     .build();

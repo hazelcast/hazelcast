@@ -24,8 +24,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.ConnectionMonitor;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.spi.Connection;
-import com.hazelcast.spi.ConnectionManager;
+import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.ConnectionManager;
 
 import java.nio.channels.ServerSocketChannel;
 import java.util.Map;
@@ -245,6 +245,10 @@ public class StaticNodeRegistry {
             }
 
             public void searchForOtherClusters() {
+            }
+
+            public String toString() {
+                return "StaticJoiner";
             }
         }
     }

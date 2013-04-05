@@ -134,6 +134,10 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         lockSupport.lock(nodeEngine, k);
     }
 
+    public void lock(final Object key, final long leaseTime, final TimeUnit timeUnit) {
+        lockSupport.lock(getNodeEngine(), getService().toData(key), timeUnit.toMillis(leaseTime));
+    }
+
     public void unlock(final K key) {
         NodeEngine nodeEngine = getNodeEngine();
         Data k = getService().toData(key);

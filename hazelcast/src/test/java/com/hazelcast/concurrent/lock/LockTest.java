@@ -238,6 +238,33 @@ public class LockTest {
 
     }
 
+    @Test(timeout = 100000)
+    public void testLockEviction() throws Exception {
+        final StaticNodeFactory nodeFactory = new StaticNodeFactory(2);
+        final Config config = new Config();
+        final AtomicInteger integer = new AtomicInteger(0);
+        final HazelcastInstance lockOwner = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
+
+        final String name = "testLockEviction";
+        final ILock lock = lockOwner.getLock(name);
+        lock.lock(1, TimeUnit.SECONDS);
+        Assert.assertEquals(true, lock.isLocked());
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                final ILock lock = instance1.getLock(name);
+                lock.lock();
+                integer.incrementAndGet();
+
+            }
+        });
+        t.start();
+        Assert.assertEquals(0, integer.get());
+        Thread.sleep(2000);
+        Assert.assertEquals(1, integer.get());
+    }
+
+
     @Test
     public void testLockConditionSimpleUsage() throws InterruptedException {
         final StaticNodeFactory nodeFactory = new StaticNodeFactory(2);

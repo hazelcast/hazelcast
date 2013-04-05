@@ -14,13 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
-
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ConnectionMonitor;
-import com.hazelcast.nio.Packet;
+package com.hazelcast.nio;
 
 public interface Connection {
+
     Address getEndPoint();
 
     boolean live();

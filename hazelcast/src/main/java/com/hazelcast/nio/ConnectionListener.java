@@ -16,8 +16,6 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.spi.Connection;
-
 public interface ConnectionListener {
     void connectionAdded(Connection connection);
 

@@ -27,6 +27,7 @@ import com.hazelcast.nio.TcpIpConnection;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
+import com.hazelcast.spi.OperationAccessor;
 
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
@@ -101,8 +102,8 @@ public class ClientAuthenticateHandler extends ClientCommandHandler {
             clientEndpoint.authenticated();
             BindOperation bind = new BindOperation(new Address(conn.getSocketChannelWrapper().socket().getInetAddress(),
                     conn.getSocketChannelWrapper().socket().getPort()));
-            bind.setConnection(conn);
             bind.setNodeEngine(node.nodeEngine);
+            OperationAccessor.setConnection(bind, conn);
             node.nodeEngine.getOperationService().runOperation(bind);
             ///?????
         }

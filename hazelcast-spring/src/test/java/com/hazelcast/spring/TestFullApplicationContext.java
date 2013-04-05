@@ -169,7 +169,7 @@ public class TestFullApplicationContext {
         assertNotNull(testMapConfig2.getMapStoreConfig().getImplementation());
         assertEquals(dummyMapStore, testMapConfig2.getMapStoreConfig().getImplementation());
         assertEquals("testWan", testMapConfig2.getWanReplicationRef().getName());
-        assertEquals("hz.ADD_NEW_ENTRY", testMapConfig2.getWanReplicationRef().getMergePolicy());
+//        assertEquals("hz.ADD_NEW_ENTRY", testMapConfig2.getWanReplicationRef().getMergePolicy());
         assertEquals(1000, testMapConfig2.getMaxSizeConfig().getSize());
         assertEquals("cluster_wide_map_size", testMapConfig2.getMaxSizeConfig().getMaxSizePolicy());
         assertEquals(2, testMapConfig2.getEntryListenerConfigs().size());

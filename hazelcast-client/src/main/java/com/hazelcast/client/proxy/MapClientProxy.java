@@ -342,6 +342,11 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K, V> {
         proxyHelper.lock(getName(), dKey, Command.MLOCK, new String[]{getName()}, dKey);
     }
 
+    @Override
+    public void lock(K key, long leaseTime, TimeUnit timeUnit) {
+        // todo to be implemented
+    }
+
     public boolean isLocked(K key) {
         check(key);
         Data dKey = proxyHelper.toData(key);

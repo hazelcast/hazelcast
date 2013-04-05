@@ -21,6 +21,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 
@@ -76,7 +77,9 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
             }
 
             if (postJoinOp != null) {
-                postJoinOp.setNodeEngine(nodeEngine).setCallerAddress(getCallerAddress()).setConnection(getConnection());
+                postJoinOp.setNodeEngine(nodeEngine);
+                OperationAccessor.setCallerAddress(postJoinOp, getCallerAddress());
+                OperationAccessor.setConnection(postJoinOp, getConnection());
                 postJoinOp.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
                 nodeEngine.getOperationService().runOperation(postJoinOp);
             }

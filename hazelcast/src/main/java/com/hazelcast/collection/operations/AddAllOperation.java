@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.operations;
 
+import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.nio.IOUtil;
@@ -35,6 +36,7 @@ import java.util.List;
 public class AddAllOperation extends CollectionBackupAwareOperation {
 
     List<Data> dataList;
+    transient Collection<CollectionRecord> recordList;
 
     int index;
 
@@ -48,26 +50,33 @@ public class AddAllOperation extends CollectionBackupAwareOperation {
     }
 
     public void run() throws Exception {
-        Collection<CollectionRecord> coll = getOrCreateCollection();
-        Collection<CollectionRecord> recordList = new ArrayList<CollectionRecord>(dataList.size());
-        for (Data data : dataList) {
-            recordList.add(new CollectionRecord(isBinary() ? data : toObject(data)));
-        }
-
-        if (index == -1) {
-            response = coll.addAll(recordList);
-        } else {
-            List list = (List) coll;
-            try {
-                response = list.addAll(index, recordList);
-            } catch (IndexOutOfBoundsException e) {
-                response = e;
+        CollectionContainer container = getOrCreateContainer();
+        Collection<CollectionRecord> coll = container.getOrCreateCollectionWrapper(dataKey).getCollection();
+        List list = (List) coll;
+        recordList = new ArrayList<CollectionRecord>(dataList.size());
+        try {
+            int i = 0;
+            for (Data data : dataList) {
+                CollectionRecord record = new CollectionRecord(isBinary() ? data : toObject(data));
+                boolean added = true;
+                if (index == -1) {
+                    added = coll.add(record);
+                } else {
+                    list.add(index+(i++), record);
+                }
+                if (added) {
+                    record.setRecordId(container.nextId());
+                    recordList.add(record);
+                }
             }
+            response = recordList.size() != 0;
+        } catch (IndexOutOfBoundsException e) {
+            response = e;
         }
     }
 
     public Operation getBackupOperation() {
-        return new AddAllBackupOperation(proxyId, dataKey, dataList, index);
+        return new AddAllBackupOperation(proxyId, dataKey, recordList, index);
     }
 
     public boolean shouldBackup() {

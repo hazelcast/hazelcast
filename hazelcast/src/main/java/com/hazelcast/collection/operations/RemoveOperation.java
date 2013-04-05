@@ -18,6 +18,7 @@ package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
+import com.hazelcast.collection.CollectionWrapper;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -28,6 +29,7 @@ import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Iterator;
 
 /**
  * @ali 1/16/13
@@ -36,6 +38,7 @@ public class RemoveOperation extends CollectionBackupAwareOperation {
 
     Data value;
 
+    transient long recordId;
     transient long begin = -1;
 
     public RemoveOperation() {
@@ -48,13 +51,22 @@ public class RemoveOperation extends CollectionBackupAwareOperation {
 
     public void run() throws Exception {
         begin = Clock.currentTimeMillis();
-        Collection<CollectionRecord> coll = getCollection();
-        if (coll == null) {
-            response = false;
+        response = false;
+        CollectionWrapper wrapper = getCollectionWrapper();
+        if (wrapper == null) {
             return;
         }
+        Collection<CollectionRecord> coll = wrapper.getCollection();
         CollectionRecord record = new CollectionRecord(isBinary() ? value : toObject(value));
-        response = coll.remove(record);
+        Iterator<CollectionRecord> iter = coll.iterator();
+        while (iter.hasNext()){
+            CollectionRecord r = iter.next();
+            if (r.equals(record)){
+                iter.remove();
+                recordId = r.getRecordId();
+                response = true;
+            }
+        }
         if (coll.isEmpty()) {
             removeCollection();
         }
@@ -74,7 +86,7 @@ public class RemoveOperation extends CollectionBackupAwareOperation {
     }
 
     public Operation getBackupOperation() {
-        return new RemoveBackupOperation(proxyId, dataKey, value);
+        return new RemoveBackupOperation(proxyId, dataKey, recordId);
     }
 
     public void onWaitExpire() {
