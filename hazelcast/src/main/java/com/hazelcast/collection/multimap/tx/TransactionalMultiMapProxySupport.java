@@ -58,6 +58,19 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         return recordId != -1;
     }
 
+    public boolean removeInternal(Data key, Data value) {
+        throwExceptionIfNull(key);
+        throwExceptionIfNull(value);
+        long timeout = tx.getTimeoutMillis();
+        long ttl = timeout*3/2;
+        Long recordId = (Long)lockAndGet(key, value, timeout, ttl, TxnMultiMapOperation.REMOVE_OPERATION);
+        if (recordId == null){
+            throw new ConcurrentModificationException("Transaction couldn't obtain lock " + getThreadId());
+        }
+        TxnRemoveOperation operation = new TxnRemoveOperation(proxyId, key, getThreadId(), recordId, value);
+        tx.addTransactionLog(new MultiMapTransactionLog(key, recordId, proxyId, ttl, getThreadId(), operation));
+        return recordId != -1;
+    }
 
     public Object getId() {
         return proxyId;

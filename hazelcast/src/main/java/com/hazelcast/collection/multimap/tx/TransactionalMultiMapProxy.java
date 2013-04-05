@@ -46,7 +46,9 @@ public class TransactionalMultiMapProxy<K,V> extends TransactionalMultiMapProxyS
     }
 
     public boolean remove(Object key, Object value) {
-        return false;
+        Data dataKey = getNodeEngine().toData(key);
+        Data dataValue = getNodeEngine().toData(value);
+        return removeInternal(dataKey, dataValue);
     }
 
     public Collection<V> remove(Object key) {
