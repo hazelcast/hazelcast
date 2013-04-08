@@ -733,8 +733,11 @@ public class FactoryImpl implements HazelcastInstance {
         Instance proxy = proxies.remove(proxyKey);
         if (proxy != null) {
             String name = proxyKey.name;
+
             if (name.startsWith(Prefix.QUEUE)) {
                 node.blockingQueueManager.destroy(name);
+            } else if (name.startsWith(Prefix.AS_LIST)) {
+                node.blockingQueueManager.destroy(Prefix.QUEUE+name);
             } else if (name.startsWith(Prefix.MAP)) {
                 node.concurrentMapManager.destroy(name);
             } else if (name.startsWith(Prefix.MAP_BASED)) {
