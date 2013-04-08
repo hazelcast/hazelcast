@@ -603,7 +603,7 @@ public class CMap {
                 }
                 record.setIndexes(req.indexes, req.indexTypes);
             }
-            if (req.ttl > 0 && req.ttl < Long.MAX_VALUE) {
+            if (req.ttl >= 0 && req.ttl < Long.MAX_VALUE) {
                 record.setTTL(req.ttl);
                 ttlPerRecord = true;
             }
@@ -742,7 +742,7 @@ public class CMap {
         if (!locked) {
             response = -1L;
             Throwable t = new IllegalStateException("Something is wrong! Lock cannot be acquired! "
-                                                    + request + " -> " + lock);
+                    + request + " -> " + lock);
             logger.log(Level.SEVERE, t.getMessage(), t);
         }
         // ----------------
@@ -927,7 +927,7 @@ public class CMap {
             record.incrementVersion();
             record.setLastUpdated();
         }
-        if (req.ttl > 0 && req.ttl < Long.MAX_VALUE) {
+        if (req.ttl >= 0 && req.ttl < Long.MAX_VALUE) {
             record.setTTL(req.ttl);
             ttlPerRecord = true;
         }
@@ -952,10 +952,10 @@ public class CMap {
             localUpdateListener.recordUpdated(record);
         }
         if (req.operation == CONCURRENT_MAP_SET
-            || req.operation == CONCURRENT_MAP_TRY_PUT
-            || req.operation == CONCURRENT_MAP_PUT_TRANSIENT
-            || req.operation == CONCURRENT_MAP_REPLACE_IF_SAME
-            || req.operation == CONCURRENT_MAP_PUT_AND_UNLOCK) {
+                || req.operation == CONCURRENT_MAP_TRY_PUT
+                || req.operation == CONCURRENT_MAP_PUT_TRANSIENT
+                || req.operation == CONCURRENT_MAP_REPLACE_IF_SAME
+                || req.operation == CONCURRENT_MAP_PUT_AND_UNLOCK) {
             req.response = Boolean.TRUE;
         } else {
             req.response = oldValue;
@@ -1090,7 +1090,7 @@ public class CMap {
         final long now = Clock.currentTimeMillis();
         for (Record record : records) {
             if (record.isActive() && record.isValid(now) &&
-                record.isLocked() && acquiredAtLeastFor < (now - record.getLockAcquireTime())) {
+                    record.isLocked() && acquiredAtLeastFor < (now - record.getLockAcquireTime())) {
                 result.add(record);
             }
         }
@@ -1099,7 +1099,7 @@ public class CMap {
 
     /**
      * for dead-lock detection
-     *
+     * <p/>
      * TODO: Warning => DistributedLock is not thread-safe !!!
      *
      * @param lockOwners
@@ -1117,7 +1117,7 @@ public class CMap {
                         Request request = scheduledAction.getRequest();
                         if (ClusterOperation.CONCURRENT_MAP_LOCK.equals(request.operation)) {
                             lockRequested.put(record.getKey(),
-                                              new DistributedLock(request.lockAddress, request.lockThreadId));
+                                    new DistributedLock(request.lockAddress, request.lockThreadId));
                         }
                     }
                 }
@@ -1288,7 +1288,7 @@ public class CMap {
     }
 
     class MaxSizeHeapPolicy extends MaxSizePerJVMPolicy {
-        final long memoryLimit ;
+        final long memoryLimit;
 
         MaxSizeHeapPolicy(MaxSizeConfig maxSizeConfig) {
             super(maxSizeConfig);
@@ -1301,7 +1301,7 @@ public class CMap {
     }
 
     class MaxSizeHeapPercentagePolicy extends MaxSizePerJVMPolicy {
-        final int maxPercentage ;
+        final int maxPercentage;
 
         MaxSizeHeapPercentagePolicy(MaxSizeConfig maxSizeConfig) {
             super(maxSizeConfig);
@@ -1751,7 +1751,7 @@ public class CMap {
             final List<ScheduledAction> scheduledActions = oldRecord.getScheduledActions();
             if (scheduledActions != null && !scheduledActions.isEmpty()) {
                 logger.log(Level.WARNING, "Replacing a record which is locked and has scheduled actions! " +
-                                          oldRecord + " -> " + oldRecord.getLock());
+                        oldRecord + " -> " + oldRecord.getLock());
                 if (logger.isLoggable(Level.FINEST)) {
                     logger.log(Level.FINEST, "Stack trace:", new Throwable());
                 }
