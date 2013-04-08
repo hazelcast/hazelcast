@@ -46,6 +46,10 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
             mapContainer.getMapOperationCounter().incrementPuts(Clock.currentTimeMillis() - getStartTime());
         }
+        if (mapContainer.getWanReplicationListener() != null && mapContainer.getWanMergePolicy() != null) {
+            SimpleEntryView entryView = new SimpleEntryView(dataKey, mapService.toData(dataValue), recordStore.getRecords().get(dataKey));
+            mapService.publishWanReplicationUpdate(name, entryView);
+        }
     }
 
     public boolean shouldBackup() {

@@ -18,11 +18,14 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.MapLoaderLifecycleSupport;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.map.merge.MapMergePolicy;
+import com.hazelcast.map.merge.PassThroughMergePolicy;
 import com.hazelcast.monitor.impl.MapOperationsCounter;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
@@ -35,12 +38,14 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
+import com.hazelcast.wan.WanReplicationListener;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 
 import static com.hazelcast.map.MapService.SERVICE_NAME;
 
@@ -66,6 +71,9 @@ public class MapContainer {
     private final EntryTaskScheduler ttlEvictionScheduler;
     private final EntryTaskScheduler mapStoreWriteScheduler;
     private final EntryTaskScheduler mapStoreDeleteScheduler;
+
+    private final WanReplicationListener wanReplicationListener;
+    private final MapMergePolicy wanMergePolicy;
 
     public MapContainer(String name, MapConfig mapConfig, MapService mapService) {
         MapStore storeTemp = null;
@@ -99,8 +107,8 @@ public class MapContainer {
         store = storeTemp;
 
         if (store != null) {
-            if(store instanceof MapLoaderLifecycleSupport) {
-                ((MapLoaderLifecycleSupport)store).init(nodeEngine.getHazelcastInstance(), mapConfig.getMapStoreConfig().getProperties(), name);
+            if (store instanceof MapLoaderLifecycleSupport) {
+                ((MapLoaderLifecycleSupport) store).init(nodeEngine.getHazelcastInstance(), mapConfig.getMapStoreConfig().getProperties(), name);
             }
             // only master can initiate the loadAll. master will send other members to loadAll.
             // the members join later will not load from mapstore.
@@ -123,11 +131,10 @@ public class MapContainer {
                 mapReady = true;
             }
 
-            if(mapStoreConfig.getWriteDelaySeconds() > 0) {
-                mapStoreWriteScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new MapStoreWriteProcessor(this, mapService) , false);
-                mapStoreDeleteScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new MapStoreDeleteProcessor(this, mapService) , false);
-            }
-            else {
+            if (mapStoreConfig.getWriteDelaySeconds() > 0) {
+                mapStoreWriteScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new MapStoreWriteProcessor(this, mapService), false);
+                mapStoreDeleteScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new MapStoreDeleteProcessor(this, mapService), false);
+            } else {
                 mapStoreDeleteScheduler = null;
                 mapStoreWriteScheduler = null;
             }
@@ -137,11 +144,19 @@ public class MapContainer {
             mapStoreWriteScheduler = null;
         }
         ttlEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new EvictionProcessor(nodeEngine, mapService, name), true);
-        if(mapConfig.getMaxIdleSeconds() > 0) {
+        if (mapConfig.getMaxIdleSeconds() > 0) {
             idleEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new EvictionProcessor(nodeEngine, mapService, name), true);
-        }
-        else {
+        } else {
             idleEvictionScheduler = null;
+        }
+
+        WanReplicationRef wanReplicationRef = mapConfig.getWanReplicationRef();
+        if (wanReplicationRef != null) {
+            this.wanReplicationListener = nodeEngine.getWanReplicationService().getWanReplication(wanReplicationRef.getName());
+            this.wanMergePolicy = getMergePolicy(wanReplicationRef.getMergePolicy());
+        } else {
+            wanMergePolicy = null;
+            wanReplicationListener = null;
         }
 
         interceptors = new CopyOnWriteArrayList<MapInterceptor>();
@@ -149,6 +164,22 @@ public class MapContainer {
         interceptorIdMap = new ConcurrentHashMap<MapInterceptor, String>();
         nearCacheEnabled = mapConfig.getNearCacheConfig() != null;
         creationTime = Clock.currentTimeMillis();
+    }
+
+    // todo cache policies in a map probably in mapservice
+    private MapMergePolicy getMergePolicy(String mergePolicyName) {
+        MapMergePolicy mergePolicyTemp = null;
+        if (mergePolicyName != null) {
+            try {
+                mergePolicyTemp = (MapMergePolicy) ClassLoaderUtil.newInstance(mergePolicyName);
+            } catch (Exception e) {
+                ExceptionUtil.rethrow(e);
+            }
+        }
+        if(mergePolicyTemp == null) {
+            mergePolicyTemp = new PassThroughMergePolicy();
+        }
+        return mergePolicyTemp;
     }
 
     public boolean isMapReady() {
@@ -225,6 +256,7 @@ public class MapContainer {
                 mapReady = true;
             }
         }
+
     }
 
     public EntryTaskScheduler getIdleEvictionScheduler() {
@@ -249,6 +281,14 @@ public class MapContainer {
 
     public MapOperationsCounter getMapOperationCounter() {
         return mapOperationCounter;
+    }
+
+    public WanReplicationListener getWanReplicationListener() {
+        return wanReplicationListener;
+    }
+
+    public MapMergePolicy getWanMergePolicy() {
+        return wanMergePolicy;
     }
 
     public String addInterceptor(MapInterceptor interceptor) {

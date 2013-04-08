@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.proxy;
 
-import com.hazelcast.concurrent.lock.LockNamespace;
+import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.concurrent.lock.LockProxySupport;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
@@ -46,7 +46,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
     protected MapProxySupport(final String name, final MapService mapService, NodeEngine nodeEngine) {
         super(nodeEngine, mapService);
         this.name = name;
-        lockSupport = new LockProxySupport(new LockNamespace(MapService.SERVICE_NAME, name));
+        lockSupport = new LockProxySupport(new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
     }
 
     protected Data getInternal(Data key) {

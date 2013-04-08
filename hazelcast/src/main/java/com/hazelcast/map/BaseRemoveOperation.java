@@ -22,6 +22,8 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.Clock;
 
+import java.util.Date;
+
 public abstract class BaseRemoveOperation extends LockAwareOperation implements BackupAwareOperation {
 
     protected transient Data dataOldValue;
@@ -40,6 +42,10 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
         invalidateNearCaches();
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
             mapContainer.getMapOperationCounter().incrementRemoves(Clock.currentTimeMillis() - getStartTime());
+        }
+        if (mapContainer.getWanReplicationListener() != null && mapContainer.getWanMergePolicy() != null) {
+            // todo should evict operation replicated??
+            mapService.publishWanReplicationRemove(name, dataKey, Clock.currentTimeMillis());
         }
     }
 
@@ -62,6 +68,11 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
 
     public boolean shouldBackup() {
         return true;
+    }
+
+    @Override
+    public void onWaitExpire() {
+        getResponseHandler().sendResponse(null);
     }
 
     @Override

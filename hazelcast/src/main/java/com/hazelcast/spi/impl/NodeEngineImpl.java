@@ -36,6 +36,7 @@ import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.TransactionManagerServiceImpl;
+import com.hazelcast.wan.WanReplicationService;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -55,6 +56,8 @@ public class NodeEngineImpl implements NodeEngine {
     final AsyncInvocationServiceImpl asyncInvocationService;
     final WaitNotifyServiceImpl waitNotifyService;
     final TransactionManagerServiceImpl transactionManagerService;
+    final WanReplicationService wanReplicationService;
+
 
     public NodeEngineImpl(Node node) {
         this.node = node;
@@ -67,6 +70,7 @@ public class NodeEngineImpl implements NodeEngine {
         asyncInvocationService = new AsyncInvocationServiceImpl(this);
         waitNotifyService = new WaitNotifyServiceImpl(this);
         transactionManagerService = new TransactionManagerServiceImpl(this);
+        wanReplicationService = new WanReplicationService(this.node);
     }
 
     @PrivateApi
@@ -129,6 +133,10 @@ public class NodeEngineImpl implements NodeEngine {
 
     public WaitNotifyService getWaitNotifyService() {
         return waitNotifyService;
+    }
+
+    public WanReplicationService getWanReplicationService() {
+        return wanReplicationService;
     }
 
     public TransactionManagerService getTransactionManagerService() {
@@ -226,6 +234,8 @@ public class NodeEngineImpl implements NodeEngine {
             operationService.handleOperation(packet);
         } else if (packet.isHeaderSet(Packet.HEADER_EVENT)) {
             eventService.handleEvent(packet);
+        } else if (packet.isHeaderSet(Packet.HEADER_WAN_REPLICATION)) {
+            wanReplicationService.handleEvent(packet);
         } else {
             logger.log(Level.SEVERE, "Unknown packet type! Header: " + packet.getHeader());
         }
@@ -314,5 +324,6 @@ public class NodeEngineImpl implements NodeEngine {
         asyncInvocationService.shutdown();
         eventService.shutdown();
         operationService.shutdown();
+        wanReplicationService.shutdown();
     }
 }

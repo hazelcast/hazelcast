@@ -14,17 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.lock;
+package com.hazelcast.wan;
 
-import com.hazelcast.nio.serialization.DataSerializable;
-
-/**
- * @mdogan 2/13/13
- */
-public interface ILockNamespace extends DataSerializable {
-
-    String getServiceName();
-
-    Object getObjectId();
-
+public interface WanReplicationListener {
+    void publishReplicationEvent(String serviceName, ReplicationEventObject eventObject);
 }

@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.KeyBasedOperation;
 
 import java.io.IOException;
@@ -28,7 +29,7 @@ abstract class BaseLockOperation extends AbstractOperation implements KeyBasedOp
 
     public static final long DEFAULT_LOCK_TTL = Long.MAX_VALUE;
 
-    protected ILockNamespace namespace;
+    protected ObjectNamespace namespace;
 
     protected Data key;
 
@@ -43,20 +44,20 @@ abstract class BaseLockOperation extends AbstractOperation implements KeyBasedOp
     public BaseLockOperation() {
     }
 
-    protected BaseLockOperation(ILockNamespace namespace, Data key, int threadId) {
+    protected BaseLockOperation(ObjectNamespace namespace, Data key, int threadId) {
         this.namespace = namespace;
         this.key = key;
         this.threadId = threadId;
     }
 
-    protected BaseLockOperation(ILockNamespace namespace, Data key, int threadId, long timeout) {
+    protected BaseLockOperation(ObjectNamespace namespace, Data key, int threadId, long timeout) {
         this.namespace = namespace;
         this.key = key;
         this.threadId = threadId;
         this.timeout = timeout;
     }
 
-    public BaseLockOperation(ILockNamespace namespace, Data key, int threadId, long ttl, long timeout) {
+    public BaseLockOperation(ObjectNamespace namespace, Data key, int threadId, long ttl, long timeout) {
         this.namespace = namespace;
         this.key = key;
         this.threadId = threadId;

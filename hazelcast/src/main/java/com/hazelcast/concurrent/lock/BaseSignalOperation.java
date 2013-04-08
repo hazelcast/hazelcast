@@ -19,6 +19,7 @@ package com.hazelcast.concurrent.lock;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.ObjectNamespace;
 
 import java.io.IOException;
 
@@ -34,7 +35,7 @@ abstract class BaseSignalOperation extends BaseLockOperation {
     public BaseSignalOperation() {
     }
 
-    public BaseSignalOperation(ILockNamespace namespace, Data key, int threadId, String conditionId, boolean all) {
+    public BaseSignalOperation(ObjectNamespace namespace, Data key, int threadId, String conditionId, boolean all) {
         super(namespace, key, threadId);
         this.conditionId = conditionId;
         this.all = all;

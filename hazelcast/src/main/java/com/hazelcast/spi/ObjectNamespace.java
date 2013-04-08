@@ -14,21 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.lock;
+package com.hazelcast.spi;
 
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.nio.serialization.DataSerializable;
 
 /**
  * @mdogan 2/13/13
  */
-public class SignalBackupOperation extends BaseSignalOperation implements BackupOperation {
+public interface ObjectNamespace extends DataSerializable {
 
-    public SignalBackupOperation() {
-    }
+    String getServiceName();
 
-    public SignalBackupOperation(ObjectNamespace namespace, Data key, int threadId, String conditionId, boolean all) {
-        super(namespace, key, threadId, conditionId, all);
-    }
+    Object getObjectId();
+
 }

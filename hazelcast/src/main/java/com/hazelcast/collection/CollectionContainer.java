@@ -16,7 +16,7 @@
 
 package com.hazelcast.collection;
 
-import com.hazelcast.concurrent.lock.LockNamespace;
+import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.concurrent.lock.SharedLockService;
 import com.hazelcast.config.MultiMapConfig;
@@ -45,7 +45,7 @@ public class CollectionContainer {
 
     final ConcurrentMap<Data, CollectionWrapper> collections = new ConcurrentHashMap<Data, CollectionWrapper>(1000);
 
-    final LockNamespace lockNamespace;
+    final DefaultObjectNamespace lockNamespace;
 
     final LockStore lockStore;
 
@@ -63,7 +63,7 @@ public class CollectionContainer {
         this.partitionId = partitionId;
         this.config = new MultiMapConfig(nodeEngine.getConfig().getMultiMapConfig(proxyId.name));
 
-        this.lockNamespace = new LockNamespace(CollectionService.SERVICE_NAME, proxyId);
+        this.lockNamespace = new DefaultObjectNamespace(CollectionService.SERVICE_NAME, proxyId);
         final SharedLockService lockService = nodeEngine.getSharedService(SharedLockService.SERVICE_NAME);
         this.lockStore = lockService == null ? null :
                 lockService.createLockStore(partitionId, lockNamespace, config.getSyncBackupCount(), config.getAsyncBackupCount());

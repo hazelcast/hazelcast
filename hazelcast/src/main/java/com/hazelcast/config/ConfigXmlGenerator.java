@@ -245,7 +245,7 @@ public class ConfigXmlGenerator {
             if (m.getWanReplicationRef() != null) {
                 final WanReplicationRef wan = m.getWanReplicationRef();
                 xml.append("<wan-replication-ref name=\"").append(wan.getName()).append("\">");
-                xml.append("<merge-policy>").append(wan.getMergePolicyClassName()).append("</merge-policy>");
+                xml.append("<merge-policy>").append(wan.getMergePolicy()).append("</merge-policy>");
                 xml.append("</wan-replication-ref>");
             }
             if (!m.getMapIndexConfigs().isEmpty()) {

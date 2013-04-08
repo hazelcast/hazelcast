@@ -41,7 +41,7 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
 
     private final NodeEngine nodeEngine;
     private final LockStoreContainer[] containers;
-    private final ConcurrentHashMap<ILockNamespace, EntryTaskScheduler> evictionProcessors = new ConcurrentHashMap<ILockNamespace, EntryTaskScheduler>();
+    private final ConcurrentHashMap<ObjectNamespace, EntryTaskScheduler> evictionProcessors = new ConcurrentHashMap<ObjectNamespace, EntryTaskScheduler>();
 
     public LockService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -68,29 +68,29 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
         }
     }
 
-    public LockStore createLockStore(int partitionId, ILockNamespace namespace, int backupCount, int asyncBackupCount) {
+    public LockStore createLockStore(int partitionId, ObjectNamespace namespace, int backupCount, int asyncBackupCount) {
         final LockStoreContainer container = getLockContainer(partitionId);
         container.createLockStore(namespace, backupCount, asyncBackupCount);
         return new LockStoreProxy(container, namespace);
     }
 
-    public void clearLockStore(int partitionId, ILockNamespace namespace) {
+    public void clearLockStore(int partitionId, ObjectNamespace namespace) {
         final LockStoreContainer container = getLockContainer(partitionId);
         container.clearLockStore(namespace);
     }
 
-    private final ConcurrencyUtil.ConstructorFunction<ILockNamespace, EntryTaskScheduler> schedulerConstructor = new ConcurrencyUtil.ConstructorFunction<ILockNamespace, EntryTaskScheduler>() {
-        public EntryTaskScheduler createNew(ILockNamespace namespace) {
+    private final ConcurrencyUtil.ConstructorFunction<ObjectNamespace, EntryTaskScheduler> schedulerConstructor = new ConcurrencyUtil.ConstructorFunction<ObjectNamespace, EntryTaskScheduler>() {
+        public EntryTaskScheduler createNew(ObjectNamespace namespace) {
             return EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new LockEvictionProcessor(nodeEngine, namespace) , true);
         }
     };
 
-    public void scheduleEviction(ILockNamespace namespace, Data key, long delay) {
+    public void scheduleEviction(ObjectNamespace namespace, Data key, long delay) {
         EntryTaskScheduler scheduler = ConcurrencyUtil.getOrPutSynchronized(evictionProcessors, namespace, evictionProcessors, schedulerConstructor);
         scheduler.schedule(delay, key, null);
     }
 
-    public void cancelEviction(ILockNamespace namespace, Data key) {
+    public void cancelEviction(ObjectNamespace namespace, Data key) {
         EntryTaskScheduler scheduler = ConcurrencyUtil.getOrPutSynchronized(evictionProcessors, namespace, evictionProcessors, schedulerConstructor);
         scheduler.cancel(key);
     }
@@ -99,7 +99,7 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
         return containers[partitionId];
     }
 
-    LockStoreImpl getLockStore(int partitionId, ILockNamespace namespace) {
+    LockStoreImpl getLockStore(int partitionId, ObjectNamespace namespace) {
         return getLockContainer(partitionId).getOrCreateDefaultLockStore(namespace);
     }
 

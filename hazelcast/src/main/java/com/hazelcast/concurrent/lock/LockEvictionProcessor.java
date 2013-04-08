@@ -16,9 +16,8 @@
 
 package com.hazelcast.concurrent.lock;
 
-import com.hazelcast.map.EvictOperation;
-import com.hazelcast.map.MapService;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
@@ -35,9 +34,9 @@ import static com.hazelcast.concurrent.lock.LockService.SERVICE_NAME;
 public class LockEvictionProcessor implements ScheduledEntryProcessor<Data, Object> {
 
     NodeEngine nodeEngine;
-    ILockNamespace namespace;
+    ObjectNamespace namespace;
 
-    public LockEvictionProcessor(NodeEngine nodeEngine, ILockNamespace namespace) {
+    public LockEvictionProcessor(NodeEngine nodeEngine, ObjectNamespace namespace) {
         this.nodeEngine = nodeEngine;
         this.namespace = namespace;
     }

@@ -24,26 +24,28 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
 
-public class MergeOperation extends BasePutOperation {
+public class MergeRemoveOperation extends BaseRemoveOperation {
 
-    private MapMergePolicy mergePolicy;
-    private EntryView<Data,Data> mergingEntry;
+    private long removeTime;
     private transient boolean merged = false;
 
-    public MergeOperation(String name, Data dataKey, EntryView<Data, Data> entryView, MapMergePolicy policy) {
-        super(name, dataKey, null);
-        mergingEntry = entryView;
-        mergePolicy = policy;
+    public MergeRemoveOperation(String name, Data dataKey, long removeTime) {
+        super(name, dataKey);
+        this.removeTime = removeTime;
     }
 
-    public MergeOperation() {
+    public MergeRemoveOperation() {
     }
 
     public void run() {
-        SimpleEntryView entryView = (SimpleEntryView) mergingEntry;
-        entryView.setKey(mapService.toObject(mergingEntry.getKey()));
-        entryView.setValue(mapService.toObject(mergingEntry.getValue()));
-        merged = recordStore.merge(dataKey, mergingEntry, mergePolicy);
+        Record record = recordStore.getRecords().get(dataKey);
+        // todo what if statistics is disabled. currently it accepts the remove
+        // check if there is newer update or insert. If so then cancel the remove
+        if (record.getStatistics() != null && (record.getStatistics().getCreationTime() > removeTime || record.getStatistics().getLastUpdateTime() > removeTime ) ) {
+            return;
+        }
+        recordStore.getRecords().remove(dataKey);
+        merged = true;
     }
 
     @Override
@@ -55,7 +57,6 @@ public class MergeOperation extends BasePutOperation {
         if(merged) {
             invalidateNearCaches();
         }
-
     }
 
     public boolean shouldBackup() {
@@ -63,22 +64,25 @@ public class MergeOperation extends BasePutOperation {
     }
 
     @Override
+    public void onWaitExpire() {
+        getResponseHandler().sendResponse(false);
+    }
+
+    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeObject(mergingEntry);
-        out.writeObject(mergePolicy);
+        out.writeLong(removeTime);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        mergingEntry = in.readObject();
-        mergePolicy = in.readObject();
+        removeTime = in.readLong();
     }
 
     @Override
     public String toString() {
-        return "MergeOperation{" + name + "}";
+        return "MergeRemoveOperation{" + name + "}";
     }
 
 }
