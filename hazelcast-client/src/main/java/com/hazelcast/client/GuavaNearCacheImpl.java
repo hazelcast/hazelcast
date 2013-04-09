@@ -30,7 +30,8 @@ public class GuavaNearCacheImpl<K,V> implements NearCache<K,V> {
 
     public GuavaNearCacheImpl(NearCacheConfig nc, final MapClientProxy<K,V> map) {
         this.map = map;
-        CacheBuilder cacheBuilder = CacheBuilder.newBuilder().maximumSize(nc.getMaxSize());
+        CacheBuilder cacheBuilder = CacheBuilder.newBuilder();
+        if (nc.getMaxSize() > 0) cacheBuilder.maximumSize(nc.getMaxSize());
         if (nc.getTimeToLiveSeconds() > 0)
             cacheBuilder.expireAfterWrite(nc.getTimeToLiveSeconds(), TimeUnit.SECONDS);
         if (nc.getMaxIdleSeconds() > 0) cacheBuilder.expireAfterAccess(nc.getMaxIdleSeconds(), TimeUnit.SECONDS);
