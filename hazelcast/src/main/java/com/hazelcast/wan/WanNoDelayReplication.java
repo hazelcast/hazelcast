@@ -89,7 +89,6 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
                     Data data = node.nodeEngine.getSerializationService().toData(operation);
                     Packet operationPacket = new Packet(data, node.nodeEngine.getSerializationContext());
                     operationPacket.setHeader(Packet.HEADER_WAN_REPLICATION, true);
-                    System.out.println("send oper"+operation);
                     node.nodeEngine.send(operationPacket, conn);
                 } else {
                     failureQ.addFirst(operation);

@@ -718,6 +718,7 @@
                 <xs:element ref="max-idle-seconds" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="eviction-policy" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="invalidate-on-change" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="in-memory-format" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
         </xs:complexType>
     </xs:element>

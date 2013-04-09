@@ -545,7 +545,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         invalidateNearCache(mapName, key);
     }
 
-    public Data getFromNearCache(String mapName, Data key) {
+    public Object getFromNearCache(String mapName, Data key) {
         NearCache nearCache = getNearCache(mapName);
         return nearCache.get(key);
     }
