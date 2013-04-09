@@ -248,8 +248,8 @@ public class WebFilter implements Filter {
     private HazelcastHttpSession getSessionWithId(final String sessionId) {
         HazelcastHttpSession session = mapSessions.get(sessionId);
         if (session != null && !session.isValid()) {
-            session = null;
             destroySession(session, true);
+            session = null;
         }
         return session;
     }
