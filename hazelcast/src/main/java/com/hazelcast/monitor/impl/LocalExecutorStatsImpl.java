@@ -84,15 +84,15 @@ public class LocalExecutorStatsImpl implements LocalExecutorStats {
         return creationTime;
     }
 
-    public long getPending() {
+    public long getPendingTaskCount() {
         return pending.get();
     }
 
-    public long getStarted() {
+    public long getStartedTaskCount() {
         return started.get();
     }
 
-    public long getCompleted() {
+    public long getCompletedTaskCount() {
         return completed.get();
     }
 
@@ -104,7 +104,7 @@ public class LocalExecutorStatsImpl implements LocalExecutorStats {
 //        return minExecutionTime.get();
 //    }
 
-    public long getTotalExecutionTime() {
+    public long getTotalExecutionLatency() {
         return totalExecutionTime.get();
     }
 

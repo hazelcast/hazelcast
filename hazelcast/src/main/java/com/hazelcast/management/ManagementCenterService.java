@@ -17,12 +17,10 @@
 package com.hazelcast.management;
 
 import com.hazelcast.ascii.rest.HttpCommand;
-import com.hazelcast.collection.multimap.ObjectMultiMapProxy;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.core.LifecycleEvent.LifecycleState;
-import com.hazelcast.executor.ExecutorServiceProxy;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -31,7 +29,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.management.operation.ManagementCenterConfigOperation;
 import com.hazelcast.management.request.*;
 import com.hazelcast.map.MapService;
-import com.hazelcast.map.proxy.MapProxy;
 import com.hazelcast.monitor.TimedMemberState;
 import com.hazelcast.monitor.impl.*;
 import com.hazelcast.nio.Address;
@@ -40,12 +37,9 @@ import com.hazelcast.nio.serialization.ObjectDataOutputStream;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.partition.Partition;
-import com.hazelcast.queue.proxy.QueueProxy;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.topic.proxy.TopicProxy;
 
-import java.io.DataInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.management.*;
@@ -299,7 +293,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 } else if (distributedObject instanceof MultiMap) {
                     MultiMap multiMap = (MultiMap) distributedObject;
                     if (instanceFilterTopic.visible(multiMap.getName())) {
-                        memberState.putLocalMultiMapStats(multiMap.getName(), (LocalMapStatsImpl) multiMap.getLocalMultiMapStats());
+                        memberState.putLocalMultiMapStats(multiMap.getName(), (LocalMultiMapStatsImpl) multiMap.getLocalMultiMapStats());
                         count++;
                     }
                 } else if (distributedObject instanceof IExecutorService) {

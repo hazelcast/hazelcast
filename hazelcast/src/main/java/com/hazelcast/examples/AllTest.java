@@ -73,7 +73,7 @@ public class AllTest {
 //            return;
 //        }
 //        log(qOpStats);
-//        log("Q Operations per Second : " + (qOpStats.getNumberOfOffers() + qOpStats.getNumberOfEmptyPolls() + qOpStats.getNumberOfEmptyPolls() + qOpStats.getNumberOfRejectedOffers()) / period);
+//        log("Q Operations per Second : " + (qOpStats.getOfferOperationCount() + qOpStats.getEmptyPollOperationCount() + qOpStats.getEmptyPollOperationCount() + qOpStats.getRejectedOfferOperationCount()) / period);
     }
 
     private void log(Object message) {

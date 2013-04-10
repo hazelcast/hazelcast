@@ -53,17 +53,17 @@ public interface LocalQueueStats extends LocalInstanceStats {
      *
      * @return average age
      */
-    long getAveAge();
+    long getAvgAge();
 
     /**
      * Returns the number of offer/put/add operations.
      * Offers returning false will be included.
-     * #getNumberOfRejectedOffers can be used
+     * #getRejectedOfferOperationCount can be used
      * to get the rejected offers.
      *
      * @return number offer/put/add operations
      */
-    public long getNumberOfOffers();
+    public long getOfferOperationCount();
 
     /**
      * Returns the number of rejected offers. Offer
@@ -72,17 +72,17 @@ public interface LocalQueueStats extends LocalInstanceStats {
      *
      * @return number of rejected offers.
      */
-    public long getNumberOfRejectedOffers();
+    public long getRejectedOfferOperationCount();
 
     /**
      * Returns the number of poll/take/remove operations.
      * Polls returning null (empty) will be included.
-     * #getNumberOfEmptyPolls can be used to get the
+     * #getEmptyPollOperationCount can be used to get the
      * number of polls returned null.
      *
      * @return number of poll/take/remove operations.
      */
-    public long getNumberOfPolls();
+    public long getPollOperationCount();
 
     /**
      * Returns number of null returning poll operations.
@@ -90,19 +90,19 @@ public interface LocalQueueStats extends LocalInstanceStats {
      *
      * @return number of null returning poll operations.
      */
-    public long getNumberOfEmptyPolls();
+    public long getEmptyPollOperationCount();
 
     /**
      * Returns number of //TODO operations.
      *
      * @return number of null returning poll operations.
      */
-    public long getNumberOfOtherOperations();
+    public long getOtherOperationsCount();
 
     /**
      * Returns number of //TODO operations.
      *
      * @return number of null returning poll operations.
      */
-    public long getNumberOfEvents();
+    public long getEventOperationCount();
 }

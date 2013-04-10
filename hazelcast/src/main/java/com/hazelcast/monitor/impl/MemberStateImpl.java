@@ -37,7 +37,7 @@ public class MemberStateImpl implements MemberState {
     MemberHealthStatsImpl memberHealthStats = new MemberHealthStatsImpl();
     Map<String, Long> runtimeProps = new HashMap<String, Long>();
     Map<String, LocalMapStatsImpl> mapStats = new HashMap<String, LocalMapStatsImpl>();
-    Map<String, LocalMapStatsImpl> multiMapStats = new HashMap<String, LocalMapStatsImpl>();
+    Map<String, LocalMultiMapStatsImpl> multiMapStats = new HashMap<String, LocalMultiMapStatsImpl>();
     Map<String, LocalQueueStatsImpl> queueStats = new HashMap<String, LocalQueueStatsImpl>();
     Map<String, LocalTopicStatsImpl> topicStats = new HashMap<String, LocalTopicStatsImpl>();
     Map<String, LocalExecutorStatsImpl> executorStats = new HashMap<String, LocalExecutorStatsImpl>();
@@ -55,7 +55,7 @@ public class MemberStateImpl implements MemberState {
             entry.getValue().writeData(out);
         }
         out.writeInt(multiMapStats.size());
-        for (Map.Entry<String, LocalMapStatsImpl> entry : multiMapStats.entrySet()) {
+        for (Map.Entry<String, LocalMultiMapStatsImpl> entry : multiMapStats.entrySet()) {
             out.writeUTF(entry.getKey());
             entry.getValue().writeData(out);
         }
@@ -114,7 +114,7 @@ public class MemberStateImpl implements MemberState {
         for (int i = in.readInt(); i > 0; i--) {
             name = in.readUTF();
             (impl = new LocalMapStatsImpl()).readData(in);
-            multiMapStats.put(name, (LocalMapStatsImpl) impl);
+            multiMapStats.put(name, (LocalMultiMapStatsImpl) impl);
         }
         for (int i = in.readInt(); i > 0; i--) {
             name = in.readUTF();
@@ -207,7 +207,7 @@ public class MemberStateImpl implements MemberState {
         return mapStats.get(mapName);
     }
 
-    public LocalMapStats getLocalMultiMapStats(String mapName) {
+    public LocalMultiMapStats getLocalMultiMapStats(String mapName) {
         return multiMapStats.get(mapName);
     }
 
@@ -255,7 +255,7 @@ public class MemberStateImpl implements MemberState {
         mapStats.put(name, localMapStats);
     }
 
-    public void putLocalMultiMapStats(String name, LocalMapStatsImpl localMultiMapStats) {
+    public void putLocalMultiMapStats(String name, LocalMultiMapStatsImpl localMultiMapStats) {
         multiMapStats.put(name, localMultiMapStats);
     }
 

@@ -89,7 +89,7 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
         this.maxAge = maxAge;
     }
 
-    public long getAveAge() {
+    public long getAvgAge() {
         return aveAge;
     }
 
@@ -121,23 +121,23 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
         return numberOfOffers.get() + numberOfPolls.get() + numberOfOtherOperations.get();
     }
 
-    public long getNumberOfOffers() {
+    public long getOfferOperationCount() {
         return numberOfOffers.get();
     }
 
-    public long getNumberOfRejectedOffers() {
+    public long getRejectedOfferOperationCount() {
         return numberOfRejectedOffers.get();
     }
 
-    public long getNumberOfPolls() {
+    public long getPollOperationCount() {
         return numberOfPolls.get();
     }
 
-    public long getNumberOfEmptyPolls() {
+    public long getEmptyPollOperationCount() {
         return numberOfEmptyPolls.get();
     }
 
-    public long getNumberOfOtherOperations() {
+    public long getOtherOperationsCount() {
         return numberOfOtherOperations.get();
     }
 
@@ -165,7 +165,7 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
         numberOfEvents.incrementAndGet();
     }
 
-    public long getNumberOfEvents() {
+    public long getEventOperationCount() {
         return numberOfEvents.get();
     }
 

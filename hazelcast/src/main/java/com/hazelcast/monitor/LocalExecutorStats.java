@@ -23,21 +23,21 @@ public interface LocalExecutorStats extends LocalInstanceStats {
      *
      * @return the number of pending operations
      */
-    long getPending();
+    long getPendingTaskCount();
 
     /**
      * Returns the number of started operations of the executor service
      *
      * @return the number of started operations
      */
-    long getStarted();
+    long getStartedTaskCount();
 
     /**
      * Returns the number of completed operations of the executor service
      *
      * @return the number of completed operations
      */
-    long getCompleted();
+    long getCompletedTaskCount();
 
     /**
      * Returns the total start latency of operations started
@@ -51,7 +51,7 @@ public interface LocalExecutorStats extends LocalInstanceStats {
      *
      * @return the total execution time
      */
-    long getTotalExecutionTime();
+    long getTotalExecutionLatency();
 
 //    /**
 //     * Returns the min execution time of operations finished
