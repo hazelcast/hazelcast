@@ -31,6 +31,7 @@ import java.util.Map;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotSame;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 
 public class ClientMapGuavaCacheTest {
 
@@ -40,7 +41,7 @@ public class ClientMapGuavaCacheTest {
     }
 
     @Test
-    public void testReadFromCache() {
+    public void testReadFromCache() throws InterruptedException {
         System.setProperty("hazelcast.client.near.cache.enabled", "true");
         Config config = new Config();
         NearCacheConfig nearCacheConfig = new NearCacheConfig();
@@ -63,6 +64,13 @@ public class ClientMapGuavaCacheTest {
             mapC.get("a");
         }
         assertEquals(mapH.getMapEntry("a").getHits(), hit);
+        
+        mapH.remove("a");
+        Thread.sleep(100);
+        assertNull(mapC.get("a"));
+        mapC.put("a", "a");
+        Thread.sleep(100);
+        assertEquals("a", mapC.get("a"));
     }
 
     @Test
@@ -114,5 +122,12 @@ public class ClientMapGuavaCacheTest {
         Thread.sleep(100);
         assertEquals("b", mapC.get("a"));
         assertEquals(mapH.getMapEntry("a").getHits(), ++hit);
+        
+        mapH.remove("a");
+        Thread.sleep(100);
+        assertNull(mapC.get("a"));
+        mapH.put("a", "a");
+        Thread.sleep(100);
+        assertEquals("a", mapC.get("a"));
     }
 }

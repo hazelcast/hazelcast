@@ -16,6 +16,7 @@
 
 package com.hazelcast.client;
 
+import com.google.common.base.Optional;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -25,9 +26,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 public class GuavaNearCacheImpl<K,V> implements NearCache<K,V> {
-    LoadingCache<K, V> cache;
+    LoadingCache<K, Optional<V>> cache;
     private MapClientProxy<K, V> map;
-
+    
     public GuavaNearCacheImpl(NearCacheConfig nc, final MapClientProxy<K,V> map) {
         this.map = map;
         CacheBuilder cacheBuilder = CacheBuilder.newBuilder();
@@ -39,7 +40,7 @@ public class GuavaNearCacheImpl<K,V> implements NearCache<K,V> {
             @Override
             public Object load(Object o) throws Exception {
                 try {
-                    return map.get0(o);
+                	return Optional.fromNullable(map.get0(o));
                 } catch (Exception e) {
                     throw new ExecutionException(e);
                 }
@@ -53,8 +54,9 @@ public class GuavaNearCacheImpl<K,V> implements NearCache<K,V> {
 
     public V get(K key) {
         try {
-            return cache.get(key);
+            return cache.get(key).orNull();
         } catch (ExecutionException e) {
+        	
             if (e.getCause() instanceof RuntimeException) {
                 throw (RuntimeException) e.getCause();
             }
