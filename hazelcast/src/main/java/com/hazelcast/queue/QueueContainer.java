@@ -83,30 +83,30 @@ public class QueueContainer implements DataSerializable {
 
     //TX Methods
 
-    public void commit(String txId){
+    public void commit(String txId) {
         List<QueueItem> list = txOfferMap.remove(txId);
-        if (list != null){
-            for (QueueItem item: list){
+        if (list != null) {
+            for (QueueItem item : list) {
                 item.setItemId(nextId());
                 getItemQueue().offer(item);
             }
         }
         list = txPollMap.remove(txId);
-        if (list != null){
+        if (list != null) {
             long current = Clock.currentTimeMillis();
-            for (QueueItem item: list){
+            for (QueueItem item : list) {
                 age(item, current);
             }
         }
     }
 
-    public void rollback(String txId){
+    public void rollback(String txId) {
         List<QueueItem> list = txPollMap.remove(txId);
-        if (list != null){
+        if (list != null) {
             ListIterator<QueueItem> iter = list.listIterator(list.size());
-            while (iter.hasPrevious()){
+            while (iter.hasPrevious()) {
                 QueueItem item = iter.previous();
-                if (item.getItemId() != -1){//TODO
+                if (item.getItemId() != -1) {//TODO
                     getItemQueue().offerFirst(item);
                 }
             }
@@ -114,22 +114,22 @@ public class QueueContainer implements DataSerializable {
         txOfferMap.remove(txId);
     }
 
-    public long txOffer(String txId, Data data){
+    public long txOffer(String txId, Data data) {
         List<QueueItem> list = getTxList(txId, txOfferMap);
         long itemId = nextId();
         list.add(new QueueItem(this, nextId(), data));
         return itemId;
     }
 
-    public QueueItem txPoll(String txId){
+    public QueueItem txPoll(String txId) {
         QueueItem item = getItemQueue().poll();
-        if (item == null ){
+        if (item == null) {
             List<QueueItem> list = getTxList(txId, txOfferMap);
-            if (list.size() > 0){
+            if (list.size() > 0) {
                 item = list.remove(0);
             }
         }
-        if (item != null){
+        if (item != null) {
             List<QueueItem> list = getTxList(txId, txPollMap);
             list.add(item);
             return item;
@@ -137,20 +137,20 @@ public class QueueContainer implements DataSerializable {
         return null;
     }
 
-    public Data txPeek(String txId){
+    public Data txPeek(String txId) {
         QueueItem item = getItemQueue().peek();
-        if (item == null){
+        if (item == null) {
             List<QueueItem> list = getTxList(txId, txOfferMap);
-            if (list.size() > 0){
+            if (list.size() > 0) {
                 item = list.get(0);
             }
         }
         return item == null ? null : item.getData();
     }
 
-    private List<QueueItem> getTxList(String txId, Map<String, List<QueueItem>> map){
+    private List<QueueItem> getTxList(String txId, Map<String, List<QueueItem>> map) {
         List<QueueItem> list = map.get(txId);
-        if (list == null){
+        if (list == null) {
             list = new ArrayList<QueueItem>(3);
             map.put(txId, list);
         }
@@ -172,7 +172,7 @@ public class QueueContainer implements DataSerializable {
         }
         getItemQueue().offer(item);
         QueueItem replaced = itemMap.put(item.getItemId(), item);
-        if (replaced != null){
+        if (replaced != null) {
             System.err.println("something wrong!!!");
         }
         return item.getItemId();
@@ -184,7 +184,7 @@ public class QueueContainer implements DataSerializable {
             item.setData(data);
         }
         QueueItem replaced = itemMap.put(itemId, item);
-        if (replaced != null){
+        if (replaced != null) {
             System.err.println("something wrong!!!");
         }
     }
@@ -198,7 +198,7 @@ public class QueueContainer implements DataSerializable {
             }
             getItemQueue().offer(item);
             QueueItem replaced = itemMap.put(item.getItemId(), item);
-            if (replaced != null){
+            if (replaced != null) {
                 System.err.println("something wrong!!!");
             }
 
@@ -218,7 +218,7 @@ public class QueueContainer implements DataSerializable {
     }
 
     public void addAllBackup(Map<Long, Data> dataMap) {
-        for (Map.Entry<Long, Data> entry: dataMap.entrySet()){
+        for (Map.Entry<Long, Data> entry : dataMap.entrySet()) {
             QueueItem item = new QueueItem(this, entry.getKey());
             if (!store.isEnabled() || store.getMemoryLimit() > getItemQueue().size()) {
                 item.setData(entry.getValue());
@@ -256,7 +256,7 @@ public class QueueContainer implements DataSerializable {
         }
         getItemQueue().poll();
         QueueItem removed = itemMap.remove(item.getItemId());
-        if (removed == null || removed.getItemId() != item.getItemId()){
+        if (removed == null || removed.getItemId() != item.getItemId()) {
             System.err.println("something wrong!!!");
         }
         age(item, Clock.currentTimeMillis());
@@ -265,10 +265,9 @@ public class QueueContainer implements DataSerializable {
 
     public void pollBackup(long itemId) {
         QueueItem item = itemMap.remove(itemId);
-        if (item != null){
+        if (item != null) {
             age(item, Clock.currentTimeMillis());//For Stats
-        }
-        else {
+        } else {
             System.err.println("something wrong!!!");
         }
     }
@@ -301,7 +300,7 @@ public class QueueContainer implements DataSerializable {
         for (int i = 0; i < maxSize; i++) {
             QueueItem item = getItemQueue().poll();
             QueueItem removed = itemMap.remove(item.getItemId());
-            if (removed == null || removed.getItemId() != item.getItemId()){
+            if (removed == null || removed.getItemId() != item.getItemId()) {
                 System.err.println("something wrong!!!");
             }
             age(item, current); //For Stats
@@ -310,7 +309,7 @@ public class QueueContainer implements DataSerializable {
     }
 
     public void drainFromBackup(Set<Long> itemIdSet) {
-        for (Long itemId: itemIdSet){
+        for (Long itemId : itemIdSet) {
             pollBackup(itemId);
         }
         dataMap.clear();
@@ -470,10 +469,10 @@ public class QueueContainer implements DataSerializable {
         return (getItemQueue().size() + delta) <= config.getMaxSize();
     }
 
-    LinkedList<QueueItem> getItemQueue(){
-        if (itemQueue == null){
+    LinkedList<QueueItem> getItemQueue() {
+        if (itemQueue == null) {
             itemQueue = new LinkedList<QueueItem>();
-            if (!itemMap.isEmpty()){
+            if (!itemMap.isEmpty()) {
                 List<QueueItem> values = new ArrayList<QueueItem>(itemMap.values());
                 Collections.sort(values);
                 itemQueue.addAll(values);
@@ -493,11 +492,11 @@ public class QueueContainer implements DataSerializable {
         store.setConfig(storeConfig);
     }
 
-    long nextId(){
+    long nextId() {
         return idGenerator++;
     }
 
-    void setId(long itemId){
+    void setId(long itemId) {
         idGenerator = Math.max(itemId, idGenerator);
     }
 
@@ -517,24 +516,23 @@ public class QueueContainer implements DataSerializable {
         return partitionId;
     }
 
-    private void age(QueueItem item, long currentTime){
+    private void age(QueueItem item, long currentTime) {
         long elapsed = currentTime - item.getCreationTime();
-        if (elapsed <= 0){
+        if (elapsed <= 0) {
             return;//elapsed time can not be a negative value, a system clock problem maybe. ignored
         }
         totalAgedCount++;
         totalAge += elapsed;
-        if (minAge == 0){
+        if (minAge == 0) {
             minAge = elapsed;
             maxAge = elapsed;
-        }
-        else {
+        } else {
             minAge = Math.min(minAge, elapsed);
             maxAge = Math.max(maxAge, elapsed);
         }
     }
 
-    public void setStats(LocalQueueStatsImpl stats){
+    public void setStats(LocalQueueStatsImpl stats) {
         stats.setMinAge(minAge);
         minAge = 0;
         stats.setMaxAge(maxAge);
@@ -543,6 +541,7 @@ public class QueueContainer implements DataSerializable {
         totalAge = 0;
         long totalAgedCountVal = totalAgedCount;
         totalAgedCount = 0;
+        totalAgedCountVal = totalAgedCountVal == 0 ? 1 : totalAgedCountVal;
         stats.setAveAge(totalAgeVal / totalAgedCountVal);
     }
 
@@ -553,22 +552,22 @@ public class QueueContainer implements DataSerializable {
             item.writeData(out);
         }
         out.writeInt(txOfferMap.size());
-        for (Map.Entry<String, List<QueueItem>> entry: txOfferMap.entrySet()){
+        for (Map.Entry<String, List<QueueItem>> entry : txOfferMap.entrySet()) {
             String txId = entry.getKey();
             out.writeUTF(txId);
             List<QueueItem> list = entry.getValue();
             out.writeInt(list.size());
-            for (QueueItem item: list){
+            for (QueueItem item : list) {
                 item.writeData(out);
             }
         }
         out.writeInt(txPollMap.size());
-        for (Map.Entry<String, List<QueueItem>> entry: txPollMap.entrySet()){
+        for (Map.Entry<String, List<QueueItem>> entry : txPollMap.entrySet()) {
             String txId = entry.getKey();
             out.writeUTF(txId);
             List<QueueItem> list = entry.getValue();
             out.writeInt(list.size());
-            for (QueueItem item: list){
+            for (QueueItem item : list) {
                 item.writeData(out);
             }
         }
@@ -585,7 +584,7 @@ public class QueueContainer implements DataSerializable {
             setId(item.getItemId());
         }
         int offerMapSize = in.readInt();
-        for (int i=0; i<offerMapSize; i++){
+        for (int i = 0; i < offerMapSize; i++) {
             String txId = in.readUTF();
             int listSize = in.readInt();
             List<QueueItem> list = new ArrayList<QueueItem>(listSize);
@@ -597,7 +596,7 @@ public class QueueContainer implements DataSerializable {
             txOfferMap.put(txId, list);
         }
         int pollMapSize = in.readInt();
-        for (int i=0; i<pollMapSize; i++){
+        for (int i = 0; i < pollMapSize; i++) {
             String txId = in.readUTF();
             int listSize = in.readInt();
             List<QueueItem> list = new ArrayList<QueueItem>(listSize);
