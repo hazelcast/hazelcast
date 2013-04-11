@@ -70,7 +70,7 @@ public class UnlockOperation extends BaseLockOperation implements Notifier, Back
     }
 
     public boolean shouldNotify() {
-        return /*!getOrCreateDefaultLockStore().isLocked(key) && */ shouldNotify;
+        return shouldNotify;
     }
 
     public final WaitNotifyKey getNotifiedKey() {

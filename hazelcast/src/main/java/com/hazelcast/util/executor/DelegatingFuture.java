@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.executor;
+package com.hazelcast.util.executor;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -28,7 +28,7 @@ import java.util.concurrent.TimeoutException;
 /**
  * @mdogan 1/18/13
  */
-public final class FutureProxy<V> implements Future<V> {
+public final class DelegatingFuture<V> implements Future<V> {
 
     private final Future future;
     private final SerializationService serializationService;
@@ -38,17 +38,17 @@ public final class FutureProxy<V> implements Future<V> {
     private Throwable error;
     private volatile boolean done = false;
 
-    public FutureProxy(Future future, SerializationService serializationService) {
+    public DelegatingFuture(Future future, SerializationService serializationService) {
         this.future = future;
         this.serializationService = serializationService;
         this.defaultValue = null;
         this.hasDefaultValue = false;
     }
 
-    public FutureProxy(Future future, SerializationService serializationService, V defaultValue) {
+    public DelegatingFuture(Future future, SerializationService serializationService, V defaultValue) {
         this.future = future;
-        this.defaultValue = defaultValue;
         this.serializationService = serializationService;
+        this.defaultValue = defaultValue;
         this.hasDefaultValue = true;
     }
 

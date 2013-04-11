@@ -67,7 +67,7 @@ public final class MigrationOperation extends BaseMigrationOperation {
                 if (taskCount != tasks.size()) {
                     getLogger().log(Level.SEVERE, "Migration task count mismatch! => " +
                             "expected-count: " + size + ", actual-count: " + tasks.size() +
-                            "\nfrom: " + migrationInfo.getFromAddress() + ", partition: " + getPartitionId()
+                            "\nfrom: " + migrationInfo.getSource() + ", partition: " + getPartitionId()
                             + ", replica: " + getReplicaIndex());
                 }
                 success = runMigrationTasks();
@@ -109,7 +109,7 @@ public final class MigrationOperation extends BaseMigrationOperation {
                 op.setNodeEngine(nodeEngine)
                         .setPartitionId(getPartitionId()).setReplicaIndex(getReplicaIndex());
                 op.setResponseHandler(ERROR_RESPONSE_HANDLER);
-                OperationAccessor.setCallerAddress(op, migrationInfo.getFromAddress());
+                OperationAccessor.setCallerAddress(op, migrationInfo.getSource());
                 MigrationAwareService service = op.getService();
                 service.beforeMigration(new MigrationServiceEvent(MigrationEndpoint.DESTINATION, migrationInfo));
                 op.beforeRun();

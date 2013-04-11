@@ -282,7 +282,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     private void ping(final MemberImpl memberImpl) {
         memberImpl.didPing();
         if (!icmpEnabled) return;
-        nodeEngine.getExecutionService().execute("hz:system", new Runnable() {
+        nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
             public void run() {
                 try {
                     final Address address = memberImpl.getAddress();
@@ -839,7 +839,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             final MembershipServiceEvent event = new MembershipServiceEvent(member, eventType);
             for (final MembershipAwareService service : membershipAwareServices) {
                 // service events should not block each other
-                nodeEngine.getExecutionService().execute("hz:system", new Runnable() {
+                nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
                     public void run() {
                         if (added) {
                             service.memberAdded(event);

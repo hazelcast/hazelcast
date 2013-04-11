@@ -17,16 +17,18 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.Operation;
 
 public class PartitionInvocationImpl extends InvocationImpl {
 
     public PartitionInvocationImpl(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
-                                   int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout) {
-        super(nodeEngine, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis, callTimeout);
+                                   int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout,
+                                   boolean async, Callback<Object> callback) {
+        super(nodeEngine, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis, callTimeout, async, callback);
     }
 
     public Address getTarget() {
-        return getPartitionInfo().getReplicaAddress(replicaIndex);
+        return getPartitionInfo().getReplicaAddress(getReplicaIndex());
     }
 }

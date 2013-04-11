@@ -47,8 +47,6 @@ public interface NodeEngine {
 
     ProxyService getProxyService();
 
-    AsyncInvocationService getAsyncInvocationService();
-
     WaitNotifyService getWaitNotifyService();
 
     TransactionManagerService getTransactionManagerService();

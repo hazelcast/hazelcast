@@ -23,6 +23,9 @@ import java.util.concurrent.*;
  */
 public interface ExecutionService {
 
+    static final String SYSTEM_EXECUTOR = "hz:system";
+    static final String ASYNC_EXECUTOR = "hz:async-inv";
+
     void execute(String name, Runnable command);
 
     Future<?> submit(String name, Runnable task);

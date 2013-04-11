@@ -16,16 +16,10 @@
 
 package com.hazelcast.spi;
 
-import com.hazelcast.core.ExecutionCallback;
-
-import java.util.concurrent.Future;
-
 /**
- * @mdogan 1/21/13
+ * @mdogan 1/18/13
  */
-public interface AsyncInvocationService {
+public enum ExceptionAction {
 
-    <V> Future<V> invoke(Invocation invocation);
-
-    <V> void invoke(Invocation invocation, ExecutionCallback<V> callback);
+    RETRY_INVOCATION, CONTINUE_WAIT, THROW_EXCEPTION
 }

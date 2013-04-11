@@ -50,9 +50,9 @@ public class NodeEngineImpl implements NodeEngine {
     final ProxyServiceImpl proxyService;
     final ServiceManager serviceManager;
     final OperationServiceImpl operationService;
+    final BackupService backupService;
     final ExecutionServiceImpl executionService;
     final EventServiceImpl eventService;
-    final AsyncInvocationServiceImpl asyncInvocationService;
     final WaitNotifyServiceImpl waitNotifyService;
     final TransactionManagerServiceImpl transactionManagerService;
 
@@ -63,8 +63,8 @@ public class NodeEngineImpl implements NodeEngine {
         serviceManager = new ServiceManager(this);
         executionService = new ExecutionServiceImpl(this);
         operationService = new OperationServiceImpl(this);
+        backupService = new BackupService(this);
         eventService = new EventServiceImpl(this);
-        asyncInvocationService = new AsyncInvocationServiceImpl(this);
         waitNotifyService = new WaitNotifyServiceImpl(this);
         transactionManagerService = new TransactionManagerServiceImpl(this);
     }
@@ -107,6 +107,10 @@ public class NodeEngineImpl implements NodeEngine {
         return operationService;
     }
 
+    public BackupService getBackupService() {
+        return backupService;
+    }
+
     public ExecutionService getExecutionService() {
         return executionService;
     }
@@ -121,10 +125,6 @@ public class NodeEngineImpl implements NodeEngine {
 
     public ProxyService getProxyService() {
         return proxyService;
-    }
-
-    public AsyncInvocationService getAsyncInvocationService() {
-        return asyncInvocationService;
     }
 
     public WaitNotifyService getWaitNotifyService() {
@@ -311,7 +311,7 @@ public class NodeEngineImpl implements NodeEngine {
         proxyService.shutdown();
         serviceManager.shutdown();
         executionService.shutdown();
-        asyncInvocationService.shutdown();
+//        asyncInvocationService.shutdown();
         eventService.shutdown();
         operationService.shutdown();
     }

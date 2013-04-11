@@ -20,25 +20,27 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public final class Response extends AbstractOperation implements ResponseOperation, IdentifiedDataSerializable {
+final class Response extends Operation implements IdentifiedDataSerializable {
 
-    private Object result = null;
+    private Object result;
     private boolean exception = false;
+    private int backupCount;
 
     public Response() {
     }
 
     public Response(Object result) {
-        this(result, (result instanceof Throwable));
+        this.result = result;
+        this.exception = result instanceof Throwable;
     }
 
-    public Response(Object result, boolean exception) {
-        this.result = result;
-        this.exception = exception;
+    Response(Object result, int backupCount) {
+        this(result);
+        this.backupCount = backupCount;
     }
 
     @Override
@@ -47,14 +49,10 @@ public final class Response extends AbstractOperation implements ResponseOperati
 
     public void run() throws Exception {
         final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        final long callId = getCallId();
-        final Object response;
         if (exception) {
-            response = nodeEngine.toObject(result);
-        } else {
-            response = result;
+            result = nodeEngine.toObject(result);
         }
-        nodeEngine.operationService.notifyRemoteCall(callId, response);
+        nodeEngine.operationService.notifyRemoteCall(getCallId(), getResponse());
     }
 
     @Override
@@ -66,12 +64,16 @@ public final class Response extends AbstractOperation implements ResponseOperati
         return false;
     }
 
-    public boolean isException() {
-        return exception;
+    public Object getResponse() {
+        return exception ? result : new ResponseObj(result, getCallId(), backupCount);
     }
 
-    public Object getResult() {
-        return result;
+    int getBackupCount() {
+        return backupCount;
+    }
+
+    void setBackupCount(int backupCount) {
+        this.backupCount = backupCount;
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
@@ -83,6 +85,7 @@ public final class Response extends AbstractOperation implements ResponseOperati
             out.writeObject(result);
         }
         out.writeBoolean(exception);
+        out.writeInt(backupCount);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
@@ -95,17 +98,20 @@ public final class Response extends AbstractOperation implements ResponseOperati
             result = in.readObject();
         }
         exception = in.readBoolean();
-    }
-
-    @Override
-    public String toString() {
-        return "Response{" +
-               "result=" + getResult() +
-               ", exception=" + exception +
-               '}';
+        backupCount = in.readInt();
     }
 
     public int getId() {
         return DataSerializerSpiHook.RESPONSE;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("Response{");
+        sb.append("result=").append(result);
+        sb.append(", exception=").append(exception);
+        sb.append(", backupCount=").append(backupCount);
+        sb.append('}');
+        return sb.toString();
     }
 }

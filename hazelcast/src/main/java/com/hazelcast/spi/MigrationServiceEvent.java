@@ -38,8 +38,7 @@ public class MigrationServiceEvent extends EventObject {
     private final int copyBackReplicaIndex;
 
     public MigrationServiceEvent(final MigrationEndpoint migrationEndpoint, final MigrationInfo migrationInfo) {
-        this(migrationEndpoint, migrationInfo.getPartitionId(), migrationInfo.getReplicaIndex(),
-                migrationInfo.getMigrationType(), migrationInfo.getCopyBackReplicaIndex());
+        this(migrationEndpoint, migrationInfo.getPartitionId(), 0, MigrationType.MOVE, -1);
     }
 
     public MigrationServiceEvent(final MigrationEndpoint migrationEndpoint,

@@ -14,17 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.partition;
+package com.hazelcast.spi;
 
-import com.hazelcast.core.Member;
+public interface Callback<T> {
 
-import java.util.Collection;
-import java.util.List;
-
-public interface PartitionStateGenerator {
-
-    PartitionInfo[] initialize(final Collection<Member> members, final int partitionCount);
-
-    PartitionInfo[] reArrange(final PartitionInfo[] currentState, final Collection<Member> members,
-                              final int partitionCount, final List<MigrationInfo> migrations);
+    void notify(T object);
 }

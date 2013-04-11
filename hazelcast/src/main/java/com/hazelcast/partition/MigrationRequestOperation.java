@@ -53,8 +53,8 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
         if (!masterAddress.equals(getCallerAddress())) {
             throw new RetryableHazelcastException("Caller is not master node! => " + toString());
         }
-        final Address from = migrationInfo.getFromAddress();
-        final Address to = migrationInfo.getToAddress();
+        final Address from = migrationInfo.getSource();
+        final Address to = migrationInfo.getDestination();
         if (to.equals(from)) {
             getLogger().log(Level.WARNING, "To and from addresses are the same! => " + toString());
             success = false;

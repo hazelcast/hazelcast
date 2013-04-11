@@ -20,9 +20,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.*;
-import com.hazelcast.util.ResponseQueueFactory;
 
-import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
@@ -33,12 +31,12 @@ public final class ResponseHandlerFactory {
 
     private static final NoResponseHandler NO_RESPONSE_HANDLER = new NoResponseHandler();
 
-    public static void setLocalResponseHandler(InvocationImpl inv) {
-        inv.getOperation().setResponseHandler(createLocalResponseHandler(inv));
+    public static void setLocalResponseHandler(Operation op, Callback<Object> callback) {
+        op.setResponseHandler(createLocalResponseHandler(op, callback));
     }
 
-    public static ResponseHandler createLocalResponseHandler(InvocationImpl inv) {
-        return new LocalInvocationResponseHandler(inv);
+    public static ResponseHandler createLocalResponseHandler(Operation op, Callback<Object> callback) {
+        return new LocalInvocationResponseHandler(callback, op.getCallId());
     }
 
     public static void setRemoteResponseHandler(NodeEngine nodeEngine, Operation op) {
@@ -46,13 +44,13 @@ public final class ResponseHandlerFactory {
     }
 
     public static ResponseHandler createRemoteResponseHandler(NodeEngine nodeEngine, Operation op) {
-        if (op.getCallId() < 0) {
+        if (op.getCallId() == 0) {
             if (op.returnsResponse()) {
                 throw new HazelcastException("Op: " + op.getClass().getName() + " can not return response without call-id!");
             }
             return NO_RESPONSE_HANDLER;
         }
-        return new RemoteInvocationResponseHandler(nodeEngine, op.getConnection(), op.getPartitionId(), op.getCallId());
+        return new RemoteInvocationResponseHandler(nodeEngine, op.getConnection(), op.getCallId());
     }
 
     public static ResponseHandler createEmptyResponseHandler() {
@@ -83,48 +81,16 @@ public final class ResponseHandlerFactory {
         }
     }
 
-    public static class FutureResponseHandler implements ResponseHandler, Future {
-
-        final BlockingQueue<Object> q = ResponseQueueFactory.newResponseQueue();
-
-        public void sendResponse(Object obj) {
-            q.offer(obj);
-        }
-
-        public Object get() throws InterruptedException, ExecutionException {
-            return q.take();
-        }
-
-        public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-            return q.poll(timeout, unit);
-        }
-
-        public boolean cancel(boolean mayInterruptIfRunning) {
-            return false;
-        }
-
-        public boolean isCancelled() {
-            return false;
-        }
-
-        public boolean isDone() {
-            return false;
-        }
-    }
-
     private static class RemoteInvocationResponseHandler implements ResponseHandler {
 
         private final NodeEngine nodeEngine;
         private final Connection conn;
-        private final int partitionId;
         private final long callId;
         private final AtomicBoolean sent = new AtomicBoolean(false);
 
-        private RemoteInvocationResponseHandler(NodeEngine nodeEngine, Connection conn,
-                                                int partitionId, long callId) {
+        private RemoteInvocationResponseHandler(NodeEngine nodeEngine, Connection conn, long callId) {
             this.nodeEngine = nodeEngine;
             this.conn = conn;
-            this.partitionId = partitionId;
             this.callId = callId;
         }
 
@@ -133,32 +99,38 @@ public final class ResponseHandlerFactory {
                 throw new IllegalStateException("Response already sent for call: " + callId
                                                 + " to " + conn.getEndPoint() + ", current-response: " + obj);
             }
-            final Operation response;
-            if (obj instanceof Operation) {
-                response = (Operation) obj;
+            final Response response;
+            if (obj instanceof Response) {
+                response = (Response) obj;
             } else {
                 response = new Response(obj);
             }
             OperationAccessor.setCallId(response, callId);
-            response.setPartitionId(partitionId);
             nodeEngine.getOperationService().send(response, conn);
         }
     }
 
     private static class LocalInvocationResponseHandler implements ResponseHandler {
 
-        private final InvocationImpl invocation;
+        private final Callback<Object> callback;
         private final AtomicBoolean sent = new AtomicBoolean(false);
+        private final long callId;
 
-        private LocalInvocationResponseHandler(InvocationImpl invocation) {
-            this.invocation = invocation;
+        private LocalInvocationResponseHandler(Callback<Object> callback, long callId) {
+            this.callback = callback;
+            this.callId = callId;
         }
 
         public void sendResponse(Object obj) {
             if (!sent.compareAndSet(false, true)) {
-                throw new IllegalStateException("Response already sent for invocation: " + invocation);
+                throw new IllegalStateException("Response already sent for callback: " + callback);
             }
-            invocation.notify(obj);
+            if (obj instanceof Response) {
+                final Response response = (Response) obj;
+                OperationAccessor.setCallId(response, callId);
+                obj = response.getResponse();
+            }
+            callback.notify(obj);
         }
     }
 

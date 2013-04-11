@@ -890,10 +890,8 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                 targetSizePerPartition = Double.valueOf(maxPartitionSize * ((100 - evictionPercentage) / 100.0)).intValue();
             }
             for (int i = 0; i < ExecutorConfig.DEFAULT_POOL_SIZE; i++) {
-                nodeEngine.getExecutionService().execute("map-evict", new EvictRunner(i, mapConfig, targetSizePerPartition, comparator, evictionPercentage));
+                nodeEngine.getExecutionService().execute("hz:map-evict", new EvictRunner(i, mapConfig, targetSizePerPartition, comparator, evictionPercentage));
             }
-
-
         }
 
         private class EvictRunner implements Runnable {

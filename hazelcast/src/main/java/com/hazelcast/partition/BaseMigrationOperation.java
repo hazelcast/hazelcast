@@ -21,7 +21,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.InvocationAction;
+import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.PartitionLevelOperation;
 
 import java.io.IOException;
@@ -38,21 +38,11 @@ public abstract class BaseMigrationOperation extends AbstractOperation
 
     public BaseMigrationOperation(MigrationInfo migrationInfo) {
         this.migrationInfo = migrationInfo;
-        setPartitionId(migrationInfo.getPartitionId())
-                .setReplicaIndex(migrationInfo.getReplicaIndex());
+        setPartitionId(migrationInfo.getPartitionId());
     }
 
     public MigrationInfo getMigrationInfo() {
         return migrationInfo;
-    }
-
-    public MigrationType getMigrationType() {
-        return migrationInfo.getMigrationType();
-    }
-
-    public boolean isMigration() {
-        return getMigrationType() == MigrationType.MOVE
-                || getMigrationType() == MigrationType.MOVE_COPY_BACK;
     }
 
     @Override
@@ -74,12 +64,12 @@ public abstract class BaseMigrationOperation extends AbstractOperation
         return getNodeEngine().getLogger(getClass().getName());
     }
 
-    public final InvocationAction getActionOnException(Throwable throwable) {
+    public final ExceptionAction getActionOnException(Throwable throwable) {
         if (throwable instanceof MemberLeftException) {
-            return InvocationAction.THROW_EXCEPTION;
+            return ExceptionAction.THROW_EXCEPTION;
         }
         if (!migrationInfo.isValid()) {
-            return InvocationAction.THROW_EXCEPTION;
+            return ExceptionAction.THROW_EXCEPTION;
         }
         return super.getActionOnException(throwable);
     }

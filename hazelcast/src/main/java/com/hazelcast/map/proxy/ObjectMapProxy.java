@@ -24,8 +24,8 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.impl.Response;
 import com.hazelcast.util.QueryResultStream;
+import com.hazelcast.util.executor.DelegatingFuture;
 
 import java.util.*;
 import java.util.concurrent.Future;
@@ -152,7 +152,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     public Future<V> getAsync(final K k) {
         Data key = getService().toData(k);
         NodeEngine nodeEngine = getNodeEngine();
-        return new ObjectFuture(getAsyncInternal(key), nodeEngine.getSerializationService());
+        return new DelegatingFuture<V>(getAsyncInternal(key), nodeEngine.getSerializationService());
     }
 
     public boolean isLocked(final K k) {
@@ -164,12 +164,12 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     public Future putAsync(final K key, final V value) {
         Data k = getService().toData(key);
         Data v = getService().toData(value);
-        return new ObjectFuture(putAsyncInternal(k, v), getNodeEngine().getSerializationService());
+        return new DelegatingFuture<V>(putAsyncInternal(k, v), getNodeEngine().getSerializationService());
     }
 
     public Future removeAsync(final K key) {
         Data k = getService().toData(key);
-        return new ObjectFuture(removeAsyncInternal(k), getNodeEngine().getSerializationService());
+        return new DelegatingFuture<V>(removeAsyncInternal(k), getNodeEngine().getSerializationService());
     }
 
     public Map<K, V> getAll(final Set<K> keys) {
@@ -309,13 +309,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId).build();
         Future f = invocation.invoke();
         Object response = f.get();
-        Object returnObj;
-        if (response instanceof Response) {
-            Response r = (Response) response;
-            returnObj = r.getResult();
-        } else {
-            returnObj = getService().toObject(response);
-        }
+        Object returnObj = getService().toObject(response);
         if (returnObj instanceof Throwable) {
             throw (Throwable) returnObj;
         }

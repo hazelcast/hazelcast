@@ -58,7 +58,7 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
                 OperationAccessor.setCallerAddress(op, getCallerAddress());
                 responses.put(partitionId, responseQueue);
 
-                nodeEngine.getExecutionService().execute("hz:system", new Runnable() {
+                nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
                     public void run() {
                         nodeEngine.getOperationService().runOperation(op);
                     }
