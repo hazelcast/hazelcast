@@ -29,7 +29,7 @@ import com.hazelcast.collection.set.ObjectSetProxy;
 import com.hazelcast.collection.set.client.*;
 import com.hazelcast.core.*;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.monitor.impl.LocalMapStatsImpl;
+import com.hazelcast.monitor.impl.LocalMultiMapStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
@@ -57,10 +57,10 @@ public class CollectionService implements ManagedService, RemoteService, Members
     private final NodeEngine nodeEngine;
     private final CollectionPartitionContainer[] partitionContainers;
     private final ConcurrentMap<ListenerKey, String> eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
-    private final ConcurrentMap<CollectionProxyId, LocalMapStatsImpl> statsMap = new ConcurrentHashMap<CollectionProxyId, LocalMapStatsImpl>(1000);
-    private final ConcurrencyUtil.ConstructorFunction<CollectionProxyId, LocalMapStatsImpl> localMapStatsConstructorFunction = new ConcurrencyUtil.ConstructorFunction<CollectionProxyId, LocalMapStatsImpl>() {
-        public LocalMapStatsImpl createNew(CollectionProxyId key) {
-            return new LocalMapStatsImpl();
+    private final ConcurrentMap<CollectionProxyId, LocalMultiMapStatsImpl> statsMap = new ConcurrentHashMap<CollectionProxyId, LocalMultiMapStatsImpl>(1000);
+    private final ConcurrencyUtil.ConstructorFunction<CollectionProxyId, LocalMultiMapStatsImpl> localMultiMapStatsConstructorFunction = new ConcurrencyUtil.ConstructorFunction<CollectionProxyId, LocalMultiMapStatsImpl>() {
+        public LocalMultiMapStatsImpl createNew(CollectionProxyId key) {
+            return new LocalMultiMapStatsImpl();
         }
     };
 
@@ -154,7 +154,7 @@ public class CollectionService implements ManagedService, RemoteService, Members
                 keySet.addAll(collectionContainer.keySet());
             }
         }
-        getLocalMapStatsImpl(proxyId).incrementOtherOperations();
+        getLocalMultiMapStatsImpl(proxyId).incrementOtherOperations();
         return keySet;
     }
 
@@ -201,7 +201,7 @@ public class CollectionService implements ManagedService, RemoteService, Members
             } else if (event.eventType.equals(EntryEventType.REMOVED)) {
                 entryListener.entryRemoved(entryEvent);
             }
-            getLocalMapStatsImpl(event.getProxyId()).incrementReceivedEvents();
+            getLocalMultiMapStatsImpl(event.getProxyId()).incrementReceivedEvents();
         } else if (listener instanceof ItemListener) {
             ItemListener itemListener = (ItemListener) listener;
             ItemEvent itemEvent = new ItemEvent(event.getProxyId().getName(), event.eventType.getType(), nodeEngine.toObject(event.getValue()),
@@ -341,7 +341,7 @@ public class CollectionService implements ManagedService, RemoteService, Members
     }
 
     public LocalMapStats createStats(CollectionProxyId proxyId) {
-        LocalMapStatsImpl stats = getLocalMapStatsImpl(proxyId);
+        LocalMultiMapStatsImpl stats = getLocalMultiMapStatsImpl(proxyId);
         long ownedEntryCount = 0;
         long backupEntryCount = 0;
         long dirtyCount = 0;
@@ -399,8 +399,8 @@ public class CollectionService implements ManagedService, RemoteService, Members
     }
 
 
-    public LocalMapStatsImpl getLocalMapStatsImpl(CollectionProxyId name) {
-        return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, localMapStatsConstructorFunction);
+    public LocalMultiMapStatsImpl getLocalMultiMapStatsImpl(CollectionProxyId name) {
+        return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, localMultiMapStatsConstructorFunction);
     }
 
     public TransactionalMultimapProxySupport createTransactionalObject(Object id, Transaction transaction) {

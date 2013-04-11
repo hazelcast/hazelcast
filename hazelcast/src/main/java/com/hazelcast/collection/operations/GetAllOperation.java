@@ -51,6 +51,6 @@ public class GetAllOperation extends CollectionKeyBasedOperation {
 
     public void afterRun() throws Exception {
         long elapsed = Math.max(0, Clock.currentTimeMillis() - begin);
-        ((CollectionService) getService()).getLocalMapStatsImpl(proxyId).incrementGets(elapsed);
+        ((CollectionService) getService()).getLocalMultiMapStatsImpl(proxyId).incrementGets(elapsed);
     }
 }

@@ -46,7 +46,7 @@ public class ContainsEntryOperation extends CollectionOperation {
 
     public void run() throws Exception {
         CollectionContainer container = getOrCreateContainer();
-        ((CollectionService) getService()).getLocalMapStatsImpl(proxyId).incrementOtherOperations();
+        ((CollectionService) getService()).getLocalMultiMapStatsImpl(proxyId).incrementOtherOperations();
         if (key != null && value != null) {
             response = container.containsEntry(isBinary(), key, value);
         } else if (key != null) {

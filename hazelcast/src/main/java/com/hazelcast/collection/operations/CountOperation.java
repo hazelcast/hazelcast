@@ -38,7 +38,7 @@ public class CountOperation extends CollectionKeyBasedOperation {
 
     public void run() throws Exception {
         CollectionContainer container = getOrCreateContainer();
-        ((CollectionService) getService()).getLocalMapStatsImpl(proxyId).incrementOtherOperations();
+        ((CollectionService) getService()).getLocalMultiMapStatsImpl(proxyId).incrementOtherOperations();
         Collection<CollectionRecord> coll = container.getCollection(dataKey);
         response = coll == null ? 0 : coll.size();
     }

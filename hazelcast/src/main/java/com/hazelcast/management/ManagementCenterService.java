@@ -53,7 +53,6 @@ import java.util.regex.Pattern;
 
 public class ManagementCenterService implements LifecycleListener, MembershipListener {
 
-    //    public static final String MANAGEMENT_EXECUTOR = "hz:management";
     private final HazelcastInstanceImpl instance;
     private final TaskPoller taskPoller;
     private final StateSender stateSender;

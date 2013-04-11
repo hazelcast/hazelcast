@@ -113,7 +113,7 @@ public class MemberStateImpl implements MemberState {
         }
         for (int i = in.readInt(); i > 0; i--) {
             name = in.readUTF();
-            (impl = new LocalMapStatsImpl()).readData(in);
+            (impl = new LocalMultiMapStatsImpl()).readData(in);
             multiMapStats.put(name, (LocalMultiMapStatsImpl) impl);
         }
         for (int i = in.readInt(); i > 0; i--) {

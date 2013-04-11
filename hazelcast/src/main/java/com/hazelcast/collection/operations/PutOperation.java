@@ -69,7 +69,7 @@ public class PutOperation extends CollectionBackupAwareOperation {
 
     public void afterRun() throws Exception {
         long elapsed = Math.max(0, Clock.currentTimeMillis() - begin);
-        ((CollectionService) getService()).getLocalMapStatsImpl(proxyId).incrementPuts(elapsed);
+        ((CollectionService) getService()).getLocalMultiMapStatsImpl(proxyId).incrementPuts(elapsed);
         if (Boolean.TRUE.equals(response)) {
             publishEvent(EntryEventType.ADDED, dataKey, value);
         }

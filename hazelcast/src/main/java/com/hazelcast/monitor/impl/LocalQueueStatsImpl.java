@@ -97,7 +97,7 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
         this.aveAge = aveAge;
     }
 
-    public int getOwnedItemCount() {
+    public long getOwnedItemCount() {
         return ownedItemCount;
     }
 
@@ -105,7 +105,7 @@ public class LocalQueueStatsImpl implements LocalQueueStats {
         this.ownedItemCount = ownedItemCount;
     }
 
-    public int getBackupItemCount() {
+    public long getBackupItemCount() {
         return backupItemCount;
     }
 

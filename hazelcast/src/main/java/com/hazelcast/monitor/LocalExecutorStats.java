@@ -53,18 +53,5 @@ public interface LocalExecutorStats extends LocalInstanceStats {
      */
     long getTotalExecutionLatency();
 
-//    /**
-//     * Returns the min execution time of operations finished
-//     *
-//     * @return the min execution time
-//     */
-//    long getMinExecutionTime();
-//
-//    /**
-//     * Returns the max execution time of operations finished
-//     *
-//     * @return the max execution time
-//     */
-//    long getMaxExecutionTime();
 
 }

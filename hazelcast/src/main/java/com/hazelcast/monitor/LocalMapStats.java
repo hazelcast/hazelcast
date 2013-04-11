@@ -94,14 +94,14 @@ public interface LocalMapStats extends LocalInstanceStats {
      *
      * @return number of put operations
      */
-    public long getNumberOfPuts();
+    public long getPutOperationCount();
 
     /**
      * Returns the number of get operations
      *
      * @return number of get operations
      */
-    public long getNumberOfGets();
+    public long getGetOperationCount();
 
 
     /**
@@ -109,7 +109,7 @@ public interface LocalMapStats extends LocalInstanceStats {
      *
      * @return number of remove operations
      */
-    public long getNumberOfRemoves();
+    public long getRemoveOperationCount();
 
 
     /**
@@ -159,14 +159,14 @@ public interface LocalMapStats extends LocalInstanceStats {
      *
      * @return number of events received
      */
-    public long getNumberOfEvents();
+    public long getEventOperationCount();
 
     /**
      * Returns the total number of Other Operations
      *
      * @return number of other operations
      */
-    public long getNumberOfOtherOperations();
+    public long getOtherOperationCount();
 
     /**
      * Returns the total number of total operations

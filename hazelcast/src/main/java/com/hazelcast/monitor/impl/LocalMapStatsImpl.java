@@ -168,7 +168,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
         return putCount.get() + getCount.get() + removeCount.get() + numberOfOtherOperations.get();
     }
 
-    public long getNumberOfPuts() {
+    public long getPutOperationCount() {
         return putCount.get();
     }
 
@@ -178,7 +178,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
         maxPutLatency.set(Math.max(maxPutLatency.get(), latency));
     }
 
-    public long getNumberOfGets() {
+    public long getGetOperationCount() {
         return getCount.get();
     }
 
@@ -188,7 +188,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
         maxGetLatency.set(Math.max(maxGetLatency.get(), latency));
     }
 
-    public long getNumberOfRemoves() {
+    public long getRemoveOperationCount() {
         return removeCount.get();
     }
 
@@ -221,7 +221,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
         return maxRemoveLatency.get();
     }
 
-    public long getNumberOfOtherOperations() {
+    public long getOtherOperationCount() {
         return numberOfOtherOperations.get();
     }
 
@@ -229,7 +229,7 @@ public class LocalMapStatsImpl implements LocalMapStats {
         numberOfOtherOperations.incrementAndGet();
     }
 
-    public long getNumberOfEvents() {
+    public long getEventOperationCount() {
         return numberOfEvents.get();
     }
 

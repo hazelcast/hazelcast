@@ -34,7 +34,7 @@ public class EntrySetOperation extends CollectionOperation {
 
     public void run() throws Exception {
         CollectionContainer container = getOrCreateContainer();
-        ((CollectionService) getService()).getLocalMapStatsImpl(proxyId).incrementOtherOperations();
+        ((CollectionService) getService()).getLocalMultiMapStatsImpl(proxyId).incrementOtherOperations();
         response = new EntrySetResponse(container.copyCollections(), getNodeEngine());
     }
 }

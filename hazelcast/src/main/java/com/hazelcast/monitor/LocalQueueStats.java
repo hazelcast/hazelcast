@@ -25,14 +25,14 @@ public interface LocalQueueStats extends LocalInstanceStats {
      *
      * @return number of owned items.
      */
-    int getOwnedItemCount();
+    long getOwnedItemCount();
 
     /**
      * Returns the number of backup items in this member.
      *
      * @return number of backup items.
      */
-    int getBackupItemCount();
+    long getBackupItemCount();
 
     /**
      * Returns the min age of the items in this member.
@@ -63,7 +63,7 @@ public interface LocalQueueStats extends LocalInstanceStats {
      *
      * @return number offer/put/add operations
      */
-    public long getOfferOperationCount();
+    long getOfferOperationCount();
 
     /**
      * Returns the number of rejected offers. Offer
@@ -72,7 +72,7 @@ public interface LocalQueueStats extends LocalInstanceStats {
      *
      * @return number of rejected offers.
      */
-    public long getRejectedOfferOperationCount();
+    long getRejectedOfferOperationCount();
 
     /**
      * Returns the number of poll/take/remove operations.
@@ -82,7 +82,7 @@ public interface LocalQueueStats extends LocalInstanceStats {
      *
      * @return number of poll/take/remove operations.
      */
-    public long getPollOperationCount();
+    long getPollOperationCount();
 
     /**
      * Returns number of null returning poll operations.
@@ -90,19 +90,19 @@ public interface LocalQueueStats extends LocalInstanceStats {
      *
      * @return number of null returning poll operations.
      */
-    public long getEmptyPollOperationCount();
+    long getEmptyPollOperationCount();
 
     /**
      * Returns number of //TODO operations.
      *
      * @return number of null returning poll operations.
      */
-    public long getOtherOperationsCount();
+    long getOtherOperationsCount();
 
     /**
      * Returns number of //TODO operations.
      *
      * @return number of null returning poll operations.
      */
-    public long getEventOperationCount();
+    long getEventOperationCount();
 }
