@@ -14,21 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.partition;
+package com.hazelcast.spi;
 
-import com.hazelcast.nio.Address;
+import java.util.EventObject;
 
-class PartitionReplicaChangeEvent {
-    private int partitionId;
-    private int replicaIndex;
-    private Address oldAddress;
-    private Address newAddress;
+/**
+ * @mdogan 9/12/12
+ */
+public class PartitionReplicationEvent extends EventObject {
 
-    public PartitionReplicaChangeEvent(int partitionId, int replicaIndex, Address oldAddress, Address newAddress) {
+    private final int partitionId;
+
+    private final int replicaIndex;
+
+    public PartitionReplicationEvent(int partitionId, int replicaIndex) {
+        super(partitionId);
         this.partitionId = partitionId;
         this.replicaIndex = replicaIndex;
-        this.oldAddress = oldAddress;
-        this.newAddress = newAddress;
     }
 
     public int getPartitionId() {
@@ -39,21 +41,12 @@ class PartitionReplicaChangeEvent {
         return replicaIndex;
     }
 
-    public Address getOldAddress() {
-        return oldAddress;
-    }
-
-    public Address getNewAddress() {
-        return newAddress;
-    }
-
     @Override
     public String toString() {
-        return "PartitionReplicaChangeEvent{" +
-                "partitionId=" + partitionId +
-                ", replicaIndex=" + replicaIndex +
-                ", oldAddress=" + oldAddress +
-                ", newAddress=" + newAddress +
-                '}';
+        final StringBuilder sb = new StringBuilder("PartitionReplicationEvent{");
+        sb.append("partitionId=").append(partitionId);
+        sb.append(", replicaIndex=").append(replicaIndex);
+        sb.append('}');
+        return sb.toString();
     }
 }

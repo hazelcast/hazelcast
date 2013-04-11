@@ -22,7 +22,6 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.MigrationEndpoint;
-import com.hazelcast.partition.MigrationType;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.util.ConcurrencyUtil;
@@ -133,39 +132,36 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
         }
     }
 
-    public void beforeMigration(MigrationServiceEvent migrationServiceEvent) {
+    public void beforeMigration(PartitionMigrationEvent partitionMigrationEvent) {
     }
 
-    public Operation prepareMigrationOperation(MigrationServiceEvent event) {
+    public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
         LockStoreContainer container = containers[event.getPartitionId()];
-        LockMigrationOperation op = new LockMigrationOperation(container, event.getPartitionId(), event.getReplicaIndex());
+        LockReplicationOperation op = new LockReplicationOperation(container, event.getPartitionId(), event.getReplicaIndex());
         return op.isEmpty() ? null : op;
     }
 
-    public void commitMigration(MigrationServiceEvent event) {
+    public void commitMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-            final LockStoreContainer container = containers[event.getPartitionId()];
-            if (event.getMigrationType() == MigrationType.MOVE) {
-                for (LockStoreImpl ls : container.getLockStores()) {
-                    ls.clear();
-                }
-            } else if (event.getMigrationType() == MigrationType.MOVE_COPY_BACK) {
-                for (LockStoreImpl ls : container.getLockStores()) {
-                    if (ls.getTotalBackupCount() < event.getCopyBackReplicaIndex()) {
-                        ls.clear();
-                    }
-                }
-            }
+            clearPartition(event.getPartitionId());
         }
     }
 
-    public void rollbackMigration(MigrationServiceEvent event) {
-        if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
-            final LockStoreContainer container = containers[event.getPartitionId()];
-            for (LockStoreImpl ls : container.getLockStores()) {
-                ls.clear();
-            }
+    private void clearPartition(int partitionId) {
+        final LockStoreContainer container = containers[partitionId];
+        for (LockStoreImpl ls : container.getLockStores()) {
+            ls.clear();
         }
+    }
+
+    public void rollbackMigration(PartitionMigrationEvent event) {
+        if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
+            clearPartition(event.getPartitionId());
+        }
+    }
+
+    public void clearPartitionReplica(int partitionId) {
+        clearPartition(partitionId);
     }
 
     public String getServiceName() {

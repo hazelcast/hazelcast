@@ -177,11 +177,11 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
 
     private void registerBackups(BackupAwareOperation op, long callId) {
         final long oldCallId = ((Operation) op).getCallId();
-        final BackupService backupService = nodeEngine.backupService;
+        final OperationServiceImpl operationService = nodeEngine.operationService;
         if (oldCallId != 0) {
-            backupService.deregisterCall(oldCallId);
+            operationService.deregisterBackupCall(oldCallId);
         }
-        backupService.registerCall(callId);
+        operationService.registerBackupCall(callId);
     }
 
     public void notify(Object obj) {
@@ -366,7 +366,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         private void waitForBackups(ResponseObj response) {
             if (op instanceof BackupAwareOperation) {
                 try {
-                    final boolean ok = nodeEngine.backupService.waitFor(response.callId, response.backupCount, 5, TimeUnit.SECONDS);
+                    final boolean ok = nodeEngine.operationService.waitForBackups(response.callId, response.backupCount, 5, TimeUnit.SECONDS);
                     if (!ok && logger.isLoggable(Level.FINEST)) {
                         logger.log(Level.FINEST, "Backup response cannot be received -> " + toString());
                     }

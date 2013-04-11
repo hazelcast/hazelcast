@@ -111,7 +111,7 @@ public final class MigrationOperation extends BaseMigrationOperation {
                 op.setResponseHandler(ERROR_RESPONSE_HANDLER);
                 OperationAccessor.setCallerAddress(op, migrationInfo.getSource());
                 MigrationAwareService service = op.getService();
-                service.beforeMigration(new MigrationServiceEvent(MigrationEndpoint.DESTINATION, migrationInfo));
+                service.beforeMigration(new PartitionMigrationEvent(MigrationEndpoint.DESTINATION, migrationInfo.getPartitionId()));
                 op.beforeRun();
                 op.run();
                 op.afterRun();

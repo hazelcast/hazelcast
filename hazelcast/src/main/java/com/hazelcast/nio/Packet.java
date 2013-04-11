@@ -27,10 +27,11 @@ public final class Packet extends DataWriter implements SocketWritable {
     public static final byte PACKET_VERSION = 1;
 
     public static final int HEADER_OP = 0;
-    public static final int HEADER_MIGRATION = 1;
-    public static final int HEADER_EVENT = 2;
+    public static final int HEADER_BACKUP = 2;
+    public static final int HEADER_MIGRATION = 2;
+    public static final int HEADER_EVENT = 3;
 
-    private byte header;
+    private short header;
 
     private transient Connection conn;
 
@@ -50,18 +51,15 @@ public final class Packet extends DataWriter implements SocketWritable {
         this.conn = conn;
     }
 
-    public void setHeader(int bit, boolean b) {
-        if (b)
-            header |= 1 << bit;
-        else
-            header &= ~1 << bit;
+    public void setHeader(int bit) {
+        header |= 1 << bit;
     }
 
     public boolean isHeaderSet(int bit) {
         return (header & 1 << bit) != 0;
     }
 
-    public byte getHeader() {
+    public short getHeader() {
         return header;
     }
 
@@ -71,10 +69,10 @@ public final class Packet extends DataWriter implements SocketWritable {
     public final boolean writeTo(ByteBuffer destination) {
         // TODO: @mm - think about packet versions
         if (!isStatusSet(stHeader)) {
-            if (!destination.hasRemaining()) {
+            if (destination.remaining() < 2) {
                 return false;
             }
-            destination.put(header);
+            destination.putShort(header);
             setStatus(stHeader);
         }
         return super.writeTo(destination);
@@ -83,10 +81,10 @@ public final class Packet extends DataWriter implements SocketWritable {
     public final boolean readFrom(ByteBuffer source) {
         // TODO: @mm - think about packet versions
         if (!isStatusSet(stHeader)) {
-            if (!source.hasRemaining()) {
+            if (source.remaining() < 2) {
                 return false;
             }
-            header = source.get();
+            header = source.getShort();
             setStatus(stHeader);
         }
         return super.readFrom(source);

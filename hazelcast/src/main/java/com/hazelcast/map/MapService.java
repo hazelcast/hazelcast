@@ -41,7 +41,6 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.partition.MigrationEndpoint;
-import com.hazelcast.partition.MigrationType;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Index;
@@ -365,58 +364,45 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         return ownedPartitions;
     }
 
-    public void beforeMigration(MigrationServiceEvent event) {
-        // TODO: @mm - what if partition has transactions?
+    public void beforeMigration(PartitionMigrationEvent event) {
     }
 
-    public Operation prepareMigrationOperation(MigrationServiceEvent event) {
+    public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
+        logger.log(Level.INFO, "Preparing replication op -> " + event);
         final PartitionContainer container = partitionContainers[event.getPartitionId()];
-        final MapMigrationOperation operation = new MapMigrationOperation(container, event.getPartitionId(), event.getReplicaIndex());
+        final MapReplicationOperation operation = new MapReplicationOperation(container, event.getPartitionId(), event.getReplicaIndex());
         return operation.isEmpty() ? null : operation;
     }
 
-    public void commitMigration(MigrationServiceEvent event) {
+    public void commitMigration(PartitionMigrationEvent event) {
         logger.log(Level.FINEST, "Committing " + event);
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
             migrateIndex(event);
-            if (event.getMigrationType() == MigrationType.MOVE) {
-                clearPartitionData(event.getPartitionId());
-            } else if (event.getMigrationType() == MigrationType.MOVE_COPY_BACK) {
-                final PartitionContainer container = partitionContainers[event.getPartitionId()];
-                for (PartitionRecordStore mapPartition : container.maps.values()) {
-                    final MapContainer mapContainer = getMapContainer(mapPartition.name);
-                    final MapConfig mapConfig = mapContainer.getMapConfig();
-                    if (mapConfig.getTotalBackupCount() < event.getCopyBackReplicaIndex()) {
-                        mapPartition.clear();
-                    }
-                }
-            }
+            clearPartitionData(event.getPartitionId());
         } else {
             migrateIndex(event);
         }
         ownedPartitions.set(nodeEngine.getPartitionService().getMemberPartitions(nodeEngine.getThisAddress()));
     }
 
-    private void migrateIndex(MigrationServiceEvent event) {
-        if (event.getReplicaIndex() == 0) {
-            final PartitionContainer container = partitionContainers[event.getPartitionId()];
-            for (PartitionRecordStore mapPartition : container.maps.values()) {
-                final MapContainer mapContainer = getMapContainer(mapPartition.name);
-                final IndexService indexService = mapContainer.getIndexService();
-                if (indexService.hasIndex()) {
-                    for (Record record : mapPartition.getRecords().values()) {
-                        if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-                            indexService.removeEntryIndex(record.getKey());
-                        } else {
-                            indexService.saveEntryIndex(new QueryEntry(getSerializationService(), record.getKey(), record.getKey(), record.getValue()));
-                        }
+    private void migrateIndex(PartitionMigrationEvent event) {
+        final PartitionContainer container = partitionContainers[event.getPartitionId()];
+        for (PartitionRecordStore mapPartition : container.maps.values()) {
+            final MapContainer mapContainer = getMapContainer(mapPartition.name);
+            final IndexService indexService = mapContainer.getIndexService();
+            if (indexService.hasIndex()) {
+                for (Record record : mapPartition.getRecords().values()) {
+                    if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
+                        indexService.removeEntryIndex(record.getKey());
+                    } else {
+                        indexService.saveEntryIndex(new QueryEntry(getSerializationService(), record.getKey(), record.getKey(), record.getValue()));
                     }
                 }
             }
         }
     }
 
-    public void rollbackMigration(MigrationServiceEvent event) {
+    public void rollbackMigration(PartitionMigrationEvent event) {
         logger.log(Level.FINEST, "Rolling back " + event);
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
             clearPartitionData(event.getPartitionId());
@@ -431,6 +417,10 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             mapPartition.clear();
         }
         container.maps.clear();
+    }
+
+    public void clearPartitionReplica(int partitionId) {
+        clearPartitionData(partitionId);
     }
 
     public Record createRecord(String name, Data dataKey, Object value, long ttl) {

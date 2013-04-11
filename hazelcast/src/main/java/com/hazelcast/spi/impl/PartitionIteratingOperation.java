@@ -66,8 +66,13 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
             }
             for (Map.Entry<Integer, ResponseQueue> responseQueueEntry : responses.entrySet()) {
                 final ResponseQueue queue = responseQueueEntry.getValue();
+                final Integer key = responseQueueEntry.getKey();
                 final Object result = queue.get();
-                results.put(responseQueueEntry.getKey(), result);
+                if (result instanceof ResponseObj) {
+                    results.put(key, ((ResponseObj) result).response);
+                } else {
+                    results.put(key, result);
+                }
             }
         } catch (Exception e) {
             getLogger(nodeEngine).log(Level.SEVERE, e.getMessage(), e);

@@ -235,7 +235,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
             }
         } else {
             final Packet packet = new Packet(nodeEngine.toData(eventPacket), nodeEngine.getSerializationContext());
-            packet.setHeader(Packet.HEADER_EVENT, true);
+            packet.setHeader(Packet.HEADER_EVENT);
             nodeEngine.send(packet, subscriber);
         }
     }

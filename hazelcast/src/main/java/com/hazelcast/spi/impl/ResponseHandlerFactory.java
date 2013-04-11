@@ -125,11 +125,6 @@ public final class ResponseHandlerFactory {
             if (!sent.compareAndSet(false, true)) {
                 throw new IllegalStateException("Response already sent for callback: " + callback);
             }
-            if (obj instanceof Response) {
-                final Response response = (Response) obj;
-                OperationAccessor.setCallId(response, callId);
-                obj = response.getResponse();
-            }
             callback.notify(obj);
         }
     }

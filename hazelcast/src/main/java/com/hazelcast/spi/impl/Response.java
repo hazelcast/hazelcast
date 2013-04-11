@@ -33,14 +33,15 @@ final class Response extends Operation implements IdentifiedDataSerializable {
     public Response() {
     }
 
-    public Response(Object result) {
-        this.result = result;
+    Response(Object result) {
+        if (result instanceof ResponseObj) {
+            final ResponseObj responseObj = (ResponseObj) result;
+            this.result = responseObj.response;
+            this.backupCount = responseObj.backupCount;
+        } else {
+            this.result = result;
+        }
         this.exception = result instanceof Throwable;
-    }
-
-    Response(Object result, int backupCount) {
-        this(result);
-        this.backupCount = backupCount;
     }
 
     @Override
@@ -66,14 +67,6 @@ final class Response extends Operation implements IdentifiedDataSerializable {
 
     public Object getResponse() {
         return exception ? result : new ResponseObj(result, getCallId(), backupCount);
-    }
-
-    int getBackupCount() {
-        return backupCount;
-    }
-
-    void setBackupCount(int backupCount) {
-        this.backupCount = backupCount;
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

@@ -32,7 +32,7 @@ public interface PartitionService extends CoreService {
 
     boolean isPartitionMigrating(int partitionId);
 
-    PartitionInfo getPartitionInfo(int i);
+    PartitionInfo getPartitionInfo(int partitionId);
 
     int getPartitionId(Data key);
 

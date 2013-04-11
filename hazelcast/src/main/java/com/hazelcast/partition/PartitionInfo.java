@@ -27,16 +27,16 @@ public class PartitionInfo {
     private final AtomicReferenceArray<Address> addresses = new AtomicReferenceArray<Address>(MAX_REPLICA_COUNT);
     private final PartitionListener partitionListener;
 
-    public PartitionInfo(int partitionId, PartitionListener partitionListener) {
+    PartitionInfo(int partitionId, PartitionListener partitionListener) {
         this.partitionId = partitionId;
         this.partitionListener = partitionListener;
     }
 
-    public PartitionInfo(int partitionId) {
+    PartitionInfo(int partitionId) {
         this(partitionId, null);
     }
 
-    public PartitionInfo(PartitionInfo partition) {
+    PartitionInfo(PartitionInfo partition) {
         this(partition.getPartitionId(), null);
         setPartitionInfo(partition);
     }

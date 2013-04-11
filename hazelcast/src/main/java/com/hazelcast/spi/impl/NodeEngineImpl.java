@@ -50,7 +50,6 @@ public class NodeEngineImpl implements NodeEngine {
     final ProxyServiceImpl proxyService;
     final ServiceManager serviceManager;
     final OperationServiceImpl operationService;
-    final BackupService backupService;
     final ExecutionServiceImpl executionService;
     final EventServiceImpl eventService;
     final WaitNotifyServiceImpl waitNotifyService;
@@ -63,7 +62,6 @@ public class NodeEngineImpl implements NodeEngine {
         serviceManager = new ServiceManager(this);
         executionService = new ExecutionServiceImpl(this);
         operationService = new OperationServiceImpl(this);
-        backupService = new BackupService(this);
         eventService = new EventServiceImpl(this);
         waitNotifyService = new WaitNotifyServiceImpl(this);
         transactionManagerService = new TransactionManagerServiceImpl(this);
@@ -105,10 +103,6 @@ public class NodeEngineImpl implements NodeEngine {
 
     public OperationService getOperationService() {
         return operationService;
-    }
-
-    public BackupService getBackupService() {
-        return backupService;
     }
 
     public ExecutionService getExecutionService() {
@@ -220,10 +214,12 @@ public class NodeEngineImpl implements NodeEngine {
 
     @PrivateApi
     public void handlePacket(Packet packet) {
-        if (packet.isHeaderSet(Packet.HEADER_MIGRATION)) {
-            node.partitionService.handleMigration(packet);
-        } else if (packet.isHeaderSet(Packet.HEADER_OP)) {
+        if (packet.isHeaderSet(Packet.HEADER_OP)) {
             operationService.handleOperation(packet);
+        } else if (packet.isHeaderSet(Packet.HEADER_BACKUP)) {
+            operationService.handleBackup(packet);
+        } else if (packet.isHeaderSet(Packet.HEADER_MIGRATION)) {
+            node.partitionService.handleMigration(packet);
         } else if (packet.isHeaderSet(Packet.HEADER_EVENT)) {
             eventService.handleEvent(packet);
         } else {

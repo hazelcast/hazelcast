@@ -31,14 +31,14 @@ import java.util.Map;
  * Time: 11:23 AM
  */
 
-public class QueueMigrationOperation extends AbstractOperation {
+public class QueueReplicationOperation extends AbstractOperation {
 
     Map<String, QueueContainer> migrationData;
 
-    public QueueMigrationOperation() {
+    public QueueReplicationOperation() {
     }
 
-    public QueueMigrationOperation(Map<String, QueueContainer> migrationData, int partitionId, int replicaIndex) {
+    public QueueReplicationOperation(Map<String, QueueContainer> migrationData, int partitionId, int replicaIndex) {
         setPartitionId(partitionId).setReplicaIndex(replicaIndex);
         this.migrationData = migrationData;
     }

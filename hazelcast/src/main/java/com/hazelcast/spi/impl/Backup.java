@@ -30,7 +30,7 @@ import java.util.logging.Level;
 /**
  * @mdogan 4/5/13
  */
-final class Backup extends Operation implements IdentifiedDataSerializable {
+final class Backup extends Operation implements BackupOperation, IdentifiedDataSerializable {
 
     private Operation backupOp;
     private Address originalCaller;
@@ -40,10 +40,11 @@ final class Backup extends Operation implements IdentifiedDataSerializable {
     Backup() {
     }
 
-    Backup(Operation backupOp, Address originalCaller, boolean sync) {
+    public Backup(Operation backupOp, Address originalCaller, long version, boolean sync) {
         this.backupOp = backupOp;
         this.originalCaller = originalCaller;
         this.sync = sync;
+        this.version = version;
     }
 
     public void beforeRun() throws Exception {
@@ -65,9 +66,8 @@ final class Backup extends Operation implements IdentifiedDataSerializable {
 
     public void run() throws Exception {
         final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        final BackupService backupService = nodeEngine.backupService;
-        backupService.checkBackupVersion(getPartitionId(), version);
-        nodeEngine.getOperationService().runOperation(backupOp);
+        final OperationServiceImpl operationService = nodeEngine.operationService;
+        operationService.runBackupOperation(backupOp, getPartitionId(), version);
     }
 
     public void afterRun() throws Exception {
@@ -85,10 +85,6 @@ final class Backup extends Operation implements IdentifiedDataSerializable {
 
     public Object getResponse() {
         return null;
-    }
-
-    public void setVersion(long version) {
-        this.version = version;
     }
 
     @Override

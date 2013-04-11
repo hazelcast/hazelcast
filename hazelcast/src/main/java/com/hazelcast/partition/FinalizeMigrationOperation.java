@@ -20,7 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.MigrationAwareService;
-import com.hazelcast.spi.MigrationServiceEvent;
+import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
@@ -46,8 +46,7 @@ final class FinalizeMigrationOperation extends AbstractOperation
 
     public void run() {
         final Collection<MigrationAwareService> services = getServices();
-        final MigrationServiceEvent event = new MigrationServiceEvent(endpoint, getPartitionId(),
-                getReplicaIndex(), null, -1);
+        final PartitionMigrationEvent event = new PartitionMigrationEvent(endpoint, getPartitionId());
         for (MigrationAwareService service : services) {
             try {
                 if (success) {
