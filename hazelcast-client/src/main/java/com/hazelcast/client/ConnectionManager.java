@@ -72,13 +72,15 @@ public class ConnectionManager implements MembershipListener {
             @Override
             public void run() {
                 long diff = Clock.currentTimeMillis() - client.getInRunnable().lastReceived;
+                System.out.println("Diff is " + diff);
                 try {
                     if (diff >= TIMEOUT / 5 && diff < TIMEOUT) {
                         logger.log(Level.FINEST,
-                                   "Being idle for some time, Doing a getMembers() call to ping the server!");
+                                "Being idle for some time, Doing a getMembers() call to ping the server!");
                         final CountDownLatch latch = new CountDownLatch(1);
                         new Thread(new Runnable() {
                             public void run() {
+                                System.out.println("Doing a getmembers");
                                 Set<Member> members = client.getCluster().getMembers();
                                 if (members != null && members.size() >= 1) {
                                     latch.countDown();
@@ -90,7 +92,7 @@ public class ConnectionManager implements MembershipListener {
                         }
                     } else if (diff >= TIMEOUT) {
                         logger.log(Level.WARNING, "Server didn't respond to client's requests for " + TIMEOUT / 1000 +
-                                                  " seconds. Assuming it is dead, closing the connection!");
+                                " seconds. Assuming it is dead, closing the connection!");
                         currentConnection.close();
                     }
                 } catch (InterruptedException e) {
@@ -98,14 +100,14 @@ public class ConnectionManager implements MembershipListener {
                 } catch (IOException ignored) {
                 }
             }
-        }, TIMEOUT, TIMEOUT / 10);
+        }, TIMEOUT / 10, TIMEOUT / 10);
     }
 
     public Connection getInitConnection() throws IOException {
         if (currentConnection == null) {
             synchronized (this) {
                 currentConnection = lookForLiveConnection(config.getInitialConnectionAttemptLimit(),
-                                                          config.getReConnectionTimeOut());
+                        config.getReConnectionTimeOut());
             }
         }
         return currentConnection;
@@ -157,8 +159,8 @@ public class ConnectionManager implements MembershipListener {
                 attempt++;
                 final long t = next - Clock.currentTimeMillis();
                 logger.log(Level.INFO, format("Unable to get alive cluster connection," +
-                                              " try in {0} ms later, attempt {1} of {2}.",
-                                              Math.max(0, t), attempt, attemptsLimit));
+                        " try in {0} ms later, attempt {1} of {2}.",
+                        Math.max(0, t), attempt, attemptsLimit));
                 if (t > 0) {
                     try {
                         Thread.sleep(t);
@@ -183,7 +185,7 @@ public class ConnectionManager implements MembershipListener {
             }
         } catch (Throwable e) {
             logger.log(Level.INFO, "got an exception on closeConnection "
-                                   + connection + ":" + e.getMessage(), e);
+                    + connection + ":" + e.getMessage(), e);
         }
     }
 
@@ -229,8 +231,8 @@ public class ConnectionManager implements MembershipListener {
         boolean lost = false;
         synchronized (this) {
             if (currentConnection != null &&
-                connection != null &&
-                currentConnection.getVersion() == connection.getVersion()) {
+                    connection != null &&
+                    currentConnection.getVersion() == connection.getVersion()) {
                 logger.log(Level.WARNING, "Connection to " + currentConnection + " is lost");
                 // remove current connection's address from member list.
                 // if address is IPv6 then remove all possible socket addresses (for all scopes)
@@ -259,11 +261,10 @@ public class ConnectionManager implements MembershipListener {
     private Connection searchForAvailableConnection() {
         Connection connection = null;
         popAndPush(clusterMembers);
-        if(clusterMembers.isEmpty()){
+        if (clusterMembers.isEmpty()) {
             clusterMembers.addAll(initialClusterMembers);
         }
         int counter = clusterMembers.size();
-
         while (counter > 0) {
             try {
                 connection = getNextConnection();
@@ -286,7 +287,7 @@ public class ConnectionManager implements MembershipListener {
     public void memberAdded(MembershipEvent membershipEvent) {
         InetSocketAddress address = membershipEvent.getMember().getInetSocketAddress();
         Collection<InetSocketAddress> addresses = AddressHelper.getPossibleSocketAddresses(address.getAddress(),
-                                                                                           address.getPort());
+                address.getPort());
         clusterMembers.addAll(addresses);
         initialClusterMembers.addAll(addresses);
     }
@@ -294,7 +295,7 @@ public class ConnectionManager implements MembershipListener {
     public void memberRemoved(MembershipEvent membershipEvent) {
         InetSocketAddress address = membershipEvent.getMember().getInetSocketAddress();
         Collection<InetSocketAddress> addresses = AddressHelper.getPossibleSocketAddresses(address.getAddress(),
-                                                                                           address.getPort());
+                address.getPort());
         clusterMembers.removeAll(addresses);
     }
 
@@ -304,7 +305,7 @@ public class ConnectionManager implements MembershipListener {
         for (Member member : members) {
             InetSocketAddress address = member.getInetSocketAddress();
             Collection<InetSocketAddress> addresses = AddressHelper.getPossibleSocketAddresses(address.getAddress(),
-                                                                                               address.getPort());
+                    address.getPort());
             clusterMembers.addAll(addresses);
         }
     }
