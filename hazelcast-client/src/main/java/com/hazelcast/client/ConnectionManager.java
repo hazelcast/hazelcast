@@ -72,7 +72,6 @@ public class ConnectionManager implements MembershipListener {
             @Override
             public void run() {
                 long diff = Clock.currentTimeMillis() - client.getInRunnable().lastReceived;
-                System.out.println("Diff is " + diff);
                 try {
                     if (diff >= TIMEOUT / 5 && diff < TIMEOUT) {
                         logger.log(Level.FINEST,
@@ -80,7 +79,6 @@ public class ConnectionManager implements MembershipListener {
                         final CountDownLatch latch = new CountDownLatch(1);
                         new Thread(new Runnable() {
                             public void run() {
-                                System.out.println("Doing a getmembers");
                                 Set<Member> members = client.getCluster().getMembers();
                                 if (members != null && members.size() >= 1) {
                                     latch.countDown();
