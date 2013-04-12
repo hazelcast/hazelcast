@@ -22,10 +22,7 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.spi.MigrationAwareService;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.PartitionReplicationEvent;
+import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
@@ -37,7 +34,7 @@ import java.util.logging.Level;
 /**
  * @mdogan 4/11/13
  */
-public class ReplicaSyncRequest extends Operation {
+public class ReplicaSyncRequest extends Operation implements FireAndForgetOp {
 
     public void beforeRun() throws Exception {
     }
