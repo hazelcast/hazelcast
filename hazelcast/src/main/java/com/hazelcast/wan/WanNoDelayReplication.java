@@ -88,7 +88,7 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
                 if (conn != null && conn.live()) {
                     Data data = node.nodeEngine.getSerializationService().toData(operation);
                     Packet operationPacket = new Packet(data, node.nodeEngine.getSerializationContext());
-                    operationPacket.setHeader(Packet.HEADER_WAN_REPLICATION, true);
+                    operationPacket.setHeader(Packet.HEADER_WAN_REPLICATION);
                     node.nodeEngine.send(operationPacket, conn);
                 } else {
                     failureQ.addFirst(operation);

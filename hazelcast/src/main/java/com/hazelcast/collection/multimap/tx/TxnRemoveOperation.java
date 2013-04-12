@@ -16,10 +16,7 @@
 
 package com.hazelcast.collection.multimap.tx;
 
-import com.hazelcast.collection.CollectionContainer;
-import com.hazelcast.collection.CollectionProxyId;
-import com.hazelcast.collection.CollectionRecord;
-import com.hazelcast.collection.CollectionWrapper;
+import com.hazelcast.collection.*;
 import com.hazelcast.collection.operations.CollectionKeyBasedOperation;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.ObjectDataInput;
@@ -74,7 +71,8 @@ public class TxnRemoveOperation extends CollectionKeyBasedOperation {
 
     public void afterRun() throws Exception {
         long elapsed = Math.max(0, Clock.currentTimeMillis()-begin);
-        getOrCreateContainer().getOperationsCounter().incrementRemoves(elapsed);
+        final CollectionService service = getService();
+        service.getLocalMultiMapStatsImpl(proxyId).incrementRemoves(elapsed);
         if (Boolean.TRUE.equals(response)) {
             getOrCreateContainer().update();
             publishEvent(EntryEventType.REMOVED, dataKey, value);

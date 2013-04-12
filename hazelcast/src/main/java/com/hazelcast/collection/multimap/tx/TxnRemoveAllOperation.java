@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,7 @@
 
 package com.hazelcast.collection.multimap.tx;
 
-import com.hazelcast.collection.CollectionContainer;
-import com.hazelcast.collection.CollectionProxyId;
-import com.hazelcast.collection.CollectionRecord;
-import com.hazelcast.collection.CollectionWrapper;
+import com.hazelcast.collection.*;
 import com.hazelcast.collection.operations.CollectionKeyBasedOperation;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.ObjectDataInput;
@@ -85,7 +82,8 @@ public class TxnRemoveAllOperation extends CollectionKeyBasedOperation {
 
     public void afterRun() throws Exception {
         long elapsed = Math.max(0, Clock.currentTimeMillis()-begin);
-        getOrCreateContainer().getOperationsCounter().incrementRemoves(elapsed);
+        final CollectionService service = getService();
+        service.getLocalMultiMapStatsImpl(proxyId).incrementRemoves(elapsed);
         if (removed != null) {
             getOrCreateContainer().update();
             for (CollectionRecord record : removed) {
