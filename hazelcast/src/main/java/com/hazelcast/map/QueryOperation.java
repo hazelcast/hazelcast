@@ -64,7 +64,7 @@ public class QueryOperation extends AbstractMapOperation {
             result.setPartitionIds(finalPartitions);
         }
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            mapService.getMapContainer(name).getMapOperationCounter().incrementOtherOperations();
+            ((MapService) getService()).getLocalMapStatsImpl(name).incrementOtherOperations();            //TODO @msk stats change
         }
     }
 

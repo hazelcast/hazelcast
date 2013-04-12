@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,11 +51,10 @@ public class TxnOfferOperation extends QueueBackupAwareOperation implements Noti
 
     public void afterRun() throws Exception {
         if (Boolean.TRUE.equals(response)) {
-            getQueueService().getOrCreateOperationsCounter(name).incrementOffers();
+            getQueueService().getLocalQueueStatsImpl(name).incrementOffers();
             publishEvent(ItemEventType.ADDED, data);
-        }
-        else{
-            getQueueService().getOrCreateOperationsCounter(name).incrementRejectedOffers();
+        } else {
+            getQueueService().getLocalQueueStatsImpl(name).incrementRejectedOffers();
         }
     }
 

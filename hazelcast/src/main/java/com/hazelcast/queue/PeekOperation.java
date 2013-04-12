@@ -38,7 +38,7 @@ public final class PeekOperation extends QueueOperation implements IdentifiedDat
     }
 
     public void afterRun() throws Exception {
-        getQueueService().getOrCreateOperationsCounter(name).incrementOtherOperations();
+        getQueueService().getLocalQueueStatsImpl(name).incrementOtherOperations();
     }
 
     public int getId() {

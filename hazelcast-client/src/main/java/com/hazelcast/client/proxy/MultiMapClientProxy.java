@@ -24,7 +24,7 @@ import com.hazelcast.client.util.LightMultiMapEntrySet;
 import com.hazelcast.client.util.ValueCollection;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MultiMap;
-import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
@@ -36,10 +36,10 @@ import static com.hazelcast.client.proxy.ProxyHelper.check;
 import static java.lang.String.valueOf;
 
 public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder<K, V> {
+    final Map<EntryListener<K, V>, Map<Object, ListenerThread>> listenerMap = new IdentityHashMap<EntryListener<K, V>, Map<Object, ListenerThread>>();
     private final String name;
     private final ProxyHelper proxyHelper;
     private final HazelcastClient client;
-    final Map<EntryListener<K, V>, Map<Object, ListenerThread>> listenerMap = new IdentityHashMap<EntryListener<K, V>, Map<Object, ListenerThread>>();
 
     public MultiMapClientProxy(HazelcastClient client, String name) {
         this.name = name;
@@ -61,7 +61,7 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder<K,
 
     public void addEntryListener(final EntryListener<K, V> listener, final K key, final boolean includeValue) {
         Data dKey = key == null ? null : proxyHelper.toData(key);
-        Data[] datas = dKey == null? null: new Data[]{dKey};
+        Data[] datas = dKey == null ? null : new Data[]{dKey};
         Protocol request = proxyHelper.createProtocol(Command.MMLISTEN, new String[]{name, valueOf(includeValue)}, datas);
         ListenerThread thread = proxyHelper.createAListenerThread("hz.client.multiMapListener.",
                 client, request, new EntryEventLRH<K, V>(listener, key, includeValue, this));
@@ -121,7 +121,7 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder<K,
         proxyHelper.unlock(getName(), dKey, Command.MMUNLOCK, new String[]{getName()}, dKey);
     }
 
-    public LocalMapStats getLocalMultiMapStats() {
+    public LocalMultiMapStats getLocalMultiMapStats() {
         throw new UnsupportedOperationException();
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,11 +51,10 @@ public class TxnPollOperation extends QueueBackupAwareOperation implements Notif
 
     public void afterRun() throws Exception {
         if (response != null) {
-            getQueueService().getOrCreateOperationsCounter(name).incrementPolls();
+            getQueueService().getLocalQueueStatsImpl(name).incrementPolls();
             publishEvent(ItemEventType.REMOVED, data);
-        }
-        else {
-            getQueueService().getOrCreateOperationsCounter(name).incrementEmptyPolls();
+        } else {
+            getQueueService().getLocalQueueStatsImpl(name).incrementEmptyPolls();
         }
     }
 

@@ -81,7 +81,7 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
 
     private final ConcurrencyUtil.ConstructorFunction<ObjectNamespace, EntryTaskScheduler> schedulerConstructor = new ConcurrencyUtil.ConstructorFunction<ObjectNamespace, EntryTaskScheduler>() {
         public EntryTaskScheduler createNew(ObjectNamespace namespace) {
-            return EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new LockEvictionProcessor(nodeEngine, namespace) , true);
+            return EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new LockEvictionProcessor(nodeEngine, namespace), true);
         }
     };
 
@@ -97,6 +97,10 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
 
     LockStoreContainer getLockContainer(int partitionId) {
         return containers[partitionId];
+    }
+
+    public LockStoreContainer[] getLockContainers() {
+        return containers;
     }
 
     LockStoreImpl getLockStore(int partitionId, ObjectNamespace namespace) {
@@ -115,10 +119,10 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
     private void releaseLocksOf(final String uuid) {
         for (LockStoreContainer container : containers) {
             for (LockStoreImpl lockStore : container.getLockStores()) {
-                Map<Data, LockInfo> locks = lockStore.getLocks();
-                for (Map.Entry<Data, LockInfo> entry : locks.entrySet()) {
+                Map<Data, DistributedLock> locks = lockStore.getLocks();
+                for (Map.Entry<Data, DistributedLock> entry : locks.entrySet()) {
                     final Data key = entry.getKey();
-                    final LockInfo lock = entry.getValue();
+                    final DistributedLock lock = entry.getValue();
                     if (uuid.equals(lock.getOwner()) && !lock.isTransactional()) {
                         UnlockOperation op = new UnlockOperation(lockStore.getNamespace(), key, -1, true);
                         op.setNodeEngine(nodeEngine);

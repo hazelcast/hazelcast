@@ -28,14 +28,13 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * @mdogan 2/12/13
  */
-class LockStoreContainer {
+public class LockStoreContainer {
 
     private final LockService lockService;
     private final int partitionId;
     private final ConcurrentMap<ObjectNamespace, LockStoreImpl> lockStores = new ConcurrentHashMap<ObjectNamespace, LockStoreImpl>();
-
     private final ConstructorFunction<ObjectNamespace, LockStoreImpl> lockStoreConstructor
-                = new ConstructorFunction<ObjectNamespace, LockStoreImpl>() {
+            = new ConstructorFunction<ObjectNamespace, LockStoreImpl>() {
         public LockStoreImpl createNew(ObjectNamespace key) {
             return new LockStoreImpl(key, 1, 0, lockService);
         }
@@ -75,7 +74,7 @@ class LockStoreContainer {
         return lockStores.get(namespace);
     }
 
-    Collection<LockStoreImpl> getLockStores() {
+    public Collection<LockStoreImpl> getLockStores() {
         return Collections.unmodifiableCollection(lockStores.values());
     }
 
@@ -91,8 +90,8 @@ class LockStoreContainer {
     }
 
     void put(LockStoreImpl ls) {
-        Collection<LockInfo> lockInfos = ls.getLocks().values();
-        for (LockInfo lockInfo : lockInfos) {
+        Collection<DistributedLock> lockInfos = ls.getLocks().values();
+        for (DistributedLock lockInfo : lockInfos) {
             lockInfo.setLockService(lockService);
             lockInfo.setNamespace(ls.getNamespace());
         }

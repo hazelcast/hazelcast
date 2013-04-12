@@ -856,11 +856,11 @@
 //        IMap map = h.getMap(mapName);
 //        map.put("1", "1");
 //        Thread.sleep(100);
-//        assertEquals(1, map.getLocalMapStats().getOperationStats().getNumberOfEvents());
+//        assertEquals(1, map.getLocalMapStats().getOperationStats().getEventOperationCount());
 //        client.shutdown();
 //        map.put(2, 2);
 //        Thread.sleep(5000);
-//        assertEquals(1, map.getLocalMapStats().getOperationStats().getNumberOfEvents());
+//        assertEquals(1, map.getLocalMapStats().getOperationStats().getEventOperationCount());
 //    }
 //
 //    @Test

@@ -16,14 +16,112 @@
 
 package com.hazelcast.monitor.impl;
 
-import com.hazelcast.monitor.LocalSemaphoreOperationStats;
 import com.hazelcast.monitor.LocalSemaphoreStats;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
-public class LocalSemaphoreStatsImpl extends LocalInstanceStatsSupport<LocalSemaphoreOperationStats>
-        implements LocalSemaphoreStats {
+import java.io.IOException;
+
+public class LocalSemaphoreStatsImpl implements LocalSemaphoreStats {
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+    }
 
     @Override
-    LocalSemaphoreOperationStats newOperationStatsInstance() {
-        return new LocalSemaphoreOperationStatsImpl();
+    public void readData(ObjectDataInput in) throws IOException {
+    }
+
+
+    //    OperationStat acquires = new OperationStat(0, 0);
+//    OperationStat nonAcquires = new OperationStat(0, 0);
+//    long numberOfRejectedAcquires;
+//    long numberOfPermitsAcquired;
+//    long numberOfPermitsReleased;
+//    long numberOfPermitsAttached;
+//    long numberOfPermitsDetached;
+//    long numberOfPermitsReduced;
+//
+//    public void writeData(ObjectDataOutput out) throws IOException {
+//        acquires.writeData(out);
+//        nonAcquires.writeData(out);
+//        out.writeLong(numberOfRejectedAcquires);
+//        out.writeLong(numberOfPermitsAcquired);
+//        out.writeLong(numberOfPermitsReleased);
+//        out.writeLong(numberOfPermitsAttached);
+//        out.writeLong(numberOfPermitsDetached);
+//        out.writeLong(numberOfPermitsReduced);
+//    }
+//
+//    public void readData(ObjectDataInput in) throws IOException {
+//        (acquires = new OperationStat()).readData(in);
+//        (nonAcquires = new OperationStat()).readData(in);
+//        numberOfRejectedAcquires = in.readLong();
+//        numberOfPermitsAcquired = in.readLong();
+//        numberOfPermitsReleased = in.readLong();
+//        numberOfPermitsAttached = in.readLong();
+//        numberOfPermitsDetached = in.readLong();
+//        numberOfPermitsReduced = in.readLong();
+//    }
+//
+//    public long total() {
+//        return acquires.count + nonAcquires.count;
+//    }
+//
+//    public long getNumberOfAcquireOps() {
+//        return acquires.count;
+//    }
+//
+//    public long getNumberOfNonAcquireOps() {
+//        return nonAcquires.count;
+//    }
+//
+//    public long getTotalAcquireLatency() {
+//        return acquires.totalLatency;
+//    }
+//
+//    public long getTotalNonAcquireLatency() {
+//        return nonAcquires.totalLatency;
+//    }
+//
+//    public long getNumberOfRejectedAcquires() {
+//        return numberOfRejectedAcquires;
+//    }
+//
+//    public long getNumberOfPermitsAcquired() {
+//        return numberOfPermitsAcquired;
+//    }
+//
+//    public long getNumberOfPermitsReduced() {
+//        return numberOfPermitsReduced;
+//    }
+//
+//    public long getNumberOfPermitsReleased() {
+//        return numberOfPermitsReleased;
+//    }
+//
+//    public long getNumberOfAttachedPermits() {
+//        return numberOfPermitsAttached;
+//    }
+//
+//    public long getNumberOfDetachedPermits() {
+//        return numberOfPermitsDetached;
+//    }
+//
+//    public String toString() {
+//        return "LocalSemaphoreOperationStats{" +
+//                "total= " + total() +
+//                ", acquires total:" + acquires +
+//                ", acquires rejected:" + numberOfRejectedAcquires +
+//                ", non-acquires:" + nonAcquires +
+//                ", permits acquired: " + numberOfPermitsAcquired +
+//                ", permits released: " + numberOfPermitsReleased +
+//                ", permits attached: " + numberOfPermitsAttached +
+//                ", permits detached: " + numberOfPermitsDetached +
+//                ", permits reduced: " + numberOfPermitsReduced +
+//                "}";
+//    }
+
+    public long getCreationTime() {
+        return 0;
     }
 }

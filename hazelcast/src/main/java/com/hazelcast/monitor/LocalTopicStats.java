@@ -16,7 +16,7 @@
 
 package com.hazelcast.monitor;
 
-public interface LocalTopicStats extends LocalInstanceStats<LocalTopicOperationStats> {
+public interface LocalTopicStats extends LocalInstanceStats {
 
     /**
      * Returns the creation time of this topic on this member
@@ -30,20 +30,14 @@ public interface LocalTopicStats extends LocalInstanceStats<LocalTopicOperationS
      *
      * @return total number of publishes
      */
-    long getTotalPublishes();
+    long getPublishOperationCount();
 
     /**
      * Returns the total number of received messages of this topic on this member
      *
      * @return
      */
-    long getTotalReceivedMessages();
+    long getReceiveOperationCount();
 
-    /**
-     * Returns the last publish time of this topic on this member
-     *
-     * @return last publish time
-     */
-    long getLastPublishTime();
 
 }

@@ -38,7 +38,7 @@ public final class GetOperation extends KeyBasedMapOperation implements Identifi
     public void afterRun() {
         mapService.interceptAfterGet(name, result);
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            mapContainer.getMapOperationCounter().incrementGets(Clock.currentTimeMillis() - getStartTime());
+            ((MapService) getService()).getLocalMapStatsImpl(name).incrementGets(Clock.currentTimeMillis() - getStartTime());//TODO @msk stats change
         }
     }
 

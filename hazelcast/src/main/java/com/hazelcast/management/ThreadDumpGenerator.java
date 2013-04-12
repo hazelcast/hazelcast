@@ -37,7 +37,7 @@ public class ThreadDumpGenerator {
 
     protected final ThreadMXBean threadMxBean;
 
-    private ThreadDumpGenerator(ThreadMXBean bean) {
+    ThreadDumpGenerator(ThreadMXBean bean) {
         super();
         this.threadMxBean = bean;
     }

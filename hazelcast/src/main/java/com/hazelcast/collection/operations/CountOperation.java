@@ -16,10 +16,10 @@
 
 package com.hazelcast.collection.operations;
 
-import com.hazelcast.collection.CollectionContainer;
-import com.hazelcast.collection.CollectionProxyId;
-import com.hazelcast.collection.CollectionWrapper;
+import com.hazelcast.collection.*;
 import com.hazelcast.nio.serialization.Data;
+
+import java.util.Collection;
 
 /**
  * @ali 1/16/13
@@ -35,7 +35,7 @@ public class CountOperation extends CollectionKeyBasedOperation {
 
     public void run() throws Exception {
         CollectionContainer container = getOrCreateContainer();
-        container.getOperationsCounter().incrementOtherOperations();
+        ((CollectionService) getService()).getLocalMultiMapStatsImpl(proxyId).incrementOtherOperations();
         CollectionWrapper wrapper = container.getCollectionWrapper(dataKey);
         response = wrapper == null ? 0 : wrapper.getCollection().size();
     }
