@@ -14,21 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.lock;
+package com.hazelcast.map.merge;
 
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.core.EntryView;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
-/**
- * @mdogan 2/13/13
- */
-public class SignalBackupOperation extends BaseSignalOperation implements BackupOperation {
+import java.io.IOException;
 
-    public SignalBackupOperation() {
+public class PassThroughMergePolicy implements MapMergePolicy {
+
+    @Override
+    public Object merge(String mapName, EntryView mergingEntry, EntryView existingEntry) {
+        return mergingEntry == null ? null : mergingEntry.getValue();
     }
 
-    public SignalBackupOperation(ObjectNamespace namespace, Data key, int threadId, String conditionId, boolean all) {
-        super(namespace, key, threadId, conditionId, all);
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
     }
 }

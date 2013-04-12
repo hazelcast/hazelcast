@@ -16,16 +16,11 @@
 
 package com.hazelcast.map.tx;
 
-import com.hazelcast.concurrent.lock.LockBackupOperation;
-import com.hazelcast.concurrent.lock.LockNamespace;
 import com.hazelcast.map.LockAwareOperation;
-import com.hazelcast.map.MapService;
 import com.hazelcast.map.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.transaction.TransactionException;
 

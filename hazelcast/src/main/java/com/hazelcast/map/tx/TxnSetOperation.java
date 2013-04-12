@@ -16,8 +16,6 @@
 
 package com.hazelcast.map.tx;
 
-import com.hazelcast.concurrent.lock.LockNamespace;
-import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
 import com.hazelcast.map.*;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;

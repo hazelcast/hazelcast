@@ -16,7 +16,7 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.concurrent.lock.LockNamespace;
+import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.WaitNotifyKey;
@@ -50,6 +50,6 @@ public abstract class LockAwareOperation extends KeyBasedMapOperation implements
     public abstract void onWaitExpire();
 
     public final WaitNotifyKey getWaitKey() {
-        return new LockWaitNotifyKey(new LockNamespace(MapService.SERVICE_NAME, name), dataKey);
+        return new LockWaitNotifyKey(new DefaultObjectNamespace(MapService.SERVICE_NAME, name), dataKey);
     }
 }

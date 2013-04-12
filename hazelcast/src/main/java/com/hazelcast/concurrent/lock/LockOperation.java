@@ -17,25 +17,22 @@
 package com.hazelcast.concurrent.lock;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.WaitSupport;
+import com.hazelcast.spi.*;
 
 public class LockOperation extends BaseLockOperation implements WaitSupport, BackupAwareOperation {
 
     public LockOperation() {
     }
 
-    public LockOperation(ILockNamespace namespace, Data key, int threadId) {
+    public LockOperation(ObjectNamespace namespace, Data key, int threadId) {
         super(namespace, key, threadId);
     }
 
-    public LockOperation(ILockNamespace namespace, Data key, int threadId, long timeout) {
+    public LockOperation(ObjectNamespace namespace, Data key, int threadId, long timeout) {
         super(namespace, key, threadId, timeout);
     }
 
-    public LockOperation(ILockNamespace namespace, Data key, int threadId, long ttl, long timeout) {
+    public LockOperation(ObjectNamespace namespace, Data key, int threadId, long ttl, long timeout) {
         super(namespace, key, threadId, ttl, timeout);
     }
 

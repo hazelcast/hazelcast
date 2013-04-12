@@ -19,6 +19,7 @@ package com.hazelcast.concurrent.lock;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.*;
+import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
@@ -38,12 +39,12 @@ class LockInfo implements DataSerializable {
     private List<ConditionKey> signalKeys;
     private List<AwaitOperation> expiredAwaitOps;
     private transient LockService lockService;
-    private transient ILockNamespace namespace;
+    private transient ObjectNamespace namespace;
 
     public LockInfo() {
     }
 
-    public LockInfo(Data key, LockService lockService, ILockNamespace namespace) {
+    public LockInfo(Data key, LockService lockService, ObjectNamespace namespace) {
         this.key = key;
         this.lockService = lockService;
         this.namespace = namespace;
@@ -57,7 +58,7 @@ class LockInfo implements DataSerializable {
         this.lockService = lockService;
     }
 
-    public void setNamespace(ILockNamespace namespace) {
+    public void setNamespace(ObjectNamespace namespace) {
         this.namespace = namespace;
     }
 

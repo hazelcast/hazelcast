@@ -14,7 +14,7 @@
 * limitations under the License.
 */
 
-package com.hazelcast.concurrent.lock;
+package com.hazelcast.spi;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -24,16 +24,16 @@ import java.io.IOException;
 /**
 * @mdogan 2/12/13
 */
-public final class LockNamespace implements ILockNamespace {
+public final class DefaultObjectNamespace implements ObjectNamespace {
 
     private String service;
 
     private Object objectId;
 
-    public LockNamespace() {
+    public DefaultObjectNamespace() {
     }
 
-    public LockNamespace(String serviceName, Object objectId) {
+    public DefaultObjectNamespace(String serviceName, Object objectId) {
         this.service = serviceName;
         this.objectId = objectId;
     }
@@ -51,7 +51,7 @@ public final class LockNamespace implements ILockNamespace {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        LockNamespace that = (LockNamespace) o;
+        DefaultObjectNamespace that = (DefaultObjectNamespace) o;
 
         if (objectId != null ? !objectId.equals(that.objectId) : that.objectId != null) return false;
         if (service != null ? !service.equals(that.service) : that.service != null) return false;
@@ -79,7 +79,7 @@ public final class LockNamespace implements ILockNamespace {
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        sb.append("LockNamespace");
+        sb.append("DefaultObjectNamespace");
         sb.append("{service='").append(service).append('\'');
         sb.append(", objectId=").append(objectId);
         sb.append('}');

@@ -30,6 +30,8 @@ import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.map.proxy.ObjectMapProxy;
 import com.hazelcast.map.tx.TxnMapProxy;
+import com.hazelcast.map.wan.MapReplicationRemove;
+import com.hazelcast.map.wan.MapReplicationUpdate;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -55,6 +57,7 @@ import com.hazelcast.transaction.Transaction;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConcurrencyUtil.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.wan.WanReplicationEvent;
 
 import java.io.IOException;
 import java.util.*;
@@ -67,7 +70,7 @@ import java.util.logging.Level;
 
 public class MapService implements ManagedService, MigrationAwareService, MembershipAwareService,
         TransactionalService, RemoteService, EventPublishingService<EventData, EntryListener>,
-        ClientProtocolService, PostJoinAwareService, SplitBrainHandlerService {
+        ClientProtocolService, PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService {
 
     public final static String SERVICE_NAME = "hz:impl:mapService";
 
@@ -179,6 +182,36 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         return new Merger(recordMap);
     }
 
+    @Override
+    public void onReplicationEvent(WanReplicationEvent replicationEvent) {
+        Object eventObject = replicationEvent.getEventObject();
+        if (eventObject instanceof MapReplicationUpdate) {
+            MapReplicationUpdate replicationUpdate = (MapReplicationUpdate) eventObject;
+            EntryView entryView = replicationUpdate.getEntryView();
+            MapMergePolicy mergePolicy = replicationUpdate.getMergePolicy();
+            MergeOperation operation = new MergeOperation(replicationUpdate.getMapName(), toData(entryView.getKey()), entryView, mergePolicy);
+            try {
+                int partitionId = nodeEngine.getPartitionService().getPartitionId(entryView.getKey());
+                Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId).build();
+                invocation.invoke().get();
+            } catch (Throwable t) {
+                ExceptionUtil.rethrow(t);
+            }
+        }
+        else if (eventObject instanceof MapReplicationRemove) {
+            MapReplicationRemove replicationRemove = (MapReplicationRemove) eventObject;
+
+            DeleteOperation operation = new DeleteOperation(replicationRemove.getMapName(), toData(replicationRemove.getKey()));
+            try {
+                int partitionId = nodeEngine.getPartitionService().getPartitionId(replicationRemove.getKey());
+                Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId).build();
+                invocation.invoke().get();
+            } catch (Throwable t) {
+                ExceptionUtil.rethrow(t);
+            }
+        }
+    }
+
     public class Merger implements Runnable {
 
         Map<MapContainer, Collection<Record>> recordMap;
@@ -197,6 +230,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                     if (mergePolicy == null) {
                         String mergeClassName = mergePolicyConfig.getClassName();
                         try {
+                            // todo cache merge policies in a map
                             mergePolicy = ClassLoaderUtil.newInstance(mergeClassName);
                         } catch (Exception e) {
                             logger.log(Level.SEVERE, e.getMessage(), e);
@@ -204,7 +238,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                         }
                     }
                 }
-                if(mergePolicy == null) {
+                if (mergePolicy == null) {
                     try {
                         mergePolicy = ClassLoaderUtil.newInstance(MapMergePolicyConfig.DEFAULT_POLICY);
                     } catch (Exception e) {
@@ -511,7 +545,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         invalidateNearCache(mapName, key);
     }
 
-    public Data getFromNearCache(String mapName, Data key) {
+    public Object getFromNearCache(String mapName, Data key) {
         NearCache nearCache = getNearCache(mapName);
         return nearCache.get(key);
     }
@@ -683,6 +717,18 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                 interceptor.afterRemove(value);
             }
         }
+    }
+
+    public void publishWanReplicationUpdate(String mapName, EntryView entryView) {
+        MapContainer mapContainer = getMapContainer(mapName);
+        MapReplicationUpdate replicationEvent = new MapReplicationUpdate(mapName, mapContainer.getWanMergePolicy(), entryView);
+        mapContainer.getWanReplicationListener().publishReplicationEvent(SERVICE_NAME, replicationEvent);
+    }
+
+    public void publishWanReplicationRemove(String mapName, Data key, long removeTime) {
+        MapContainer mapContainer = getMapContainer(mapName);
+        MapReplicationRemove replicationEvent = new MapReplicationRemove(mapName, key, removeTime);
+        mapContainer.getWanReplicationListener().publishReplicationEvent(SERVICE_NAME, replicationEvent);
     }
 
     public void publishEvent(Address caller, String mapName, int eventType, Data dataKey, Data dataOldValue, Data dataValue) {
@@ -890,7 +936,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                 targetSizePerPartition = Double.valueOf(maxPartitionSize * ((100 - evictionPercentage) / 100.0)).intValue();
             }
             for (int i = 0; i < ExecutorConfig.DEFAULT_POOL_SIZE; i++) {
-                nodeEngine.getExecutionService().execute("map-evict", new EvictRunner(i, mapConfig, targetSizePerPartition, comparator, evictionPercentage));
+                nodeEngine.getExecutionService().execute("hz:map-evict", new EvictRunner(i, mapConfig, targetSizePerPartition, comparator, evictionPercentage));
             }
 
 

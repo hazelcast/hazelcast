@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.util.ConcurrencyUtil;
 
 import java.io.IOException;
@@ -39,7 +40,7 @@ class LockStoreImpl implements DataSerializable, LockStore {
     };
 
     private final ConcurrentMap<Data, LockInfo> locks = new ConcurrentHashMap<Data, LockInfo>();
-    private ILockNamespace namespace;
+    private ObjectNamespace namespace;
     private int backupCount;
     private int asyncBackupCount;
     private transient LockService lockService;
@@ -47,7 +48,7 @@ class LockStoreImpl implements DataSerializable, LockStore {
     public LockStoreImpl() {
     }
 
-    public LockStoreImpl(ILockNamespace name, int backupCount, int asyncBackupCount, LockService lockService) {
+    public LockStoreImpl(ObjectNamespace name, int backupCount, int asyncBackupCount, LockService lockService) {
         this.namespace = name;
         this.backupCount = backupCount;
         this.asyncBackupCount = asyncBackupCount;
@@ -139,7 +140,7 @@ class LockStoreImpl implements DataSerializable, LockStore {
         locks.clear();
     }
 
-    public ILockNamespace getNamespace() {
+    public ObjectNamespace getNamespace() {
         return namespace;
     }
 

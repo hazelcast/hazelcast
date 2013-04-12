@@ -240,12 +240,13 @@ public class ConfigXmlGenerator {
                 xml.append("<max-idle-seconds>").append(n.getMaxIdleSeconds()).append("</max-idle-seconds>");
                 xml.append("<eviction-policy>").append(n.getEvictionPolicy()).append("</eviction-policy>");
                 xml.append("<invalidate-on-change>").append(n.isInvalidateOnChange()).append("</invalidate-on-change>");
+                xml.append("<in-memory-format>").append(n.getInMemoryFormat()).append("</in-memory-format>");
                 xml.append("</near-cache>");
             }
             if (m.getWanReplicationRef() != null) {
                 final WanReplicationRef wan = m.getWanReplicationRef();
                 xml.append("<wan-replication-ref name=\"").append(wan.getName()).append("\">");
-                xml.append("<merge-policy>").append(wan.getMergePolicyClassName()).append("</merge-policy>");
+                xml.append("<merge-policy>").append(wan.getMergePolicy()).append("</merge-policy>");
                 xml.append("</wan-replication-ref>");
             }
             if (!m.getMapIndexConfigs().isEmpty()) {

@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitSupport;
 
@@ -34,7 +35,7 @@ public class AwaitOperation extends BaseLockOperation implements WaitSupport, Ba
     public AwaitOperation() {
     }
 
-    public AwaitOperation(ILockNamespace namespace, Data key, int threadId, long timeout, String conditionId) {
+    public AwaitOperation(ObjectNamespace namespace, Data key, int threadId, long timeout, String conditionId) {
         super(namespace, key, threadId, timeout);
         this.conditionId = conditionId;
     }

@@ -16,9 +16,7 @@
 
 package com.hazelcast.wan;
 
-import com.hazelcast.map.Record;
-
-public class WanReplication implements LocalUpdateListener {
+public class WanReplication implements WanReplicationListener {
     final String name;
     final WanReplicationEndpoint[] endpoints;
 
@@ -35,9 +33,10 @@ public class WanReplication implements LocalUpdateListener {
         return name;
     }
 
-    public void recordUpdated(Record record) {
+    @Override
+    public void publishReplicationEvent(String serviceName, ReplicationEventObject eventObject) {
         for (WanReplicationEndpoint endpoint : endpoints) {
-            endpoint.recordUpdated(record);
+            endpoint.publishReplicationEvent(serviceName, eventObject);
         }
     }
 }

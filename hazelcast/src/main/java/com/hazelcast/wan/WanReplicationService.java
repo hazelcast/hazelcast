@@ -21,20 +21,24 @@ import com.hazelcast.config.WanTargetClusterConfig;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.CoreService;
+import com.hazelcast.spi.ReplicationSupportingService;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
 
 public class WanReplicationService implements CoreService {
 
     public static final String SERVICE_NAME = "hz:core:wanReplicationService";
 
     private final Node node;
-    private final Map<String, WanReplication> mapWanReplications = new ConcurrentHashMap<String, WanReplication>(2);
     private final ILogger logger;
+
+    private final Map<String, WanReplication> wanReplications = new ConcurrentHashMap<String, WanReplication>(2);
 
     public WanReplicationService(Node node) {
         this.node = node;
@@ -43,10 +47,10 @@ public class WanReplicationService implements CoreService {
 
     @SuppressWarnings("SynchronizeOnThis")
     public WanReplication getWanReplication(String name) {
-        WanReplication wr = mapWanReplications.get(name);
+        WanReplication wr = wanReplications.get(name);
         if (wr != null) return wr;
         synchronized (this) {
-            wr = mapWanReplications.get(name);
+            wr = wanReplications.get(name);
             if (wr != null) return wr;
             WanReplicationConfig wanReplicationConfig = node.getConfig().getWanReplicationConfig(name);
             if (wanReplicationConfig == null) return null;
@@ -55,14 +59,13 @@ public class WanReplicationService implements CoreService {
             int count = 0;
             for (WanTargetClusterConfig targetClusterConfig : targets) {
                 WanReplicationEndpoint target = null;
-                if( targetClusterConfig.getReplicationImpl() != null) {
+                if (targetClusterConfig.getReplicationImpl() != null) {
                     try {
                         target = (WanReplicationEndpoint) ClassLoaderUtil.newInstance(targetClusterConfig.getReplicationImpl());
                     } catch (Exception e) {
-                        logger.log(Level.SEVERE, e.getMessage(), e);
+                        ExceptionUtil.rethrow(e);
                     }
-                }
-                else {
+                } else {
                     target = new WanNoDelayReplication();
                 }
                 String groupName = targetClusterConfig.getGroupName();
@@ -73,14 +76,32 @@ public class WanReplicationService implements CoreService {
                 targetClusters[count++] = target;
             }
             wr = new WanReplication(name, targetClusters);
-            mapWanReplications.put(name, wr);
+            wanReplications.put(name, wr);
             return wr;
         }
     }
 
+    public void handleEvent(final Packet packet) {
+        // todo execute in which thread
+        node.nodeEngine.getExecutionService().execute("hz:wan", new Runnable() {
+            @Override
+            public void run() {
+                final Data data = packet.getData();
+                try {
+                    WanReplicationEvent replicationEvent = (WanReplicationEvent) node.nodeEngine.toObject(data);
+                    String serviceName = replicationEvent.getServiceName();
+                    ReplicationSupportingService service = node.nodeEngine.getService(serviceName);
+                    service.onReplicationEvent(replicationEvent);
+                } catch (Exception e) {
+                    ExceptionUtil.rethrow(e);
+                }
+            }
+        });
+    }
+
     public void shutdown() {
         synchronized (this) {
-            for (WanReplication wanReplication : mapWanReplications.values()) {
+            for (WanReplication wanReplication : wanReplications.values()) {
                 WanReplicationEndpoint[] wanReplicationEndpoints = wanReplication.getEndpoints();
                 if (wanReplicationEndpoints != null) {
                     for (WanReplicationEndpoint wanReplicationEndpoint : wanReplicationEndpoints) {

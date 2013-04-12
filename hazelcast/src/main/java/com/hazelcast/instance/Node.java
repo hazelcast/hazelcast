@@ -108,8 +108,6 @@ public class Node {
 
     private final SystemLogService systemLogService;
 
-    private final WanReplicationService wanReplicationService;
-
     private final Joiner joiner;
 
     public final NodeInitializer initializer;
@@ -203,7 +201,6 @@ public class Node {
             logger.log(Level.SEVERE, e.getMessage(), e);
         }
         this.multicastService = mcService;
-        wanReplicationService = new WanReplicationService(this);
         initializeListeners(config);
         joiner = nodeContext.createJoiner(this);
     }
@@ -381,7 +378,6 @@ public class Node {
             joined.set(false);
             setActive(false);
             setMasterAddress(null);
-            wanReplicationService.shutdown();
             try {
                 Runtime.getRuntime().removeShutdownHook(shutdownHookThread);
             } catch (Throwable ignored) {

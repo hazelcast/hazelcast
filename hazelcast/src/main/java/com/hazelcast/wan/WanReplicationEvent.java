@@ -14,44 +14,52 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.lock;
+package com.hazelcast.wan;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 
-/**
- * @mdogan 2/13/13
- */
-public final class InternalLockNamespace implements ObjectNamespace {
+public class WanReplicationEvent implements DataSerializable {
+
+    private String serviceName;
+    private ReplicationEventObject eventObject;
+
+    public WanReplicationEvent() {
+    }
+
+    public WanReplicationEvent(String serviceName, ReplicationEventObject eventObject) {
+        this.serviceName = serviceName;
+        this.eventObject = eventObject;
+    }
 
     public String getServiceName() {
-        return SharedLockService.SERVICE_NAME;
+        return serviceName;
     }
 
-    public Object getObjectId() {
-        return null;
+    public void setServiceName(String serviceName) {
+        this.serviceName = serviceName;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        return true;
+    public Object getEventObject() {
+        return eventObject;
     }
 
-    @Override
-    public int hashCode() {
-        return getServiceName().hashCode();
+    public void setEventObject(ReplicationEventObject eventObject) {
+        this.eventObject = eventObject;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(serviceName);
+        out.writeObject(eventObject);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+        serviceName = in.readUTF();
+        eventObject = in.readObject();
     }
 }

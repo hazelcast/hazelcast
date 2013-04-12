@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.wan;
+package com.hazelcast.spi;
 
-import com.hazelcast.map.Record;
+import com.hazelcast.wan.WanReplicationEvent;
 
-public interface LocalUpdateListener {
-    void recordUpdated(Record record);
+public interface ReplicationSupportingService {
+    void onReplicationEvent(WanReplicationEvent replicationEvent);
 }

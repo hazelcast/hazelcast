@@ -16,16 +16,5 @@
 
 package com.hazelcast.wan;
 
-public interface WanMergeListener {
-    enum EventType {
-        REMOVED,
-        UPDATED,
-        IGNORED
-    }
-
-    void entryRemoved();
-
-    void entryUpdated();
-
-    void entryIgnored();
+public interface ReplicationEventObject {
 }

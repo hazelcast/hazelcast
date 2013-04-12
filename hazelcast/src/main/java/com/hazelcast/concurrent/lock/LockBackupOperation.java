@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.ObjectNamespace;
 
 import java.io.IOException;
 
@@ -30,7 +31,7 @@ public class LockBackupOperation extends BaseLockOperation implements BackupOper
     public LockBackupOperation() {
     }
 
-    public LockBackupOperation(ILockNamespace namespace, Data key, int threadId, String originalCallerUuid) {
+    public LockBackupOperation(ObjectNamespace namespace, Data key, int threadId, String originalCallerUuid) {
         super(namespace, key, threadId);
         this.originalCallerUuid = originalCallerUuid;
     }

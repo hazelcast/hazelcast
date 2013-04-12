@@ -16,6 +16,7 @@
 
 package com.hazelcast.concurrent.lock;
 
+import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.SharedService;
 
 /**
@@ -25,7 +26,7 @@ public interface SharedLockService extends SharedService {
 
     final static String SERVICE_NAME = "hz:impl:lockService";
 
-    LockStore createLockStore(int partitionId, ILockNamespace namespace, int backupCount, int asyncBackupCount);
+    LockStore createLockStore(int partitionId, ObjectNamespace namespace, int backupCount, int asyncBackupCount);
 
-    void clearLockStore(int partitionId, ILockNamespace namespace);
+    void clearLockStore(int partitionId, ObjectNamespace namespace);
 }

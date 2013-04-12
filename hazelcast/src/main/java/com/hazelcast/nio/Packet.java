@@ -29,6 +29,7 @@ public final class Packet extends DataWriter implements SocketWritable {
     public static final int HEADER_OP = 0;
     public static final int HEADER_EVENT = 1;
     public static final int HEADER_MIGRATION = 2;
+    public static final int HEADER_WAN_REPLICATION = 3;
 
     private byte header;
 

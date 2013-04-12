@@ -117,7 +117,7 @@ public abstract class KeyBasedMapOperation extends Operation implements KeyBased
     }
 
     @Override
-    public final boolean returnsResponse() {
+    public boolean returnsResponse() {
         return true;
     }
 

@@ -18,6 +18,7 @@ package com.hazelcast.concurrent.lock;
 
 import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
@@ -32,9 +33,9 @@ import static com.hazelcast.concurrent.lock.LockService.SERVICE_NAME;
  */
 public final class LockProxySupport {
 
-    private final ILockNamespace namespace;
+    private final ObjectNamespace namespace;
 
-    public LockProxySupport(ILockNamespace namespace) {
+    public LockProxySupport(ObjectNamespace namespace) {
         this.namespace = namespace;
     }
 

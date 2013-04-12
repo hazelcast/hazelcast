@@ -16,7 +16,7 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.concurrent.lock.LockNamespace;
+import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.concurrent.lock.SharedLockService;
 import com.hazelcast.core.EntryView;
@@ -47,7 +47,7 @@ public class PartitionRecordStore implements RecordStore {
         this.mapContainer = mapService.getMapContainer(name);
         final SharedLockService lockService = mapService.getNodeEngine().getSharedService(SharedLockService.SERVICE_NAME);
         this.lockStore = lockService == null ? null :
-                lockService.createLockStore(partitionContainer.partitionId, new LockNamespace(MapService.SERVICE_NAME, name),
+                lockService.createLockStore(partitionContainer.partitionId, new DefaultObjectNamespace(MapService.SERVICE_NAME, name),
                         mapContainer.getBackupCount(), mapContainer.getAsyncBackupCount());
     }
 
@@ -76,7 +76,7 @@ public class PartitionRecordStore implements RecordStore {
     void clear() {
         final SharedLockService lockService = mapService.getNodeEngine().getSharedService(SharedLockService.SERVICE_NAME);
         if (lockService != null) {
-            lockService.clearLockStore(partitionContainer.partitionId, new LockNamespace(MapService.SERVICE_NAME, name));
+            lockService.clearLockStore(partitionContainer.partitionId, new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
         }
         records.clear();
     }

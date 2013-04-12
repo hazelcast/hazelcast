@@ -45,11 +45,6 @@ public final class RemoveOperation extends BaseRemoveOperation implements Identi
     }
 
     @Override
-    public void onWaitExpire() {
-        getResponseHandler().sendResponse(null);
-    }
-
-    @Override
     public String toString() {
         return "RemoveOperation{" + name + "}";
     }
