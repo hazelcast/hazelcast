@@ -17,7 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.client.ClientCommandHandler;
-import com.hazelcast.cluster.ClusterServiceImpl;
+import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapMergePolicyConfig;
@@ -42,6 +42,7 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.PartitionInfo;
+import com.hazelcast.partition.PartitionService;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.IndexService;
@@ -368,7 +369,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
-        logger.log(Level.INFO, "Preparing replication op -> " + event);
+        logger.log(Level.FINEST, "Preparing replication op -> " + event); // TODO: to FINEST
         final PartitionContainer container = partitionContainers[event.getPartitionId()];
         final MapReplicationOperation operation = new MapReplicationOperation(container, event.getPartitionId(), event.getReplicaIndex());
         return operation.isEmpty() ? null : operation;
@@ -411,7 +412,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     private void clearPartitionData(final int partitionId) {
-        logger.log(Level.FINEST, "Clearing partition data -> " + partitionId);
+        logger.log(Level.FINEST, "Clearing partition data -> " + partitionId);   // TODO: to FINEST
         final PartitionContainer container = partitionContainers[partitionId];
         for (PartitionRecordStore mapPartition : container.maps.values()) {
             mapPartition.clear();
@@ -950,7 +951,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                 for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
                     Address owner = nodeEngine.getPartitionService().getPartitionOwner(i);
                     if (nodeEngine.getThisAddress().equals(owner)) {
-                        int size = partitionContainers[i].getRecordStore(mapName).getRecords().size();
+                        int size = partitionContainers[i].getRecordStore(mapName).getRecords().size();  // TODO: can throw NPE during shutdown!
                         if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_PARTITION) {
                             if (size >= maxSize) {
                                 return true;
@@ -960,10 +961,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                         }
                     }
                 }
-                if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_NODE)
-                    return totalSize >= maxSize;
-                else
-                    return false;
+                return maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_NODE && totalSize >= maxSize;
             }
             if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.USED_HEAP_SIZE || maxSizePolicy == MaxSizeConfig.MaxSizePolicy.USED_HEAP_PERCENTAGE) {
                 long total = Runtime.getRuntime().totalMemory();
@@ -1019,11 +1017,12 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         long lockedEntryCount = 0;
 
         int backupCount = mapContainer.getTotalBackupCount();
-        ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();
+        ClusterService clusterService = nodeEngine.getClusterService();
+        final PartitionService partitionService = nodeEngine.getPartitionService();
 
         Address thisAddress = clusterService.getThisAddress();
-        for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
-            PartitionInfo partitionInfo = nodeEngine.getPartitionService().getPartitionInfo(i);
+        for (int i = 0; i < partitionService.getPartitionCount(); i++) {
+            PartitionInfo partitionInfo = partitionService.getPartitionInfo(i);
             if (partitionInfo.getOwner().equals(thisAddress)) {
                 PartitionContainer partitionContainer = getPartitionContainer(i);
                 RecordStore recordStore = partitionContainer.getRecordStore(mapName);
@@ -1047,15 +1046,13 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             } else {
                 for (int j = 1; j <= backupCount; j++) {
                     Address replicaAddress = partitionInfo.getReplicaAddress(j);
-                    int memberSize = nodeEngine.getClusterService().getMembers().size();
-
-                    int tryCount = 3;
+                    int tryCount = 30;
                     // wait if the partition table is not updated yet
-                    while (memberSize > backupCount && replicaAddress == null && tryCount-- > 0) {
+                    while (replicaAddress == null && clusterService.getSize() > backupCount && tryCount-- > 0) {
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException e) {
-                            ExceptionUtil.rethrow(e);
+                            throw ExceptionUtil.rethrow(e);
                         }
                         replicaAddress = partitionInfo.getReplicaAddress(j);
                     }
@@ -1080,8 +1077,8 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         localMapStats.setBackupEntryCount(zeroOrPositive(backupEntryCount));
         localMapStats.setOwnedEntryMemoryCost(zeroOrPositive(ownedEntryMemoryCost));
         localMapStats.setBackupEntryMemoryCost(zeroOrPositive(backupEntryMemoryCost));
-        localMapStats.setCreationTime(zeroOrPositive(clusterService.getClusterTimeFor(mapContainer.getCreationTime())));
-        localMapStats.setOperationStats(getMapContainer(mapName).getMapOperationCounter().getPublishedStats());
+        localMapStats.setCreationTime(zeroOrPositive(mapContainer.getCreationTime()));
+        localMapStats.setOperationStats(mapContainer.getMapOperationCounter().getPublishedStats());
         return localMapStats;
     }
 

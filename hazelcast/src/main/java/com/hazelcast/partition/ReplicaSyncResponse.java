@@ -24,6 +24,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 
@@ -33,7 +34,7 @@ import java.util.logging.Level;
 /**
  * @mdogan 4/11/13
  */
-public class ReplicaSyncResponse extends Operation implements BackupOperation {
+public class ReplicaSyncResponse extends Operation implements BackupOperation, PartitionAwareOperation {
 
     private byte[] data;
     private long version;
@@ -54,36 +55,41 @@ public class ReplicaSyncResponse extends Operation implements BackupOperation {
         final PartitionServiceImpl partitionService = (PartitionServiceImpl) nodeEngine.getPartitionService();
         final int partitionId = getPartitionId();
         final PartitionInfo partitionInfo = partitionService.getPartitionInfo(partitionId);
-        final Address owner = partitionInfo.getReplicaAddress(getReplicaIndex());
+        final int replicaIndex = getReplicaIndex();
+        final Address owner = partitionInfo.getReplicaAddress(replicaIndex);
         final ILogger logger = nodeEngine.getLogger(getClass());
-        if (nodeEngine.getThisAddress().equals(owner)) {
+        if (nodeEngine.getThisAddress().equals(owner)) { // no need to check, op is already partition aware...
             SerializationService serializationService = nodeEngine.getSerializationService();
             ObjectDataInput in = null;
             try {
-                final byte[] taskData = IOUtil.decompress(data);
-                in = serializationService.createObjectDataInput(taskData);
-                int size = in.readInt();
-                for (int i = 0; i < size; i++) {
-                    Operation op = (Operation) serializationService.readObject(in);
-                    try {
-                        op.setNodeEngine(nodeEngine)
-                                .setPartitionId(partitionId).setReplicaIndex(getReplicaIndex());
-                        op.setResponseHandler(ResponseHandlerFactory.createErrorLoggingResponseHandler(nodeEngine.getLogger(op.getClass())));
-                        op.beforeRun();
-                        op.run();
-                        op.afterRun();
-                    } catch (Throwable e) {
-                        logger.log(Level.SEVERE, "While executing " + op, e);
+                if (data != null) {
+                    if (logger.isLoggable(Level.FINEST)) {
+                        logger.log(Level.FINEST, "Applying replica sync for partition: " + partitionId + ", replica: " + replicaIndex);
+                    }
+                    final byte[] taskData = IOUtil.decompress(data);
+                    in = serializationService.createObjectDataInput(taskData);
+                    int size = in.readInt();
+                    for (int i = 0; i < size; i++) {
+                        Operation op = (Operation) serializationService.readObject(in);
+                        try {
+                            op.setNodeEngine(nodeEngine)
+                                    .setPartitionId(partitionId).setReplicaIndex(replicaIndex);
+                            op.setResponseHandler(ResponseHandlerFactory.createErrorLoggingResponseHandler(nodeEngine.getLogger(op.getClass())));
+                            op.beforeRun();
+                            op.run();
+                            op.afterRun();
+                        } catch (Throwable e) {
+                            logger.log(Level.SEVERE, "While executing " + op, e);
+                        }
                     }
                 }
-
             } finally {
                 IOUtil.closeResource(in);
                 partitionService.finalizeReplicaSync(partitionId, version);
             }
         } else {
             logger.log(Level.WARNING, "Ignoring sync response, since this node is not owner of " +
-                    "partition[" + partitionId + "] -> replica[" + getReplicaIndex() + "]");
+                    "partition[" + partitionId + "] -> replica[" + replicaIndex + "]");
         }
     }
 
@@ -99,7 +105,7 @@ public class ReplicaSyncResponse extends Operation implements BackupOperation {
     }
 
     public boolean validatesTarget() {
-        return false;
+        return true;
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

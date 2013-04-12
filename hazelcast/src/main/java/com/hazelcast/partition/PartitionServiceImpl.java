@@ -521,15 +521,25 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             final ReplicaSyncRequest syncRequest = new ReplicaSyncRequest();
             syncRequest.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
             final ReplicaSyncInfo currentSyncInfo = replicaSyncRequests.get(partitionId);
-            final ReplicaSyncInfo syncInfo = new ReplicaSyncInfo(partitionId);
+            final ReplicaSyncInfo syncInfo = new ReplicaSyncInfo(partitionId, target);
             boolean sendRequest = false;
             if (currentSyncInfo == null) {
                 sendRequest = replicaSyncRequests.putIfAbsent(partitionId, syncInfo) == null;
-            } else if (currentSyncInfo.requestTime < (Clock.currentTimeMillis() - 10000)) {
+            } else if (currentSyncInfo.requestTime < (Clock.currentTimeMillis() - 10000)
+                    || nodeEngine.getClusterService().getMember(currentSyncInfo.target) == null) {
                 sendRequest = replicaSyncRequests.replace(partitionId, currentSyncInfo, syncInfo);
             }
             if (sendRequest) {
+                if (logger.isLoggable(Level.FINEST)) {
+                    logger.log(Level.FINEST, "Sending sync replica request to -> " + target
+                            + "; for partition: " + partitionId + ", replica: " + replicaIndex);
+                }
                 nodeEngine.getOperationService().send(syncRequest, target);
+            }
+        } else {
+            if (logger.isLoggable(Level.FINEST)) {
+                logger.log(Level.FINEST, "Sync replica target is null, no need to sync -> partition: + " + partitionId
+                        + ", replica: " + replicaIndex);
             }
         }
     }
@@ -576,12 +586,12 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         if (size == 0) {
             for (PartitionInfo partition : partitions) {
                 if (partition.getReplicaAddress(1) == null) {
-                    logger.log(Level.WARNING, "Should take immediate backup of partition: " + partition.getPartitionId());
+                    logger.log(Level.WARNING, "Should take backup of partition: " + partition.getPartitionId());
                     return true;
                 }
             }
         } else {
-            logger.log(Level.WARNING, "Should complete ongoing total of " + size + " immediate migration tasks!");
+            logger.log(Level.WARNING, "Should complete ongoing total of " + size + " migration tasks!");
             return true;
         }
         return false;
@@ -1030,9 +1040,11 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
     private class ReplicaSyncInfo {
         final int partitionId;
         final long requestTime = Clock.currentTimeMillis();
+        final Address target;
 
-        private ReplicaSyncInfo(int partitionId) {
+        private ReplicaSyncInfo(int partitionId, Address target) {
             this.partitionId = partitionId;
+            this.target = target;
         }
 
         @Override
@@ -1056,6 +1068,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         public String toString() {
             final StringBuilder sb = new StringBuilder("ReplicaSyncInfo{");
             sb.append("partitionId=").append(partitionId);
+            sb.append(", target=").append(target);
             sb.append(", requestTime=").append(requestTime);
             sb.append('}');
             return sb.toString();

@@ -22,7 +22,10 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.MigrationAwareService;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
@@ -43,15 +46,9 @@ public class ReplicaSyncRequest extends Operation {
         final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         final PartitionServiceImpl partitionService = (PartitionServiceImpl) nodeEngine.getPartitionService();
         final int partitionId = getPartitionId();
-        final PartitionInfo partitionInfo = partitionService.getPartitionInfo(partitionId);
-        final Address owner = partitionInfo.getOwner();
-        if (!nodeEngine.getThisAddress().equals(owner)) {
-            final ILogger logger = nodeEngine.getLogger(getClass());
-            logger.log(Level.FINEST, "Ignoring sync request, since this node is not owner of partition[" + partitionId + "].");
-            return;
-        }
         final Collection<MigrationAwareService> services = nodeEngine.getServices(MigrationAwareService.class);
-        final PartitionReplicationEvent event = new PartitionReplicationEvent(partitionId, getReplicaIndex());
+        final int replicaIndex = getReplicaIndex();
+        final PartitionReplicationEvent event = new PartitionReplicationEvent(partitionId, replicaIndex);
         final List<Operation> tasks = new LinkedList<Operation>();
         for (MigrationAwareService service : services) {
             final Operation op = service.prepareReplicationOperation(event);
@@ -59,12 +56,9 @@ public class ReplicaSyncRequest extends Operation {
                 tasks.add(op);
             }
         }
+        final ILogger logger = nodeEngine.getLogger(getClass());
+        byte[] data = null;
         if (!tasks.isEmpty()) {
-            if (!nodeEngine.getThisAddress().equals(owner)) {
-                final ILogger logger = nodeEngine.getLogger(getClass());
-                logger.log(Level.FINEST, "Ignoring sync request, since this node is not owner of partition[" + partitionId + "].");
-                return;
-            }
             final SerializationService serializationService = nodeEngine.getSerializationService();
             final ObjectDataOutput out = serializationService.createObjectDataOutput(1024 * 32);
             try {
@@ -72,15 +66,24 @@ public class ReplicaSyncRequest extends Operation {
                 for (Operation task : tasks) {
                     serializationService.writeObject(out, task);
                 }
-                byte[] data = IOUtil.compress(out.toByteArray());
-                final OperationService operationService = nodeEngine.getOperationService();
-                ReplicaSyncResponse syncResponse = new ReplicaSyncResponse(data, partitionService.getPartitionVersion(partitionId));
-                syncResponse.setPartitionId(partitionId).setReplicaIndex(getReplicaIndex());
-                operationService.send(syncResponse, getCallerAddress());
+                data = IOUtil.compress(out.toByteArray());
             } finally {
                 IOUtil.closeResource(out);
             }
+        } else {
+            if (logger.isLoggable(Level.FINEST)) {
+                logger.log(Level.FINEST, "No replica data is found for partition: " + partitionId + ", replica: " + replicaIndex);
+            }
         }
+
+        ReplicaSyncResponse syncResponse = new ReplicaSyncResponse(data, partitionService.getPartitionVersion(partitionId));
+        syncResponse.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
+        final Address target = getCallerAddress();
+        if (logger.isLoggable(Level.FINEST)) {
+            logger.log(Level.FINEST, "Sending sync response to -> " + target + "; for partition: " + partitionId + ", replica: " + replicaIndex);
+        }
+        final OperationService operationService = nodeEngine.getOperationService();
+        operationService.send(syncResponse, target);
     }
 
     public void afterRun() throws Exception {
