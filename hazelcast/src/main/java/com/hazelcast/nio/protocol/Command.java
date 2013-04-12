@@ -46,7 +46,7 @@ public enum Command {
     ADDANDGET(), GETANDSET(), COMPAREANDSET(), GETANDADD(),
     NEWID(), INITID(),
     TPUBLISH(), TLISTEN(), TREMOVELISTENER(), MESSAGE(),
-    EXECUTE(),
+    EXECUTE(), EXSHUTDOWN(), EXISSHUTDOWN(),
     PING();
 
     private final byte value;

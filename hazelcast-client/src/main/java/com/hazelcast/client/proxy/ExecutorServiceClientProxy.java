@@ -21,6 +21,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiExecutionCallback;
+import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.executor.RunnableAdapter;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.nio.Protocol;
@@ -209,29 +210,32 @@ public class ExecutorServiceClientProxy implements IExecutorService {
     }
 
     public Object getId() {
-        return null;
+        return name;
     }
 
     public String getName() {
-        return null;
+        return name;
     }
 
     public void destroy() {
+        proxyHelper.doCommand(Command.DESTROY, new String[]{DistributedExecutorService.SERVICE_NAME, getName()});
     }
 
     public void shutdown() {
+        proxyHelper.doCommand(Command.EXSHUTDOWN, new String[]{getName()});
     }
 
     public List<Runnable> shutdownNow() {
-        return null;
+        shutdown();
+        return Collections.emptyList();
     }
 
     public boolean isShutdown() {
-        return false;
+        return proxyHelper.doCommandAsBoolean(Command.EXISSHUTDOWN, new String[]{getName()});
     }
 
     public boolean isTerminated() {
-        return false;
+        return isShutdown();
     }
 
     public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
@@ -256,14 +260,14 @@ public class ExecutorServiceClientProxy implements IExecutorService {
     }
 
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        return null;
+        throw new UnsupportedOperationException();
     }
 }

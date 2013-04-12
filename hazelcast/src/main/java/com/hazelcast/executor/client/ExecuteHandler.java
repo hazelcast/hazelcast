@@ -17,7 +17,6 @@
 
 package com.hazelcast.executor.client;
 
-import com.hazelcast.client.ClientCommandHandler;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.executor.DistributedExecutorService;
@@ -34,10 +33,11 @@ import java.net.UnknownHostException;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 
-public class ExecuteHandler extends ClientCommandHandler {
+public class ExecuteHandler extends ExecutorCommandHandler {
     final DistributedExecutorService distributedExecutorService;
 
     public ExecuteHandler(DistributedExecutorService distributedExecutorService) {
+        super(distributedExecutorService);
         this.distributedExecutorService = distributedExecutorService;
     }
 
@@ -52,7 +52,7 @@ public class ExecuteHandler extends ClientCommandHandler {
         try {
             String name = protocol.args[0];
             Callable<Object> callable = (Callable<Object>) node.serializationService.toObject(protocol.buffers[0]);
-            ExecutorServiceProxy proxy = distributedExecutorService.createDistributedObject(name);
+            ExecutorServiceProxy proxy = getExecutorServiceProxy(name);
             MyExecutionCallBack callBack = new MyExecutionCallBack(protocol, node);
             if (protocol.args.length > 1) {
                 try {

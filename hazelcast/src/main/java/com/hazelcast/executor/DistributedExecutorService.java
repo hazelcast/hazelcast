@@ -18,8 +18,8 @@ package com.hazelcast.executor;
 
 import com.hazelcast.client.ClientCommandHandler;
 
-import com.hazelcast.concurrent.atomiclong.client.GetAndSetHandler;
-import com.hazelcast.core.DistributedObject;
+import com.hazelcast.executor.client.ExecuteIsShutdownHandler;
+import com.hazelcast.executor.client.ExecuteShutdownHandler;
 import com.hazelcast.monitor.impl.LocalExecutorStatsImpl;
 
 import com.hazelcast.executor.client.ExecuteHandler;
@@ -116,6 +116,8 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     public Map<Command, ClientCommandHandler> getCommandsAsMap() {
         Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
         commandHandlers.put(Command.EXECUTE, new ExecuteHandler(this));
+        commandHandlers.put(Command.EXSHUTDOWN, new ExecuteShutdownHandler(this));
+        commandHandlers.put(Command.EXISSHUTDOWN, new ExecuteIsShutdownHandler(this));
         return commandHandlers;
     }
 
