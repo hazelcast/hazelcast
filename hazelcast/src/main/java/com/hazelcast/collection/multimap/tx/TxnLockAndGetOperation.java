@@ -55,9 +55,10 @@ public class TxnLockAndGetOperation extends CollectionKeyBasedOperation implemen
         if (!container.txnLock(dataKey, getCallerUuid(), threadId, ttl)) {
             throw new TransactionException("Lock failed.");
         }
-        CollectionWrapper wrapper = getCollectionWrapper();
-        Collection<CollectionRecord> coll = wrapper != null ? wrapper.getCollection() : null;
-        response = new CollectionResponse(coll).setNextRecordId(container.nextId()).setTxVersion(wrapper.incrementAndGetVersion());
+        CollectionWrapper wrapper = getOrCreateCollectionWrapper();
+
+        Collection<CollectionRecord> coll = null;
+        response = new CollectionResponse(wrapper.getCollection()).setNextRecordId(container.nextId()).setTxVersion(wrapper.incrementAndGetVersion());
     }
 
     public WaitNotifyKey getWaitKey() {
