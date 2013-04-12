@@ -120,6 +120,7 @@ final class OperationServiceImpl implements OperationService {
     }
 
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, Address target) {
+        if (target == null) throw new IllegalArgumentException("Target cannot be null!");
         return new InvocationBuilder(nodeEngine, serviceName, op, target);
     }
 
@@ -347,7 +348,8 @@ final class OperationServiceImpl implements OperationService {
                     } else {
                         backupOp.setPartitionId(partitionId).setReplicaIndex(replicaIndex).setServiceName(serviceName);
                         Backup backup = new Backup(backupOp, op.getCallerAddress(), version, replicaIndex <= syncBackupCount);
-                        backup.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
+                        backup.setPartitionId(partitionId).setReplicaIndex(replicaIndex).setServiceName(serviceName)
+                                .setCallerUuid(nodeEngine.getLocalMember().getUuid());
                         OperationAccessor.setCallId(backup, op.getCallId());
                         send(backup, target);
                     }
@@ -638,17 +640,12 @@ final class OperationServiceImpl implements OperationService {
                 if (op instanceof Response) {
                     processResponse((Response) op);
                 } else {
-                    final ResponseHandler responseHandler = ResponseHandlerFactory.createRemoteResponseHandler(nodeEngine, op);
+                    ResponseHandlerFactory.setRemoteResponseHandler(nodeEngine, op);
                     if (!OperationAccessor.isJoinOperation(op) && node.clusterService.getMember(op.getCallerAddress()) == null) {
                         final Exception error = new CallerNotMemberException(op.getCallerAddress(), op.getPartitionId(),
                                 op.getClass().getName(), op.getServiceName());
-                        if (op.returnsResponse()) {
-                            responseHandler.sendResponse(error);
-                        } else {
-                            throw error;
-                        }
+                        handleOperationError(op, error);
                     } else {
-                        op.setResponseHandler(responseHandler);
                         runOperation(op);
                     }
                 }

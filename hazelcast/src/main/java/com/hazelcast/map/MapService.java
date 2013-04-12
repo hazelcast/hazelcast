@@ -1006,7 +1006,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     public LocalMapStatsImpl createLocalMapStats(String mapName) {
         LocalMapStatsImpl localMapStats = new LocalMapStatsImpl();
         MapContainer mapContainer = getMapContainer(mapName);
-        if (mapContainer.getMapConfig().isStatisticsEnabled()) {
+        if (!mapContainer.getMapConfig().isStatisticsEnabled()) {
             return localMapStats;
         }
 

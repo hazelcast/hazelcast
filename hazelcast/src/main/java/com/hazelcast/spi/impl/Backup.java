@@ -87,6 +87,10 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
         return null;
     }
 
+    public boolean validatesTarget() {
+        return true;
+    }
+
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeObject(backupOp);
@@ -107,5 +111,17 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
     @Override
     public int getId() {
         return DataSerializerSpiHook.BACKUP;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("Backup");
+        sb.append("{backupOp=").append(backupOp);
+        sb.append(", originalCaller=").append(originalCaller);
+        sb.append(", version=").append(version);
+        sb.append(", sync=").append(sync);
+        sb.append('}');
+        return sb.toString();
     }
 }

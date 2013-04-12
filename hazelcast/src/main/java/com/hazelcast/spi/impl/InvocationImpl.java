@@ -55,6 +55,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
     private final boolean async;
 
     private volatile int invokeCount = 0;
+    private Address target; // set before invokeCount increment.
     private boolean remote = false;
 
     InvocationImpl(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
@@ -121,8 +122,8 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             remote = false;
             throw new HazelcastInstanceNotActiveException();
         }
+        target = getTarget();
         invokeCount++;
-        final Address target = getTarget();
         final Address thisAddress = nodeEngine.getThisAddress();
         if (target == null) {
             remote = false;
@@ -262,14 +263,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
 
         public Object get() throws InterruptedException, ExecutionException {
             try {
-                final Object response = resolveResponse(waitForResponse(Long.MAX_VALUE, TimeUnit.MILLISECONDS));
-                done = true;
-                if (response instanceof ResponseObj) {
-                    final ResponseObj responseObj = (ResponseObj) response;
-                    waitForBackups(responseObj);
-                    return responseObj.response;
-                }
-                return response;
+                return get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
             } catch (TimeoutException e) {
                 logger.log(Level.FINEST, e.getMessage(), e);
                 return null;
@@ -280,9 +274,16 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             final Object response = resolveResponse(waitForResponse(timeout, unit));
             done = true;
             if (response instanceof ResponseObj) {
-                final ResponseObj responseObj = (ResponseObj) response;
-                waitForBackups(responseObj);
-                return responseObj.response;
+                if (op instanceof BackupAwareOperation) {
+                    final Object obj = waitForBackupsAndGetResponse((ResponseObj) response);
+                    if (obj == RETRY_RESPONSE) {
+                        final Future f = resetAndReInvoke();
+                        return f.get(timeout, unit);
+                    }
+                    return obj;
+                } else {
+                    return ((ResponseObj) response).response;
+                }
             }
             return response;
         }
@@ -363,16 +364,22 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             return TIMEOUT_RESPONSE;
         }
 
-        private void waitForBackups(ResponseObj response) {
+        private Object waitForBackupsAndGetResponse(ResponseObj response) {
             if (op instanceof BackupAwareOperation) {
                 try {
                     final boolean ok = nodeEngine.operationService.waitForBackups(response.callId, response.backupCount, 5, TimeUnit.SECONDS);
-                    if (!ok && logger.isLoggable(Level.FINEST)) {
-                        logger.log(Level.FINEST, "Backup response cannot be received -> " + toString());
+                    if (!ok) {
+                        if (logger.isLoggable(Level.FINEST)) {
+                            logger.log(Level.FINEST, "Backup response cannot be received -> " + toString());
+                        }
+                        if (nodeEngine.getClusterService().getMember(target) == null) {
+                            return RETRY_RESPONSE;
+                        }
                     }
                 } catch (InterruptedException ignored) {
                 }
             }
+            return response.response;
         }
 
         private Object resolveResponse(Object response) throws ExecutionException, InterruptedException, TimeoutException {
@@ -416,6 +423,12 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         public boolean isDone() {
             return done;
         }
+    }
+
+    private Future resetAndReInvoke() {
+        responseQ.clear();
+        invokeCount = 0;
+        return invoke();
     }
 
     private boolean isOperationExecuting(Address target) {

@@ -17,6 +17,7 @@
 package com.hazelcast.partition;
 
 import com.hazelcast.client.ClientCommandHandler;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
@@ -658,6 +659,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         void reset(long v) {
             version.set(v);
             updates.set(v);
+            dirtyCount.set(0);
         }
 
         boolean isDirty() {
@@ -693,8 +695,15 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
     public Map<Address, List<Integer>> getMemberPartitionsMap() {
         final int members = node.getClusterService().getSize();
         Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(members);
-        for (int i = 0; i < getPartitionCount(); i++) {
-            Address owner = getPartitionOwner(i);
+        for (int i = 0; i < partitionCount; i++) {
+            Address owner;
+            while ((owner = getPartitionOwner(i)) == null) {
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    throw new HazelcastException(e);
+                }
+            }
             List<Integer> ownedPartitions = memberPartitions.get(owner);
             if (ownedPartitions == null) {
                 ownedPartitions = new ArrayList<Integer>();
@@ -708,8 +717,8 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
 
     public List<Integer> getMemberPartitions(Address target) {
         List<Integer> ownedPartitions = new LinkedList<Integer>();
-        for (int i = 0; i < getPartitionCount(); i++) {
-            Address owner = getPartitionOwner(i);
+        for (int i = 0; i < partitionCount; i++) {
+            final Address owner = getPartitionOwner(i);
             if (target.equals(owner)) {
                 ownedPartitions.add(i);
             }
@@ -991,7 +1000,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                     }
                 }
             } catch (InterruptedException e) {
-                logger.log(Level.WARNING, "MigrationManagerThread is interrupted: " + e.getMessage());
+                logger.log(Level.FINEST, "MigrationManagerThread is interrupted: " + e.getMessage());
             } finally {
                 clearMigrationQueue();
             }
