@@ -22,17 +22,18 @@ import com.hazelcast.concurrent.atomiclong.proxy.AtomicLongProxy;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Protocol;
 
-public class GetAndSetHandler extends AtomicLongCommandHandler {
-    public GetAndSetHandler(AtomicLongService atomicLongService) {
+public class CompareAndSetHandler extends AtomicLongCommandHandler {
+    public CompareAndSetHandler(AtomicLongService atomicLongService) {
         super(atomicLongService);
     }
 
     @Override
     public Protocol processCall(Node node, Protocol protocol) {
         String name = protocol.args[0];
-        long newValue = Long.valueOf(protocol.args[1]);
+        long expected = Long.valueOf(protocol.args[1]);
+        long update = Long.valueOf(protocol.args[2]);
         AtomicLongProxy proxy = getAtomicLongProxy(name);
-        long result = proxy.getAndSet(newValue);
+        boolean result = proxy.compareAndSet(expected, update);
         return protocol.success(String.valueOf(result));
     }
 }

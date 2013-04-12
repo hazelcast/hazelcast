@@ -253,7 +253,7 @@ public class MapTest extends ProtocolTest{
     @Test
     public void getMapEntry() throws IOException {
         put(socket, "1".getBytes(), "a".getBytes(), 0);
-        OutputStream out = doOp("MGETENTRY default #1", ""+"1".getBytes().length);
+        OutputStream out = doOp("MGETENTRYVIEW default #1", ""+"1".getBytes().length);
         out.write("1".getBytes());
         List<String> entry = read(socket);
         assertTrue(entry.contains("a"));

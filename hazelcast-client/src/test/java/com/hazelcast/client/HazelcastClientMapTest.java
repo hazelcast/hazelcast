@@ -404,23 +404,18 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
     }
 
     //TODO
-//    @Test
-//    public void getMapEntry() {
-//        HazelcastClient hClient = getHazelcastClient();
-//        IMap map = hClient.getMap("getMapEntry");
-//        assertNull(map.put("a", "b"));
-//        map.get("a");
-//        map.get("a");
-//        Map.Entry<String, String> entry = map.getMapEntry("a");
-//        assertEquals("a", entry.getKey());
-//        assertEquals("b", entry.getValue());
-////        assertEquals(2, ((DataRecordEntry)entry).getHits());
-//        assertEquals("b", entry.getValue());
-//        assertEquals("b", entry.setValue("c"));
-//        assertEquals("c", map.get("a"));
-//        entry = map.getMapEntry("a");
-//        assertEquals("c", entry.getValue());
-//    }
+    @Test
+    public void getMapEntry() {
+        long start = System.currentTimeMillis();
+        HazelcastClient hClient = getHazelcastClient();
+        IMap map = hClient.getMap("getMapEntry");
+        assertNull(map.put("a", "b"));
+        map.get("a");
+        map.get("a");
+        EntryView<String, String> entry = map.getEntryView("a");
+        assertEquals("a", entry.getKey());
+        assertEquals("b", entry.getValue());
+    }
 
     @Test
     public void iterateOverMapKeys() {

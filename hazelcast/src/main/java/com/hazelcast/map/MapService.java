@@ -569,7 +569,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         commandHandlers.put(Command.MSET, new MapSetHandler(this));
         commandHandlers.put(Command.MPUTTRANSIENT, new MapPutTransientHandler(this));
         commandHandlers.put(Command.MLOCK, new MapLockHandler(this));
-        commandHandlers.put(Command.MTRYLOCK, new MapLockHandler(this));
+        commandHandlers.put(Command.MTRYLOCK, new MapTryLockHandler(this));
         commandHandlers.put(Command.MTRYREMOVE, new MapTryRemoveHandler(this));
         commandHandlers.put(Command.MISLOCKED, new MapIsLockedHandler(this));
         commandHandlers.put(Command.MUNLOCK, new MapUnlockHandler(this));
@@ -586,13 +586,14 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         commandHandlers.put(Command.MEVICT, new MapEvictHandler(this));
         commandHandlers.put(Command.MENTRYSET, new MapEntrySetHandler(this));
         commandHandlers.put(Command.KEYSET, new KeySetHandler(this));
-        commandHandlers.put(Command.MGETENTRY, new MapGetEntryHandler(this));
+        commandHandlers.put(Command.MGETENTRYVIEW, new MapGetEntryHandler(this));
         commandHandlers.put(Command.MFORCEUNLOCK, new MapForceUnlockHandler(this));
         commandHandlers.put(Command.MLISTEN, new MapListenHandler(this));
-        commandHandlers.put(Command.MADDINTERCEPTOR, new MapAddInterceptorHandler(this));
+        commandHandlers.put(Command.MADDINTERCEPTOR, new MapAddIndexHandler(this));
         commandHandlers.put(Command.MREMOVEINTERCEPTOR, new MapExecuteOnKeyHandler(this));
         commandHandlers.put(Command.MEXECUTEONKEY, new MapExecuteOnKeyHandler(this));
         commandHandlers.put(Command.MEXECUTEONALLKEYS, new MapExecuteOnAllKeysHandler(this));
+        commandHandlers.put(Command.MADDINDEX, new MapAddIndexHandler(this));
         return commandHandlers;
     }
 

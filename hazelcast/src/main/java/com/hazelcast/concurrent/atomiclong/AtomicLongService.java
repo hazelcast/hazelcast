@@ -17,6 +17,8 @@
 package com.hazelcast.concurrent.atomiclong;
 
 import com.hazelcast.client.ClientCommandHandler;
+import com.hazelcast.concurrent.atomiclong.client.AddAndGetHandler;
+import com.hazelcast.concurrent.atomiclong.client.GetAndAddHandler;
 import com.hazelcast.concurrent.atomiclong.client.CompareAndSetHandler;
 import com.hazelcast.concurrent.atomiclong.client.GetAndSetHandler;
 import com.hazelcast.concurrent.atomiclong.proxy.AtomicLongProxy;
@@ -142,8 +144,8 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
     @Override
     public Map<Command, ClientCommandHandler> getCommandsAsMap() {
         Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
-        commandHandlers.put(Command.ALADDANDGET, new GetAndSetHandler(this));
-        commandHandlers.put(Command.ALGETANDADD, new GetAndSetHandler(this));
+        commandHandlers.put(Command.ALADDANDGET, new AddAndGetHandler(this));
+        commandHandlers.put(Command.ALGETANDADD, new GetAndAddHandler(this));
         commandHandlers.put(Command.ALGETANDSET, new GetAndSetHandler(this));
         commandHandlers.put(Command.ALCOMPAREANDSET, new CompareAndSetHandler(this));
         return commandHandlers ;

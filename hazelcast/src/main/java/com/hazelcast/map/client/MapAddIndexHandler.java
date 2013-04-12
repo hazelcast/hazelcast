@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package com.hazelcast.map.client;
@@ -20,31 +21,20 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.nio.Protocol;
-import com.hazelcast.nio.serialization.Data;
 
-import java.util.concurrent.TimeUnit;
+public class MapAddIndexHandler extends MapCommandHandler {
 
-public class MapLockHandler extends MapCommandHandler {
-    public MapLockHandler(MapService mapService) {
+    public MapAddIndexHandler(MapService mapService) {
         super(mapService);
     }
 
     @Override
     public Protocol processCall(Node node, Protocol protocol) {
         String name = protocol.args[0];
-        Data key = null;
-        if (protocol.buffers != null && protocol.buffers.length > 0) {
-            key = protocol.buffers[0];
-        }
-        long leaseTime = -1;
-        if (protocol.args.length > 1) {
-            leaseTime = Long.valueOf(protocol.args[1]);
-        }
+        String attribute = protocol.args[1];
+        boolean ordered = Boolean.valueOf(protocol.args[2]);
         DataMapProxy dataMapProxy = getMapProxy(name);
-        if (leaseTime == -1)
-            dataMapProxy.lock(key);
-        else
-            dataMapProxy.lock(key, leaseTime, TimeUnit.MILLISECONDS);
+        dataMapProxy.addIndex(attribute, ordered);
         return protocol.success();
     }
 }
