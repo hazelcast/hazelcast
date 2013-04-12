@@ -70,7 +70,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     private volatile boolean urlChanged = false;
     private boolean versionMismatch = false;
 
-    public ManagementCenterService(HazelcastInstanceImpl instance) {  //TODO @msk why not singleton
+    public ManagementCenterService(HazelcastInstanceImpl instance) {
         this.instance = instance;
         logger = this.instance.node.getLogger(ManagementCenterService.class.getName());
         managementCenterConfig = this.instance.node.config.getManagementCenterConfig();
@@ -91,7 +91,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 ? managementCenterConfig.getUpdateInterval() * 1000 : 5000;
         taskPoller = new TaskPoller();
         stateSender = new StateSender();
-        serializationService = new SerializationServiceImpl(1, null); //TODO @msk version ??
+        serializationService = new SerializationServiceImpl(1, null);
     }
 
     public void start() {

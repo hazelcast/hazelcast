@@ -70,7 +70,7 @@ public class ExecuteScriptRequest implements ConsoleRequest {
         if (targetAllMembers) {
             result = mcs.callOnAllMembers(operation);
         } else if (targets.isEmpty()) {
-            result = NULL;   //TODO @msk ?????
+            result = NULL;
         } else if (targets.size() == 1) {
             result = mcs.call(targets.iterator().next(), operation);
         } else {

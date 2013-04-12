@@ -88,7 +88,7 @@ public class GetMapEntryRequest implements ConsoleRequest {
         result.put("date_access_time", Long.toString(entry.getLastAccessTime()));
         result.put("date_update_time", Long.toString(entry.getLastUpdateTime()));
         result.put("browse_version", Long.toString(entry.getVersion()));
-//        result.put("boolean_valid", Boolean.toString(entry.isValid()));  //TODO @msk ???
+
 
         dos.writeInt(result.size());
 
