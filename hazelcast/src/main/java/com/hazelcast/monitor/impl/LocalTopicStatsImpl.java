@@ -50,7 +50,7 @@ public class LocalTopicStatsImpl implements LocalTopicStats {
         return creationTime;
     }
 
-    public long getNumberOfPublishes() {
+    public long getPublishOperationCount() {
         return totalPublishes.get();
     }
 
@@ -58,7 +58,7 @@ public class LocalTopicStatsImpl implements LocalTopicStats {
         totalPublishes.incrementAndGet();
     }
 
-    public long getNumberOfReceivedMessages() {
+    public long getReceiveOperationCount() {
         return totalReceivedMessages.get();
     }
 

@@ -388,11 +388,11 @@ public class TopicTest {
         latch1.await();
         latch2.await();
         LocalTopicStatsImpl stats = (LocalTopicStatsImpl) topic.getLocalTopicStats();
-        Assert.assertEquals(1000, stats.getNumberOfPublishes());
-        Assert.assertEquals(2000, stats.getNumberOfReceivedMessages());
+        Assert.assertEquals(1000, stats.getPublishOperationCount());
+        Assert.assertEquals(2000, stats.getReceiveOperationCount());
 //        Assert.assertTrue(stats.getCreationTime() < stats.getLastPublishTime());
-//        Assert.assertEquals(1000, stats.getOperationStats().getNumberOfPublishes());
-//        Assert.assertEquals(2000, stats.getOperationStats().getNumberOfReceivedMessages());
+//        Assert.assertEquals(1000, stats.getOperationStats().getPublishOperationCount());
+//        Assert.assertEquals(2000, stats.getOperationStats().getReceiveOperationCount());
 
 
     }

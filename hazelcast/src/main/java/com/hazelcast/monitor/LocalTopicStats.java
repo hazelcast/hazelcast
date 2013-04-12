@@ -30,14 +30,14 @@ public interface LocalTopicStats extends LocalInstanceStats {
      *
      * @return total number of publishes
      */
-    long getNumberOfPublishes();
+    long getPublishOperationCount();
 
     /**
      * Returns the total number of received messages of this topic on this member
      *
      * @return
      */
-    long getNumberOfReceivedMessages();
+    long getReceiveOperationCount();
 
 
 }
