@@ -99,6 +99,10 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
         return containers[partitionId];
     }
 
+    public LockStoreContainer[] getLockContainers() {
+        return containers;
+    }
+
     LockStoreImpl getLockStore(int partitionId, ObjectNamespace namespace) {
         return getLockContainer(partitionId).getOrCreateDefaultLockStore(namespace);
     }
