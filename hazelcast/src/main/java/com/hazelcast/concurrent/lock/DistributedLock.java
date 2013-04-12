@@ -44,8 +44,7 @@ public class DistributedLock implements DataSerializable {
     public DistributedLock() {
     }
 
-    public DistributedLock(Data key) {
-    public LockInfo(Data key, LockService lockService, ObjectNamespace namespace) {
+    public DistributedLock(Data key, LockService lockService, ObjectNamespace namespace) {
         this.key = key;
         this.lockService = lockService;
         this.namespace = namespace;
@@ -354,7 +353,7 @@ public class DistributedLock implements DataSerializable {
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        sb.append("LockInfo");
+        sb.append("DistributedLock");
         sb.append("{owner='").append(owner).append('\'');
         sb.append(", threadId=").append(threadId);
         sb.append(", lockCount=").append(lockCount);

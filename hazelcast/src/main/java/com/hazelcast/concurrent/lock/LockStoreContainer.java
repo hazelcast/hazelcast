@@ -33,9 +33,8 @@ public class LockStoreContainer {
     private final LockService lockService;
     private final int partitionId;
     private final ConcurrentMap<ObjectNamespace, LockStoreImpl> lockStores = new ConcurrentHashMap<ObjectNamespace, LockStoreImpl>();
-
     private final ConstructorFunction<ObjectNamespace, LockStoreImpl> lockStoreConstructor
-                = new ConstructorFunction<ObjectNamespace, LockStoreImpl>() {
+            = new ConstructorFunction<ObjectNamespace, LockStoreImpl>() {
         public LockStoreImpl createNew(ObjectNamespace key) {
             return new LockStoreImpl(key, 1, 0, lockService);
         }
@@ -71,12 +70,11 @@ public class LockStoreContainer {
         return ConcurrencyUtil.getOrPutIfAbsent(lockStores, namespace, lockStoreConstructor);
     }
 
-    public Collection<LockStoreImpl> getLockStores() {
     LockStoreImpl getLockStore(ObjectNamespace namespace) {
         return lockStores.get(namespace);
     }
 
-    Collection<LockStoreImpl> getLockStores() {
+    public Collection<LockStoreImpl> getLockStores() {
         return Collections.unmodifiableCollection(lockStores.values());
     }
 
@@ -92,8 +90,8 @@ public class LockStoreContainer {
     }
 
     void put(LockStoreImpl ls) {
-        Collection<LockInfo> lockInfos = ls.getLocks().values();
-        for (LockInfo lockInfo : lockInfos) {
+        Collection<DistributedLock> lockInfos = ls.getLocks().values();
+        for (DistributedLock lockInfo : lockInfos) {
             lockInfo.setLockService(lockService);
             lockInfo.setNamespace(ls.getNamespace());
         }

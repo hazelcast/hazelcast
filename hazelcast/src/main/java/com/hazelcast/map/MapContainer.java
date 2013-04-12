@@ -24,10 +24,8 @@ import com.hazelcast.core.MapStore;
 import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.merge.PassThroughMergePolicy;
-import com.hazelcast.monitor.impl.MapOperationsCounter;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.IndexService;
@@ -35,7 +33,6 @@ import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
-import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
@@ -46,7 +43,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 
 import static com.hazelcast.map.MapService.SERVICE_NAME;
 
@@ -63,16 +59,14 @@ public class MapContainer {
     private final Map<MapInterceptor, String> interceptorIdMap;
     private final IndexService indexService = new IndexService();
     private final boolean nearCacheEnabled;
-    private volatile boolean mapReady = false;
     private final AtomicBoolean initialLoaded = new AtomicBoolean(false);
-
     private final EntryTaskScheduler idleEvictionScheduler;
     private final EntryTaskScheduler ttlEvictionScheduler;
     private final EntryTaskScheduler mapStoreWriteScheduler;
     private final EntryTaskScheduler mapStoreDeleteScheduler;
-
     private final WanReplicationListener wanReplicationListener;
     private final MapMergePolicy wanMergePolicy;
+    private volatile boolean mapReady = false;
 
     public MapContainer(String name, MapConfig mapConfig, MapService mapService) {
         MapStore storeTemp = null;
@@ -174,7 +168,7 @@ public class MapContainer {
                 ExceptionUtil.rethrow(e);
             }
         }
-        if(mergePolicyTemp == null) {
+        if (mergePolicyTemp == null) {
             mergePolicyTemp = new PassThroughMergePolicy();
         }
         return mergePolicyTemp;
@@ -226,37 +220,6 @@ public class MapContainer {
         }
     }
 
-    private class MapLoadAllTask implements Runnable {
-        private Map<Data, Object> keys;
-        private AtomicInteger counter;
-
-        private MapLoadAllTask(Map<Data, Object> keys, AtomicInteger counter) {
-            this.keys = keys;
-            this.counter = counter;
-        }
-
-        public void run() {
-            NodeEngine nodeEngine = mapService.getNodeEngine();
-            Map values = store.loadAll(keys.values());
-            for (Data dataKey : keys.keySet()) {
-                Object key = keys.get(dataKey);
-                Data dataValue = mapService.toData(values.get(key));
-                int partitionId = nodeEngine.getPartitionService().getPartitionId(dataKey);
-                PutFromLoadOperation operation = new PutFromLoadOperation(name, dataKey, dataValue, -1);
-                operation.setNodeEngine(nodeEngine);
-                operation.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
-                operation.setPartitionId(partitionId);
-                operation.setServiceName(MapService.SERVICE_NAME);
-                nodeEngine.getOperationService().runOperation(operation);
-            }
-
-            if (counter.decrementAndGet() <= 0) {
-                mapReady = true;
-            }
-        }
-
-    }
-
     public EntryTaskScheduler getIdleEvictionScheduler() {
         return idleEvictionScheduler;
     }
@@ -275,10 +238,6 @@ public class MapContainer {
 
     public IndexService getIndexService() {
         return indexService;
-    }
-
-    public MapOperationsCounter getMapOperationCounter() {
-        return mapOperationCounter;
     }
 
     public WanReplicationListener getWanReplicationListener() {
@@ -320,7 +279,6 @@ public class MapContainer {
         interceptors.remove(interceptor);
     }
 
-
     public String getName() {
         return name;
     }
@@ -351,6 +309,37 @@ public class MapContainer {
 
     public MapStore getStore() {
         return store;
+    }
+
+    private class MapLoadAllTask implements Runnable {
+        private Map<Data, Object> keys;
+        private AtomicInteger counter;
+
+        private MapLoadAllTask(Map<Data, Object> keys, AtomicInteger counter) {
+            this.keys = keys;
+            this.counter = counter;
+        }
+
+        public void run() {
+            NodeEngine nodeEngine = mapService.getNodeEngine();
+            Map values = store.loadAll(keys.values());
+            for (Data dataKey : keys.keySet()) {
+                Object key = keys.get(dataKey);
+                Data dataValue = mapService.toData(values.get(key));
+                int partitionId = nodeEngine.getPartitionService().getPartitionId(dataKey);
+                PutFromLoadOperation operation = new PutFromLoadOperation(name, dataKey, dataValue, -1);
+                operation.setNodeEngine(nodeEngine);
+                operation.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
+                operation.setPartitionId(partitionId);
+                operation.setServiceName(MapService.SERVICE_NAME);
+                nodeEngine.getOperationService().runOperation(operation);
+            }
+
+            if (counter.decrementAndGet() <= 0) {
+                mapReady = true;
+            }
+        }
+
     }
 
 }

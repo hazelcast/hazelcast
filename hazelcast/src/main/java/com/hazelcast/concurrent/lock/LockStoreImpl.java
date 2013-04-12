@@ -30,14 +30,14 @@ import java.util.concurrent.ConcurrentMap;
 
 public class LockStoreImpl implements DataSerializable, LockStore {
 
-    private final ConcurrencyUtil.ConstructorFunction<Data, LockInfo> lockConstructor
-            = new ConcurrencyUtil.ConstructorFunction<Data, LockInfo>() {
-        public LockInfo createNew(Data key) {
-            return new LockInfo(key, lockService, namespace);
+    private final ConcurrencyUtil.ConstructorFunction<Data, DistributedLock> lockConstructor
+            = new ConcurrencyUtil.ConstructorFunction<Data, DistributedLock>() {
+        public DistributedLock createNew(Data key) {
+            return new DistributedLock(key, lockService, namespace);
         }
     };
 
-    private final ConcurrentMap<Data, LockInfo> locks = new ConcurrentHashMap<Data, LockInfo>();
+    private final ConcurrentMap<Data, DistributedLock> locks = new ConcurrentHashMap<Data, DistributedLock>();
     private ObjectNamespace namespace;
     private int backupCount;
     private int asyncBackupCount;
@@ -58,41 +58,41 @@ public class LockStoreImpl implements DataSerializable, LockStore {
     }
 
     public boolean lock(Data key, String caller, int threadId, long ttl) {
-        final LockInfo lock = getLock(key);
+        final DistributedLock lock = getLock(key);
         return lock.lock(caller, threadId, ttl);
     }
 
     public boolean txnLock(Data key, String caller, int threadId, long ttl) {
-        final LockInfo lock = getLock(key);
+        final DistributedLock lock = getLock(key);
         return lock.lock(caller, threadId, ttl, true);
     }
 
     public boolean extendTTL(Data key, String caller, int threadId, long ttl) {
-        final LockInfo lock = locks.get(key);
+        final DistributedLock lock = locks.get(key);
         return lock != null && lock.extendTTL(caller, threadId, ttl);
     }
 
-    private LockInfo getLock(Data key) {
+    private DistributedLock getLock(Data key) {
         return ConcurrencyUtil.getOrPutIfAbsent(locks, key, lockConstructor);
     }
 
     public boolean isLocked(Data key) {
-        final LockInfo lock = locks.get(key);
+        final DistributedLock lock = locks.get(key);
         return lock != null && lock.isLocked();
     }
 
     public boolean isLockedBy(Data key, String caller, int threadId) {
-        LockInfo lock = locks.get(key);
+        DistributedLock lock = locks.get(key);
         return lock != null && lock.isLockedBy(caller, threadId);
     }
 
     public boolean canAcquireLock(Data key, String caller, int threadId) {
-        final LockInfo lock = locks.get(key);
+        final DistributedLock lock = locks.get(key);
         return lock == null || lock.canAcquireLock(caller, threadId);
     }
 
     public boolean unlock(Data key, String caller, int threadId) {
-        final LockInfo lock = locks.get(key);
+        final DistributedLock lock = locks.get(key);
         boolean result = false;
         if (lock == null)
             return result;
@@ -108,7 +108,7 @@ public class LockStoreImpl implements DataSerializable, LockStore {
     }
 
     public boolean forceUnlock(Data key) {
-        final LockInfo lock = locks.get(key);
+        final DistributedLock lock = locks.get(key);
         if (lock == null)
             return false;
         else {
@@ -122,7 +122,7 @@ public class LockStoreImpl implements DataSerializable, LockStore {
         }
     }
 
-    public Map<Data, LockInfo> getLocks() {
+    public Map<Data, DistributedLock> getLocks() {
         return Collections.unmodifiableMap(locks);
     }
 
@@ -198,7 +198,7 @@ public class LockStoreImpl implements DataSerializable, LockStore {
         int len = locks.size();
         out.writeInt(len);
         if (len > 0) {
-            for (LockInfo lock : locks.values()) {
+            for (DistributedLock lock : locks.values()) {
                 lock.writeData(out);
             }
         }
@@ -211,7 +211,7 @@ public class LockStoreImpl implements DataSerializable, LockStore {
         int len = in.readInt();
         if (len > 0) {
             for (int i = 0; i < len; i++) {
-                LockInfo lock = new LockInfo();
+                DistributedLock lock = new DistributedLock();
                 lock.readData(in);
                 locks.put(lock.getKey(), lock);
             }
