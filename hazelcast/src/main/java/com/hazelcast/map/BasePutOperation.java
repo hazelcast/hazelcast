@@ -61,8 +61,6 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
     }
 
     public final int getSyncBackupCount() {
-        mapService = getService();
-        mapContainer = mapService.getMapContainer(name);
         return mapContainer.getBackupCount();
     }
 

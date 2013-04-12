@@ -84,34 +84,13 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         this.partitionCount = node.groupProperties.PARTITION_COUNT.getInteger();
         this.node = node;
         this.nodeEngine = node.nodeEngine;
-        this.logger = this.node.getLogger(PartitionService.class.getName());
-        this.partitions = new PartitionInfo[partitionCount];
+        this.logger = node.getLogger(PartitionService.class);
         this.systemLogService = node.getSystemLogService();
-        final Address thisAddress = node.getThisAddress();
+        this.partitions = new PartitionInfo[partitionCount];
+        final PartitionListener partitionListener = new LocalPartitionListener(node.getThisAddress());
         for (int i = 0; i < partitionCount; i++) {
-            this.partitions[i] = new PartitionInfo(i, new PartitionListener() {
-                public void replicaChanged(PartitionReplicaChangeEvent event) {
-                    if (event.getReplicaIndex() > 0) {
-                        // backup replica owner changed!
-                        if (thisAddress.equals(event.getOldAddress())) {
-                            clearPartitionReplica(event.getPartitionId(), event.getReplicaIndex());
-                        } else if (thisAddress.equals(event.getNewAddress())) {
-                            syncPartitionReplica(event.getPartitionId(), event.getReplicaIndex());
-                        }
-                    }
-                    if (event.getReplicaIndex() == 0 && event.getNewAddress() == null && node.isActive() && node.joined()) {
-                        final String warning = "Owner of partition is being removed! " +
-                                "Possible data loss for partition[" + event.getPartitionId() + "]. " + event;
-                        logger.log(Level.WARNING, warning);
-                        systemLogService.logPartition(warning);
-                    }
-                    if (node.isMaster()) {
-                        stateVersion.incrementAndGet();
-                    }
-                }
-            });
+            this.partitions[i] = new PartitionInfo(i, partitionListener);
         }
-
         partitionVersions = new PartitionVersion[partitionCount];
         for (int i = 0; i < partitionVersions.length; i++) {
             partitionVersions[i] = new PartitionVersion(i);
@@ -131,6 +110,36 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         proxy = new PartitionServiceProxy(this);
 
         replicaSyncRequests = new ConcurrentHashMap<Integer, ReplicaSyncInfo>(partitionCount);
+    }
+
+    private class LocalPartitionListener implements PartitionListener {
+        final Address thisAddress;
+        private LocalPartitionListener(Address thisAddress) {
+            this.thisAddress = thisAddress;
+        }
+
+        public void replicaChanged(PartitionReplicaChangeEvent event) {
+            if (event.getReplicaIndex() > 0) {
+                // backup replica owner changed!
+                if (thisAddress.equals(event.getOldAddress())) {
+                    final PartitionInfo partition = partitions[event.getPartitionId()];
+                    if (!partition.isOwnerOrBackup(thisAddress)) {
+                        clearPartitionReplica(event.getPartitionId(), event.getReplicaIndex());
+                    }
+                } else if (thisAddress.equals(event.getNewAddress())) {
+                    syncPartitionReplica(event.getPartitionId(), event.getReplicaIndex());
+                }
+            }
+            if (event.getReplicaIndex() == 0 && event.getNewAddress() == null && node.isActive() && node.joined()) {
+                final String warning = "Owner of partition is being removed! " +
+                        "Possible data loss for partition[" + event.getPartitionId() + "]. " + event;
+                logger.log(Level.WARNING, warning);
+                systemLogService.logPartition(warning);
+            }
+            if (node.isMaster()) {
+                stateVersion.incrementAndGet();
+            }
+        }
     }
 
     public void init(final NodeEngine nodeEngine, Properties properties) {
@@ -233,18 +242,9 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             // otherwise new master may take action fast and send new partition state
             // before other members realize the dead one and fix their records.
             final boolean migrationStatus = migrationActive.getAndSet(false);
-            // list of partitions those have dead member in their replicas
-            // !! this should be calculated before dead member is removed from partition table !!
-//            int[] indexesOfDead = new int[partitions.length];
             for (PartitionInfo partition : partitions) {
-                final int replicaIndexOfDead = partition.getReplicaIndexOf(deadAddress);
-//                indexesOfDead[partition.getPartitionId()] = replicaIndexOfDead;
                 // shift partition table up.
-                // safe removal of dead address from partition table.
-                // there might be duplicate dead address in partition table
-                // during migration tasks' execution (when there are multiple backups and
-                // copy backup tasks or because of a bug.
-                while (partition.onDeadAddress(deadAddress)) ;
+                while (partition.onDeadAddress(deadAddress));
             }
             migrationQueue.offer(new PrepareRepartitioningTask());
 
@@ -981,12 +981,13 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                         }
                     }
                     final boolean hasNoTasks = migrationQueue.isEmpty();
+                    if (hasNoTasks && migrating) {
+                        migrating = false;
+                        logger.log(Level.INFO, "All migration tasks has been completed, queues are empty.");
+                    }
                     if (!migrationActive.get() || hasNoTasks) {
-                        if (hasNoTasks && migrating) {
-                            migrating = false;
-                            logger.log(Level.INFO, "All migration tasks has been completed, queues are empty.");
-                        }
                         evictCompletedMigrations();
+                        Thread.sleep(250);
                     }
                 }
             } catch (InterruptedException e) {
