@@ -16,6 +16,8 @@
 
 package com.hazelcast.collection.multimap.tx;
 
+import com.hazelcast.collection.CollectionProxyId;
+import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.nio.serialization.Data;
@@ -23,6 +25,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.Transaction;
 import com.hazelcast.transaction.TransactionException;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
 /**
@@ -30,8 +33,11 @@ import java.util.Collection;
  */
 public class TransactionalMultiMapProxy<K,V> extends TransactionalMultiMapProxySupport implements TransactionalMultiMap<K, V> {
 
-    public TransactionalMultiMapProxy(NodeEngine nodeEngine, CollectionService service, String name, Transaction tx) {
-        super(nodeEngine, service, name, tx);
+
+
+
+    public TransactionalMultiMapProxy(NodeEngine nodeEngine, CollectionService service, CollectionProxyId proxyId, Transaction tx) {
+        super(nodeEngine, service, proxyId, tx);
     }
 
     public boolean put(K key, V value) throws TransactionException {
@@ -41,19 +47,36 @@ public class TransactionalMultiMapProxy<K,V> extends TransactionalMultiMapProxyS
     }
 
     public Collection<V> get(K key) {
-        return null;
+        Data dataKey = getNodeEngine().toData(key);
+        Collection<CollectionRecord> coll = getInternal(dataKey);
+        Collection<V> collection = new ArrayList<V>(coll.size());
+        for (CollectionRecord record: coll){
+            collection.add((V)getNodeEngine().toObject(record.getObject()));
+        }
+        return collection;
     }
 
     public boolean remove(Object key, Object value) {
-        return false;
+        Data dataKey = getNodeEngine().toData(key);
+        Data dataValue = getNodeEngine().toData(value);
+        return removeInternal(dataKey, dataValue);
     }
 
     public Collection<V> remove(Object key) {
-        return null;
+        Data dataKey = getNodeEngine().toData(key);
+        Collection<CollectionRecord> coll = removeAllInternal(dataKey);
+        Collection<V> result = new ArrayList<V>(coll.size());
+        for (CollectionRecord record: coll){
+            result.add((V)getNodeEngine().toObject(record.getObject()));
+        }
+        return result;
     }
 
     public int valueCount(K key) {
-        return 0;
+        Data dataKey = getNodeEngine().toData(key);
+        return valueCountInternal(dataKey);
     }
+
+
 
 }

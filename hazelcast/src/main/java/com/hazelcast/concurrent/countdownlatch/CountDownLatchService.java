@@ -23,7 +23,6 @@ import com.hazelcast.concurrent.countdownlatch.client.CDLGetCountHandler;
 import com.hazelcast.concurrent.countdownlatch.client.CDLSetCountHandler;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.partition.MigrationEndpoint;
-import com.hazelcast.partition.MigrationType;
 import com.hazelcast.spi.*;
 
 import java.util.*;
@@ -114,10 +113,10 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
         latches.remove(String.valueOf(objectId));
     }
 
-    public void beforeMigration(MigrationServiceEvent migrationServiceEvent) {
+    public void beforeMigration(PartitionMigrationEvent partitionMigrationEvent) {
     }
 
-    public Operation prepareMigrationOperation(MigrationServiceEvent event) {
+    public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
         if (event.getReplicaIndex() > 1) {
             return null;
         }
@@ -127,23 +126,16 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
                 data.add(latchEntry.getValue());
             }
         }
-        return data.isEmpty() ? null : new CountDownLatchMigrationOperation(data);
+        return data.isEmpty() ? null : new CountDownLatchReplicationOperation(data);
     }
 
-    public void commitMigration(MigrationServiceEvent event) {
-        if (event.getReplicaIndex() > 1) {
-            return;
-        }
-        if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE
-                && event.getMigrationType() == MigrationType.MOVE) {
+    public void commitMigration(PartitionMigrationEvent event) {
+        if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
             clearPartition(event.getPartitionId());
         }
     }
 
-    public void rollbackMigration(MigrationServiceEvent event) {
-        if (event.getReplicaIndex() > 1) {
-            return;
-        }
+    public void rollbackMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
             clearPartition(event.getPartitionId());
         }
@@ -156,6 +148,10 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
                 iter.remove();
             }
         }
+    }
+
+    public void clearPartitionReplica(int partitionId) {
+        clearPartition(partitionId);
     }
 
     public CountDownLatchInfo getLatch(String name) {

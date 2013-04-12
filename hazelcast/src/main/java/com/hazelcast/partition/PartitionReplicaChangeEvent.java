@@ -18,7 +18,7 @@ package com.hazelcast.partition;
 
 import com.hazelcast.nio.Address;
 
-public class PartitionReplicaChangeEvent {
+class PartitionReplicaChangeEvent {
     private int partitionId;
     private int replicaIndex;
     private Address oldAddress;

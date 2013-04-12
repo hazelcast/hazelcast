@@ -19,7 +19,7 @@ package com.hazelcast.collection.multimap;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.collection.operations.*;
-import com.hazelcast.concurrent.lock.LockNamespace;
+import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.concurrent.lock.LockProxySupport;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.instance.ThreadContext;
@@ -47,7 +47,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
         super(nodeEngine, service);
         this.config = new MultiMapConfig(config);
         this.proxyId = proxyId;
-        lockSupport = new LockProxySupport(new LockNamespace(CollectionService.SERVICE_NAME, proxyId));
+        lockSupport = new LockProxySupport(new DefaultObjectNamespace(CollectionService.SERVICE_NAME, proxyId));
     }
 
     public <V> Collection<V> createNew() {
@@ -109,7 +109,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
                 if (result == null) {
                     continue;
                 }
-                CollectionResponse response = (CollectionResponse) nodeEngine.toObject(result);
+                CollectionResponse response = nodeEngine.toObject(result);
                 keySet.addAll(response.getCollection());
             }
             return keySet;

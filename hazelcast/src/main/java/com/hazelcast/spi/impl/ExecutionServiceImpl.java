@@ -25,7 +25,10 @@ import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.executor.ExecutorThreadFactory;
 import com.hazelcast.util.executor.ManagedExecutorService;
 import com.hazelcast.util.executor.PoolExecutorThreadFactory;
+import com.hazelcast.util.executor.ScheduledTaskRunner;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.*;
@@ -39,6 +42,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
     private final NodeEngineImpl nodeEngine;
     private final ExecutorService cachedExecutorService;
     private final ScheduledExecutorService scheduledExecutorService;
+    private final ExecutorService scheduledManagedExecutor;
     private final ILogger logger;
 
     private final ConcurrentMap<String, ExecutorService> executors = new ConcurrentHashMap<String, ExecutorService>();
@@ -66,13 +70,26 @@ public final class ExecutionServiceImpl implements ExecutionService {
                         return scheduledThreadName;
                     }
                 });
+        enableRemoveOnCancelIfAvailable();
 
         // default executors
-        register("hz:system", 30, Integer.MAX_VALUE);
-        register("hz:scheduled", 20, Integer.MAX_VALUE);
+        final int coreSize = Runtime.getRuntime().availableProcessors();
+        register(SYSTEM_EXECUTOR, coreSize * 5, Integer.MAX_VALUE);
+        register(ASYNC_EXECUTOR, coreSize * 10, coreSize * 100000);  // TODO: @mm - both sizes should be configurable.
+        scheduledManagedExecutor = register("hz:scheduled", coreSize * 10, coreSize * 100000);
     }
 
-    ExecutorService register(String name, int maxThreadSize, int queueSize) {
+    private void enableRemoveOnCancelIfAvailable() {
+        try {
+            final Method m = scheduledExecutorService.getClass().getMethod("setRemoveOnCancelPolicy", boolean.class);
+            m.invoke(scheduledExecutorService, true);
+        } catch (NoSuchMethodException ignored) {
+        } catch (InvocationTargetException ignored) {
+        } catch (IllegalAccessException ignored) {
+        }
+    }
+
+    private ExecutorService register(String name, int maxThreadSize, int queueSize) {
         final ManagedExecutorService executor = new ManagedExecutorService(name, cachedExecutorService,
                 maxThreadSize, queueSize);
         if (executors.putIfAbsent(name, executor) != null) {
@@ -107,15 +124,22 @@ public final class ExecutionServiceImpl implements ExecutionService {
     }
 
     public ScheduledFuture<?> schedule(final Runnable command, long delay, TimeUnit unit) {
-        return scheduledExecutorService.schedule(new ScheduledRunner(command), delay, unit);
+        return scheduledExecutorService.schedule(createScheduledRunner(command), delay, unit);
     }
 
     public ScheduledFuture<?> scheduleAtFixedRate(final Runnable command, long initialDelay, long period, TimeUnit unit) {
-        return scheduledExecutorService.scheduleAtFixedRate(new ScheduledRunner(command), initialDelay, period, unit);
+        return scheduledExecutorService.scheduleAtFixedRate(createScheduledRunner(command), initialDelay, period, unit);
     }
 
     public ScheduledFuture<?> scheduleWithFixedDelay(final Runnable command, long initialDelay, long period, TimeUnit unit) {
-        return scheduledExecutorService.scheduleWithFixedDelay(new ScheduledRunner(command), initialDelay, period, unit);
+        return scheduledExecutorService.scheduleWithFixedDelay(createScheduledRunner(command), initialDelay, period, unit);
+    }
+
+    private ScheduledTaskRunner createScheduledRunner(Runnable command) {
+        if (command instanceof ScheduledTaskRunner) {
+            return (ScheduledTaskRunner) command;
+        }
+        return new ScheduledTaskRunner(scheduledManagedExecutor, command);
     }
 
     public ScheduledExecutorService getScheduledExecutor() {
@@ -142,22 +166,6 @@ public final class ExecutionServiceImpl implements ExecutionService {
         final ExecutorService ex = executors.remove(name);
         if (ex != null) {
             ex.shutdown();
-        }
-    }
-
-    private class ScheduledRunner implements Runnable {
-        private final Runnable runnable;
-
-        private ScheduledRunner(Runnable runnable) {
-            this.runnable = runnable;
-        }
-
-        public void run() {
-            try {
-                execute("hz:scheduled", runnable);
-            } catch (Throwable t) {
-                logger.log(Level.SEVERE, t.getMessage(), t);
-            }
         }
     }
 

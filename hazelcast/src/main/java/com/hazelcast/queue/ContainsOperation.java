@@ -45,7 +45,7 @@ public class ContainsOperation extends QueueOperation {
     }
 
     public void afterRun() throws Exception {
-        getQueueService().getOrCreateOperationsCounter(name).incrementOtherOperations();
+        getQueueService().getLocalQueueStatsImpl(name).incrementOtherOperations();
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

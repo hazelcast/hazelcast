@@ -26,6 +26,8 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.executor.CompletedFuture;
+import com.hazelcast.util.executor.DelegatingFuture;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -85,7 +87,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
 
     public <T> Future<T> submit(Runnable task, T result) {
         Callable<T> callable = createRunnableAdapter(task);
-        return new FutureProxy<T>(submit(callable), getNodeEngine().getSerializationService(), result);
+        return new DelegatingFuture<T>(submit(callable), getNodeEngine().getSerializationService(), result);
     }
 
     public <T> Future<T> submit(Callable<T> task) {
@@ -117,7 +119,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
             }
             return new CompletedFuture<T>(nodeEngine.getSerializationService(), response);
         }
-        return new FutureProxy<T>(future, nodeEngine.getSerializationService());
+        return new DelegatingFuture<T>(future, nodeEngine.getSerializationService());
     }
 
     private boolean checkSync() {
@@ -204,8 +206,8 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
         }
         final NodeEngine nodeEngine = getNodeEngine();
         Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(DistributedExecutorService.SERVICE_NAME,
-                new CallableTaskOperation<T>(name, task), partitionId).build();
-        nodeEngine.getAsyncInvocationService().invoke(inv, callback);
+                new CallableTaskOperation<T>(name, task), partitionId).setCallback(new ExecutionCallbackAdapter(callback)).build();
+        inv.invoke();
     }
 
     public <T> void submit(Callable<T> task, ExecutionCallback<T> callback) {
@@ -224,8 +226,9 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
         }
         final NodeEngine nodeEngine = getNodeEngine();
         Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(DistributedExecutorService.SERVICE_NAME,
-                new MemberCallableTaskOperation<T>(name, task), ((MemberImpl) member).getAddress()).build();
-        nodeEngine.getAsyncInvocationService().invoke(inv, callback);
+                new MemberCallableTaskOperation<T>(name, task), ((MemberImpl) member).getAddress())
+                .setCallback(new ExecutionCallbackAdapter(callback)).build();
+        inv.invoke();
     }
 
     private String getRejectionMessage() {
@@ -328,13 +331,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
     }
 
     public LocalExecutorStats getLocalExecutorStats() {
-        LocalExecutorStatsImpl localExecutorStats = new LocalExecutorStatsImpl();
-        ExecutorServiceStatsContainer serviceStatsContainer = getService().getExecutorServiceStatsContainer(name);
-        localExecutorStats.setCreationTime(serviceStatsContainer.getCreationTime());
-        localExecutorStats.setTotalFinished(serviceStatsContainer.getTotalFinished());
-        localExecutorStats.setTotalStarted(serviceStatsContainer.getTotalStarted());
-        localExecutorStats.setOperationStats(serviceStatsContainer.getOperationsCounter().getPublishedStats());
-        return localExecutorStats;
+        return getService().getLocalExecutorStats(name);
     }
 
     public String getServiceName() {

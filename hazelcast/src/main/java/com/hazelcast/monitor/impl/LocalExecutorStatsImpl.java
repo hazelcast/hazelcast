@@ -16,70 +16,100 @@
 
 package com.hazelcast.monitor.impl;
 
-import com.hazelcast.monitor.LocalExecutorOperationStats;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.util.Clock;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicLong;
 
-public class LocalExecutorStatsImpl extends LocalInstanceStatsSupport<LocalExecutorOperationStats> implements LocalExecutorStats {
+public class LocalExecutorStatsImpl implements LocalExecutorStats {
 
     private long creationTime;
-    private long totalStarted;
-    private long totalFinished;
+    private final AtomicLong pending = new AtomicLong(0);
+    private final AtomicLong started = new AtomicLong(0);
+    private final AtomicLong totalStartLatency = new AtomicLong(0);
+    private final AtomicLong completed = new AtomicLong(0);
+    private final AtomicLong totalExecutionTime = new AtomicLong(0);
+//    final AtomicLong minExecutionTime = new AtomicLong(Long.MAX_VALUE);
+//    final AtomicLong maxExecutionTime = new AtomicLong(Long.MIN_VALUE);
 
-    @Override
-    LocalExecutorOperationStats newOperationStatsInstance() {
-        return new LocalExecutorOperationStatsImpl();
+    public LocalExecutorStatsImpl() {
+        creationTime = Clock.currentTimeMillis();
     }
 
-    @Override
-    void writeDataInternal(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(creationTime);
-        out.writeLong(totalStarted);
-        out.writeLong(totalFinished);
+        out.writeLong(pending.get());
+        out.writeLong(started.get());
+        out.writeLong(totalStartLatency.get());
+        out.writeLong(completed.get());
+        out.writeLong(totalExecutionTime.get());
+//        out.writeLong(minExecutionTime.get());
+//        out.writeLong(maxExecutionTime.get());
     }
 
-    @Override
-    void readDataInternal(ObjectDataInput in) throws IOException {
+
+    public void readData(ObjectDataInput in) throws IOException {
         creationTime = in.readLong();
-        totalStarted = in.readLong();
-        totalFinished = in.readLong();
+        pending.set(in.readLong());
+        started.set(in.readLong());
+        totalStartLatency.set(in.readLong());
+        completed.set(in.readLong());
+        totalExecutionTime.set(in.readLong());
+//        minExecutionTime.set(in.readLong());
+//        maxExecutionTime.set(in.readLong());
     }
 
+    public void startExecution(long elapsed) {
+        totalStartLatency.addAndGet(elapsed);
+        started.incrementAndGet();
+    }
+
+    public void finishExecution(long elapsed) {
+        totalExecutionTime.addAndGet(elapsed);
+        completed.incrementAndGet();
+//        if (elapsed > maxExecutionTime.get())
+//            maxExecutionTime.set(elapsed);
+//        if (elapsed < minExecutionTime.get())
+//            minExecutionTime.set(elapsed);
+    }
+
+    public void startPending() {
+        pending.incrementAndGet();
+    }
 
     public long getCreationTime() {
         return creationTime;
     }
 
-    public void setCreationTime(long creationTime) {
-        this.creationTime = creationTime;
+    public long getPendingTaskCount() {
+        return pending.get();
     }
 
-    public long getTotalStarted() {
-        return totalStarted;
+    public long getStartedTaskCount() {
+        return started.get();
     }
 
-    public void setTotalStarted(long totalStarted) {
-        this.totalStarted = totalStarted;
+    public long getCompletedTaskCount() {
+        return completed.get();
     }
 
-    public long getTotalFinished() {
-        return totalFinished;
+    public long getTotalStartLatency() {
+        return totalStartLatency.get();
     }
 
-    public void setTotalFinished(long totalFinished) {
-        this.totalFinished = totalFinished;
+//    public long getMinExecutionTime() {
+//        return minExecutionTime.get();
+//    }
+
+    public long getTotalExecutionLatency() {
+        return totalExecutionTime.get();
     }
 
-    @Override
-    public String toString() {
-        return "LocalExecutorStatsImpl{" +
-                "creationTime=" + creationTime +
-                ", totalStarted=" + totalStarted +
-                ", totalFinished=" + totalFinished +
-                ", operationStats=" + getOperationStats() +
-                '}';
-    }
+//    public long getMaxExecutionTime() {
+//        return maxExecutionTime.get();
+//    }
+
 }

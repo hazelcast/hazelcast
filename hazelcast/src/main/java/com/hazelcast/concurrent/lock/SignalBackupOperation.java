@@ -18,6 +18,7 @@ package com.hazelcast.concurrent.lock;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.ObjectNamespace;
 
 /**
  * @mdogan 2/13/13
@@ -27,7 +28,7 @@ public class SignalBackupOperation extends BaseSignalOperation implements Backup
     public SignalBackupOperation() {
     }
 
-    public SignalBackupOperation(ILockNamespace namespace, Data key, int threadId, String conditionId, boolean all) {
+    public SignalBackupOperation(ObjectNamespace namespace, Data key, int threadId, String conditionId, boolean all) {
         super(namespace, key, threadId, conditionId, all);
     }
 }

@@ -17,13 +17,14 @@
 package com.hazelcast.concurrent.lock;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.ObjectNamespace;
 
 public class IsLockedOperation extends BaseLockOperation {
 
     public IsLockedOperation() {
     }
 
-    public IsLockedOperation(ILockNamespace namespace, Data key) {
+    public IsLockedOperation(ObjectNamespace namespace, Data key) {
         super(namespace, key, -1);
     }
 

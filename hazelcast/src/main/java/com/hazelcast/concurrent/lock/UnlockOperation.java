@@ -19,10 +19,7 @@ package com.hazelcast.concurrent.lock;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Notifier;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.*;
 
 import java.io.IOException;
 
@@ -34,11 +31,11 @@ public class UnlockOperation extends BaseLockOperation implements Notifier, Back
     public UnlockOperation() {
     }
 
-    public UnlockOperation(ILockNamespace namespace, Data key, int threadId) {
+    public UnlockOperation(ObjectNamespace namespace, Data key, int threadId) {
         super(namespace, key, threadId);
     }
 
-    public UnlockOperation(ILockNamespace namespace, Data key, int threadId, boolean force) {
+    public UnlockOperation(ObjectNamespace namespace, Data key, int threadId, boolean force) {
         super(namespace, key, threadId);
         this.force = force;
     }
@@ -70,7 +67,7 @@ public class UnlockOperation extends BaseLockOperation implements Notifier, Back
     }
 
     public boolean shouldNotify() {
-        return /*!getOrCreateDefaultLockStore().isLocked(key) && */ shouldNotify;
+        return shouldNotify;
     }
 
     public final WaitNotifyKey getNotifiedKey() {

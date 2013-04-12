@@ -17,6 +17,7 @@
 package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionProxyId;
+import com.hazelcast.collection.CollectionService;
 import com.hazelcast.collection.CollectionWrapper;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.Clock;
@@ -40,16 +41,16 @@ public class GetAllOperation extends CollectionKeyBasedOperation {
     public void run() throws Exception {
         CollectionWrapper wrapper = getOrCreateContainer().getCollectionWrapper(dataKey);
         Collection coll = null;
-        if (wrapper != null){
+        if (wrapper != null) {
             wrapper.incrementHit();
             coll = wrapper.getCollection();
         }
         begin = Clock.currentTimeMillis();
-        response = new CollectionResponse(coll, getNodeEngine());
+        response = new CollectionResponse(coll);
     }
 
     public void afterRun() throws Exception {
-        long elapsed = Math.max(0, Clock.currentTimeMillis()-begin);
-        getOrCreateContainer().getOperationsCounter().incrementGets(elapsed);
+        long elapsed = Math.max(0, Clock.currentTimeMillis() - begin);
+        ((CollectionService) getService()).getLocalMultiMapStatsImpl(proxyId).incrementGets(elapsed);
     }
 }

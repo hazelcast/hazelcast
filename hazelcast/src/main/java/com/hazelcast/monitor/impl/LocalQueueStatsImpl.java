@@ -16,56 +16,88 @@
 
 package com.hazelcast.monitor.impl;
 
-import com.hazelcast.monitor.LocalQueueOperationStats;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.util.Clock;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicLong;
 
-public class LocalQueueStatsImpl extends LocalInstanceStatsSupport<LocalQueueOperationStats>
-        implements LocalQueueStats, DataSerializable {
+public class LocalQueueStatsImpl implements LocalQueueStats {
 
     private int ownedItemCount;
     private int backupItemCount;
     private long minAge;
     private long maxAge;
     private long aveAge;
+    private long creationTime;
+    private AtomicLong numberOfOffers = new AtomicLong(0);
+    private AtomicLong numberOfRejectedOffers = new AtomicLong(0);
+    private AtomicLong numberOfPolls = new AtomicLong(0);
+    private AtomicLong numberOfEmptyPolls = new AtomicLong(0);
+    private AtomicLong numberOfOtherOperations = new AtomicLong(0);
+    private AtomicLong numberOfEvents = new AtomicLong(0);
 
     public LocalQueueStatsImpl() {
+        creationTime = Clock.currentTimeMillis();
     }
 
-    public LocalQueueStatsImpl(int ownedItemCount, int backupItemCount, long minAge, long maxAge, long aveAge) {
-        this.ownedItemCount = ownedItemCount;
-        this.backupItemCount = backupItemCount;
-        this.minAge = minAge;
-        this.maxAge = maxAge;
-        this.aveAge = aveAge;
-    }
-
-    void writeDataInternal(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(ownedItemCount);
         out.writeInt(backupItemCount);
         out.writeLong(minAge);
         out.writeLong(maxAge);
         out.writeLong(aveAge);
+        out.writeLong(creationTime);
+        out.writeLong(numberOfOffers.get());
+        out.writeLong(numberOfPolls.get());
+        out.writeLong(numberOfRejectedOffers.get());
+        out.writeLong(numberOfEmptyPolls.get());
+        out.writeLong(numberOfOtherOperations.get());
+        out.writeLong(numberOfEvents.get());
     }
 
-    void readDataInternal(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         ownedItemCount = in.readInt();
         backupItemCount = in.readInt();
         minAge = in.readLong();
         maxAge = in.readLong();
         aveAge = in.readLong();
+        creationTime = in.readLong();
+        numberOfOffers.set(in.readLong());
+        numberOfPolls.set(in.readLong());
+        numberOfRejectedOffers.set(in.readLong());
+        numberOfEmptyPolls.set(in.readLong());
+        numberOfOtherOperations.set(in.readLong());
+        numberOfEvents.set(in.readLong());
     }
 
-    @Override
-    LocalQueueOperationStats newOperationStatsInstance() {
-        return new LocalQueueOperationStatsImpl();
+    public long getMinAge() {
+        return minAge;
     }
 
-    public int getOwnedItemCount() {
+    public void setMinAge(long minAge) {
+        this.minAge = minAge;
+    }
+
+    public long getMaxAge() {
+        return maxAge;
+    }
+
+    public void setMaxAge(long maxAge) {
+        this.maxAge = maxAge;
+    }
+
+    public long getAvgAge() {
+        return aveAge;
+    }
+
+    public void setAveAge(long aveAge) {
+        this.aveAge = aveAge;
+    }
+
+    public long getOwnedItemCount() {
         return ownedItemCount;
     }
 
@@ -73,47 +105,69 @@ public class LocalQueueStatsImpl extends LocalInstanceStatsSupport<LocalQueueOpe
         this.ownedItemCount = ownedItemCount;
     }
 
+    public long getBackupItemCount() {
+        return backupItemCount;
+    }
+
     public void setBackupItemCount(int backupItemCount) {
         this.backupItemCount = backupItemCount;
     }
 
-    public void setMinAge(long minAge) {
-        this.minAge = minAge;
+    public long getCreationTime() {
+        return creationTime;
     }
 
-    public void setMaxAge(long maxAge) {
-        this.maxAge = maxAge;
+    public long total() {
+        return numberOfOffers.get() + numberOfPolls.get() + numberOfOtherOperations.get();
     }
 
-    public void setAveAge(long aveAge) {
-        this.aveAge = aveAge;
+    public long getOfferOperationCount() {
+        return numberOfOffers.get();
     }
 
-    public int getBackupItemCount() {
-        return backupItemCount;
+    public long getRejectedOfferOperationCount() {
+        return numberOfRejectedOffers.get();
     }
 
-    public long getMaxAge() {
-        return maxAge;
+    public long getPollOperationCount() {
+        return numberOfPolls.get();
     }
 
-    public long getMinAge() {
-        return minAge;
+    public long getEmptyPollOperationCount() {
+        return numberOfEmptyPolls.get();
     }
 
-    public long getAveAge() {
-        return aveAge;
+    public long getOtherOperationsCount() {
+        return numberOfOtherOperations.get();
     }
 
-    @Override
-    public String toString() {
-        return "LocalQueueStatsImpl{" +
-                "aveAge=" + aveAge +
-                ", ownedItemCount=" + ownedItemCount +
-                ", backupItemCount=" + backupItemCount +
-                ", minAge=" + minAge +
-                ", maxAge=" + maxAge +
-                ", queueOperationStats=" + operationStats +
-                '}';
+    public void incrementOtherOperations() {
+        numberOfOtherOperations.incrementAndGet();
     }
+
+    public void incrementOffers() {
+        numberOfOffers.incrementAndGet();
+    }
+
+    public void incrementRejectedOffers() {
+        numberOfRejectedOffers.incrementAndGet();
+    }
+
+    public void incrementPolls() {
+        numberOfPolls.incrementAndGet();
+    }
+
+    public void incrementEmptyPolls() {
+        numberOfEmptyPolls.incrementAndGet();
+    }
+
+    public void incrementReceivedEvents() {
+        numberOfEvents.incrementAndGet();
+    }
+
+    public long getEventOperationCount() {
+        return numberOfEvents.get();
+    }
+
+
 }

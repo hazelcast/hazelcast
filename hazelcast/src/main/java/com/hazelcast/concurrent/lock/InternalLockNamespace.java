@@ -18,13 +18,14 @@ package com.hazelcast.concurrent.lock;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.ObjectNamespace;
 
 import java.io.IOException;
 
 /**
  * @mdogan 2/13/13
  */
-public final class InternalLockNamespace implements ILockNamespace {
+public final class InternalLockNamespace implements ObjectNamespace {
 
     public String getServiceName() {
         return SharedLockService.SERVICE_NAME;

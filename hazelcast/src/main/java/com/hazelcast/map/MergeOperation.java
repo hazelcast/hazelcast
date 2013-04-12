@@ -52,7 +52,14 @@ public class MergeOperation extends BasePutOperation {
     }
 
     public void afterRun() {
-        invalidateNearCaches();
+        if(merged) {
+            invalidateNearCaches();
+        }
+
+    }
+
+    public boolean shouldBackup() {
+        return merged;
     }
 
     @Override

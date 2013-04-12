@@ -16,7 +16,6 @@
 
 package com.hazelcast.collection;
 
-import java.util.ArrayList;
 import java.util.Collection;
 
 /**
@@ -28,19 +27,14 @@ public class CollectionWrapper {
 
     private int hits;
 
-    private final Collection<CollectionRecord> reserve;
+    private long version = -1;
 
     public CollectionWrapper(Collection<CollectionRecord> collection) {
         this.collection = collection;
-        this.reserve = new ArrayList<CollectionRecord>();// TODO how about a SET behaviour?
     }
 
     public Collection<CollectionRecord> getCollection() {
         return collection;
-    }
-
-    public void reservePut(CollectionRecord record){
-
     }
 
     public void incrementHit(){
@@ -51,5 +45,25 @@ public class CollectionWrapper {
         return hits;
     }
 
+    public boolean containsRecordId(long recordId){
+        for (CollectionRecord record: collection){
+            if (record.getRecordId() == recordId){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public long getVersion() {
+        return version;
+    }
+
+    public void setVersion(long version) {
+        this.version = version;
+    }
+
+    public long incrementAndGetVersion(){
+        return ++version;
+    }
 
 }

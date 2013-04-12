@@ -26,6 +26,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 
 /**
+ * Behaves like semaphore, has no notion of ownership!
+ *
  * @mdogan 12/3/12
  */
 public final class SpinReadWriteLock implements ReadWriteLock {
@@ -35,6 +37,10 @@ public final class SpinReadWriteLock implements ReadWriteLock {
     private final AtomicBoolean locked = new AtomicBoolean(false);
 
     private final AtomicInteger readCount = new AtomicInteger();
+
+    private final Lock readLock = new ReadLock();
+
+    private final Lock writeLock = new WriteLock();
 
     public SpinReadWriteLock() {
         this.spinInterval = 1;
@@ -46,11 +52,11 @@ public final class SpinReadWriteLock implements ReadWriteLock {
     }
 
     public Lock readLock() {
-        return new ReadLock();
+        return readLock;
     }
 
     public Lock writeLock() {
-        return new WriteLock();
+        return writeLock;
     }
 
     private boolean acquireReadLock(final long time, TimeUnit unit) throws InterruptedException {

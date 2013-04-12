@@ -598,6 +598,7 @@ public class QueueContainer implements DataSerializable {
         totalAge = 0;
         long totalAgedCountVal = totalAgedCount;
         totalAgedCount = 0;
+        totalAgedCountVal = totalAgedCountVal == 0 ? 1 : totalAgedCountVal;
         stats.setAveAge(totalAgeVal / totalAgedCountVal);
     }
 

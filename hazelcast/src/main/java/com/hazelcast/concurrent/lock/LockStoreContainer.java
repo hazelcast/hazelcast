@@ -16,6 +16,7 @@
 
 package com.hazelcast.concurrent.lock;
 
+import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConcurrencyUtil.ConstructorFunction;
 
@@ -27,15 +28,14 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * @mdogan 2/12/13
  */
-class LockStoreContainer {
+public class LockStoreContainer {
 
     private final LockService lockService;
     private final int partitionId;
-    private final ConcurrentMap<ILockNamespace, LockStoreImpl> lockStores = new ConcurrentHashMap<ILockNamespace, LockStoreImpl>();
-
-    private final ConstructorFunction<ILockNamespace, LockStoreImpl> lockStoreConstructor
-                = new ConstructorFunction<ILockNamespace, LockStoreImpl>() {
-        public LockStoreImpl createNew(ILockNamespace key) {
+    private final ConcurrentMap<ObjectNamespace, LockStoreImpl> lockStores = new ConcurrentHashMap<ObjectNamespace, LockStoreImpl>();
+    private final ConstructorFunction<ObjectNamespace, LockStoreImpl> lockStoreConstructor
+            = new ConstructorFunction<ObjectNamespace, LockStoreImpl>() {
+        public LockStoreImpl createNew(ObjectNamespace key) {
             return new LockStoreImpl(key, 1, 0, lockService);
         }
     };
@@ -45,7 +45,7 @@ class LockStoreContainer {
         this.partitionId = partitionId;
     }
 
-    public LockStoreImpl createLockStore(ILockNamespace namespace, int backupCount, int asyncBackupCount) {
+    public LockStoreImpl createLockStore(ObjectNamespace namespace, int backupCount, int asyncBackupCount) {
         final LockStoreImpl ls = new LockStoreImpl(namespace, backupCount, asyncBackupCount, lockService);
         final LockStoreImpl current;
         if ((current = lockStores.putIfAbsent(namespace, ls)) != null) {
@@ -59,22 +59,22 @@ class LockStoreContainer {
         return ls;
     }
 
-    void clearLockStore(ILockNamespace namespace) {
+    void clearLockStore(ObjectNamespace namespace) {
         final LockStoreImpl lockStore = lockStores.get(namespace);
         if (lockStore != null) {
             lockStore.clear();
         }
     }
 
-    LockStoreImpl getOrCreateDefaultLockStore(ILockNamespace namespace) {
+    LockStoreImpl getOrCreateDefaultLockStore(ObjectNamespace namespace) {
         return ConcurrencyUtil.getOrPutIfAbsent(lockStores, namespace, lockStoreConstructor);
     }
 
-    LockStoreImpl getLockStore(ILockNamespace namespace) {
+    LockStoreImpl getLockStore(ObjectNamespace namespace) {
         return lockStores.get(namespace);
     }
 
-    Collection<LockStoreImpl> getLockStores() {
+    public Collection<LockStoreImpl> getLockStores() {
         return Collections.unmodifiableCollection(lockStores.values());
     }
 
@@ -90,8 +90,8 @@ class LockStoreContainer {
     }
 
     void put(LockStoreImpl ls) {
-        Collection<LockInfo> lockInfos = ls.getLocks().values();
-        for (LockInfo lockInfo : lockInfos) {
+        Collection<DistributedLock> lockInfos = ls.getLocks().values();
+        for (DistributedLock lockInfo : lockInfos) {
             lockInfo.setLockService(lockService);
             lockInfo.setNamespace(ls.getNamespace());
         }

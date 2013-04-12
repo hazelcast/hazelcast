@@ -52,10 +52,10 @@ public class NearCache {
         this.mapService = mapService;
         this.nodeEngine = mapService.getNodeEngine();
         Config config = nodeEngine.getConfig();
-        inMemoryFormat = config.getMapConfig(mapName).getInMemoryFormat();
         NearCacheConfig nearCacheConfig = config.getMapConfig(mapName).getNearCacheConfig();
         maxSize = nearCacheConfig.getMaxSize();
         maxIdleMillis = nearCacheConfig.getMaxIdleSeconds() * 1000;
+        inMemoryFormat = nearCacheConfig.getInMemoryFormat();
         timeToLiveMillis = nearCacheConfig.getTimeToLiveSeconds() * 1000;
         invalidateOnChange = nearCacheConfig.isInvalidateOnChange();
         evictionPolicy = EvictionPolicy.valueOf(nearCacheConfig.getEvictionPolicy());
@@ -69,7 +69,7 @@ public class NearCache {
         NONE, LRU, LFU
     }
 
-    public void put(Data key, Data value) {
+    public void put(Data key, Data data) {
         fireCleanup();
         if (evictionPolicy == EvictionPolicy.NONE && cache.size() >= maxSize) {
             return;
@@ -77,12 +77,13 @@ public class NearCache {
         if (evictionPolicy != EvictionPolicy.NONE && cache.size() >= maxSize) {
                 fireEvictCache();
         }
+        Object value = inMemoryFormat.equals(MapConfig.InMemoryFormat.BINARY) ? data : mapService.toObject(data);
         cache.put(key, new CacheRecord(key, value));
     }
 
     private void fireEvictCache() {
         if (canEvict.compareAndSet(true, false)) {
-            nodeEngine.getExecutionService().execute("hz:near-cache-evict", new Runnable() {
+            nodeEngine.getExecutionService().execute("hz:near-cache", new Runnable() {
                 public void run() {
                     List<CacheRecord> values = new ArrayList(cache.values());
                     Collections.sort(values);
@@ -101,7 +102,7 @@ public class NearCache {
             return;
 
         if (canCleanUp.compareAndSet(true, false)) {
-            nodeEngine.getExecutionService().execute("hz:near-cache-cleanup", new Runnable() {
+            nodeEngine.getExecutionService().execute("hz:near-cache", new Runnable() {
                 public void run() {
                     lastCleanup = Clock.currentTimeMillis();
                     Iterator<Map.Entry<Data, CacheRecord>> iterator = cache.entrySet().iterator();
@@ -117,7 +118,7 @@ public class NearCache {
         }
     }
 
-    public Data get(Data key) {
+    public Object get(Data key) {
         fireCleanup();
         CacheRecord record = cache.get(key);
         if (record != null) {
@@ -142,12 +143,12 @@ public class NearCache {
 
     class CacheRecord implements Comparable<CacheRecord> {
         final Data key;
-        final Data value;
+        final Object value;
         volatile long lastAccessTime;
         final long creationTime;
         final AtomicInteger hit;
 
-        CacheRecord(Data key, Data value) {
+        CacheRecord(Data key, Object value) {
             this.key = key;
             this.value = value;
             long time = Clock.currentTimeMillis();

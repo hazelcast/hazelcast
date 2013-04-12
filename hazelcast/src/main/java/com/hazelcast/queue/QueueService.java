@@ -23,11 +23,9 @@ import com.hazelcast.core.ItemListener;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
-import com.hazelcast.monitor.impl.QueueOperationsCounter;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.partition.MigrationEndpoint;
-import com.hazelcast.partition.MigrationType;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.queue.client.*;
 import com.hazelcast.queue.proxy.DataQueueProxy;
@@ -35,6 +33,7 @@ import com.hazelcast.queue.proxy.ObjectQueueProxy;
 import com.hazelcast.queue.tx.TransactionalQueueProxy;
 import com.hazelcast.spi.*;
 import com.hazelcast.transaction.Transaction;
+import com.hazelcast.util.ConcurrencyUtil;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -53,12 +52,16 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         RemoteService, EventPublishingService<QueueEvent, ItemListener>, ClientProtocolService {
 
     public static final String SERVICE_NAME = "hz:impl:queueService";
-
     private final NodeEngine nodeEngine;
     private final ConcurrentMap<String, QueueContainer> containerMap = new ConcurrentHashMap<String, QueueContainer>();
-    private final ConcurrentMap<String, QueueOperationsCounter> counterMap = new ConcurrentHashMap<String, QueueOperationsCounter>(1000);
+    private final ConcurrentMap<String, LocalQueueStatsImpl> statsMap = new ConcurrentHashMap<String, LocalQueueStatsImpl>(1000);
     private final ConcurrentMap<ListenerKey, String> eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
     private final ILogger logger;
+    private final ConcurrencyUtil.ConstructorFunction<String, LocalQueueStatsImpl> localQueueStatsConstructorFunction = new ConcurrencyUtil.ConstructorFunction<String, LocalQueueStatsImpl>() {
+        public LocalQueueStatsImpl createNew(String key) {
+            return new LocalQueueStatsImpl();
+        }
+    };
 
     public QueueService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -94,10 +97,10 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         containerMap.put(name, container);
     }
 
-    public void beforeMigration(MigrationServiceEvent migrationServiceEvent) {
+    public void beforeMigration(PartitionMigrationEvent partitionMigrationEvent) {
     }
 
-    public Operation prepareMigrationOperation(MigrationServiceEvent event) {
+    public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
         Map<String, QueueContainer> migrationData = new HashMap<String, QueueContainer>();
         for (Entry<String, QueueContainer> entry : containerMap.entrySet()) {
             String name = entry.getKey();
@@ -106,31 +109,33 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
                 migrationData.put(name, container);
             }
         }
-        return migrationData.isEmpty() ? null : new QueueMigrationOperation(migrationData, event.getPartitionId(), event.getReplicaIndex());
+        return migrationData.isEmpty() ? null : new QueueReplicationOperation(migrationData, event.getPartitionId(), event.getReplicaIndex());
     }
 
-    public void commitMigration(MigrationServiceEvent event) {
+    public void commitMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-            if (event.getMigrationType() == MigrationType.MOVE || event.getMigrationType() == MigrationType.MOVE_COPY_BACK) {
-                clearMigrationData(event.getPartitionId(), event.getCopyBackReplicaIndex());
-            }
+            clearMigrationData(event.getPartitionId());
         }
     }
 
-    public void rollbackMigration(MigrationServiceEvent event) {
+    public void rollbackMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
-            clearMigrationData(event.getPartitionId(), -1);
+            clearMigrationData(event.getPartitionId());
         }
     }
 
-    private void clearMigrationData(int partitionId, int copyBack) {
+    private void clearMigrationData(int partitionId) {
         Iterator<Entry<String, QueueContainer>> iterator = containerMap.entrySet().iterator();
         while (iterator.hasNext()) {
             QueueContainer container = iterator.next().getValue();
-            if (container.getPartitionId() == partitionId && (copyBack == -1 || container.getConfig().getTotalBackupCount() < copyBack)) {
+            if (container.getPartitionId() == partitionId) {
                 iterator.remove();
             }
         }
+    }
+
+    public void clearPartitionReplica(int partitionId) {
+        clearMigrationData(partitionId);
     }
 
     public void dispatchEvent(QueueEvent event, ItemListener listener) {
@@ -141,7 +146,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         } else {
             listener.itemRemoved(itemEvent);
         }
-        getOrCreateOperationsCounter(event.name).incrementReceivedEvents();
+        getLocalQueueStatsImpl(event.name).incrementReceivedEvents();
     }
 
     public String getServiceName() {
@@ -201,36 +206,26 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         return nodeEngine;
     }
 
-    public LocalQueueStats createLocalQueueStats(String name, int partitionId){
-        LocalQueueStatsImpl stats = new LocalQueueStatsImpl();
+    public LocalQueueStats createLocalQueueStats(String name, int partitionId) {
+        LocalQueueStatsImpl stats = getLocalQueueStatsImpl(name);
         QueueContainer container = containerMap.get(name);
-        if (container == null){
+        if (container == null) {
             return stats;
         }
 
         Address thisAddress = nodeEngine.getClusterService().getThisAddress();
         PartitionInfo info = nodeEngine.getPartitionService().getPartitionInfo(partitionId);
-        if (thisAddress.equals(info.getOwner())){
+        if (thisAddress.equals(info.getOwner())) {
             stats.setOwnedItemCount(container.size());
-        }
-        else{
+        } else {
             stats.setBackupItemCount(container.size());
         }
         container.setStats(stats);
-        stats.setOperationStats(getOrCreateOperationsCounter(name).getPublishedStats());
         return stats;
     }
 
-    public QueueOperationsCounter getOrCreateOperationsCounter(String name){
-        QueueOperationsCounter operationsCounter = counterMap.get(name);
-        if (operationsCounter == null){
-            operationsCounter = new QueueOperationsCounter();
-            QueueOperationsCounter counter = counterMap.putIfAbsent(name, operationsCounter);
-            if (counter != null){
-                operationsCounter = counter;
-            }
-        }
-        return operationsCounter;
+    public LocalQueueStatsImpl getLocalQueueStatsImpl(String name) {
+        return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, localQueueStatsConstructorFunction);
     }
 
     public TransactionalQueueProxy createTransactionalObject(Object id, Transaction transaction) {

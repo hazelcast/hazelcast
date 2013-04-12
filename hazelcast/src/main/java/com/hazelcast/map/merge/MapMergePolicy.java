@@ -17,8 +17,9 @@
 package com.hazelcast.map.merge;
 
 import com.hazelcast.core.EntryView;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-public interface MapMergePolicy {
+public interface MapMergePolicy extends DataSerializable {
 
     /**
      * Returns the value of the entry after the merge

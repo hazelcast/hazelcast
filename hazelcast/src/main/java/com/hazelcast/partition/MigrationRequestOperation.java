@@ -53,8 +53,8 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
         if (!masterAddress.equals(getCallerAddress())) {
             throw new RetryableHazelcastException("Caller is not master node! => " + toString());
         }
-        final Address from = migrationInfo.getFromAddress();
-        final Address to = migrationInfo.getToAddress();
+        final Address from = migrationInfo.getSource();
+        final Address to = migrationInfo.getDestination();
         if (to.equals(from)) {
             getLogger().log(Level.WARNING, "To and from addresses are the same! => " + toString());
             success = false;
@@ -84,8 +84,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
                         final byte[] data = IOUtil.compress(out.toByteArray());
                         final MigrationOperation migrationOperation = new MigrationOperation(migrationInfo, data, tasks.size());
                         Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(PartitionServiceImpl.SERVICE_NAME,
-                                migrationOperation, to)
-                                .setTryCount(10).setTryPauseMillis(1000).setReplicaIndex(getReplicaIndex()).build();
+                                migrationOperation, to).setTryPauseMillis(1000).setReplicaIndex(getReplicaIndex()).build();
                         Future future = inv.invoke();
                         success = (Boolean) nodeEngine.toObject(future.get(timeout, TimeUnit.SECONDS));
                     } finally {
@@ -123,13 +122,14 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
 
     private Collection<Operation> prepareMigrationTasks() {
         NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        final MigrationServiceEvent event = new MigrationServiceEvent(MigrationEndpoint.SOURCE, migrationInfo);
+        final PartitionReplicationEvent replicationEvent = new PartitionReplicationEvent(migrationInfo.getPartitionId(), 0);
+        final PartitionMigrationEvent migrationEvent = new PartitionMigrationEvent(MigrationEndpoint.SOURCE, migrationInfo.getPartitionId());
         final Collection<Operation> tasks = new LinkedList<Operation>();
         for (MigrationAwareService service : nodeEngine.getServices(MigrationAwareService.class)) {
-            final Operation op = service.prepareMigrationOperation(event);
+            final Operation op = service.prepareReplicationOperation(replicationEvent);
             if (op != null) {
                 op.setServiceName(service.getServiceName());
-                service.beforeMigration(event);
+                service.beforeMigration(migrationEvent);
                 tasks.add(op);
             }
         }

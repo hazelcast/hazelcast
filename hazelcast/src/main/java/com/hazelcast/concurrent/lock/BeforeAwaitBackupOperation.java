@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.ObjectNamespace;
 
 import java.io.IOException;
 
@@ -31,7 +32,7 @@ public class BeforeAwaitBackupOperation extends BaseLockOperation implements Bac
     public BeforeAwaitBackupOperation() {
     }
 
-    public BeforeAwaitBackupOperation(ILockNamespace namespace, Data key, int threadId,
+    public BeforeAwaitBackupOperation(ObjectNamespace namespace, Data key, int threadId,
                                       String conditionId, String originalCaller) {
         super(namespace, key, threadId);
         this.conditionId = conditionId;

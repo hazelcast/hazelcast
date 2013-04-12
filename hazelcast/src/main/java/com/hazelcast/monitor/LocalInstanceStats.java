@@ -16,12 +16,10 @@
 
 package com.hazelcast.monitor;
 
-public interface LocalInstanceStats<T extends LocalInstanceOperationStats> {
+import com.hazelcast.nio.serialization.DataSerializable;
 
-    /**
-     * Returns the operation stats for this member.
-     *
-     * @return operation stats
-     */
-    T getOperationStats();
+public interface LocalInstanceStats extends DataSerializable {
+
+    public long getCreationTime();
+
 }

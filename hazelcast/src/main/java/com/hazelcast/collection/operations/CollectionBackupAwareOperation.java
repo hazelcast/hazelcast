@@ -18,7 +18,7 @@ package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionService;
-import com.hazelcast.concurrent.lock.LockNamespace;
+import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -34,7 +34,7 @@ import java.io.IOException;
  */
 public abstract class CollectionBackupAwareOperation extends CollectionKeyBasedOperation implements BackupAwareOperation, WaitSupport {
 
-    int threadId;
+    protected int threadId;
 
     protected CollectionBackupAwareOperation() {
     }
@@ -59,7 +59,7 @@ public abstract class CollectionBackupAwareOperation extends CollectionKeyBasedO
     }
 
     public WaitNotifyKey getWaitKey() {
-        return new LockWaitNotifyKey(new LockNamespace(CollectionService.SERVICE_NAME, proxyId), dataKey);
+        return new LockWaitNotifyKey(new DefaultObjectNamespace(CollectionService.SERVICE_NAME, proxyId), dataKey);
     }
 
     public boolean shouldWait() {

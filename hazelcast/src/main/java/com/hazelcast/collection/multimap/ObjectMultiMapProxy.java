@@ -22,6 +22,7 @@ import com.hazelcast.collection.operations.EntrySetResponse;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
@@ -182,8 +183,8 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
         lockSupport.unlock(nodeEngine, dataKey);
     }
 
-    public LocalMapStats getLocalMultiMapStats() {
-        return getService().createStats(proxyId);
+    public LocalMultiMapStats getLocalMultiMapStats() {
+        return (LocalMultiMapStats) getService().createStats(proxyId);
     }
 
     private Set<K> toObjectSet(Set<Data> dataSet) {

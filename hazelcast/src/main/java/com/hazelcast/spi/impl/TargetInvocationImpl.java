@@ -17,20 +17,21 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.Operation;
 
-public class TargetInvocationImpl extends InvocationImpl {
+public final class TargetInvocationImpl extends InvocationImpl {
 
     private final Address target;
 
     public TargetInvocationImpl(NodeEngineImpl nodeEngine, String serviceName, Operation op,
-                                Address target, int tryCount, long tryPauseMillis, long callTimeout) {
+                                Address target, int tryCount, long tryPauseMillis, long callTimeout,
+                                boolean async, Callback<Object> callback) {
         super(nodeEngine, serviceName, op, op.getPartitionId(), op.getReplicaIndex(),
-                tryCount, tryPauseMillis, callTimeout);
+                tryCount, tryPauseMillis, callTimeout, async, callback);
         this.target = target;
     }
 
-    @Override
     public Address getTarget() {
         return target;
     }

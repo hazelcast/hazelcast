@@ -32,41 +32,35 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.executor.ScheduledTaskRunner;
 
 import java.io.IOException;
 import java.util.concurrent.*;
 import java.util.logging.Level;
 
-abstract class InvocationImpl implements Future, Invocation, Callback<Object> {
-    static final Object NULL_RESPONSE = new Object() {
-        public String toString() {
-            return "Invocation::NULL_RESPONSE";
-        }
-    };
-    static final Object TIMEOUT_RESPONSE = new Object() {
-        public String toString() {
-            return "Invocation::TIMEOUT_RESPONSE";
-        }
-    };
+abstract class InvocationImpl implements Invocation, Callback<Object> {
 
     private final BlockingQueue<Object> responseQ = new LinkedBlockingQueue<Object>();
     private final long callTimeout;
-    protected final NodeEngineImpl nodeEngine;
-    protected final String serviceName;
-    protected final Operation op;
-    protected final int partitionId;
-    protected final int replicaIndex;
-    protected final int tryCount;
-    protected final long tryPauseMillis;
-    protected final ILogger logger;
-    private volatile int invokeCount = 0;
-    private volatile boolean done = false;
+    private final NodeEngineImpl nodeEngine;
+    private final String serviceName;
+    private final Operation op;
+    private final int partitionId;
+    private final int replicaIndex;
+    private final int tryCount;
+    private final long tryPauseMillis;
+    private final Callback<Object> callback;
+    private final ResponseProcessor responseProcessor;
+    private final ILogger logger;
+    private final boolean async;
 
+    private volatile int invokeCount = 0;
+    private Address target; // set before invokeCount increment.
     private boolean remote = false;
-    private Callback<InvocationImpl> callback;
 
     InvocationImpl(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
-                   int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout) {
+                   int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout,
+                   boolean async, Callback<Object> callback) {
         this.nodeEngine = nodeEngine;
         this.serviceName = serviceName;
         this.op = op;
@@ -75,6 +69,9 @@ abstract class InvocationImpl implements Future, Invocation, Callback<Object> {
         this.tryCount = tryCount;
         this.tryPauseMillis = tryPauseMillis;
         this.callTimeout = getCallTimeout(callTimeout);
+        this.callback = callback;
+        this.async = async;
+        this.responseProcessor = callback == null ? new DefaultResponseProcessor() : new CallbackResponseProcessor();
         this.logger = nodeEngine.getLogger(Invocation.class.getName());
     }
 
@@ -85,22 +82,12 @@ abstract class InvocationImpl implements Future, Invocation, Callback<Object> {
         final long defaultCallTimeout = nodeEngine.operationService.getDefaultCallTimeout();
         if (op instanceof WaitSupport) {
             final long waitTimeoutMillis = ((WaitSupport) op).getWaitTimeoutMillis();
-            if (waitTimeoutMillis > 0 && waitTimeoutMillis < Long.MAX_VALUE && defaultCallTimeout > 5000) {
-                return waitTimeoutMillis + 5000;
+            if (waitTimeoutMillis > 0 && waitTimeoutMillis < Long.MAX_VALUE && defaultCallTimeout > 10000) {
+                return waitTimeoutMillis + 10000;
             }
         }
         return defaultCallTimeout;
     }
-
-    public void notify(Object result) {
-        setResult(result);
-        final Callback<InvocationImpl> callbackLocal = callback;
-        if (callbackLocal != null) {
-            callbackLocal.notify(this);
-        }
-    }
-
-    public abstract Address getTarget();
 
     public final Future invoke() {
         if (invokeCount > 0) {   // no need to be pessimistic.
@@ -122,39 +109,39 @@ abstract class InvocationImpl implements Future, Invocation, Callback<Object> {
             doInvoke();
         } catch (Exception e) {
             if (e instanceof RetryableException) {
-                setResult(e);
+                notify(e);
             } else {
                 throw ExceptionUtil.rethrow(e);
             }
         }
-        return this;
+        return new InvocationFuture();
     }
 
     private void doInvoke() {
-        if (!isActive()) {
+        if (!nodeEngine.isActive()) {
             remote = false;
             throw new HazelcastInstanceNotActiveException();
         }
+        target = getTarget();
         invokeCount++;
-        final Address target = getTarget();
         final Address thisAddress = nodeEngine.getThisAddress();
         if (target == null) {
             remote = false;
-            if (isActive()) {
-                setResult(new WrongTargetException(thisAddress, target, partitionId, replicaIndex, op.getClass().getName(), serviceName));
+            if (nodeEngine.isActive()) {
+                notify(new WrongTargetException(thisAddress, target, partitionId, replicaIndex, op.getClass().getName(), serviceName));
             } else {
-                setResult(new HazelcastInstanceNotActiveException());
+                notify(new HazelcastInstanceNotActiveException());
             }
         } else if (!OperationAccessor.isJoinOperation(op) && nodeEngine.getClusterService().getMember(target) == null) {
-            setResult(new TargetNotMemberException(target, partitionId, op.getClass().getName(), serviceName));
+            notify(new TargetNotMemberException(target, partitionId, op.getClass().getName(), serviceName));
         } else {
             if (op.getPartitionId() != partitionId) {
-                setResult(new IllegalStateException("Partition id of operation: " + op.getPartitionId() +
+                notify(new IllegalStateException("Partition id of operation: " + op.getPartitionId() +
                         " is not equal to the partition id of invocation: " + partitionId));
                 return;
             }
             if (op.getReplicaIndex() != replicaIndex) {
-                setResult(new IllegalStateException("Replica index of operation: " + op.getReplicaIndex() +
+                notify(new IllegalStateException("Replica index of operation: " + op.getReplicaIndex() +
                         " is not equal to the replica index of invocation: " + replicaIndex));
                 return;
             }
@@ -162,181 +149,304 @@ abstract class InvocationImpl implements Future, Invocation, Callback<Object> {
             final OperationServiceImpl operationService = nodeEngine.operationService;
             if (thisAddress.equals(target)) {
                 remote = false;
-                ResponseHandlerFactory.setLocalResponseHandler(this);
-                operationService.runOperation(op);
+                if (op instanceof BackupAwareOperation) {
+                    final long callId = operationService.newRemoteCallId();
+                    registerBackups((BackupAwareOperation) op, callId);
+                    OperationAccessor.setCallId(op, callId);
+                }
+                ResponseHandlerFactory.setLocalResponseHandler(op, this);
+                if (!async || invokeCount > 1 ) {
+                    operationService.runOperation(op);
+                } else {
+                    operationService.executeOperation(op);
+                }
             } else {
                 remote = true;
                 RemoteCall call = new RemoteCall(target, this);
                 final long callId = operationService.registerRemoteCall(call);
+                if (op instanceof BackupAwareOperation) {
+                    registerBackups((BackupAwareOperation) op, callId);
+                }
                 OperationAccessor.setCallId(op, callId);
                 boolean sent = operationService.send(op, target);
                 if (!sent) {
-                    setResult(new RetryableIOException("Packet not sent to -> " + target));
+                    notify(new RetryableIOException("Packet not sent to -> " + target));
                 }
             }
         }
     }
 
-    private boolean isActive() {
-        return nodeEngine.getNode().isActive();
-    }
-
-    private void setResult(Object result) {
-        if (result == null) {
-            result = NULL_RESPONSE;
+    private void registerBackups(BackupAwareOperation op, long callId) {
+        final long oldCallId = ((Operation) op).getCallId();
+        final OperationServiceImpl operationService = nodeEngine.operationService;
+        if (oldCallId != 0) {
+            operationService.deregisterBackupCall(oldCallId);
         }
-        responseQ.offer(result);
+        operationService.registerBackupCall(callId);
     }
 
-    public Object get() throws InterruptedException, ExecutionException {
-        try {
-            final Object response = doGet(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
-            return resolveResponse(response);
-        } catch (TimeoutException e) {
-            nodeEngine.getLogger(getClass().getName()).log(Level.FINEST, e.getMessage(), e);
-            return null;
-        } finally {
-            done = true;
-        }
-    }
-
-    public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        try {
-            final Object response = doGet(timeout, unit);
-            return resolveResponse(response);
-        } finally {
-            done = true;
-        }
-    }
-
-    final Object doGet(long time, TimeUnit unit) {
-        long timeout = unit.toMillis(time);
-        if (timeout < 0) timeout = 0;
-
-        final long maxCallTimeout = callTimeout * 2 > 0 ? callTimeout * 2 : Long.MAX_VALUE;
-        final boolean longPolling = timeout > maxCallTimeout;
-        int pollCount = 0;
-        InterruptedException interrupted = null;
-
-        while (timeout >= 0) {
-            final long pollTimeout = Math.min(maxCallTimeout, timeout);
-            final long start = Clock.currentTimeMillis();
-            final Object response;
-            final long lastPollTime;
-            try {
-                response = responseQ.poll(pollTimeout, TimeUnit.MILLISECONDS);
-                lastPollTime = Clock.currentTimeMillis() - start;
-                timeout = decrementTimeout(timeout, lastPollTime);
-            } catch (InterruptedException e) {
-                // do not allow interruption while waiting for a response!
-                logger.log(Level.FINEST, Thread.currentThread().getName() + " is interrupted while waiting " +
-                        "response for operation " + op);
-                interrupted = e;
-                if (!isActive()) {
-                    return e;
+    public void notify(Object obj) {
+        final Object response;
+        if (obj == null) {
+            response = NULL_RESPONSE;
+        } else if (obj instanceof Throwable) {
+            final Throwable error = (Throwable) obj;
+            final ExceptionAction action = op.onException(error);
+            final int localInvokeCount = invokeCount;
+            if (action == ExceptionAction.RETRY_INVOCATION && localInvokeCount < tryCount) {
+                response = RETRY_RESPONSE;
+                if (localInvokeCount > 99 && localInvokeCount % 10 == 0) {
+                    logger.log(Level.WARNING, "Retrying invocation: " + toString() + ", Reason: " + error);
                 }
-                continue;
+            } else if (action == ExceptionAction.CONTINUE_WAIT) {
+                response = WAIT_RESPONSE;
+            } else {
+                response = obj;
             }
-            pollCount++;
+        } else {
+            response = obj;
+        }
+        responseProcessor.process(response);
+    }
 
-            if (response instanceof Throwable) {
-                if (interrupted != null) {
-                    return interrupted;
-                }
-                final Throwable error = (Throwable) response;
-                final InvocationAction action = op.onException(error);
-                final int localInvokeCount = invokeCount;
-                if (action == InvocationAction.RETRY_INVOCATION && localInvokeCount < tryCount && timeout > 0) {
-                    if (localInvokeCount > 5) {
-                        final long sleepTime = tryPauseMillis;
-                        try {
-                            Thread.sleep(sleepTime);
-                            timeout = decrementTimeout(timeout, sleepTime);
-                        } catch (InterruptedException e) {
-                            return e;
+    private interface ResponseProcessor {
+        void process(final Object response);
+    }
+
+    private class DefaultResponseProcessor implements ResponseProcessor {
+        public void process(final Object response) {
+            responseQ.offer(response);
+        }
+    }
+
+    private class CallbackResponseProcessor implements ResponseProcessor {
+        public void process(final Object response) {
+            if (response == RETRY_RESPONSE) {
+                responseQ.offer(WAIT_RESPONSE); // wait on poll while retrying invocation!
+                final ExecutionService ex = nodeEngine.getExecutionService();
+                ex.schedule(new ScheduledTaskRunner(ex.getExecutor(ExecutionService.ASYNC_EXECUTOR),
+                        new ScheduledInv()), tryPauseMillis, TimeUnit.MILLISECONDS);
+            } else if (response == WAIT_RESPONSE) {
+                responseQ.offer(WAIT_RESPONSE);
+            } else {
+                responseQ.offer(response);
+                final Callback<Object> callbackLocal = callback;
+                if (callbackLocal != null) {
+                    try {
+                        final Object realResponse;
+                        if (response instanceof ResponseObj) {
+                            final ResponseObj responseObj = (ResponseObj) response;
+                            realResponse = responseObj.response;
+                        } else if (response == NULL_RESPONSE) {
+                            realResponse = null;
+                        } else {
+                            realResponse = response;
                         }
+                        callbackLocal.notify(realResponse);
+                    } catch (Throwable e) {
+                        logger.log(Level.SEVERE, e.getMessage(), e);
                     }
-                    // TODO: @mm - improve logging (see SystemLogService)
-                    if (localInvokeCount > 99 && localInvokeCount % 10 == 0) {
-                        logger.log(Level.WARNING, "Retrying invocation: " + toString() + ", Reason: " + error);
-                    }
-                    doInvoke();
-                } else if (action == InvocationAction.CONTINUE_WAIT) {
-                    // continue;
-                } else {
-                    if (remote) {
-                        ExceptionUtil.fixRemoteStackTrace(error, Thread.currentThread().getStackTrace());
-                    }
-                    return response;
                 }
-            } else if (response != null) {
-                return response;
-            } else if (/* response == null && */ longPolling) {
-                // no response!
-                final Address target = getTarget();
-                if (nodeEngine.getThisAddress().equals(target)) {
-                    // target may change during invocation because of migration!
+            }
+        }
+
+        class ScheduledInv implements Runnable {
+            public void run() {
+                doInvoke();
+            }
+        }
+    }
+
+    private class InvocationFuture implements Future {
+
+        volatile boolean done = false;
+
+        public Object get() throws InterruptedException, ExecutionException {
+            try {
+                return get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
+            } catch (TimeoutException e) {
+                logger.log(Level.FINEST, e.getMessage(), e);
+                return null;
+            }
+        }
+
+        public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+            final Object response = resolveResponse(waitForResponse(timeout, unit));
+            done = true;
+            if (response instanceof ResponseObj) {
+                if (op instanceof BackupAwareOperation) {
+                    final Object obj = waitForBackupsAndGetResponse((ResponseObj) response);
+                    if (obj == RETRY_RESPONSE) {
+                        final Future f = resetAndReInvoke();
+                        return f.get(timeout, unit);
+                    }
+                    return obj;
+                } else {
+                    return ((ResponseObj) response).response;
+                }
+            }
+            return response;
+        }
+
+        private Object waitForResponse(long time, TimeUnit unit) {
+            long timeout = unit.toMillis(time);
+            if (timeout < 0) timeout = 0;
+
+            final long maxCallTimeout = callTimeout * 2 > 0 ? callTimeout * 2 : Long.MAX_VALUE;
+            final boolean longPolling = timeout > maxCallTimeout;
+            int pollCount = 0;
+            InterruptedException interrupted = null;
+
+            while (timeout >= 0) {
+                final long pollTimeout = Math.min(maxCallTimeout, timeout);
+                final long start = Clock.currentTimeMillis();
+                final Object response;
+                final long lastPollTime;
+                try {
+                    response = responseQ.poll(pollTimeout, TimeUnit.MILLISECONDS);
+                    lastPollTime = Clock.currentTimeMillis() - start;
+                    timeout = decrementTimeout(timeout, lastPollTime);
+                } catch (InterruptedException e) {
+                    // do not allow interruption while waiting for a response!
+                    logger.log(Level.FINEST, Thread.currentThread().getName() + " is interrupted while waiting " +
+                            "response for operation " + op);
+                    interrupted = e;
+                    if (!nodeEngine.isActive()) {
+                        return e;
+                    }
                     continue;
                 }
-                // TODO: @mm - improve logging (see SystemLogService)
-                logger.log(Level.WARNING, "No response for " + lastPollTime + " ms. " + toString());
+                pollCount++;
 
-                boolean executing = isOperationExecuting(target);
-                if (!executing) {
-                    Object obj = responseQ.poll(); // real response might arrive before "is-executing" response.
-                    if (obj != null) {
-                        return obj;
+                if (response == RETRY_RESPONSE) {
+                    if (interrupted != null) {
+                        return interrupted;
                     }
-                    return new OperationTimeoutException("No response for " + (pollTimeout * pollCount)
-                            + " ms. Aborting invocation! " + toString());
+                    if (timeout > 0) {
+                        if (invokeCount > 5) {
+                            final long sleepTime = tryPauseMillis;
+                            try {
+                                Thread.sleep(sleepTime);
+                                timeout = decrementTimeout(timeout, sleepTime);
+                            } catch (InterruptedException e) {
+                                return e;
+                            }
+                        }
+                        doInvoke();
+                    } else {
+                        return TIMEOUT_RESPONSE;
+                    }
+                } else if (response == WAIT_RESPONSE) {
+                    continue;
+                } else if (response != null) {
+                    return response;
+                } else if (/* response == null && */ longPolling) {
+                    // no response!
+                    final Address target = getTarget();
+                    if (nodeEngine.getThisAddress().equals(target)) {
+                        // target may change during invocation because of migration!
+                        continue;
+                    }
+                    // TODO: @mm - improve logging (see SystemLogService)
+                    logger.log(Level.WARNING, "No response for " + lastPollTime + " ms. " + toString());
+
+                    boolean executing = isOperationExecuting(target);
+                    if (!executing) {
+                        Object obj = responseQ.peek(); // real response might arrive before "is-executing" response.
+                        if (obj != null) {
+                            continue;
+                        }
+                        return new OperationTimeoutException("No response for " + (pollTimeout * pollCount)
+                                + " ms. Aborting invocation! " + toString());
+                    }
                 }
             }
+            return TIMEOUT_RESPONSE;
         }
-        return TIMEOUT_RESPONSE;
+
+        private Object waitForBackupsAndGetResponse(ResponseObj response) {
+            if (op instanceof BackupAwareOperation) {
+                try {
+                    final boolean ok = nodeEngine.operationService.waitForBackups(response.callId, response.backupCount, 5, TimeUnit.SECONDS);
+                    if (!ok) {
+                        if (logger.isLoggable(Level.FINEST)) {
+                            logger.log(Level.FINEST, "Backup response cannot be received -> " + toString());
+                        }
+                        if (nodeEngine.getClusterService().getMember(target) == null) {
+                            return RETRY_RESPONSE;
+                        }
+                    }
+                } catch (InterruptedException ignored) {
+                }
+            }
+            return response.response;
+        }
+
+        private Object resolveResponse(Object response) throws ExecutionException, InterruptedException, TimeoutException {
+            if (response instanceof Throwable) {
+                if (remote) {
+                    ExceptionUtil.fixRemoteStackTrace((Throwable) response, Thread.currentThread().getStackTrace());
+                }
+                // To obey Future contract, we should wrap unchecked exceptions with ExecutionExceptions.
+                if (response instanceof ExecutionException) {
+                    throw (ExecutionException) response;
+                }
+                if (response instanceof TimeoutException) {
+                    throw (TimeoutException) response;
+                }
+                if (response instanceof Error) {
+                    throw (Error) response;
+                }
+                if (response instanceof InterruptedException) {
+                    throw (InterruptedException) response;
+                }
+                throw new ExecutionException((Throwable) response);
+            }
+            if (response == NULL_RESPONSE) {
+                return null;
+            }
+            if (response == TIMEOUT_RESPONSE) {
+                throw new TimeoutException();
+            }
+            return response;
+        }
+
+        public boolean cancel(boolean mayInterruptIfRunning) {
+            done = true;
+            return false;
+        }
+
+        public boolean isCancelled() {
+            return false;
+        }
+
+        public boolean isDone() {
+            return done;
+        }
+    }
+
+    private Future resetAndReInvoke() {
+        responseQ.clear();
+        invokeCount = 0;
+        return invoke();
     }
 
     private boolean isOperationExecuting(Address target) {
         // ask if op is still being executed?
         Boolean executing = Boolean.FALSE;
         try {
-            final InvocationImpl inv = new TargetInvocationImpl(nodeEngine, serviceName,
-                    new IsStillExecuting(op.getCallId()), target, 0, 0, 5000);
-            inv.invoke();
+            final Invocation inv = new TargetInvocationImpl(nodeEngine, serviceName,
+                    new IsStillExecuting(op.getCallId()), target, 0, 0, 5000, false, null);
+            Future f = inv.invoke();
             // TODO: @mm - improve logging (see SystemLogService)
             logger.log(Level.WARNING, "Asking if operation execution has been started: " + toString());
-            executing = (Boolean) nodeEngine.toObject(inv.get(5000, TimeUnit.MILLISECONDS));
+            executing = (Boolean) nodeEngine.toObject(f.get(5000, TimeUnit.MILLISECONDS));
         } catch (Exception e) {
             logger.log(Level.WARNING, "While asking 'is-executing': " + toString(), e);
         }
         // TODO: @mm - improve logging (see SystemLogService)
         logger.log(Level.WARNING, "'is-executing': " + executing + " -> " + toString());
         return executing;
-    }
-
-    static Object resolveResponse(Object response) throws ExecutionException, InterruptedException, TimeoutException {
-        if (response instanceof Throwable) {
-            // To obey Future contract, we should wrap unchecked exceptions with ExecutionExceptions.
-            if (response instanceof ExecutionException) {
-                throw (ExecutionException) response;
-            }
-            if (response instanceof TimeoutException) {
-                throw (TimeoutException) response;
-            }
-            if (response instanceof Error) {
-                throw (Error) response;
-            }
-            if (response instanceof InterruptedException) {
-                throw (InterruptedException) response;
-            }
-            throw new ExecutionException((Throwable) response);
-        }
-        if (response == NULL_RESPONSE) {
-            return null;
-        }
-        if (response == TIMEOUT_RESPONSE) {
-            throw new TimeoutException();
-        }
-        return response;
     }
 
     private static long decrementTimeout(long timeout, long diff) {
@@ -400,11 +510,11 @@ abstract class InvocationImpl implements Future, Invocation, Callback<Object> {
         return serviceName;
     }
 
-    public Operation getOperation() {
+    Operation getOperation() {
         return op;
     }
 
-    public PartitionInfo getPartitionInfo() {
+    PartitionInfo getPartitionInfo() {
         return nodeEngine.getPartitionService().getPartitionInfo(partitionId);
     }
 
@@ -412,32 +522,8 @@ abstract class InvocationImpl implements Future, Invocation, Callback<Object> {
         return replicaIndex;
     }
 
-    public boolean cancel(boolean mayInterruptIfRunning) {
-        throw new UnsupportedOperationException();
-    }
-
-    public boolean isCancelled() {
-        return false;
-    }
-
     public int getPartitionId() {
         return partitionId;
-    }
-
-    public int getInvokeCount() {
-        return invokeCount;
-    }
-
-    public int getTryCount() {
-        return tryCount;
-    }
-
-    public boolean isDone() {
-        return done;
-    }
-
-    void setCallback(Callback<InvocationImpl> callback) {
-        this.callback = callback;
     }
 
     public static class IsStillExecuting extends AbstractOperation {
@@ -476,7 +562,6 @@ abstract class InvocationImpl implements Future, Invocation, Callback<Object> {
         }
     }
 
-
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
@@ -493,4 +578,25 @@ abstract class InvocationImpl implements Future, Invocation, Callback<Object> {
         sb.append('}');
         return sb.toString();
     }
+
+    static final Object NULL_RESPONSE = new Object() {
+        public String toString() {
+            return "Invocation::NULL_RESPONSE";
+        }
+    };
+    static final Object RETRY_RESPONSE = new Object() {
+        public String toString() {
+            return "Invocation::RETRY_RESPONSE";
+        }
+    };
+    static final Object WAIT_RESPONSE = new Object() {
+        public String toString() {
+            return "Invocation::WAIT_RESPONSE";
+        }
+    };
+    static final Object TIMEOUT_RESPONSE = new Object() {
+        public String toString() {
+            return "Invocation::TIMEOUT_RESPONSE";
+        }
+    };
 }

@@ -59,13 +59,13 @@ public abstract class TxnMapProxySupport extends AbstractDistributedObject<MapSe
         }
     }
 
-    public Data getInternal(Data key) {
+    public Object getInternal(Data key) {
         final MapService mapService = getService();
         final boolean nearCacheEnabled = mapService.getMapContainer(name).isNearCacheEnabled();
         if (nearCacheEnabled) {
-            Data cachedData = mapService.getFromNearCache(name, key);
-            if (cachedData != null)
-                return cachedData;
+            Object cached = mapService.getFromNearCache(name, key);
+            if (cached != null)
+                return cached;
         }
         GetOperation operation = new GetOperation(name, key);
         final NodeEngine nodeEngine = getNodeEngine();

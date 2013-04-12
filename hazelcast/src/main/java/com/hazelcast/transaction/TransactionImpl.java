@@ -39,6 +39,7 @@ final class TransactionImpl implements Transaction {
     private final TransactionManagerServiceImpl transactionManagerService;
     private final NodeEngine nodeEngine;
     private final List<TransactionLog> txLogs = new LinkedList<TransactionLog>();
+    private final Map<Object, TransactionLog> txLogMap = new HashMap<Object, TransactionLog>();
     private final String txnId;
     private final long threadId = Thread.currentThread().getId();
     private final long timeoutMillis;
@@ -85,6 +86,14 @@ final class TransactionImpl implements Transaction {
         }
         checkThread();
         txLogs.add(transactionLog);
+        if (transactionLog instanceof KeyAwareTransactionLog){
+            KeyAwareTransactionLog keyAwareTransactionLog = (KeyAwareTransactionLog)transactionLog;
+            txLogMap.put(keyAwareTransactionLog.getKey(), keyAwareTransactionLog);
+        }
+    }
+
+    public TransactionLog getTransactionLog(Object key){
+        return txLogMap.get(key);
     }
 
     private void checkThread() {

@@ -17,6 +17,7 @@
 package com.hazelcast.concurrent.lock;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.WaitNotifyKey;
 
 /**
@@ -24,10 +25,10 @@ import com.hazelcast.spi.WaitNotifyKey;
  */
 public final class LockWaitNotifyKey implements WaitNotifyKey {
 
-    private final ILockNamespace namespace;
+    private final ObjectNamespace namespace;
     private final Data key;
 
-    public LockWaitNotifyKey(ILockNamespace namespace, Data key) {
+    public LockWaitNotifyKey(ObjectNamespace namespace, Data key) {
         this.namespace = namespace;
         this.key = key;
     }

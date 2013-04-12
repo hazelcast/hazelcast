@@ -19,6 +19,7 @@ package com.hazelcast.collection.operations;
 import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
+import com.hazelcast.collection.CollectionService;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -56,7 +57,7 @@ public class PutOperation extends CollectionBackupAwareOperation {
         begin = Clock.currentTimeMillis();
         CollectionContainer container = getOrCreateContainer();
         recordId = container.nextId();
-        CollectionRecord record = new CollectionRecord(isBinary() ? value : toObject(value));
+        CollectionRecord record = new CollectionRecord(recordId, isBinary() ? value : toObject(value));
         Collection<CollectionRecord> coll = container.getOrCreateCollectionWrapper(dataKey).getCollection();
         if (index == -1) {
             response = coll.add(record);
@@ -68,12 +69,11 @@ public class PutOperation extends CollectionBackupAwareOperation {
                 response = e;
             }
         }
-        record.setRecordId(recordId);
     }
 
     public void afterRun() throws Exception {
-        long elapsed = Math.max(0, Clock.currentTimeMillis()-begin);
-        getOrCreateContainer().getOperationsCounter().incrementPuts(elapsed);
+        long elapsed = Math.max(0, Clock.currentTimeMillis() - begin);
+        ((CollectionService) getService()).getLocalMultiMapStatsImpl(proxyId).incrementPuts(elapsed);
         if (Boolean.TRUE.equals(response)) {
             publishEvent(EntryEventType.ADDED, dataKey, value);
         }

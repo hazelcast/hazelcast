@@ -17,10 +17,8 @@
 package com.hazelcast.wan;
 
 import com.hazelcast.cluster.AuthorizationOperation;
-import com.hazelcast.core.EntryView;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.Record;
 import com.hazelcast.nio.*;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
@@ -42,8 +40,8 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
     private String groupName;
     private String password;
     private final LinkedBlockingQueue<String> addressQueue = new LinkedBlockingQueue<String>();
-    private final LinkedList<RecordUpdate> failureQ = new LinkedList<RecordUpdate>();
-    private final BlockingQueue<RecordUpdate> q = new ArrayBlockingQueue<RecordUpdate>(100000);
+    private final LinkedList<WanReplicationEvent> failureQ = new LinkedList<WanReplicationEvent>();
+    private final BlockingQueue<WanReplicationEvent> q = new ArrayBlockingQueue<WanReplicationEvent>(100000);
     private volatile boolean running = true;
 
     public void init(Node node, String groupName, String password, String... targets) {
@@ -55,13 +53,15 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
         node.nodeEngine.getExecutionService().execute("hz:wan", this);
     }
 
-    public void recordUpdated(Record entry) {
-//        System.out.println("record updated:"+node.nodeEngine.toObject(record.getKey()));
-//        if (!q.offer(ru)) {
-//            q.poll();
-//            q.offer(ru);
-//        }
+    @Override
+    public void publishReplicationEvent(String serviceName, ReplicationEventObject eventObject) {
+        WanReplicationEvent replicationEvent = new WanReplicationEvent(serviceName, eventObject);
+        if (!q.offer(replicationEvent)) {
+            q.poll();
+            q.offer(replicationEvent);
+        }
     }
+
 
     public void shutdown() {
         running = false;
@@ -71,7 +71,7 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
         Connection conn = null;
         while (running) {
             try {
-                RecordUpdate ru = (failureQ.size() > 0) ? failureQ.removeFirst() : q.take();
+                WanReplicationEvent operation = (failureQ.size() > 0) ? failureQ.removeFirst() : q.take();
                 if (conn == null) {
                     conn = getConnection();
                     if (conn != null) {
@@ -86,9 +86,12 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
                     }
                 }
                 if (conn != null && conn.live()) {
-                    ((TcpIpConnection) conn).getWriteHandler().enqueueSocketWritable(ru.toNewPacket());
+                    Data data = node.nodeEngine.getSerializationService().toData(operation);
+                    Packet operationPacket = new Packet(data, node.nodeEngine.getSerializationContext());
+                    operationPacket.setHeader(Packet.HEADER_WAN_REPLICATION);
+                    node.nodeEngine.send(operationPacket, conn);
                 } else {
-                    failureQ.addFirst(ru);
+                    failureQ.addFirst(operation);
                     conn = null;
                 }
             } catch (InterruptedException e) {
@@ -140,22 +143,4 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
         return false;
     }
 
-    class RecordUpdate {
-        final EntryView<Data,Data> entry;
-        final String name;
-
-        RecordUpdate(EntryView entry, String name) {
-            this.entry = entry;
-            this.name = name;
-        }
-
-        public Packet toNewPacket() {
-            Packet packet = new Packet(null);
-//            packet.name = name;
-//            packet.operation = ClusterOperation.CONCURRENT_MAP_ASYNC_MERGE;
-//            packet.setKey(dataRecordEntry.getKeyData());
-//            packet.setValue(toData(dataRecordEntry));
-            return packet;
-        }
-    }
 }

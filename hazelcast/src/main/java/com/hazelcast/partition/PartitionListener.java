@@ -16,6 +16,6 @@
 
 package com.hazelcast.partition;
 
-public interface PartitionListener {
+interface PartitionListener {
     void replicaChanged(PartitionReplicaChangeEvent event);
 }

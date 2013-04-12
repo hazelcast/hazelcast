@@ -16,11 +16,10 @@
 
 package com.hazelcast.collection;
 
-import com.hazelcast.concurrent.lock.LockNamespace;
+import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.concurrent.lock.SharedLockService;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.monitor.impl.MapOperationsCounter;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.Clock;
@@ -45,7 +44,7 @@ public class CollectionContainer {
 
     final ConcurrentMap<Data, CollectionWrapper> collections = new ConcurrentHashMap<Data, CollectionWrapper>(1000);
 
-    final LockNamespace lockNamespace;
+    final DefaultObjectNamespace lockNamespace;
 
     final LockStore lockStore;
 
@@ -63,7 +62,7 @@ public class CollectionContainer {
         this.partitionId = partitionId;
         this.config = new MultiMapConfig(nodeEngine.getConfig().getMultiMapConfig(proxyId.name));
 
-        this.lockNamespace = new LockNamespace(CollectionService.SERVICE_NAME, proxyId);
+        this.lockNamespace = new DefaultObjectNamespace(CollectionService.SERVICE_NAME, proxyId);
         final SharedLockService lockService = nodeEngine.getSharedService(SharedLockService.SERVICE_NAME);
         this.lockStore = lockService == null ? null :
                 lockService.createLockStore(partitionId, lockNamespace, config.getSyncBackupCount(), config.getAsyncBackupCount());
@@ -74,8 +73,24 @@ public class CollectionContainer {
         return lockStore != null && lockStore.canAcquireLock(dataKey, caller, threadId);
     }
 
-    public boolean isLocked(Data dataKey){
+    public boolean isLocked(Data dataKey) {
         return lockStore != null && lockStore.isLocked(dataKey);
+    }
+
+    public boolean txnLock(Data key, String caller, int threadId, long ttl){
+        return lockStore != null && lockStore.txnLock(key, caller, threadId, ttl);
+    }
+
+    public boolean unlock(Data key, String caller, int threadId){
+        return lockStore != null && lockStore.unlock(key, caller, threadId);
+    }
+
+    public boolean forceUnlock(Data key){
+        return lockStore != null && lockStore.forceUnlock(key);
+    }
+
+    public boolean extendLock(Data key, String caller, int threadId, long ttl) {
+        return lockStore != null && lockStore.extendTTL(key, caller, threadId, ttl);
     }
 
     public long nextId() {
@@ -188,19 +203,19 @@ public class CollectionContainer {
         collections.clear();
     }
 
-    public void access(){
+    public void access() {
         lastAccessTime.set(Clock.currentTimeMillis());
     }
 
-    public void update(){
+    public void update() {
         lastUpdateTime.set(Clock.currentTimeMillis());
     }
 
-    public long getLastAccessTime(){
+    public long getLastAccessTime() {
         return lastAccessTime.get();
     }
 
-    public long getLastUpdateTime(){
+    public long getLastUpdateTime() {
         return lastUpdateTime.get();
     }
 
@@ -208,11 +223,9 @@ public class CollectionContainer {
         return creationTime;
     }
 
-    public long getLockedCount(){
+    public long getLockedCount() {
         return lockStore.getLockedKeys().size();
     }
 
-    public MapOperationsCounter getOperationsCounter() {
-        return service.getOrCreateOperationsCounter(proxyId);
-    }
+
 }

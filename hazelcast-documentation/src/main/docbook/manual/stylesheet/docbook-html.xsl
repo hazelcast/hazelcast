@@ -34,6 +34,10 @@
 
     <!-- some customization -->
 
+    <xsl:template name="user.header.content">
+        <xsl:copy-of select="document('./../../../src/main/docbook/manual/stylesheet/tracker.js',/)"/>
+    </xsl:template>
+
     <xsl:template match='xslthl:string' mode="xslthl">
         <font font-style="normal" color="#008000">
             <xsl:apply-templates mode="xslthl"/>

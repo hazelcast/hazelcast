@@ -16,6 +16,71 @@
 
 package com.hazelcast.monitor;
 
-public interface LocalCountDownLatchStats extends LocalInstanceStats<LocalCountDownLatchOperationStats> {
+public interface LocalCountDownLatchStats extends LocalInstanceStats {
 
+    /**
+     //     * Returns the number of countDown operations in this period.
+     //     *
+     //     * @return number of acquire operations
+     //     */
+//    public long getNumberOfCountDowns();
+//
+//    /**
+//     * Returns the number of await operations in this period.
+//     *
+//     * @return number of await operations
+//     */
+//    public long getNumberOfAwaits();
+//
+//    /**
+//     * Returns the number of operations other than await or countDown
+//     * in this period.
+//     *
+//     * @return number of await operations
+//     */
+//    public long getNumberOfOthers();
+//
+//    /**
+//     * Returns the total latency of await operations in this period.
+//     * <p>To get the average latency, divide by the number of awaits.
+//     * </p>
+//     *
+//     * @return total latency of all await operations
+//     */
+//    public long getTotalAwaitLatency();
+//
+//    /**
+//     * Returns the total latency of countdown operations in this period.
+//     * <p>To get the average latency, divide by the number of countdowns.
+//     * </p>
+//     *
+//     * @return total latency of all countdown operations
+//     */
+//    public long getTotalCountDownLatency();
+//
+//    /**
+//     * Returns the total latency of operations other than await or
+//     * countdown in this period.
+//     * <p>To get the average latency, divide by the number of others.
+//     * </p>
+//     *
+//     * @return total latency of all await operations
+//     */
+//    public long getTotalOtherLatency();
+//
+//    /**
+//     * Returns the number of times the count reached zero from a countdown
+//     * operation in this period.
+//     *
+//     * @return number of attach operations
+//     */
+//    public long getNumberOfGatesOpened();
+//
+//    /**
+//     * Returns the number of awaits released in this period from gate
+//     * openings.
+//     *
+//     * @return number of awaits released
+//     */
+//    public long getNumberOfAwaitsReleased();
 }

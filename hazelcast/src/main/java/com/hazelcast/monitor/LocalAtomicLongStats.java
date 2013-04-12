@@ -16,7 +16,7 @@
 
 package com.hazelcast.monitor;
 
-public interface LocalAtomicLongStats extends LocalInstanceStats<LocalAtomicLongOperationStats> {
+public interface LocalAtomicLongStats extends LocalInstanceStats {
     /**
      * Returns the creation time of this atomic long on this member.
      *
@@ -37,4 +37,18 @@ public interface LocalAtomicLongStats extends LocalInstanceStats<LocalAtomicLong
      * @return last update time.
      */
     long getLastUpdateTime();
+
+    /**
+     //     * Returns the number of operations that modified the stored atomic value.
+     //     *
+     //     * @return number of modified operations
+     //     */
+//    public long getNumberOfModifyOps();
+//
+//    /**
+//     * Returns the number of operations that did not modify the stored atomic value.
+//     *
+//     * @return number of non-modified operations
+//     */
+//    public long getNumberOfNonModifyOps();
 }

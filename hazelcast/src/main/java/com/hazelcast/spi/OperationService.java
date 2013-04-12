@@ -70,5 +70,4 @@ public interface OperationService {
     boolean send(Operation op, Address target);
 
     boolean send(Operation op, Connection connection);
-
 }

@@ -18,12 +18,14 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.MapLoaderLifecycleSupport;
 import com.hazelcast.core.MapStore;
 import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.monitor.impl.MapOperationsCounter;
+import com.hazelcast.map.merge.MapMergePolicy;
+import com.hazelcast.map.merge.PassThroughMergePolicy;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.IndexService;
@@ -31,10 +33,10 @@ import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
-import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
+import com.hazelcast.wan.WanReplicationListener;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -57,15 +59,14 @@ public class MapContainer {
     private final Map<MapInterceptor, String> interceptorIdMap;
     private final IndexService indexService = new IndexService();
     private final boolean nearCacheEnabled;
-    private final MapOperationsCounter mapOperationCounter = new MapOperationsCounter();
-    private volatile boolean mapReady = false;
-    private final long creationTime;
     private final AtomicBoolean initialLoaded = new AtomicBoolean(false);
-
     private final EntryTaskScheduler idleEvictionScheduler;
     private final EntryTaskScheduler ttlEvictionScheduler;
     private final EntryTaskScheduler mapStoreWriteScheduler;
     private final EntryTaskScheduler mapStoreDeleteScheduler;
+    private final WanReplicationListener wanReplicationListener;
+    private final MapMergePolicy wanMergePolicy;
+    private volatile boolean mapReady = false;
 
     public MapContainer(String name, MapConfig mapConfig, MapService mapService) {
         MapStore storeTemp = null;
@@ -99,8 +100,8 @@ public class MapContainer {
         store = storeTemp;
 
         if (store != null) {
-            if(store instanceof MapLoaderLifecycleSupport) {
-                ((MapLoaderLifecycleSupport)store).init(nodeEngine.getHazelcastInstance(), mapConfig.getMapStoreConfig().getProperties(), name);
+            if (store instanceof MapLoaderLifecycleSupport) {
+                ((MapLoaderLifecycleSupport) store).init(nodeEngine.getHazelcastInstance(), mapConfig.getMapStoreConfig().getProperties(), name);
             }
             // only master can initiate the loadAll. master will send other members to loadAll.
             // the members join later will not load from mapstore.
@@ -123,11 +124,10 @@ public class MapContainer {
                 mapReady = true;
             }
 
-            if(mapStoreConfig.getWriteDelaySeconds() > 0) {
-                mapStoreWriteScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new MapStoreWriteProcessor(this, mapService) , false);
-                mapStoreDeleteScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new MapStoreDeleteProcessor(this, mapService) , false);
-            }
-            else {
+            if (mapStoreConfig.getWriteDelaySeconds() > 0) {
+                mapStoreWriteScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new MapStoreWriteProcessor(this, mapService), false);
+                mapStoreDeleteScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new MapStoreDeleteProcessor(this, mapService), false);
+            } else {
                 mapStoreDeleteScheduler = null;
                 mapStoreWriteScheduler = null;
             }
@@ -137,18 +137,41 @@ public class MapContainer {
             mapStoreWriteScheduler = null;
         }
         ttlEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new EvictionProcessor(nodeEngine, mapService, name), true);
-        if(mapConfig.getMaxIdleSeconds() > 0) {
+        if (mapConfig.getMaxIdleSeconds() > 0) {
             idleEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new EvictionProcessor(nodeEngine, mapService, name), true);
-        }
-        else {
+        } else {
             idleEvictionScheduler = null;
+        }
+
+        WanReplicationRef wanReplicationRef = mapConfig.getWanReplicationRef();
+        if (wanReplicationRef != null) {
+            this.wanReplicationListener = nodeEngine.getWanReplicationService().getWanReplication(wanReplicationRef.getName());
+            this.wanMergePolicy = getMergePolicy(wanReplicationRef.getMergePolicy());
+        } else {
+            wanMergePolicy = null;
+            wanReplicationListener = null;
         }
 
         interceptors = new CopyOnWriteArrayList<MapInterceptor>();
         interceptorMap = new ConcurrentHashMap<String, MapInterceptor>();
         interceptorIdMap = new ConcurrentHashMap<MapInterceptor, String>();
         nearCacheEnabled = mapConfig.getNearCacheConfig() != null;
-        creationTime = Clock.currentTimeMillis();
+    }
+
+    // todo cache policies in a map probably in mapservice
+    private MapMergePolicy getMergePolicy(String mergePolicyName) {
+        MapMergePolicy mergePolicyTemp = null;
+        if (mergePolicyName != null) {
+            try {
+                mergePolicyTemp = (MapMergePolicy) ClassLoaderUtil.newInstance(mergePolicyName);
+            } catch (Exception e) {
+                ExceptionUtil.rethrow(e);
+            }
+        }
+        if (mergePolicyTemp == null) {
+            mergePolicyTemp = new PassThroughMergePolicy();
+        }
+        return mergePolicyTemp;
     }
 
     public boolean isMapReady() {
@@ -188,42 +211,12 @@ public class MapContainer {
             AtomicInteger counter = new AtomicInteger(numberOfChunks);
             for (Map<Data, Object> currentChunk : chunkList) {
                 try {
-                    nodeEngine.getExecutionService().submit("hz:map-load-all", new MapLoadAllTask(currentChunk, counter));
+                    nodeEngine.getExecutionService().submit("hz:map-load", new MapLoadAllTask(currentChunk, counter));
                 } catch (Throwable t) {
                     ExceptionUtil.rethrow(t);
                 }
             }
 
-        }
-    }
-
-    private class MapLoadAllTask implements Runnable {
-        private Map<Data, Object> keys;
-        private AtomicInteger counter;
-
-        private MapLoadAllTask(Map<Data, Object> keys, AtomicInteger counter) {
-            this.keys = keys;
-            this.counter = counter;
-        }
-
-        public void run() {
-            NodeEngine nodeEngine = mapService.getNodeEngine();
-            Map values = store.loadAll(keys.values());
-            for (Data dataKey : keys.keySet()) {
-                Object key = keys.get(dataKey);
-                Data dataValue = mapService.toData(values.get(key));
-                int partitionId = nodeEngine.getPartitionService().getPartitionId(dataKey);
-                PutFromLoadOperation operation = new PutFromLoadOperation(name, dataKey, dataValue, -1);
-                operation.setNodeEngine(nodeEngine);
-                operation.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
-                operation.setPartitionId(partitionId);
-                operation.setServiceName(MapService.SERVICE_NAME);
-                nodeEngine.getOperationService().runOperation(operation);
-            }
-
-            if (counter.decrementAndGet() <= 0) {
-                mapReady = true;
-            }
         }
     }
 
@@ -247,8 +240,12 @@ public class MapContainer {
         return indexService;
     }
 
-    public MapOperationsCounter getMapOperationCounter() {
-        return mapOperationCounter;
+    public WanReplicationListener getWanReplicationListener() {
+        return wanReplicationListener;
+    }
+
+    public MapMergePolicy getWanMergePolicy() {
+        return wanMergePolicy;
     }
 
     public String addInterceptor(MapInterceptor interceptor) {
@@ -282,7 +279,6 @@ public class MapContainer {
         interceptors.remove(interceptor);
     }
 
-
     public String getName() {
         return name;
     }
@@ -315,7 +311,35 @@ public class MapContainer {
         return store;
     }
 
-    public long getCreationTime() {
-        return creationTime;
+    private class MapLoadAllTask implements Runnable {
+        private Map<Data, Object> keys;
+        private AtomicInteger counter;
+
+        private MapLoadAllTask(Map<Data, Object> keys, AtomicInteger counter) {
+            this.keys = keys;
+            this.counter = counter;
+        }
+
+        public void run() {
+            NodeEngine nodeEngine = mapService.getNodeEngine();
+            Map values = store.loadAll(keys.values());
+            for (Data dataKey : keys.keySet()) {
+                Object key = keys.get(dataKey);
+                Data dataValue = mapService.toData(values.get(key));
+                int partitionId = nodeEngine.getPartitionService().getPartitionId(dataKey);
+                PutFromLoadOperation operation = new PutFromLoadOperation(name, dataKey, dataValue, -1);
+                operation.setNodeEngine(nodeEngine);
+                operation.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
+                operation.setPartitionId(partitionId);
+                operation.setServiceName(MapService.SERVICE_NAME);
+                nodeEngine.getOperationService().runOperation(operation);
+            }
+
+            if (counter.decrementAndGet() <= 0) {
+                mapReady = true;
+            }
+        }
+
     }
+
 }

@@ -53,15 +53,12 @@ public class TopicEvent implements DataSerializable {
         out.writeUTF(name);
         out.writeLong(publishTime);
         out.writeObject(publishingMember);
-//        publishingMember.writeData(out);<
         IOUtil.writeNullableData(out, data);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         publishTime = in.readLong();
-//        publishingMember = new MemberImpl();
-//        publishingMember.readData(in);
         publishingMember = in.readObject();
         data = IOUtil.readNullableData(in);
     }

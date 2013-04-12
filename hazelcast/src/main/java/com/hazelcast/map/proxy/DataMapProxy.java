@@ -40,7 +40,7 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
 
     public Data get(Object k) {
         Data key = getService().toData(k);
-        return getInternal(key);
+        return getService().toData(getInternal(key));
     }
 
     public Future<Data> getAsync(final Data key) {

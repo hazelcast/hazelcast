@@ -16,7 +16,7 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.monitor.LocalMultiMapStats;
 
 import java.util.Collection;
 import java.util.Map;
@@ -409,6 +409,6 @@ public interface MultiMap<K, V> extends DistributedObject {
      *
      * @return this multimap's local statistics.
      */
-    LocalMapStats getLocalMultiMapStats();
+    LocalMultiMapStats getLocalMultiMapStats();
 
 }

@@ -27,62 +27,33 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class MigrationInfo implements DataSerializable {
 
     private int partitionId;
-    private Address from;
-    private Address to;
-    private int replicaIndex;
-    private MigrationType migrationType;
-    private int copyBackReplicaIndex = -1;
+    private Address source;
+    private Address destination;
     private Address master;
     private String masterUuid;
 
     private transient final AtomicBoolean processing = new AtomicBoolean(false);
+    private transient volatile boolean valid = true;
 
     public MigrationInfo() {
     }
 
-    public MigrationInfo(int partitionId, int replicaIndex, MigrationType migrationType,
-                         Address from, Address to) {
+    public MigrationInfo(int partitionId, Address source, Address destination) {
         this.partitionId = partitionId;
-        this.from = from;
-        this.to = to;
-        this.replicaIndex = replicaIndex;
-        this.migrationType = migrationType;
+        this.source = source;
+        this.destination = destination;
     }
 
-    public Address getFromAddress() {
-        return from;
+    public Address getSource() {
+        return source;
     }
 
-    void setFromAddress(Address fromAddress) {
-        this.from = fromAddress;
-    }
-
-    public Address getToAddress() {
-        return to;
-    }
-
-    public int getReplicaIndex() {
-        return replicaIndex;
+    public Address getDestination() {
+        return destination;
     }
 
     public int getPartitionId() {
         return partitionId;
-    }
-
-    public int getCopyBackReplicaIndex() {
-        return copyBackReplicaIndex;
-    }
-
-    void setCopyBackReplicaIndex(int copyBackReplicaIndex) {
-        this.copyBackReplicaIndex = copyBackReplicaIndex;
-    }
-
-    public MigrationType getMigrationType() {
-        return migrationType;
-    }
-
-    void setMigrationType(MigrationType migrationType) {
-        this.migrationType = migrationType;
     }
 
     void setMasterUuid(String uuid) {
@@ -113,49 +84,51 @@ public class MigrationInfo implements DataSerializable {
         processing.set(false);
     }
 
+    boolean isValid() {
+        return valid;
+    }
+
+    void invalidate() {
+        valid = false;
+    }
+
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(partitionId);
-        out.writeInt(replicaIndex);
-        out.writeInt(copyBackReplicaIndex);
-        MigrationType.writeTo(migrationType, out);
-        boolean hasFrom = from != null;
+        boolean hasFrom = source != null;
         out.writeBoolean(hasFrom);
         if (hasFrom) {
-            from.writeData(out);
+            source.writeData(out);
         }
-        to.writeData(out);
+        destination.writeData(out);
         master.writeData(out);
         out.writeUTF(masterUuid);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
         partitionId = in.readInt();
-        replicaIndex = in.readInt();
-        copyBackReplicaIndex = in.readInt();
-        migrationType = MigrationType.readFrom(in);
         boolean hasFrom = in.readBoolean();
         if (hasFrom) {
-            from = new Address();
-            from.readData(in);
+            source = new Address();
+            source.readData(in);
         }
-        to = new Address();
-        to.readData(in);
+        destination = new Address();
+        destination.readData(in);
         master = new Address();
         master.readData(in);
         masterUuid = in.readUTF();
     }
 
     @Override
-    public boolean equals(final Object o) {
+    public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        final MigrationInfo that = (MigrationInfo) o;
+        MigrationInfo that = (MigrationInfo) o;
 
-        if (copyBackReplicaIndex != that.copyBackReplicaIndex) return false;
         if (partitionId != that.partitionId) return false;
-        if (replicaIndex != that.replicaIndex) return false;
-        if (migrationType != that.migrationType) return false;
+        if (destination != null ? !destination.equals(that.destination) : that.destination != null) return false;
+        if (masterUuid != null ? !masterUuid.equals(that.masterUuid) : that.masterUuid != null) return false;
+        if (source != null ? !source.equals(that.source) : that.source != null) return false;
 
         return true;
     }
@@ -163,9 +136,9 @@ public class MigrationInfo implements DataSerializable {
     @Override
     public int hashCode() {
         int result = partitionId;
-        result = 31 * result + replicaIndex;
-        result = 31 * result + copyBackReplicaIndex;
-        result = 31 * result + (migrationType != null ? migrationType.hashCode() : 0);
+        result = 31 * result + (source != null ? source.hashCode() : 0);
+        result = 31 * result + (destination != null ? destination.hashCode() : 0);
+        result = 31 * result + (masterUuid != null ? masterUuid.hashCode() : 0);
         return result;
     }
 
@@ -174,11 +147,8 @@ public class MigrationInfo implements DataSerializable {
         final StringBuilder sb = new StringBuilder();
         sb.append("MigrationInfo");
         sb.append("{ partitionId=").append(partitionId);
-        sb.append(", replicaIndex=").append(replicaIndex);
-        sb.append(", copyBackReplicaIndex=").append(copyBackReplicaIndex);
-        sb.append(", migrationType=").append(migrationType);
-        sb.append(", source=").append(from);
-        sb.append(", destination=").append(to);
+        sb.append(", source=").append(source);
+        sb.append(", destination=").append(destination);
         sb.append(", master=").append(master);
         sb.append(", processing=").append(processing.get());
         sb.append('}');

@@ -18,6 +18,10 @@ package com.hazelcast.hibernate;
 
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.merge.MapMergePolicy;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+
+import java.io.IOException;
 
 // TODO: implement hibernate version aware merge policy!
 public class VersionAwareMapMergePolicy implements MapMergePolicy {
@@ -51,5 +55,15 @@ public class VersionAwareMapMergePolicy implements MapMergePolicy {
 //            return mergingDataEntry.getValueData();
 //        }
         return null;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        //To change body of implemented methods use File | Settings | File Templates.
     }
 }

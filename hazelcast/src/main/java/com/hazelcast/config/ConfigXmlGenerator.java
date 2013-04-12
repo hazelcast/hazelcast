@@ -142,8 +142,8 @@ public class ConfigXmlGenerator {
         xml.append("<ssl enabled=\"").append(ssl != null && ssl.isEnabled()).append("\">");
         if (ssl != null) {
             String className = ssl.getFactoryImplementation() != null
-                               ? ssl.getFactoryImplementation().getClass().getName()
-                               : ssl.getFactoryClassName();
+                    ? ssl.getFactoryImplementation().getClass().getName()
+                    : ssl.getFactoryClassName();
             xml.append("<factory-class-name>").append(className).append("</factory-class-name>");
             appendProperties(xml, ssl.getProperties());
         }
@@ -152,7 +152,7 @@ public class ConfigXmlGenerator {
         xml.append("<socket-interceptor enabled=\"").append(socket != null && socket.isEnabled()).append("\">");
         if (socket != null) {
             String className = socket.getImplementation() != null
-                               ? socket.getImplementation().getClass().getName() : socket.getClassName();
+                    ? socket.getImplementation().getClass().getName() : socket.getClassName();
             xml.append("<class-name>").append(className).append("</class-name>");
             appendProperties(xml, socket.getProperties());
         }
@@ -223,8 +223,8 @@ public class ConfigXmlGenerator {
                 final String clazz = s.getImplementation() != null ? s.getImplementation().getClass().getName() : s.getClassName();
                 xml.append("<class-name>").append(clazz).append("</class-name>");
                 final String factoryClass = s.getFactoryImplementation() != null
-                                            ? s.getFactoryImplementation().getClass().getName()
-                                            : s.getFactoryClassName();
+                        ? s.getFactoryImplementation().getClass().getName()
+                        : s.getFactoryClassName();
                 if (factoryClass != null) {
                     xml.append("<factory-class-name>").append(factoryClass).append("</factory-class-name>");
                 }
@@ -240,12 +240,13 @@ public class ConfigXmlGenerator {
                 xml.append("<max-idle-seconds>").append(n.getMaxIdleSeconds()).append("</max-idle-seconds>");
                 xml.append("<eviction-policy>").append(n.getEvictionPolicy()).append("</eviction-policy>");
                 xml.append("<invalidate-on-change>").append(n.isInvalidateOnChange()).append("</invalidate-on-change>");
+                xml.append("<in-memory-format>").append(n.getInMemoryFormat()).append("</in-memory-format>");
                 xml.append("</near-cache>");
             }
             if (m.getWanReplicationRef() != null) {
                 final WanReplicationRef wan = m.getWanReplicationRef();
                 xml.append("<wan-replication-ref name=\"").append(wan.getName()).append("\">");
-                xml.append("<merge-policy>").append(wan.getMergePolicyClassName()).append("</merge-policy>");
+                xml.append("<merge-policy>").append(wan.getMergePolicy()).append("</merge-policy>");
                 xml.append("</wan-replication-ref>");
             }
             if (!m.getMapIndexConfigs().isEmpty()) {
@@ -322,7 +323,7 @@ public class ConfigXmlGenerator {
 //            xml.append("<class-name>").append(clazz).append("</class-name>");
 //            xml.append("</map-merge-policy>");
 //        }
-        xml.append("</merge-policies>");
+//        xml.append("</merge-policies>");
         if (!config.getListenerConfigs().isEmpty()) {
             xml.append("<listeners>");
             for (ListenerConfig lc : config.getListenerConfigs()) {

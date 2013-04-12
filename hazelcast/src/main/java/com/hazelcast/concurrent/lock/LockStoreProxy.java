@@ -17,6 +17,7 @@
 package com.hazelcast.concurrent.lock;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.ObjectNamespace;
 
 import java.util.Set;
 
@@ -26,9 +27,9 @@ import java.util.Set;
 public final class LockStoreProxy implements LockStore {
 
     private final LockStoreContainer container;
-    private final ILockNamespace namespace;
+    private final ObjectNamespace namespace;
 
-    public LockStoreProxy(LockStoreContainer container, ILockNamespace namespace) {
+    public LockStoreProxy(LockStoreContainer container, ObjectNamespace namespace) {
         this.container = container;
         this.namespace = namespace;
     }

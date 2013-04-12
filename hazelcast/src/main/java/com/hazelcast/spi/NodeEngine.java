@@ -27,6 +27,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.transaction.TransactionManagerService;
+import com.hazelcast.wan.WanReplicationService;
 
 /**
  * @mdogan 8/24/12
@@ -47,9 +48,9 @@ public interface NodeEngine {
 
     ProxyService getProxyService();
 
-    AsyncInvocationService getAsyncInvocationService();
-
     WaitNotifyService getWaitNotifyService();
+
+    WanReplicationService getWanReplicationService();
 
     TransactionManagerService getTransactionManagerService();
 

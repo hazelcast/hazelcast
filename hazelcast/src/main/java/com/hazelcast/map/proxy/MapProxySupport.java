@@ -1,4 +1,4 @@
-/*
+   /*
  * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.proxy;
 
-import com.hazelcast.concurrent.lock.LockNamespace;
+import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.concurrent.lock.LockProxySupport;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
@@ -46,16 +46,17 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
     protected MapProxySupport(final String name, final MapService mapService, NodeEngine nodeEngine) {
         super(nodeEngine, mapService);
         this.name = name;
-        lockSupport = new LockProxySupport(new LockNamespace(MapService.SERVICE_NAME, name));
+        lockSupport = new LockProxySupport(new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
     }
 
-    protected Data getInternal(Data key) {
+    // this operation returns the object in data format except it is got from near-cache and near-cache memory format is object.
+    protected Object getInternal(Data key) {
         final MapService mapService = getService();
         final boolean nearCacheEnabled = mapService.getMapContainer(name).isNearCacheEnabled();
         if (nearCacheEnabled) {
-            Data cachedData = mapService.getFromNearCache(name, key);
-            if (cachedData != null) {
-                return cachedData;
+            Object cached = mapService.getFromNearCache(name, key);
+            if (cached != null) {
+                return cached;
             }
         }
         GetOperation operation = new GetOperation(name, key);
@@ -76,8 +77,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         GetOperation operation = new GetOperation(name, key);
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .build();
-            return nodeEngine.getAsyncInvocationService().invoke(invocation);
+                    .setAsync(true).build();
+            return invocation.invoke();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -124,8 +125,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         operation.setThreadId(ThreadContext.getThreadId());
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .build();
-            return nodeEngine.getAsyncInvocationService().invoke(invocation);
+                    .setAsync(true).build();
+            return invocation.invoke();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -178,8 +179,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         operation.setThreadId(ThreadContext.getThreadId());
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .build();
-            return nodeEngine.getAsyncInvocationService().invoke(invocation);
+                    .setAsync(true).build();
+            return invocation.invoke();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -255,7 +256,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
     protected Map<Data, Data> getAllDataInternal(final Set<Data> keys) {
         Map<Data, Data> res = new HashMap(keys.size());
         for (Data key : keys) {
-            res.put(key, getInternal(key));
+            res.put(key, getService().toData(getInternal(key)));
         }
         return res;
     }

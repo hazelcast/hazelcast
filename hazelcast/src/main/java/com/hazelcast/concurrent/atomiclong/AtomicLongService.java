@@ -17,15 +17,16 @@
 package com.hazelcast.concurrent.atomiclong;
 
 import com.hazelcast.client.ClientCommandHandler;
+
 import com.hazelcast.concurrent.atomiclong.client.AddAndGetHandler;
 import com.hazelcast.concurrent.atomiclong.client.GetAndAddHandler;
 import com.hazelcast.concurrent.atomiclong.client.CompareAndSetHandler;
+
 import com.hazelcast.concurrent.atomiclong.client.GetAndSetHandler;
 import com.hazelcast.concurrent.atomiclong.proxy.AtomicLongProxy;
 import com.hazelcast.config.Config;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.partition.MigrationEndpoint;
-import com.hazelcast.partition.MigrationType;
 import com.hazelcast.spi.*;
 import com.hazelcast.util.ConcurrencyUtil;
 
@@ -90,45 +91,37 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
         numbers.remove(String.valueOf(objectId));
     }
 
-    public void beforeMigration(MigrationServiceEvent migrationServiceEvent) {
+    public void beforeMigration(PartitionMigrationEvent partitionMigrationEvent) {
     }
 
-    public Operation prepareMigrationOperation(MigrationServiceEvent migrationServiceEvent) {
-        if (migrationServiceEvent.getReplicaIndex() > 1) {
+    public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
+        if (event.getReplicaIndex() > 1) {
             return null;
         }
         Map<String, Long> data = new HashMap<String, Long>();
-        final int partitionId = migrationServiceEvent.getPartitionId();
+        final int partitionId = event.getPartitionId();
         for (String name : numbers.keySet()) {
             if (partitionId == nodeEngine.getPartitionService().getPartitionId(name)) {
                 data.put(name, numbers.get(name).get());
             }
         }
-        return data.isEmpty() ? null : new AtomicLongMigrationOperation(data);
+        return data.isEmpty() ? null : new AtomicLongReplicationOperation(data);
     }
 
-    public void commitMigration(MigrationServiceEvent migrationServiceEvent) {
-        if (migrationServiceEvent.getReplicaIndex() > 1) {
-            return;
-        }
-        if (migrationServiceEvent.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-            if (migrationServiceEvent.getMigrationType() == MigrationType.MOVE) {
-                removeNumber(migrationServiceEvent.getPartitionId());
-            }
-        } else if (migrationServiceEvent.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
-
-        } else {
-            throw new IllegalStateException("Nor source neither destination, probably bug");
+    public void commitMigration(PartitionMigrationEvent partitionMigrationEvent) {
+        if (partitionMigrationEvent.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
+            removeNumber(partitionMigrationEvent.getPartitionId());
         }
     }
 
-    public void rollbackMigration(MigrationServiceEvent migrationServiceEvent) {
-        if (migrationServiceEvent.getReplicaIndex() > 1) {
-            return;
+    public void rollbackMigration(PartitionMigrationEvent partitionMigrationEvent) {
+        if (partitionMigrationEvent.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
+            removeNumber(partitionMigrationEvent.getPartitionId());
         }
-        if (migrationServiceEvent.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
-            removeNumber(migrationServiceEvent.getPartitionId());
-        }
+    }
+
+    public void clearPartitionReplica(int partitionId) {
+        removeNumber(partitionId);
     }
 
     public void removeNumber(int partitionId) {

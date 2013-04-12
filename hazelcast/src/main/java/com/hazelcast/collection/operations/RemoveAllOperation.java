@@ -18,6 +18,7 @@ package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
+import com.hazelcast.collection.CollectionService;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
@@ -44,12 +45,12 @@ public class RemoveAllOperation extends CollectionBackupAwareOperation {
     public void run() throws Exception {
         begin = Clock.currentTimeMillis();
         coll = removeCollection();
-        response = new CollectionResponse(coll, getNodeEngine());
+        response = new CollectionResponse(coll);
     }
 
     public void afterRun() throws Exception {
-        long elapsed = Math.max(0, Clock.currentTimeMillis()-begin);
-        getOrCreateContainer().getOperationsCounter().incrementRemoves(elapsed);
+        long elapsed = Math.max(0, Clock.currentTimeMillis() - begin);
+        ((CollectionService) getService()).getLocalMultiMapStatsImpl(proxyId).incrementRemoves(elapsed);
         if (coll != null) {
             getOrCreateContainer().update();
             for (CollectionRecord record : coll) {

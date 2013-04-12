@@ -235,7 +235,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
             }
         } else {
             final Packet packet = new Packet(nodeEngine.toData(eventPacket), nodeEngine.getSerializationContext());
-            packet.setHeader(Packet.HEADER_EVENT, true);
+            packet.setHeader(Packet.HEADER_EVENT);
             nodeEngine.send(packet, subscriber);
         }
     }
@@ -450,7 +450,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         final long start = Clock.currentTimeMillis();
         service.dispatchEvent(event, listener);
         final long end = Clock.currentTimeMillis();
-        if ((end - start) > 10) {
+        if ((end - start) > 50) {
             logger.log(Level.WARNING, "Caution: Off-load event processing to your own thread-pool, don't use event thread!");
         }
     }

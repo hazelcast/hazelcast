@@ -23,6 +23,7 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
@@ -36,6 +37,7 @@ import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.TransactionManagerServiceImpl;
+import com.hazelcast.wan.WanReplicationService;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -52,9 +54,10 @@ public class NodeEngineImpl implements NodeEngine {
     final OperationServiceImpl operationService;
     final ExecutionServiceImpl executionService;
     final EventServiceImpl eventService;
-    final AsyncInvocationServiceImpl asyncInvocationService;
     final WaitNotifyServiceImpl waitNotifyService;
     final TransactionManagerServiceImpl transactionManagerService;
+    final WanReplicationService wanReplicationService;
+
 
     public NodeEngineImpl(Node node) {
         this.node = node;
@@ -64,9 +67,9 @@ public class NodeEngineImpl implements NodeEngine {
         executionService = new ExecutionServiceImpl(this);
         operationService = new OperationServiceImpl(this);
         eventService = new EventServiceImpl(this);
-        asyncInvocationService = new AsyncInvocationServiceImpl(this);
         waitNotifyService = new WaitNotifyServiceImpl(this);
         transactionManagerService = new TransactionManagerServiceImpl(this);
+        wanReplicationService = new WanReplicationService(this.node);
     }
 
     @PrivateApi
@@ -119,16 +122,20 @@ public class NodeEngineImpl implements NodeEngine {
         return node.getClusterService();
     }
 
+    public ManagementCenterService getManagementCenterService() {
+        return node.getManagementCenterService();
+    }
+
     public ProxyService getProxyService() {
         return proxyService;
     }
 
-    public AsyncInvocationService getAsyncInvocationService() {
-        return asyncInvocationService;
-    }
-
     public WaitNotifyService getWaitNotifyService() {
         return waitNotifyService;
+    }
+
+    public WanReplicationService getWanReplicationService() {
+        return wanReplicationService;
     }
 
     public TransactionManagerService getTransactionManagerService() {
@@ -220,12 +227,16 @@ public class NodeEngineImpl implements NodeEngine {
 
     @PrivateApi
     public void handlePacket(Packet packet) {
-        if (packet.isHeaderSet(Packet.HEADER_MIGRATION)) {
-            node.partitionService.handleMigration(packet);
-        } else if (packet.isHeaderSet(Packet.HEADER_OP)) {
+        if (packet.isHeaderSet(Packet.HEADER_OP)) {
             operationService.handleOperation(packet);
+        } else if (packet.isHeaderSet(Packet.HEADER_BACKUP)) {
+            operationService.handleBackup(packet);
+        } else if (packet.isHeaderSet(Packet.HEADER_MIGRATION)) {
+            node.partitionService.handleMigration(packet);
         } else if (packet.isHeaderSet(Packet.HEADER_EVENT)) {
             eventService.handleEvent(packet);
+        } else if (packet.isHeaderSet(Packet.HEADER_WAN_REPLICATION)) {
+            wanReplicationService.handleEvent(packet);
         } else {
             logger.log(Level.SEVERE, "Unknown packet type! Header: " + packet.getHeader());
         }
@@ -311,8 +322,9 @@ public class NodeEngineImpl implements NodeEngine {
         proxyService.shutdown();
         serviceManager.shutdown();
         executionService.shutdown();
-        asyncInvocationService.shutdown();
+//        asyncInvocationService.shutdown();
         eventService.shutdown();
         operationService.shutdown();
+        wanReplicationService.shutdown();
     }
 }
