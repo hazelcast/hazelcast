@@ -29,10 +29,12 @@ public class InvocationBuilder {
     private final Operation op;
     private final int partitionId;
     private final Address target;
+    private Callback<Object> callback;
     private long callTimeout = -1L;
     private int replicaIndex = 0;
     private int tryCount = 250;
     private long tryPauseMillis = 500;
+    private boolean async;
 
     public InvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId) {
         this(nodeEngine, serviceName, op, partitionId, null);
@@ -42,7 +44,8 @@ public class InvocationBuilder {
         this(nodeEngine, serviceName, op, -1, target);
     }
 
-    private InvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId, Address target) {
+    private InvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op,
+                              int partitionId, Address target) {
         this.nodeEngine = nodeEngine;
         this.serviceName = serviceName;
         this.op = op;
@@ -106,12 +109,31 @@ public class InvocationBuilder {
         return callTimeout;
     }
 
+    public Callback getCallback() {
+        return callback;
+    }
+
+    public InvocationBuilder setCallback(Callback<Object> callback) {
+        this.callback = callback;
+        return this;
+    }
+
+    public boolean isAsync() {
+        return async;
+    }
+
+    public InvocationBuilder setAsync(boolean async) {
+        this.async = async;
+        return this;
+    }
+
     public Invocation build() {
         if (target == null) {
             return new PartitionInvocationImpl(nodeEngine, serviceName, op, partitionId, replicaIndex,
-                    tryCount, tryPauseMillis, callTimeout);
+                    tryCount, tryPauseMillis, callTimeout, async, callback);
         } else {
-            return new TargetInvocationImpl(nodeEngine, serviceName, op, target, tryCount, tryPauseMillis, callTimeout);
+            return new TargetInvocationImpl(nodeEngine, serviceName, op, target, tryCount, tryPauseMillis,
+                    callTimeout, async, callback);
         }
     }
 }

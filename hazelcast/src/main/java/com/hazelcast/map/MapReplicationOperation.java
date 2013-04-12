@@ -29,15 +29,14 @@ import java.util.Map.Entry;
 /**
  * @mdogan 7/24/12
  */
-public class MapMigrationOperation extends AbstractOperation {
+public class MapReplicationOperation extends AbstractOperation {
 
-    // TODO: @mm - simplify please...
     private Map<String, Set<Record>> data;
 
-    public MapMigrationOperation() {
+    public MapReplicationOperation() {
     }
 
-    public MapMigrationOperation(PartitionContainer container, int partitionId, int replicaIndex) {
+    public MapReplicationOperation(PartitionContainer container, int partitionId, int replicaIndex) {
         this.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
         data = new HashMap<String, Set<Record>>(container.maps.size());
         for (Entry<String, PartitionRecordStore> entry : container.maps.entrySet()) {

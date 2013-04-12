@@ -27,14 +27,14 @@ import java.util.Collection;
 /**
  * @mdogan 1/17/13
  */
-public class CountDownLatchMigrationOperation extends AbstractOperation {
+public class CountDownLatchReplicationOperation extends AbstractOperation {
 
     private Collection<CountDownLatchInfo> data;
 
-    public CountDownLatchMigrationOperation() {
+    public CountDownLatchReplicationOperation() {
     }
 
-    public CountDownLatchMigrationOperation(Collection<CountDownLatchInfo> data) {
+    public CountDownLatchReplicationOperation(Collection<CountDownLatchInfo> data) {
         this.data = data;
     }
 

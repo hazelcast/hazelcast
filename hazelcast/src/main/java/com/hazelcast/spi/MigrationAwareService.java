@@ -21,13 +21,15 @@ package com.hazelcast.spi;
  */
 public interface MigrationAwareService {
 
-    void beforeMigration(MigrationServiceEvent migrationServiceEvent);
+    Operation prepareReplicationOperation(PartitionReplicationEvent event);
 
-    Operation prepareMigrationOperation(MigrationServiceEvent migrationServiceEvent);
+    void beforeMigration(PartitionMigrationEvent event);
 
-    void commitMigration(MigrationServiceEvent migrationServiceEvent);
+    void commitMigration(PartitionMigrationEvent event);
 
-    void rollbackMigration(MigrationServiceEvent migrationServiceEvent);
+    void rollbackMigration(PartitionMigrationEvent event);
+
+    void clearPartitionReplica(int partitionId);
 
     String getServiceName();
 

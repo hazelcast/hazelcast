@@ -14,9 +14,27 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
+package com.hazelcast.executor;
 
-interface Callback<T> {
+import com.hazelcast.core.ExecutionCallback;
+import com.hazelcast.spi.Callback;
 
-    void notify(T object);
+/**
+ * @mdogan 4/10/13
+ */
+final class ExecutionCallbackAdapter implements Callback<Object> {
+
+    private final ExecutionCallback executionCallback;
+
+    ExecutionCallbackAdapter(ExecutionCallback executionCallback) {
+        this.executionCallback = executionCallback;
+    }
+
+    public void notify(Object response) {
+        if (response instanceof Throwable) {
+            executionCallback.onFailure((Throwable) response);
+        } else {
+            executionCallback.onResponse(response);
+        }
+    }
 }

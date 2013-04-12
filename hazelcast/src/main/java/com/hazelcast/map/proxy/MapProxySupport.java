@@ -77,8 +77,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         GetOperation operation = new GetOperation(name, key);
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .build();
-            return nodeEngine.getAsyncInvocationService().invoke(invocation);
+                    .setAsync(true).build();
+            return invocation.invoke();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -125,8 +125,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         operation.setThreadId(ThreadContext.getThreadId());
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .build();
-            return nodeEngine.getAsyncInvocationService().invoke(invocation);
+                    .setAsync(true).build();
+            return invocation.invoke();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -179,8 +179,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         operation.setThreadId(ThreadContext.getThreadId());
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .build();
-            return nodeEngine.getAsyncInvocationService().invoke(invocation);
+                    .setAsync(true).build();
+            return invocation.invoke();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }

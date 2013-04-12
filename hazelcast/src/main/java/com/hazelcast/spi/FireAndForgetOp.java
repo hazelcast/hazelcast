@@ -14,8 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.partition;
+package com.hazelcast.spi;
 
-interface PartitionListener {
-    void replicaChanged(PartitionReplicaChangeEvent event);
+import com.hazelcast.spi.annotation.PrivateApi;
+
+/**
+ * @mdogan 4/12/13
+ */
+
+@PrivateApi
+public interface FireAndForgetOp {
 }

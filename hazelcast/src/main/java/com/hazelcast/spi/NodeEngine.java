@@ -48,8 +48,6 @@ public interface NodeEngine {
 
     ProxyService getProxyService();
 
-    AsyncInvocationService getAsyncInvocationService();
-
     WaitNotifyService getWaitNotifyService();
 
     WanReplicationService getWanReplicationService();

@@ -14,12 +14,30 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.util.executor;
+
+import com.hazelcast.util.ExceptionUtil;
+
+import java.util.concurrent.Executor;
 
 /**
- * @mdogan 1/18/13
+ * @mdogan 4/9/13
  */
-public enum InvocationAction {
+public final class ScheduledTaskRunner implements Runnable {
 
-    RETRY_INVOCATION, CONTINUE_WAIT, THROW_EXCEPTION
+    private final Executor executor;
+    private final Runnable runnable;
+
+    public ScheduledTaskRunner(Executor executor, Runnable runnable) {
+        this.executor = executor;
+        this.runnable = runnable;
+    }
+
+    public void run() {
+        try {
+            executor.execute(runnable);
+        } catch (Throwable t) {
+            ExceptionUtil.sneakyThrow(t);
+        }
+    }
 }

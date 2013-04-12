@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomiclong;
+package com.hazelcast.concurrent.semaphore;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -25,50 +25,40 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * User: sancar
- * Date: 12/28/12
- * Time: 2:26 PM
+ * @ali 1/22/13
  */
-public class AtomicLongMigrationOperation extends AbstractOperation {
+public class SemaphoreReplicationOperation extends AbstractOperation {
 
-    private Map<String, Long> migrationData;
+    Map<String, Permit> migrationData;
 
-    public AtomicLongMigrationOperation() {
-        super();
+    public SemaphoreReplicationOperation() {
     }
 
-    public AtomicLongMigrationOperation(Map<String, Long> migrationData) {
+    public SemaphoreReplicationOperation(Map<String, Permit> migrationData) {
         this.migrationData = migrationData;
     }
 
     public void run() throws Exception {
-        AtomicLongService atomicLongService = getService();
-        for (Map.Entry<String, Long> longEntry : migrationData.entrySet()) {
-            atomicLongService.getNumber(longEntry.getKey()).set(longEntry.getValue());
-        }
-
+        SemaphoreService service = getService();
+        service.insertMigrationData(migrationData);
     }
-
-    public String getServiceName() {
-        return AtomicLongService.SERVICE_NAME;
-    }
-
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeInt(migrationData.size());
-        for (Map.Entry<String, Long> entry : migrationData.entrySet()) {
+        for (Map.Entry<String, Permit> entry : migrationData.entrySet()) {
             out.writeUTF(entry.getKey());
-            out.writeLong(entry.getValue());
+            entry.getValue().writeData(out);
         }
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
-        int mapSize = in.readInt();
-        migrationData = new HashMap<String, Long>(mapSize);
-        for (int i = 0; i < mapSize; i++) {
+        int size = in.readInt();
+        migrationData = new HashMap<String, Permit>(size);
+        for (int i = 0; i < size; i++) {
             String name = in.readUTF();
-            Long number = in.readLong();
-            migrationData.put(name, number);
+            Permit permit = new Permit();
+            permit.readData(in);
+            migrationData.put(name, permit);
         }
     }
 }

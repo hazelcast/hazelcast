@@ -35,7 +35,6 @@ import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.MigrationEndpoint;
-import com.hazelcast.partition.MigrationType;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
 import com.hazelcast.transaction.Transaction;
@@ -214,10 +213,10 @@ public class CollectionService implements ManagedService, RemoteService, Members
         }
     }
 
-    public void beforeMigration(MigrationServiceEvent migrationServiceEvent) {
+    public void beforeMigration(PartitionMigrationEvent partitionMigrationEvent) {
     }
 
-    public Operation prepareMigrationOperation(MigrationServiceEvent event) {
+    public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
         int replicaIndex = event.getReplicaIndex();
         CollectionPartitionContainer partitionContainer = partitionContainers[event.getPartitionId()];
         Map<CollectionProxyId, Map> map = new HashMap<CollectionProxyId, Map>(partitionContainer.containerMap.size());
@@ -244,32 +243,23 @@ public class CollectionService implements ManagedService, RemoteService, Members
         }
     }
 
-    private void clearMigrationData(int partitionId, int copyBackReplicaIndex) {
+    private void clearMigrationData(int partitionId) {
         final CollectionPartitionContainer partitionContainer = partitionContainers[partitionId];
-        if (copyBackReplicaIndex == -1) {
-            partitionContainer.containerMap.clear();
-            return;
-        }
-        for (CollectionContainer container : partitionContainer.containerMap.values()) {
-            int totalBackupCount = container.config.getTotalBackupCount();
-            if (totalBackupCount < copyBackReplicaIndex) {
-                container.destroy();
-            }
-        }
+        partitionContainer.containerMap.clear();
     }
 
-    public void commitMigration(MigrationServiceEvent event) {
+    public void commitMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-            if (event.getMigrationType() == MigrationType.MOVE) {
-                clearMigrationData(event.getPartitionId(), -1);
-            } else if (event.getMigrationType() == MigrationType.MOVE_COPY_BACK) {
-                clearMigrationData(event.getPartitionId(), event.getCopyBackReplicaIndex());
-            }
+            clearMigrationData(event.getPartitionId());
         }
     }
 
-    public void rollbackMigration(MigrationServiceEvent event) {
-        clearMigrationData(event.getPartitionId(), -1);
+    public void rollbackMigration(PartitionMigrationEvent event) {
+        clearMigrationData(event.getPartitionId());
+    }
+
+    public void clearPartitionReplica(int partitionId) {
+        clearMigrationData(partitionId);
     }
 
     public void memberAdded(MembershipServiceEvent event) {

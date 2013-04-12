@@ -21,7 +21,6 @@ import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.partition.MigrationEndpoint;
-import com.hazelcast.partition.MigrationType;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
@@ -110,10 +109,10 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
         permitMap.remove(String.valueOf(objectId));
     }
 
-    public void beforeMigration(MigrationServiceEvent migrationServiceEvent) {
+    public void beforeMigration(PartitionMigrationEvent partitionMigrationEvent) {
     }
 
-    public Operation prepareMigrationOperation(MigrationServiceEvent event) {
+    public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
         Map<String, Permit> migrationData = new HashMap<String, Permit>();
         for (Map.Entry<String, Permit> entry: permitMap.entrySet()){
             String name = entry.getKey();
@@ -125,35 +124,37 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
         if (migrationData.isEmpty()){
             return null;
         }
-        return new SemaphoreMigrationOperation(migrationData);
+        return new SemaphoreReplicationOperation(migrationData);
     }
 
     public void insertMigrationData(Map<String, Permit> migrationData){
         permitMap.putAll(migrationData);
     }
 
-    public void commitMigration(MigrationServiceEvent event) {
+    public void commitMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE){
-            if (event.getMigrationType() == MigrationType.MOVE || event.getMigrationType() == MigrationType.MOVE_COPY_BACK){
-                clearMigrationData(event.getPartitionId(), event.getCopyBackReplicaIndex());
-            }
+            clearMigrationData(event.getPartitionId());
         }
     }
 
-    private void clearMigrationData(int partitionId, int copyBack){
+    private void clearMigrationData(int partitionId){
         Iterator<Map.Entry<String, Permit>> iter = permitMap.entrySet().iterator();
         while (iter.hasNext()){
             Permit permit = iter.next().getValue();
-            if (permit.getPartitionId() == partitionId && (copyBack == -1 || permit.getConfig().getTotalBackupCount() < copyBack)){
+            if (permit.getPartitionId() == partitionId){
                 iter.remove();
             }
         }
     }
 
-    public void rollbackMigration(MigrationServiceEvent event) {
+    public void rollbackMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
-            clearMigrationData(event.getPartitionId(), -1);
+            clearMigrationData(event.getPartitionId());
         }
+    }
+
+    public void clearPartitionReplica(int partitionId) {
+        clearMigrationData(partitionId);
     }
 
     public Map<Command, ClientCommandHandler> getCommandsAsMap() {

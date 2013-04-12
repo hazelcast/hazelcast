@@ -42,7 +42,7 @@ public abstract class BaseCallableTaskOperation<V> extends Operation {
 
     @Override
     public final void beforeRun() throws Exception {
-        if (callable instanceof HazelcastInstanceAware && getCallId() < 0) {
+        if (callable instanceof HazelcastInstanceAware) {
             ((HazelcastInstanceAware) callable).setHazelcastInstance(getNodeEngine().getHazelcastInstance());
         }
     }

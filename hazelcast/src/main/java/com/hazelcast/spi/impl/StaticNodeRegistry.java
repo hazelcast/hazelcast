@@ -26,6 +26,7 @@ import com.hazelcast.nio.ConnectionMonitor;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.spi.ExecutionService;
 
 import java.nio.channels.ServerSocketChannel;
 import java.util.Map;
@@ -105,7 +106,7 @@ public class StaticNodeRegistry {
 
                     final NodeEngineImpl nodeEngine = nodes.get(address);
                     if (nodeEngine != null && nodeEngine.isActive()) {
-                        nodeEngine.getExecutionService().execute("hz:system", new Runnable() {
+                        nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
                             public void run() {
                                 final ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();
                                 clusterService.removeAddress(thisAddress);

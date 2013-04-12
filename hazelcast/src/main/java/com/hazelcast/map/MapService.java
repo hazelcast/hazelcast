@@ -17,8 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.client.ClientCommandHandler;
-import com.hazelcast.cluster.ClusterServiceImpl;
-import com.hazelcast.collection.CollectionProxyId;
+import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapMergePolicyConfig;
@@ -44,8 +43,8 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.partition.MigrationEndpoint;
-import com.hazelcast.partition.MigrationType;
 import com.hazelcast.partition.PartitionInfo;
+import com.hazelcast.partition.PartitionService;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.IndexService;
@@ -411,58 +410,45 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         return ownedPartitions;
     }
 
-    public void beforeMigration(MigrationServiceEvent event) {
-        // TODO: @mm - what if partition has transactions?
+    public void beforeMigration(PartitionMigrationEvent event) {
     }
 
-    public Operation prepareMigrationOperation(MigrationServiceEvent event) {
+    public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
+        logger.log(Level.FINEST, "Preparing replication op -> " + event); // TODO: to FINEST
         final PartitionContainer container = partitionContainers[event.getPartitionId()];
-        final MapMigrationOperation operation = new MapMigrationOperation(container, event.getPartitionId(), event.getReplicaIndex());
+        final MapReplicationOperation operation = new MapReplicationOperation(container, event.getPartitionId(), event.getReplicaIndex());
         return operation.isEmpty() ? null : operation;
     }
 
-    public void commitMigration(MigrationServiceEvent event) {
+    public void commitMigration(PartitionMigrationEvent event) {
         logger.log(Level.FINEST, "Committing " + event);
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
             migrateIndex(event);
-            if (event.getMigrationType() == MigrationType.MOVE) {
-                clearPartitionData(event.getPartitionId());
-            } else if (event.getMigrationType() == MigrationType.MOVE_COPY_BACK) {
-                final PartitionContainer container = partitionContainers[event.getPartitionId()];
-                for (PartitionRecordStore mapPartition : container.maps.values()) {
-                    final MapContainer mapContainer = getMapContainer(mapPartition.name);
-                    final MapConfig mapConfig = mapContainer.getMapConfig();
-                    if (mapConfig.getTotalBackupCount() < event.getCopyBackReplicaIndex()) {
-                        mapPartition.clear();
-                    }
-                }
-            }
+            clearPartitionData(event.getPartitionId());
         } else {
             migrateIndex(event);
         }
         ownedPartitions.set(nodeEngine.getPartitionService().getMemberPartitions(nodeEngine.getThisAddress()));
     }
 
-    private void migrateIndex(MigrationServiceEvent event) {
-        if (event.getReplicaIndex() == 0) {
-            final PartitionContainer container = partitionContainers[event.getPartitionId()];
-            for (PartitionRecordStore mapPartition : container.maps.values()) {
-                final MapContainer mapContainer = getMapContainer(mapPartition.name);
-                final IndexService indexService = mapContainer.getIndexService();
-                if (indexService.hasIndex()) {
-                    for (Record record : mapPartition.getRecords().values()) {
-                        if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-                            indexService.removeEntryIndex(record.getKey());
-                        } else {
-                            indexService.saveEntryIndex(new QueryEntry(getSerializationService(), record.getKey(), record.getKey(), record.getValue()));
-                        }
+    private void migrateIndex(PartitionMigrationEvent event) {
+        final PartitionContainer container = partitionContainers[event.getPartitionId()];
+        for (PartitionRecordStore mapPartition : container.maps.values()) {
+            final MapContainer mapContainer = getMapContainer(mapPartition.name);
+            final IndexService indexService = mapContainer.getIndexService();
+            if (indexService.hasIndex()) {
+                for (Record record : mapPartition.getRecords().values()) {
+                    if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
+                        indexService.removeEntryIndex(record.getKey());
+                    } else {
+                        indexService.saveEntryIndex(new QueryEntry(getSerializationService(), record.getKey(), record.getKey(), record.getValue()));
                     }
                 }
             }
         }
     }
 
-    public void rollbackMigration(MigrationServiceEvent event) {
+    public void rollbackMigration(PartitionMigrationEvent event) {
         logger.log(Level.FINEST, "Rolling back " + event);
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
             clearPartitionData(event.getPartitionId());
@@ -471,12 +457,16 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     private void clearPartitionData(final int partitionId) {
-        logger.log(Level.FINEST, "Clearing partition data -> " + partitionId);
+        logger.log(Level.FINEST, "Clearing partition data -> " + partitionId);   // TODO: to FINEST
         final PartitionContainer container = partitionContainers[partitionId];
         for (PartitionRecordStore mapPartition : container.maps.values()) {
             mapPartition.clear();
         }
         container.maps.clear();
+    }
+
+    public void clearPartitionReplica(int partitionId) {
+        clearPartitionData(partitionId);
     }
 
     public Record createRecord(String name, Data dataKey, Object value, long ttl) {
@@ -950,8 +940,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             for (int i = 0; i < ExecutorConfig.DEFAULT_POOL_SIZE; i++) {
                 nodeEngine.getExecutionService().execute("hz:map-evict", new EvictRunner(i, mapConfig, targetSizePerPartition, comparator, evictionPercentage));
             }
-
-
         }
 
         private class EvictRunner implements Runnable {
@@ -1020,7 +1008,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                 for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
                     Address owner = nodeEngine.getPartitionService().getPartitionOwner(i);
                     if (nodeEngine.getThisAddress().equals(owner)) {
-                        int size = partitionContainers[i].getRecordStore(mapName).getRecords().size();
+                        int size = partitionContainers[i].getRecordStore(mapName).getRecords().size();  // TODO: can throw NPE during shutdown!
                         if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_PARTITION) {
                             if (size >= maxSize) {
                                 return true;
@@ -1030,10 +1018,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                         }
                     }
                 }
-                if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_NODE)
-                    return totalSize >= maxSize;
-                else
-                    return false;
+                return maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_NODE && totalSize >= maxSize;
             }
             if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.USED_HEAP_SIZE || maxSizePolicy == MaxSizeConfig.MaxSizePolicy.USED_HEAP_PERCENTAGE) {
                 long total = Runtime.getRuntime().totalMemory();
@@ -1089,11 +1074,12 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         long lockedEntryCount = 0;
 
         int backupCount = mapContainer.getTotalBackupCount();
-        ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();
+        ClusterService clusterService = nodeEngine.getClusterService();
+        final PartitionService partitionService = nodeEngine.getPartitionService();
 
         Address thisAddress = clusterService.getThisAddress();
-        for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
-            PartitionInfo partitionInfo = nodeEngine.getPartitionService().getPartitionInfo(i);
+        for (int i = 0; i < partitionService.getPartitionCount(); i++) {
+            PartitionInfo partitionInfo = partitionService.getPartitionInfo(i);
             if (partitionInfo.getOwner().equals(thisAddress)) {
                 PartitionContainer partitionContainer = getPartitionContainer(i);
                 RecordStore recordStore = partitionContainer.getRecordStore(mapName);
@@ -1117,15 +1103,13 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             } else {
                 for (int j = 1; j <= backupCount; j++) {
                     Address replicaAddress = partitionInfo.getReplicaAddress(j);
-                    int memberSize = nodeEngine.getClusterService().getMembers().size();
-
-                    int tryCount = 3;
+                    int tryCount = 30;
                     // wait if the partition table is not updated yet
-                    while (memberSize > backupCount && replicaAddress == null && tryCount-- > 0) {
+                    while (replicaAddress == null && clusterService.getSize() > backupCount && tryCount-- > 0) {
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException e) {
-                            ExceptionUtil.rethrow(e);
+                            throw ExceptionUtil.rethrow(e);
                         }
                         replicaAddress = partitionInfo.getReplicaAddress(j);
                     }

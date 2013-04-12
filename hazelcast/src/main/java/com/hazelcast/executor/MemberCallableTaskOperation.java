@@ -18,7 +18,7 @@ package com.hazelcast.executor;
 
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.InvocationAction;
+import com.hazelcast.spi.ExceptionAction;
 
 import java.util.concurrent.Callable;
 
@@ -35,9 +35,9 @@ public final class MemberCallableTaskOperation<V> extends BaseCallableTaskOperat
     }
 
     @Override
-    public InvocationAction getActionOnException(Throwable throwable) {
+    public ExceptionAction getActionOnException(Throwable throwable) {
         if (throwable instanceof MemberLeftException) {
-            return InvocationAction.THROW_EXCEPTION;
+            return ExceptionAction.THROW_EXCEPTION;
         }
         return super.getActionOnException(throwable);
     }

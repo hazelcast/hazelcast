@@ -20,9 +20,11 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.StaticNodeFactory;
 import org.junit.*;
+import org.junit.runner.RunWith;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class ListenerTest {
 
     final String n = "foo";

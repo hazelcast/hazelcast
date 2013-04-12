@@ -173,25 +173,23 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
 
     // This is executed under partition migration lock!
     public void onPartitionMigrate(Address thisAddress, MigrationInfo migrationInfo) {
-        if (migrationInfo.getReplicaIndex() == 0) {
-            if (thisAddress.equals(migrationInfo.getFromAddress())) {
-                int partitionId = migrationInfo.getPartitionId();
-                for (Queue<WaitingOp> q : mapWaitingOps.values()) {
-                    Iterator<WaitingOp> it = q.iterator();
-                    while (it.hasNext()) {
-                        if (Thread.interrupted()) {
-                            return;
-                        }
-                        WaitingOp waitingOp = it.next();
-                        if (waitingOp.isValid()) {
-                            Operation op = waitingOp.getOperation();
-                            if (partitionId == op.getPartitionId()) {
-                                waitingOp.setValid(false);
-                                PartitionMigratingException pme = new PartitionMigratingException(thisAddress,
-                                        partitionId, op.getClass().getName(), op.getServiceName());
-                                op.getResponseHandler().sendResponse(pme);
-                                it.remove();
-                            }
+        if (thisAddress.equals(migrationInfo.getSource())) {
+            int partitionId = migrationInfo.getPartitionId();
+            for (Queue<WaitingOp> q : mapWaitingOps.values()) {
+                Iterator<WaitingOp> it = q.iterator();
+                while (it.hasNext()) {
+                    if (Thread.interrupted()) {
+                        return;
+                    }
+                    WaitingOp waitingOp = it.next();
+                    if (waitingOp.isValid()) {
+                        Operation op = waitingOp.getOperation();
+                        if (partitionId == op.getPartitionId()) {
+                            waitingOp.setValid(false);
+                            PartitionMigratingException pme = new PartitionMigratingException(thisAddress,
+                                    partitionId, op.getClass().getName(), op.getServiceName());
+                            op.getResponseHandler().sendResponse(pme);
+                            it.remove();
                         }
                     }
                 }

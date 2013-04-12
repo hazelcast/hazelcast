@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.partition;
+package com.hazelcast.spi;
 
-interface PartitionListener {
-    void replicaChanged(PartitionReplicaChangeEvent event);
+public interface Callback<T> {
+
+    void notify(T object);
 }

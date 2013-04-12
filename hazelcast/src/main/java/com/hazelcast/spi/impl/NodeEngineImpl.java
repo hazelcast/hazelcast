@@ -54,7 +54,6 @@ public class NodeEngineImpl implements NodeEngine {
     final OperationServiceImpl operationService;
     final ExecutionServiceImpl executionService;
     final EventServiceImpl eventService;
-    final AsyncInvocationServiceImpl asyncInvocationService;
     final WaitNotifyServiceImpl waitNotifyService;
     final TransactionManagerServiceImpl transactionManagerService;
     final WanReplicationService wanReplicationService;
@@ -68,7 +67,6 @@ public class NodeEngineImpl implements NodeEngine {
         executionService = new ExecutionServiceImpl(this);
         operationService = new OperationServiceImpl(this);
         eventService = new EventServiceImpl(this);
-        asyncInvocationService = new AsyncInvocationServiceImpl(this);
         waitNotifyService = new WaitNotifyServiceImpl(this);
         transactionManagerService = new TransactionManagerServiceImpl(this);
         wanReplicationService = new WanReplicationService(this.node);
@@ -130,10 +128,6 @@ public class NodeEngineImpl implements NodeEngine {
 
     public ProxyService getProxyService() {
         return proxyService;
-    }
-
-    public AsyncInvocationService getAsyncInvocationService() {
-        return asyncInvocationService;
     }
 
     public WaitNotifyService getWaitNotifyService() {
@@ -233,10 +227,12 @@ public class NodeEngineImpl implements NodeEngine {
 
     @PrivateApi
     public void handlePacket(Packet packet) {
-        if (packet.isHeaderSet(Packet.HEADER_MIGRATION)) {
-            node.partitionService.handleMigration(packet);
-        } else if (packet.isHeaderSet(Packet.HEADER_OP)) {
+        if (packet.isHeaderSet(Packet.HEADER_OP)) {
             operationService.handleOperation(packet);
+        } else if (packet.isHeaderSet(Packet.HEADER_BACKUP)) {
+            operationService.handleBackup(packet);
+        } else if (packet.isHeaderSet(Packet.HEADER_MIGRATION)) {
+            node.partitionService.handleMigration(packet);
         } else if (packet.isHeaderSet(Packet.HEADER_EVENT)) {
             eventService.handleEvent(packet);
         } else if (packet.isHeaderSet(Packet.HEADER_WAN_REPLICATION)) {
@@ -326,7 +322,7 @@ public class NodeEngineImpl implements NodeEngine {
         proxyService.shutdown();
         serviceManager.shutdown();
         executionService.shutdown();
-        asyncInvocationService.shutdown();
+//        asyncInvocationService.shutdown();
         eventService.shutdown();
         operationService.shutdown();
         wanReplicationService.shutdown();

@@ -36,7 +36,7 @@ public abstract class Operation implements DataSerializable {
     private String serviceName;
     private int partitionId = -1;
     private int replicaIndex;
-    private long callId = -1;
+    private long callId = 0;
     private boolean validateTarget = true;
     private long invocationTime = -1;
     private long callTimeout = Long.MAX_VALUE;
@@ -203,17 +203,17 @@ public abstract class Operation implements DataSerializable {
         return this;
     }
 
-    public final InvocationAction onException(Throwable throwable) {
+    public final ExceptionAction onException(Throwable throwable) {
         if (this instanceof BackupOperation && throwable instanceof MemberLeftException) {
-            return InvocationAction.THROW_EXCEPTION;
+            return ExceptionAction.THROW_EXCEPTION;
         }
-        final InvocationAction action = getActionOnException(throwable);
-        return action != null ? action : InvocationAction.THROW_EXCEPTION;
+        final ExceptionAction action = getActionOnException(throwable);
+        return action != null ? action : ExceptionAction.THROW_EXCEPTION;
     }
 
-    protected InvocationAction getActionOnException(Throwable throwable) {
+    protected ExceptionAction getActionOnException(Throwable throwable) {
         return (throwable instanceof RetryableException)
-                ? InvocationAction.RETRY_INVOCATION : InvocationAction.THROW_EXCEPTION;
+                ? ExceptionAction.RETRY_INVOCATION : ExceptionAction.THROW_EXCEPTION;
     }
 
     public String getCallerUuid() {

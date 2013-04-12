@@ -92,7 +92,7 @@ public class StaticNodeFactory {
             config = new XmlConfigBuilder().build();
         }
         config.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
-        config.setProperty(GroupProperties.PROP_GRACEFUL_SHUTDOWN_MAX_WAIT, "5");
+        config.setProperty(GroupProperties.PROP_GRACEFUL_SHUTDOWN_MAX_WAIT, "10");
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         return config;
     }

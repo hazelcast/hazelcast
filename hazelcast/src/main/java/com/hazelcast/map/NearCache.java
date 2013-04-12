@@ -83,7 +83,7 @@ public class NearCache {
 
     private void fireEvictCache() {
         if (canEvict.compareAndSet(true, false)) {
-            nodeEngine.getExecutionService().execute("hz:near-cache-evict", new Runnable() {
+            nodeEngine.getExecutionService().execute("hz:near-cache", new Runnable() {
                 public void run() {
                     List<CacheRecord> values = new ArrayList(cache.values());
                     Collections.sort(values);
@@ -102,7 +102,7 @@ public class NearCache {
             return;
 
         if (canCleanUp.compareAndSet(true, false)) {
-            nodeEngine.getExecutionService().execute("hz:near-cache-cleanup", new Runnable() {
+            nodeEngine.getExecutionService().execute("hz:near-cache", new Runnable() {
                 public void run() {
                     lastCleanup = Clock.currentTimeMillis();
                     Iterator<Map.Entry<Data, CacheRecord>> iterator = cache.entrySet().iterator();

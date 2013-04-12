@@ -26,7 +26,6 @@ import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.partition.MigrationEndpoint;
-import com.hazelcast.partition.MigrationType;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.queue.client.*;
 import com.hazelcast.queue.proxy.DataQueueProxy;
@@ -98,10 +97,10 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         containerMap.put(name, container);
     }
 
-    public void beforeMigration(MigrationServiceEvent migrationServiceEvent) {
+    public void beforeMigration(PartitionMigrationEvent partitionMigrationEvent) {
     }
 
-    public Operation prepareMigrationOperation(MigrationServiceEvent event) {
+    public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
         Map<String, QueueContainer> migrationData = new HashMap<String, QueueContainer>();
         for (Entry<String, QueueContainer> entry : containerMap.entrySet()) {
             String name = entry.getKey();
@@ -110,31 +109,33 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
                 migrationData.put(name, container);
             }
         }
-        return migrationData.isEmpty() ? null : new QueueMigrationOperation(migrationData, event.getPartitionId(), event.getReplicaIndex());
+        return migrationData.isEmpty() ? null : new QueueReplicationOperation(migrationData, event.getPartitionId(), event.getReplicaIndex());
     }
 
-    public void commitMigration(MigrationServiceEvent event) {
+    public void commitMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-            if (event.getMigrationType() == MigrationType.MOVE || event.getMigrationType() == MigrationType.MOVE_COPY_BACK) {
-                clearMigrationData(event.getPartitionId(), event.getCopyBackReplicaIndex());
-            }
+            clearMigrationData(event.getPartitionId());
         }
     }
 
-    public void rollbackMigration(MigrationServiceEvent event) {
+    public void rollbackMigration(PartitionMigrationEvent event) {
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
-            clearMigrationData(event.getPartitionId(), -1);
+            clearMigrationData(event.getPartitionId());
         }
     }
 
-    private void clearMigrationData(int partitionId, int copyBack) {
+    private void clearMigrationData(int partitionId) {
         Iterator<Entry<String, QueueContainer>> iterator = containerMap.entrySet().iterator();
         while (iterator.hasNext()) {
             QueueContainer container = iterator.next().getValue();
-            if (container.getPartitionId() == partitionId && (copyBack == -1 || container.getConfig().getTotalBackupCount() < copyBack)) {
+            if (container.getPartitionId() == partitionId) {
                 iterator.remove();
             }
         }
+    }
+
+    public void clearPartitionReplica(int partitionId) {
+        clearMigrationData(partitionId);
     }
 
     public void dispatchEvent(QueueEvent event, ItemListener listener) {
