@@ -44,7 +44,7 @@ public class RemoveAllOperation extends CollectionBackupAwareOperation {
     public void run() throws Exception {
         begin = Clock.currentTimeMillis();
         coll = removeCollection();
-        response = new CollectionResponse(coll, getNodeEngine());
+        response = new CollectionResponse(coll);
     }
 
     public void afterRun() throws Exception {

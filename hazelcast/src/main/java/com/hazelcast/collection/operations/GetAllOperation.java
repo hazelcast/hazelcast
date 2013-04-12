@@ -45,7 +45,7 @@ public class GetAllOperation extends CollectionKeyBasedOperation {
             coll = wrapper.getCollection();
         }
         begin = Clock.currentTimeMillis();
-        response = new CollectionResponse(coll, getNodeEngine());
+        response = new CollectionResponse(coll);
     }
 
     public void afterRun() throws Exception {

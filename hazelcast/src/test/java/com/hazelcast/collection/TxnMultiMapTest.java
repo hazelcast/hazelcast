@@ -50,7 +50,6 @@ public class TxnMultiMapTest {
         Config config = new Config();
         final String name = "defMM";
         config.getMultiMapConfig(name).setValueCollectionType(MultiMapConfig.ValueCollectionType.SET);
-        final int count = 100;
 
         final int insCount = 4;
         final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
@@ -60,17 +59,7 @@ public class TxnMultiMapTest {
             TransactionalMultiMap mm = context.getMultiMap(name);
             boolean result = mm.put("key1","value1");
             System.err.println("res: " + result);
-            new Thread(){
-                public void run() {
-                    try {
-                        System.err.println("1");
-                        instances[1].getMultiMap(name).put("key1","value2");
-                        System.err.println("2");
-                    } catch (Exception e){
-                        System.err.println("time out" + e.getMessage());
-                    }
-                }
-            }.start();
+
             Thread.sleep(10*1000);
             context.commitTransaction();
         } catch (Exception e){

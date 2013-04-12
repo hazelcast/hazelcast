@@ -17,10 +17,8 @@
 package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionRecord;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.NodeEngine;
 
@@ -34,29 +32,27 @@ import java.util.Collections;
  */
 public class CollectionResponse implements DataSerializable {
 
-    private Collection<Data> collection;
+    private Collection collection;
+
+    private Object attachment;
 
     public CollectionResponse() {
     }
 
-    public CollectionResponse(Collection<Data> collection) {
-        if (collection == null) {
-            return;
-        }
+    public CollectionResponse(Collection collection) {
         this.collection = collection;
     }
 
-    public CollectionResponse(Collection<CollectionRecord> collection, NodeEngine nodeEngine) {
-        if (collection == null) {
-            return;
-        }
-        this.collection = new ArrayList<Data>(collection.size());
-        for (CollectionRecord record : collection) {
-            this.collection.add(nodeEngine.toData(record.getObject()));
-        }
+    public Object getAttachment() {
+        return attachment;
     }
 
-    public Collection<Data> getCollection() {
+    public CollectionResponse setAttachment(Object attachment) {
+        this.attachment = attachment;
+        return this;
+    }
+
+    public Collection getCollection() {
         return collection;
     }
 
@@ -65,31 +61,46 @@ public class CollectionResponse implements DataSerializable {
             return Collections.emptyList();
         }
         Collection coll = new ArrayList(collection.size());
-        for (Data data : collection) {
-            coll.add(nodeEngine.toObject(data));
+        for (Object obj : collection) {
+            CollectionRecord record = nodeEngine.toObject(obj);
+            coll.add(nodeEngine.toObject(record.getObject()));
+        }
+        return coll;
+    }
+
+    public Collection<CollectionRecord> getRecordCollection(NodeEngine nodeEngine) {
+        if (collection == null) {
+            return Collections.emptyList();
+        }
+        Collection<CollectionRecord> coll = new ArrayList(collection.size());
+        for (Object obj : collection) {
+            CollectionRecord record = nodeEngine.toObject(obj);
+            coll.add(record);
         }
         return coll;
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeObject(attachment);
         if (collection == null) {
             out.writeInt(-1);
             return;
         }
         out.writeInt(collection.size());
-        for (Data data : collection) {
-            data.writeData(out);
+        for (Object obj : collection) {
+            out.writeObject(obj);
         }
     }
 
     public void readData(ObjectDataInput in) throws IOException {
+        attachment = in.readObject();
         int size = in.readInt();
         if (size == -1) {
             return;
         }
-        collection = new ArrayList<Data>(size);
+        collection = new ArrayList(size);
         for (int i = 0; i < size; i++) {
-            collection.add(IOUtil.readData(in));
+            collection.add(in.readObject());
         }
     }
 

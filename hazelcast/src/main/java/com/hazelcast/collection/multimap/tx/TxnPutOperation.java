@@ -56,6 +56,7 @@ public class TxnPutOperation extends CollectionBackupAwareOperation implements N
         begin = Clock.currentTimeMillis();
         CollectionContainer container = getOrCreateContainer();
         CollectionWrapper wrapper = container.getOrCreateCollectionWrapper(dataKey);
+        response = true;
         if (wrapper.containsRecordId(recordId)){
             response = false;
             notify = false;
@@ -63,7 +64,7 @@ public class TxnPutOperation extends CollectionBackupAwareOperation implements N
         }
         Collection<CollectionRecord> coll = wrapper.getCollection();
         CollectionRecord record = new CollectionRecord(recordId, isBinary() ? value : toObject(value));
-        response = coll.add(record);
+        coll.add(record);
         container.unlock(dataKey, getCallerUuid(), threadId);
     }
 

@@ -17,19 +17,25 @@
 package com.hazelcast.collection.multimap.tx;
 
 import com.hazelcast.collection.CollectionProxyId;
+import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.collection.CollectionService;
+import com.hazelcast.collection.operations.CollectionResponse;
 import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.Transaction;
 import com.hazelcast.transaction.TransactionException;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
 /**
  * @ali 3/29/13
  */
 public class TransactionalMultiMapProxy<K,V> extends TransactionalMultiMapProxySupport implements TransactionalMultiMap<K, V> {
+
+
+
 
     public TransactionalMultiMapProxy(NodeEngine nodeEngine, CollectionService service, CollectionProxyId proxyId, Transaction tx) {
         super(nodeEngine, service, proxyId, tx);
@@ -42,7 +48,13 @@ public class TransactionalMultiMapProxy<K,V> extends TransactionalMultiMapProxyS
     }
 
     public Collection<V> get(K key) {
-        return null;
+        Data dataKey = getNodeEngine().toData(key);
+        Collection<CollectionRecord> coll = getInternal(dataKey);
+        Collection<V> collection = new ArrayList<V>(coll.size());
+        for (CollectionRecord record: coll){
+            collection.add((V)getNodeEngine().toObject(record.getObject()));
+        }
+        return collection;
     }
 
     public boolean remove(Object key, Object value) {
@@ -52,11 +64,16 @@ public class TransactionalMultiMapProxy<K,V> extends TransactionalMultiMapProxyS
     }
 
     public Collection<V> remove(Object key) {
-        return null;
+        Data dataKey = getNodeEngine().toData(key);
+        CollectionResponse response = removeAllInternal(dataKey);
+        return response.getObjectCollection(getNodeEngine());
     }
 
     public int valueCount(K key) {
-        return 0;
+        Data dataKey = getNodeEngine().toData(key);
+        return valueCountInternal(dataKey);
     }
+
+
 
 }

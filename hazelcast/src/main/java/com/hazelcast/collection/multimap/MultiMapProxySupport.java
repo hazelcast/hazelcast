@@ -109,7 +109,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
                 if (result == null) {
                     continue;
                 }
-                CollectionResponse response = (CollectionResponse) nodeEngine.toObject(result);
+                CollectionResponse response = nodeEngine.toObject(result);
                 keySet.addAll(response.getCollection());
             }
             return keySet;

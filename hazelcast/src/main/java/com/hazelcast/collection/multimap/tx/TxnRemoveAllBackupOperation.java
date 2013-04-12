@@ -27,49 +27,48 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 
 /**
- * @ali 4/5/13
+ * @ali 4/10/13
  */
-public class TxnRemoveBackupOperation extends CollectionKeyBasedOperation implements BackupOperation {
+public class TxnRemoveAllBackupOperation extends CollectionKeyBasedOperation implements BackupOperation {
 
-    long recordId;
-    Data value;
-    int threadId;
+    Collection<Long> recordIds;
     String caller;
+    int threadId;
 
-    public TxnRemoveBackupOperation() {
+    public TxnRemoveAllBackupOperation() {
     }
 
-    public TxnRemoveBackupOperation(CollectionProxyId proxyId, Data dataKey, long recordId, Data value, int threadId, String caller) {
+    public TxnRemoveAllBackupOperation(CollectionProxyId proxyId, Data dataKey, String caller, int threadId, Collection<Long> recordIds) {
         super(proxyId, dataKey);
-        this.recordId = recordId;
-        this.value = value;
+        this.recordIds = recordIds;
         this.threadId = threadId;
         this.caller = caller;
     }
 
     public void run() throws Exception {
         CollectionContainer container = getOrCreateContainer();
-        CollectionWrapper wrapper = container.getCollectionWrapper(dataKey);
+        CollectionWrapper wrapper = container.getOrCreateCollectionWrapper(dataKey);
         response = true;
-        if (recordId == -1){
-            //TODO this breaks idempotent behaviour
-            container.unlock(dataKey, getCallerUuid(), threadId);
-            return;
-        }
-        if (wrapper == null || !wrapper.containsRecordId(recordId)) {
-            response = false;
-            return;
+        for (Long recordId: recordIds){
+            if(!wrapper.containsRecordId(recordId)){
+                response = false;
+                return;
+            }
         }
         Collection<CollectionRecord> coll = wrapper.getCollection();
-        Iterator<CollectionRecord> iter = coll.iterator();
-        while (iter.hasNext()){
-            if (iter.next().getRecordId() == recordId){
-                iter.remove();
-                break;
+        for (Long recordId: recordIds){
+            Iterator<CollectionRecord> iter = coll.iterator();
+            while (iter.hasNext()){
+                CollectionRecord record = iter.next();
+                if (record.getRecordId() == recordId){
+                    iter.remove();
+                    break;
+                }
             }
         }
         if (coll.isEmpty()) {
@@ -80,18 +79,22 @@ public class TxnRemoveBackupOperation extends CollectionKeyBasedOperation implem
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(recordId);
-        out.writeInt(threadId);
         out.writeUTF(caller);
-        value.writeData(out);
+        out.writeInt(threadId);
+        out.writeInt(recordIds.size());
+        for (Long recordId: recordIds){
+            out.writeLong(recordId);
+        }
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        recordId = in.readLong();
-        threadId = in.readInt();
         caller = in.readUTF();
-        value = new Data();
-        value.readData(in);
+        threadId = in.readInt();
+        int size = in.readInt();
+        recordIds = new ArrayList<Long>();
+        for (int i=0; i<size; i++){
+            recordIds.add(in.readLong());
+        }
     }
 }

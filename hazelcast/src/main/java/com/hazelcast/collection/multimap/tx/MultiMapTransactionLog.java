@@ -38,16 +38,14 @@ public class MultiMapTransactionLog implements TransactionLog {
     CollectionProxyId proxyId;
     Operation op;
     Data key;
-    long recordId;
     long ttl;
     int threadId;
 
     public MultiMapTransactionLog() {
     }
 
-    public MultiMapTransactionLog(Data key, long recordId, CollectionProxyId proxyId, long ttl, int threadId, Operation op) {
+    public MultiMapTransactionLog(Data key, CollectionProxyId proxyId, long ttl, int threadId, Operation op) {
         this.key = key;
-        this.recordId = recordId;
         this.proxyId = proxyId;
         this.ttl = ttl;
         this.threadId = threadId;
@@ -93,7 +91,6 @@ public class MultiMapTransactionLog implements TransactionLog {
         proxyId.writeData(out);
         out.writeObject(op);
         key.writeData(out);
-        out.writeLong(recordId);
         out.writeLong(ttl);
         out.writeInt(threadId);
     }
@@ -104,7 +101,6 @@ public class MultiMapTransactionLog implements TransactionLog {
         op = in.readObject();
         key = new Data();
         key.readData(in);
-        recordId = in.readLong();
         ttl = in.readLong();
         threadId = in.readInt();
     }

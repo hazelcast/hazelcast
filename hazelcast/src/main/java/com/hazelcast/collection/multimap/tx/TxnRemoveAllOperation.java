@@ -31,76 +31,83 @@ import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedList;
 
 /**
- * @ali 4/5/13
+ * @ali 4/10/13
  */
-public class TxnRemoveOperation extends CollectionBackupAwareOperation implements Notifier {
+public class TxnRemoveAllOperation extends CollectionBackupAwareOperation implements Notifier {
 
-    long recordId;
-    Data value;
+    Collection<Long> recordIds;
     transient long begin = -1;
-    transient boolean notify = true;
+    transient Collection<CollectionRecord> removed;
 
-    public TxnRemoveOperation() {
+    public TxnRemoveAllOperation() {
     }
 
-    public TxnRemoveOperation(CollectionProxyId proxyId, Data dataKey, int threadId, long recordId, Data value) {
+    public TxnRemoveAllOperation(CollectionProxyId proxyId, Data dataKey, int threadId, Collection<CollectionRecord> records) {
         super(proxyId, dataKey, threadId);
-        this.recordId = recordId;
-        this.value = value;
+        this.recordIds = new ArrayList<Long>();
+        for (CollectionRecord record: records){
+            recordIds.add(record.getRecordId());
+        }
     }
 
     public void run() throws Exception {
         begin = Clock.currentTimeMillis();
         CollectionContainer container = getOrCreateContainer();
-        CollectionWrapper wrapper = container.getCollectionWrapper(dataKey);
+        CollectionWrapper wrapper = container.getOrCreateCollectionWrapper(dataKey);
         response = true;
-        if (recordId == -1){
-            //TODO this breaks idempotent behaviour
-            container.unlock(dataKey, getCallerUuid(), threadId);
-            return;
-        }
-        if (wrapper == null || !wrapper.containsRecordId(recordId)) {
-            response = false;
-            notify = false;
-            return;
+        for (Long recordId: recordIds){
+            if(!wrapper.containsRecordId(recordId)){
+                response = false;
+                return;
+            }
         }
         Collection<CollectionRecord> coll = wrapper.getCollection();
-        Iterator<CollectionRecord> iter = coll.iterator();
-        while (iter.hasNext()){
-            if (iter.next().getRecordId() == recordId){
-                iter.remove();
-                break;
+        removed = new LinkedList<CollectionRecord>();
+        for (Long recordId: recordIds){
+            Iterator<CollectionRecord> iter = coll.iterator();
+            while (iter.hasNext()){
+                CollectionRecord record = iter.next();
+                if (record.getRecordId() == recordId){
+                    iter.remove();
+                    removed.add(record);
+                    break;
+                }
             }
         }
         if (coll.isEmpty()) {
             removeCollection();
         }
         container.unlock(dataKey, getCallerUuid(), threadId);
+
     }
 
     public void afterRun() throws Exception {
         long elapsed = Math.max(0, Clock.currentTimeMillis()-begin);
         getOrCreateContainer().getOperationsCounter().incrementRemoves(elapsed);
-        if (Boolean.TRUE.equals(response)) {
+        if (removed != null) {
             getOrCreateContainer().update();
-            publishEvent(EntryEventType.REMOVED, dataKey, value);
+            for (CollectionRecord record : removed) {
+                publishEvent(EntryEventType.REMOVED, dataKey, record.getObject());
+            }
         }
     }
 
     public Operation getBackupOperation() {
-        return new TxnRemoveBackupOperation(proxyId,dataKey,recordId,value,threadId,getCallerUuid());
+        return new TxnRemoveAllBackupOperation(proxyId, dataKey, getCallerUuid(), threadId, recordIds);
     }
 
     public boolean shouldNotify() {
-        return notify;
+        return removed != null;
     }
 
     public boolean shouldBackup() {
-        return notify;
+        return removed != null;
     }
 
     public WaitNotifyKey getNotifiedKey() {
@@ -109,15 +116,18 @@ public class TxnRemoveOperation extends CollectionBackupAwareOperation implement
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(recordId);
-        value.writeData(out);
+        out.writeInt(recordIds.size());
+        for (Long recordId: recordIds){
+            out.writeLong(recordId);
+        }
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        recordId = in.readLong();
-        value = new Data();
-        value.readData(in);
+        int size = in.readInt();
+        recordIds = new ArrayList<Long>();
+        for (int i=0; i<size; i++){
+            recordIds.add(in.readLong());
+        }
     }
-
 }

@@ -21,7 +21,6 @@ import com.hazelcast.collection.operations.CollectionKeyBasedOperation;
 import com.hazelcast.collection.operations.CollectionResponse;
 import com.hazelcast.concurrent.lock.LockNamespace;
 import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -31,8 +30,6 @@ import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Iterator;
-import java.util.Set;
 
 /**
  * @ali 4/4/13
@@ -42,22 +39,16 @@ public class TxnLockAndGetOperation extends CollectionKeyBasedOperation implemen
     long timeout;
     long ttl;
     int threadId;
-    Data value;
-    int operationType;
+    boolean getCollection = false;
 
     public TxnLockAndGetOperation() {
     }
 
-    public TxnLockAndGetOperation(CollectionProxyId proxyId, Data dataKey, Data value, long timeout, long ttl, int threadId) {
+    public TxnLockAndGetOperation(CollectionProxyId proxyId, Data dataKey, long timeout, long ttl, int threadId) {
         super(proxyId, dataKey);
-        this.value = value;
         this.timeout = timeout;
         this.ttl = ttl;
         this.threadId = threadId;
-    }
-
-    public void setOperationType(int operationType){
-        this.operationType = operationType;
     }
 
     public void run() throws Exception {
@@ -65,42 +56,9 @@ public class TxnLockAndGetOperation extends CollectionKeyBasedOperation implemen
         if (!container.txnLock(dataKey, getCallerUuid(), threadId, ttl)) {
             throw new TransactionException("Lock failed.");
         }
-        CollectionRecord record = new CollectionRecord(isBinary() ? value : toObject(value));
-        CollectionWrapper wrapper = null;
-        Collection<CollectionRecord> coll = null;
-        long recordId = -1;
-        switch (operationType){
-            case PUT_OPERATION:
-                wrapper = getOrCreateCollectionWrapper();
-                coll = wrapper.getCollection();
-                if (!(coll instanceof Set) || !coll.contains(record)){
-                    recordId = container.nextId();
-                }
-                response = recordId;
-                break;
-            case REMOVE_OPERATION:
-                wrapper = getCollectionWrapper();
-                if (wrapper != null){
-                    coll = wrapper.getCollection();
-                    Iterator<CollectionRecord> iter = coll.iterator();
-                    while (iter.hasNext()){
-                        CollectionRecord r = iter.next();
-                        if (r.equals(record)){
-                            recordId = r.getRecordId();
-                            break;
-                        }
-                    }
-                }
-                response = recordId;
-                break;
-            case REMOVE_ALL_OPERATION:
-                wrapper = getCollectionWrapper();
-                if (wrapper != null){
-                    coll = wrapper.getCollection();
-                }
-                response = new CollectionResponse(coll, getNodeEngine());
-                break;
-        }
+        CollectionWrapper wrapper = getCollectionWrapper();
+        Collection<CollectionRecord> coll = wrapper != null ? wrapper.getCollection() : null;
+        response = new CollectionResponse(getCollection ? coll : null).setAttachment(container.nextId());
     }
 
     public WaitNotifyKey getWaitKey() {
@@ -119,22 +77,23 @@ public class TxnLockAndGetOperation extends CollectionKeyBasedOperation implemen
         getResponseHandler().sendResponse(null);
     }
 
+    public void setGetCollection(boolean getCollection) {
+        this.getCollection = getCollection;
+    }
+
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        IOUtil.writeNullableData(out, value);
-        value.writeData(out);
         out.writeLong(timeout);
         out.writeLong(ttl);
         out.writeInt(threadId);
-        out.writeInt(operationType);
+        out.writeBoolean(getCollection);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        value = IOUtil.readNullableData(in);
         timeout = in.readLong();
         ttl = in.readLong();
         threadId = in.readInt();
-        operationType = in.readInt();
+        getCollection = in.readBoolean();
     }
 }
