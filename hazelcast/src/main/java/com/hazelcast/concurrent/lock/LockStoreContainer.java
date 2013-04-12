@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * @mdogan 2/12/13
  */
-class LockStoreContainer {
+public class LockStoreContainer {
 
     private final LockService lockService;
     private final int partitionId;
@@ -71,6 +71,7 @@ class LockStoreContainer {
         return ConcurrencyUtil.getOrPutIfAbsent(lockStores, namespace, lockStoreConstructor);
     }
 
+    public Collection<LockStoreImpl> getLockStores() {
     LockStoreImpl getLockStore(ObjectNamespace namespace) {
         return lockStores.get(namespace);
     }

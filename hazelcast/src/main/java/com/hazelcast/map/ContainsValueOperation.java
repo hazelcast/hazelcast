@@ -43,7 +43,7 @@ public class ContainsValueOperation extends AbstractMapOperation implements Part
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
         contains = recordStore.containsValue(testValue);
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            mapService.getMapContainer(name).getMapOperationCounter().incrementOtherOperations();
+            ((MapService) getService()).getLocalMapStatsImpl(name).incrementOtherOperations();//TODO @msk stats change
         }
     }
 

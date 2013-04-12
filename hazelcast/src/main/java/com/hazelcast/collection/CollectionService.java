@@ -27,8 +27,7 @@ import com.hazelcast.collection.set.ObjectSetProxy;
 import com.hazelcast.collection.set.client.*;
 import com.hazelcast.core.*;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.monitor.impl.LocalMapStatsImpl;
-import com.hazelcast.monitor.impl.MapOperationsCounter;
+import com.hazelcast.monitor.impl.LocalMultiMapStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.protocol.Command;
@@ -39,6 +38,7 @@ import com.hazelcast.partition.MigrationType;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
 import com.hazelcast.transaction.Transaction;
+import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -53,11 +53,15 @@ public class CollectionService implements ManagedService, RemoteService, Members
         MigrationAwareService, EventPublishingService<CollectionEvent, EventListener>, ClientProtocolService, TransactionalService {
 
     public static final String SERVICE_NAME = "hz:impl:collectionService";
-
     private final NodeEngine nodeEngine;
     private final CollectionPartitionContainer[] partitionContainers;
     private final ConcurrentMap<ListenerKey, String> eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
-    private final ConcurrentMap<CollectionProxyId, MapOperationsCounter> counterMap = new ConcurrentHashMap<CollectionProxyId, MapOperationsCounter>(1000);
+    private final ConcurrentMap<CollectionProxyId, LocalMultiMapStatsImpl> statsMap = new ConcurrentHashMap<CollectionProxyId, LocalMultiMapStatsImpl>(1000);
+    private final ConcurrencyUtil.ConstructorFunction<CollectionProxyId, LocalMultiMapStatsImpl> localMultiMapStatsConstructorFunction = new ConcurrencyUtil.ConstructorFunction<CollectionProxyId, LocalMultiMapStatsImpl>() {
+        public LocalMultiMapStatsImpl createNew(CollectionProxyId key) {
+            return new LocalMultiMapStatsImpl();
+        }
+    };
 
     public CollectionService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -142,14 +146,14 @@ public class CollectionService implements ManagedService, RemoteService, Members
             PartitionInfo partitionInfo = nodeEngine.getPartitionService().getPartitionInfo(i);
             CollectionPartitionContainer partitionContainer = getPartitionContainer(i);
             CollectionContainer collectionContainer = partitionContainer.getCollectionContainer(proxyId);
-            if (collectionContainer == null){
+            if (collectionContainer == null) {
                 continue;
             }
             if (partitionInfo.getOwner().equals(thisAddress)) {
                 keySet.addAll(collectionContainer.keySet());
             }
         }
-        getOrCreateOperationsCounter(proxyId).incrementOtherOperations();
+        getLocalMultiMapStatsImpl(proxyId).incrementOtherOperations();
         return keySet;
     }
 
@@ -196,7 +200,7 @@ public class CollectionService implements ManagedService, RemoteService, Members
             } else if (event.eventType.equals(EntryEventType.REMOVED)) {
                 entryListener.entryRemoved(entryEvent);
             }
-            getOrCreateOperationsCounter(event.getProxyId()).incrementReceivedEvents();
+            getLocalMultiMapStatsImpl(event.getProxyId()).incrementReceivedEvents();
         } else if (listener instanceof ItemListener) {
             ItemListener itemListener = (ItemListener) listener;
             ItemEvent itemEvent = new ItemEvent(event.getProxyId().getName(), event.eventType.getType(), nodeEngine.toObject(event.getValue()),
@@ -326,8 +330,8 @@ public class CollectionService implements ManagedService, RemoteService, Members
     public void clientDisconnected(String clientUuid) {
     }
 
-    public LocalMapStats createStats(CollectionProxyId proxyId){
-        LocalMapStatsImpl stats = new LocalMapStatsImpl();
+    public LocalMapStats createStats(CollectionProxyId proxyId) {
+        LocalMultiMapStatsImpl stats = getLocalMultiMapStatsImpl(proxyId);
         long ownedEntryCount = 0;
         long backupEntryCount = 0;
         long dirtyCount = 0;
@@ -335,8 +339,7 @@ public class CollectionService implements ManagedService, RemoteService, Members
         long backupEntryMemoryCost = 0;
         long hits = 0;
         long lockedEntryCount = 0;
-        long creationTime = Long.MAX_VALUE;
-
+        //TODO @msk memory costs????
         ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();
 
         Address thisAddress = clusterService.getThisAddress();
@@ -344,20 +347,16 @@ public class CollectionService implements ManagedService, RemoteService, Members
             PartitionInfo partitionInfo = nodeEngine.getPartitionService().getPartitionInfo(i);
             CollectionPartitionContainer partitionContainer = getPartitionContainer(i);
             CollectionContainer collectionContainer = partitionContainer.getCollectionContainer(proxyId);
-            if (collectionContainer == null){
+            if (collectionContainer == null) {
                 continue;
             }
             if (partitionInfo.getOwner().equals(thisAddress)) {
-                stats.setLastAccessTime(collectionContainer.getLastAccessTime());
-                stats.setLastUpdateTime(collectionContainer.getLastUpdateTime());
-                creationTime = Math.min(creationTime, collectionContainer.getCreationTime());
                 lockedEntryCount += collectionContainer.getLockedCount();
-                for (CollectionWrapper wrapper: collectionContainer.collections.values()){
+                for (CollectionWrapper wrapper : collectionContainer.collections.values()) {
                     hits += wrapper.getHits();
                     ownedEntryCount += wrapper.getCollection().size();
                 }
-            }
-            else {
+            } else {
                 int backupCount = collectionContainer.config.getTotalBackupCount();
                 for (int j = 1; j <= backupCount; j++) {
                     Address replicaAddress = partitionInfo.getReplicaAddress(j);
@@ -375,32 +374,23 @@ public class CollectionService implements ManagedService, RemoteService, Members
                     }
 
                     if (replicaAddress != null && replicaAddress.equals(thisAddress)) {
-                        for (CollectionWrapper wrapper: collectionContainer.collections.values()){
+                        for (CollectionWrapper wrapper : collectionContainer.collections.values()) {
                             backupEntryCount += wrapper.getCollection().size();
                         }
                     }
                 }
             }
         }
-        stats.setCreationTime(creationTime == Long.MAX_VALUE ? -1 : creationTime);
         stats.setOwnedEntryCount(ownedEntryCount);
         stats.setBackupEntryCount(backupEntryCount);
         stats.setHits(hits);
         stats.setLockedEntryCount(lockedEntryCount);
-        stats.setOperationStats(getOrCreateOperationsCounter(proxyId).getPublishedStats());
         return stats;
     }
 
-    public MapOperationsCounter getOrCreateOperationsCounter(CollectionProxyId proxyId){
-        MapOperationsCounter operationsCounter = counterMap.get(proxyId);
-        if (operationsCounter == null){
-            operationsCounter = new MapOperationsCounter();
-            MapOperationsCounter counter = counterMap.putIfAbsent(proxyId, operationsCounter);
-            if (counter != null){
-                operationsCounter = counter;
-            }
-        }
-        return operationsCounter;
+
+    public LocalMultiMapStatsImpl getLocalMultiMapStatsImpl(CollectionProxyId name) {
+        return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, localMultiMapStatsConstructorFunction);
     }
 
     public <T extends TransactionalObject> T createTransactionalObject(Object id, Transaction transaction) {

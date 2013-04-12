@@ -24,13 +24,11 @@ import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.util.ConcurrencyUtil;
 
 import java.io.IOException;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-class LockStoreImpl implements DataSerializable, LockStore {
+public class LockStoreImpl implements DataSerializable, LockStore {
 
     private final ConcurrencyUtil.ConstructorFunction<Data, LockInfo> lockConstructor
             = new ConcurrencyUtil.ConstructorFunction<Data, LockInfo>() {

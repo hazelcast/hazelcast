@@ -18,6 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.client.ClientCommandHandler;
 import com.hazelcast.cluster.ClusterServiceImpl;
+import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapMergePolicyConfig;
@@ -87,6 +88,17 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         logger = nodeEngine.getLogger(MapService.class.getName());
         partitionContainers = new PartitionContainer[nodeEngine.getPartitionService().getPartitionCount()];
         ownedPartitions = new AtomicReference<List<Integer>>();
+    }
+
+    private final ConcurrentMap<String, LocalMapStatsImpl> statsMap = new ConcurrentHashMap<String, LocalMapStatsImpl>(1000);
+    private final ConcurrencyUtil.ConstructorFunction<String, LocalMapStatsImpl> localMapStatsConstructorFunction = new ConcurrencyUtil.ConstructorFunction<String, LocalMapStatsImpl>() {
+        public LocalMapStatsImpl createNew(String key) {
+            return new LocalMapStatsImpl();
+        }
+    };
+
+    public LocalMapStatsImpl getLocalMapStatsImpl(String name) {
+        return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, localMapStatsConstructorFunction);
     }
 
     public void init(final NodeEngine nodeEngine, Properties properties) {
@@ -856,7 +868,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         }
         MapContainer mapContainer = getMapContainer(eventData.getMapName());
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            mapContainer.getMapOperationCounter().incrementReceivedEvents();
+            getLocalMapStatsImpl(eventData.getMapName()).incrementReceivedEvents();//TODO @msk stats change
         }
     }
 
@@ -1062,9 +1074,9 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public LocalMapStatsImpl createLocalMapStats(String mapName) {
-        LocalMapStatsImpl localMapStats = new LocalMapStatsImpl();
         MapContainer mapContainer = getMapContainer(mapName);
-        if (mapContainer.getMapConfig().isStatisticsEnabled()) {
+        LocalMapStatsImpl localMapStats = getLocalMapStatsImpl(mapName);
+        if (!mapContainer.getMapConfig().isStatisticsEnabled()) {
             return localMapStats;
         }
 
@@ -1096,7 +1108,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                     ownedEntryCount++;
                     ownedEntryMemoryCost += record.getCost();
                     localMapStats.setLastAccessTime(stats.getLastAccessTime());
-                    localMapStats.setLastUpdateTime(stats.getLastUpdateTime());
+//                    localMapStats.setLastUpdateTime(stats.getLastUpdateTime());//TODO @msk last update time
                     hits += stats.getHits();
                     if (recordStore.isLocked(record.getKey())) {
                         lockedEntryCount++;
@@ -1138,8 +1150,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         localMapStats.setBackupEntryCount(zeroOrPositive(backupEntryCount));
         localMapStats.setOwnedEntryMemoryCost(zeroOrPositive(ownedEntryMemoryCost));
         localMapStats.setBackupEntryMemoryCost(zeroOrPositive(backupEntryMemoryCost));
-        localMapStats.setCreationTime(zeroOrPositive(clusterService.getClusterTimeFor(mapContainer.getCreationTime())));
-        localMapStats.setOperationStats(getMapContainer(mapName).getMapOperationCounter().getPublishedStats());
         return localMapStats;
     }
 

@@ -60,11 +60,10 @@ public final class OfferOperation extends QueueBackupAwareOperation implements W
 
     public void afterRun() throws Exception {
         if (Boolean.TRUE.equals(response)) {
-            getQueueService().getOrCreateOperationsCounter(name).incrementOffers();
+            getQueueService().getLocalQueueStatsImpl(name).incrementOffers();
             publishEvent(ItemEventType.ADDED, data);
-        }
-        else{
-            getQueueService().getOrCreateOperationsCounter(name).incrementRejectedOffers();
+        } else {
+            getQueueService().getLocalQueueStatsImpl(name).incrementRejectedOffers();
         }
     }
 

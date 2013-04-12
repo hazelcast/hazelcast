@@ -17,8 +17,6 @@
 package com.hazelcast.examples;
 
 import com.hazelcast.core.*;
-import com.hazelcast.monitor.LocalMapOperationStats;
-import com.hazelcast.monitor.LocalQueueOperationStats;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.util.Clock;
 
@@ -69,13 +67,13 @@ public class AllTest {
     }
 
     private void qStats() {
-        LocalQueueOperationStats qOpStats = hazelcast.getQueue("myQ").getLocalQueueStats().getOperationStats();
-        long period = ((qOpStats.getPeriodEnd() - qOpStats.getPeriodStart()) / 1000);
-        if (period == 0) {
-            return;
-        }
-        log(qOpStats);
-        log("Q Operations per Second : " + (qOpStats.getNumberOfOffers() + qOpStats.getNumberOfEmptyPolls() + qOpStats.getNumberOfEmptyPolls() + qOpStats.getNumberOfRejectedOffers()) / period);
+//        LocalQueueOperationStats qOpStats = hazelcast.getQueue("myQ").getLocalQueueStats().getOperationStats();
+//        long period = ((qOpStats.getPeriodEnd() - qOpStats.getPeriodStart()) / 1000);
+//        if (period == 0) {
+//            return;
+//        }
+//        log(qOpStats);
+//        log("Q Operations per Second : " + (qOpStats.getOfferOperationCount() + qOpStats.getEmptyPollOperationCount() + qOpStats.getEmptyPollOperationCount() + qOpStats.getRejectedOfferOperationCount()) / period);
     }
 
     private void log(Object message) {
@@ -85,13 +83,13 @@ public class AllTest {
     }
 
     private void mapStats() {
-        LocalMapOperationStats mapOpStats = hazelcast.getMap("myMap").getLocalMapStats().getOperationStats();
-        long period = ((mapOpStats.getPeriodEnd() - mapOpStats.getPeriodStart()) / 1000);
-        if (period == 0) {
-            return;
-        }
-        log(mapOpStats);
-        log("Map Operations per Second : " + mapOpStats.total() / period);
+//        LocalMapOperationStats mapOpStats = hazelcast.getMap("myMap").getLocalMapStats().getOperationStats();
+//        long period = ((mapOpStats.getPeriodEnd() - mapOpStats.getPeriodStart()) / 1000);
+//        if (period == 0) {
+//            return;
+//        }
+//        log(mapOpStats);
+//        log("Map Operations per Second : " + mapOpStats.total() / period);
     }
 
     private void topicStats() {

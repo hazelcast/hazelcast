@@ -17,9 +17,6 @@
 package com.hazelcast.concurrent.atomiclong.proxy;
 
 import com.hazelcast.concurrent.atomiclong.*;
-import com.hazelcast.monitor.LocalAtomicLongStats;
-import com.hazelcast.monitor.impl.AtomicLongOperationsCounter;
-import com.hazelcast.monitor.impl.LocalAtomicLongStatsImpl;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;

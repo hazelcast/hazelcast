@@ -175,6 +175,10 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         return node.clusterService.getClusterProxy();
     }
 
+    public Collection<DistributedObject> getDistributedObjects(String serviceName) {
+        return node.nodeEngine.getProxyService().getDistributedObjects(serviceName);
+    }
+
     public Collection<DistributedObject> getDistributedObjects() {
         return node.nodeEngine.getProxyService().getAllDistributedObjects();
     }

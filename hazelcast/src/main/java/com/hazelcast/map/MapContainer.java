@@ -24,6 +24,7 @@ import com.hazelcast.core.MapStore;
 import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.merge.PassThroughMergePolicy;
 import com.hazelcast.monitor.impl.MapOperationsCounter;
@@ -62,9 +63,7 @@ public class MapContainer {
     private final Map<MapInterceptor, String> interceptorIdMap;
     private final IndexService indexService = new IndexService();
     private final boolean nearCacheEnabled;
-    private final MapOperationsCounter mapOperationCounter = new MapOperationsCounter();
     private volatile boolean mapReady = false;
-    private final long creationTime;
     private final AtomicBoolean initialLoaded = new AtomicBoolean(false);
 
     private final EntryTaskScheduler idleEvictionScheduler;
@@ -163,7 +162,6 @@ public class MapContainer {
         interceptorMap = new ConcurrentHashMap<String, MapInterceptor>();
         interceptorIdMap = new ConcurrentHashMap<MapInterceptor, String>();
         nearCacheEnabled = mapConfig.getNearCacheConfig() != null;
-        creationTime = Clock.currentTimeMillis();
     }
 
     // todo cache policies in a map probably in mapservice
@@ -355,7 +353,4 @@ public class MapContainer {
         return store;
     }
 
-    public long getCreationTime() {
-        return creationTime;
-    }
 }

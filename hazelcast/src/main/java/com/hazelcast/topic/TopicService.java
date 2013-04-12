@@ -20,6 +20,7 @@ import com.hazelcast.client.ClientCommandHandler;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
+import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.spi.*;
 import com.hazelcast.topic.client.TopicListenHandler;
@@ -47,11 +48,11 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     private final Lock[] orderingLocks = new Lock[1000];
     private NodeEngine nodeEngine;
 
-    private final ConcurrentMap<String, TopicStatsContainer> topicContainers = new ConcurrentHashMap<String, TopicStatsContainer>();
+    private final ConcurrentMap<String, LocalTopicStatsImpl> statsMap = new ConcurrentHashMap<String, LocalTopicStatsImpl>();
 
-    private final ConcurrencyUtil.ConstructorFunction<String, TopicStatsContainer> topicConstructor = new ConcurrencyUtil.ConstructorFunction<String, TopicStatsContainer>() {
-        public TopicStatsContainer createNew(String mapName) {
-            return new TopicStatsContainer();
+    private final ConcurrencyUtil.ConstructorFunction<String, LocalTopicStatsImpl> localTopicStatsConstructorFunction = new ConcurrencyUtil.ConstructorFunction<String, LocalTopicStatsImpl>() {
+        public LocalTopicStatsImpl createNew(String mapName) {
+            return new LocalTopicStatsImpl();
         }
     };
 
@@ -63,7 +64,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     }
 
     public void reset() {
-        topicContainers.clear();
+        statsMap.clear();
     }
 
     public void shutdown() {
@@ -94,7 +95,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     }
 
     public void destroyDistributedObject(Object objectId) {
-        topicContainers.remove(String.valueOf(objectId));
+        statsMap.remove(String.valueOf(objectId));
 
     }
 
@@ -105,16 +106,16 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         ((MessageListener) listener).onMessage(message);
     }
 
-    public TopicStatsContainer getTopicStatsContainer(String name) {
-        return ConcurrencyUtil.getOrPutSynchronized(topicContainers, name, topicContainers, topicConstructor);
+    public LocalTopicStatsImpl getLocalTopicStats(String name) {
+        return ConcurrencyUtil.getOrPutSynchronized(statsMap, name, statsMap, localTopicStatsConstructorFunction);
     }
 
     public void incrementPublishes(String topicName) {
-        getTopicStatsContainer(topicName).incrementPublishes();
+        getLocalTopicStats(topicName).incrementPublishes();
     }
 
     public void incrementReceivedMessages(String topicName) {
-        getTopicStatsContainer(topicName).incrementReceivedMessages();
+        getLocalTopicStats(topicName).incrementReceives();
     }
 
     public Map<Command, ClientCommandHandler> getCommandsAsMap() {

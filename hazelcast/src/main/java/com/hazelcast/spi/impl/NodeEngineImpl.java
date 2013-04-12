@@ -23,6 +23,7 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
@@ -121,6 +122,10 @@ public class NodeEngineImpl implements NodeEngine {
 
     public ClusterService getClusterService() {
         return node.getClusterService();
+    }
+
+    public ManagementCenterService getManagementCenterService() {
+        return node.getManagementCenterService();
     }
 
     public ProxyService getProxyService() {

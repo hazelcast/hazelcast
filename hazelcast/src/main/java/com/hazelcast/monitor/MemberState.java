@@ -32,11 +32,7 @@ public interface MemberState extends DataSerializable {
 
     LocalMapStats getLocalMapStats(String mapName);
 
-    LocalMapStats getLocalMultiMapStats(String mapName);
-
-//    LocalExecutorStats getInternalExecutorStats(String name);
-//
-//    LocalExecutorStats getExternalExecutorStats(String name);
+    LocalMultiMapStats getLocalMultiMapStats(String mapName);
 
     LocalQueueStats getLocalQueueStats(String queueName);
 

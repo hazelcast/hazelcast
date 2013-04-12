@@ -23,7 +23,7 @@ package com.hazelcast.monitor;
  * of another member. LocalMapStats tells you the count of owned and backup
  * entries besides their size in memory.
  */
-public interface LocalMapStats extends LocalInstanceStats<LocalMapOperationStats> {
+public interface LocalMapStats extends LocalInstanceStats {
 
     /**
      * Returns the number of entries owned by this member.
@@ -68,13 +68,6 @@ public interface LocalMapStats extends LocalInstanceStats<LocalMapOperationStats
     long getLastAccessTime();
 
     /**
-     * Returns the last update time of the locally owned entries.
-     *
-     * @return last update time.
-     */
-    long getLastUpdateTime();
-
-    /**
      * Returns the number of hits (reads) of the locally owned entries.
      *
      * @return number of hits (reads).
@@ -95,4 +88,92 @@ public interface LocalMapStats extends LocalInstanceStats<LocalMapOperationStats
      * @return
      */
     long getDirtyEntryCount();
+
+    /**
+     * Returns the number of put operations
+     *
+     * @return number of put operations
+     */
+    public long getPutOperationCount();
+
+    /**
+     * Returns the number of get operations
+     *
+     * @return number of get operations
+     */
+    public long getGetOperationCount();
+
+
+    /**
+     * Returns the number of Remove operations
+     *
+     * @return number of remove operations
+     */
+    public long getRemoveOperationCount();
+
+
+    /**
+     * Returns the total latency of put operations. To get the average latency, divide to number of puts
+     *
+     * @return
+     */
+    public long getTotalPutLatency();
+
+    /**
+     * Returns the total latency of get operations. To get the average latency, divide to number of gets
+     *
+     * @return
+     */
+    public long getTotalGetLatency();
+
+    /**
+     * Returns the total latency of remove operations. To get the average latency, divide to number of gets
+     *
+     * @return
+     */
+    public long getTotalRemoveLatency();
+
+    /**
+     * Returns the maximum latency of put operations. To get the average latency, divide to number of puts
+     *
+     * @return
+     */
+    public long getMaxPutLatency();
+
+    /**
+     * Returns the maximum latency of get operations. To get the average latency, divide to number of gets
+     *
+     * @return
+     */
+    public long getMaxGetLatency();
+
+    /**
+     * Returns the maximum latency of remove operations. To get the average latency, divide to number of gets
+     *
+     * @return
+     */
+    public long getMaxRemoveLatency();
+
+    /**
+     * Returns the number of Events Received
+     *
+     * @return number of events received
+     */
+    public long getEventOperationCount();
+
+    /**
+     * Returns the total number of Other Operations
+     *
+     * @return number of other operations
+     */
+    public long getOtherOperationCount();
+
+    /**
+     * Returns the total number of total operations
+     *
+     * @return number of total operations
+     */
+    public long total();
+
+
 }

@@ -328,13 +328,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
     }
 
     public LocalExecutorStats getLocalExecutorStats() {
-        LocalExecutorStatsImpl localExecutorStats = new LocalExecutorStatsImpl();
-        ExecutorServiceStatsContainer serviceStatsContainer = getService().getExecutorServiceStatsContainer(name);
-        localExecutorStats.setCreationTime(serviceStatsContainer.getCreationTime());
-        localExecutorStats.setTotalFinished(serviceStatsContainer.getTotalFinished());
-        localExecutorStats.setTotalStarted(serviceStatsContainer.getTotalStarted());
-        localExecutorStats.setOperationStats(serviceStatsContainer.getOperationsCounter().getPublishedStats());
-        return localExecutorStats;
+        return getService().getLocalExecutorStats(name);
     }
 
     public String getServiceName() {
