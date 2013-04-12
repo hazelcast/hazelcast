@@ -16,7 +16,10 @@
 
 package com.hazelcast.collection.multimap.tx;
 
-import com.hazelcast.collection.*;
+import com.hazelcast.collection.CollectionContainer;
+import com.hazelcast.collection.CollectionProxyId;
+import com.hazelcast.collection.CollectionService;
+import com.hazelcast.collection.CollectionWrapper;
 import com.hazelcast.collection.operations.CollectionKeyBasedOperation;
 import com.hazelcast.collection.operations.CollectionResponse;
 import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
@@ -29,7 +32,6 @@ import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
-import java.util.Collection;
 
 /**
  * @ali 4/4/13
@@ -57,7 +59,6 @@ public class TxnLockAndGetOperation extends CollectionKeyBasedOperation implemen
         }
         CollectionWrapper wrapper = getOrCreateCollectionWrapper();
 
-        Collection<CollectionRecord> coll = null;
         response = new CollectionResponse(wrapper.getCollection()).setNextRecordId(container.nextId()).setTxVersion(wrapper.incrementAndGetVersion());
     }
 

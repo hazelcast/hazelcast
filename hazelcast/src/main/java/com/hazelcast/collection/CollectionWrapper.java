@@ -63,7 +63,7 @@ public class CollectionWrapper {
     }
 
     public long incrementAndGetVersion(){
-        return version++;
+        return ++version;
     }
 
 }

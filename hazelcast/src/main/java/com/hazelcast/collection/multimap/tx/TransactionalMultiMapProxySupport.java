@@ -118,7 +118,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
                 break;
             }
         }
-        if (recordId != -1){
+        if (version != -1 || recordId != -1){
             TxnRemoveOperation operation = new TxnRemoveOperation(proxyId, key, recordId, value);
             MultiMapTransactionLog log = (MultiMapTransactionLog)tx.getTransactionLog(key);
             if (log != null){
@@ -128,7 +128,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
                 log = new MultiMapTransactionLog(key, proxyId, ttl, getThreadId(), version, operation);
                 tx.addTransactionLog(log);
             }
-            return true;
+            return recordId != -1;
         }
         return false;
     }
