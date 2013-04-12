@@ -20,14 +20,11 @@ import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.collection.CollectionWrapper;
-import com.hazelcast.collection.operations.CollectionBackupAwareOperation;
+import com.hazelcast.collection.operations.CollectionKeyBasedOperation;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Notifier;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
@@ -39,7 +36,7 @@ import java.util.LinkedList;
 /**
  * @ali 4/10/13
  */
-public class TxnRemoveAllOperation extends CollectionBackupAwareOperation implements Notifier {
+public class TxnRemoveAllOperation extends CollectionKeyBasedOperation {
 
     Collection<Long> recordIds;
     transient long begin = -1;
@@ -48,8 +45,8 @@ public class TxnRemoveAllOperation extends CollectionBackupAwareOperation implem
     public TxnRemoveAllOperation() {
     }
 
-    public TxnRemoveAllOperation(CollectionProxyId proxyId, Data dataKey, int threadId, Collection<CollectionRecord> records) {
-        super(proxyId, dataKey, threadId);
+    public TxnRemoveAllOperation(CollectionProxyId proxyId, Data dataKey, Collection<CollectionRecord> records) {
+        super(proxyId, dataKey);
         this.recordIds = new ArrayList<Long>();
         for (CollectionRecord record: records){
             recordIds.add(record.getRecordId());
@@ -83,7 +80,6 @@ public class TxnRemoveAllOperation extends CollectionBackupAwareOperation implem
         if (coll.isEmpty()) {
             removeCollection();
         }
-        container.unlock(dataKey, getCallerUuid(), threadId);
 
     }
 
@@ -98,20 +94,8 @@ public class TxnRemoveAllOperation extends CollectionBackupAwareOperation implem
         }
     }
 
-    public Operation getBackupOperation() {
-        return new TxnRemoveAllBackupOperation(proxyId, dataKey, getCallerUuid(), threadId, recordIds);
-    }
-
-    public boolean shouldNotify() {
-        return removed != null;
-    }
-
-    public boolean shouldBackup() {
-        return removed != null;
-    }
-
-    public WaitNotifyKey getNotifiedKey() {
-        return getWaitKey();
+    public Collection<Long> getRecordIds() {
+        return recordIds;
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

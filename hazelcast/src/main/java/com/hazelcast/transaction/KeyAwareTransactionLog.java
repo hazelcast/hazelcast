@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,30 +17,10 @@
 package com.hazelcast.transaction;
 
 /**
- * Hazelcast transaction interface.
+ * @ali 4/12/13
  */
-public interface Transaction {
+public interface KeyAwareTransactionLog extends TransactionLog {
 
-    public enum State {
-        NO_TXN,
-        ACTIVE,
-        PREPARING,
-        PREPARED,
-        COMMITTING,
-        COMMITTED,
-        COMMIT_FAILED,
-        ROLLING_BACK,
-        ROLLED_BACK
-    }
-
-    void addTransactionLog(TransactionLog transactionLog);
-
-    public TransactionLog getTransactionLog(Object key);
-
-    String getTxnId();
-
-    State getState();
-
-    long getTimeoutMillis();
+    Object getKey();
 
 }

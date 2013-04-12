@@ -27,6 +27,8 @@ public class CollectionWrapper {
 
     private int hits;
 
+    private long version = -1;
+
     public CollectionWrapper(Collection<CollectionRecord> collection) {
         this.collection = collection;
     }
@@ -50,6 +52,18 @@ public class CollectionWrapper {
             }
         }
         return false;
+    }
+
+    public long getVersion() {
+        return version;
+    }
+
+    public void setVersion(long version) {
+        this.version = version;
+    }
+
+    public long incrementAndGetVersion(){
+        return version++;
     }
 
 }

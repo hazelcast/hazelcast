@@ -20,14 +20,11 @@ import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.collection.CollectionWrapper;
-import com.hazelcast.collection.operations.CollectionBackupAwareOperation;
+import com.hazelcast.collection.operations.CollectionKeyBasedOperation;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.Notifier;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
@@ -36,36 +33,34 @@ import java.util.Collection;
 /**
  * @ali 4/2/13
  */
-public class TxnPutOperation extends CollectionBackupAwareOperation implements Notifier{
+public class TxnPutOperation extends CollectionKeyBasedOperation {
 
     long recordId;
     Data value;
     transient long begin = -1;
-    transient boolean notify = true;
 
     public TxnPutOperation() {
     }
 
-    public TxnPutOperation(CollectionProxyId proxyId, Data dataKey, Data value, long recordId, int threadId) {
-        super(proxyId, dataKey, threadId);
+    public TxnPutOperation(CollectionProxyId proxyId, Data dataKey, Data value, long recordId) {
+        super(proxyId, dataKey);
         this.recordId = recordId;
         this.value = value;
     }
 
     public void run() throws Exception {
+        System.err.println("---------------------------- putting recordId: "+recordId);
         begin = Clock.currentTimeMillis();
         CollectionContainer container = getOrCreateContainer();
         CollectionWrapper wrapper = container.getOrCreateCollectionWrapper(dataKey);
         response = true;
         if (wrapper.containsRecordId(recordId)){
             response = false;
-            notify = false;
             return;
         }
         Collection<CollectionRecord> coll = wrapper.getCollection();
         CollectionRecord record = new CollectionRecord(recordId, isBinary() ? value : toObject(value));
         coll.add(record);
-        container.unlock(dataKey, getCallerUuid(), threadId);
     }
 
     public void afterRun() throws Exception {
@@ -76,20 +71,8 @@ public class TxnPutOperation extends CollectionBackupAwareOperation implements N
         }
     }
 
-    public boolean shouldBackup() {
-        return notify;
-    }
-
-    public Operation getBackupOperation() {
-        return new TxnPutBackupOperation(proxyId, dataKey, value, recordId, threadId, getCallerUuid());
-    }
-
-    public boolean shouldNotify() {
-        return notify;
-    }
-
-    public WaitNotifyKey getNotifiedKey() {
-        return getWaitKey();
+    public long getRecordId() {
+        return recordId;
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

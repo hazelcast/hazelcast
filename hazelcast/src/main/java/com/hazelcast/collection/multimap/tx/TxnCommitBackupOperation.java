@@ -16,67 +16,65 @@
 
 package com.hazelcast.collection.multimap.tx;
 
-import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionProxyId;
-import com.hazelcast.collection.CollectionRecord;
-import com.hazelcast.collection.CollectionWrapper;
 import com.hazelcast.collection.operations.CollectionKeyBasedOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
-import java.util.Collection;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * @ali 4/4/13
+ * @ali 4/12/13
  */
-public class TxnPutBackupOperation extends CollectionKeyBasedOperation implements BackupOperation {
+public class TxnCommitBackupOperation extends CollectionKeyBasedOperation implements BackupOperation {
 
-    long recordId;
-    Data value;
-    int threadId;
+    List<Operation> opList;
     String caller;
+    int threadId;
 
-    public TxnPutBackupOperation() {
+    public TxnCommitBackupOperation() {
     }
 
-    public TxnPutBackupOperation(CollectionProxyId proxyId, Data dataKey, Data value, long recordId, int threadId, String caller) {
+    public TxnCommitBackupOperation(CollectionProxyId proxyId, Data dataKey, List<Operation> opList, String caller, int threadId) {
         super(proxyId, dataKey);
-        this.recordId = recordId;
-        this.value = value;
-        this.threadId = threadId;
+        this.opList = opList;
         this.caller = caller;
+        this.threadId = threadId;
     }
 
     public void run() throws Exception {
-        CollectionContainer container = getOrCreateContainer();
-        CollectionWrapper wrapper = container.getOrCreateCollectionWrapper(dataKey);
-        if (wrapper.containsRecordId(recordId)){
-            response = false;
-            return;
+        for (Operation op: opList){
+            op.setNodeEngine(getNodeEngine()).setServiceName(getServiceName()).setPartitionId(getPartitionId());
+            op.beforeRun();
+            op.run();
+            op.afterRun();
+            boolean response = (Boolean)op.getResponse();
         }
-        Collection<CollectionRecord> coll = wrapper.getCollection();
-        CollectionRecord record = new CollectionRecord(recordId, isBinary() ? value : toObject(value));
-        response = coll.add(record);
-        container.unlock(dataKey, caller, threadId);
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(recordId);
-        out.writeInt(threadId);
+        out.writeInt(opList.size());
+        for (Operation op: opList){
+            out.writeObject(op);
+        }
         out.writeUTF(caller);
-        value.writeData(out);
+        out.writeInt(threadId);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        recordId = in.readLong();
-        threadId = in.readInt();
+        int size = in.readInt();
+        opList = new ArrayList<Operation>(size);
+        for (int i=0; i<size; i++){
+            opList.add((Operation)in.readObject());
+        }
         caller = in.readUTF();
-        value = new Data();
-        value.readData(in);
+        threadId = in.readInt();
     }
 }

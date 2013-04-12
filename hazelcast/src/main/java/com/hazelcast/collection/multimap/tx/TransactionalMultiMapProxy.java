@@ -19,7 +19,6 @@ package com.hazelcast.collection.multimap.tx;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.collection.CollectionService;
-import com.hazelcast.collection.operations.CollectionResponse;
 import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
@@ -65,8 +64,12 @@ public class TransactionalMultiMapProxy<K,V> extends TransactionalMultiMapProxyS
 
     public Collection<V> remove(Object key) {
         Data dataKey = getNodeEngine().toData(key);
-        CollectionResponse response = removeAllInternal(dataKey);
-        return response.getObjectCollection(getNodeEngine());
+        Collection<CollectionRecord> coll = removeAllInternal(dataKey);
+        Collection<V> result = new ArrayList<V>(coll.size());
+        for (CollectionRecord record: coll){
+            result.add((V)getNodeEngine().toObject(record.getObject()));
+        }
+        return result;
     }
 
     public int valueCount(K key) {

@@ -34,7 +34,9 @@ public class CollectionResponse implements DataSerializable {
 
     private Collection collection;
 
-    private Object attachment;
+    private long nextRecordId = -1;
+
+    private long txVersion = -1;
 
     public CollectionResponse() {
     }
@@ -43,12 +45,21 @@ public class CollectionResponse implements DataSerializable {
         this.collection = collection;
     }
 
-    public Object getAttachment() {
-        return attachment;
+    public long getNextRecordId() {
+        return nextRecordId;
     }
 
-    public CollectionResponse setAttachment(Object attachment) {
-        this.attachment = attachment;
+    public CollectionResponse setNextRecordId(long recordId) {
+        this.nextRecordId = recordId;
+        return this;
+    }
+
+    public long getTxVersion() {
+        return txVersion;
+    }
+
+    public CollectionResponse setTxVersion(long txVersion) {
+        this.txVersion = txVersion;
         return this;
     }
 
@@ -81,7 +92,8 @@ public class CollectionResponse implements DataSerializable {
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(attachment);
+        out.writeLong(nextRecordId);
+        out.writeLong(txVersion);
         if (collection == null) {
             out.writeInt(-1);
             return;
@@ -93,7 +105,8 @@ public class CollectionResponse implements DataSerializable {
     }
 
     public void readData(ObjectDataInput in) throws IOException {
-        attachment = in.readObject();
+        nextRecordId = in.readLong();
+        txVersion = in.readLong();
         int size = in.readInt();
         if (size == -1) {
             return;

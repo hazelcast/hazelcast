@@ -29,6 +29,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.*;
+
 /**
  * @ali 4/5/13
  */
@@ -57,16 +59,24 @@ public class TxnMultiMapTest {
         try {
             context.beginTransaction();
             TransactionalMultiMap mm = context.getMultiMap(name);
-            boolean result = mm.put("key1","value1");
-            System.err.println("res: " + result);
+            assertEquals(0, mm.get("key1").size());
+            assertEquals(0, mm.valueCount("key1"));
+            assertTrue(mm.put("key1","value1"));
+            assertFalse(mm.put("key1", "value1"));
+            assertEquals(1, mm.get("key1").size());
+            assertEquals(1, mm.valueCount("key1"));
+            assertFalse(mm.remove("key1","value2"));
+            assertTrue(mm.remove("key1","value1"));
 
-            Thread.sleep(10*1000);
+            assertFalse(mm.remove("key2","value2"));
             context.commitTransaction();
         } catch (Exception e){
-            e.printStackTrace();
+            fail(e.getMessage());
             context.rollbackTransaction();
         }
 
-
+        assertEquals(0, instances[1].getMultiMap(name).size());
+        assertTrue(instances[2].getMultiMap(name).put("key1","value1"));
+        assertTrue(instances[2].getMultiMap(name).put("key2","value2"));
     }
 }

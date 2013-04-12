@@ -50,6 +50,30 @@ public class MapTransactionTest {
     }
 
     @Test
+    public void testCommitOrder() throws TransactionException {
+        Config config = new Config();
+        StaticNodeFactory factory = new StaticNodeFactory(4);
+        HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        HazelcastInstance h2 = factory.newHazelcastInstance(config);
+        HazelcastInstance h3 = factory.newHazelcastInstance(config);
+        HazelcastInstance h4 = factory.newHazelcastInstance(config);
+
+        boolean b = h1.executeTransaction(new TransactionalTask<Boolean>() {
+            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
+                final TransactionalMap<Object, Object> txMap = context.getMap("default");
+                txMap.put("1", "value1");
+                assertEquals("value1", txMap.put("1", "value2"));
+                assertEquals("value2", txMap.put("1", "value3"));
+                assertEquals("value3", txMap.put("1", "value4"));
+                assertEquals("value4", txMap.put("1", "value5"));
+                assertEquals("value5", txMap.put("1", "value6"));
+                return true;
+            }
+        });
+        assertEquals("value6",h4.getMap("default").get("1"));
+    }
+
+    @Test
     public void testTxnCommit() throws TransactionException {
         Config config = new Config();
         StaticNodeFactory factory = new StaticNodeFactory(2);

@@ -19,11 +19,11 @@ package com.hazelcast.collection.multimap.tx;
 import com.hazelcast.collection.*;
 import com.hazelcast.collection.operations.CollectionKeyBasedOperation;
 import com.hazelcast.collection.operations.CollectionResponse;
-import com.hazelcast.concurrent.lock.LockNamespace;
 import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
 import com.hazelcast.transaction.TransactionException;
@@ -39,7 +39,6 @@ public class TxnLockAndGetOperation extends CollectionKeyBasedOperation implemen
     long timeout;
     long ttl;
     int threadId;
-    boolean getCollection = false;
 
     public TxnLockAndGetOperation() {
     }
@@ -58,11 +57,11 @@ public class TxnLockAndGetOperation extends CollectionKeyBasedOperation implemen
         }
         CollectionWrapper wrapper = getCollectionWrapper();
         Collection<CollectionRecord> coll = wrapper != null ? wrapper.getCollection() : null;
-        response = new CollectionResponse(getCollection ? coll : null).setAttachment(container.nextId());
+        response = new CollectionResponse(coll).setNextRecordId(container.nextId()).setTxVersion(wrapper.incrementAndGetVersion());
     }
 
     public WaitNotifyKey getWaitKey() {
-        return new LockWaitNotifyKey(new LockNamespace(CollectionService.SERVICE_NAME, proxyId), dataKey);
+        return new LockWaitNotifyKey(new DefaultObjectNamespace(CollectionService.SERVICE_NAME, proxyId), dataKey);
     }
 
     public boolean shouldWait() {
@@ -77,16 +76,11 @@ public class TxnLockAndGetOperation extends CollectionKeyBasedOperation implemen
         getResponseHandler().sendResponse(null);
     }
 
-    public void setGetCollection(boolean getCollection) {
-        this.getCollection = getCollection;
-    }
-
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(timeout);
         out.writeLong(ttl);
         out.writeInt(threadId);
-        out.writeBoolean(getCollection);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
@@ -94,6 +88,5 @@ public class TxnLockAndGetOperation extends CollectionKeyBasedOperation implemen
         timeout = in.readLong();
         ttl = in.readLong();
         threadId = in.readInt();
-        getCollection = in.readBoolean();
     }
 }
