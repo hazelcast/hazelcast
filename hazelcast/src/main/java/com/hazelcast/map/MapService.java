@@ -209,8 +209,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             } catch (Throwable t) {
                 ExceptionUtil.rethrow(t);
             }
-        }
-        else if (eventObject instanceof MapReplicationRemove) {
+        } else if (eventObject instanceof MapReplicationRemove) {
             MapReplicationRemove replicationRemove = (MapReplicationRemove) eventObject;
 
             DeleteOperation operation = new DeleteOperation(replicationRemove.getMapName(), toData(replicationRemove.getKey()));
@@ -868,7 +867,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         }
         MapContainer mapContainer = getMapContainer(eventData.getMapName());
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            getLocalMapStatsImpl(eventData.getMapName()).incrementReceivedEvents();//TODO @msk stats change
+            getLocalMapStatsImpl(eventData.getMapName()).incrementReceivedEvents();
         }
     }
 

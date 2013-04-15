@@ -43,10 +43,6 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
         int eventType = dataOldValue == null ? EntryEvent.TYPE_ADDED : EntryEvent.TYPE_UPDATED;
         mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, dataValue);
         invalidateNearCaches();
-        if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            ((MapService) getService()).getLocalMapStatsImpl(name).incrementPuts(Clock.currentTimeMillis() - getStartTime());//TODO @msk stats change
-
-        }
         if (mapContainer.getWanReplicationListener() != null && mapContainer.getWanMergePolicy() != null) {
             SimpleEntryView entryView = new SimpleEntryView(dataKey, mapService.toData(dataValue), recordStore.getRecords().get(dataKey));
             mapService.publishWanReplicationUpdate(name, entryView);

@@ -40,9 +40,6 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
         int eventType = EntryEvent.TYPE_REMOVED;
         mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, null);
         invalidateNearCaches();
-        if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            ((MapService) getService()).getLocalMapStatsImpl(name).incrementRemoves(Clock.currentTimeMillis() - getStartTime());//TODO @msk stats change
-        }
         if (mapContainer.getWanReplicationListener() != null && mapContainer.getWanMergePolicy() != null) {
             // todo should evict operation replicated??
             mapService.publishWanReplicationRemove(name, dataKey, Clock.currentTimeMillis());
