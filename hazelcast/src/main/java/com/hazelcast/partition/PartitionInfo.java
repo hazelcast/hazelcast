@@ -27,18 +27,13 @@ public class PartitionInfo {
     private final AtomicReferenceArray<Address> addresses = new AtomicReferenceArray<Address>(MAX_REPLICA_COUNT);
     private final PartitionListener partitionListener;
 
-    public PartitionInfo(int partitionId, PartitionListener partitionListener) {
+    PartitionInfo(int partitionId, PartitionListener partitionListener) {
         this.partitionId = partitionId;
         this.partitionListener = partitionListener;
     }
 
-    public PartitionInfo(int partitionId) {
+    PartitionInfo(int partitionId) {
         this(partitionId, null);
-    }
-
-    public PartitionInfo(PartitionInfo partition) {
-        this(partition.getPartitionId(), null);
-        setPartitionInfo(partition);
     }
 
     public int getPartitionId() {
@@ -51,6 +46,11 @@ public class PartitionInfo {
 
     void setOwner(Address ownerAddress) {
         setReplicaAddress(0, ownerAddress);
+    }
+
+    public Address getReplicaAddress(int index) {
+        return (addresses.length() > index)
+                ? addresses.get(index) : null;
     }
 
     void setReplicaAddress(int index, Address address) {
@@ -69,9 +69,17 @@ public class PartitionInfo {
         }
     }
 
-    public Address getReplicaAddress(int index) {
-        return (addresses.length() > index)
-                ? addresses.get(index) : null;
+    boolean onDeadAddress(Address deadAddress) {
+        for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
+            if (deadAddress.equals(addresses.get(i))) {
+                for (int a = i; a + 1 < MAX_REPLICA_COUNT; a++) {
+                    setReplicaAddress(a, addresses.get(a + 1));
+                }
+                setReplicaAddress(MAX_REPLICA_COUNT - 1, null);
+                return true;
+            }
+        }
+        return false;
     }
 
     void setPartitionInfo(PartitionInfo partitionInfo) {
@@ -80,9 +88,8 @@ public class PartitionInfo {
         }
     }
 
-    public boolean isBackup(Address address, int backupCount) {
-        int backup = Math.min(backupCount + 1, MAX_REPLICA_COUNT);
-        for (int i = 1; i < backup; i++) {
+    public boolean isBackup(Address address) {
+        for (int i = 1; i < MAX_REPLICA_COUNT; i++) {
             if (address.equals(getReplicaAddress(i))) {
                 return true;
             }
@@ -90,23 +97,9 @@ public class PartitionInfo {
         return false;
     }
 
-    public boolean isOwnerOrBackup(Address address, int backupCount) {
-        int replicaCount = Math.min(backupCount + 1, MAX_REPLICA_COUNT);
-        for (int i = 0; i < replicaCount; i++) {
-            if (address.equals(getReplicaAddress(i))) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    boolean onDeadAddress(Address deadAddress) {
+    public boolean isOwnerOrBackup(Address address) {
         for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
-            if (deadAddress.equals(addresses.get(i))) {
-                for (int a = i; a + 1 < MAX_REPLICA_COUNT; a++) {
-                    setReplicaAddress(a, addresses.get(a + 1));
-                }
-                setReplicaAddress(MAX_REPLICA_COUNT - 1, null);
+            if (address.equals(getReplicaAddress(i))) {
                 return true;
             }
         }

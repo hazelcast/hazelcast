@@ -28,14 +28,14 @@ import java.util.LinkedList;
  * @mdogan 02/12/13
  */
 
-public class LockMigrationOperation extends AbstractOperation {
+public class LockReplicationOperation extends AbstractOperation {
 
     private final Collection<LockStoreImpl> locks = new LinkedList<LockStoreImpl>();
 
-    public LockMigrationOperation() {
+    public LockReplicationOperation() {
     }
 
-    public LockMigrationOperation(LockStoreContainer container, int partitionId, int replicaIndex) {
+    public LockReplicationOperation(LockStoreContainer container, int partitionId, int replicaIndex) {
         this.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
         final Collection<LockStoreImpl> allLockStores = container.getLockStores();
 

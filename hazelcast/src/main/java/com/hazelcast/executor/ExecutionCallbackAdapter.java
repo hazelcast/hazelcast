@@ -14,18 +14,27 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.executor;
 
 import com.hazelcast.core.ExecutionCallback;
-
-import java.util.concurrent.Future;
+import com.hazelcast.spi.Callback;
 
 /**
- * @mdogan 1/21/13
+ * @mdogan 4/10/13
  */
-public interface AsyncInvocationService {
+final class ExecutionCallbackAdapter implements Callback<Object> {
 
-    <V> Future<V> invoke(Invocation invocation);
+    private final ExecutionCallback executionCallback;
 
-    <V> void invoke(Invocation invocation, ExecutionCallback<V> callback);
+    ExecutionCallbackAdapter(ExecutionCallback executionCallback) {
+        this.executionCallback = executionCallback;
+    }
+
+    public void notify(Object response) {
+        if (response instanceof Throwable) {
+            executionCallback.onFailure((Throwable) response);
+        } else {
+            executionCallback.onResponse(response);
+        }
+    }
 }

@@ -245,7 +245,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         final BindOperation bind = new BindOperation(ioService.getThisAddress(), remoteEndPoint, replyBack);
         final Data bindData = ioService.toData(bind);
         final Packet packet = new Packet(bindData, serializationContext);
-        packet.setHeader(Packet.HEADER_OP, true);
+        packet.setHeader(Packet.HEADER_OP);
         connection.write(packet);
         //now you can send anything...
     }

@@ -66,10 +66,11 @@ public class RemoveOperation extends CollectionBackupAwareOperation {
                 iter.remove();
                 recordId = r.getRecordId();
                 response = true;
+                if (coll.isEmpty()) {
+                    removeCollection();
+                }
+                break;
             }
-        }
-        if (coll.isEmpty()) {
-            removeCollection();
         }
     }
 

@@ -20,7 +20,6 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.nio.Protocol;
-import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.concurrent.TimeUnit;
@@ -33,30 +32,19 @@ public class MapLockHandler extends MapCommandHandler {
     @Override
     public Protocol processCall(Node node, Protocol protocol) {
         String name = protocol.args[0];
-        long timeout = -1;
-        if (protocol.command.equals(Command.MTRYLOCK)) {
-            if (protocol.args.length > 0)
-                timeout = Long.valueOf(protocol.args[1]);
-            else
-                timeout = 0;
-        }
-        boolean locked = true;
         Data key = null;
         if (protocol.buffers != null && protocol.buffers.length > 0) {
             key = protocol.buffers[0];
         }
-        DataMapProxy dataMapProxy = getMapProxy(name);
-        if (timeout == -1) {
-            dataMapProxy.lock(key);
-        } else if (timeout == 0) {
-            locked = dataMapProxy.tryLock(key);
-        } else {
-            try {
-                locked = dataMapProxy.tryLock(key, timeout, TimeUnit.MILLISECONDS);
-            } catch (InterruptedException e) {
-                locked = false;
-            }
+        long leaseTime = -1;
+        if (protocol.args.length > 1) {
+            leaseTime = Long.valueOf(protocol.args[1]);
         }
-        return protocol.success(String.valueOf(locked));
+        DataMapProxy dataMapProxy = getMapProxy(name);
+        if (leaseTime == -1)
+            dataMapProxy.lock(key);
+        else
+            dataMapProxy.lock(key, leaseTime, TimeUnit.MILLISECONDS);
+        return protocol.success();
     }
 }

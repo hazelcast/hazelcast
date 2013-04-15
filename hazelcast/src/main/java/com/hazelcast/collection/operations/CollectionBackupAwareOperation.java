@@ -34,7 +34,7 @@ import java.io.IOException;
  */
 public abstract class CollectionBackupAwareOperation extends CollectionKeyBasedOperation implements BackupAwareOperation, WaitSupport {
 
-    int threadId;
+    protected int threadId;
 
     protected CollectionBackupAwareOperation() {
     }

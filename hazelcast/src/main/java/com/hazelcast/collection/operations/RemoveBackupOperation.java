@@ -58,6 +58,7 @@ public class RemoveBackupOperation extends CollectionKeyBasedOperation implement
                 if (coll.isEmpty()) {
                     removeCollection();
                 }
+                break;
             }
         }
     }

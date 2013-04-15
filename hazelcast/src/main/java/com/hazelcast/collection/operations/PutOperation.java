@@ -57,7 +57,7 @@ public class PutOperation extends CollectionBackupAwareOperation {
         begin = Clock.currentTimeMillis();
         CollectionContainer container = getOrCreateContainer();
         recordId = container.nextId();
-        CollectionRecord record = new CollectionRecord(isBinary() ? value : toObject(value));
+        CollectionRecord record = new CollectionRecord(recordId, isBinary() ? value : toObject(value));
         Collection<CollectionRecord> coll = container.getOrCreateCollectionWrapper(dataKey).getCollection();
         if (index == -1) {
             response = coll.add(record);
@@ -69,7 +69,6 @@ public class PutOperation extends CollectionBackupAwareOperation {
                 response = e;
             }
         }
-        record.setRecordId(recordId);
     }
 
     public void afterRun() throws Exception {

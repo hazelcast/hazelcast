@@ -17,13 +17,10 @@
 
 package com.hazelcast.concurrent.atomiclong.client;
 
-import com.hazelcast.client.ClientCommandHandler;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.atomiclong.proxy.AtomicLongProxy;
 import com.hazelcast.instance.Node;
-import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.nio.Protocol;
-import com.hazelcast.nio.serialization.Data;
 
 public class GetAndSetHandler extends AtomicLongCommandHandler {
     public GetAndSetHandler(AtomicLongService atomicLongService) {

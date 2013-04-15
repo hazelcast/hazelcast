@@ -33,10 +33,12 @@ public final class DataSerializerSpiHook implements DataSerializerHook {
 
     static final int DATA = Data.ID;
     static final int RESPONSE = 1;
-    static final int PARTITION_ITERATOR = 2;
-    static final int PARTITION_RESPONSE = 3;
-    static final int PARALLEL_OPERATION_FACTORY = 4;
-    static final int EVENT_PACKET = 5;
+    static final int BACKUP = 2;
+    static final int BACKUP_RESPONSE = 3;
+    static final int PARTITION_ITERATOR = 4;
+    static final int PARTITION_RESPONSE = 5;
+    static final int PARALLEL_OPERATION_FACTORY = 6;
+    static final int EVENT_PACKET = 7;
 
     public Map<Integer, DataSerializableFactory> getFactories() {
         final Map<Integer, DataSerializableFactory> factories = new HashMap<Integer, DataSerializableFactory>();
@@ -50,6 +52,18 @@ public final class DataSerializerSpiHook implements DataSerializerHook {
         factories.put(RESPONSE, new DataSerializableFactory() {
             public IdentifiedDataSerializable create() {
                 return new Response();
+            }
+        });
+
+        factories.put(BACKUP, new DataSerializableFactory() {
+            public IdentifiedDataSerializable create() {
+                return new Backup();
+            }
+        });
+
+        factories.put(BACKUP_RESPONSE, new DataSerializableFactory() {
+            public IdentifiedDataSerializable create() {
+                return new BackupResponse();
             }
         });
 

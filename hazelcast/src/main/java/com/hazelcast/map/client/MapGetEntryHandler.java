@@ -23,8 +23,6 @@ import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.serialization.Data;
 
-import java.util.Map;
-
 public class MapGetEntryHandler extends MapCommandHandler {
     public MapGetEntryHandler(MapService mapService) {
         super(mapService);
@@ -35,12 +33,20 @@ public class MapGetEntryHandler extends MapCommandHandler {
         String name = protocol.args[0];
         Data key = protocol.buffers[0];
         DataMapProxy dataMapProxy = getMapProxy(name);
-        
-        EntryView<Data,Data> mapEntry = dataMapProxy.getEntryView(key);
-
+        EntryView<Data, Data> mapEntry = dataMapProxy.getEntryView(key);
         if (mapEntry == null)
             return protocol.success();
-        else
-            return protocol.success(new Data[]{mapEntry.getKey(), mapEntry.getValue()});
+        else {
+            String[] args = new String[8];
+            args[0] = String.valueOf(mapEntry.getCost());
+            args[1] = String.valueOf(mapEntry.getCreationTime());
+            args[2] = String.valueOf(mapEntry.getExpirationTime());
+            args[3] = String.valueOf(mapEntry.getHits());
+            args[4] = String.valueOf(mapEntry.getLastAccessTime());
+            args[5] = String.valueOf(mapEntry.getLastStoredTime());
+            args[6] = String.valueOf(mapEntry.getLastUpdateTime());
+            args[7] = String.valueOf(mapEntry.getVersion());
+            return protocol.success(new Data[]{mapEntry.getKey(), mapEntry.getValue()}, args);
+        }
     }
 }

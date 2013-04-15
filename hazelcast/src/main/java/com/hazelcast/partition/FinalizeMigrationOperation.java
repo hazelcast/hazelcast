@@ -20,7 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.MigrationAwareService;
-import com.hazelcast.spi.MigrationServiceEvent;
+import com.hazelcast.spi.PartitionMigrationEvent;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
@@ -34,25 +34,19 @@ final class FinalizeMigrationOperation extends AbstractOperation
         implements /*PartitionLevelOperation, */ MigrationCycleOperation {
 
     private MigrationEndpoint endpoint;     // source of destination
-    private MigrationType type;       // move or copy
-    private int copyBackReplicaIndex;
     private boolean success;
 
     public FinalizeMigrationOperation() {
     }
 
-    public FinalizeMigrationOperation(final MigrationEndpoint endpoint, final MigrationType type,
-                                      final int copyBackReplicaIndex, final boolean success) {
+    public FinalizeMigrationOperation(final MigrationEndpoint endpoint, final boolean success) {
         this.endpoint = endpoint;
         this.success = success;
-        this.type = type;
-        this.copyBackReplicaIndex = copyBackReplicaIndex;
     }
 
     public void run() {
         final Collection<MigrationAwareService> services = getServices();
-        final MigrationServiceEvent event = new MigrationServiceEvent(endpoint, getPartitionId(),
-                getReplicaIndex(), type, copyBackReplicaIndex);
+        final PartitionMigrationEvent event = new PartitionMigrationEvent(endpoint, getPartitionId());
         for (MigrationAwareService service : services) {
             try {
                 if (success) {
@@ -100,17 +94,13 @@ final class FinalizeMigrationOperation extends AbstractOperation
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         success = in.readBoolean();
-        copyBackReplicaIndex = in.readInt();
         endpoint = MigrationEndpoint.readFrom(in);
-        type = MigrationType.readFrom(in);
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeBoolean(success);
-        out.writeInt(copyBackReplicaIndex);
         MigrationEndpoint.writeTo(endpoint, out);
-        MigrationType.writeTo(type, out);
     }
 }

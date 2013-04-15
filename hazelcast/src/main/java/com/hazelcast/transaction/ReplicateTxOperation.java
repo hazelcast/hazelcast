@@ -19,7 +19,7 @@ package com.hazelcast.transaction;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.InvocationAction;
+import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
@@ -73,9 +73,9 @@ public final class ReplicateTxOperation extends Operation {
     }
 
     @Override
-    public InvocationAction getActionOnException(Throwable throwable) {
+    public ExceptionAction getActionOnException(Throwable throwable) {
         if (throwable instanceof MemberLeftException) {
-            return InvocationAction.THROW_EXCEPTION;
+            return ExceptionAction.THROW_EXCEPTION;
         }
         return super.getActionOnException(throwable);
     }

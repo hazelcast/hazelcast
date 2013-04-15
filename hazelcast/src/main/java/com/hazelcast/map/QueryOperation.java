@@ -70,7 +70,7 @@ public class QueryOperation extends AbstractMapOperation {
 
     private void runParallel(final List<Integer> initialPartitions) throws InterruptedException, ExecutionException {
         final SerializationServiceImpl ss = (SerializationServiceImpl) getNodeEngine().getSerializationService();
-        final ExecutorService executor = getNodeEngine().getExecutionService().getExecutor("hz:parallel-query");
+        final ExecutorService executor = getNodeEngine().getExecutionService().getExecutor("hz:query");
         final List<Future<ConcurrentMap<Object, QueryableEntry>>> lsFutures = new ArrayList<Future<ConcurrentMap<Object, QueryableEntry>>>(initialPartitions.size());
         for (final Integer partition : initialPartitions) {
             Future<ConcurrentMap<Object, QueryableEntry>> f = executor.submit(new Callable<ConcurrentMap<Object, QueryableEntry>>() {

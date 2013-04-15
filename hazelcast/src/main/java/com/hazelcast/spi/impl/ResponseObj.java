@@ -16,13 +16,20 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.spi.annotation.PrivateApi;
-
 /**
- * @mdogan 12/25/12
+ * @mdogan 4/10/13
  */
+class ResponseObj {
 
-@PrivateApi
-public interface ResponseOperation {
+    final Object response;
 
+    final long callId;
+
+    final int backupCount;
+
+    ResponseObj(Object response, long callId, int backupCount) {
+        this.response = response;
+        this.callId = callId;
+        this.backupCount = backupCount;
+    }
 }

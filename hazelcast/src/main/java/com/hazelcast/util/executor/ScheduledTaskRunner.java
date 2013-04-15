@@ -14,9 +14,30 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
+package com.hazelcast.util.executor;
 
-interface Callback<T> {
+import com.hazelcast.util.ExceptionUtil;
 
-    void notify(T object);
+import java.util.concurrent.Executor;
+
+/**
+ * @mdogan 4/9/13
+ */
+public final class ScheduledTaskRunner implements Runnable {
+
+    private final Executor executor;
+    private final Runnable runnable;
+
+    public ScheduledTaskRunner(Executor executor, Runnable runnable) {
+        this.executor = executor;
+        this.runnable = runnable;
+    }
+
+    public void run() {
+        try {
+            executor.execute(runnable);
+        } catch (Throwable t) {
+            ExceptionUtil.sneakyThrow(t);
+        }
+    }
 }

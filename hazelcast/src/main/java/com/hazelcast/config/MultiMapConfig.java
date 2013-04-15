@@ -33,7 +33,7 @@ public class MultiMapConfig implements DataSerializable {
     private String name;
     private String valueCollectionType = ValueCollectionType.SET.toString();
     private List<EntryListenerConfig> listenerConfigs;
-    private boolean binary = false;
+    private boolean binary = true;
     private int syncBackupCount = DEFAULT_SYNC_BACKUP_COUNT;
     private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
 

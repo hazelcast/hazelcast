@@ -32,7 +32,7 @@ public class DummyWanReplication implements WanReplicationEndpoint {
     public void shutdown() {
     }
 
-    @Override
     public void publishReplicationEvent(String serviceName, ReplicationEventObject eventObject) {
+
     }
 }

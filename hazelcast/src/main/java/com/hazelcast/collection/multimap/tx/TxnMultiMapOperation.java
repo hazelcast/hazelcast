@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.collection.multimap.tx;
 
 /**
- * @mdogan 1/18/13
+ * @ali 4/4/13
  */
-public enum InvocationAction {
+public interface TxnMultiMapOperation {
 
-    RETRY_INVOCATION, CONTINUE_WAIT, THROW_EXCEPTION
+    public static final int PUT_OPERATION = 0;
+    public static final int REMOVE_OPERATION = 1;
+    public static final int REMOVE_ALL_OPERATION = 2;
 }

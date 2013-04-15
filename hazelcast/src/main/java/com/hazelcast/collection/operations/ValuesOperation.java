@@ -35,6 +35,6 @@ public class ValuesOperation extends CollectionOperation {
     public void run() throws Exception {
         CollectionContainer container = getOrCreateContainer();
         ((CollectionService) getService()).getLocalMultiMapStatsImpl(proxyId).incrementOtherOperations();
-        response = new CollectionResponse(container.values(), getNodeEngine());
+        response = new CollectionResponse(container.values());
     }
 }

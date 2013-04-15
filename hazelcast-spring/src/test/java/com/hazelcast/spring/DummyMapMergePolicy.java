@@ -30,11 +30,11 @@ public class DummyMapMergePolicy implements MapMergePolicy {
         return null;
     }
 
-    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+
     }
 
-    @Override
     public void readData(ObjectDataInput in) throws IOException {
+
     }
 }
