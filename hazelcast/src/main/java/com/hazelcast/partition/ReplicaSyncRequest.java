@@ -50,6 +50,7 @@ public class ReplicaSyncRequest extends Operation implements FireAndForgetOp {
         for (MigrationAwareService service : services) {
             final Operation op = service.prepareReplicationOperation(event);
             if (op != null) {
+                op.setServiceName(service.getServiceName());
                 tasks.add(op);
             }
         }
