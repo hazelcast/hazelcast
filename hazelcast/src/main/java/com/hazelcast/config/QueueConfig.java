@@ -32,7 +32,7 @@ public final class QueueConfig implements DataSerializable {
 
     private String name;
     private List<ItemListenerConfig> listenerConfigs;
-    private int syncBackupCount = DEFAULT_SYNC_BACKUP_COUNT;
+    private int backupCount = DEFAULT_SYNC_BACKUP_COUNT;
     private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
     private int maxSize = DEFAULT_MAX_SIZE;
     private QueueStoreConfig queueStoreConfig;
@@ -43,7 +43,7 @@ public final class QueueConfig implements DataSerializable {
     public QueueConfig(QueueConfig config) {
         this();
         this.name = config.name;
-        this.syncBackupCount = config.syncBackupCount;
+        this.backupCount = config.backupCount;
         this.asyncBackupCount = config.asyncBackupCount;
         this.maxSize = config.maxSize;
         this.queueStoreConfig = config.queueStoreConfig;
@@ -63,15 +63,15 @@ public final class QueueConfig implements DataSerializable {
     }
 
     public int getTotalBackupCount(){
-        return syncBackupCount + asyncBackupCount;
+        return backupCount + asyncBackupCount;
     }
 
-    public int getSyncBackupCount() {
-        return syncBackupCount;
+    public int getBackupCount() {
+        return backupCount;
     }
 
-    public QueueConfig setSyncBackupCount(int syncBackupCount) {
-        this.syncBackupCount = syncBackupCount;
+    public QueueConfig setBackupCount(int backupCount) {
+        this.backupCount = backupCount;
         return this;
     }
 
@@ -132,7 +132,7 @@ public final class QueueConfig implements DataSerializable {
 
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
-        out.writeInt(syncBackupCount);
+        out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
         out.writeInt(maxSize);
         //TODO store and listener configs
@@ -140,7 +140,7 @@ public final class QueueConfig implements DataSerializable {
 
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
-        syncBackupCount = in.readInt();
+        backupCount = in.readInt();
         asyncBackupCount = in.readInt();
         maxSize = in.readInt();
     }

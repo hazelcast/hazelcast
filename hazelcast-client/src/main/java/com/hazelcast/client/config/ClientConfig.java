@@ -29,6 +29,7 @@ import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+// todo check the new attributes added on 3.0 working in spring configuration
 public class ClientConfig {
 
     /**

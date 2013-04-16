@@ -49,7 +49,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         private ManagedMap multiMapManagedMap;
         private ManagedMap executorManagedMap;
         private ManagedMap wanReplicationManagedMap;
-        private ManagedMap mergePolicyConfigMap;
 
         public SpringXmlConfigBuilder(ParserContext parserContext) {
             this.parserContext = parserContext;
@@ -60,14 +59,12 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.multiMapManagedMap = new ManagedMap();
             this.executorManagedMap = new ManagedMap();
             this.wanReplicationManagedMap = new ManagedMap();
-            this.mergePolicyConfigMap = new ManagedMap();
             this.configBuilder.addPropertyValue("mapConfigs", mapConfigManagedMap);
             this.configBuilder.addPropertyValue("QConfigs", queueManagedMap);
             this.configBuilder.addPropertyValue("topicConfigs", topicManagedMap);
             this.configBuilder.addPropertyValue("multiMapConfigs", multiMapManagedMap);
             this.configBuilder.addPropertyValue("executorConfigMap", executorManagedMap);
             this.configBuilder.addPropertyValue("wanReplicationConfigs", wanReplicationManagedMap);
-            this.configBuilder.addPropertyValue("mergePolicyConfigs", mergePolicyConfigMap);
 
             BeanDefinitionBuilder managedContextBeanBuilder = createBeanBuilder(SpringManagedContext.class);
             this.configBuilder.addPropertyValue("managedContext", managedContextBeanBuilder.getBeanDefinition());
@@ -160,8 +157,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleMultiMap(node);
                 } else if ("topic".equals(nodeName)) {
                     handleTopic(node);
-                } else if ("merge-policies".equals(nodeName)) {
-                    handleMergePolicies(node);
                 } else if ("wan-replication".equals(nodeName)) {
                     handleWanReplication(node);
                 } else if ("partition-group".equals(nodeName)) {
@@ -391,7 +386,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             final Node maxSizePolicyNode = node.getAttributes().getNamedItem("max-size-policy");
             if (maxSizePolicyNode != null) {
                 maxSizeConfigBuilder
-                        .addPropertyValue(xmlToJavaName(cleanNodeName(maxSizePolicyNode)), getValue(maxSizePolicyNode));
+                        .addPropertyValue(xmlToJavaName(cleanNodeName(maxSizePolicyNode)), MaxSizeConfig.MaxSizePolicy.valueOf(getValue(maxSizePolicyNode)));
             }
             for (org.w3c.dom.Node childNode : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
                 final String nodeName = cleanNodeName(childNode.getNodeName());
@@ -563,23 +558,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             topicManagedMap.put(name, topicConfigBuilder.getBeanDefinition());
-        }
-
-        public void handleMergePolicies(Node node) {
-            final String implAttr = "implementation";
-            for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
-                if ("map-merge-policy".equals(cleanNodeName(n))) {
-                    BeanDefinitionBuilder mergePolicyConfigBuilder = createBeanBuilder(MapMergePolicyConfig.class);
-                    final AbstractBeanDefinition beanDefinition = mergePolicyConfigBuilder.getBeanDefinition();
-                    fillValues(n, mergePolicyConfigBuilder, implAttr);
-                    final Node impl = n.getAttributes().getNamedItem(implAttr);
-                    if (implAttr != null) {
-                        mergePolicyConfigBuilder.addPropertyReference(implAttr, getValue(impl));
-                    }
-                    final String name = getValue(n.getAttributes().getNamedItem("name"));
-                    mergePolicyConfigMap.put(name, beanDefinition);
-                }
-            }
         }
 
         private void handleSecurity(final Node node) {

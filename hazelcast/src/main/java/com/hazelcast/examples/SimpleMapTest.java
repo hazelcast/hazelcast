@@ -211,7 +211,7 @@ public class SimpleMapTest {
             long total = getsNow + putsNow + removesNow;
 
             logger.log(Level.INFO, "total= " + total + ", gets:" + getsNow
-                                   + ", puts:" + putsNow + ", removes:" + removesNow);
+                    + ", puts:" + putsNow + ", removes:" + removesNow);
             logger.log(Level.INFO, "Operations per Second : " + total / STATS_SECONDS);
         }
     }

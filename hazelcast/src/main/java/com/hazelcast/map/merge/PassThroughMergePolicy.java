@@ -23,6 +23,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 
 public class PassThroughMergePolicy implements MapMergePolicy {
+    public static String NAME = "PASS_THROUGH";
 
     @Override
     public Object merge(String mapName, EntryView mergingEntry, EntryView existingEntry) {
