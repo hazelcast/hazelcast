@@ -31,6 +31,7 @@ import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.logging.Level;
 
 /**
  * User: ali
@@ -110,7 +111,7 @@ public class QueueContainer implements DataSerializable {
         }
         QueueItem removed = itemMap.remove(item.getItemId());
         if (removed == null || removed.getItemId() != item.getItemId()){
-            System.err.println("something wrong!!!");
+            logger.log(Level.SEVERE, "txnPollReserve operation-> No item at itemMap for itemId: " + item.getItemId());
         }
         txMap.put(item.getItemId(), item);
         return new QueueItem(null, item.getItemId(), item.getData());
@@ -128,7 +129,7 @@ public class QueueContainer implements DataSerializable {
     public Data txnCommitPoll(long itemId){
         QueueItem item = txMap.remove(itemId);
         if (item == null){
-            System.err.println("something wrong!!!");
+            logger.log(Level.WARNING, "txnCommitPoll operation-> No txn item for itemId: " + itemId);
             return null;
         }
         if (store.isEnabled()) {
@@ -144,7 +145,7 @@ public class QueueContainer implements DataSerializable {
     public boolean txnRollbackPoll(long itemId, boolean backup){
         QueueItem item = txMap.remove(itemId);
         if (item == null){
-            System.err.println("something wrong!!!");
+            logger.log(Level.WARNING, "No txn item for itemId: " + itemId);
             return false;
         }
         if (!backup){
@@ -152,7 +153,7 @@ public class QueueContainer implements DataSerializable {
         }
         QueueItem replaced = itemMap.put(itemId, item);
         if (replaced != null){
-            System.err.println("something wrong!!!");
+            logger.log(Level.SEVERE, "txnRollbackPoll operation-> Item exists already at itemMap for itemId: " + itemId);
         }
         return true;
     }
@@ -168,7 +169,7 @@ public class QueueContainer implements DataSerializable {
         QueueItem item = new QueueItem(this, itemId);
         Object o = txMap.put(itemId, item);
         if (o != null){
-            System.err.println("something wrong!!!");
+            logger.log(Level.SEVERE, "txnOfferBackupReserve operation-> Item exists already at txMap for itemId: " + itemId);
         }
     }
 
@@ -186,7 +187,7 @@ public class QueueContainer implements DataSerializable {
         }
         QueueItem replaced = itemMap.put(item.getItemId(), item);
         if (replaced != null){
-            System.err.println("something wrong!!!");
+            logger.log(Level.SEVERE, "txnCommitOffer operation-> Item exists already at itemMap for itemId: " + item.getItemId());
         }
         if (store.isEnabled()) {
             try {
@@ -201,7 +202,7 @@ public class QueueContainer implements DataSerializable {
     public boolean txnRollbackOffer(long itemId){
         QueueItem item = txMap.remove(itemId);
         if (item == null){
-            System.err.println("something wrong!!!");
+            logger.log(Level.WARNING, "txnRollbackOffer operation-> No txn item for itemId: " + itemId);
             return false;
         }
         return true;
@@ -225,7 +226,7 @@ public class QueueContainer implements DataSerializable {
         getItemQueue().offer(item);
         QueueItem replaced = itemMap.put(item.getItemId(), item);
         if (replaced != null){
-            System.err.println("something wrong!!!");
+            logger.log(Level.SEVERE, "offer operation-> Item already exists at itemMap for itemId: " + item.getItemId());
         }
         return item.getItemId();
     }
@@ -237,7 +238,7 @@ public class QueueContainer implements DataSerializable {
         }
         QueueItem replaced = itemMap.put(itemId, item);
         if (replaced != null){
-            System.err.println("something wrong!!!");
+            logger.log(Level.SEVERE, "offerBackup operation-> Item already exists at itemMap for itemId: " + item.getItemId());
         }
     }
 
@@ -251,7 +252,7 @@ public class QueueContainer implements DataSerializable {
             getItemQueue().offer(item);
             QueueItem replaced = itemMap.put(item.getItemId(), item);
             if (replaced != null){
-                System.err.println("something wrong!!!");
+                logger.log(Level.SEVERE, "addAll operation-> Item already exists at itemMap for itemId: " + item.getItemId());
             }
 
             dataMap.put(item.getItemId(), data);
@@ -309,7 +310,7 @@ public class QueueContainer implements DataSerializable {
         getItemQueue().poll();
         QueueItem removed = itemMap.remove(item.getItemId());
         if (removed == null || removed.getItemId() != item.getItemId()){
-            System.err.println("something wrong!!!");
+            logger.log(Level.SEVERE, "poll operation-> No item at itemMap for itemId: " + item.getItemId());
         }
         age(item, Clock.currentTimeMillis());
         return item;
@@ -321,7 +322,7 @@ public class QueueContainer implements DataSerializable {
             age(item, Clock.currentTimeMillis());//For Stats
         }
         else {
-            System.err.println("something wrong!!!");
+            logger.log(Level.SEVERE, "pollBackup operation-> No item at itemMap for itemId: " + item.getItemId());
         }
     }
 
@@ -354,7 +355,7 @@ public class QueueContainer implements DataSerializable {
             QueueItem item = getItemQueue().poll();
             QueueItem removed = itemMap.remove(item.getItemId());
             if (removed == null || removed.getItemId() != item.getItemId()){
-                System.err.println("something wrong!!!");
+                logger.log(Level.SEVERE, "poll operation-> No item at itemMap for itemId: " + item.getItemId());
             }
             age(item, current); //For Stats
         }
@@ -482,7 +483,6 @@ public class QueueContainer implements DataSerializable {
                 }
             }
             Iterator<QueueItem> iter = getItemQueue().iterator();
-            long current = Clock.currentTimeMillis();
             while (iter.hasNext()) {
                 QueueItem item = iter.next();
                 if (map.containsKey(item.getItemId())) {
