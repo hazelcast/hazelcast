@@ -146,7 +146,7 @@ public class MapContainer {
         WanReplicationRef wanReplicationRef = mapConfig.getWanReplicationRef();
         if (wanReplicationRef != null) {
             this.wanReplicationListener = nodeEngine.getWanReplicationService().getWanReplication(wanReplicationRef.getName());
-            this.wanMergePolicy = getMergePolicy(wanReplicationRef.getMergePolicy());
+            this.wanMergePolicy = mapService.getMergePolicy(wanReplicationRef.getMergePolicy());
         } else {
             wanMergePolicy = null;
             wanReplicationListener = null;
@@ -162,21 +162,6 @@ public class MapContainer {
         idleEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new EvictionProcessor(nodeEngine, mapService, name), true);
     }
 
-    // todo cache policies in a map probably in mapservice
-    private MapMergePolicy getMergePolicy(String mergePolicyName) {
-        MapMergePolicy mergePolicyTemp = null;
-        if (mergePolicyName != null) {
-            try {
-                mergePolicyTemp = (MapMergePolicy) ClassLoaderUtil.newInstance(mergePolicyName);
-            } catch (Exception e) {
-                ExceptionUtil.rethrow(e);
-            }
-        }
-        if (mergePolicyTemp == null) {
-            mergePolicyTemp = new PassThroughMergePolicy();
-        }
-        return mergePolicyTemp;
-    }
 
     public boolean isMapReady() {
         // map ready states whether the map load operation has been finished. if not retry exception is sent.

@@ -353,4 +353,8 @@ public class HazelcastClient implements HazelcastInstance {
     public void registerSerializer(final TypeSerializer serializer, final Class type) {
         serializationService.register(serializer, type);
     }
+
+    public void shutdown() {
+        getLifecycleService().shutdown();
+    }
 }

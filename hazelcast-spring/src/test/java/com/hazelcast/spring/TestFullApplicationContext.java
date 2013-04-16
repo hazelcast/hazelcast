@@ -75,7 +75,7 @@ public class TestFullApplicationContext {
     @Resource(name = "idGenerator")
     private IdGenerator idGenerator;
 
-    @Resource(name = "atomicNumber")
+    @Resource(name = "atomicLong")
     private IAtomicLong atomicLong;
 
     @Resource(name = "countDownLatch")
@@ -105,9 +105,6 @@ public class TestFullApplicationContext {
     @Autowired
     private EntryListener entryListener;
 
-    @Resource(name = "liteConfig")
-    private Config liteConfig;
-
     @Resource
     private SSLContextFactory sslContextFactory;
 
@@ -128,16 +125,16 @@ public class TestFullApplicationContext {
     @Test
     public void testMapConfig() {
         assertNotNull(config);
-        assertEquals(6, config.getMapConfigs().size());
+        assertEquals(8, config.getMapConfigs().size());
         MapConfig testMapConfig = config.getMapConfig("testMap");
         assertNotNull(testMapConfig);
         assertEquals("testMap", testMapConfig.getName());
         assertEquals(2, testMapConfig.getBackupCount());
-        assertEquals("NONE", testMapConfig.getEvictionPolicy());
+        assertEquals(MapConfig.EvictionPolicy.NONE, testMapConfig.getEvictionPolicy());
         assertEquals(Integer.MAX_VALUE, testMapConfig.getMaxSizeConfig().getSize());
         assertEquals(30, testMapConfig.getEvictionPercentage());
         assertEquals(0, testMapConfig.getTimeToLiveSeconds());
-        assertEquals("hz.ADD_NEW_ENTRY", testMapConfig.getMergePolicyConfig());
+        assertEquals("PUT_IF_ABSENT", testMapConfig.getMergePolicy());
         assertTrue(testMapConfig.isReadBackupData());
         assertEquals(StorageType.HEAP, testMapConfig.getStorageType());
         assertEquals(2, testMapConfig.getMapIndexConfigs().size());
@@ -171,7 +168,7 @@ public class TestFullApplicationContext {
         assertEquals("testWan", testMapConfig2.getWanReplicationRef().getName());
 //        assertEquals("hz.ADD_NEW_ENTRY", testMapConfig2.getWanReplicationRef().getMergePolicy());
         assertEquals(1000, testMapConfig2.getMaxSizeConfig().getSize());
-        assertEquals("cluster_wide_map_size", testMapConfig2.getMaxSizeConfig().getMaxSizePolicy());
+        assertEquals(MaxSizeConfig.MaxSizePolicy.PER_NODE, testMapConfig2.getMaxSizeConfig().getMaxSizePolicy());
         assertEquals(2, testMapConfig2.getEntryListenerConfigs().size());
         for (EntryListenerConfig listener : testMapConfig2.getEntryListenerConfigs()) {
             if (listener.getClassName() != null) {
@@ -190,11 +187,11 @@ public class TestFullApplicationContext {
         assertEquals("simpleMap", simpleMapConfig.getName());
         assertEquals(3, simpleMapConfig.getBackupCount());
         assertEquals(1, simpleMapConfig.getAsyncBackupCount());
-        assertEquals("LRU", simpleMapConfig.getEvictionPolicy());
+        assertEquals(MapConfig.EvictionPolicy.LRU, simpleMapConfig.getEvictionPolicy());
         assertEquals(10, simpleMapConfig.getMaxSizeConfig().getSize());
         assertEquals(50, simpleMapConfig.getEvictionPercentage());
         assertEquals(1, simpleMapConfig.getTimeToLiveSeconds());
-        assertEquals("hz.LATEST_UPDATE", simpleMapConfig.getMergePolicyConfig());
+        assertEquals("LATEST_UPDATE", simpleMapConfig.getMergePolicy());
         // Test that the simpleMapConfig does NOT have a mapStoreConfig
         assertNull(simpleMapConfig.getMapStoreConfig());
         // Test that the simpleMapConfig does NOT have a nearCacheConfig
@@ -265,15 +262,13 @@ public class TestFullApplicationContext {
         ExecutorConfig testExecConfig = config.getExecutorConfig("testExec");
         assertNotNull(testExecConfig);
         assertEquals("testExec", testExecConfig.getName());
-//        assertEquals(2, testExecConfig.getCorePoolSize());
-        assertEquals(32, testExecConfig.getPoolSize());
-//        assertEquals(30, testExecConfig.getKeepAliveSeconds());
+        assertEquals(2, testExecConfig.getPoolSize());
+        assertEquals(100, testExecConfig.getQueueCapacity());
         ExecutorConfig testExec2Config = config.getExecutorConfig("testExec2");
         assertNotNull(testExec2Config);
         assertEquals("testExec2", testExec2Config.getName());
-//        assertEquals(5, testExec2Config.getCorePoolSize());
-        assertEquals(10, testExec2Config.getPoolSize());
-//        assertEquals(20, testExec2Config.getKeepAliveSeconds());
+        assertEquals(5, testExec2Config.getPoolSize());
+        assertEquals(300, testExec2Config.getQueueCapacity());
     }
 
     @Test
@@ -369,7 +364,7 @@ public class TestFullApplicationContext {
         assertEquals("set", set.getName());
         assertEquals("list", list.getName());
         assertEquals("idGenerator", idGenerator.getName());
-        assertEquals("atomicNumber", atomicLong.getName());
+        assertEquals("atomicLong", atomicLong.getName());
         assertEquals("countDownLatch", countDownLatch.getName());
         assertEquals("semaphore", semaphore.getName());
 //        assertEquals(new ProxyKey("lock", "lock"), lock.getId());
@@ -384,7 +379,7 @@ public class TestFullApplicationContext {
         assertNotNull(targetCfg);
         assertEquals("tokyo", targetCfg.getGroupName());
         assertEquals("tokyo-pass", targetCfg.getGroupPassword());
-        assertEquals("com.hazelcast.impl.wan.WanNoDelayReplication", targetCfg.getReplicationImpl());
+        assertEquals("com.hazelcast.wan.WanNoDelayReplication", targetCfg.getReplicationImpl());
         assertEquals(2, targetCfg.getEndpoints().size());
         assertEquals("10.2.1.1:5701", targetCfg.getEndpoints().get(0));
         assertEquals("10.2.1.2:5701", targetCfg.getEndpoints().get(1));
