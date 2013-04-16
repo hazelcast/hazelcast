@@ -53,9 +53,9 @@
 
             </hz:network>
             <hz:executor-service name="testExec"
-                                 core-pool-size="2"
-                                 max-pool-size="32"
-                                 keep-alive-seconds="30"/>
+                                 pool-size="2"
+                                 queue-capacity="100"
+                                 />
         </hz:config>
     </hz:hazelcast>
 

@@ -32,4 +32,5 @@ public interface MapMergePolicy extends DataSerializable {
      * @return final value of the entry. If returns null then no change on the entry.
      */
     Object merge(String mapName, EntryView mergingEntry, EntryView existingEntry);
+
 }

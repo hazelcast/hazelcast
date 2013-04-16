@@ -93,6 +93,7 @@
     <partition-group enabled="false"/>
     <executor-service name="default">
         <pool-size>16</pool-size>
+        <queue-capacity>100</queue-capacity>
     </executor-service>
     <queue name="default">
         <!--
@@ -180,27 +181,19 @@
             the policy set here. Default policy is hz.ADD_NEW_ENTRY
 
             There are built-in merge policies such as
-            hz.NO_MERGE      ; no entry will merge.
-            hz.ADD_NEW_ENTRY ; entry will be added if the merging entry's key
+            NO_MERGE      ; no entry will merge.
+            PUT_IF_ABSENT ; entry will be added if the merging entry's key
                                doesn't exist in the cluster.
-            hz.HIGHER_HITS   ; entry with the higher hits wins.
-            hz.LATEST_UPDATE ; entry with the latest update wins.
+            HIGHER_HITS   ; entry with the higher hits wins.
+            LATEST_UPDATE ; entry with the latest update wins.
         -->
-        <merge-policy>hz.ADD_NEW_ENTRY</merge-policy>
+        <merge-policy>PUT_IF_ABSENT</merge-policy>
     </map>
 
     <!-- Add your own semaphore configurations here:
         <semaphore name="default">
             <initial-permits>10</initial-permits>
         </semaphore>
-    -->
-
-    <!-- Add your own map merge policy implementations here:
-    	<merge-policies>
-           	<map-merge-policy name="MY_MERGE_POLICY">
-            	<class-name>com.acme.MyOwnMergePolicy</class-name>
-        	</map-merge-policy>
-    	</merge-policies>
     -->
 
     <serialization>

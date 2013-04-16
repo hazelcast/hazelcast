@@ -74,18 +74,18 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                         groupConfigBuilder.addPropertyValue("name", value);
                     } else if ("group-password".equals(name)) {
                         groupConfigBuilder.addPropertyValue("password", value);
-                    } else if ("auto-update-members".equals(name)) {
-                        configBuilder.addPropertyValue("updateAutomatic", value);
-                    } else if ("shuffle-members".equals(name)) {
-                        configBuilder.addPropertyValue("shuffle", value);
+                    } else if ("redo-operation".equals(name)) {
+                        configBuilder.addPropertyValue("redoOperation", value);
+                    } else if ("smart".equals(name)) {
+                        configBuilder.addPropertyValue("smart", value);
                     } else if ("connect-attempt-limit".equals(name)) {
                         configBuilder.addPropertyValue("initialConnectionAttemptLimit", value);
                     } else if ("connect-timeout".equals(name)) {
                         configBuilder.addPropertyValue("connectionTimeout", value);
                     } else if ("reconnect-attempt-limit".equals(name)) {
                         configBuilder.addPropertyValue("reconnectionAttemptLimit", value);
-                    } else if ("reconnect-timeout".equals(name)) {
-                        configBuilder.addPropertyValue("reConnectionTimeOut", value);
+                    } else if ("attempt-period".equals(name)) {
+                        configBuilder.addPropertyValue("attemptPeriod", value);
                     } else if ("credentials-ref".equals(name)) {
                         configBuilder.addPropertyReference("credentials", value);
                     }

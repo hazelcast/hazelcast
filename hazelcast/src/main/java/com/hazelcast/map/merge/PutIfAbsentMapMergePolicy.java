@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import java.io.IOException;
 
 public class PutIfAbsentMapMergePolicy implements MapMergePolicy, DataSerializable {
+    public static String NAME = "PUT_IF_ABSENT";
 
     public Object merge(String mapName, EntryView mergingEntry, EntryView existingEntry) {
         if(existingEntry.getValue() == null) {

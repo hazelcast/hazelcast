@@ -20,13 +20,12 @@ import com.hazelcast.client.ClientCommandHandler;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapMergePolicyConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.client.*;
-import com.hazelcast.map.merge.MapMergePolicy;
+import com.hazelcast.map.merge.*;
 import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.map.proxy.ObjectMapProxy;
 import com.hazelcast.map.tx.TxnMapProxy;
@@ -81,12 +80,18 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     private final ConcurrentMap<String, NearCache> nearCacheMap = new ConcurrentHashMap<String, NearCache>();
     private final ConcurrentMap<ListenerKey, String> eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
     private final AtomicReference<List<Integer>> ownedPartitions;
+    private final Map<String, MapMergePolicy> mergePolicyMap;
 
     public MapService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         logger = nodeEngine.getLogger(MapService.class.getName());
         partitionContainers = new PartitionContainer[nodeEngine.getPartitionService().getPartitionCount()];
         ownedPartitions = new AtomicReference<List<Integer>>();
+        mergePolicyMap = new ConcurrentHashMap<String, MapMergePolicy>();
+        mergePolicyMap.put(PutIfAbsentMapMergePolicy.NAME, new PutIfAbsentMapMergePolicy());
+        mergePolicyMap.put(HigherHitsMapMergePolicy.NAME, new HigherHitsMapMergePolicy());
+        mergePolicyMap.put(PassThroughMergePolicy.NAME, new PassThroughMergePolicy());
+        mergePolicyMap.put(LatestUpdateMapMergePolicy.NAME, new LatestUpdateMapMergePolicy());
     }
 
     private final ConcurrentMap<String, LocalMapStatsImpl> statsMap = new ConcurrentHashMap<String, LocalMapStatsImpl>(1000);
@@ -222,6 +227,25 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         }
     }
 
+    public MapMergePolicy getMergePolicy(String mergePolicyName) {
+        MapMergePolicy mergePolicy = null;
+        mergePolicy = mergePolicyMap.get(mergePolicyName);
+        if(mergePolicy == null && mergePolicyName != null) {
+            try {
+                // check if user has entered custom class name instead of policy name
+                mergePolicy = ClassLoaderUtil.newInstance(mergePolicyName);
+                mergePolicyMap.put(mergePolicyName, mergePolicy);
+            } catch (Exception e) {
+                logger.log(Level.SEVERE, e.getMessage(), e);
+                ExceptionUtil.rethrow(e);
+            }
+        }
+        if(mergePolicy == null) {
+            return mergePolicyMap.get(MapConfig.DEFAULT_MAP_MERGE_POLICY);
+        }
+        return mergePolicy;
+    }
+
     public class Merger implements Runnable {
 
         Map<MapContainer, Collection<Record>> recordMap;
@@ -232,32 +256,9 @@ public class MapService implements ManagedService, MigrationAwareService, Member
 
         public void run() {
             for (final MapContainer mapContainer : recordMap.keySet()) {
-
-                MapMergePolicy mergePolicy = null;
-                MapMergePolicyConfig mergePolicyConfig = mapContainer.getMapConfig().getMergePolicyConfig();
-                if (mergePolicyConfig != null) {
-                    mergePolicy = mergePolicyConfig.getImplementation();
-                    if (mergePolicy == null) {
-                        String mergeClassName = mergePolicyConfig.getClassName();
-                        try {
-                            // todo cache merge policies in a map
-                            mergePolicy = ClassLoaderUtil.newInstance(mergeClassName);
-                        } catch (Exception e) {
-                            logger.log(Level.SEVERE, e.getMessage(), e);
-                            ExceptionUtil.rethrow(e);
-                        }
-                    }
-                }
-                if (mergePolicy == null) {
-                    try {
-                        mergePolicy = ClassLoaderUtil.newInstance(MapMergePolicyConfig.DEFAULT_POLICY);
-                    } catch (Exception e) {
-                        logger.log(Level.SEVERE, e.getMessage(), e);
-                        ExceptionUtil.rethrow(e);
-                    }
-                }
-
                 Collection<Record> recordList = recordMap.get(mapContainer);
+                String mergePolicyName = mapContainer.getMapConfig().getMergePolicy();
+                MapMergePolicy mergePolicy = getMergePolicy(mergePolicyName);
 
                 // todo number of records may be high. below can be optimized a many records can be send in single invocation
                 for (final Record record : recordList) {
@@ -1107,7 +1108,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                     // wait if the partition table is not updated yet
                     while (replicaAddress == null && clusterService.getSize() > backupCount && tryCount-- > 0) {
                         try {
-                            Thread.sleep(1000);
+                            Thread.sleep(100);
                         } catch (InterruptedException e) {
                             throw ExceptionUtil.rethrow(e);
                         }

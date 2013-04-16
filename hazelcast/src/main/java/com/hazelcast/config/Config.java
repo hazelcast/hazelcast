@@ -278,6 +278,11 @@ public class Config implements DataSerializable {
         return Collections.unmodifiableMap(executorConfigs);
     }
 
+    public Config setExecutorConfigMap(Map executorConfigs){
+        this.executorConfigs = executorConfigs;
+        return this;
+    }
+
     public Config addTopicConfig(TopicConfig topicConfig) {
         topicConfigs.put(topicConfig.getName(), topicConfig);
         return this;
@@ -291,6 +296,61 @@ public class Config implements DataSerializable {
     }
 
     /**
+     * @param mapTopicConfigs the topicConfigs to set
+     */
+    public Config setTopicConfigs(Map<String, TopicConfig> mapTopicConfigs) {
+        this.topicConfigs = mapTopicConfigs;
+        for (final Entry<String, TopicConfig> entry : this.topicConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
+        return this;
+    }
+
+    public void setProperties(Properties properties) {
+        this.properties = properties;
+    }
+
+    public void setGroupConfig(GroupConfig groupConfig) {
+        this.groupConfig = groupConfig;
+    }
+
+    public void setNetworkConfig(NetworkConfig networkConfig) {
+        this.networkConfig = networkConfig;
+    }
+
+    public void setQueueConfigs(Map<String, QueueConfig> queueConfigs) {
+        this.queueConfigs = queueConfigs;
+    }
+
+    public void setWanReplicationConfigs(Map<String, WanReplicationConfig> wanReplicationConfigs) {
+        this.wanReplicationConfigs = wanReplicationConfigs;
+    }
+
+    public void setServicesConfig(ServicesConfig servicesConfig) {
+        this.servicesConfig = servicesConfig;
+    }
+
+    public void setSecurityConfig(SecurityConfig securityConfig) {
+        this.securityConfig = securityConfig;
+    }
+
+    public void setListenerConfigs(List<ListenerConfig> listenerConfigs) {
+        this.listenerConfigs = listenerConfigs;
+    }
+
+    public void setPartitionGroupConfig(PartitionGroupConfig partitionGroupConfig) {
+        this.partitionGroupConfig = partitionGroupConfig;
+    }
+
+    public void setManagementCenterConfig(ManagementCenterConfig managementCenterConfig) {
+        this.managementCenterConfig = managementCenterConfig;
+    }
+
+    public void setSerializationConfig(SerializationConfig serializationConfig) {
+        this.serializationConfig = serializationConfig;
+    }
+
+    /**
      * @return the mapQConfigs
      */
     public Map<String, QueueConfig> getQConfigs() {
@@ -300,6 +360,19 @@ public class Config implements DataSerializable {
     public Config addQueueConfig(QueueConfig queueConfig) {
         queueConfigs.put(queueConfig.getName(), queueConfig);
         return this;
+    }
+
+    public Config setQConfigs(Map queueConfigs) {
+        this.queueConfigs = queueConfigs;
+        return this;
+    }
+
+    public void setExecutorConfigs(Map<String, ExecutorConfig> executorConfigs) {
+        this.executorConfigs = executorConfigs;
+    }
+
+    public void setSemaphoreConfigs(Map<String, SemaphoreConfig> semaphoreConfigs) {
+        this.semaphoreConfigs = semaphoreConfigs;
     }
 
     public Config addMapConfig(MapConfig mapConfig) {
@@ -321,6 +394,25 @@ public class Config implements DataSerializable {
 
     public Map<String, MultiMapConfig> getMultiMapConfigs() {
         return Collections.unmodifiableMap(multiMapConfigs);
+    }
+
+    /**
+     * @param mapConfigs the mapConfigs to set
+     */
+    public Config setMapConfigs(Map<String, MapConfig> mapConfigs) {
+        this.mapConfigs = mapConfigs;
+        for (final Entry<String, MapConfig> entry : this.mapConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
+        return this;
+    }
+
+    public Config setMultiMapConfigs(Map<String, MultiMapConfig> multiMapConfigs) {
+        this.multiMapConfigs = multiMapConfigs;
+        for (final Entry<String, MultiMapConfig> entry : this.multiMapConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
+        return this;
     }
 
     /**
@@ -357,6 +449,7 @@ public class Config implements DataSerializable {
         return sc;
     }
 
+
     /**
      * Returns the collection of semaphore configs.
      *
@@ -368,6 +461,14 @@ public class Config implements DataSerializable {
 
     public Map<String, SemaphoreConfig> getSemaphoreConfigMap() {
         return Collections.unmodifiableMap(semaphoreConfigs);
+    }
+
+    public Config setSemaphoreConfigMap(Map<String, SemaphoreConfig> mapSemaphores) {
+        this.semaphoreConfigs = mapSemaphores;
+        for (final Entry<String, SemaphoreConfig> entry : this.semaphoreConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
+        return this;
     }
 
     /**
