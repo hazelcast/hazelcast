@@ -60,7 +60,7 @@ public class MapContainer {
     private final IndexService indexService = new IndexService();
     private final boolean nearCacheEnabled;
     private final AtomicBoolean initialLoaded = new AtomicBoolean(false);
-    private final EntryTaskScheduler idleEvictionScheduler;
+    private EntryTaskScheduler idleEvictionScheduler;
     private final EntryTaskScheduler ttlEvictionScheduler;
     private final EntryTaskScheduler mapStoreWriteScheduler;
     private final EntryTaskScheduler mapStoreDeleteScheduler;
@@ -156,6 +156,10 @@ public class MapContainer {
         interceptorMap = new ConcurrentHashMap<String, MapInterceptor>();
         interceptorIdMap = new ConcurrentHashMap<MapInterceptor, String>();
         nearCacheEnabled = mapConfig.getNearCacheConfig() != null;
+    }
+
+    public void createIdleEvictionScheduler(NodeEngine nodeEngine) {
+        idleEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new EvictionProcessor(nodeEngine, mapService, name), true);
     }
 
     // todo cache policies in a map probably in mapservice

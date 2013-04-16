@@ -66,12 +66,6 @@ public class GroupProperties {
     public static final String PROP_LOG_STATE = "hazelcast.log.state";
     public static final String PROP_ENABLE_JMX = "hazelcast.jmx";
     public static final String PROP_ENABLE_JMX_DETAILED = "hazelcast.jmx.detailed";
-    public static final String PROP_MC_ATOMIC_NUMBER_EXCLUDES = "hazelcast.mc.atomiclong.excludes";
-    public static final String PROP_MC_COUNT_DOWN_LATCH_EXCLUDES = "hazelcast.mc.countdownlatch.excludes";
-    public static final String PROP_MC_MAP_EXCLUDES = "hazelcast.mc.map.excludes";
-    public static final String PROP_MC_QUEUE_EXCLUDES = "hazelcast.mc.queue.excludes";
-    public static final String PROP_MC_SEMAPHORE_EXCLUDES = "hazelcast.mc.semaphore.excludes";
-    public static final String PROP_MC_TOPIC_EXCLUDES = "hazelcast.mc.topic.excludes";
     public static final String PROP_MC_MAX_VISIBLE_INSTANCE_COUNT = "hazelcast.mc.max.visible.instance.count";
     public static final String PROP_MC_URL_CHANGE_ENABLED = "hazelcast.mc.url.change.enabled";
     public static final String PROP_CONNECTION_MONITOR_INTERVAL = "hazelcast.connection.monitor.interval";
@@ -138,7 +132,7 @@ public class GroupProperties {
     public final GroupProperty MAX_WAIT_SECONDS_BEFORE_JOIN;
 
     public final GroupProperty MAX_JOIN_SECONDS;
-    
+
     public final GroupProperty MAX_JOIN_MERGE_TARGET_SECONDS;
 
     public final GroupProperty MAX_NO_HEARTBEAT_SECONDS;
@@ -174,18 +168,6 @@ public class GroupProperties {
     public final GroupProperty ENABLE_JMX;
 
     public final GroupProperty ENABLE_JMX_DETAILED;
-
-    public final GroupProperty MC_ATOMIC_NUMBER_EXCLUDES;
-
-    public final GroupProperty MC_COUNT_DOWN_LATCH_EXCLUDES;
-
-    public final GroupProperty MC_MAP_EXCLUDES;
-
-    public final GroupProperty MC_QUEUE_EXCLUDES;
-
-    public final GroupProperty MC_SEMAPHORE_EXCLUDES;
-
-    public final GroupProperty MC_TOPIC_EXCLUDES;
 
     public final GroupProperty MC_MAX_INSTANCE_COUNT;
 
@@ -259,12 +241,6 @@ public class GroupProperties {
         LOGGING_TYPE = new GroupProperty(config, PROP_LOGGING_TYPE, "jdk");
         ENABLE_JMX = new GroupProperty(config, PROP_ENABLE_JMX, "false");
         ENABLE_JMX_DETAILED = new GroupProperty(config, PROP_ENABLE_JMX_DETAILED, "false");
-        MC_ATOMIC_NUMBER_EXCLUDES = new GroupProperty(config, PROP_MC_ATOMIC_NUMBER_EXCLUDES);
-        MC_COUNT_DOWN_LATCH_EXCLUDES = new GroupProperty(config, PROP_MC_COUNT_DOWN_LATCH_EXCLUDES);
-        MC_MAP_EXCLUDES = new GroupProperty(config, PROP_MC_MAP_EXCLUDES);
-        MC_QUEUE_EXCLUDES = new GroupProperty(config, PROP_MC_QUEUE_EXCLUDES);
-        MC_SEMAPHORE_EXCLUDES = new GroupProperty(config, PROP_MC_SEMAPHORE_EXCLUDES);
-        MC_TOPIC_EXCLUDES = new GroupProperty(config, PROP_MC_TOPIC_EXCLUDES);
         MC_MAX_INSTANCE_COUNT = new GroupProperty(config, PROP_MC_MAX_VISIBLE_INSTANCE_COUNT, "100");
         MC_URL_CHANGE_ENABLED = new GroupProperty(config, PROP_MC_URL_CHANGE_ENABLED, "true");
         CONNECTION_MONITOR_INTERVAL = new GroupProperty(config, PROP_CONNECTION_MONITOR_INTERVAL, "100");

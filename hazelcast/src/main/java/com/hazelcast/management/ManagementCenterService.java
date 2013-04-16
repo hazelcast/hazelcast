@@ -17,6 +17,7 @@
 package com.hazelcast.management;
 
 import com.hazelcast.ascii.rest.HttpCommand;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.config.ManagementCenterConfig;
 import com.hazelcast.core.*;
@@ -49,7 +50,6 @@ import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
-import java.util.regex.Pattern;
 
 public class ManagementCenterService implements LifecycleListener, MembershipListener {
 
@@ -58,9 +58,6 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     private final StateSender stateSender;
     private final ILogger logger;
     private final ConsoleCommandHandler commandHandler;
-    private final StatsInstanceFilter instanceFilterMap;
-    private final StatsInstanceFilter instanceFilterQueue;
-    private final StatsInstanceFilter instanceFilterTopic;
     private final int maxVisibleInstanceCount;
     private final int updateIntervalMs;
     private final ManagementCenterConfig managementCenterConfig;
@@ -79,9 +76,6 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         }
         this.instance.getLifecycleService().addLifecycleListener(this);
         this.instance.getCluster().addMembershipListener(this);
-        this.instanceFilterMap = new StatsInstanceFilter(instance.node.getGroupProperties().MC_MAP_EXCLUDES.getString());
-        this.instanceFilterQueue = new StatsInstanceFilter(instance.node.getGroupProperties().MC_QUEUE_EXCLUDES.getString());
-        this.instanceFilterTopic = new StatsInstanceFilter(instance.node.getGroupProperties().MC_TOPIC_EXCLUDES.getString());
         maxVisibleInstanceCount = this.instance.node.groupProperties.MC_MAX_INSTANCE_COUNT.getInteger();
         commandHandler = new ConsoleCommandHandler(this.instance);
         String tmpWebServerUrl = managementCenterConfig.getUrl();
@@ -269,38 +263,31 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     private void createMemState(MemberStateImpl memberState,
                                 Collection<DistributedObject> distributedObjects) {
         int count = 0;
+        final Config config = getHazelcastInstance().getConfig();
         for (DistributedObject distributedObject : distributedObjects) {
             if (count < maxVisibleInstanceCount) {
                 if (distributedObject instanceof IMap) {
                     IMap map = (IMap) distributedObject;
-                    if (instanceFilterMap.visible(map.getName())) {
+                    if (config.getMapConfig(map.getName()).isStatisticsEnabled()) {
                         memberState.putLocalMapStats(map.getName(), (LocalMapStatsImpl) map.getLocalMapStats());
                         count++;
                     }
                 } else if (distributedObject instanceof IQueue) {
                     IQueue queue = (IQueue) distributedObject;
-                    if (instanceFilterQueue.visible(queue.getName())) {
-                        memberState.putLocalQueueStats(queue.getName(), (LocalQueueStatsImpl) queue.getLocalQueueStats());
-                        count++;
-                    }
+                    memberState.putLocalQueueStats(queue.getName(), (LocalQueueStatsImpl) queue.getLocalQueueStats());
+                    count++;
                 } else if (distributedObject instanceof ITopic) {
                     ITopic topic = (ITopic) distributedObject;
-                    if (instanceFilterTopic.visible(topic.getName())) {
-                        memberState.putLocalTopicStats(topic.getName(), (LocalTopicStatsImpl) topic.getLocalTopicStats());
-                        count++;
-                    }
+                    memberState.putLocalTopicStats(topic.getName(), (LocalTopicStatsImpl) topic.getLocalTopicStats());
+                    count++;
                 } else if (distributedObject instanceof MultiMap) {
                     MultiMap multiMap = (MultiMap) distributedObject;
-                    if (instanceFilterTopic.visible(multiMap.getName())) {
-                        memberState.putLocalMultiMapStats(multiMap.getName(), (LocalMultiMapStatsImpl) multiMap.getLocalMultiMapStats());
-                        count++;
-                    }
+                    memberState.putLocalMultiMapStats(multiMap.getName(), (LocalMultiMapStatsImpl) multiMap.getLocalMultiMapStats());
+                    count++;
                 } else if (distributedObject instanceof IExecutorService) {
                     IExecutorService executorService = (IExecutorService) distributedObject;
-//                    if (instanceFilterTopic.visible(multiMapProxy.getName())) {
                     memberState.putLocalExecutorStats(executorService.getName(), (LocalExecutorStatsImpl) executorService.getLocalExecutorStats());
                     count++;
-//                    }
                 }
             }
         }
@@ -317,38 +304,31 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     private void collectInstanceNames(Set<String> setLongInstanceNames,
                                       Collection<DistributedObject> distributedObjects) {
         int count = 0;
+        final Config config = getHazelcastInstance().getConfig();
         for (DistributedObject distributedObject : distributedObjects) {
             if (count < maxVisibleInstanceCount) {
                 if (distributedObject instanceof MultiMap) {
                     MultiMap multiMap = (MultiMap) distributedObject;
-                    if (instanceFilterMap.visible(multiMap.getName())) {
-                        setLongInstanceNames.add("m:" + multiMap.getName());
-                        count++;
-                    }
+                    setLongInstanceNames.add("m:" + multiMap.getName());
+                    count++;
                 } else if (distributedObject instanceof IMap) {
                     IMap map = (IMap) distributedObject;
-                    if (instanceFilterMap.visible(map.getName())) {
+                    if (config.getMapConfig(map.getName()).isStatisticsEnabled()) {
                         setLongInstanceNames.add("c:" + map.getName());
                         count++;
                     }
                 } else if (distributedObject instanceof IQueue) {
                     IQueue queue = (IQueue) distributedObject;
-                    if (instanceFilterQueue.visible(queue.getName())) {
-                        setLongInstanceNames.add("q:" + queue.getName());
-                        count++;
-                    }
+                    setLongInstanceNames.add("q:" + queue.getName());
+                    count++;
                 } else if (distributedObject instanceof ITopic) {
                     ITopic topic = (ITopic) distributedObject;
-                    if (instanceFilterTopic.visible(topic.getName())) {
-                        setLongInstanceNames.add("t:" + topic.getName());
-                        count++;
-                    }
+                    setLongInstanceNames.add("t:" + topic.getName());
+                    count++;
                 } else if (distributedObject instanceof IExecutorService) {
                     IExecutorService executorService = (IExecutorService) distributedObject;
-//                    if (instanceFilterTopic.visible(topicProxy.getName())) {
                     setLongInstanceNames.add("e:" + executorService.getName());
                     count++;
-//                    }
                 }
             }
         }
@@ -550,48 +530,6 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 }
                 logger.log(Level.FINEST, "Problem on management center while polling task.", throwable);
             }
-        }
-    }
-
-    class StatsInstanceFilter {
-        final Set<Pattern> setExcludes;
-        final Set<String> setIncludeCache;
-        final Set<String> setExcludeCache;
-
-        StatsInstanceFilter(String excludes) {
-            if (excludes != null) {
-                setExcludes = new HashSet<Pattern>();
-                setIncludeCache = new HashSet<String>();
-                setExcludeCache = new HashSet<String>();
-                StringTokenizer st = new StringTokenizer(excludes, ",");
-                while (st.hasMoreTokens()) {
-                    setExcludes.add(Pattern.compile(st.nextToken().trim()));
-                }
-            } else {
-                setExcludes = null;
-                setIncludeCache = null;
-                setExcludeCache = null;
-            }
-        }
-
-        boolean visible(String instanceName) {
-            if (setExcludes == null) {
-                return true;
-            }
-            if (setIncludeCache.contains(instanceName)) {
-                return true;
-            }
-            if (setExcludeCache.contains(instanceName)) {
-                return false;
-            }
-            for (Pattern pattern : setExcludes) {
-                if (pattern.matcher(instanceName).matches()) {
-                    setExcludeCache.add(instanceName);
-                    return false;
-                }
-            }
-            setIncludeCache.add(instanceName);
-            return true;
         }
     }
 }

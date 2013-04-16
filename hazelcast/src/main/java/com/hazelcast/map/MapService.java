@@ -863,7 +863,10 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public void scheduleIdleEviction(String mapName, Data key, long delay) {
+        if (getMapContainer(mapName).getIdleEvictionScheduler() == null)
+            getMapContainer(mapName).createIdleEvictionScheduler(nodeEngine);
         getMapContainer(mapName).getIdleEvictionScheduler().schedule(delay, key, null);
+
     }
 
     public void scheduleTtlEviction(String mapName, Data key, long delay) {
@@ -1094,7 +1097,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                     ownedEntryCount++;
                     ownedEntryMemoryCost += record.getCost();
                     localMapStats.setLastAccessTime(stats.getLastAccessTime());
-//                    localMapStats.setLastUpdateTime(stats.getLastUpdateTime());//TODO @msk last update time
                     hits += stats.getHits();
                     if (recordStore.isLocked(record.getKey())) {
                         lockedEntryCount++;

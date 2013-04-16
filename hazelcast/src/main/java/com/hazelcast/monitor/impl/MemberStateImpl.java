@@ -44,7 +44,7 @@ public class MemberStateImpl implements MemberState {
     //    Map<String, LocalAtomicLongStatsImpl> atomicNumberStats = new HashMap<String, LocalAtomicLongStatsImpl>();
 //    Map<String, LocalCountDownLatchStatsImpl> countDownLatchStats = new HashMap<String, LocalCountDownLatchStatsImpl>();
 //    Map<String, LocalSemaphoreStatsImpl> semaphoreStats = new HashMap<String, LocalSemaphoreStatsImpl>();
-    List<Integer> lsPartitions = new ArrayList<Integer>(271); //TODO @msk where to get this num from?
+    List<Integer> lsPartitions = new ArrayList<Integer>(271);
 
     public void writeData(ObjectDataOutput out) throws IOException {
         address.writeData(out);
