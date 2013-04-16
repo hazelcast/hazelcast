@@ -217,10 +217,10 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         PartitionInfo info = nodeEngine.getPartitionService().getPartitionInfo(partitionId);
         if (thisAddress.equals(info.getOwner())) { //TODO @msk two nodes owner ????
             stats.setOwnedItemCount(container.size());
-            System.out.println("I am owner : " + nodeEngine.getLocalMember().getAddress());
+//            System.out.println("I am owner : " + nodeEngine.getLocalMember().getAddress());
         } else {
             stats.setBackupItemCount(container.size());
-            System.out.println("I am backup : " + nodeEngine.getLocalMember().getAddress());
+//            System.out.println("I am backup : " + nodeEngine.getLocalMember().getAddress());
         }
         container.setStats(stats);
         return stats;
