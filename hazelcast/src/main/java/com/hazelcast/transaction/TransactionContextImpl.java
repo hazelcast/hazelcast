@@ -19,6 +19,8 @@ package com.hazelcast.transaction;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionProxyType;
 import com.hazelcast.collection.CollectionService;
+import com.hazelcast.collection.list.ObjectListProxy;
+import com.hazelcast.core.TransactionalList;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.core.TransactionalQueue;
@@ -72,6 +74,11 @@ class TransactionContextImpl implements TransactionContext {
     @SuppressWarnings("unchecked")
     public <K,V> TransactionalMultiMap<K,V> getMultiMap(String name) {
         return (TransactionalMultiMap<K,V>) getTransactionalObject(CollectionService.SERVICE_NAME, new CollectionProxyId(name, null, CollectionProxyType.MULTI_MAP));
+    }
+
+    @SuppressWarnings("unchecked")
+    public <E> TransactionalList<E> getList(String name) {
+        return (TransactionalList<E>) getTransactionalObject(CollectionService.SERVICE_NAME, new CollectionProxyId(ObjectListProxy.COLLECTION_LIST_NAME, name, CollectionProxyType.LIST));
     }
 
     @SuppressWarnings("unchecked")

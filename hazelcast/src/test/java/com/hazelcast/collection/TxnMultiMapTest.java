@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.TransactionalList;
 import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.transaction.TransactionContext;
@@ -78,5 +79,34 @@ public class TxnMultiMapTest {
         assertEquals(0, instances[1].getMultiMap(name).size());
         assertTrue(instances[2].getMultiMap(name).put("key1","value1"));
         assertTrue(instances[2].getMultiMap(name).put("key2","value2"));
+    }
+
+    @Test
+    public void testPutRemoveList(){
+        Config config = new Config();
+        final String name = "defList";
+
+        final int insCount = 4;
+        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
+        TransactionContext context = instances[0].newTransactionContext();
+        try {
+            context.beginTransaction();
+
+            TransactionalList mm = context.getList(name);
+            assertEquals(0, mm.size());
+            assertTrue(mm.add("value1"));
+            assertTrue(mm.add("value1"));
+            assertEquals(2, mm.size());
+            assertFalse(mm.remove("value2"));
+            assertTrue(mm.remove("value1"));
+
+            context.commitTransaction();
+        } catch (Exception e){
+            fail(e.getMessage());
+            context.rollbackTransaction();
+        }
+
+        assertEquals(1, instances[1].getList(name).size());
+        assertTrue(instances[2].getList(name).add("value1"));
     }
 }

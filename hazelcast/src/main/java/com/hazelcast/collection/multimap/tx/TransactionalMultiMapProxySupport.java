@@ -46,11 +46,11 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
 
     private final Map<Data, Collection<CollectionRecord>> txMap = new HashMap<Data, Collection<CollectionRecord>>();
 
-    protected TransactionalMultiMapProxySupport(NodeEngine nodeEngine, CollectionService service, CollectionProxyId proxyId, Transaction tx) {
+    protected TransactionalMultiMapProxySupport(NodeEngine nodeEngine, CollectionService service, CollectionProxyId proxyId, Transaction tx, MultiMapConfig config) {
         super(nodeEngine, service);
         this.proxyId = proxyId;
         this.tx = tx;
-        this.config = nodeEngine.getConfig().getMultiMapConfig(proxyId.getName());
+        this.config = config;
     }
 
     public boolean putInternal(Data key, Data value) {

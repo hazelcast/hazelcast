@@ -21,6 +21,7 @@ import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.collection.client.CollectionItemListenHandler;
 import com.hazelcast.collection.list.ObjectListProxy;
 import com.hazelcast.collection.list.client.*;
+import com.hazelcast.collection.list.tx.TransactionalListProxy;
 import com.hazelcast.collection.multimap.ObjectMultiMapProxy;
 import com.hazelcast.collection.multimap.client.*;
 import com.hazelcast.collection.multimap.tx.TransactionalMultiMapProxy;
@@ -391,7 +392,7 @@ public class CollectionService implements ManagedService, RemoteService, Members
             case MULTI_MAP:
                 return (T) new TransactionalMultiMapProxy(nodeEngine, this, collectionProxyId, transaction);
             case LIST:
-                return null;
+                return (T) new TransactionalListProxy(nodeEngine, this, collectionProxyId, transaction);
             case SET:
                 return null;
             case QUEUE:
