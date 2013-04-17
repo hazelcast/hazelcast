@@ -270,7 +270,7 @@ public class BackupTest {
 
         Config config = new Config();
         final String name = "default";
-        final int partitionCount = 200;
+        final int partitionCount = 1111;
         config.setProperty(GroupProperties.PROP_PARTITION_COUNT, String.valueOf(partitionCount));
         MapConfig mapConfig = config.getMapConfig(name);
         final int backupCount = 2;
@@ -287,8 +287,10 @@ public class BackupTest {
         }
         assertEquals(size, getTotalOwnedEntryCount(map1, map2));
         assertEquals(size, getTotalBackupEntryCount(map1, map2));
+
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance(config);
         IMap map3 = h3.getMap(name);
+
         Thread.sleep(3000);
         assertEquals(size, getTotalOwnedEntryCount(map1, map2, map3));
         assertEquals(backupCount * size, getTotalBackupEntryCount(map1, map2, map3));

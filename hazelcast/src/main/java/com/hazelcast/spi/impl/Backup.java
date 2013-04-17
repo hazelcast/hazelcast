@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -31,7 +32,7 @@ import java.util.logging.Level;
 /**
  * @mdogan 4/5/13
  */
-final class Backup extends Operation implements BackupOperation, IdentifiedDataSerializable, FireAndForgetOp {
+final class Backup extends Operation implements BackupOperation, IdentifiedDataSerializable {
 
     private Operation backupOp;
     private Address originalCaller;
@@ -99,6 +100,11 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
 
     public boolean validatesTarget() {
         return true;
+    }
+
+    public void logError(Throwable e) {
+        final ILogger logger = getLogger();
+        logger.log(Level.INFO, e.getClass() + ": " + e.getMessage());
     }
 
     @Override

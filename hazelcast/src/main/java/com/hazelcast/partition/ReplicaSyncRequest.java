@@ -34,7 +34,7 @@ import java.util.logging.Level;
 /**
  * @mdogan 4/11/13
  */
-public class ReplicaSyncRequest extends Operation implements PartitionAwareOperation, MigrationCycleOperation/*, FireAndForgetOp*/ {
+public class ReplicaSyncRequest extends Operation implements PartitionAwareOperation, MigrationCycleOperation {
 
     public ReplicaSyncRequest() {
     }
@@ -101,6 +101,11 @@ public class ReplicaSyncRequest extends Operation implements PartitionAwareOpera
 
     public boolean validatesTarget() {
         return false;
+    }
+
+    public void logError(Throwable e) {
+        final ILogger logger = getLogger();
+        logger.log(Level.INFO, e.getClass() + ": " + e.getMessage());
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

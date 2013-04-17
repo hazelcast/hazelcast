@@ -31,6 +31,7 @@ import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
+import java.util.logging.Level;
 
 public abstract class Operation implements DataSerializable {
 
@@ -230,6 +231,17 @@ public abstract class Operation implements DataSerializable {
     protected final ILogger getLogger() {
         final NodeEngine ne = nodeEngine;
         return ne != null ? ne.getLogger(getClass()) : Logger.getLogger(getClass().getName());
+    }
+
+    public void logError(Throwable e) {
+        final ILogger logger = getLogger();
+        if (e instanceof RetryableException) {
+            final Level level = returnsResponse() ? Level.FINEST : Level.WARNING;
+            logger.log(level, e.getClass() + ": " + e.getMessage());
+        } else {
+            final Level level = nodeEngine != null && nodeEngine.isActive() ? Level.SEVERE : Level.FINEST;
+            logger.log(level, e.getMessage(), e);
+        }
     }
 
     private transient boolean writeDataFlag = false;

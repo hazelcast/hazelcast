@@ -30,7 +30,7 @@ import java.util.logging.Level;
 /**
  * @mdogan 4/11/13
  */
-public class ReplicaSyncResponse extends Operation implements PartitionAwareOperation, BackupOperation, FireAndForgetOp {
+public class ReplicaSyncResponse extends Operation implements PartitionAwareOperation, BackupOperation {
 
     private byte[] data;
     private long version;
@@ -113,6 +113,11 @@ public class ReplicaSyncResponse extends Operation implements PartitionAwareOper
         return true;
     }
 
+    public void logError(Throwable e) {
+        final ILogger logger = getLogger();
+        logger.log(Level.INFO, e.getClass() + ": " + e.getMessage());
+    }
+
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeLong(version);
         IOUtil.writeByteArray(out, data);
@@ -121,5 +126,16 @@ public class ReplicaSyncResponse extends Operation implements PartitionAwareOper
     protected void readInternal(ObjectDataInput in) throws IOException {
         version = in.readLong();
         data = IOUtil.readByteArray(in);
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("ReplicaSyncResponse");
+        sb.append("{partition=").append(getPartitionId());
+        sb.append(", replica=").append(getReplicaIndex());
+        sb.append(", version=").append(version);
+        sb.append('}');
+        return sb.toString();
     }
 }

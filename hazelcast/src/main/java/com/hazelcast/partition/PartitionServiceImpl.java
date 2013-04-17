@@ -98,6 +98,8 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         proxy = new PartitionServiceProxy(this);
 
         replicaSyncRequests = new ConcurrentHashMap<Integer, ReplicaSyncInfo>(partitionCount);
+
+        nodeEngine.getExecutionService().scheduleWithFixedDelay(new SyncReplicaVersionTask(), 30, 30, TimeUnit.SECONDS);
     }
 
     private class LocalPartitionListener implements PartitionListener {
@@ -342,7 +344,8 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                         unknownAddresses.add(address);
                     }
                 }
-                currentPartition.setPartitionInfo(newPartition);
+                // backup replicas will be assigned after active migrations are finalized.
+                currentPartition.setOwner(newPartition.getOwner());
             }
             if (!unknownAddresses.isEmpty()) {
                 StringBuilder s = new StringBuilder("Following unknown addresses are found in partition table")
@@ -365,6 +368,12 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 final MemberImpl masterMember = getMasterMember();
                 rollbackActiveMigrationsFromPreviousMaster(masterMember.getUuid());
             }
+
+            for (PartitionInfo newPartition : newPartitions) {
+                PartitionInfo currentPartition = partitions[newPartition.getPartitionId()];
+                currentPartition.setPartitionInfo(newPartition);
+            }
+
             stateVersion.set(partitionState.getVersion());
             initialized = true;
         } finally {
@@ -505,7 +514,8 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         });
     }
 
-    private void syncPartitionReplica(int partitionId, int replicaIndex, boolean force) {
+    @PrivateApi
+    void syncPartitionReplica(int partitionId, int replicaIndex, boolean force) {
         if (replicaIndex < 0 || replicaIndex > PartitionInfo.MAX_REPLICA_COUNT) {
             throw new IllegalArgumentException("Invalid replica index: " + replicaIndex);
         }
@@ -625,7 +635,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
     }
 
     @PrivateApi
-    public long getPartitionVersion(int partitionId) {
+    long getPartitionVersion(int partitionId) {
         return partitionVersions[partitionId].get();
     }
 
@@ -644,27 +654,31 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
 
     private class PartitionVersion {
         final int partitionId;
-        final AtomicLong version = new AtomicLong(); // TODO: no need to be an AtomicLong or even volatile!
+        long version = 0L; // read and updated only by operation/partition threads
 
         private PartitionVersion(int partitionId) {
             this.partitionId = partitionId;
         }
 
         long incrementAndGet() {
-            return version.incrementAndGet();
+            return ++version;
         }
 
         long get() {
-            return version.get();
+            return version;
         }
 
         boolean update(final long v) {
-            long current = version.get();
-            return current == v - 1 && version.compareAndSet(current, v);
+            final long current = version;
+            final boolean updated = current == v - 1;
+            if (updated) {
+                version = v;
+            }
+            return updated;
         }
 
         void reset(long v) {
-            version.set(v);
+            version = v;
         }
 
         @Override
@@ -742,6 +756,23 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                     logger.log(Level.INFO, "Remaining migration tasks in queue => " + migrationQueue.size());
                 }
                 sendPartitionRuntimeState();
+            }
+        }
+    }
+
+    private class SyncReplicaVersionTask implements Runnable {
+
+        public void run() {
+            if (node.isActive() && migrationActive.get()) {
+                final Address thisAddress = node.getThisAddress();
+                for (PartitionInfo partition : partitions) {
+                    if (thisAddress.equals(partition.getOwner()) && partition.getReplicaAddress(1) != null) {
+                        SyncReplicaVersion op = new SyncReplicaVersion();
+                        op.setService(PartitionServiceImpl.this);
+                        op.setPartitionId(partition.getPartitionId());
+                        nodeEngine.getOperationService().executeOperation(op);
+                    }
+                }
             }
         }
     }

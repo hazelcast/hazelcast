@@ -298,13 +298,7 @@ final class OperationServiceImpl implements OperationService {
         if (e instanceof OutOfMemoryError) {
             OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) e);
         }
-        if (e instanceof RetryableException) {
-            final Level level = (op.returnsResponse() || op instanceof FireAndForgetOp) ? Level.FINEST : Level.WARNING;
-            logger.log(level, "While executing op: " + op + " -> " + e.getClass() + ": " + e.getMessage());
-        } else {
-            final Level level = nodeEngine.isActive() ? Level.SEVERE : Level.FINEST;
-            logger.log(level, "While executing op: " + op + " -> " + e.getMessage(), e);
-        }
+        op.logError(e);
         if (node.isActive() && op.returnsResponse() && op.getResponseHandler() != null) {
             try {
                 op.getResponseHandler().sendResponse(e);

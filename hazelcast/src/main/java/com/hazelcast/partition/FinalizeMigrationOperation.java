@@ -26,7 +26,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.LinkedList;
 import java.util.logging.Level;
 
 // runs locally...
@@ -46,8 +45,9 @@ final class FinalizeMigrationOperation extends AbstractOperation implements Part
     public void run() {
         PartitionServiceImpl partitionService = getService();
         MigrationInfo migrationInfo = partitionService.getActiveMigration(getPartitionId());
+        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         if (migrationInfo != null) {
-            final Collection<MigrationAwareService> services = getServices();
+            final Collection<MigrationAwareService> services = nodeEngine.getServices(MigrationAwareService.class);
             final PartitionMigrationEvent event = new PartitionMigrationEvent(endpoint, getPartitionId());
             for (MigrationAwareService service : services) {
                 try {
@@ -62,22 +62,9 @@ final class FinalizeMigrationOperation extends AbstractOperation implements Part
             }
             partitionService.removeActiveMigration(getPartitionId());
             if (success) {
-                NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
                 nodeEngine.onPartitionMigrate(migrationInfo);
             }
         }
-    }
-
-    protected Collection<MigrationAwareService> getServices() {
-        Collection<MigrationAwareService> services = new LinkedList<MigrationAwareService>();
-        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        for (Object serviceObject : nodeEngine.getServices(MigrationAwareService.class)) {
-            if (serviceObject instanceof MigrationAwareService) {
-                MigrationAwareService service = (MigrationAwareService) serviceObject;
-                services.add(service);
-            }
-        }
-        return services;
     }
 
     @Override
