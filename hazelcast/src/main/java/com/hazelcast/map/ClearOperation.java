@@ -21,8 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionLevelOperation;
-import com.hazelcast.spi.impl.AbstractNamedOperation;
+import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -30,7 +29,7 @@ import java.util.Set;
 
 import static com.hazelcast.map.MapService.SERVICE_NAME;
 
-public class ClearOperation extends AbstractMapOperation implements PartitionLevelOperation, BackupAwareOperation {
+public class ClearOperation extends AbstractMapOperation implements BackupAwareOperation, PartitionAwareOperation {
 
     Set<Data> keys;
 

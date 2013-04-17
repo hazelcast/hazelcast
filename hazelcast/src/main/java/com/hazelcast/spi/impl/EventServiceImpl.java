@@ -32,7 +32,7 @@ import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConcurrencyUtil.ConstructorFunction;
-import com.hazelcast.util.executor.ExecutorThreadFactory;
+import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 
 import java.io.IOException;
 import java.util.*;
@@ -57,11 +57,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         logger = nodeEngine.getLogger(EventService.class.getName());
         final Node node = nodeEngine.getNode();
         eventExecutorService = Executors.newSingleThreadExecutor(
-                new ExecutorThreadFactory(node.threadGroup, node.getConfig().getClassLoader()) {
-                    protected String newThreadName() {
-                        return node.getThreadNamePrefix("event");
-                    }
-                });
+                new SingleExecutorThreadFactory(node.threadGroup, node.getConfig().getClassLoader(), node.getThreadNamePrefix("event")));
         segments = new ConcurrentHashMap<String, EventServiceSegment>();
     }
 

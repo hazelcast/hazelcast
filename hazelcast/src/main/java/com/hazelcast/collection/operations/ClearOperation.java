@@ -23,7 +23,7 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionLevelOperation;
+import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.util.Collection;
 import java.util.Map;
@@ -31,7 +31,7 @@ import java.util.Map;
 /**
  * @ali 1/9/13
  */
-public class ClearOperation extends CollectionOperation implements BackupAwareOperation, PartitionLevelOperation {
+public class ClearOperation extends CollectionOperation implements BackupAwareOperation, PartitionAwareOperation {
 
     transient Map<Data, Collection<CollectionRecord>> objects;
 

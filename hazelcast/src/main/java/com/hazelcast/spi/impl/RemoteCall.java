@@ -24,10 +24,18 @@ import com.hazelcast.spi.Callback;
 final class RemoteCall {
 
     private final Address target;
+    private final String uuid;
     private final Callback<Object> callback;
 
     RemoteCall(Address target, Callback<Object> callback) {
         this.target = target;
+        this.callback = callback;
+        this.uuid = null;
+    }
+
+    RemoteCall(MemberImpl target, Callback<Object> callback) {
+        this.target = target.getAddress();
+        this.uuid = target.getUuid();
         this.callback = callback;
     }
 
@@ -36,7 +44,15 @@ final class RemoteCall {
     }
 
     void onMemberLeft(MemberImpl leftMember) {
-        if (leftMember.getAddress().equals(target)) {
+        boolean notify;
+
+        if (uuid != null) {
+            notify = leftMember.getUuid().equals(uuid);
+        } else {
+            notify = leftMember.getAddress().equals(target);
+        }
+
+        if (notify) {
             callback.notify(new MemberLeftException(leftMember));
         }
     }

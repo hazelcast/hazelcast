@@ -19,12 +19,12 @@ package com.hazelcast.collection.operations;
 import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.KeyBasedOperation;
+import com.hazelcast.spi.PartitionAwareOperation;
 
 /**
  * @ali 1/16/13
  */
-public class ContainsOperation extends ContainsEntryOperation implements KeyBasedOperation {
+public class ContainsOperation extends ContainsEntryOperation implements PartitionAwareOperation {
 
     public ContainsOperation() {
     }
@@ -38,7 +38,4 @@ public class ContainsOperation extends ContainsEntryOperation implements KeyBase
         response = container.containsEntry(isBinary(), key, value);
     }
 
-    public int getKeyHash() {
-        return key.getPartitionHash();
-    }
 }

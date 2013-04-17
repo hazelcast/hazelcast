@@ -332,7 +332,7 @@ public class MapContainer {
                 operation.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
                 operation.setPartitionId(partitionId);
                 operation.setServiceName(MapService.SERVICE_NAME);
-                nodeEngine.getOperationService().runOperation(operation);
+                nodeEngine.getOperationService().executeOperation(operation);
             }
 
             if (counter.decrementAndGet() <= 0) {

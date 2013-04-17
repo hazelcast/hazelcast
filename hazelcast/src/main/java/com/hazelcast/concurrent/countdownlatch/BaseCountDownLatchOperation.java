@@ -16,14 +16,14 @@
 
 package com.hazelcast.concurrent.countdownlatch;
 
-import com.hazelcast.spi.KeyBasedOperation;
+import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 /**
  * @mdogan 1/10/13
  */
-abstract class BaseCountDownLatchOperation extends AbstractNamedOperation implements KeyBasedOperation {
+abstract class BaseCountDownLatchOperation extends AbstractNamedOperation implements PartitionAwareOperation {
 
     protected BaseCountDownLatchOperation() {
     }
@@ -35,10 +35,6 @@ abstract class BaseCountDownLatchOperation extends AbstractNamedOperation implem
     @Override
     public boolean returnsResponse() {
         return true;
-    }
-
-    public final int getKeyHash() {
-        return (CountDownLatchService.SERVICE_NAME + name).hashCode();
     }
 
     @Override

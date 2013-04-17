@@ -16,6 +16,9 @@
 
 package com.hazelcast.util.executor;
 
+import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
+import com.hazelcast.instance.ThreadContext;
+
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -23,7 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * @mdogan 1/10/13
  */
-public class PoolExecutorThreadFactory extends ExecutorThreadFactory {
+public final class PoolExecutorThreadFactory extends AbstractExecutorThreadFactory {
 
     private final String threadNamePrefix;
     private final AtomicInteger idGen = new AtomicInteger(0);
@@ -32,10 +35,6 @@ public class PoolExecutorThreadFactory extends ExecutorThreadFactory {
     public PoolExecutorThreadFactory(ThreadGroup threadGroup, String threadNamePrefix, ClassLoader classLoader) {
         super(threadGroup, classLoader);
         this.threadNamePrefix = threadNamePrefix;
-    }
-
-    protected String newThreadName() {
-        throw new UnsupportedOperationException();
     }
 
     protected Thread createThread(Runnable r) {
@@ -47,8 +46,28 @@ public class PoolExecutorThreadFactory extends ExecutorThreadFactory {
         return new ManagedThread(r, name, id);
     }
 
-    protected void afterThreadExit(ManagedThread t) {
-        super.afterThreadExit(t);
-        idQ.offer(t.id);
+    private class ManagedThread extends Thread {
+
+        protected final int id;
+
+        public ManagedThread(Runnable target, String name, int id) {
+            super(threadGroup, target, name);
+            this.id = id;
+        }
+
+        public void run() {
+            try {
+                super.run();
+            } catch (OutOfMemoryError e) {
+                OutOfMemoryErrorDispatcher.onOutOfMemory(e);
+            } finally {
+                try {
+                    ThreadContext.shutdown(this);
+                    idQ.offer(id);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 }

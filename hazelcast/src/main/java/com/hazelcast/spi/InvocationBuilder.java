@@ -34,7 +34,6 @@ public class InvocationBuilder {
     private int replicaIndex = 0;
     private int tryCount = 250;
     private long tryPauseMillis = 500;
-    private boolean async;
 
     public InvocationBuilder(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId) {
         this(nodeEngine, serviceName, op, partitionId, null);
@@ -118,22 +117,13 @@ public class InvocationBuilder {
         return this;
     }
 
-    public boolean isAsync() {
-        return async;
-    }
-
-    public InvocationBuilder setAsync(boolean async) {
-        this.async = async;
-        return this;
-    }
-
     public Invocation build() {
         if (target == null) {
             return new PartitionInvocationImpl(nodeEngine, serviceName, op, partitionId, replicaIndex,
-                    tryCount, tryPauseMillis, callTimeout, async, callback);
+                    tryCount, tryPauseMillis, callTimeout, callback);
         } else {
             return new TargetInvocationImpl(nodeEngine, serviceName, op, target, tryCount, tryPauseMillis,
-                    callTimeout, async, callback);
+                    callTimeout, callback);
         }
     }
 }

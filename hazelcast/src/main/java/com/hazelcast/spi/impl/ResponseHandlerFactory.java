@@ -36,7 +36,7 @@ public final class ResponseHandlerFactory {
     }
 
     public static ResponseHandler createLocalResponseHandler(Operation op, Callback<Object> callback) {
-        return new LocalInvocationResponseHandler(callback, op.getCallId());
+        return new LocalInvocationResponseHandler(callback);
     }
 
     public static void setRemoteResponseHandler(NodeEngine nodeEngine, Operation op) {
@@ -114,17 +114,20 @@ public final class ResponseHandlerFactory {
 
         private final Callback<Object> callback;
         private final AtomicBoolean sent = new AtomicBoolean(false);
-        private final long callId;
+        private volatile Object response;
+        private volatile Throwable trace;
 
-        private LocalInvocationResponseHandler(Callback<Object> callback, long callId) {
+        private LocalInvocationResponseHandler(Callback<Object> callback) {
             this.callback = callback;
-            this.callId = callId;
         }
 
         public void sendResponse(Object obj) {
             if (!sent.compareAndSet(false, true)) {
-                throw new IllegalStateException("Response already sent for callback: " + callback);
+                throw new IllegalStateException("Response already sent for callback: " + callback
+                        + ", current-response: : " + obj + " -vs- " + response, trace);
             }
+            response = obj;
+            trace = new Throwable();
             callback.notify(obj);
         }
     }

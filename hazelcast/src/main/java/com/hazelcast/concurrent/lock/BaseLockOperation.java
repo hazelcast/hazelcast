@@ -21,11 +21,11 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.KeyBasedOperation;
+import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
 
-abstract class BaseLockOperation extends AbstractOperation implements KeyBasedOperation {
+abstract class BaseLockOperation extends AbstractOperation implements PartitionAwareOperation {
 
     public static final long DEFAULT_LOCK_TTL = Long.MAX_VALUE;
 
@@ -85,10 +85,6 @@ abstract class BaseLockOperation extends AbstractOperation implements KeyBasedOp
     @Override
     public final String getServiceName() {
         return LockService.SERVICE_NAME;
-    }
-
-    public final int getKeyHash() {
-        return key.getPartitionHash();
     }
 
     public final Data getKey() {

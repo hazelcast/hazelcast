@@ -20,10 +20,11 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.FireAndForgetOp;
 
 import java.io.IOException;
 
-final class BackupResponse extends AbstractOperation implements IdentifiedDataSerializable {
+final class BackupResponse extends AbstractOperation implements IdentifiedDataSerializable, FireAndForgetOp {
 
     public BackupResponse() {
     }

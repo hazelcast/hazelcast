@@ -991,7 +991,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                         clearOperation.setServiceName(SERVICE_NAME);
                         clearOperation.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
                         clearOperation.setPartitionId(i);
-                        nodeEngine.getOperationService().runOperation(clearOperation);
+                        nodeEngine.getOperationService().executeOperation(clearOperation);
                     }
                 }
             }
@@ -1078,10 +1078,10 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         final PartitionService partitionService = nodeEngine.getPartitionService();
 
         Address thisAddress = clusterService.getThisAddress();
-        for (int i = 0; i < partitionService.getPartitionCount(); i++) {
-            PartitionInfo partitionInfo = partitionService.getPartitionInfo(i);
+        for (int partition = 0; partition < partitionService.getPartitionCount(); partition++) {
+            PartitionInfo partitionInfo = partitionService.getPartitionInfo(partition);
             if (partitionInfo.getOwner().equals(thisAddress)) {
-                PartitionContainer partitionContainer = getPartitionContainer(i);
+                PartitionContainer partitionContainer = getPartitionContainer(partition);
                 RecordStore recordStore = partitionContainer.getRecordStore(mapName);
                 ConcurrentMap<Data, Record> records = recordStore.getRecords();
                 for (Record record : records.values()) {
@@ -1101,8 +1101,8 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                     }
                 }
             } else {
-                for (int j = 1; j <= backupCount; j++) {
-                    Address replicaAddress = partitionInfo.getReplicaAddress(j);
+                for (int replica = 1; replica <= backupCount; replica++) {
+                    Address replicaAddress = partitionInfo.getReplicaAddress(replica);
                     int tryCount = 30;
                     // wait if the partition table is not updated yet
                     while (replicaAddress == null && clusterService.getSize() > backupCount && tryCount-- > 0) {
@@ -1111,17 +1111,19 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                         } catch (InterruptedException e) {
                             throw ExceptionUtil.rethrow(e);
                         }
-                        replicaAddress = partitionInfo.getReplicaAddress(j);
+                        replicaAddress = partitionInfo.getReplicaAddress(replica);
                     }
 
                     if (replicaAddress != null && replicaAddress.equals(thisAddress)) {
-                        PartitionContainer partitionContainer = getPartitionContainer(i);
+                        PartitionContainer partitionContainer = getPartitionContainer(partition);
                         RecordStore recordStore = partitionContainer.getRecordStore(mapName);
                         ConcurrentMap<Data, Record> records = recordStore.getRecords();
                         for (Record record : records.values()) {
                             backupEntryCount++;
                             backupEntryMemoryCost += record.getCost();
                         }
+                    } else if (replicaAddress == null && clusterService.getSize() > backupCount) {
+                        logger.log(Level.WARNING, "Partition: " + partition + ", replica: " + replica + " has no owner!");
                     }
                 }
             }

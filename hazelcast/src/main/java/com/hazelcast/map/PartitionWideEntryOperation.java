@@ -20,16 +20,15 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionLevelOperation;
+import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
-public class PartitionWideEntryOperation extends AbstractMapOperation implements BackupAwareOperation, PartitionLevelOperation {
+public class PartitionWideEntryOperation extends AbstractMapOperation implements BackupAwareOperation, PartitionAwareOperation {
 
     EntryProcessor entryProcessor;
 

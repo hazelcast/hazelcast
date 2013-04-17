@@ -311,7 +311,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         if (connection == null)
             return;
         log(Level.FINEST, "Destroying " + connection);
-        setActiveConnections.remove(connection);
+        setActiveConnections.remove((TcpIpConnection) connection);
         final Address endPoint = connection.getEndPoint();
         if (endPoint != null) {
             setConnectionInProgress.remove(endPoint);

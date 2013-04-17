@@ -184,7 +184,7 @@ public class NodeEngineImpl implements NodeEngine {
                 futureSend = new FutureSend(packet, target);
             }
             final int retries = futureSend.retries;
-            if (retries < 5) {
+            if (retries < 5 && node.isActive()) {
                 connectionManager.getOrConnect(target, true);
                 // TODO: Caution: may break the order guarantee of the packets sent from the same thread!
                 executionService.schedule(futureSend, (retries + 1) * 100, TimeUnit.MILLISECONDS);
@@ -229,10 +229,6 @@ public class NodeEngineImpl implements NodeEngine {
     public void handlePacket(Packet packet) {
         if (packet.isHeaderSet(Packet.HEADER_OP)) {
             operationService.handleOperation(packet);
-        } else if (packet.isHeaderSet(Packet.HEADER_BACKUP)) {
-            operationService.handleBackup(packet);
-        } else if (packet.isHeaderSet(Packet.HEADER_MIGRATION)) {
-            node.partitionService.handleMigration(packet);
         } else if (packet.isHeaderSet(Packet.HEADER_EVENT)) {
             eventService.handleEvent(packet);
         } else if (packet.isHeaderSet(Packet.HEADER_WAN_REPLICATION)) {

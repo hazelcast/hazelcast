@@ -24,8 +24,8 @@ public class PartitionInvocationImpl extends InvocationImpl {
 
     public PartitionInvocationImpl(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
                                    int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout,
-                                   boolean async, Callback<Object> callback) {
-        super(nodeEngine, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis, callTimeout, async, callback);
+                                   Callback<Object> callback) {
+        super(nodeEngine, serviceName, op, partitionId, replicaIndex, tryCount, tryPauseMillis, callTimeout, callback);
     }
 
     public Address getTarget() {

@@ -69,10 +69,11 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
         sb.append(" Closing socket to endpoint ");
         sb.append(connection.getEndPoint());
         sb.append(", Cause:").append(e);
+        final Level level = connectionManager.ioService.isActive() ? Level.WARNING : Level.FINEST;
         if (e instanceof IOException) {
-            logger.log(Level.WARNING, sb.toString());
+            logger.log(level, sb.toString());
         } else {
-            logger.log(Level.WARNING, sb.toString(), e);
+            logger.log(level, sb.toString(), e);
         }
     }
 
