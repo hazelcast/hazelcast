@@ -917,13 +917,17 @@ public class CMap {
             }
         }
         Data oldValue = null;
+        Data newValue = req.value;
         if (record == null) {
-            record = createAndAddNewRecord(req.key, req.value);
+            record = createAndAddNewRecord(req.key, newValue);
         } else {
             markAsActive(record);
             record.setRemoveTime(0);
             oldValue = (record.isValid(now)) ? record.getValueData() : null;
-            record.setValueData(req.value);
+            if(req.operation == CONCURRENT_MAP_REPLACE_IF_SAME) {
+                oldValue = (Data) req.attachment;
+            }
+            record.setValueData(newValue);
             record.incrementVersion();
             record.setLastUpdated();
         }

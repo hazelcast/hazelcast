@@ -2898,6 +2898,7 @@ public class ConcurrentMapManager extends BaseManager {
             public void doMapStoreOperation() {
                 MultiData multiData = (MultiData) toObject(request.value);
                 Object expectedValue = toObject(multiData.getData(0));
+                request.attachment = multiData.getData(0); // old value for event
                 request.value = multiData.getData(1); // new value
                 request.response = expectedValue.equals(record.getValue());
 
