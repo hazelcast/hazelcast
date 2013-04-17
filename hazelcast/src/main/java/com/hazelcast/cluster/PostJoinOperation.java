@@ -34,8 +34,7 @@ public class PostJoinOperation extends AbstractOperation {
     }
 
     public PostJoinOperation(final Operation... ops) {
-        for (int i = 0; i < ops.length; i++) {
-            Operation op = ops[i];
+        for (Operation op : ops) {
             if (op == null) {
                 throw new NullPointerException();
             }
@@ -63,9 +62,9 @@ public class PostJoinOperation extends AbstractOperation {
 
     public void run() throws Exception {
         if (operations != null && operations.length > 0) {
-            final NodeEngine nodeEngine = getNodeEngine();
+            final OperationService operationService = getNodeEngine().getOperationService();
             for (final Operation op : operations) {
-                nodeEngine.getOperationService().runOperation(op);
+                operationService.runOperation(op);
             }
         }
     }
@@ -74,11 +73,6 @@ public class PostJoinOperation extends AbstractOperation {
     public boolean returnsResponse() {
         return true;
     }
-
-//    @Override
-//    public Object getResponse() {
-//        return Boolean.TRUE;
-//    }
 
     @Override
     public boolean validatesTarget() {

@@ -18,7 +18,7 @@ package com.hazelcast.nio;
 
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataWriter;
+import com.hazelcast.nio.serialization.DataAdapter;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -96,7 +96,7 @@ public class Protocol implements SocketWritable {
         totalWritten += IOUtil.copyToHeapBuffer(response, destination);
         if (hasBuffer()) {
             while (writerIterator.hasNext()) {
-                DataWriter dw = writerIterator.next();
+                DataAdapter dw = writerIterator.next();
                 if (!dw.writeTo(destination)) { // check if buffer is written completely
                     return false;
                 }
@@ -104,10 +104,6 @@ public class Protocol implements SocketWritable {
             totalWritten += IOUtil.copyToHeapBuffer(ByteBuffer.wrap(NEWLINE.getBytes()), destination);
         }
         return totalWritten >= totalSize;
-    }
-
-    public boolean readFrom(ByteBuffer source) {
-        return false;
     }
 
     public final boolean writeTo(final ObjectDataOutput dos) throws IOException {
@@ -159,7 +155,7 @@ public class Protocol implements SocketWritable {
 
     private class BufferWriterIterator {
         int index = 0;
-        DataWriter current = null;
+        DataAdapter current = null;
 
         boolean hasNext() {
             return hasBuffer() &&
@@ -170,13 +166,13 @@ public class Protocol implements SocketWritable {
             return current != null && !current.done();
         }
 
-        DataWriter next() {
+        DataAdapter next() {
             if (hasCurrent()) {
                 return current;
             }
 
             Data data = buffers[index++];
-            current = new DataWriter(data);
+            current = new DataAdapter(data);
             return current;
         }
     }

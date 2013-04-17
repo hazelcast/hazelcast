@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.nio;
 
-/**
- * @mdogan 12/3/12
- */
-public interface KeyBasedOperation extends PartitionAwareOperation {
+import java.nio.ByteBuffer;
 
-    int getKeyHash();
+public interface SocketReadable {
+
+    boolean readFrom(ByteBuffer source);
 
 }

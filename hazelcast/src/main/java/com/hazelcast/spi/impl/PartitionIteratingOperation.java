@@ -57,12 +57,7 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
                         .setService(getService());
                 OperationAccessor.setCallerAddress(op, getCallerAddress());
                 responses.put(partitionId, responseQueue);
-
-                nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
-                    public void run() {
-                        nodeEngine.getOperationService().runOperation(op);
-                    }
-                });
+                nodeEngine.getOperationService().executeOperation(op);
             }
             for (Map.Entry<Integer, ResponseQueue> responseQueueEntry : responses.entrySet()) {
                 final ResponseQueue queue = responseQueueEntry.getValue();

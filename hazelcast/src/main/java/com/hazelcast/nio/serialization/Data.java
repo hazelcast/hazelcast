@@ -52,7 +52,7 @@ public final class Data implements IdentifiedDataSerializable {
     /**
      * WARNING:
      *
-     * Should be in sync with {@link DataWriter#readFrom(java.nio.ByteBuffer)}
+     * Should be in sync with {@link DataAdapter#readFrom(java.nio.ByteBuffer)}
      */
     public void readData(ObjectDataInput in) throws IOException {
         type = in.readInt();
@@ -81,7 +81,7 @@ public final class Data implements IdentifiedDataSerializable {
     /**
      * WARNING:
      *
-     * Should be in sync with {@link DataWriter#writeTo(java.nio.ByteBuffer)}
+     * Should be in sync with {@link DataAdapter#writeTo(java.nio.ByteBuffer)}
      *
      * {@link #totalSize()} should be updated whenever writeData method is changed.
      */

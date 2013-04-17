@@ -28,7 +28,7 @@ import com.hazelcast.spi.exception.PartitionMigratingException;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConcurrencyUtil.ConstructorFunction;
-import com.hazelcast.util.executor.ExecutorThreadFactory;
+import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 
 import java.util.Iterator;
 import java.util.Queue;
@@ -41,7 +41,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
     private final DelayQueue delayQueue = new DelayQueue();
     private final ExecutorService expirationService;
     private final Future expirationTask;
-    private final NodeEngine nodeEngine;
+    private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
 
     public WaitNotifyServiceImpl(final NodeEngineImpl nodeEngine) {
@@ -50,11 +50,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
         logger = node.getLogger(WaitNotifyService.class.getName());
 
         expirationService = Executors.newSingleThreadExecutor(
-                new ExecutorThreadFactory(node.threadGroup, node.getConfig().getClassLoader()) {
-                    protected String newThreadName() {
-                        return node.getThreadNamePrefix("wait-notify");
-                    }
-                });
+                new SingleExecutorThreadFactory(node.threadGroup, node.getConfig().getClassLoader(), node.getThreadNamePrefix("wait-notify")));
 
         expirationTask = expirationService.submit(new Runnable() {
             public void run() {
@@ -116,7 +112,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
         final WaitNotifyKey key = waitSupport.getWaitKey();
         final Queue<WaitingOp> q = ConcurrencyUtil.getOrPutIfAbsent(mapWaitingOps, key, waitQueueConstructor);
         long timeout = waitSupport.getWaitTimeoutMillis();
-        WaitingOp waitingOp = (waitSupport instanceof KeyBasedOperation) ? new KeyBasedWaitingOp(q, waitSupport) : new WaitingOp(q, waitSupport);
+        WaitingOp waitingOp = new WaitingOp(q, waitSupport);
         waitingOp.setNodeEngine(nodeEngine);
         if (timeout > -1 && timeout < 1500) {
             delayQueue.offer(waitingOp);
@@ -143,17 +139,13 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
                     if (waitingOp.shouldWait()) {
                         return;
                     }
-                    processUnderExistingLock(op);
+                    nodeEngine.operationService.runOperation(op);
                 }
                 waitingOp.setValid(false);
             }
             q.poll(); // consume
             waitingOp = q.peek();
         }
-    }
-
-    private void processUnderExistingLock(Operation op) {
-        nodeEngine.getOperationService().runOperationUnderExistingLock(op);
     }
 
     // invalidated waiting ops will removed from queue eventually by notifiers.
@@ -228,16 +220,6 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
             q.clear();
         }
         mapWaitingOps.clear();
-    }
-
-    static class KeyBasedWaitingOp extends WaitingOp implements KeyBasedOperation {
-        KeyBasedWaitingOp(Queue<WaitingOp> queue, WaitSupport so) {
-            super(queue, so);
-        }
-
-        public int getKeyHash() {
-            return ((KeyBasedOperation) getOperation()).getKeyHash();
-        }
     }
 
     static class WaitingOp extends AbstractOperation implements Delayed, PartitionAwareOperation {

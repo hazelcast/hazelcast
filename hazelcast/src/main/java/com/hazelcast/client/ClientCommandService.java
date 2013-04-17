@@ -126,7 +126,7 @@ public class ClientCommandService implements ConnectionListener {
                     if (member.localMember()) {
                         final ClientDisconnectionOperation op = new ClientDisconnectionOperation(clientEndpoint.uuid);
                         op.setNodeEngine(node.nodeEngine).setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
-                        node.nodeEngine.getOperationService().executeOperation(op);
+                        node.nodeEngine.getOperationService().runOperation(op);
                     } else {
                         final Invocation inv = node.nodeEngine.getOperationService()
                                 .createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,

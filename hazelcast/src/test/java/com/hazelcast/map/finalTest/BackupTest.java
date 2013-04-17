@@ -82,7 +82,7 @@ public class BackupTest {
     @Test
     public void testGracefulShutdown2() throws Exception {
         Config config = new Config();
-        config.getMapConfig("test").setBackupCount(1).setStatisticsEnabled(true);
+        config.getMapConfig("test").setBackupCount(2).setStatisticsEnabled(true);
         config.setProperty(GroupProperties.PROP_PARTITION_COUNT, "1111");
 
         StaticNodeFactory f = new StaticNodeFactory(6);
@@ -157,52 +157,6 @@ public class BackupTest {
     }
 
     /**
-     * Fix for the issue 275.
-     *
-     * @throws Exception
-     */
-    @Test
-    public void testDataRecovery2() throws Exception {
-        StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
-        final int size = 100000;
-        final Config config = new Config();
-        final String name = "default";
-        config.getMapConfig(name).setStatisticsEnabled(true);
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
-        IMap map1 = h1.getMap(name);
-        for (int i = 0; i < size; i++) {
-            map1.put(i, "value" + i);
-        }
-        assertEquals(size, map1.size());
-
-        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
-        sleep(3000);
-        IMap map2 = h2.getMap(name);
-        assertEquals(size, map1.size());
-        assertEquals(size, map2.size());
-        assertEquals(size, getTotalOwnedEntryCount(map1, map2));
-        assertEquals(size, getTotalBackupEntryCount(map1, map2));
-
-        HazelcastInstance h3 = nodeFactory.newHazelcastInstance(config);
-        IMap map3 = h3.getMap(name);
-        sleep(3000);
-        assertEquals(size, map1.size());
-        assertEquals(size, map2.size());
-        assertEquals(size, map3.size());
-        assertEquals(size, getTotalOwnedEntryCount(map1, map2, map3));
-        assertEquals(size, getTotalBackupEntryCount(map1, map2, map3));
-
-        h2.getLifecycleService().shutdown();
-        sleep(3000);
-        assertEquals(size, map1.size());
-        assertEquals(size, map3.size());
-        assertEquals(size, getTotalOwnedEntryCount(map1, map3));
-        assertEquals(size, getTotalBackupEntryCount(map1, map3));
-        h1.getLifecycleService().shutdown();
-        assertEquals(size, map3.size());
-    }
-
-    /**
      * Testing if we are losing any data when we start a node
      * or when we shutdown a node.
      * <p/>
@@ -264,13 +218,60 @@ public class BackupTest {
         assertEquals(size, map3.size());
     }
 
+    /**
+     * Fix for the issue 275.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testDataRecovery2() throws Exception {
+        StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
+        final int size = 100000;
+        final Config config = new Config();
+        final String name = "default";
+        config.getMapConfig(name).setStatisticsEnabled(true);
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
+        IMap map1 = h1.getMap(name);
+        for (int i = 0; i < size; i++) {
+            map1.put(i, "value" + i);
+        }
+        assertEquals(size, map1.size());
+
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
+        sleep(3000);
+        IMap map2 = h2.getMap(name);
+        assertEquals(size, map1.size());
+        assertEquals(size, map2.size());
+        assertEquals(size, getTotalOwnedEntryCount(map1, map2));
+        assertEquals(size, getTotalBackupEntryCount(map1, map2));
+
+        HazelcastInstance h3 = nodeFactory.newHazelcastInstance(config);
+        IMap map3 = h3.getMap(name);
+        sleep(3000);
+        assertEquals(size, map1.size());
+        assertEquals(size, map2.size());
+        assertEquals(size, map3.size());
+        assertEquals(size, getTotalOwnedEntryCount(map1, map2, map3));
+        assertEquals(size, getTotalBackupEntryCount(map1, map2, map3));
+
+        h2.getLifecycleService().shutdown();
+        sleep(3000);
+        assertEquals(size, map1.size());
+        assertEquals(size, map3.size());
+        assertEquals(size, getTotalOwnedEntryCount(map1, map3));
+        assertEquals(size, getTotalBackupEntryCount(map1, map3));
+        h1.getLifecycleService().shutdown();
+        assertEquals(size, map3.size());
+    }
+
     @Test(timeout = 160000)
     public void testBackupCountTwo() throws Exception {
         StaticNodeFactory nodeFactory = new StaticNodeFactory(4);
 
         Config config = new Config();
         final String name = "default";
-        config.setProperty(GroupProperties.PROP_PARTITION_COUNT, "1111");
+        final int partitionCount = 200;
+        config.setProperty(GroupProperties.PROP_PARTITION_COUNT, String.valueOf(partitionCount));
         MapConfig mapConfig = config.getMapConfig(name);
         final int backupCount = 2;
         mapConfig.setBackupCount(backupCount).setStatisticsEnabled(true);
@@ -279,6 +280,7 @@ public class BackupTest {
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
         IMap map1 = h1.getMap(name);
         IMap map2 = h2.getMap(name);
+
         int size = 100000;
         for (int i = 0; i < size; i++) {
             map1.put(i, i);
@@ -290,6 +292,7 @@ public class BackupTest {
         Thread.sleep(3000);
         assertEquals(size, getTotalOwnedEntryCount(map1, map2, map3));
         assertEquals(backupCount * size, getTotalBackupEntryCount(map1, map2, map3));
+
         HazelcastInstance h4 = nodeFactory.newHazelcastInstance(config);
         IMap map4 = h4.getMap(name);
         Thread.sleep(3000);

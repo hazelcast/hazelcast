@@ -21,13 +21,13 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.KeyBasedOperation;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 
 import java.io.IOException;
 
-public abstract class KeyBasedMapOperation extends Operation implements KeyBasedOperation {
+public abstract class KeyBasedMapOperation extends Operation implements PartitionAwareOperation {
 
     protected String name;
     protected Data dataKey;
@@ -91,10 +91,6 @@ public abstract class KeyBasedMapOperation extends Operation implements KeyBased
 
     public final long getTtl() {
         return ttl;
-    }
-
-    public final int getKeyHash() {
-        return dataKey != null ? dataKey.getPartitionHash() : 0;
     }
 
     @Override

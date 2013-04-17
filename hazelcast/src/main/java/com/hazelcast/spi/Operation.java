@@ -18,6 +18,8 @@ package com.hazelcast.spi;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
@@ -223,6 +225,11 @@ public abstract class Operation implements DataSerializable {
     public Operation setCallerUuid(String callerUuid) {
         this.callerUuid = callerUuid;
         return this;
+    }
+
+    protected final ILogger getLogger() {
+        final NodeEngine ne = nodeEngine;
+        return ne != null ? ne.getLogger(getClass()) : Logger.getLogger(getClass().getName());
     }
 
     private transient boolean writeDataFlag = false;

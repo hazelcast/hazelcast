@@ -206,6 +206,6 @@ class SocketPacketReader implements SocketReader {
     }
 
     public Packet obtainReadable() {
-        return connection.obtainPacket();
+        return new Packet(ioService.getSerializationContext());
     }
 }

@@ -88,7 +88,7 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
                 Operation op = new SemaphoreDeadMemberOperation(name, caller).setPartitionId(partitionId)
                         .setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler())
                         .setService(this).setNodeEngine(nodeEngine).setServiceName(SERVICE_NAME);
-                nodeEngine.getOperationService().runOperation(op);
+                nodeEngine.getOperationService().executeOperation(op);
             }
         }
     }

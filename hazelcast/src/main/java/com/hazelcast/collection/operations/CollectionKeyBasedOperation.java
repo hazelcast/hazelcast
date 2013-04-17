@@ -22,7 +22,7 @@ import com.hazelcast.collection.CollectionWrapper;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.KeyBasedOperation;
+import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -30,7 +30,7 @@ import java.util.Collection;
 /**
  * @ali 1/16/13
  */
-public abstract class CollectionKeyBasedOperation extends CollectionOperation implements KeyBasedOperation {
+public abstract class CollectionKeyBasedOperation extends CollectionOperation implements PartitionAwareOperation {
 
     protected Data dataKey;
 
@@ -40,10 +40,6 @@ public abstract class CollectionKeyBasedOperation extends CollectionOperation im
     protected CollectionKeyBasedOperation(CollectionProxyId proxyId, Data dataKey) {
         super(proxyId);
         this.dataKey = dataKey;
-    }
-
-    public final int getKeyHash() {
-        return dataKey == null ? 0 : dataKey.getPartitionHash();
     }
 
     public final CollectionWrapper getOrCreateCollectionWrapper() {

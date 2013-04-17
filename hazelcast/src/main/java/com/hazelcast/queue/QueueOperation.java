@@ -29,7 +29,7 @@ import java.util.Collection;
 /**
  * @ali 12/6/12
  */
-public abstract class QueueOperation extends Operation implements KeyBasedOperation {
+public abstract class QueueOperation extends Operation implements PartitionAwareOperation {
 
     protected String name;
 
@@ -83,10 +83,6 @@ public abstract class QueueOperation extends Operation implements KeyBasedOperat
 
     public final boolean returnsResponse() {
         return true;
-    }
-
-    public final int getKeyHash() {
-        return name.hashCode();
     }
 
     public final long getWaitTimeoutMillis() {

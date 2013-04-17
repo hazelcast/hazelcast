@@ -27,9 +27,12 @@ import net.spy.memcached.ConnectionFactoryBuilder;
 import net.spy.memcached.FailureMode;
 import net.spy.memcached.MemcachedClient;
 import net.spy.memcached.internal.OperationFuture;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.LinkedList;
@@ -41,13 +44,10 @@ import java.util.concurrent.ExecutionException;
  * Date: 3/7/13
  * Time: 2:48 PM
  */
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class MemcacheTest {
-    static Config config;
 
-    @BeforeClass
-    public static void prepareConfig() throws FileNotFoundException {
-        config = new XmlConfigBuilder("/Users/msk/IdeaProjects/sample/src/main/resources/hazelcast.xml").build();
-    }
+    final static Config config = new XmlConfigBuilder().build();
 
     @After
     @Before

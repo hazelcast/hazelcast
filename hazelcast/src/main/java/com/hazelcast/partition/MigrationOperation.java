@@ -34,6 +34,7 @@ public final class MigrationOperation extends BaseMigrationOperation {
 
     private static final ResponseHandler ERROR_RESPONSE_HANDLER = new ErrorResponseHandler();
 
+    private long partitionVersion;
     private transient Collection<Operation> tasks;
     private byte[] zippedTaskData;
     private int taskCount;
@@ -41,8 +42,9 @@ public final class MigrationOperation extends BaseMigrationOperation {
     public MigrationOperation() {
     }
 
-    public MigrationOperation(MigrationInfo migrationInfo, byte[] taskData, int taskCount) throws IOException {
+    public MigrationOperation(MigrationInfo migrationInfo, long partitionVersion, byte[] taskData, int taskCount) {
         super(migrationInfo);
+        this.partitionVersion = partitionVersion;
         this.taskCount = taskCount;
         this.zippedTaskData = taskData;
     }
@@ -71,6 +73,10 @@ public final class MigrationOperation extends BaseMigrationOperation {
                             + ", replica: " + getReplicaIndex());
                 }
                 success = runMigrationTasks();
+                if (success) {
+                    final PartitionServiceImpl partitionService = getService();
+                    partitionService.setPartitionVersion(migrationInfo.getPartitionId(), partitionVersion);
+                }
             } catch (Throwable e) {
                 Level level = Level.WARNING;
                 if (e instanceof IllegalStateException) {
@@ -88,7 +94,6 @@ public final class MigrationOperation extends BaseMigrationOperation {
         }
     }
 
-    @Override
     public Object getResponse() {
         return success;
     }
@@ -132,6 +137,7 @@ public final class MigrationOperation extends BaseMigrationOperation {
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
+        out.writeLong(partitionVersion);
         out.writeInt(taskCount);
         out.writeInt(zippedTaskData.length);
         out.write(zippedTaskData);
@@ -139,6 +145,7 @@ public final class MigrationOperation extends BaseMigrationOperation {
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
+        partitionVersion = in.readLong();
         taskCount = in.readInt();
         int size = in.readInt();
         zippedTaskData = new byte[size];
