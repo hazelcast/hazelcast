@@ -36,6 +36,7 @@ public final class QueueConfig implements DataSerializable {
     private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
     private int maxSize = DEFAULT_MAX_SIZE;
     private QueueStoreConfig queueStoreConfig;
+    private boolean statisticsEnabled = true;
 
     public QueueConfig() {
     }
@@ -55,14 +56,14 @@ public final class QueueConfig implements DataSerializable {
     }
 
     public QueueConfig setMaxSize(int maxSize) {
-        if (maxSize < 0){
+        if (maxSize < 0) {
             throw new IllegalArgumentException("Size of the queue can not be a negative value!");
         }
         this.maxSize = maxSize;
         return this;
     }
 
-    public int getTotalBackupCount(){
+    public int getTotalBackupCount() {
         return backupCount + asyncBackupCount;
     }
 
@@ -91,6 +92,14 @@ public final class QueueConfig implements DataSerializable {
     public QueueConfig setQueueStoreConfig(QueueStoreConfig queueStoreConfig) {
         this.queueStoreConfig = queueStoreConfig;
         return this;
+    }
+
+    public boolean isStatisticsEnabled() {
+        return statisticsEnabled;
+    }
+
+    public void setStatisticsEnabled(boolean statisticsEnabled) {
+        this.statisticsEnabled = statisticsEnabled;
     }
 
     /**

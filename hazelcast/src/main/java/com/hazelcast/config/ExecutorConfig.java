@@ -33,6 +33,8 @@ public class ExecutorConfig implements DataSerializable {
 
     private int queueCapacity = DEFAULT_QUEUE_CAPACITY;
 
+    private boolean statisticsEnabled = true;
+
     public ExecutorConfig() {
     }
 
@@ -79,6 +81,14 @@ public class ExecutorConfig implements DataSerializable {
     public ExecutorConfig setQueueCapacity(int queueCapacity) {
         this.queueCapacity = queueCapacity;
         return this;
+    }
+
+    public boolean isStatisticsEnabled() {
+        return statisticsEnabled;
+    }
+
+    public void setStatisticsEnabled(boolean statisticsEnabled) {
+        this.statisticsEnabled = statisticsEnabled;
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {

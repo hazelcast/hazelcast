@@ -36,6 +36,7 @@ public class MultiMapConfig implements DataSerializable {
     private boolean binary = true;
     private int syncBackupCount = DEFAULT_SYNC_BACKUP_COUNT;
     private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
+    private boolean statisticsEnabled = true;
 
     public MultiMapConfig() {
     }
@@ -135,8 +136,16 @@ public class MultiMapConfig implements DataSerializable {
         return this;
     }
 
-    public int getTotalBackupCount(){
+    public int getTotalBackupCount() {
         return syncBackupCount + asyncBackupCount;
+    }
+
+    public boolean isStatisticsEnabled() {
+        return statisticsEnabled;
+    }
+
+    public void setStatisticsEnabled(boolean statisticsEnabled) {
+        this.statisticsEnabled = statisticsEnabled;
     }
 
     public String toString() {
