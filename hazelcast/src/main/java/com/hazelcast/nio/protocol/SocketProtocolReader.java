@@ -118,7 +118,7 @@ public class SocketProtocolReader implements SocketReader {
             }
         } catch (Exception e) {
             connection.getWriteHandler().enqueueSocketWritable(new Protocol(connection,
-                    Command.ERROR, flag, threadId, false, new String[]{"Malformed_request", e.toString()}));
+                    Command.ERROR, flag, threadId, false, new String[]{"Malformed_request", e.getClass().getName()}));
             logger.log(Level.SEVERE, e.toString(), e);
         }
     }

@@ -21,6 +21,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.instance.StaticNodeFactory;
+import com.hazelcast.util.ClientCompatibleTest;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -43,6 +44,7 @@ public class AtomicLongTest {
     }
 
     @Test
+    @ClientCompatibleTest
     public void testSimpleAtomicLong() {
         HazelcastInstance hazelcastInstance = new StaticNodeFactory(1).newHazelcastInstance(new Config());
         IAtomicLong an = hazelcastInstance.getAtomicLong("testAtomicLong");
@@ -63,15 +65,13 @@ public class AtomicLongTest {
     }
 
     @Test
-    public void testMultipleThreadAtomicLong() {
-
+    @ClientCompatibleTest
+    public void testMultipleThreadAtomicLong() throws InterruptedException {
         final HazelcastInstance[] instances = StaticNodeFactory.newInstances(new Config(), 1);
         final HazelcastInstance instance = instances[0];
-
         final int k = 10;
         final CountDownLatch countDownLatch = new CountDownLatch(k);
         final IAtomicLong atomicLong = instance.getAtomicLong("testMultipleThreadAtomicLong");
-
         for (int i = 0; i < k; i++) {
             new Thread() {
                 public void run() {
@@ -86,9 +86,8 @@ public class AtomicLongTest {
                 }
             }.start();
         }
-
         try {
-            countDownLatch.await(5, TimeUnit.SECONDS);
+            countDownLatch.await(50, TimeUnit.SECONDS);
             Assert.assertEquals(0, atomicLong.get());
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -96,6 +95,7 @@ public class AtomicLongTest {
     }
 
     @Test
+    @ClientCompatibleTest
     public void testAtomicLongFailure() {
         int k = 4;
         StaticNodeFactory nodeFactory = new StaticNodeFactory(k + 1);
@@ -103,9 +103,7 @@ public class AtomicLongTest {
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
         String name = "testAtomicLongFailure";
         IAtomicLong atomicLong = instance.getAtomicLong(name);
-
         atomicLong.set(100);
-
         for (int i = 0; i < k; i++) {
             HazelcastInstance newInstance = nodeFactory.newHazelcastInstance(config);
             IAtomicLong newAtomicLong = newInstance.getAtomicLong(name);
@@ -117,6 +115,7 @@ public class AtomicLongTest {
     }
 
     @Test
+    @ClientCompatibleTest
     public void testAtomicLongSpawnNodeInParallel() {
         int total = 6;
         int parallel = 2;
@@ -125,9 +124,7 @@ public class AtomicLongTest {
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
         final String name = "testAtomicLongSpawnNodeInParallel";
         IAtomicLong atomicLong = instance.getAtomicLong(name);
-
         atomicLong.set(100);
-
         for (int i = 0; i < total / parallel; i++) {
             final HazelcastInstance[] instances = new HazelcastInstance[parallel];
             final CountDownLatch countDownLatch = new CountDownLatch(parallel);
@@ -140,17 +137,14 @@ public class AtomicLongTest {
                         countDownLatch.countDown();
                     }
                 }.start();
-
             }
             try {
                 countDownLatch.await(1, TimeUnit.MINUTES);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-
             IAtomicLong newAtomicLong = instance.getAtomicLong(name);
             Assert.assertEquals((long) 100 + (i + 1) * parallel, newAtomicLong.get());
-
             instance.getLifecycleService().shutdown();
             instance = instances[0];
             for (int j = 1; j < parallel; j++) {

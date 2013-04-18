@@ -609,6 +609,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                         qConfig.addItemListenerConfig(new ItemListenerConfig(listenerClass, incValue));
                     }
                 }
+            } else if ("statistics-enabled".equals(nodeName)) {
+                qConfig.setStatisticsEnabled(checkTrue(value));
             }
         }
         this.config.addQueueConfig(qConfig);
@@ -641,6 +643,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                         multiMapConfig.addEntryListenerConfig(new EntryListenerConfig(listenerClass, local, incValue));
                     }
                 }
+            } else if ("statistics-enabled".equals(nodeName)) {
+                multiMapConfig.setStatisticsEnabled(checkTrue(value));
             }
         }
         this.config.addMultiMapConfig(multiMapConfig);
@@ -825,6 +829,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                         tConfig.addMessageListenerConfig(new ListenerConfig(getValue(listenerNode)));
                     }
                 }
+            } else if ("statistics-enabled".equals(nodeName)) {
+                tConfig.setStatisticsEnabled(checkTrue(getValue(n)));
             }
         }
         config.addTopicConfig(tConfig);
@@ -908,7 +914,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
             final String name = cleanNodeName(child);
             if ("portable-version".equals(name)) {
-               String value = getTextContent(child);
+                String value = getTextContent(child);
                 serializationConfig.setPortableVersion(getIntegerValue(name, value, 0));
             } else if ("portable-factory-class".equals(name)) {
                 String value = getTextContent(child);

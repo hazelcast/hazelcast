@@ -57,9 +57,7 @@ public class TransactionClientProxy implements Transaction {
         return proxyHelper.doCommandAsInt(Command.TRXSTATUS, new String[]{});
     }
 
-    public void addPartition(int partitionId) {
 
-    }
 
     public void addTransactionLog(TransactionLog transactionLog) {
 

@@ -23,6 +23,7 @@ import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
+import com.hazelcast.util.ClientCompatibleTest;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -44,6 +45,7 @@ public class CountDownLatchTest {
     }
 
     @Test
+    @ClientCompatibleTest
     public void testSimpleUsage() {
         final int k = 5;
         final Config config = new Config();
@@ -68,7 +70,7 @@ public class CountDownLatchTest {
         }.start();
 
         try {
-            Assert.assertTrue(latch.await(500, TimeUnit.MILLISECONDS));
+            Assert.assertTrue(latch.await(5000, TimeUnit.MILLISECONDS));
         } catch (Exception e) {
             e.printStackTrace();
             Assert.fail(e.getMessage());
@@ -77,6 +79,7 @@ public class CountDownLatchTest {
     }
 
     @Test
+    @ClientCompatibleTest
     public void testAwaitFail() {
         final int k = 3;
         final Config config = new Config();
@@ -96,6 +99,7 @@ public class CountDownLatchTest {
     }
 
     @Test(expected = DistributedObjectDestroyedException.class)
+    @ClientCompatibleTest
     public void testLatchDestroyed() {
         StaticNodeFactory factory = new StaticNodeFactory(2);
         final Config config = new Config();
@@ -127,6 +131,7 @@ public class CountDownLatchTest {
     }
 
     @Test
+    @ClientCompatibleTest
     public void testLatchMigration() throws InterruptedException {
         StaticNodeFactory factory = new StaticNodeFactory(5);
         HazelcastInstance hz1 = factory.newHazelcastInstance(new Config());

@@ -27,11 +27,9 @@ import java.util.List;
 public final class TopicConfig implements DataSerializable {
 
     public final static boolean DEFAULT_GLOBAL_ORDERING_ENABLED = true;
-
     private String name;
-
     private boolean globalOrderingEnabled = DEFAULT_GLOBAL_ORDERING_ENABLED;
-
+    private boolean statisticsEnabled = true;
     private List<ListenerConfig> listenerConfigs;
 
     public TopicConfig() {
@@ -88,13 +86,19 @@ public final class TopicConfig implements DataSerializable {
         this.listenerConfigs = listenerConfigs;
     }
 
-    @Override
+    public boolean isStatisticsEnabled() {
+        return statisticsEnabled;
+    }
+
+    public void setStatisticsEnabled(boolean statisticsEnabled) {
+        this.statisticsEnabled = statisticsEnabled;
+    }
+
     public int hashCode() {
         return (globalOrderingEnabled ? 1231 : 1237) +
                 31 * (name != null ? name.hashCode() : 0);
     }
 
-    @Override
     public boolean equals(Object obj) {
         if (this == obj)
             return true;
@@ -106,7 +110,6 @@ public final class TopicConfig implements DataSerializable {
                         this.globalOrderingEnabled == other.globalOrderingEnabled;
     }
 
-    @Override
     public String toString() {
         return "TopicConfig [name=" + name + ", globalOrderingEnabled=" + globalOrderingEnabled + "]";
     }

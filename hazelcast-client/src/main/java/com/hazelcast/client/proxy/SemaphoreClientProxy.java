@@ -17,14 +17,11 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.proxy.ProxyHelper;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.core.ISemaphore;
-import com.hazelcast.core.Member;
 import com.hazelcast.monitor.LocalSemaphoreStats;
 import com.hazelcast.nio.protocol.Command;
 
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 public class SemaphoreClientProxy implements ISemaphore {
@@ -44,66 +41,19 @@ public class SemaphoreClientProxy implements ISemaphore {
     public void acquire(int permits) throws InterruptedException {
         if (Thread.currentThread().isInterrupted())
             throw new InterruptedException();
-//        proxyHelper.doOp(SEMAPHORE_TRY_ACQUIRE, false, permits, -1, TimeUnit.MILLISECONDS);
-    }
-
-    public Future acquireAsync() {
-        return acquireAsync(1);
-    }
-
-    public Future acquireAsync(int permits) {
-        return doAcquireAsync(permits, false);
-    }
-
-    public void acquireAttach() throws InterruptedException {
-        acquireAttach(1);
-    }
-
-    public void acquireAttach(int permits) throws InterruptedException {
-//        proxyHelper.doOp(SEMAPHORE_TRY_ACQUIRE, true, permits, -1, TimeUnit.MILLISECONDS);
-    }
-
-    public Future acquireAttachAsync() {
-        return acquireAttachAsync(1);
-    }
-
-    public Future acquireAttachAsync(int permits) {
-        return doAcquireAsync(permits, true);
-    }
-
-    public void attach() {
-        attach(1);
-    }
-
-    public void attach(int permits) {
-//        proxyHelper.doOp(SEMAPHORE_ATTACH_DETACH_PERMITS, true, permits);
-    }
-
-    public int attachedPermits() {
-        return 0;
-//        return (Integer) proxyHelper.doOp(SEMAPHORE_GET_ATTACHED_PERMITS, false, 0);
+        proxyHelper.doCommand(Command.SEMACQUIRE, new String[]{getName(), String.valueOf(permits)});
     }
 
     public int availablePermits() {
-//        return (Integer) proxyHelper.doOp(SEMAPHORE_GET_AVAILABLE_PERMITS, false, 0);
-        return 0;
-    }
-
-    public void detach() {
-        detach(1);
-    }
-
-    public void detach(int permits) {
-//        proxyHelper.doOp(SEMAPHORE_ATTACH_DETACH_PERMITS, false, permits);
+        return proxyHelper.doCommandAsInt(Command.SEMAVAILABLEPERMITS, new String[]{getName()});
     }
 
     public int drainPermits() {
-        return 0;
-//        return (Integer) proxyHelper.doOp(SEMAPHORE_DRAIN_PERMITS, false, 0);
+        return proxyHelper.doCommandAsInt(Command.SEMDRAINPERMITS, new String[]{getName()});
     }
 
     public void reducePermits(int permits) {
-//        proxyHelper.doOp(SEMAPHORE_REDUCE_PERMITS, false, permits);
+        proxyHelper.doCommand(Command.SEMREDUCEPERMITS, new String[]{getName(), String.valueOf(permits)});
     }
 
     public void release() {
@@ -111,15 +61,7 @@ public class SemaphoreClientProxy implements ISemaphore {
     }
 
     public void release(int permits) {
-//        proxyHelper.doOp(SEMAPHORE_RELEASE, false, permits);
-    }
-
-    public void releaseDetach() {
-        releaseDetach(1);
-    }
-
-    public void releaseDetach(int permits) {
-//        proxyHelper.doOp(SEMAPHORE_RELEASE, true, permits);
+        proxyHelper.doCommand(Command.SEMRELEASE, new String[]{getName(), String.valueOf(permits)});
     }
 
     public boolean tryAcquire() {
@@ -139,29 +81,7 @@ public class SemaphoreClientProxy implements ISemaphore {
     }
 
     public boolean tryAcquire(int permits, long timeout, TimeUnit unit) throws InterruptedException {
-//        return (Boolean) proxyHelper.doOp(SEMAPHORE_TRY_ACQUIRE, false, permits, timeout, unit);
-        return false;
-    }
-
-    public boolean tryAcquireAttach() {
-        return tryAcquireAttach(1);
-    }
-
-    public boolean tryAcquireAttach(int permits) {
-        try {
-            return tryAcquireAttach(permits, 0, TimeUnit.MILLISECONDS);
-        } catch (Throwable e) {
-            return false;
-        }
-    }
-
-    public boolean tryAcquireAttach(long timeout, TimeUnit unit) throws InterruptedException {
-        return tryAcquireAttach(1, timeout, unit);
-    }
-
-    public boolean tryAcquireAttach(int permits, long timeout, TimeUnit unit) throws InterruptedException {
-//        return (Boolean) proxyHelper.doOp(SEMAPHORE_TRY_ACQUIRE, true, permits, timeout, unit);
-        return false;
+        return proxyHelper.doCommandAsBoolean(Command.SEMTRYACQUIRE, new String[]{getName(), String.valueOf(permits), String.valueOf(unit.toMillis(timeout))});
     }
 
     public void destroy() {
@@ -177,21 +97,9 @@ public class SemaphoreClientProxy implements ISemaphore {
     }
 
     public boolean init(int permits) {
-        return false;
+        return proxyHelper.doCommandAsBoolean(Command.SEMINIT, new String[]{getName(), String.valueOf(permits)});
     }
-
-    private Future doAcquireAsync(final int permits, final boolean attach) {
-//        Packet request = proxyHelper.prepareRequest(SEMAPHORE_TRY_ACQUIRE, attach, permits, Long.MAX_VALUE, TimeUnit.MILLISECONDS);
-//        Call remoteCall = proxyHelper.createCall(request);
-//        proxyHelper.sendCall(remoteCall);
-//        return new AsyncClientCall(remoteCall) {
-//            public boolean cancel(boolean mayInterruptIfRunning) {
-//                return !isDone() && (cancelled = (Boolean) proxyHelper.doOp(SEMAPHORE_CANCEL_ACQUIRE, false, 0));
-//            }
-//        };
-        return null;
-    }
-
+  
     public LocalSemaphoreStats getLocalSemaphoreStats() {
         throw new UnsupportedOperationException();
     }
