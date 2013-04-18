@@ -29,7 +29,7 @@
         . Id generation occurs almost at the speed of
         <literal>AtomicLong.incrementAndGet()</literal>
         . Generated IDs are unique during the life cycle of the cluster. If the entire cluster is restarted, IDs start
-        from 0 again.
+        from 0 again or you can initialize to a value.
 
         <programlisting language="java"><![CDATA[import com.hazelcast.core.IdGenerator;
 import com.hazelcast.core.Hazelcast;
@@ -37,6 +37,7 @@ import com.hazelcast.core.Hazelcast;
 Config cfg = new Config();
 HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
 IdGenerator idGenerator = hz.getIdGenerator("customer-ids");
+idGenerator.init(123L); //Optional
 long id = idGenerator.newId();
 ]]></programlisting>
 
