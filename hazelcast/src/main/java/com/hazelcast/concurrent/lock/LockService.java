@@ -129,7 +129,7 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
                         op.setService(LockService.this);
                         op.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
                         op.setPartitionId(container.getPartitionId());
-                        nodeEngine.getOperationService().runOperation(op);
+                        nodeEngine.getOperationService().executeOperation(op);
                     }
                 }
             }

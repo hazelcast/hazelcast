@@ -17,7 +17,6 @@
 package com.hazelcast.management.request;
 
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.management.operation.GetMapConfigOperation;
 import com.hazelcast.management.operation.UpdateMapConfigOperation;
@@ -58,7 +57,6 @@ public class MapConfigRequest implements ConsoleRequest {
     public void setTarget(Address target) {
         this.target = target;
     }
-
 
     public int getType() {
         return ConsoleRequestConstants.REQUEST_TYPE_MAP_CONFIG;

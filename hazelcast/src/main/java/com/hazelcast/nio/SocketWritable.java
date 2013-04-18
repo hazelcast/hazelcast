@@ -22,7 +22,5 @@ public interface SocketWritable {
 
     boolean writeTo(ByteBuffer destination);
 
-    boolean readFrom(ByteBuffer source);
-
     void onEnqueue();
 }

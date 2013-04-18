@@ -1,22 +1,21 @@
-   /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+/*
+* Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+* http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
 
 package com.hazelcast.map.proxy;
 
-import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.concurrent.lock.LockProxySupport;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
@@ -77,7 +76,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         GetOperation operation = new GetOperation(name, key);
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .setAsync(true).build();
+                    .build();
             return invocation.invoke();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
@@ -111,8 +110,24 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                     .build();
-            Future f = invocation.invoke();
-            return f.get();
+            Future f;
+            Object o;
+            if (getNodeEngine().getConfig().getMapConfig(name).isStatisticsEnabled()) {
+                long time = System.currentTimeMillis();
+                f = invocation.invoke();
+                o = f.get();
+                if (operation instanceof BasePutOperation)
+                    getService().getLocalMapStatsImpl(name).incrementPuts(System.currentTimeMillis() - time);
+                else if (operation instanceof BaseRemoveOperation)
+                    getService().getLocalMapStatsImpl(name).incrementRemoves(System.currentTimeMillis() - time);
+                else if (operation instanceof GetOperation)
+                    getService().getLocalMapStatsImpl(name).incrementGets(System.currentTimeMillis() - time);
+
+            } else {
+                f = invocation.invoke();
+                o = f.get();
+            }
+            return o;
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -125,7 +140,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         operation.setThreadId(ThreadContext.getThreadId());
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .setAsync(true).build();
+                    .build();
             return invocation.invoke();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
@@ -179,7 +194,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         operation.setThreadId(ThreadContext.getThreadId());
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .setAsync(true).build();
+                    .build();
             return invocation.invoke();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);

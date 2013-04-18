@@ -18,11 +18,9 @@ package com.hazelcast.examples;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.Member;
+import com.hazelcast.core.*;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.*;
@@ -67,7 +65,7 @@ public class SimpleMapTest {
         this.putPercentage = putPercentage;
         this.load = load;
         Config cfg = new XmlConfigBuilder().build();
-//        cfg.getMapConfig("default").setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT);
+        cfg.getMapConfig(NAMESPACE).setStatisticsEnabled(true);
         cfg.getSerializationConfig().setPortableFactory(new PortableFactory() {
             public Portable create(int classId) {
                 return new PortableByteArray();
@@ -140,8 +138,9 @@ public class SimpleMapTest {
                                 stats.removes.incrementAndGet();
                             }
                         }
-                    } catch (Exception ignored) {
-                        ignored.printStackTrace();
+                    } catch (HazelcastInstanceNotActiveException ignored) {
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
                 }
             });
@@ -187,10 +186,14 @@ public class SimpleMapTest {
             }
 
             public void run() {
+                final IMap<String, Object> map = instance.getMap(NAMESPACE);
                 while (true) {
                     try {
                         Thread.sleep(STATS_SECONDS * 1000);
                         stats.printAndReset();
+                        final LocalMapStats localMapStats = map.getLocalMapStats();
+                        logger.log(Level.INFO, "Owned-Entries= " + localMapStats.getOwnedEntryCount()
+                                + ", Backup-Entries:" + localMapStats.getBackupEntryCount() + '\n');
                     } catch (InterruptedException ignored) {
                         return;
                     }
@@ -211,7 +214,7 @@ public class SimpleMapTest {
             long total = getsNow + putsNow + removesNow;
 
             logger.log(Level.INFO, "total= " + total + ", gets:" + getsNow
-                                   + ", puts:" + putsNow + ", removes:" + removesNow);
+                    + ", puts:" + putsNow + ", removes:" + removesNow);
             logger.log(Level.INFO, "Operations per Second : " + total / STATS_SECONDS);
         }
     }

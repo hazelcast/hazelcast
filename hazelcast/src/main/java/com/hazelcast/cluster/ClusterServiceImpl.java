@@ -18,10 +18,7 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.client.ClientCommandHandler;
 import com.hazelcast.cluster.client.*;
-import com.hazelcast.core.Cluster;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.core.MembershipListener;
+import com.hazelcast.core.*;
 import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -368,7 +365,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             logger.log(Level.WARNING, "Cluster-merge process is ongoing, won't process member removal: " + deadAddress);
             return;
         }
-        logger.log(Level.INFO, "Removing Address " + deadAddress);
         if (!node.joined()) {
             node.failedConnection(deadAddress);
             return;
@@ -704,7 +700,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             }
             addMembers(newMembers);
             if (!getMemberList().contains(thisMember)) {
-                throw new RuntimeException("Member list doesn't contain local member!");
+                throw new HazelcastException("Member list doesn't contain local member!");
             }
             joinReset();
             heartBeater();
@@ -785,7 +781,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     }
 
     private void removeMember(MemberImpl deadMember) {
-        logger.log(Level.FINEST, "Removing  " + deadMember);
+        logger.log(Level.INFO, "Removing " + deadMember);
         lock.lock();
         try {
             final Map<Address, MemberImpl> members = membersRef.get();
@@ -799,7 +795,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 sendMembershipEventNotifications(deadMember, false); // async events
                 if (node.isMaster()) {
                     logger.log(Level.FINEST, deadMember + " is dead. Sending remove to all other members.");
-                    invokeMemberRemoveOperation(deadMember.getAddress(), false);
+                    invokeMemberRemoveOperation(deadMember.getAddress());
                 }
             }
         } finally {
@@ -807,28 +803,17 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
     }
 
-    private void invokeMemberRemoveOperation(final Address deadAddress, boolean fireAndForget) {
-        final Collection<Future> responses = new LinkedList<Future>();
+    private void invokeMemberRemoveOperation(final Address deadAddress) {
         for (MemberImpl member : getMemberList()) {
             Address address = member.getAddress();
             if (!thisAddress.equals(address) && !address.equals(deadAddress)) {
-                Future f = invokeClusterOperation(new MemberRemoveOperation(deadAddress), address);
-                responses.add(f);
-            }
-        }
-        if (!fireAndForget) {
-            for (Future response : responses) {
-                try {
-                    response.get(1, TimeUnit.SECONDS);
-                } catch (Throwable e) {
-                    logger.log(Level.FINEST, e.getMessage(), e);
-                }
+                nodeEngine.getOperationService().send(new MemberRemoveOperation(deadAddress), address);
             }
         }
     }
 
     public void sendShutdownMessage() {
-        invokeMemberRemoveOperation(thisAddress, true);
+        invokeMemberRemoveOperation(thisAddress);
     }
 
     private void sendMembershipEventNotifications(final MemberImpl member, final boolean added) {

@@ -16,8 +16,6 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.monitor.LocalAtomicLongStats;
-
 /**
  * IAtomicLong is a backed-up distributed implementation of
  * {@link java.util.concurrent.atomic.AtomicLong java.util.concurrent.atomic.AtomicLong}.

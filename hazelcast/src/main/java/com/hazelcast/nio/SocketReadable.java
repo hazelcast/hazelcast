@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.nio;
 
-import com.hazelcast.spi.annotation.PrivateApi;
+import java.nio.ByteBuffer;
 
-/**
- * @mdogan 4/12/13
- */
+public interface SocketReadable {
 
-@PrivateApi
-public interface FireAndForgetOp {
+    boolean readFrom(ByteBuffer source);
+
 }

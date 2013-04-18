@@ -16,9 +16,7 @@
 
 package com.hazelcast.transaction;
 
-import com.hazelcast.core.TransactionalMap;
-import com.hazelcast.core.TransactionalMultiMap;
-import com.hazelcast.core.TransactionalQueue;
+import com.hazelcast.core.*;
 
 public interface TransactionalTaskContext {
 
@@ -44,10 +42,28 @@ public interface TransactionalTaskContext {
      * Returns the transactional multimap instance with the specified name.
      *
      *
-     * @param name name of the queue
-     * @return transactional queue instance with the specified name
+     * @param name name of the multimap
+     * @return transactional multimap instance with the specified name
      */
     <K, V> TransactionalMultiMap<K, V> getMultiMap(String name);
+
+    /**
+     * Returns the transactional list instance with the specified name.
+     *
+     *
+     * @param name name of the list
+     * @return transactional list instance with the specified name
+     */
+    <E> TransactionalList<E> getList(String name);
+
+    /**
+     * Returns the transactional set instance with the specified name.
+     *
+     *
+     * @param name name of the set
+     * @return transactional set instance with the specified name
+     */
+    <E> TransactionalSet<E> getSet(String name);
 
 
     <T extends TransactionalObject> T getTransactionalObject(String serviceName, Object id);

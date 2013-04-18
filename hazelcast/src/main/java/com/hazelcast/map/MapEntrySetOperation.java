@@ -37,7 +37,7 @@ public class MapEntrySetOperation extends AbstractMapOperation implements Partit
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
         entrySet = recordStore.entrySetData();
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
-            ((MapService) getService()).getLocalMapStatsImpl(name).incrementOtherOperations();//TODO @msk stats change
+            ((MapService) getService()).getLocalMapStatsImpl(name).incrementOtherOperations();
         }
     }
 

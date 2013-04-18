@@ -104,7 +104,8 @@ public class ClientAuthenticateHandler extends ClientCommandHandler {
                     conn.getSocketChannelWrapper().socket().getPort()));
             bind.setNodeEngine(node.nodeEngine);
             OperationAccessor.setConnection(bind, conn);
-            node.nodeEngine.getOperationService().runOperation(bind);
+//            node.nodeEngine.getOperationService().runOperationInCurrentThread(bind);
+            bind.run();
             ///?????
         }
         return authenticated;

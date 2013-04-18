@@ -597,7 +597,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             if ("max-size".equals(nodeName)) {
                 qConfig.setMaxSize(getIntegerValue("max-size", value, QueueConfig.DEFAULT_MAX_SIZE));
             } else if ("backup-count".equals(nodeName)) {
-                qConfig.setSyncBackupCount(getIntegerValue("backup-count", value, QueueConfig.DEFAULT_SYNC_BACKUP_COUNT));
+                qConfig.setBackupCount(getIntegerValue("backup-count", value, QueueConfig.DEFAULT_SYNC_BACKUP_COUNT));
             } else if ("async-backup-count".equals(nodeName)) {
                 qConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value, QueueConfig.DEFAULT_ASYNC_BACKUP_COUNT));
             } else if ("item-listeners".equals(nodeName)) {
@@ -705,7 +705,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             } else if ("near-cache".equals(nodeName)) {
                 handleViaReflection(n, mapConfig, new NearCacheConfig());
             } else if ("merge-policy".equals(nodeName)) {
-                mapConfig.getMergePolicyConfig().setClassName(value);
+                mapConfig.setMergePolicy(value);
             } else if ("read-backup-data".equals(nodeName)) {
                 mapConfig.setReadBackupData(checkTrue(value));
             } else if ("statistics-enabled".equals(nodeName)) {

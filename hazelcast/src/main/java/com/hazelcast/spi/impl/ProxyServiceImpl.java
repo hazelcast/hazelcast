@@ -173,7 +173,11 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
         private ProxyRegistry(String serviceName) {
             this.service = nodeEngine.serviceManager.getService(serviceName);
             if (service == null) {
-                throw new IllegalArgumentException("Unknown service: " + serviceName);
+                if (nodeEngine.isActive()) {
+                    throw new IllegalArgumentException("Unknown service: " + serviceName);
+                } else {
+                    throw new HazelcastInstanceNotActiveException();
+                }
             }
         }
 

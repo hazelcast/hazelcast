@@ -60,7 +60,7 @@ public class MapContainer {
     private final IndexService indexService = new IndexService();
     private final boolean nearCacheEnabled;
     private final AtomicBoolean initialLoaded = new AtomicBoolean(false);
-    private final EntryTaskScheduler idleEvictionScheduler;
+    private EntryTaskScheduler idleEvictionScheduler;
     private final EntryTaskScheduler ttlEvictionScheduler;
     private final EntryTaskScheduler mapStoreWriteScheduler;
     private final EntryTaskScheduler mapStoreDeleteScheduler;
@@ -146,7 +146,7 @@ public class MapContainer {
         WanReplicationRef wanReplicationRef = mapConfig.getWanReplicationRef();
         if (wanReplicationRef != null) {
             this.wanReplicationListener = nodeEngine.getWanReplicationService().getWanReplication(wanReplicationRef.getName());
-            this.wanMergePolicy = getMergePolicy(wanReplicationRef.getMergePolicy());
+            this.wanMergePolicy = mapService.getMergePolicy(wanReplicationRef.getMergePolicy());
         } else {
             wanMergePolicy = null;
             wanReplicationListener = null;
@@ -158,21 +158,10 @@ public class MapContainer {
         nearCacheEnabled = mapConfig.getNearCacheConfig() != null;
     }
 
-    // todo cache policies in a map probably in mapservice
-    private MapMergePolicy getMergePolicy(String mergePolicyName) {
-        MapMergePolicy mergePolicyTemp = null;
-        if (mergePolicyName != null) {
-            try {
-                mergePolicyTemp = (MapMergePolicy) ClassLoaderUtil.newInstance(mergePolicyName);
-            } catch (Exception e) {
-                ExceptionUtil.rethrow(e);
-            }
-        }
-        if (mergePolicyTemp == null) {
-            mergePolicyTemp = new PassThroughMergePolicy();
-        }
-        return mergePolicyTemp;
+    public void createIdleEvictionScheduler(NodeEngine nodeEngine) {
+        idleEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new EvictionProcessor(nodeEngine, mapService, name), true);
     }
+
 
     public boolean isMapReady() {
         // map ready states whether the map load operation has been finished. if not retry exception is sent.
@@ -332,7 +321,7 @@ public class MapContainer {
                 operation.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
                 operation.setPartitionId(partitionId);
                 operation.setServiceName(MapService.SERVICE_NAME);
-                nodeEngine.getOperationService().runOperation(operation);
+                nodeEngine.getOperationService().executeOperation(operation);
             }
 
             if (counter.decrementAndGet() <= 0) {

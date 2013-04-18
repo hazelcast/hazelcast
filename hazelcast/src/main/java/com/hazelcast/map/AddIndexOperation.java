@@ -23,13 +23,13 @@ import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
-import com.hazelcast.spi.PartitionLevelOperation;
+import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 import java.io.IOException;
 import java.util.concurrent.ConcurrentMap;
 
-public class AddIndexOperation extends AbstractNamedOperation implements PartitionLevelOperation {
+public class AddIndexOperation extends AbstractNamedOperation implements PartitionAwareOperation {
 
     String attributeName;
     boolean ordered;

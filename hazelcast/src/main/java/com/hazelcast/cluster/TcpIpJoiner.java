@@ -154,7 +154,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             } else {
                 if (!node.joined()) {
                     final int totalSleep = connectionTimeoutSeconds - numberOfSeconds;
-                    for (int i = 0; i < totalSleep * 2 && !joined.get(); i++) {
+                    for (int i = 0; i < totalSleep * 10 && !joined.get(); i++) {
                         logger.log(Level.FINEST, "Sleeping for 500 ms.");
                         Thread.sleep(500L);
                     }

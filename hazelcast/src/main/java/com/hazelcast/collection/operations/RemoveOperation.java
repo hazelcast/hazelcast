@@ -60,9 +60,9 @@ public class RemoveOperation extends CollectionBackupAwareOperation {
         Collection<CollectionRecord> coll = wrapper.getCollection();
         CollectionRecord record = new CollectionRecord(isBinary() ? value : toObject(value));
         Iterator<CollectionRecord> iter = coll.iterator();
-        while (iter.hasNext()){
+        while (iter.hasNext()) {
             CollectionRecord r = iter.next();
-            if (r.equals(record)){
+            if (r.equals(record)) {
                 iter.remove();
                 recordId = r.getRecordId();
                 response = true;
@@ -76,7 +76,6 @@ public class RemoveOperation extends CollectionBackupAwareOperation {
 
     public void afterRun() throws Exception {
         long elapsed = Math.max(0, Clock.currentTimeMillis() - begin);
-        ((CollectionService) getService()).getLocalMultiMapStatsImpl(proxyId).incrementRemoves(elapsed);
         if (Boolean.TRUE.equals(response)) {
             getOrCreateContainer().update();
             publishEvent(EntryEventType.REMOVED, dataKey, value);

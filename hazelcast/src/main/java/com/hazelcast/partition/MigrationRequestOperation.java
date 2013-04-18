@@ -71,6 +71,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
                 }
                 final PartitionServiceImpl partitionService = getService();
                 partitionService.addActiveMigration(migrationInfo);
+                final long partitionVersion = partitionService.getPartitionVersion(migrationInfo.getPartitionId());
                 final long timeout = nodeEngine.getGroupProperties().PARTITION_MIGRATION_TIMEOUT.getLong();
                 final Collection<Operation> tasks = prepareMigrationTasks();
                 if (tasks.size() > 0) {
@@ -82,7 +83,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
                             serializationService.writeObject(out, task);
                         }
                         final byte[] data = IOUtil.compress(out.toByteArray());
-                        final MigrationOperation migrationOperation = new MigrationOperation(migrationInfo, data, tasks.size());
+                        final MigrationOperation migrationOperation = new MigrationOperation(migrationInfo, partitionVersion, data, tasks.size());
                         Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(PartitionServiceImpl.SERVICE_NAME,
                                 migrationOperation, to).setTryPauseMillis(1000).setReplicaIndex(getReplicaIndex()).build();
                         Future future = inv.invoke();

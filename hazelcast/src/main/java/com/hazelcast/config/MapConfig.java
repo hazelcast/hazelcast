@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -40,6 +41,7 @@ public class MapConfig implements DataSerializable {
     public final static int DEFAULT_MAX_IDLE_SECONDS = 0;
     public final static int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
     public final static EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.NONE;
+    public final static String DEFAULT_MAP_MERGE_POLICY = PutIfAbsentMapMergePolicy.NAME;
     public final static InMemoryFormat DEFAULT_IN_MEMORY_FORMAT = InMemoryFormat.BINARY;
 
     private String name = null;
@@ -66,7 +68,7 @@ public class MapConfig implements DataSerializable {
 
     private boolean readBackupData = false;
 
-    private MapMergePolicyConfig mergePolicyConfig = new MapMergePolicyConfig();
+    private String mergePolicy = DEFAULT_MAP_MERGE_POLICY;
 
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
 
@@ -78,7 +80,7 @@ public class MapConfig implements DataSerializable {
 
     private StorageType storageType = null;
 
-    private boolean statisticsEnabled = true;//TODO read write Data?
+    private boolean statisticsEnabled = false;
 
     public enum InMemoryFormat {
         BINARY, OBJECT, CACHED
@@ -113,7 +115,7 @@ public class MapConfig implements DataSerializable {
         this.nearCacheConfig = config.nearCacheConfig;
         this.readBackupData = config.readBackupData;
         this.statisticsEnabled = config.statisticsEnabled;
-        this.mergePolicyConfig = config.mergePolicyConfig;
+        this.mergePolicy = config.mergePolicy;
         this.wanReplicationRef = config.wanReplicationRef;
     }
 
@@ -377,13 +379,12 @@ public class MapConfig implements DataSerializable {
         return this;
     }
 
-    public MapMergePolicyConfig getMergePolicyConfig() {
-        return mergePolicyConfig;
+    public String getMergePolicy() {
+        return mergePolicy;
     }
 
-    public MapConfig setMergePolicyConfig(MapMergePolicyConfig mergePolicy) {
-        this.mergePolicyConfig = mergePolicy;
-        return this;
+    public void setMergePolicy(String mergePolicy) {
+        this.mergePolicy = mergePolicy;
     }
 
     public boolean isStatisticsEnabled() {
@@ -493,7 +494,7 @@ public class MapConfig implements DataSerializable {
         result = prime * result + this.maxSizeConfig.getSize();
         result = prime
                 * result
-                + ((this.mergePolicyConfig == null) ? 0 : this.mergePolicyConfig.hashCode());
+                + ((this.mergePolicy == null) ? 0 : this.mergePolicy.hashCode());
         result = prime * result
                 + ((this.name == null) ? 0 : this.name.hashCode());
         result = prime
@@ -526,7 +527,7 @@ public class MapConfig implements DataSerializable {
                         this.timeToLiveSeconds == other.timeToLiveSeconds &&
                         this.readBackupData == other.readBackupData &&
 //                        this.valueIndexed == other.valueIndexed &&
-                        (this.mergePolicyConfig != null ? this.mergePolicyConfig.equals(other.mergePolicyConfig) : other.mergePolicyConfig == null) &&
+                        (this.mergePolicy != null ? this.mergePolicy.equals(other.mergePolicy) : other.mergePolicy == null) &&
                         (this.inMemoryFormat != null ? this.inMemoryFormat.equals(other.inMemoryFormat) : other.inMemoryFormat == null) &&
                         (this.evictionPolicy != null ? this.evictionPolicy.equals(other.evictionPolicy)
                                 : other.evictionPolicy == null) &&
@@ -589,7 +590,7 @@ public class MapConfig implements DataSerializable {
         sb.append(", readBackupData=").append(readBackupData);
         sb.append(", nearCacheConfig=").append(nearCacheConfig);
         sb.append(", mapStoreConfig=").append(mapStoreConfig);
-        sb.append(", mergePolicyConfig='").append(mergePolicyConfig).append('\'');
+        sb.append(", mergePolicyConfig='").append(mergePolicy).append('\'');
         sb.append(", wanReplicationRef=").append(wanReplicationRef);
         sb.append(", listenerConfigs=").append(listenerConfigs);
         sb.append(", mapIndexConfigs=").append(mapIndexConfigs);

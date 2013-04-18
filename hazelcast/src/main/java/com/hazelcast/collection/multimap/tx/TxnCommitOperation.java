@@ -50,10 +50,11 @@ public class TxnCommitOperation extends CollectionBackupAwareOperation implement
 
     public void run() throws Exception {
         CollectionWrapper wrapper = getCollectionWrapper();
-        if (wrapper == null || wrapper.getVersion() == version){
+        if (wrapper == null || wrapper.getVersion() != version){
             notify = false;
             return;
         }
+        wrapper.incrementAndGetVersion();
         for (Operation op: opList){
             op.setNodeEngine(getNodeEngine()).setServiceName(getServiceName()).setPartitionId(getPartitionId());
             op.beforeRun();

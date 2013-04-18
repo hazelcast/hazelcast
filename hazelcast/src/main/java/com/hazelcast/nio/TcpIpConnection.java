@@ -70,23 +70,6 @@ public final class TcpIpConnection implements Connection {
         return type;
     }
 
-    public void releasePacket(Packet packet) {
-//        if (packet == null) return;
-//        packet.reset();
-//        packetQueue.offer(packet);
-    }
-
-    public Packet obtainPacket() {
-//        Packet packet = packetQueue.poll();
-//        if (packet == null) {
-//            packet = new Packet(connectionManager.getSerializationContext());
-//        } else {
-//            packet.reset();
-//        }
-//        return packet;
-        return new Packet(connectionManager.getSerializationContext());
-    }
-
     public TcpIpConnectionManager getConnectionManager() {
         return connectionManager;
     }

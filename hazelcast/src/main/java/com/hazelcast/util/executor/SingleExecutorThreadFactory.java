@@ -19,46 +19,26 @@ package com.hazelcast.util.executor;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.instance.ThreadContext;
 
-import java.util.concurrent.ThreadFactory;
+/**
+ * @mdogan 1/10/13
+ */
+public final class SingleExecutorThreadFactory extends AbstractExecutorThreadFactory {
 
-public abstract class ExecutorThreadFactory implements ThreadFactory {
-    private final ClassLoader classLoader;
-    private final ThreadGroup threadGroup;
+    private final String threadName;
 
-    public ExecutorThreadFactory(ThreadGroup threadGroup, ClassLoader classLoader) {
-        this.threadGroup = threadGroup;
-        this.classLoader = classLoader;
-    }
-
-    public final Thread newThread(Runnable r) {
-        final Thread t = createThread(r);
-        t.setContextClassLoader(classLoader);
-        if (t.isDaemon()) {
-            t.setDaemon(false);
-        }
-        if (t.getPriority() != Thread.NORM_PRIORITY) {
-            t.setPriority(Thread.NORM_PRIORITY);
-        }
-        return t;
+    public SingleExecutorThreadFactory(ThreadGroup threadGroup, ClassLoader classLoader, String threadName) {
+        super(threadGroup, classLoader);
+        this.threadName = threadName;
     }
 
     protected Thread createThread(Runnable r) {
-        return new ManagedThread(r, newThreadName(), 0);
+        return new ManagedThread(r);
     }
 
-    protected abstract String newThreadName();
+    private class ManagedThread extends Thread {
 
-    protected void afterThreadExit(ManagedThread t) {
-        ThreadContext.shutdown(t);
-    }
-
-    protected final class ManagedThread extends Thread {
-
-        protected final int id;
-
-        public ManagedThread(Runnable target, String name, int id) {
-            super(threadGroup, target, name);
-            this.id = id;
+        public ManagedThread(Runnable target) {
+            super(threadGroup, target, threadName);
         }
 
         public void run() {
@@ -68,7 +48,7 @@ public abstract class ExecutorThreadFactory implements ThreadFactory {
                 OutOfMemoryErrorDispatcher.onOutOfMemory(e);
             } finally {
                 try {
-                    afterThreadExit(this);
+                    ThreadContext.shutdown(this);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

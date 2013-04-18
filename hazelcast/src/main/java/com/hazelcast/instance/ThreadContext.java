@@ -17,7 +17,6 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.logging.Logger;
-import com.hazelcast.spi.Operation;
 
 import java.util.Iterator;
 import java.util.Map.Entry;
@@ -34,7 +33,8 @@ public final class ThreadContext {
     public static ThreadContext get() {
         Thread currentThread = Thread.currentThread();
         ThreadContext context = lastThreadContext;
-        return (context != null && context.thread == currentThread) ? context : contexts.get(currentThread);
+        return (context != null && context.thread == currentThread)
+                ? context : (lastThreadContext = contexts.get(currentThread));
     }
 
     public static ThreadContext getOrCreate() {
@@ -88,20 +88,10 @@ public final class ThreadContext {
 
     private final Thread thread;
 
-    private Operation currentOperation;
-
     private String callerUuid;
 
     public ThreadContext(Thread thread) {
         this.thread = thread;
-    }
-
-    public Operation getCurrentOperation() {
-        return currentOperation;
-    }
-
-    public void setCurrentOperation(Operation currentOperation) {
-        this.currentOperation = currentOperation;
     }
 
     public String getCallerUuid() {
@@ -113,7 +103,6 @@ public final class ThreadContext {
     }
 
     private void destroy() {
-        currentOperation = null;
     }
 
     @Override

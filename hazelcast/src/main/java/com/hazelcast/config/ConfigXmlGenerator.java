@@ -190,7 +190,7 @@ public class ConfigXmlGenerator {
         for (QueueConfig q : qCfgs) {
             xml.append("<queue name=\"").append(q.getName()).append("\">");
             xml.append("<queue-max-size>").append(q.getMaxSize()).append("</queue-max-size>");
-            xml.append("<queue-sync-backup-count>").append(q.getSyncBackupCount()).append("</queue-sync-backup-count>");
+            xml.append("<queue-sync-backup-count>").append(q.getBackupCount()).append("</queue-sync-backup-count>");
             xml.append("<queue-async-backup-count>").append(q.getAsyncBackupCount()).append("</queue-async-backup-count>");
             if (!q.getItemListenerConfigs().isEmpty()) {
                 xml.append("<item-listeners>");
@@ -214,7 +214,7 @@ public class ConfigXmlGenerator {
             xml.append("<eviction-policy>").append(m.getEvictionPolicy()).append("</eviction-policy>");
             xml.append("<max-size policy=\"").append(m.getMaxSizeConfig().getMaxSizePolicy()).append("\">").append(m.getMaxSizeConfig().getSize()).append("</max-size>");
             xml.append("<eviction-percentage>").append(m.getEvictionPercentage()).append("</eviction-percentage>");
-            xml.append("<merge-policy>").append(m.getMergePolicyConfig()).append("</merge-policy>");
+            xml.append("<merge-policy>").append(m.getMergePolicy()).append("</merge-policy>");
             xml.append("<read-backup-data>").append(m.isReadBackupData()).append("</read-backup-data>");
             xml.append("<statistics-enabled>").append(m.isStatisticsEnabled()).append("</statistics-enabled>");
             if (m.getMapStoreConfig() != null) {

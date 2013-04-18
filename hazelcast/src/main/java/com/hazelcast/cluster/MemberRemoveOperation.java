@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
+import java.util.logging.Level;
 
 public class MemberRemoveOperation extends AbstractClusterOperation {
 
@@ -39,6 +40,7 @@ public class MemberRemoveOperation extends AbstractClusterOperation {
         final Address caller = getCallerAddress();
         if (caller != null &&
                 (caller.equals(deadAddress) || caller.equals(clusterService.getMasterAddress()))) {
+            getLogger().log(Level.FINEST, "Removing " + deadAddress + ", called from " + caller);
             clusterService.removeAddress(deadAddress);
         }
     }

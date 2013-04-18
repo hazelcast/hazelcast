@@ -72,7 +72,7 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
 //                tryCount = 0;
             } else if (result == TestResult.RETRY) {
                 tryCount++;
-                logger.log(Level.INFO, "Re-trying partition arrangement.. Count: " + tryCount);
+                logger.log(Level.FINEST, "Re-trying partition arrangement.. Count: " + tryCount);
             }
         }
         if (result == TestResult.FAIL) {

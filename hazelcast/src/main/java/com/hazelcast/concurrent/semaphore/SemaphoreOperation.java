@@ -18,7 +18,7 @@ package com.hazelcast.concurrent.semaphore;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.KeyBasedOperation;
+import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 import java.io.IOException;
@@ -26,7 +26,7 @@ import java.io.IOException;
 /**
  * @ali 1/22/13
  */
-public abstract class SemaphoreOperation extends AbstractNamedOperation implements KeyBasedOperation{
+public abstract class SemaphoreOperation extends AbstractNamedOperation implements PartitionAwareOperation {
 
     int permitCount;
 
@@ -38,10 +38,6 @@ public abstract class SemaphoreOperation extends AbstractNamedOperation implemen
     protected SemaphoreOperation(String name, int permitCount) {
         super(name);
         this.permitCount = permitCount;
-    }
-
-    public int getKeyHash() {
-        return name.hashCode();
     }
 
     public Object getResponse() {

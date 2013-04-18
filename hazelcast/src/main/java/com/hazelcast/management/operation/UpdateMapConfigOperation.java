@@ -17,6 +17,7 @@
 package com.hazelcast.management.operation;
 
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -48,8 +49,15 @@ public class UpdateMapConfigOperation extends Operation {
 
     public void run() throws Exception {
         MapService service = getService();
-        MapConfig mapConfig = service.getMapContainer(mapName).getMapConfig();
-//        mapConfig.equate(this.mapConfig); //TODO @msk
+        MapConfig config = service.getMapContainer(mapName).getMapConfig();
+        config.setTimeToLiveSeconds(mapConfig.getTimeToLiveSeconds());
+        config.setMaxIdleSeconds(mapConfig.getMaxIdleSeconds());
+        config.setEvictionPolicy(mapConfig.getEvictionPolicy());
+        config.setEvictionPercentage(mapConfig.getEvictionPercentage());
+        config.setReadBackupData(mapConfig.isReadBackupData());
+        config.setBackupCount(mapConfig.getTotalBackupCount());
+        config.setAsyncBackupCount(mapConfig.getAsyncBackupCount());
+        config.setMaxSizeConfig(mapConfig.getMaxSizeConfig());
     }
 
     public void afterRun() throws Exception {

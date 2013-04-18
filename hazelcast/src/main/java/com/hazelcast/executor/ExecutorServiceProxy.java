@@ -19,12 +19,10 @@ package com.hazelcast.executor;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.monitor.LocalExecutorStats;
-import com.hazelcast.monitor.impl.LocalExecutorStatsImpl;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
-import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.executor.CompletedFuture;
 import com.hazelcast.util.executor.DelegatingFuture;
@@ -307,10 +305,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
         final Collection<Future> calls = new LinkedList<Future>();
         for (MemberImpl member : members) {
             if (member.localMember()) {
-                final ShutdownOperation op = new ShutdownOperation(name);
-                op.setServiceName(getServiceName()).setNodeEngine(nodeEngine)
-                        .setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
-                operationService.runOperation(op);
+                getService().shutdownExecutor(name);
             } else {
                 Future f = operationService.createInvocationBuilder(getServiceName(), new ShutdownOperation(name),
                         member.getAddress()).build().invoke();
