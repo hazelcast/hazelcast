@@ -22,6 +22,7 @@ import com.hazelcast.client.connection.Connection;
 import com.hazelcast.client.connection.ConnectionManager;
 import com.hazelcast.client.connection.ProtocolReader;
 import com.hazelcast.client.connection.ProtocolWriter;
+import com.hazelcast.client.exception.ClusterClientException;
 import com.hazelcast.client.proxy.listener.ListenerResponseHandler;
 import com.hazelcast.client.proxy.listener.ListenerThread;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
@@ -248,8 +249,14 @@ public class ProxyHelper {
             cp.releaseConnection(connection);
             if (Command.OK.equals(response.command))
                 return response;
-            else if (response.args.length > 0 && "HazelcastInstanceNotActiveException".equalsIgnoreCase(response.args[0])) {
-                throw new HazelcastInstanceNotActiveException();
+            else if (response.hasBuffer() || response.args.length > 0) {
+                if (response.hasBuffer()) {
+                    Exception e = (Exception) toObject(response.buffers[0]);
+                    if (e instanceof RuntimeException) throw (RuntimeException) e;
+                    else throw new ClusterClientException(e);
+                } else {
+                    throw new ClusterClientException(response.args[0]);
+                }
             } else {
                 throw new RuntimeException(response.command + ": " + Arrays.asList(response.args));
             }

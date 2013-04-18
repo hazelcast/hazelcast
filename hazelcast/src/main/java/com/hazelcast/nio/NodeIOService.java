@@ -185,14 +185,6 @@ public class NodeIOService implements IOService {
     }
 
     public void onDisconnect(final Address endpoint) {
-        // @mm - I guess we dont need to take any action on disconnect.
-//        if (endpoint != null) {
-//            nodeEngine.getExecutionService().execute("hz:io", new Runnable() {
-//                public void run() {
-//                    nodeEngine.onMemberDisconnect(endpoint);
-//                }
-//            });
-//        }
     }
 
     public boolean isClient() {
@@ -208,12 +200,6 @@ public class NodeIOService implements IOService {
     }
 
     public void onShutdown() {
-//        try {
-//            ThreadContext.get().setCurrentInstance(node.hazelcastInstance);
-            // wait a little
-//            Thread.sleep(100);
-//        } catch (Throwable ignored) {
-//        }
     }
 
     public void executeAsync(final Runnable runnable) {

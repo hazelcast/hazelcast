@@ -17,24 +17,27 @@
 package com.hazelcast.nio.serialization;
 
 import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.SocketReadable;
+import com.hazelcast.nio.SocketWritable;
 
 import java.nio.ByteBuffer;
 
 /**
  * @mdogan 1/23/13
  */
-public class DataWriter {
+public class DataAdapter implements SocketWritable, SocketReadable {
 
-    protected static final int stHeader = 0;
-    protected static final int stType = 1;
-    protected static final int stClassId = 2;
-    protected static final int stVersion = 3;
-    protected static final int stClassDefSize = 4;
-    protected static final int stClassDef = 5;
-    protected static final int stSize = 6;
-    protected static final int stValue = 7;
-    protected static final int stHash = 8;
-    protected static final int stAll = 9;
+    protected static int stBit = 0;
+
+    private static final int stType = stBit++;
+    private static final int stClassId = stBit++;
+    private static final int stVersion = stBit++;
+    private static final int stClassDefSize = stBit++;
+    private static final int stClassDef = stBit++;
+    private static final int stSize = stBit++;
+    private static final int stValue = stBit++;
+    private static final int stHash = stBit++;
+    private static final int stAll = stBit++;
 
     private ByteBuffer buffer;
     private int classId = 0;
@@ -45,15 +48,15 @@ public class DataWriter {
     private transient short status = 0;
     private transient SerializationContext context;
 
-    public DataWriter(Data data) {
+    public DataAdapter(Data data) {
         this.data = data;
     }
 
-    public DataWriter(SerializationContext context) {
+    public DataAdapter(SerializationContext context) {
         this.context = context;
     }
 
-    public DataWriter(Data data, SerializationContext context) {
+    public DataAdapter(Data data, SerializationContext context) {
         this.data = data;
         this.context = context;
     }
@@ -252,6 +255,9 @@ public class DataWriter {
 
     public boolean done() {
         return isStatusSet(stAll);
+    }
+
+    public void onEnqueue() {
     }
 
     public void reset() {

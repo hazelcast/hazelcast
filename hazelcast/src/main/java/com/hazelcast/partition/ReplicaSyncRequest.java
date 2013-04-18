@@ -34,17 +34,21 @@ import java.util.logging.Level;
 /**
  * @mdogan 4/11/13
  */
-public class ReplicaSyncRequest extends Operation implements FireAndForgetOp {
+public class ReplicaSyncRequest extends Operation implements PartitionAwareOperation, MigrationCycleOperation {
+
+    public ReplicaSyncRequest() {
+    }
 
     public void beforeRun() throws Exception {
     }
 
     public void run() throws Exception {
         final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        final PartitionServiceImpl partitionService = (PartitionServiceImpl) nodeEngine.getPartitionService();
+        final ILogger logger = nodeEngine.getLogger(getClass());
         final int partitionId = getPartitionId();
-        final Collection<MigrationAwareService> services = nodeEngine.getServices(MigrationAwareService.class);
         final int replicaIndex = getReplicaIndex();
+        final PartitionServiceImpl partitionService = (PartitionServiceImpl) nodeEngine.getPartitionService();
+        final Collection<MigrationAwareService> services = nodeEngine.getServices(MigrationAwareService.class);
         final PartitionReplicationEvent event = new PartitionReplicationEvent(partitionId, replicaIndex);
         final List<Operation> tasks = new LinkedList<Operation>();
         for (MigrationAwareService service : services) {
@@ -54,7 +58,6 @@ public class ReplicaSyncRequest extends Operation implements FireAndForgetOp {
                 tasks.add(op);
             }
         }
-        final ILogger logger = nodeEngine.getLogger(getClass());
         byte[] data = null;
         if (!tasks.isEmpty()) {
             final SerializationService serializationService = nodeEngine.getSerializationService();
@@ -69,8 +72,9 @@ public class ReplicaSyncRequest extends Operation implements FireAndForgetOp {
                 IOUtil.closeResource(out);
             }
         } else {
-            if (logger.isLoggable(Level.FINEST)) {
-                logger.log(Level.FINEST, "No replica data is found for partition: " + partitionId + ", replica: " + replicaIndex);
+            final Level level = Level.FINEST;
+            if (logger.isLoggable(level)) {
+                logger.log(level, "No replica data is found for partition: " + partitionId + ", replica: " + replicaIndex);
             }
         }
 
@@ -92,16 +96,31 @@ public class ReplicaSyncRequest extends Operation implements FireAndForgetOp {
     }
 
     public Object getResponse() {
-        return null;
+        return Boolean.TRUE;
     }
 
     public boolean validatesTarget() {
         return false;
     }
 
+    public void logError(Throwable e) {
+        final ILogger logger = getLogger();
+        logger.log(Level.INFO, e.getClass() + ": " + e.getMessage());
+    }
+
     protected void writeInternal(ObjectDataOutput out) throws IOException {
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("ReplicaSyncRequest");
+        sb.append("{partition=").append(getPartitionId());
+        sb.append(", replica=").append(getReplicaIndex());
+        sb.append('}');
+        return sb.toString();
     }
 }

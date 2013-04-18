@@ -22,10 +22,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.executor.ExecutorThreadFactory;
-import com.hazelcast.util.executor.ManagedExecutorService;
-import com.hazelcast.util.executor.PoolExecutorThreadFactory;
-import com.hazelcast.util.executor.ScheduledTaskRunner;
+import com.hazelcast.util.executor.*;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -52,11 +49,11 @@ public final class ExecutionServiceImpl implements ExecutionService {
         final Node node = nodeEngine.getNode();
         logger = node.getLogger(ExecutionService.class.getName());
         final ClassLoader classLoader = node.getConfig().getClassLoader();
-        final ExecutorThreadFactory threadFactory = new PoolExecutorThreadFactory(node.threadGroup,
+        final ThreadFactory threadFactory = new PoolExecutorThreadFactory(node.threadGroup,
                 node.getThreadPoolNamePrefix("cached"), classLoader);
 
         cachedExecutorService = new ThreadPoolExecutor(
-                5, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
+                3, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
                 new SynchronousQueue<Runnable>(), threadFactory, new RejectedExecutionHandler() {
             public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
                 logger.log(Level.FINEST, "Node is shutting down; discarding the task: " + r);
@@ -65,18 +62,14 @@ public final class ExecutionServiceImpl implements ExecutionService {
 
         final String scheduledThreadName = node.getThreadNamePrefix("scheduled");
         scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(
-                new ExecutorThreadFactory(node.threadGroup, classLoader) {
-                    protected String newThreadName() {
-                        return scheduledThreadName;
-                    }
-                });
+                new SingleExecutorThreadFactory(node.threadGroup, classLoader, scheduledThreadName));
         enableRemoveOnCancelIfAvailable();
 
-        // default executors
         final int coreSize = Runtime.getRuntime().availableProcessors();
-        register(SYSTEM_EXECUTOR, coreSize * 5, Integer.MAX_VALUE);
-        register(ASYNC_EXECUTOR, coreSize * 10, coreSize * 100000);  // TODO: @mm - both sizes should be configurable.
-        scheduledManagedExecutor = register("hz:scheduled", coreSize * 10, coreSize * 100000);
+        // default executors
+        register(SYSTEM_EXECUTOR, coreSize * 2, Integer.MAX_VALUE);
+        register(ASYNC_EXECUTOR, coreSize * 2, coreSize * 100000);
+        scheduledManagedExecutor = register(SCHEDULED_EXECUTOR, coreSize * 5, coreSize * 100000);
     }
 
     private void enableRemoveOnCancelIfAvailable() {

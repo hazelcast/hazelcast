@@ -32,4 +32,15 @@ class ResponseObj {
         this.callId = callId;
         this.backupCount = backupCount;
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("ResponseObj");
+        sb.append("{response=").append(response);
+        sb.append(", callId=").append(callId);
+        sb.append(", backupCount=").append(backupCount);
+        sb.append('}');
+        return sb.toString();
+    }
 }

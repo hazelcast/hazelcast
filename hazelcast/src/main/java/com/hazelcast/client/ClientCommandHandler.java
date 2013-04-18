@@ -24,35 +24,34 @@ import com.hazelcast.nio.SocketWritable;
 import com.hazelcast.nio.TcpIpConnection;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationConstants;
-import com.hazelcast.spi.NodeEngine;
 
-import java.io.*;
 import java.util.logging.Level;
 
 public abstract class ClientCommandHandler implements CommandHandler {
-
 //    private final ILogger logger;
-
 //    protected ClientCommandHandler(NodeEngine node) {
 //        this.logger = node.getLogger(this.getClass().getName());
 //    }
 
-    public abstract Protocol processCall(Node node, Protocol protocol) ;
+    public abstract Protocol processCall(Node node, Protocol protocol);
 
     public void handle(Node node, Protocol protocol) {
         Protocol response;
         try {
             response = processCall(node, protocol);
-        } catch (HazelcastInstanceNotActiveException e){
-            response = new Protocol(protocol.conn, Command.ERROR, protocol.flag, protocol.threadId, false, new String[]{"HazelcastInstanceNotActiveException"});
+        } catch (HazelcastInstanceNotActiveException e) {
+            Data exception = node.serializationService.toData(e);
+            response = new Protocol(protocol.conn, Command.ERROR, protocol.flag, protocol.threadId, false,
+                    new String[]{e.getClass().getName()}, exception);
         } catch (RuntimeException e) {
             ILogger logger = node.getLogger(this.getClass().getName());
             logger.log(Level.WARNING,
                     "exception during handling " + protocol.command + ": " + e.getMessage(), e);
-            response = new Protocol(protocol.conn, Command.ERROR, protocol.flag, protocol.threadId, false, new String[]{e.getMessage()});
+            Data exception = node.serializationService.toData(e);
+            response = new Protocol(protocol.conn, Command.ERROR, protocol.flag, protocol.threadId, false,
+                    new String[]{e.getClass().getName()}, exception);
         }
-        if(response!=null)
+        if (response != null)
             sendResponse(node, response, protocol.conn);
     }
 

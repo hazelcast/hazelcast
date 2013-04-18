@@ -230,6 +230,7 @@ public abstract class AbstractJoiner implements Joiner {
                 .setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
         operationService.runOperation(prepareMergeOperation);
 
+
         for (MemberImpl member : memberList) {
             if (!member.localMember()) {
                 operationService.createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,

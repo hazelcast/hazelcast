@@ -16,10 +16,12 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.partition.PartitionServiceImpl;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.util.Clock;
@@ -65,17 +67,26 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
     }
 
     public void run() throws Exception {
-        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        final OperationServiceImpl operationService = nodeEngine.operationService;
-        operationService.runBackupOperation(backupOp, getPartitionId(), version);
+        final NodeEngine nodeEngine = getNodeEngine();
+        final PartitionServiceImpl partitionService = (PartitionServiceImpl) nodeEngine.getPartitionService();
+        partitionService.updatePartitionVersion(getPartitionId(), getReplicaIndex(), version);
+        final OperationService operationService = nodeEngine.getOperationService();
+        operationService.runOperation(backupOp);
     }
 
     public void afterRun() throws Exception {
         if (sync) {
-            final OperationService operationService = getNodeEngine().getOperationService();
-            BackupResponse backupResponse = new BackupResponse();
-            OperationAccessor.setCallId(backupResponse, getCallId());
-            operationService.send(backupResponse, originalCaller);
+            final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+            final long callId = getCallId();
+            final OperationServiceImpl operationService = nodeEngine.operationService;
+
+            if (!nodeEngine.getThisAddress().equals(originalCaller)) {
+                BackupResponse backupResponse = new BackupResponse();
+                OperationAccessor.setCallId(backupResponse, callId);
+                operationService.send(backupResponse, originalCaller);
+            } else {
+                operationService.notifyBackupCall(callId);
+            }
         }
     }
 
@@ -89,6 +100,11 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
 
     public boolean validatesTarget() {
         return true;
+    }
+
+    public void logError(Throwable e) {
+        final ILogger logger = getLogger();
+        logger.log(Level.INFO, e.getClass() + ": " + e.getMessage());
     }
 
     @Override

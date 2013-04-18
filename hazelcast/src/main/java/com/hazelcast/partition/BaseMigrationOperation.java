@@ -17,17 +17,16 @@
 package com.hazelcast.partition;
 
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.spi.ExceptionAction;
-import com.hazelcast.spi.PartitionLevelOperation;
+import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
 
 public abstract class BaseMigrationOperation extends AbstractOperation
-        implements PartitionLevelOperation, MigrationCycleOperation {
+        implements MigrationCycleOperation, PartitionAwareOperation {
 
     protected MigrationInfo migrationInfo;
 
@@ -58,10 +57,6 @@ public abstract class BaseMigrationOperation extends AbstractOperation
     @Override
     public final boolean validatesTarget() {
         return false;
-    }
-
-    protected ILogger getLogger() {
-        return getNodeEngine().getLogger(getClass().getName());
     }
 
     public final ExceptionAction getActionOnException(Throwable throwable) {

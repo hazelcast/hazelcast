@@ -19,6 +19,7 @@ package com.hazelcast.collection;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.StaticNodeFactory;
+import com.hazelcast.util.ClientCompatibleTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -52,6 +53,7 @@ public class ListTest {
     }
 
     @Test
+    @ClientCompatibleTest
     public void testListMethods() throws Exception {
         Config config = new Config();
         final String name = "defList";

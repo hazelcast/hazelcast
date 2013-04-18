@@ -28,7 +28,7 @@ import java.util.Map;
 public interface OperationService {
 
     /**
-     * Runs operation in caller thread.
+     * Runs operation in calling thread.
      * @param op
      */
     void runOperation(Operation op);
@@ -38,14 +38,6 @@ public interface OperationService {
      * @param op
      */
     void executeOperation(final Operation op);
-
-    /**
-     * Runs operation in caller thread without re-acquiring operation locks,
-     * assuming current thread owns all required locks.
-     *
-     * @param op
-     */
-    void runOperationUnderExistingLock(Operation op);
 
     InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId);
 

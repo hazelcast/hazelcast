@@ -17,8 +17,8 @@
 package com.hazelcast.concurrent.semaphore;
 
 import com.hazelcast.client.ClientCommandHandler;
+import com.hazelcast.concurrent.semaphore.client.*;
 import com.hazelcast.config.SemaphoreConfig;
-import com.hazelcast.core.DistributedObject;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.PartitionInfo;
@@ -88,7 +88,7 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
                 Operation op = new SemaphoreDeadMemberOperation(name, caller).setPartitionId(partitionId)
                         .setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler())
                         .setService(this).setNodeEngine(nodeEngine).setServiceName(SERVICE_NAME);
-                nodeEngine.getOperationService().runOperation(op);
+                nodeEngine.getOperationService().executeOperation(op);
             }
         }
     }
@@ -97,11 +97,11 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
         return SERVICE_NAME;
     }
 
-    public DistributedObject createDistributedObject(Object objectId) {
+    public SemaphoreProxy createDistributedObject(Object objectId) {
         return new SemaphoreProxy((String)objectId, this, nodeEngine);
     }
 
-    public DistributedObject createDistributedObjectForClient(Object objectId) {
+    public SemaphoreProxy createDistributedObjectForClient(Object objectId) {
         return createDistributedObject(objectId);
     }
 
@@ -158,6 +158,13 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
     }
 
     public Map<Command, ClientCommandHandler> getCommandsAsMap() {
+        Map<Command, ClientCommandHandler> map = new HashMap<Command, ClientCommandHandler>();
+        map.put(Command.SEMACQUIRE, new AcquireHandler(this));
+        map.put(Command.SEMAVAILABLEPERMITS, new AvailablePermitsHandler(this));
+        map.put(Command.SEMDRAINPERMITS, new DrainPermitsHandler(this));
+        map.put(Command.SEMINIT, new InitHandler(this));
+        map.put(Command.SEMRELEASE, new ReleaseHandler(this));
+        map.put(Command.SEMTRYACQUIRE, new TryAcquireHandler(this));
         return null;
     }
 

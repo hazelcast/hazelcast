@@ -17,7 +17,6 @@
 
 package com.hazelcast.executor.client;
 
-import com.hazelcast.client.ClientCommandHandler;
 import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.executor.DistributedExecutorService;
@@ -34,10 +33,11 @@ import java.net.UnknownHostException;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 
-public class ExecuteHandler extends ClientCommandHandler {
+public class ExecuteHandler extends ExecutorCommandHandler {
     final DistributedExecutorService distributedExecutorService;
 
     public ExecuteHandler(DistributedExecutorService distributedExecutorService) {
+        super(distributedExecutorService);
         this.distributedExecutorService = distributedExecutorService;
     }
 
@@ -52,7 +52,7 @@ public class ExecuteHandler extends ClientCommandHandler {
         try {
             String name = protocol.args[0];
             Callable<Object> callable = (Callable<Object>) node.serializationService.toObject(protocol.buffers[0]);
-            ExecutorServiceProxy proxy = distributedExecutorService.createDistributedObject(name);
+            ExecutorServiceProxy proxy = getExecutorServiceProxy(name);
             MyExecutionCallBack callBack = new MyExecutionCallBack(protocol, node);
             if (protocol.args.length > 1) {
                 try {
@@ -63,23 +63,24 @@ public class ExecuteHandler extends ClientCommandHandler {
                     MemberImpl member = new MemberImpl(address, local);
                     proxy.submitToMember(callable, member, callBack);
                 } catch (UnknownHostException e) {
-                    response = protocol.error(null, "unknownhost");
+                    response = protocol.error(new Data[]{node.serializationService.toData(e)}, e.getClass().getName());
                 }
             } else {
                 Data key = protocol.buffers[1];
                 proxy.submitToKeyOwner(callable, node.serializationService.toObject(key), callBack);
             }
-        } catch (HazelcastInstanceNotActiveException e){
-            response = new Protocol(protocol.conn, Command.ERROR, protocol.flag, protocol.threadId, false, new String[]{"HazelcastInstanceNotActiveException"});
+        } catch (HazelcastInstanceNotActiveException e) {
+            Data exception  = node.serializationService.toData(e);
+            response = new Protocol(protocol.conn, Command.ERROR, protocol.flag, protocol.threadId, false, new String[]{e.getClass().getName()}, exception);
         } catch (RuntimeException e) {
             ILogger logger = node.getLogger(this.getClass().getName());
             logger.log(Level.WARNING,
                     "exception during handling " + protocol.command + ": " + e.getMessage(), e);
-            response = new Protocol(protocol.conn, Command.ERROR, protocol.flag, protocol.threadId, false, new String[]{e.getMessage()});
+            Data exception  = node.serializationService.toData(e);
+            response = new Protocol(protocol.conn, Command.ERROR, protocol.flag, protocol.threadId, false, new String[]{e.getClass().getName()}, exception);
         }
-        if(response!=null)
+        if (response != null)
             sendResponse(node, response, protocol.conn);
-
     }
 
     class MyExecutionCallBack implements ExecutionCallback<Object> {
@@ -94,13 +95,12 @@ public class ExecuteHandler extends ClientCommandHandler {
 
         @Override
         public void onResponse(Object response) {
-
             sendResponse(node, protocol.success(node.serializationService.toData(response)), protocol.conn);
         }
 
         @Override
         public void onFailure(Throwable t) {
-            sendResponse(node, protocol.error(null, t.getMessage()), protocol.conn);
+            sendResponse(node, protocol.error(new Data[]{node.serializationService.toData(t)}, t.getClass().getName()), protocol.conn);
         }
     }
 }

@@ -16,9 +16,9 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.OperationTimeoutException;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
@@ -52,15 +52,13 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
     private final Callback<Object> callback;
     private final ResponseProcessor responseProcessor;
     private final ILogger logger;
-    private final boolean async;
 
     private volatile int invokeCount = 0;
     private Address target; // set before invokeCount increment.
     private boolean remote = false;
 
     InvocationImpl(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
-                   int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout,
-                   boolean async, Callback<Object> callback) {
+                   int replicaIndex, int tryCount, long tryPauseMillis, long callTimeout, Callback<Object> callback) {
         this.nodeEngine = nodeEngine;
         this.serviceName = serviceName;
         this.op = op;
@@ -70,7 +68,6 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         this.tryPauseMillis = tryPauseMillis;
         this.callTimeout = getCallTimeout(callTimeout);
         this.callback = callback;
-        this.async = async;
         this.responseProcessor = callback == null ? new DefaultResponseProcessor() : new CallbackResponseProcessor();
         this.logger = nodeEngine.getLogger(Invocation.class.getName());
     }
@@ -93,19 +90,24 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         if (invokeCount > 0) {   // no need to be pessimistic.
             throw new IllegalStateException("An invocation can not be invoked more than once!");
         }
+        if (nodeEngine.operationService.isOperationThread()
+                && (op instanceof PartitionAwareOperation) && !OperationAccessor.isMigrationOperation(op)) {
+            throw new IllegalThreadStateException(Thread.currentThread() + " cannot make remote call: " + op);
+        }
         try {
-            final ThreadContext threadContext = ThreadContext.getOrCreate();
             OperationAccessor.setCallTimeout(op, callTimeout);
             OperationAccessor.setCallerAddress(op, nodeEngine.getThisAddress());
             op.setNodeEngine(nodeEngine).setServiceName(serviceName)
                     .setPartitionId(partitionId).setReplicaIndex(replicaIndex);
             if (op.getCallerUuid() == null) {
-                op.setCallerUuid(threadContext.getCallerUuid());
+                final ThreadContext threadContext = ThreadContext.get();
+                if (threadContext != null) {
+                    op.setCallerUuid(threadContext.getCallerUuid());
+                }
             }
             if (op.getCallerUuid() == null) {
                 op.setCallerUuid(nodeEngine.getLocalMember().getUuid());
             }
-            checkOperationType(op, threadContext);
             doInvoke();
         } catch (Exception e) {
             if (e instanceof RetryableException) {
@@ -132,45 +134,53 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             } else {
                 notify(new HazelcastInstanceNotActiveException());
             }
-        } else if (!OperationAccessor.isJoinOperation(op) && nodeEngine.getClusterService().getMember(target) == null) {
-            notify(new TargetNotMemberException(target, partitionId, op.getClass().getName(), serviceName));
         } else {
-            if (op.getPartitionId() != partitionId) {
-                notify(new IllegalStateException("Partition id of operation: " + op.getPartitionId() +
-                        " is not equal to the partition id of invocation: " + partitionId));
-                return;
-            }
-            if (op.getReplicaIndex() != replicaIndex) {
-                notify(new IllegalStateException("Replica index of operation: " + op.getReplicaIndex() +
-                        " is not equal to the replica index of invocation: " + replicaIndex));
-                return;
-            }
-            OperationAccessor.setInvocationTime(op, nodeEngine.getClusterTime());
-            final OperationServiceImpl operationService = nodeEngine.operationService;
-            if (thisAddress.equals(target)) {
-                remote = false;
-                if (op instanceof BackupAwareOperation) {
-                    final long callId = operationService.newRemoteCallId();
-                    registerBackups((BackupAwareOperation) op, callId);
-                    OperationAccessor.setCallId(op, callId);
-                }
-                ResponseHandlerFactory.setLocalResponseHandler(op, this);
-                if (!async || invokeCount > 1 ) {
-                    operationService.runOperation(op);
-                } else {
-                    operationService.executeOperation(op);
-                }
+            final MemberImpl member = nodeEngine.getClusterService().getMember(target);
+            if (!OperationAccessor.isJoinOperation(op) && member == null) {
+                notify(new TargetNotMemberException(target, partitionId, op.getClass().getName(), serviceName));
             } else {
-                remote = true;
-                RemoteCall call = new RemoteCall(target, this);
-                final long callId = operationService.registerRemoteCall(call);
-                if (op instanceof BackupAwareOperation) {
-                    registerBackups((BackupAwareOperation) op, callId);
+                if (op.getPartitionId() != partitionId) {
+                    notify(new IllegalStateException("Partition id of operation: " + op.getPartitionId() +
+                            " is not equal to the partition id of invocation: " + partitionId));
+                    return;
                 }
-                OperationAccessor.setCallId(op, callId);
-                boolean sent = operationService.send(op, target);
-                if (!sent) {
-                    notify(new RetryableIOException("Packet not sent to -> " + target));
+                if (op.getReplicaIndex() != replicaIndex) {
+                    notify(new IllegalStateException("Replica index of operation: " + op.getReplicaIndex() +
+                            " is not equal to the replica index of invocation: " + replicaIndex));
+                    return;
+                }
+                final OperationServiceImpl operationService = nodeEngine.operationService;
+                OperationAccessor.setInvocationTime(op, nodeEngine.getClusterTime());
+
+                if (thisAddress.equals(target)) {
+                    remote = false;
+                    final long prevCallId = op.getCallId();
+                    if (prevCallId != 0) {
+                        operationService.deregisterRemoteCall(prevCallId);
+                    }
+                    if (op instanceof BackupAwareOperation) {
+                        final long callId = operationService.newRemoteCallId();
+                        registerBackups((BackupAwareOperation) op, callId);
+                        OperationAccessor.setCallId(op, callId);
+                    }
+                    ResponseHandlerFactory.setLocalResponseHandler(op, this);
+                    if (op instanceof PartitionAwareOperation) {
+                        operationService.executeOperation(op);
+                    } else {
+                        operationService.runOperation(op);
+                    }
+                } else {
+                    remote = true;
+                    final RemoteCall call = member != null ? new RemoteCall(member, this) : new RemoteCall(target, this);
+                    final long callId = operationService.registerRemoteCall(call);
+                    if (op instanceof BackupAwareOperation) {
+                        registerBackups((BackupAwareOperation) op, callId);
+                    }
+                    OperationAccessor.setCallId(op, callId);
+                    boolean sent = operationService.send(op, target);
+                    if (!sent) {
+                        notify(new RetryableIOException("Packet not sent to -> " + target));
+                    }
                 }
             }
         }
@@ -428,7 +438,8 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
     private Future resetAndReInvoke() {
         responseQ.clear();
         invokeCount = 0;
-        return invoke();
+        doInvoke();
+        return new InvocationFuture();
     }
 
     private boolean isOperationExecuting(Address target) {
@@ -436,7 +447,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         Boolean executing = Boolean.FALSE;
         try {
             final Invocation inv = new TargetInvocationImpl(nodeEngine, serviceName,
-                    new IsStillExecuting(op.getCallId()), target, 0, 0, 5000, false, null);
+                    new IsStillExecuting(op.getCallId()), target, 0, 0, 5000, null);
             Future f = inv.invoke();
             // TODO: @mm - improve logging (see SystemLogService)
             logger.log(Level.WARNING, "Asking if operation execution has been started: " + toString());
@@ -456,62 +467,8 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         return timeout;
     }
 
-    // TODO: @mm - works only for parent-child invocations; multiple chained invocations can break the rule!
-    private static void checkOperationType(Operation op, ThreadContext threadContext) {
-        final Operation parentOp = threadContext.getCurrentOperation();
-        boolean allowed = true;
-        if (parentOp != null) {
-            if (op instanceof BackupOperation && !(parentOp instanceof BackupOperation)) {
-                // OK!
-            } else if (parentOp instanceof PartitionLevelOperation) {
-                if (op instanceof PartitionLevelOperation
-                        && op.getPartitionId() == parentOp.getPartitionId()) {
-                    // OK!
-                } else if (!(op instanceof PartitionAwareOperation)) {
-                    // OK!
-                } else {
-                    allowed = false;
-                }
-            } else if (parentOp instanceof KeyBasedOperation) {
-                if (op instanceof PartitionLevelOperation) {
-                    allowed = false;
-                } else if (op instanceof KeyBasedOperation
-                        && ((KeyBasedOperation) parentOp).getKeyHash() == ((KeyBasedOperation) op).getKeyHash()
-                        && parentOp.getPartitionId() == op.getPartitionId()) {
-                    // OK!
-                } else if (op instanceof PartitionAwareOperation
-                        && op.getPartitionId() == parentOp.getPartitionId()) {
-                    // OK!
-                } else if (!(op instanceof PartitionAwareOperation)) {
-                    // OK!
-                } else {
-                    allowed = false;
-                }
-            } else if (parentOp instanceof PartitionAwareOperation) {
-                if (op instanceof PartitionLevelOperation) {
-                    allowed = false;
-                } else if (op instanceof PartitionAwareOperation
-                        && op.getPartitionId() == parentOp.getPartitionId()) {
-                    // OK!
-                } else if (!(op instanceof PartitionAwareOperation)) {
-                    // OK!
-                } else {
-                    allowed = false;
-                }
-            }
-        }
-        if (!allowed) {
-            throw new HazelcastException("INVOCATION IS NOT ALLOWED! ParentOp: "
-                    + parentOp + ", CurrentOp: " + op);
-        }
-    }
-
     public String getServiceName() {
         return serviceName;
-    }
-
-    Operation getOperation() {
-        return op;
     }
 
     PartitionInfo getPartitionInfo() {
@@ -574,27 +531,27 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         sb.append(", tryPauseMillis=").append(tryPauseMillis);
         sb.append(", invokeCount=").append(invokeCount);
         sb.append(", callTimeout=").append(callTimeout);
-        sb.append(", remote=").append(remote);
+        sb.append(", target=").append(target);
         sb.append('}');
         return sb.toString();
     }
 
-    static final Object NULL_RESPONSE = new Object() {
+    private static final Object NULL_RESPONSE = new Object() {
         public String toString() {
             return "Invocation::NULL_RESPONSE";
         }
     };
-    static final Object RETRY_RESPONSE = new Object() {
+    private static final Object RETRY_RESPONSE = new Object() {
         public String toString() {
             return "Invocation::RETRY_RESPONSE";
         }
     };
-    static final Object WAIT_RESPONSE = new Object() {
+    private static final Object WAIT_RESPONSE = new Object() {
         public String toString() {
             return "Invocation::WAIT_RESPONSE";
         }
     };
-    static final Object TIMEOUT_RESPONSE = new Object() {
+    private static final Object TIMEOUT_RESPONSE = new Object() {
         public String toString() {
             return "Invocation::TIMEOUT_RESPONSE";
         }
