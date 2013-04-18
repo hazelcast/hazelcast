@@ -1376,6 +1376,23 @@ public class HazelcastTest {
         assertTrue(map.containsKey("key"));
         h.getLifecycleService().shutdown();
     }
+    /*
+       github issue 455
+    */
+    @Test
+    public void testIssue455ZeroTTLShouldPreventEviction() throws InterruptedException {
+        Config config = new Config();
+        config.getGroupConfig().setName("testIssue455ZeroTTLShouldPreventEviction");
+        NearCacheConfig nearCacheConfig = new NearCacheConfig();
+        config.getMapConfig("default").setNearCacheConfig(nearCacheConfig);
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
+        IMap<String, String> map = h.getMap("testIssue455ZeroTTLShouldPreventEviction");
+        map.put("key", "value", 1, TimeUnit.SECONDS);
+        map.put("key", "value2", 0, TimeUnit.SECONDS);
+        Thread.sleep(2000);
+        assertEquals("value2", map.get("key"));
+        h.getLifecycleService().shutdown();
+    }
 
     /*
         github issue 304

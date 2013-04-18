@@ -347,7 +347,7 @@ public abstract class BaseManager {
             systemLogService.logObject(request, INFO, "ReturnResponse");
         }
         if (request.local) {
-            final TargetAwareOp targetAwareOp = (TargetAwareOp) request.attachment;
+            final TargetAwareOp targetAwareOp = (TargetAwareOp) request.call;
             if (request.response == OBJECT_REDO) {
                 targetAwareOp.setRedoResult(RedoType.getRedoType(request.redoCode));
             } else {
@@ -512,7 +512,7 @@ public abstract class BaseManager {
                 valueData = toData(value);
             }
             request.setLocal(operation, name, keyData, valueData, -1, getOperationTimeout(timeout), ttl, thisAddress);
-            request.attachment = this;
+            request.call = this;
         }
 
         abstract void doOp();
@@ -923,7 +923,7 @@ public abstract class BaseManager {
             if (isMigrationAware() && isPartitionMigrating()) {
                 setRedoResult(REDO_PARTITION_MIGRATING);
             } else {
-                request.attachment = TargetAwareOp.this;
+                request.call = TargetAwareOp.this;
                 request.local = true;
                 ((RequestHandler) getPacketProcessor(request.operation)).handle(request);
             }

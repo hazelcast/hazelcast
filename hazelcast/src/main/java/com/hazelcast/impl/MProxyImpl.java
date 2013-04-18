@@ -121,7 +121,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
     }
 
     public Object put(Object key, Object value) {
-        return put(key, value, 0, TimeUnit.SECONDS);
+        return put(key, value, -1, TimeUnit.SECONDS);
     }
 
     public Future getAsync(Object key) {
@@ -553,7 +553,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         }
 
         public Object put(Object key, Object value) {
-            return put(key, value, 0, TimeUnit.SECONDS);
+            return put(key, value, -1, TimeUnit.SECONDS);
         }
 
         public void putForSync(Object key, Object value) {
@@ -595,12 +595,10 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         }
 
         public Object put(Object key, Object value, long ttl, TimeUnit timeunit) {
-            if (ttl < 0) {
+            if (ttl < 0 && ttl != -1) {
                 throw new IllegalArgumentException("ttl value cannot be negative. " + ttl);
             }
-            if (ttl == 0) {
-                ttl = -1;
-            } else {
+            if (ttl > 0) {
                 ttl = toMillis(ttl, timeunit);
             }
             return put(key, value, ttl);
