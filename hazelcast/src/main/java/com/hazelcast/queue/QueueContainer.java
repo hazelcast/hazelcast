@@ -41,7 +41,7 @@ import java.util.logging.Level;
 public class QueueContainer implements DataSerializable {
 
     private LinkedList<QueueItem> itemQueue = null;
-    private HashMap<Long, QueueItem> itemMap = new HashMap<Long, QueueItem>(1000);
+    private final HashMap<Long, QueueItem> backupMap = new HashMap<Long, QueueItem>(1000);
     private final Map<Long, QueueItem> txMap = new HashMap<Long, QueueItem>();
     private final HashMap<Long, Data> dataMap = new HashMap<Long, Data>();
 
@@ -96,7 +96,6 @@ public class QueueContainer implements DataSerializable {
     }
 
     //TX Poll
-
     public QueueItem txnPollReserve() {
         QueueItem item = getItemQueue().poll();
         if (item == null) {
@@ -109,16 +108,12 @@ public class QueueContainer implements DataSerializable {
                 throw new HazelcastException(e);
             }
         }
-        QueueItem removed = itemMap.remove(item.getItemId());
-        if (removed == null || removed.getItemId() != item.getItemId()) {
-            logger.log(Level.SEVERE, "txnPollReserve operation-> No item at itemMap for itemId: " + item.getItemId());
-        }
         txMap.put(item.getItemId(), item);
         return new QueueItem(null, item.getItemId(), item.getData());
     }
 
     public boolean txnPollBackupReserve(long itemId) {
-        QueueItem item = itemMap.remove(itemId);
+        QueueItem item = backupMap.remove(itemId);
         if (item == null) {
             throw new TransactionException("Backup reserve failed: " + itemId);
         }
@@ -151,10 +146,6 @@ public class QueueContainer implements DataSerializable {
         if (!backup) {
             getItemQueue().offerFirst(item);
         }
-        QueueItem replaced = itemMap.put(itemId, item);
-        if (replaced != null) {
-            logger.log(Level.SEVERE, "txnRollbackPoll operation-> Item exists already at itemMap for itemId: " + itemId);
-        }
         return true;
     }
 
@@ -183,10 +174,6 @@ public class QueueContainer implements DataSerializable {
         item.setData(data);
         if (!backup) {
             getItemQueue().offer(item);
-        }
-        QueueItem replaced = itemMap.put(item.getItemId(), item);
-        if (replaced != null) {
-            logger.log(Level.SEVERE, "txnCommitOffer operation-> Item exists already at itemMap for itemId: " + item.getItemId());
         }
         if (store.isEnabled()) {
             try {
@@ -222,10 +209,6 @@ public class QueueContainer implements DataSerializable {
             item.setData(data);
         }
         getItemQueue().offer(item);
-        QueueItem replaced = itemMap.put(item.getItemId(), item);
-        if (replaced != null) {
-            logger.log(Level.SEVERE, "offer operation-> Item already exists at itemMap for itemId: " + item.getItemId());
-        }
         return item.getItemId();
     }
 
@@ -234,10 +217,7 @@ public class QueueContainer implements DataSerializable {
         if (!store.isEnabled() || store.getMemoryLimit() > getItemQueue().size()) {
             item.setData(data);
         }
-        QueueItem replaced = itemMap.put(itemId, item);
-        if (replaced != null) {
-            logger.log(Level.SEVERE, "offerBackup operation-> Item already exists at itemMap for itemId: " + item.getItemId());
-        }
+        backupMap.put(itemId, item);
     }
 
     public Map<Long, Data> addAll(Collection<Data> dataList) {
@@ -248,11 +228,6 @@ public class QueueContainer implements DataSerializable {
                 item.setData(data);
             }
             getItemQueue().offer(item);
-            QueueItem replaced = itemMap.put(item.getItemId(), item);
-            if (replaced != null) {
-                logger.log(Level.SEVERE, "addAll operation-> Item already exists at itemMap for itemId: " + item.getItemId());
-            }
-
             dataMap.put(item.getItemId(), data);
         }
         if (store.isEnabled()) {
@@ -274,7 +249,7 @@ public class QueueContainer implements DataSerializable {
             if (!store.isEnabled() || store.getMemoryLimit() > getItemQueue().size()) {
                 item.setData(entry.getValue());
             }
-            itemMap.put(item.getItemId(), item);
+            backupMap.put(item.getItemId(), item);
         }
     }
 
@@ -306,20 +281,14 @@ public class QueueContainer implements DataSerializable {
             }
         }
         getItemQueue().poll();
-        QueueItem removed = itemMap.remove(item.getItemId());
-        if (removed == null || removed.getItemId() != item.getItemId()) {
-            logger.log(Level.SEVERE, "poll operation-> No item at itemMap for itemId: " + item.getItemId());
-        }
         age(item, Clock.currentTimeMillis());
         return item;
     }
 
     public void pollBackup(long itemId) {
-        QueueItem item = itemMap.remove(itemId);
+        QueueItem item = backupMap.remove(itemId);
         if (item != null) {
             age(item, Clock.currentTimeMillis());//For Stats
-        } else {
-            logger.log(Level.SEVERE, "pollBackup operation-> No item at itemMap for itemId: " + itemId);
         }
     }
 
@@ -350,10 +319,6 @@ public class QueueContainer implements DataSerializable {
         long current = Clock.currentTimeMillis();
         for (int i = 0; i < maxSize; i++) {
             QueueItem item = getItemQueue().poll();
-            QueueItem removed = itemMap.remove(item.getItemId());
-            if (removed == null || removed.getItemId() != item.getItemId()) {
-                logger.log(Level.SEVERE, "poll operation-> No item at itemMap for itemId: " + item.getItemId());
-            }
             age(item, current); //For Stats
         }
         return map;
@@ -374,19 +339,19 @@ public class QueueContainer implements DataSerializable {
     public Map<Long, Data> clear() {
         if (store.isEnabled()) {
             try {
-                store.deleteAll(itemMap.keySet());
+                store.deleteAll(backupMap.keySet());
             } catch (Exception e) {
                 throw new HazelcastException(e);
             }
         }
         long current = Clock.currentTimeMillis();
-        LinkedHashMap<Long, Data> map = new LinkedHashMap<Long, Data>(itemMap.size());
-        for (QueueItem item : itemMap.values()) {
-            dataMap.put(item.getItemId(), item.getData());
+        LinkedHashMap<Long, Data> map = new LinkedHashMap<Long, Data>(backupMap.size());
+        for (QueueItem item : backupMap.values()) {
+            map.put(item.getItemId(), item.getData());
             age(item, current); // For stats
         }
         getItemQueue().clear();
-        itemMap.clear();
+        backupMap.clear();
         dataMap.clear();
         return map;
     }
@@ -412,7 +377,6 @@ public class QueueContainer implements DataSerializable {
                     }
                 }
                 iter.remove();
-                itemMap.remove(item.getItemId());
                 age(item, Clock.currentTimeMillis()); //For Stats
                 return item.getItemId();
             }
@@ -421,7 +385,7 @@ public class QueueContainer implements DataSerializable {
     }
 
     public void removeBackup(long itemId) {
-        itemMap.remove(itemId);
+        backupMap.remove(itemId);
     }
 
     /**
@@ -523,8 +487,8 @@ public class QueueContainer implements DataSerializable {
     LinkedList<QueueItem> getItemQueue() {
         if (itemQueue == null) {
             itemQueue = new LinkedList<QueueItem>();
-            if (!itemMap.isEmpty()) {
-                List<QueueItem> values = new ArrayList<QueueItem>(itemMap.values());
+            if (!backupMap.isEmpty()) {
+                List<QueueItem> values = new ArrayList<QueueItem>(backupMap.values());
                 Collections.sort(values);
                 itemQueue.addAll(values);
             }
