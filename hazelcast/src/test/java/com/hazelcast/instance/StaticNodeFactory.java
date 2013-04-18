@@ -22,13 +22,17 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.StaticNodeRegistry;
 
+import java.lang.reflect.Method;
 import java.net.UnknownHostException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class StaticNodeFactory {
 
     private final static boolean MOCK_NETWORK = !Boolean.getBoolean("hazelcast.test.use.network");
+    private final static boolean TEST_CLIENT = Boolean.getBoolean("hazelcast.test.client");
     private final static AtomicInteger ports = new AtomicInteger(5000);
+    private final static String HAZELCAST_CLIENT = "com.hazelcast.client.HazelcastClient";
+    private final static String HAZELCAST_CLIENT_CONFIG = "com.hazelcast.client.config.ClientConfig";
 
     private final Address[] addresses;
     private final StaticNodeRegistry registry;
@@ -52,8 +56,20 @@ public class StaticNodeFactory {
             config = init(config);
             NodeContext nodeContext = registry.createNodeContext(addresses[nodeIndex++]);
             return HazelcastInstanceFactory.newHazelcastInstance(config, null, nodeContext);
-        } else {
-            return HazelcastInstanceFactory.newHazelcastInstance(config);
+        }
+        return TEST_CLIENT ? newHazelcastClient() : HazelcastInstanceFactory.newHazelcastInstance(config);
+    }
+
+    private static HazelcastInstance newHazelcastClient() {
+        Class clazz = null;
+        try {
+            clazz = Class.forName(HAZELCAST_CLIENT);
+            Class clientConfig = Class.forName(HAZELCAST_CLIENT_CONFIG);
+            Method method = clazz.getMethod("newHazelcastClient", clientConfig);
+            HazelcastInstance hazelcastInstance = (HazelcastInstance) method.invoke(null, clientConfig.newInstance());
+            return hazelcastInstance;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -81,7 +97,7 @@ public class StaticNodeFactory {
             }
         } else {
             for (int i = 0; i < count; i++) {
-                instances[i] = HazelcastInstanceFactory.newHazelcastInstance(config);
+                instances[i] = TEST_CLIENT ? newHazelcastClient() : HazelcastInstanceFactory.newHazelcastInstance(config);
             }
         }
         return instances;

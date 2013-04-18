@@ -21,6 +21,7 @@ import com.hazelcast.concurrent.semaphore.SemaphoreProxy;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Protocol;
+import com.hazelcast.nio.serialization.Data;
 
 public class AcquireHandler extends SemaphoreCommandHandler {
     public AcquireHandler(SemaphoreService semaphoreService) {
@@ -35,7 +36,7 @@ public class AcquireHandler extends SemaphoreCommandHandler {
             sp.acquire(permits);
             return protocol.success();
         } catch (InterruptedException e) {
-            return protocol.error(null, e.getMessage());
+            return protocol.error(new Data[]{node.serializationService.toData(e)}, e.getClass().getName());
         }
     }
 }

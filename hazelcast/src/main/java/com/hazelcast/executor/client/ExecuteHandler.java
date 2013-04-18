@@ -63,23 +63,24 @@ public class ExecuteHandler extends ExecutorCommandHandler {
                     MemberImpl member = new MemberImpl(address, local);
                     proxy.submitToMember(callable, member, callBack);
                 } catch (UnknownHostException e) {
-                    response = protocol.error(null, "unknownhost");
+                    response = protocol.error(new Data[]{node.serializationService.toData(e)}, e.getClass().getName());
                 }
             } else {
                 Data key = protocol.buffers[1];
                 proxy.submitToKeyOwner(callable, node.serializationService.toObject(key), callBack);
             }
-        } catch (HazelcastInstanceNotActiveException e){
-            response = new Protocol(protocol.conn, Command.ERROR, protocol.flag, protocol.threadId, false, new String[]{"HazelcastInstanceNotActiveException"});
+        } catch (HazelcastInstanceNotActiveException e) {
+            Data exception  = node.serializationService.toData(e);
+            response = new Protocol(protocol.conn, Command.ERROR, protocol.flag, protocol.threadId, false, new String[]{e.getClass().getName()}, exception);
         } catch (RuntimeException e) {
             ILogger logger = node.getLogger(this.getClass().getName());
             logger.log(Level.WARNING,
                     "exception during handling " + protocol.command + ": " + e.getMessage(), e);
-            response = new Protocol(protocol.conn, Command.ERROR, protocol.flag, protocol.threadId, false, new String[]{e.getMessage()});
+            Data exception  = node.serializationService.toData(e);
+            response = new Protocol(protocol.conn, Command.ERROR, protocol.flag, protocol.threadId, false, new String[]{e.getClass().getName()}, exception);
         }
-        if(response!=null)
+        if (response != null)
             sendResponse(node, response, protocol.conn);
-
     }
 
     class MyExecutionCallBack implements ExecutionCallback<Object> {
@@ -94,13 +95,12 @@ public class ExecuteHandler extends ExecutorCommandHandler {
 
         @Override
         public void onResponse(Object response) {
-
             sendResponse(node, protocol.success(node.serializationService.toData(response)), protocol.conn);
         }
 
         @Override
         public void onFailure(Throwable t) {
-            sendResponse(node, protocol.error(null, t.getMessage()), protocol.conn);
+            sendResponse(node, protocol.error(new Data[]{node.serializationService.toData(t)}, t.getClass().getName()), protocol.conn);
         }
     }
 }
