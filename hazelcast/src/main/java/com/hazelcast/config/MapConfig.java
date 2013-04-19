@@ -80,7 +80,7 @@ public class MapConfig implements DataSerializable {
 
     private StorageType storageType = null;
 
-    private boolean statisticsEnabled = false;
+    private boolean statisticsEnabled = true;
 
     public enum InMemoryFormat {
         BINARY, OBJECT, CACHED
