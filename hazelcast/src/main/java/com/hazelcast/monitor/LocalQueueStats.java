@@ -93,16 +93,16 @@ public interface LocalQueueStats extends LocalInstanceStats {
     long getEmptyPollOperationCount();
 
     /**
-     * Returns number of //TODO operations.
+     * Returns number of other operations
      *
-     * @return number of null returning poll operations.
+     * @return number of other operations
      */
     long getOtherOperationsCount();
 
     /**
-     * Returns number of //TODO operations.
+     * Returns number of event operations
      *
-     * @return number of null returning poll operations.
+     * @return number of event operations
      */
     long getEventOperationCount();
 }
