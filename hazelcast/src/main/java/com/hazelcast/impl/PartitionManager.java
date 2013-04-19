@@ -75,6 +75,9 @@ public class PartitionManager {
     private final AtomicLong lastRepartitionTime = new AtomicLong();
     private final SystemLogService systemLogService;
 
+    private final MemberGroupFactory memberGroupFactory;
+    private final PartitionStateGenerator partitionStateGenerator;
+
     public PartitionManager(final ConcurrentMapManager concurrentMapManager) {
         this.partitionCount = concurrentMapManager.getPartitionCount();
         this.concurrentMapManager = concurrentMapManager;
@@ -102,6 +105,10 @@ public class PartitionManager {
                 }
             });
         }
+
+        memberGroupFactory = PartitionStateGeneratorFactory.newMemberGroupFactory(node.getConfig().getPartitionGroupConfig());
+        partitionStateGenerator = PartitionStateGeneratorFactory.newCustomPartitionStateGenerator(memberGroupFactory);
+
         partitionMigrationInterval = node.groupProperties.PARTITION_MIGRATION_INTERVAL.getInteger() * 1000;
         // partitionMigrationTimeout is 1.5 times of real timeout
         partitionMigrationTimeout = (long) (node.groupProperties.PARTITION_MIGRATION_TIMEOUT.getLong() * 1.5f);
@@ -156,7 +163,7 @@ public class PartitionManager {
         if (!concurrentMapManager.isMaster() || !concurrentMapManager.isActive()) return;
         if (!hasStorageMember()) return;
         if (!initialized) {
-            PartitionStateGenerator psg = getPartitionStateGenerator();
+            PartitionStateGenerator psg = partitionStateGenerator;
             logger.log(Level.INFO, "Initializing cluster partition table first arrangement...");
             PartitionInfo[] newState = psg.initialize(concurrentMapManager.lsMembers, partitionCount);
             if (newState != null) {
@@ -191,11 +198,6 @@ public class PartitionManager {
         }
         PartitionStateProcessable processable = new PartitionStateProcessable(memberInfos, partitions, clusterTime, version.get());
         concurrentMapManager.sendProcessableToAll(processable, false);
-    }
-
-    private PartitionStateGenerator getPartitionStateGenerator() {
-        return PartitionStateGeneratorFactory.newConfigPartitionStateGenerator(
-                concurrentMapManager.node.getConfig().getPartitionGroupConfig());
     }
 
     public CostAwareRecordList getActivePartitionRecords(final int partitionId, final int replicaIndex,
@@ -361,7 +363,7 @@ public class PartitionManager {
         // let all members notice the dead and fix their own records and indexes.
         // otherwise new master may take action fast and send new partition state
         // before other members realize the dead one and fix their records.
-        final boolean migrationStatus = migrationActive.getAndSet(false);
+        migrationActive.set(false);
         concurrentMapManager.partitionServiceImpl.reset();
         checkMigratingPartitionForDead(deadAddress);
         // list of partitions those have dead member in their replicas
@@ -392,44 +394,51 @@ public class PartitionManager {
                 * node.groupProperties.CONNECTION_MONITOR_MAX_FAULTS.getInteger() * 10;
         node.executorManager.getScheduledExecutorService().schedule(new Runnable() {
             public void run() {
-                migrationActive.compareAndSet(false, migrationStatus);
+                migrationActive.set(true);
             }
         }, waitBeforeMigrationActivate, TimeUnit.MILLISECONDS);
     }
 
     private void fixReplicasAndPartitionsForDead(final MemberImpl deadMember, final int[] indexesOfDead) {
-        if (!deadMember.isLiteMember() && concurrentMapManager.isMaster() && concurrentMapManager.isActive()) {
-            sendingDiffs.set(true);
-            logger.log(Level.INFO, "Starting to send partition replica diffs..." + sendingDiffs.get());
+        if (!deadMember.isLiteMember() && concurrentMapManager.isActive()) {
+            final boolean master = concurrentMapManager.isMaster();
+            if (master) {
+                sendingDiffs.set(true);
+                logger.log(Level.INFO, "Starting to send partition replica diffs...");
+            }
+
             int diffCount = 0;
             final int maxBackupCount = getMaxBackupCount();
             for (int partitionId = 0; partitionId < indexesOfDead.length; partitionId++) {
                 int indexOfDead = indexesOfDead[partitionId];
                 if (indexOfDead != -1) {
                     PartitionInfo partition = partitions[partitionId];
-                    Address owner = partition.getOwner();
-                    if (owner == null) {
-                        logger.log(Level.FINEST, "Owner of one of the replicas of Partition[" +
-                                partitionId + "] is dead, but partition owner " +
-                                "could not be found either!");
-                        logger.log(Level.FINEST, partition.toString());
-                        continue;
-                    }
-                    // send replica diffs to new replica owners after partition table shift.
-                    for (int replicaIndex = indexOfDead; replicaIndex < maxBackupCount; replicaIndex++) {
-                        Address target = partition.getReplicaAddress(replicaIndex);
-                        if (target != null && !target.equals(owner)) {
-                            if (getMember(target) != null) {
-                                MigrationRequestTask mrt = new MigrationRequestTask(partitionId, owner, target,
-                                        replicaIndex, false, true);
-                                immediateTasksQueue.offer(new Migrator(mrt));
-                                diffCount++;
-                            } else {
-                                logger.log(Level.WARNING, "Target member of replica diff task couldn't found! "
-                                        + "Replica: " + replicaIndex + ", Dead: " + deadMember + "\n" + partition);
+
+                    if (master) {
+                        Address owner = partition.getOwner();
+                        if (owner == null) {
+                            logger.log(Level.FINEST, "Owner of one of the replicas of Partition[" +
+                                    partitionId + "] is dead, but partition owner could not be found either!");
+                            logger.log(Level.FINEST, partition.toString());
+                            continue;
+                        }
+                        // send replica diffs to new replica owners after partition table shift.
+                        for (int replicaIndex = indexOfDead; replicaIndex < maxBackupCount; replicaIndex++) {
+                            Address target = partition.getReplicaAddress(replicaIndex);
+                            if (target != null && !target.equals(owner)) {
+                                if (getMember(target) != null) {
+                                    MigrationRequestTask mrt = new MigrationRequestTask(partitionId, owner, target,
+                                            replicaIndex, false, true);
+                                    immediateTasksQueue.offer(new Migrator(mrt));
+                                    diffCount++;
+                                } else {
+                                    logger.log(Level.WARNING, "Target member of replica diff task couldn't found! "
+                                            + "Replica: " + replicaIndex + ", Dead: " + deadMember + "\n" + partition);
+                                }
                             }
                         }
                     }
+
                     // if index of dead member is equal to or less than maxBackupCount
                     // clear indexes of equal to and greater than maxBackupCount of partition.
                     if (indexOfDead <= maxBackupCount) {
@@ -439,15 +448,18 @@ public class PartitionManager {
                     }
                 }
             }
-            sendPartitionRuntimeState();
-            final int totalDiffCount = diffCount;
-            immediateTasksQueue.offer(new Runnable() {
-                public void run() {
-                    logger.log(Level.INFO, "Total " + totalDiffCount + " partition replica diffs have been processed.");
-                    sendingDiffs.set(false);
-                }
-            });
-            immediateTasksQueue.offer(new PrepareRepartitioningTask());
+
+            if (master) {
+                sendPartitionRuntimeState();
+                final int totalDiffCount = diffCount;
+                immediateTasksQueue.offer(new Runnable() {
+                    public void run() {
+                        logger.log(Level.INFO, "Total " + totalDiffCount + " partition replica diffs have been processed.");
+                        sendingDiffs.set(false);
+                    }
+                });
+                immediateTasksQueue.offer(new PrepareRepartitioningTask());
+            }
         }
     }
 
@@ -473,8 +485,7 @@ public class PartitionManager {
                     // owner of the partition is dead
                     // and record is active
                     // and new owner of partition is this member.
-                    if (indexesOfDead[partitionId] == 0
-                            && record.isActive()
+                    if (indexesOfDead[partitionId] == 0 && record.isActive()
                             && thisAddress.equals(partitions[partitionId].getOwner())) {
                         cmap.markAsDirty(record, true);
                         // update the indexes
@@ -629,9 +640,17 @@ public class PartitionManager {
         for (Member member : concurrentMapManager.node.getClusterImpl().getMembers()) {
             members.add((MemberImpl) member);
         }
-        MemberGroupFactory mgf = PartitionStateGeneratorFactory.newMemberGroupFactory(
-                concurrentMapManager.node.config.getPartitionGroupConfig());
-        if (mgf.createMemberGroups(members).size() < 2) return false;
+        MemberGroupFactory mgf = memberGroupFactory;
+        final Collection<MemberGroup> memberGroups = mgf.createMemberGroups(members);
+        if (memberGroups.size() < 2) return false;
+        int groups = 0;
+        for (MemberGroup memberGroup : memberGroups) {
+            if (memberGroup.size() > 0) {
+                groups++;
+            }
+        }
+        if (groups < 2) return false;
+
         final int size = immediateTasksQueue.size();
         if (size == 0) {
             for (PartitionInfo partition : partitions) {
@@ -794,7 +813,7 @@ public class PartitionManager {
             for (Member member : memberSet) {
                 members.add((MemberImpl) member);
             }
-            PartitionStateGenerator psg = getPartitionStateGenerator();
+            PartitionStateGenerator psg = partitionStateGenerator;
             psg.reArrange(partitions, members, partitionCount, lostQ, immediateQ, scheduledQ);
         }
 
