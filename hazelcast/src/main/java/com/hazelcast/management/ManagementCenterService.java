@@ -43,6 +43,8 @@ import com.hazelcast.spi.Operation;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.management.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -355,8 +357,10 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         final Future future = invocation.invoke();
         try {
             return future.get();
-        } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+        } catch (Throwable t) {
+            StringWriter s = new StringWriter();
+            t.printStackTrace(new PrintWriter(s));
+            return s.toString();
         }
     }
 
