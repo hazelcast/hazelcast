@@ -19,5 +19,6 @@ package com.hazelcast.spi;
 import com.hazelcast.wan.WanReplicationEvent;
 
 public interface ReplicationSupportingService {
+
     void onReplicationEvent(WanReplicationEvent replicationEvent);
 }

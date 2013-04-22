@@ -16,6 +16,8 @@
 
 package com.hazelcast.wan;
 
-public interface WanReplicationListener {
+public interface WanReplicationPublisher {
+
     void publishReplicationEvent(String serviceName, ReplicationEventObject eventObject);
+
 }

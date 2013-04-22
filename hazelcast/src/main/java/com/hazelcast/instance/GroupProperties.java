@@ -43,7 +43,6 @@ public class GroupProperties {
     public static final String PROP_SOCKET_NO_DELAY = "hazelcast.socket.no.delay";
     public static final String PROP_SERIALIZER_GZIP_ENABLED = "hazelcast.serializer.gzip.enabled";
     public static final String PROP_SERIALIZER_SHARED = "hazelcast.serializer.shared";
-    public static final String PROP_PACKET_VERSION = "hazelcast.packet.version";
     public static final String PROP_SHUTDOWNHOOK_ENABLED = "hazelcast.shutdownhook.enabled";
     public static final String PROP_WAIT_SECONDS_BEFORE_JOIN = "hazelcast.wait.seconds.before.join";
     public static final String PROP_MAX_WAIT_SECONDS_BEFORE_JOIN = "hazelcast.max.wait.seconds.before.join";

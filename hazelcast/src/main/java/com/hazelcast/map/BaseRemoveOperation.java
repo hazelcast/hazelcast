@@ -22,8 +22,6 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.util.Clock;
 
-import java.util.Date;
-
 public abstract class BaseRemoveOperation extends LockAwareOperation implements BackupAwareOperation {
 
     protected transient Data dataOldValue;
@@ -40,7 +38,7 @@ public abstract class BaseRemoveOperation extends LockAwareOperation implements 
         int eventType = EntryEvent.TYPE_REMOVED;
         mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, null);
         invalidateNearCaches();
-        if (mapContainer.getWanReplicationListener() != null && mapContainer.getWanMergePolicy() != null) {
+        if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
             // todo should evict operation replicated??
             mapService.publishWanReplicationRemove(name, dataKey, Clock.currentTimeMillis());
         }
