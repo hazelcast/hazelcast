@@ -41,7 +41,7 @@ import java.util.logging.Level;
 public class QueueContainer implements DataSerializable {
 
     private LinkedList<QueueItem> itemQueue = null;
-    private final HashMap<Long, QueueItem> backupMap = new HashMap<Long, QueueItem>(1000);
+    private HashMap<Long, QueueItem> backupMap = null;
     private final Map<Long, QueueItem> txMap = new HashMap<Long, QueueItem>();
     private final HashMap<Long, Data> dataMap = new HashMap<Long, Data>();
 
@@ -113,7 +113,7 @@ public class QueueContainer implements DataSerializable {
     }
 
     public boolean txnPollBackupReserve(long itemId) {
-        QueueItem item = backupMap.remove(itemId);
+        QueueItem item = getBackupMap().remove(itemId);
         if (item == null) {
             throw new TransactionException("Backup reserve failed: " + itemId);
         }
@@ -175,6 +175,9 @@ public class QueueContainer implements DataSerializable {
         if (!backup) {
             getItemQueue().offer(item);
         }
+        else{
+            getBackupMap().put(itemId, item);
+        }
         if (store.isEnabled()) {
             try {
                 store.store(item.getItemId(), data);
@@ -217,7 +220,7 @@ public class QueueContainer implements DataSerializable {
         if (!store.isEnabled() || store.getMemoryLimit() > getItemQueue().size()) {
             item.setData(data);
         }
-        backupMap.put(itemId, item);
+        getBackupMap().put(itemId, item);
     }
 
     public Map<Long, Data> addAll(Collection<Data> dataList) {
@@ -249,7 +252,7 @@ public class QueueContainer implements DataSerializable {
             if (!store.isEnabled() || store.getMemoryLimit() > getItemQueue().size()) {
                 item.setData(entry.getValue());
             }
-            backupMap.put(item.getItemId(), item);
+            getBackupMap().put(item.getItemId(), item);
         }
     }
 
@@ -286,7 +289,7 @@ public class QueueContainer implements DataSerializable {
     }
 
     public void pollBackup(long itemId) {
-        QueueItem item = backupMap.remove(itemId);
+        QueueItem item = getBackupMap().remove(itemId);
         if (item != null) {
             age(item, Clock.currentTimeMillis());//For Stats
         }
@@ -336,22 +339,25 @@ public class QueueContainer implements DataSerializable {
         return getItemQueue().size(); //TODO check max size
     }
 
+    public int backupSize(){
+        return getBackupMap().size();
+    }
+
     public Map<Long, Data> clear() {
+        long current = Clock.currentTimeMillis();
+        LinkedHashMap<Long, Data> map = new LinkedHashMap<Long, Data>(getBackupMap().size());
+        for (QueueItem item : getBackupMap().values()) {
+            map.put(item.getItemId(), item.getData());
+            age(item, current); // For stats
+        }
         if (store.isEnabled()) {
             try {
-                store.deleteAll(backupMap.keySet());
+                store.deleteAll(map.keySet());
             } catch (Exception e) {
                 throw new HazelcastException(e);
             }
         }
-        long current = Clock.currentTimeMillis();
-        LinkedHashMap<Long, Data> map = new LinkedHashMap<Long, Data>(backupMap.size());
-        for (QueueItem item : backupMap.values()) {
-            map.put(item.getItemId(), item.getData());
-            age(item, current); // For stats
-        }
         getItemQueue().clear();
-        backupMap.clear();
         dataMap.clear();
         return map;
     }
@@ -385,7 +391,7 @@ public class QueueContainer implements DataSerializable {
     }
 
     public void removeBackup(long itemId) {
-        backupMap.remove(itemId);
+        getBackupMap().remove(itemId);
     }
 
     /**
@@ -487,14 +493,32 @@ public class QueueContainer implements DataSerializable {
     LinkedList<QueueItem> getItemQueue() {
         if (itemQueue == null) {
             itemQueue = new LinkedList<QueueItem>();
-            if (!backupMap.isEmpty()) {
+            if (backupMap != null && !backupMap.isEmpty()) {
                 List<QueueItem> values = new ArrayList<QueueItem>(backupMap.values());
                 Collections.sort(values);
                 itemQueue.addAll(values);
+                backupMap.clear();
+                backupMap = null;
             }
         }
         return itemQueue;
     }
+
+    Map<Long, QueueItem> getBackupMap(){
+        if (backupMap == null){
+            backupMap = new HashMap<Long, QueueItem>();
+            if (itemQueue != null){
+                for (QueueItem item: itemQueue){
+                    backupMap.put(item.getItemId(), item);
+                }
+                itemQueue.clear();
+                itemQueue = null;
+            }
+        }
+        return backupMap;
+    }
+
+
 
     public Data getDataFromMap(long itemId) {
         return dataMap.remove(itemId);
@@ -514,7 +538,7 @@ public class QueueContainer implements DataSerializable {
     }
 
     void setId(long itemId) {
-        idGenerator = Math.max(itemId, idGenerator);
+        idGenerator = Math.max(itemId+1, idGenerator);
     }
 
     public QueueWaitNotifyKey getPollWaitNotifyKey() {

@@ -208,6 +208,8 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
 
     public LocalQueueStats createLocalQueueStats(String name, int partitionId) {
         LocalQueueStatsImpl stats = getLocalQueueStatsImpl(name);
+        stats.setOwnedItemCount(0);
+        stats.setBackupItemCount(0);
         QueueContainer container = containerMap.get(name);
         if (container == null) {
             return stats;
@@ -217,10 +219,10 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         PartitionInfo info = nodeEngine.getPartitionService().getPartitionInfo(partitionId);
         if (thisAddress.equals(info.getOwner())) { //TODO @msk two nodes owner ????
             stats.setOwnedItemCount(container.size());
-//            System.out.println("I am owner : " + nodeEngine.getLocalMember().getAddress());
+//            System.err.println("I am owner : " + nodeEngine.getLocalMember().getAddress());
         } else {
-            stats.setBackupItemCount(container.size());
-//            System.out.println("I am backup : " + nodeEngine.getLocalMember().getAddress());
+            stats.setBackupItemCount(container.backupSize());
+//            System.err.println("I am backup : " + nodeEngine.getLocalMember().getAddress());
         }
         container.setStats(stats);
         return stats;

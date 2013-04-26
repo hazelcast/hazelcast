@@ -19,6 +19,7 @@ package com.hazelcast.queue;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.StaticNodeFactory;
+import com.hazelcast.monitor.LocalQueueStats;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -50,6 +51,39 @@ public class BasicQueueTest {
     @After
     public void cleanup() {
         Hazelcast.shutdownAll();
+    }
+
+    @Test
+    public void testQueueStats(){
+        Config config = new Config();
+        final String name = "t_queue";
+        HazelcastInstance ins1 = Hazelcast.newHazelcastInstance(config);
+        IQueue q = ins1.getQueue(name);
+        for (int i=0; i<2; i++){
+            q.offer("item"+i);
+        }
+        HazelcastInstance ins2 = Hazelcast.newHazelcastInstance(config);
+        for (int i=0; i<2; i++){
+            q.offer("item"+i);
+        }
+//        HazelcastInstance ins3 = Hazelcast.newHazelcastInstance(config);
+//        for (int i=0; i<100; i++){
+//            q.offer("item"+i);
+//        }
+
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        LocalQueueStats stats = ins1.getQueue(name).getLocalQueueStats();
+        System.err.println("owned : " + stats.getOwnedItemCount() + " back: " + stats.getBackupItemCount());
+        stats = ins2.getQueue(name).getLocalQueueStats();
+        System.err.println("owned : " + stats.getOwnedItemCount() + " back: " + stats.getBackupItemCount());
+//        stats = ins3.getQueue(name).getLocalQueueStats();
+//        System.err.println("owned : " + stats.getOwnedItemCount() + " back: " + stats.getBackupItemCount());
+
     }
 
     @Test
