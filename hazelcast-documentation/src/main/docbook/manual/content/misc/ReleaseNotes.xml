@@ -28,6 +28,17 @@
     </para>
 
     <para>
+        <emphasis role="bold">2.5.1</emphasis>
+        <itemizedlist>
+            <listitem>
+                <para><link xlink:href="https://github.com/hazelcast/hazelcast/issues?milestone=18&amp;state=closed">
+                    Fixed issues:</link></para>
+                <para>187, 310, 395, 408, 409, 410, 411, 418, 427, 428, 430, 447, 448, 449, 452, 454, 455, 456, 457, 462, 466, 467</para>
+            </listitem>
+        </itemizedlist>
+    </para>
+
+    <para>
         <emphasis role="bold">2.5</emphasis>
         <itemizedlist>
             <listitem>

@@ -60,7 +60,7 @@
 
     <hz:client id="client"
         group-name="${cluster.group.name}" group-password="${cluster.group.password}"
-        connect-attempt-limit="3" connect-timeout="1000"
+        connect-attempt-limit="3" connect-timeout="10000"
         reconnect-attempt-limit="2" reconnect-timeout="3000"
         auto-update-members="false" shuffle-members="true">
         <hz:member>127.0.0.1:5700</hz:member>
@@ -68,7 +68,7 @@
     </hz:client>
 
     <hz:client id="client2"
-               connect-attempt-limit="3" connect-timeout="1000"
+               connect-attempt-limit="3" connect-timeout="10000"
                reconnect-attempt-limit="2" reconnect-timeout="3000"
                auto-update-members="false" shuffle-members="true" credentials-ref="credentials" >
         <hz:member>127.0.0.1:5700</hz:member>
