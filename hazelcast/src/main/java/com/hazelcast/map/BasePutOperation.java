@@ -21,7 +21,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.ResponseHandler;
-import com.hazelcast.util.Clock;
 
 public abstract class BasePutOperation extends LockAwareOperation implements BackupAwareOperation {
 
@@ -43,7 +42,7 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
         int eventType = dataOldValue == null ? EntryEvent.TYPE_ADDED : EntryEvent.TYPE_UPDATED;
         mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, dataValue);
         invalidateNearCaches();
-        if (mapContainer.getWanReplicationListener() != null && mapContainer.getWanMergePolicy() != null) {
+        if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
             SimpleEntryView entryView = new SimpleEntryView(dataKey, mapService.toData(dataValue), recordStore.getRecords().get(dataKey));
             mapService.publishWanReplicationUpdate(name, entryView);
         }

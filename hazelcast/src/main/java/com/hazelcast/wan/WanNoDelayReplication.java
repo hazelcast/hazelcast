@@ -62,7 +62,6 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
         }
     }
 
-
     public void shutdown() {
         running = false;
     }
@@ -71,7 +70,7 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
         Connection conn = null;
         while (running) {
             try {
-                WanReplicationEvent operation = (failureQ.size() > 0) ? failureQ.removeFirst() : q.take();
+                WanReplicationEvent event = (failureQ.size() > 0) ? failureQ.removeFirst() : q.take();
                 if (conn == null) {
                     conn = getConnection();
                     if (conn != null) {
@@ -86,12 +85,12 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
                     }
                 }
                 if (conn != null && conn.live()) {
-                    Data data = node.nodeEngine.getSerializationService().toData(operation);
-                    Packet operationPacket = new Packet(data, node.nodeEngine.getSerializationContext());
-                    operationPacket.setHeader(Packet.HEADER_WAN_REPLICATION);
-                    node.nodeEngine.send(operationPacket, conn);
+                    Data data = node.nodeEngine.getSerializationService().toData(event);
+                    Packet packet = new Packet(data, node.nodeEngine.getSerializationContext());
+                    packet.setHeader(Packet.HEADER_WAN_REPLICATION);
+                    node.nodeEngine.send(packet, conn);
                 } else {
-                    failureQ.addFirst(operation);
+                    failureQ.addFirst(event);
                     conn = null;
                 }
             } catch (InterruptedException e) {

@@ -725,13 +725,13 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     public void publishWanReplicationUpdate(String mapName, EntryView entryView) {
         MapContainer mapContainer = getMapContainer(mapName);
         MapReplicationUpdate replicationEvent = new MapReplicationUpdate(mapName, mapContainer.getWanMergePolicy(), entryView);
-        mapContainer.getWanReplicationListener().publishReplicationEvent(SERVICE_NAME, replicationEvent);
+        mapContainer.getWanReplicationPublisher().publishReplicationEvent(SERVICE_NAME, replicationEvent);
     }
 
     public void publishWanReplicationRemove(String mapName, Data key, long removeTime) {
         MapContainer mapContainer = getMapContainer(mapName);
         MapReplicationRemove replicationEvent = new MapReplicationRemove(mapName, key, removeTime);
-        mapContainer.getWanReplicationListener().publishReplicationEvent(SERVICE_NAME, replicationEvent);
+        mapContainer.getWanReplicationPublisher().publishReplicationEvent(SERVICE_NAME, replicationEvent);
     }
 
     public void publishEvent(Address caller, String mapName, int eventType, Data dataKey, Data dataOldValue, Data dataValue) {

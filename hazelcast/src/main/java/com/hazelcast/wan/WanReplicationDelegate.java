@@ -16,11 +16,12 @@
 
 package com.hazelcast.wan;
 
-public class WanReplication implements WanReplicationListener {
+final class WanReplicationDelegate implements WanReplicationPublisher {
+
     final String name;
     final WanReplicationEndpoint[] endpoints;
 
-    public WanReplication(String name, WanReplicationEndpoint[] endpoints) {
+    public WanReplicationDelegate(String name, WanReplicationEndpoint[] endpoints) {
         this.name = name;
         this.endpoints = endpoints;
     }
@@ -33,7 +34,6 @@ public class WanReplication implements WanReplicationListener {
         return name;
     }
 
-    @Override
     public void publishReplicationEvent(String serviceName, ReplicationEventObject eventObject) {
         for (WanReplicationEndpoint endpoint : endpoints) {
             endpoint.publishReplicationEvent(serviceName, eventObject);
