@@ -78,7 +78,8 @@ public class ReplicaSyncRequest extends Operation implements PartitionAwareOpera
             }
         }
 
-        ReplicaSyncResponse syncResponse = new ReplicaSyncResponse(data, partitionService.getPartitionVersion(partitionId));
+        final long[] replicaVersions = partitionService.getPartitionReplicaVersions(partitionId);
+        ReplicaSyncResponse syncResponse = new ReplicaSyncResponse(data, replicaVersions);
         syncResponse.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
         final Address target = getCallerAddress();
         if (logger.isLoggable(Level.FINEST)) {

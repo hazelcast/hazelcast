@@ -21,12 +21,14 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.partition.PartitionServiceImpl;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.logging.Level;
 
 /**
@@ -36,42 +38,47 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
 
     private Operation backupOp;
     private Address originalCaller;
-    private long version;
+    private long[] replicaVersions;
     private boolean sync;
 
     Backup() {
     }
 
-    public Backup(Operation backupOp, Address originalCaller, long version, boolean sync) {
+    public Backup(Operation backupOp, Address originalCaller, long[] replicaVersions, boolean sync) {
         this.backupOp = backupOp;
         this.originalCaller = originalCaller;
         this.sync = sync;
-        this.version = version;
+        this.replicaVersions = replicaVersions;
     }
 
     public void beforeRun() throws Exception {
-        final NodeEngine nodeEngine = getNodeEngine();
-        backupOp.setNodeEngine(nodeEngine);
-        backupOp.setResponseHandler(new ResponseHandler() {
-            public void sendResponse(Object obj) {
-                if (obj instanceof Throwable && !(obj instanceof RetryableException)) {
-                    Throwable t = (Throwable) obj;
-                    nodeEngine.getLogger(getClass()).log(Level.SEVERE, t.getMessage(), t);
+        if (backupOp != null) {
+            final NodeEngine nodeEngine = getNodeEngine();
+            backupOp.setNodeEngine(nodeEngine);
+            backupOp.setResponseHandler(new ResponseHandler() {
+                public void sendResponse(Object obj) {
+                    if (obj instanceof Throwable && !(obj instanceof RetryableException)) {
+                        Throwable t = (Throwable) obj;
+                        nodeEngine.getLogger(getClass()).log(Level.SEVERE, t.getMessage(), t);
+                    }
                 }
-            }
-        });
-        backupOp.setCallerUuid(getCallerUuid());
-        backupOp.setValidateTarget(false);
-        OperationAccessor.setCallerAddress(backupOp, getCallerAddress());
-        OperationAccessor.setInvocationTime(backupOp, Clock.currentTimeMillis());
+            });
+            backupOp.setCallerUuid(getCallerUuid());
+            backupOp.setValidateTarget(false);
+            OperationAccessor.setCallerAddress(backupOp, getCallerAddress());
+            OperationAccessor.setInvocationTime(backupOp, Clock.currentTimeMillis());
+        }
     }
 
     public void run() throws Exception {
         final NodeEngine nodeEngine = getNodeEngine();
         final PartitionServiceImpl partitionService = (PartitionServiceImpl) nodeEngine.getPartitionService();
-        partitionService.updatePartitionVersion(getPartitionId(), getReplicaIndex(), version);
-        final OperationService operationService = nodeEngine.getOperationService();
-        operationService.runOperation(backupOp);
+        partitionService.updatePartitionReplicaVersions(getPartitionId(), replicaVersions, getReplicaIndex());
+
+        if (backupOp != null) {
+            final OperationService operationService = nodeEngine.getOperationService();
+            operationService.runOperation(backupOp);
+        }
     }
 
     public void afterRun() throws Exception {
@@ -111,7 +118,9 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeObject(backupOp);
         originalCaller.writeData(out);
-        out.writeLong(version);
+        for (int i = 0; i < PartitionInfo.MAX_BACKUP_COUNT; i++) {
+            out.writeLong(replicaVersions[i]);
+        }
         out.writeBoolean(sync);
     }
 
@@ -120,7 +129,10 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
         backupOp = in.readObject();
         originalCaller = new Address();
         originalCaller.readData(in);
-        version = in.readLong();
+        replicaVersions = new long[PartitionInfo.MAX_BACKUP_COUNT];
+        for (int i = 0; i < PartitionInfo.MAX_BACKUP_COUNT; i++) {
+            replicaVersions[i] = in.readLong();
+        }
         sync = in.readBoolean();
     }
 
@@ -135,7 +147,7 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
         sb.append("Backup");
         sb.append("{backupOp=").append(backupOp);
         sb.append(", originalCaller=").append(originalCaller);
-        sb.append(", version=").append(version);
+        sb.append(", version=").append(Arrays.toString(replicaVersions));
         sb.append(", sync=").append(sync);
         sb.append('}');
         return sb.toString();

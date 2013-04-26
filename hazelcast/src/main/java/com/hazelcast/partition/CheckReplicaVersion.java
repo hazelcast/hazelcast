@@ -44,11 +44,15 @@ public class CheckReplicaVersion extends Operation implements PartitionAwareOper
 
     public void run() throws Exception {
         final PartitionServiceImpl partitionService = getService();
-        final long currentVersion = partitionService.getPartitionVersion(getPartitionId());
+        final int partitionId = getPartitionId();
+        final int replicaIndex = getReplicaIndex();
+        final long[] currentVersions = partitionService.getPartitionReplicaVersions(partitionId);
+        final long currentVersion = currentVersions[replicaIndex];
+
         if (currentVersion != version) {
             getLogger().log(Level.INFO, "Backup partition version is not matching version of the owner " +
                     "-> " + currentVersion + " -vs- " + version);
-            partitionService.syncPartitionReplica(getPartitionId(), getReplicaIndex(), false);
+            partitionService.syncPartitionReplica(partitionId, replicaIndex, false);
         }
     }
 
