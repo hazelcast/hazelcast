@@ -581,10 +581,6 @@ public abstract class BaseManager {
 
         public Object waitAndGetResult() {
             // should be more than request timeout
-//            final long noResponseTimeout = (request.timeout == Long.MAX_VALUE || request.timeout < 0)
-//                                           ? Long.MAX_VALUE
-//                                           : request.timeout > 0 ? (long)(request.timeout * 1.5f) + MIN_POLL_TIMEOUT
-//                                                                         : responsePollTimeout;
             final long noResponseTimeout = (request.timeout == Long.MAX_VALUE || request.timeout < 0)
                     ? Long.MAX_VALUE : maxOperationTimeout;
 
@@ -834,9 +830,13 @@ public abstract class BaseManager {
         protected void onStillWaiting() {
             enqueueAndReturn(new Processable() {
                 public void process() {
-                if (targetConnection != null && !targetConnection.live()) {
-                    redo(REDO_CONNECTION_NOT_ALIVE);
-                }
+                    if (targetConnection != null && !targetConnection.live()) {
+                        if (target == null && !thisAddress.equals(target)) {
+                            redo(REDO_CONNECTION_NOT_ALIVE);
+                        } else {
+                            targetConnection = null;
+                        }
+                    }
                 }
             });
         }
@@ -924,6 +924,7 @@ public abstract class BaseManager {
                 setRedoResult(REDO_PARTITION_MIGRATING);
             } else {
                 request.call = TargetAwareOp.this;
+                targetConnection = null;
                 request.local = true;
                 ((RequestHandler) getPacketProcessor(request.operation)).handle(request);
             }

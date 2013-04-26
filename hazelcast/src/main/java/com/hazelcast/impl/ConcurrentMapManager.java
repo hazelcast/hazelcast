@@ -4108,6 +4108,12 @@ public class ConcurrentMapManager extends BaseManager {
             public void onMigrate() {
                 returnRedoResponse(request, REDO_PARTITION_MIGRATING);
             }
+
+            @Override
+            public String toString() {
+                return getClass().getSimpleName() + "[" + id + "]{ request= " + request +
+                        ", neverExpires=" + neverExpires() + ", timeout= " + timeout + "}";
+            }
         };
         record.addScheduledAction(scheduledAction);
         node.clusterManager.registerScheduledAction(scheduledAction);

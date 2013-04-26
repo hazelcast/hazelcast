@@ -138,12 +138,17 @@ public class ClusterLockTest {
         assertTrue(h3.getPartitionService().getPartition(1).getOwner().equals(h2.getCluster().getLocalMember()));
         assertTrue(h2.getPartitionService().getPartition(1).getOwner().localMember());
         assertTrue(map1.tryLock(1));
+
         final CountDownLatch latchLock = new CountDownLatch(1);
+        final CountDownLatch latchUnlock = new CountDownLatch(1);
         new Thread(new Runnable() {
             public void run() {
                 try {
                     map3.lock(1);
-                    assertTrue(latchLock.await(20, TimeUnit.SECONDS));
+                    latchLock.countDown();
+                    Thread.sleep(1000);
+                    map3.unlock(1);
+                    latchUnlock.countDown();
                 } catch (Throwable e) {
                     e.printStackTrace();
                     fail(e.getMessage());
@@ -151,34 +156,43 @@ public class ClusterLockTest {
             }
         }).start();
         Thread.sleep(2000);
+
         Record rec1 = cmap1.getRecord(dKey);
         Record rec2 = cmap2.getRecord(dKey);
         Record rec3 = cmap3.getRecord(dKey);
         assertNull(rec1);
         assertNotNull(rec2);
         assertNotNull(rec3);
+
+        assertEquals(1, rec2.getScheduledActionCount());
+        assertEquals(0, rec3.getScheduledActionCount());
+        assertTrue(rec2.getScheduledActions().iterator().next().isValid());
+
         DistributedLock lock2 = rec2.getLock();
         DistributedLock lock3 = rec3.getLock();
-        assertEquals(1, rec2.getScheduledActionCount());
-        assertTrue(rec2.getScheduledActions().iterator().next().isValid());
         Assert.assertNotNull(lock2);
         Assert.assertNotNull(lock3);
+
         h2.getLifecycleService().shutdown();
         Thread.sleep(3000);
+
         assertEquals(h3.getCluster().getLocalMember(), h1.getPartitionService().getPartition(1).getOwner());
         assertEquals(h3.getCluster().getLocalMember(), h3.getPartitionService().getPartition(1).getOwner());
+
         assertEquals(1, map1.put(1, 2));
         Thread.sleep(5000); // scheduled action may be invalid because of backup copy, wait a little.
         rec3 = cmap3.getRecord(dKey);
         assertEquals(1, rec3.getScheduledActionCount());
         assertTrue(rec3.getScheduledActions().iterator().next().isValid());
         map1.unlock(1);
+        assertTrue(latchLock.await(3, TimeUnit.SECONDS));
         lock3 = rec3.getLock();
         assertNotNull(lock3);
         assertEquals(lock3.getLockAddress(), ((MemberImpl) h3.getCluster().getLocalMember()).getAddress());
         assertEquals(1, lock3.getLockCount());
-        latchLock.countDown();
         assertFalse(map1.tryLock(1));
+        assertTrue(latchUnlock.await(3, TimeUnit.SECONDS));
+        assertTrue(map1.tryLock(1));
     }
 
     @Test
