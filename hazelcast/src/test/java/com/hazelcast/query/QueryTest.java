@@ -1161,4 +1161,34 @@ public class QueryTest extends TestUtil {
             ex.shutdownNow();
         }
     }
+
+    @Test
+    public void testOneMemberWithIndexAndOneMemberWithout() {
+        final int size = 10000;
+        final String name = "testOneMemberWithIndexAndOneMemberWithout";
+        Config config = new Config();
+        config.getMapConfig(name).addMapIndexConfig(new MapIndexConfig("this", false));
+
+        final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(new Config());
+
+        final IMap<Object,Object> map1 = hz1.getMap(name);
+        final IMap<Object,Object> map2 = hz2.getMap(name);
+
+        for (int i = 0; i < size; i++) {
+            if (i % 2 == 1) {
+                map1.put(i, i);
+            } else {
+                map2.put(i, i);
+            }
+        }
+        assertEquals(size, map1.size());
+        assertEquals(size, map2.size());
+
+        for (int i = 0; i < size; i++) {
+            map1.remove(i);
+        }
+        assertTrue(map1.isEmpty());
+        assertTrue(map2.isEmpty());
+    }
 }
