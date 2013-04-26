@@ -517,15 +517,19 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
 
         public void addIndex(final Expression expression, final boolean ordered) {
             final CountDownLatch latch = new CountDownLatch(1);
+            final AddMapIndex addMapIndexProcess = new AddMapIndex(name, expression, ordered);
             concurrentMapManager.enqueueAndReturn(new Processable() {
                 public void process() {
-                    AddMapIndex addMapIndexProcess = new AddMapIndex(name, expression, ordered);
                     concurrentMapManager.sendProcessableToAll(addMapIndexProcess, true);
                     latch.countDown();
                 }
             });
             try {
                 latch.await();
+                final Throwable error = addMapIndexProcess.getError();
+                if (error != null) {
+                    Util.throwUncheckedException(error);
+                }
             } catch (InterruptedException ignored) {
             }
         }

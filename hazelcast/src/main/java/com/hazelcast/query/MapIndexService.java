@@ -18,6 +18,7 @@ package com.hazelcast.query;
 
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.impl.Record;
+import com.hazelcast.impl.concurrentmap.QueryException;
 import com.hazelcast.nio.Data;
 
 import java.util.*;
@@ -133,9 +134,8 @@ public class MapIndexService {
         if (index == null) {
             if (size() > 0) {
                 StringBuilder sb = new StringBuilder("Index can only be added before adding entries!");
-                sb.append("\n");
-                sb.append("Add indexes first and only once then put entries.");
-                throw new RuntimeException(sb.toString());
+                sb.append(" Add indexes first and only once then put entries.");
+                throw new QueryException(sb.toString());
             }
             if (attributeIndex == -1) {
                 attributeIndex = mapIndexes.size();

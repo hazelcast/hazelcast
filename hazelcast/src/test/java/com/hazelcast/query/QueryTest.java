@@ -26,6 +26,7 @@ import com.hazelcast.impl.CMap;
 import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.impl.NodeType;
 import com.hazelcast.impl.TestUtil;
+import com.hazelcast.impl.concurrentmap.QueryException;
 import com.hazelcast.util.Clock;
 import org.junit.After;
 import org.junit.BeforeClass;
@@ -1191,4 +1192,17 @@ public class QueryTest extends TestUtil {
         assertTrue(map1.isEmpty());
         assertTrue(map2.isEmpty());
     }
+
+    @Test(expected = QueryException.class)
+    public void testAddMapIndexAfterAddingEntry() throws Exception {
+        HazelcastInstance hazelcast = Hazelcast.newHazelcastInstance();
+        IMap<String, String> testMap = hazelcast.getMap("testAddMapIndexAfterAddingEntry");
+        testMap.put("key", "value");
+        try {
+            testMap.addIndex("this", false);
+        } finally {
+            assertNotNull("Code should reach here!", testMap.get("key"));
+        }
+    }
+
 }
