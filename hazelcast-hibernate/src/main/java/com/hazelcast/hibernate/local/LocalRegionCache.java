@@ -193,7 +193,7 @@ public class LocalRegionCache implements RegionCache {
                 if (v.getLock() == LOCK_SUCCESS) {
                     continue;
                 }
-                if (v.getCreationTime() + timeToLive > now) {
+                if (v.getCreationTime() + timeToLive < now) {
                     iter.remove();
                 } else if (maxSize > 0 && maxSize != Integer.MAX_VALUE) {
                     if (entries == null) {
