@@ -16,6 +16,7 @@
 
 package com.hazelcast.hibernate.distributed;
 
+import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.hibernate.CacheEnvironment;
@@ -23,9 +24,9 @@ import com.hazelcast.hibernate.HazelcastTimestamper;
 import com.hazelcast.hibernate.RegionCache;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import org.hibernate.cache.CacheDataDescription;
-import org.hibernate.cache.access.SoftLock;
-import org.hibernate.cache.entry.CacheEntry;
+import org.hibernate.cache.spi.CacheDataDescription;
+import org.hibernate.cache.spi.access.SoftLock;
+import org.hibernate.cache.spi.entry.CacheEntry;
 
 import java.util.Comparator;
 import java.util.Map;
@@ -69,7 +70,7 @@ public class IMapRegionCache implements RegionCache {
     }
 
     public boolean update(final Object key, final Object value, final Object currentVersion,
-                       final Object previousVersion, final SoftLock lock) {
+                          final Object previousVersion, final SoftLock lock) {
         if (lock == LOCK_FAILURE) {
             logger.log(Level.WARNING, "Cache lock could not be acquired!");
             return false;
@@ -82,7 +83,7 @@ public class IMapRegionCache implements RegionCache {
                         try {
                             final CacheEntry previousEntry = (CacheEntry) map.get(key);
                             if (previousEntry == null ||
-                                versionComparator.compare(currentEntry.getVersion(), previousEntry.getVersion()) > 0) {
+                                    versionComparator.compare(currentEntry.getVersion(), previousEntry.getVersion()) > 0) {
                                 map.set(key, value, 0, TimeUnit.MILLISECONDS);
                                 return true;
                             } else {
@@ -145,12 +146,12 @@ public class IMapRegionCache implements RegionCache {
 
     public long getSizeInMemory() {
         long size = 0;
-//        for (final Object key : map.keySet()) {
-//            final EntryView entry = map.getMapEntry(key);
-//            if (entry != null) {
-//                size += entry.getCost();
-//            }
-//        }
+        for (final Object key : map.keySet()) {
+            final EntryView entry = map.getEntryView(key);
+            if (entry != null) {
+                size += entry.getCost();
+            }
+        }
         return size;
     }
 

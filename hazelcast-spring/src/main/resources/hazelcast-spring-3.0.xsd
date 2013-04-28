@@ -514,6 +514,8 @@
         <xs:complexContent>
             <xs:extension base="hazelcast-bean">
                 <xs:attribute name="instance-ref" type="xs:string" use="required"/>
+                <!-- valid values are DISTRIBUTED and LOCAL -->
+                <xs:attribute name="mode" type="xs:string" use="optional" default="DISTRIBUTED" />
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>

@@ -155,7 +155,7 @@ public abstract class AbstractXmlConfigHelper {
         return cleanNodeName(node.getNodeName());
     }
 
-    public final static String cleanNodeName(final String nodeName) {
+    public static String cleanNodeName(final String nodeName) {
         String name = nodeName;
         if (name != null) {
             name = nodeName.replaceAll("\\w+:", "").toLowerCase();

@@ -47,14 +47,6 @@ class HazelcastClientLoader implements IHazelcastInstanceLoader {
             unloadInstance();
         }
         String address = PropertiesHelper.getString(CacheEnvironment.NATIVE_CLIENT_ADDRESS, props, null);
-        if (address == null) {
-            String[] hosts = PropertiesHelper.toStringArray(CacheEnvironment.NATIVE_CLIENT_HOSTS, ",", props);
-            if (hosts != null && hosts.length > 0) {
-                address = hosts[0];
-                logger.log(Level.WARNING, "Hibernate property '" + CacheEnvironment.NATIVE_CLIENT_HOSTS + "' " +
-                        "is deprecated, use '" + CacheEnvironment.NATIVE_CLIENT_ADDRESS + "' instead!");
-            }
-        }
         String group = PropertiesHelper.getString(CacheEnvironment.NATIVE_CLIENT_GROUP, props, null);
         String pass = PropertiesHelper.getString(CacheEnvironment.NATIVE_CLIENT_PASSWORD, props, null);
         String configResourcePath = CacheEnvironment.getConfigFilePath(props);
@@ -69,6 +61,7 @@ class HazelcastClientLoader implements IHazelcastInstanceLoader {
         }
         if (clientConfig == null) {
             clientConfig = new ClientConfig();
+            clientConfig.setSmart(true);
             clientConfig.setInitialConnectionAttemptLimit(3);
             clientConfig.setReconnectionAttemptLimit(5);
         }
