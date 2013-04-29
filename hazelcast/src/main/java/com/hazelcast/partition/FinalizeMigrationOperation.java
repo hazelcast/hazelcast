@@ -79,15 +79,11 @@ final class FinalizeMigrationOperation extends AbstractOperation implements Part
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
-        success = in.readBoolean();
-        endpoint = MigrationEndpoint.readFrom(in);
+        throw new UnsupportedOperationException();
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-        out.writeBoolean(success);
-        MigrationEndpoint.writeTo(endpoint, out);
+        throw new UnsupportedOperationException();
     }
 }

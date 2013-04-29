@@ -290,7 +290,7 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                     }
                     if (!valid) {
                         partition.setReplicaAddress(index, null);
-                    } else if (valid && aggressive && index < AGGRESSIVE_INDEX_THRESHOLD) {
+                    } else if (aggressive && index < AGGRESSIVE_INDEX_THRESHOLD) {
                         for (int i = AGGRESSIVE_INDEX_THRESHOLD; i < replicaCount; i++) {
                             partition.setReplicaAddress(i, null);
                         }
@@ -302,6 +302,8 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
 
     private LinkedList<NodeGroup> createNodeGroups(Collection<MemberGroup> memberGroups) {
         LinkedList<NodeGroup> nodeGroups = new LinkedList<NodeGroup>();
+        if (memberGroups == null || memberGroups.isEmpty()) return nodeGroups;
+
         for (MemberGroup memberGroup : memberGroups) {
             final NodeGroup nodeGroup;
             if (memberGroup.size() == 0) {

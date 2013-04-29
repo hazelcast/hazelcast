@@ -25,7 +25,6 @@ import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.merge.MapMergePolicy;
-import com.hazelcast.map.merge.PassThroughMergePolicy;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.IndexService;
@@ -36,7 +35,7 @@ import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
-import com.hazelcast.wan.WanReplicationListener;
+import com.hazelcast.wan.WanReplicationPublisher;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -64,7 +63,7 @@ public class MapContainer {
     private final EntryTaskScheduler ttlEvictionScheduler;
     private final EntryTaskScheduler mapStoreWriteScheduler;
     private final EntryTaskScheduler mapStoreDeleteScheduler;
-    private final WanReplicationListener wanReplicationListener;
+    private final WanReplicationPublisher wanReplicationPublisher;
     private final MapMergePolicy wanMergePolicy;
     private volatile boolean mapReady = false;
 
@@ -145,11 +144,11 @@ public class MapContainer {
 
         WanReplicationRef wanReplicationRef = mapConfig.getWanReplicationRef();
         if (wanReplicationRef != null) {
-            this.wanReplicationListener = nodeEngine.getWanReplicationService().getWanReplication(wanReplicationRef.getName());
+            this.wanReplicationPublisher = nodeEngine.getWanReplicationService().getWanReplicationListener(wanReplicationRef.getName());
             this.wanMergePolicy = mapService.getMergePolicy(wanReplicationRef.getMergePolicy());
         } else {
             wanMergePolicy = null;
-            wanReplicationListener = null;
+            wanReplicationPublisher = null;
         }
 
         interceptors = new CopyOnWriteArrayList<MapInterceptor>();
@@ -229,8 +228,8 @@ public class MapContainer {
         return indexService;
     }
 
-    public WanReplicationListener getWanReplicationListener() {
-        return wanReplicationListener;
+    public WanReplicationPublisher getWanReplicationPublisher() {
+        return wanReplicationPublisher;
     }
 
     public MapMergePolicy getWanMergePolicy() {

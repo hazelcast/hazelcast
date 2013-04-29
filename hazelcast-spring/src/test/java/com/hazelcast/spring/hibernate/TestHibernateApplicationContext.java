@@ -20,6 +20,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.hibernate.HazelcastCacheRegionFactory;
+import com.hazelcast.hibernate.HazelcastLocalCacheRegionFactory;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -44,6 +45,9 @@ public class TestHibernateApplicationContext {
     @Resource(name = "regionFactory")
     private HazelcastCacheRegionFactory regionFactory;
 
+    @Resource(name = "localRegionFactory")
+    private HazelcastLocalCacheRegionFactory localRegionFactory;
+
     @BeforeClass
     @AfterClass
     public static void start() {
@@ -64,5 +68,8 @@ public class TestHibernateApplicationContext {
     public void testRegionFactory() {
         assertNotNull(regionFactory);
         assertEquals(regionFactory.getHazelcastInstance(), instance);
+
+        assertNotNull(localRegionFactory);
+        assertEquals(localRegionFactory.getHazelcastInstance(), instance);
     }
 }

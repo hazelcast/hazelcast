@@ -20,14 +20,12 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
-import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.concurrent.ExecutionException;
@@ -71,7 +69,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
                 }
                 final PartitionServiceImpl partitionService = getService();
                 partitionService.addActiveMigration(migrationInfo);
-                final long partitionVersion = partitionService.getPartitionVersion(migrationInfo.getPartitionId());
+                final long[] replicaVersions = partitionService.getPartitionReplicaVersions(migrationInfo.getPartitionId());
                 final long timeout = nodeEngine.getGroupProperties().PARTITION_MIGRATION_TIMEOUT.getLong();
                 final Collection<Operation> tasks = prepareMigrationTasks();
                 if (tasks.size() > 0) {
@@ -83,7 +81,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
                             serializationService.writeObject(out, task);
                         }
                         final byte[] data = IOUtil.compress(out.toByteArray());
-                        final MigrationOperation migrationOperation = new MigrationOperation(migrationInfo, partitionVersion, data, tasks.size());
+                        final MigrationOperation migrationOperation = new MigrationOperation(migrationInfo, replicaVersions, data, tasks.size());
                         Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(PartitionServiceImpl.SERVICE_NAME,
                                 migrationOperation, to).setTryPauseMillis(1000).setReplicaIndex(getReplicaIndex()).build();
                         Future future = inv.invoke();
@@ -135,13 +133,5 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
             }
         }
         return tasks;
-    }
-
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        super.writeInternal(out);
-    }
-
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        super.readInternal(in);
     }
 }
