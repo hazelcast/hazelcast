@@ -49,6 +49,9 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
         this.originalCaller = originalCaller;
         this.sync = sync;
         this.replicaVersions = replicaVersions;
+        if (sync && originalCaller == null) {
+            throw new IllegalArgumentException("Sync backup requires original caller address!");
+        }
     }
 
     public void beforeRun() throws Exception {
@@ -117,7 +120,12 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeObject(backupOp);
-        originalCaller.writeData(out);
+        if (originalCaller != null) {
+            out.writeBoolean(true);
+            originalCaller.writeData(out);
+        } else {
+            out.writeBoolean(false);
+        }
         for (int i = 0; i < PartitionInfo.MAX_BACKUP_COUNT; i++) {
             out.writeLong(replicaVersions[i]);
         }
@@ -127,8 +135,10 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         backupOp = in.readObject();
-        originalCaller = new Address();
-        originalCaller.readData(in);
+        if (in.readBoolean()) {
+            originalCaller = new Address();
+            originalCaller.readData(in);
+        }
         replicaVersions = new long[PartitionInfo.MAX_BACKUP_COUNT];
         for (int i = 0; i < PartitionInfo.MAX_BACKUP_COUNT; i++) {
             replicaVersions[i] = in.readLong();

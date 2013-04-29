@@ -258,11 +258,19 @@ final class OperationServiceImpl implements OperationService {
 
     private int sendBackups(BackupAwareOperation backupAwareOp) throws Exception {
         final Operation op = (Operation) backupAwareOp;
+        boolean returnsResponse = op.returnsResponse();
         final int maxBackups = node.getClusterService().getSize() - 1;
-        final int syncBackupCount = backupAwareOp.getSyncBackupCount() > 0
+
+        int syncBackupCount = backupAwareOp.getSyncBackupCount() > 0
                 ? Math.min(maxBackups, backupAwareOp.getSyncBackupCount()) : 0;
-        final int asyncBackupCount = (backupAwareOp.getAsyncBackupCount() > 0 && maxBackups > syncBackupCount)
+
+        int asyncBackupCount = (backupAwareOp.getAsyncBackupCount() > 0 && maxBackups > syncBackupCount)
                 ? Math.min(maxBackups - syncBackupCount, backupAwareOp.getAsyncBackupCount()) : 0;
+
+        if (!returnsResponse) {
+            asyncBackupCount += syncBackupCount;
+            syncBackupCount = 0;
+        }
 
         final int totalBackupCount = syncBackupCount + asyncBackupCount;
         if (totalBackupCount > 0) {
