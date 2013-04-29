@@ -459,7 +459,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 if (throwable instanceof OutOfMemoryError) {
                     OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) throwable);
                 }
-                logger.log(Level.FINEST, "Web Management Center will be closed due to exception.", throwable);
+                logger.log(Level.WARNING, "Web Management Center will be closed due to exception.", throwable);
                 shutdown();
             }
         }
@@ -509,7 +509,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 request.writeResponse(ManagementCenterService.this, out);
                 connection.getInputStream();
             } catch (Exception e) {
-                logger.log(Level.FINEST, e.getMessage(), e);
+                logger.log(Level.WARNING, e.getMessage(), e);
             }
         }
 
@@ -548,7 +548,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 if (throwable instanceof OutOfMemoryError) {
                     OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) throwable);
                 }
-                logger.log(Level.FINEST, "Problem on management center while polling task.", throwable);
+                logger.log(Level.WARNING, "Problem on management center while polling task.", throwable);
             }
         }
     }
