@@ -19,59 +19,68 @@ package com.hazelcast.map;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 
 public class RecordState implements DataSerializable {
 
-    protected volatile long ttlExpireTime = 0;
-    protected volatile long idleExpireTime = 0;
-    protected volatile long storeTime = 0;
+    private Record record;
+    private long idleDelayMillis = -1;
+    private long ttlDelayMillis = -1;
+    private long mapstoreWriteDelayMillis = -1;
+    private long mapstoreDeleteDelayMillis = -1;
 
-
-    public boolean isExpired() {
-        return (ttlExpireTime > 0 && ttlExpireTime <= Clock.currentTimeMillis())
-                || (idleExpireTime > 0 && idleExpireTime <= Clock.currentTimeMillis());
+    public RecordState(Record record, long idleDelayMillis, long ttlDelayMillis, long mapstoreWriteDelayMillis, long mapstoreDeleteDelayMillis) {
+        this.record = record;
+        this.idleDelayMillis = idleDelayMillis;
+        this.ttlDelayMillis = ttlDelayMillis;
+        this.mapstoreWriteDelayMillis = mapstoreWriteDelayMillis;
+        this.mapstoreDeleteDelayMillis = mapstoreDeleteDelayMillis;
     }
 
-    public boolean isDirty() {
-        return storeTime > 0;
+    public RecordState(Record record) {
+        this.record = record;
     }
 
-    public void resetStoreTime() {
-        storeTime = 0;
+    public RecordState() {
     }
 
-    public long getStoreTime() {
-        return storeTime;
+    public Record getRecord() {
+        return record;
     }
 
-    public void updateTtlExpireTime(long ttl) {
-        this.ttlExpireTime = Clock.currentTimeMillis() + ttl;
+    public long getIdleDelayMillis() {
+        return idleDelayMillis;
     }
 
-    public void updateStoreTime(long writeDelay) {
-        this.storeTime = Clock.currentTimeMillis() + writeDelay;
+    public long getTtlDelayMillis() {
+        return ttlDelayMillis;
     }
 
-    public void updateIdleExpireTime(long maxIdle) {
-        this.idleExpireTime = Clock.currentTimeMillis() + maxIdle;
+    public long getMapstoreWriteDelayMillis() {
+        return mapstoreWriteDelayMillis;
     }
 
+    public long getMapstoreDeleteDelayMillis() {
+        return mapstoreDeleteDelayMillis;
+    }
+
+    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeLong(ttlExpireTime);
-        out.writeLong(idleExpireTime);
-        out.writeLong(storeTime);
+        out.writeObject(record);
+        out.writeLong(idleDelayMillis);
+        out.writeLong(ttlDelayMillis);
+        out.writeLong(mapstoreWriteDelayMillis);
+        out.writeLong(mapstoreDeleteDelayMillis);
+
     }
 
+    @Override
     public void readData(ObjectDataInput in) throws IOException {
-        ttlExpireTime = in.readLong();
-        idleExpireTime = in.readLong();
-        storeTime = in.readLong();
-    }
-
-    public long getExpirationTime() {
-        return ttlExpireTime;
+        record = in.readObject();
+        idleDelayMillis = in.readLong();
+        ttlDelayMillis = in.readLong();
+        mapstoreWriteDelayMillis = in.readLong();
+        mapstoreDeleteDelayMillis = in.readLong();
     }
 }

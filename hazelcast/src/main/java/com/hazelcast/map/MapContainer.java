@@ -25,12 +25,14 @@ import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.merge.MapMergePolicy;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
@@ -59,7 +61,7 @@ public class MapContainer {
     private final IndexService indexService = new IndexService();
     private final boolean nearCacheEnabled;
     private final AtomicBoolean initialLoaded = new AtomicBoolean(false);
-    private EntryTaskScheduler idleEvictionScheduler;
+    private final EntryTaskScheduler idleEvictionScheduler;
     private final EntryTaskScheduler ttlEvictionScheduler;
     private final EntryTaskScheduler mapStoreWriteScheduler;
     private final EntryTaskScheduler mapStoreDeleteScheduler;
@@ -136,11 +138,7 @@ public class MapContainer {
             mapStoreWriteScheduler = null;
         }
         ttlEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new EvictionProcessor(nodeEngine, mapService, name), true);
-        if (mapConfig.getMaxIdleSeconds() > 0) {
-            idleEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new EvictionProcessor(nodeEngine, mapService, name), true);
-        } else {
-            idleEvictionScheduler = null;
-        }
+        idleEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new EvictionProcessor(nodeEngine, mapService, name), true);
 
         WanReplicationRef wanReplicationRef = mapConfig.getWanReplicationRef();
         if (wanReplicationRef != null) {
@@ -156,11 +154,6 @@ public class MapContainer {
         interceptorIdMap = new ConcurrentHashMap<MapInterceptor, String>();
         nearCacheEnabled = mapConfig.getNearCacheConfig() != null;
     }
-
-    public void createIdleEvictionScheduler(NodeEngine nodeEngine) {
-        idleEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new EvictionProcessor(nodeEngine, mapService, name), true);
-    }
-
 
     public boolean isMapReady() {
         // map ready states whether the map load operation has been finished. if not retry exception is sent.
@@ -184,7 +177,16 @@ public class MapContainer {
             for (Object key : keys) {
                 Data dataKey = mapService.toData(key);
                 int partitionId = nodeEngine.getPartitionService().getPartitionId(dataKey);
-                if (nodeEngine.getPartitionService().getPartitionOwner(partitionId).equals(nodeEngine.getClusterService().getThisAddress())) {
+                Address partitionOwner = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
+                while(partitionOwner == null) {
+                    partitionOwner = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
+                    try {
+                        Thread.sleep(10);
+                    } catch (InterruptedException e) {
+                        ExceptionUtil.rethrow(e);
+                    }
+                }
+                if (partitionOwner.equals(nodeEngine.getClusterService().getThisAddress())) {
                     chunk.put(dataKey, key);
                     if (chunk.size() >= chunkSize) {
                         chunkList.add(chunk);
@@ -319,6 +321,7 @@ public class MapContainer {
                 operation.setNodeEngine(nodeEngine);
                 operation.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
                 operation.setPartitionId(partitionId);
+                OperationAccessor.setCallerAddress(operation, nodeEngine.getThisAddress());
                 operation.setServiceName(MapService.SERVICE_NAME);
                 nodeEngine.getOperationService().executeOperation(operation);
             }

@@ -27,11 +27,9 @@ import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
 
 public class MapFlushOperation extends AbstractMapOperation implements PartitionAwareOperation {
-    boolean flushAll;
 
-    public MapFlushOperation(String name, boolean flushAll) {
+    public MapFlushOperation(String name) {
         super(name);
-        this.flushAll = flushAll;
     }
 
     public MapFlushOperation() {
@@ -39,19 +37,17 @@ public class MapFlushOperation extends AbstractMapOperation implements Partition
 
     public void run() {
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
-        recordStore.flush(flushAll);
+        recordStore.flush();
     }
 
     @Override
     public void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeBoolean(flushAll);
     }
 
     @Override
     public void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        flushAll = in.readBoolean();
     }
 
     @Override

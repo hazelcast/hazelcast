@@ -32,6 +32,7 @@ import static com.hazelcast.map.MapService.SERVICE_NAME;
 public class ClearOperation extends AbstractMapOperation implements BackupAwareOperation, PartitionAwareOperation {
 
     Set<Data> keys;
+    boolean shouldBackup = true;
 
     public ClearOperation(String name) {
         super(name);
@@ -52,6 +53,9 @@ public class ClearOperation extends AbstractMapOperation implements BackupAwareO
             recordStore.removeAll();
             return;
         }
+        if(keys.isEmpty()) {
+            shouldBackup = false;
+        }
         for (Data key : keys) {
             if (!recordStore.isLocked(key)) {
                 recordStore.evict(key);
@@ -60,15 +64,21 @@ public class ClearOperation extends AbstractMapOperation implements BackupAwareO
     }
 
     public boolean shouldBackup() {
-        return true;
+        return shouldBackup;
     }
 
     public int getSyncBackupCount() {
-        return mapService.getMapContainer(name).getBackupCount();
+          return mapService.getMapContainer(name).getBackupCount();
     }
 
     public int getAsyncBackupCount() {
         return mapService.getMapContainer(name).getAsyncBackupCount();
+    }
+
+    @Override
+    public boolean returnsResponse() {
+        // keys is not null when this operation is used in eviction, and no need a response while eviction
+        return keys == null;
     }
 
     public Operation getBackupOperation() {
@@ -86,10 +96,9 @@ public class ClearOperation extends AbstractMapOperation implements BackupAwareO
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(name);
-        if (keys == null)
+        if (keys == null) {
             out.writeInt(-1);
-        else {
+        } else {
             out.writeInt(keys.size());
             for (Data key : keys) {
                 key.writeData(out);
@@ -100,7 +109,6 @@ public class ClearOperation extends AbstractMapOperation implements BackupAwareO
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        name = in.readUTF();
         int size = in.readInt();
         if (size > -1) {
             keys = new HashSet<Data>(size);

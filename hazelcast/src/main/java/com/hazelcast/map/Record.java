@@ -27,10 +27,6 @@ public interface Record<V> extends DataSerializable, Map.Entry<Data,V>, Cloneabl
 
     Record clone() throws CloneNotSupportedException;
 
-    RecordState getState();
-
-    void setState(RecordState state);
-
     RecordStatistics getStatistics();
 
     void setStatistics(RecordStatistics stats);

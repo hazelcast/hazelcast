@@ -26,6 +26,7 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.util.scheduler.ScheduledEntry;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -51,18 +52,16 @@ public class PartitionRecordStore implements RecordStore {
                         mapContainer.getBackupCount(), mapContainer.getAsyncBackupCount());
     }
 
-    // todo flush operation should cancel scheduled mapstore operations
-    public void flush(boolean flushAllRecords) {
+    public void flush() {
+        Set<Data> keys = new HashSet<Data>();
         for (Record record : records.values()) {
-            if (flushAllRecords || record.getState().isDirty()) {
-                mapContainer.getStore().store(mapService.toObject(record.getKey()), mapService.toObject(record.getValue()));
-                record.onStore();
-            }
+            keys.add(record.getKey());
         }
-        for (Data key : toBeRemovedKeys) {
-            if (toBeRemovedKeys.remove(key))
-                mapContainer.getStore().delete(mapService.toObject(key));
+        Set<Data> processedKeys = mapContainer.getMapStoreWriteScheduler().flush(keys);
+        for (Data key : processedKeys) {
+            records.get(key).onStore();
         }
+        mapContainer.getMapStoreDeleteScheduler().flush(toBeRemovedKeys);
     }
 
     public MapContainer getMapContainer() {
@@ -298,7 +297,7 @@ public class PartitionRecordStore implements RecordStore {
         } else {
             oldValue = record.getValue();
         }
-        if(mapService.compare(name, testValue, oldValue)) {
+        if (mapService.compare(name, testValue, oldValue)) {
             mapService.interceptRemove(name, oldValue);
             mapStoreDelete(record, dataKey);
             records.remove(dataKey);
@@ -324,11 +323,7 @@ public class PartitionRecordStore implements RecordStore {
             value = record.getValue();
         }
         value = mapService.interceptGet(name, value);
-//        check if record has expired or removed but waiting delay millis
-        if (record != null && record.getState().isExpired()) {
-            System.out.println("record has been waiting to be deleted");
-            return null;
-        }
+
         return value;
     }
 
@@ -427,7 +422,7 @@ public class PartitionRecordStore implements RecordStore {
         return newValue != null;
     }
 
-      public Object replace(Data dataKey, Object value) {
+    public Object replace(Data dataKey, Object value) {
         Record record = records.get(dataKey);
         Object oldValue = null;
         if (record != null) {
@@ -521,7 +516,6 @@ public class PartitionRecordStore implements RecordStore {
         record.onAccess();
         int maxIdleSeconds = mapContainer.getMapConfig().getMaxIdleSeconds();
         if (maxIdleSeconds > 0) {
-            record.getState().updateIdleExpireTime(maxIdleSeconds * 1000);
             mapService.scheduleIdleEviction(name, record.getKey(), maxIdleSeconds * 1000);
         }
     }
@@ -544,11 +538,7 @@ public class PartitionRecordStore implements RecordStore {
                 if (record != null)
                     record.onStore();
             } else {
-                // check if there is already scheduled store task
-                if (record != null && record.getState().getStoreTime() <= 0) {
-                    record.getState().updateStoreTime(writeDelayMillis);
-                    mapService.scheduleMapStoreWrite(name, key, value, writeDelayMillis);
-                }
+                mapService.scheduleMapStoreWrite(name, key, value, writeDelayMillis);
             }
         }
     }
@@ -570,9 +560,11 @@ public class PartitionRecordStore implements RecordStore {
 
     private void updateTtl(Record record, long ttl) {
         if (ttl > 0) {
-            record.getState().updateTtlExpireTime(ttl);
             mapService.scheduleTtlEviction(name, record.getKey(), ttl);
+        } else if (ttl == 0) {
+            mapContainer.getTtlEvictionScheduler().cancel(record.getKey());
         }
+
     }
 
     public void setRecordValue(Record record, Object value) {

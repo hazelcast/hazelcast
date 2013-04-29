@@ -160,7 +160,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     private void flushMaps() {
         for (PartitionContainer partitionContainer : partitionContainers) {
             for (String mapName : mapContainers.keySet()) {
-                partitionContainer.getRecordStore(mapName).flush(false);
+                partitionContainer.getRecordStore(mapName).flush();
             }
         }
     }
@@ -230,7 +230,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     public MapMergePolicy getMergePolicy(String mergePolicyName) {
         MapMergePolicy mergePolicy = null;
         mergePolicy = mergePolicyMap.get(mergePolicyName);
-        if(mergePolicy == null && mergePolicyName != null) {
+        if (mergePolicy == null && mergePolicyName != null) {
             try {
                 // check if user has entered custom class name instead of policy name
                 mergePolicy = ClassLoaderUtil.newInstance(mergePolicyName);
@@ -240,7 +240,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                 ExceptionUtil.rethrow(e);
             }
         }
-        if(mergePolicy == null) {
+        if (mergePolicy == null) {
             return mergePolicyMap.get(MapConfig.DEFAULT_MAP_MERGE_POLICY);
         }
         return mergePolicy;
@@ -414,7 +414,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
-        logger.log(Level.FINEST, "Preparing replication op -> " + event); // TODO: to FINEST
+        logger.log(Level.FINEST, "Preparing replication op -> " + event);
         final PartitionContainer container = partitionContainers[event.getPartitionId()];
         final MapReplicationOperation operation = new MapReplicationOperation(container, event.getPartitionId(), event.getReplicaIndex());
         return operation.isEmpty() ? null : operation;
@@ -470,10 +470,10 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public Record createRecord(String name, Data dataKey, Object value, long ttl) {
-        return createRecord(name, dataKey, value, ttl, false);
+        return createRecord(name, dataKey, value, ttl, true);
     }
 
-    public Record createRecord(String name, Data dataKey, Object value, long ttl, boolean backup) {
+    public Record createRecord(String name, Data dataKey, Object value, long ttl, boolean shouldSchedule) {
         Record record = null;
         MapContainer mapContainer = getMapContainer(name);
         final MapConfig.InMemoryFormat inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
@@ -488,17 +488,14 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             throw new IllegalArgumentException("Should not happen!");
         }
 
-        if (!backup) {
-            if (ttl <= 0 && mapContainer.getMapConfig().getTimeToLiveSeconds() > 0) {
-                record.getState().updateTtlExpireTime(mapContainer.getMapConfig().getTimeToLiveSeconds() * 1000);
+        if (shouldSchedule) {
+            if (ttl < 0 && mapContainer.getMapConfig().getTimeToLiveSeconds() > 0) {
                 scheduleTtlEviction(name, dataKey, mapContainer.getMapConfig().getTimeToLiveSeconds() * 1000);
             }
             if (ttl > 0) {
-                record.getState().updateTtlExpireTime(ttl);
                 scheduleTtlEviction(name, record.getKey(), ttl);
             }
             if (mapContainer.getMapConfig().getMaxIdleSeconds() > 0) {
-                record.getState().updateIdleExpireTime(mapContainer.getMapConfig().getMaxIdleSeconds() * 1000);
                 scheduleIdleEviction(name, dataKey, mapContainer.getMapConfig().getMaxIdleSeconds() * 1000);
             }
         }
@@ -864,10 +861,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public void scheduleIdleEviction(String mapName, Data key, long delay) {
-        if (getMapContainer(mapName).getIdleEvictionScheduler() == null)
-            getMapContainer(mapName).createIdleEvictionScheduler(nodeEngine);
         getMapContainer(mapName).getIdleEvictionScheduler().schedule(delay, key, null);
-
     }
 
     public void scheduleTtlEviction(String mapName, Data key, long delay) {
@@ -990,11 +984,14 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                             Record rec = (Record) iterator.next();
                             keySet.add(rec.getKey());
                         }
+                        if (keySet.isEmpty())
+                            keySet.add(nodeEngine.toData(1));
                         ClearOperation clearOperation = new ClearOperation(mapName, keySet);
                         clearOperation.setNodeEngine(nodeEngine);
                         clearOperation.setServiceName(SERVICE_NAME);
                         clearOperation.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
                         clearOperation.setPartitionId(i);
+                        OperationAccessor.setCallerAddress(clearOperation, nodeEngine.getThisAddress());
                         nodeEngine.getOperationService().executeOperation(clearOperation);
                     }
                 }
@@ -1090,11 +1087,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                 ConcurrentMap<Data, Record> records = recordStore.getRecords();
                 for (Record record : records.values()) {
                     RecordStatistics stats = record.getStatistics();
-                    RecordState state = record.getState();
                     // there is map store and the record is dirty (waits to be stored)
-                    if (mapContainer.getStore() != null && state.isDirty()) {
-                        dirtyCount++;
-                    }
                     ownedEntryCount++;
                     ownedEntryMemoryCost += record.getCost();
                     localMapStats.setLastAccessTime(stats.getLastAccessTime());
@@ -1132,6 +1125,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             }
         }
 
+        dirtyCount = mapContainer.getMapStoreWriteScheduler().size() + mapContainer.getMapStoreDeleteScheduler().size();
         localMapStats.setDirtyEntryCount(zeroOrPositive(dirtyCount));
         localMapStats.setLockedEntryCount(zeroOrPositive(lockedEntryCount));
         localMapStats.setHits(zeroOrPositive(hits));

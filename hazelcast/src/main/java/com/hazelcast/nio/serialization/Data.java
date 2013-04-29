@@ -213,7 +213,7 @@ public final class Data implements IdentifiedDataSerializable {
     public String toString() {
         return "Data{" +
                 "type=" + type + ", " +
-                "partitionHash=" + partitionHash +
+                "partitionHash=" + getPartitionHash() +
                 "} size= " + bufferSize();
     }
 }

@@ -23,6 +23,8 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.ClearBackupOperation;
+import com.hazelcast.map.ClearOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
