@@ -335,8 +335,7 @@ public class QueueContainer implements DataSerializable {
     }
 
     public int size() {
-        //TODO check tx
-        return getItemQueue().size(); //TODO check max size
+        return Math.min(config.getMaxSize(),getItemQueue().size()); //TODO check max size
     }
 
     public int backupSize(){
@@ -454,7 +453,7 @@ public class QueueContainer implements DataSerializable {
                 QueueItem item = iter.next();
                 if (map.containsKey(item.getItemId())) {
                     iter.remove();
-                    pollBackup(item.getItemId());
+                    age(item, Clock.currentTimeMillis());//For Stats
                 }
             }
         }
