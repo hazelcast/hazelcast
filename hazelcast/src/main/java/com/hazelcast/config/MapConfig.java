@@ -383,16 +383,18 @@ public class MapConfig implements DataSerializable {
         return mergePolicy;
     }
 
-    public void setMergePolicy(String mergePolicy) {
+    public MapConfig setMergePolicy(String mergePolicy) {
         this.mergePolicy = mergePolicy;
+        return this;
     }
 
     public boolean isStatisticsEnabled() {
         return statisticsEnabled;
     }
 
-    public void setStatisticsEnabled(boolean statisticsEnabled) {
+    public MapConfig setStatisticsEnabled(boolean statisticsEnabled) {
         this.statisticsEnabled = statisticsEnabled;
+        return this;
     }
 
     public boolean isReadBackupData() {

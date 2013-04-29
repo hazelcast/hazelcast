@@ -67,7 +67,7 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
                 }
             });
             backupOp.setCallerUuid(getCallerUuid());
-            backupOp.setValidateTarget(false);
+//            backupOp.setValidateTarget(false);
             OperationAccessor.setCallerAddress(backupOp, getCallerAddress());
             OperationAccessor.setInvocationTime(backupOp, Clock.currentTimeMillis());
         }

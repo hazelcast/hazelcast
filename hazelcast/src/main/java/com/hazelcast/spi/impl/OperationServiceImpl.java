@@ -70,7 +70,7 @@ final class OperationServiceImpl implements OperationService {
         final int concurrencyLevel = reallyMultiCore ? coreSize * 4 : 16;
         remoteCalls = new ConcurrentHashMap<Long, RemoteCall>(1000, 0.75f, concurrencyLevel);
         final int opThreadCount = node.getGroupProperties().OPERATION_THREAD_COUNT.getInteger();
-        operationThreadCount =  opThreadCount > 0 ? opThreadCount : coreSize * 2;
+        operationThreadCount =  opThreadCount > 0 ? opThreadCount : coreSize * 2; // TODO: which thread count is best? coreSize OR coreSize * 2 ?
         opExecutors = new ExecutorService[operationThreadCount];
         for (int i = 0; i < opExecutors.length; i++) {
             opExecutors[i] = Executors.newSingleThreadExecutor(new OperationThreadFactory(i));
@@ -117,10 +117,10 @@ final class OperationServiceImpl implements OperationService {
     public void runOperation(Operation op) {
         final int partitionId = getPartitionIdForExecution(op);
         boolean runInCurrentThread = false;
-        final Thread currentThread = Thread.currentThread();
         if (partitionId < 0) {
             runInCurrentThread = true;
         } else {
+            final Thread currentThread = Thread.currentThread();
             if (currentThread instanceof OperationThread) {
                 int tid = ((OperationThread) currentThread).id;
                 runInCurrentThread = partitionId % operationThreadCount == tid;
