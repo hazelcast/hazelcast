@@ -63,13 +63,12 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
             final Operation[] postJoinOperations = nodeEngine.getPostJoinOperations();
             Collection<Future> calls = null;
             if (postJoinOperations != null && postJoinOperations.length > 0) {
-                final PostJoinOperation localPJOp = new PostJoinOperation(postJoinOperations);
                 final Collection<MemberImpl> members = clusterService.getMemberList();
                 calls = new ArrayList<Future>(members.size());
                 for (MemberImpl member : members) {
                     if (!member.localMember()) {
                         Future f = nodeEngine.getOperationService().createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME,
-                                localPJOp, member.getAddress())
+                                new PostJoinOperation(postJoinOperations), member.getAddress())
                                 .setTryCount(10).setTryPauseMillis(100).build().invoke();
                         calls.add(f);
                     }

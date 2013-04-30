@@ -153,6 +153,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public void shutdown() {
+        // todo you should do this before shutdown
         flushMaps();
         destroyMapStores();
         final PartitionContainer[] containers = partitionContainers;

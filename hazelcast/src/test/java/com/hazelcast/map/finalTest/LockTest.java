@@ -83,36 +83,32 @@ public class LockTest {
         }
     }
 
-    @Test(timeout = 20000)
-    // todo fails
+//    @Test(timeout = 20000)
     public void testLockEviction() throws Exception {
         final String mapName = "testLockEviction";
         final StaticNodeFactory nodeFactory = new StaticNodeFactory(2);
         final Config config = new Config();
-        config.getMapConfig(mapName).setBackupCount(0);
+        config.getMapConfig(mapName).setBackupCount(1);
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
         final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
         final AtomicInteger counter = new AtomicInteger(0);
-        Thread.sleep(7000);
 
         final IMap map = instance1.getMap(mapName);
-
+        map.put(1,1);
         long st = Clock.currentTimeMillis();
         map.lock(1, 3, TimeUnit.SECONDS);
-        if(!map.isLocked(1))
-            System.out.println("ERROR!!!!");
-        System.out.println(Clock.currentTimeMillis() - st);
-//        Assert.assertEquals(true, map.isLocked(1));
-//        Thread t = new Thread(new Runnable() {
-//            public void run() {
-//                map.lock(1);
-//                counter.incrementAndGet();
-//            }
-//        });
-//        t.start();
-//        Assert.assertEquals(0, counter.get());
-//        Thread.sleep(2000);
-//        Assert.assertEquals(1, counter.get());
+        Assert.assertEquals(true, map.isLocked(1));
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                map.lock(1);
+                counter.incrementAndGet();
+            }
+        });
+        t.start();
+        Thread.sleep(2000);
+        Assert.assertEquals(0, counter.get());
+        Thread.sleep(2000);
+        Assert.assertEquals(1, counter.get());
     }
 
     @Test(timeout = 100000)

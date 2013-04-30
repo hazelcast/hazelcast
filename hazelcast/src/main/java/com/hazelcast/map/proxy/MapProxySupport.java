@@ -502,7 +502,6 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
     protected Set query(final Predicate predicate, final QueryResultStream.IterationType iterationType, final boolean dataResult) {
         final NodeEngine nodeEngine = getNodeEngine();
         OperationService operationService = nodeEngine.getOperationService();
-        QueryOperation operation = new QueryOperation(name, predicate);
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         Set<Integer> plist = new HashSet<Integer>(partitionCount);
@@ -511,7 +510,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
             List<Future> flist = new ArrayList<Future>();
             for (MemberImpl member : members) {
                 Invocation invocation = operationService
-                        .createInvocationBuilder(SERVICE_NAME, operation, member.getAddress()).build();
+                        .createInvocationBuilder(SERVICE_NAME, new QueryOperation(name, predicate), member.getAddress()).build();
                 Future future = invocation.invoke();
                 flist.add(future);
             }
@@ -534,6 +533,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
                     missingList.add(i);
                 }
             }
+            System.out.println("missings:"+missingList.size());
             List<Future> futures = new ArrayList<Future>(missingList.size());
             for (Integer pid : missingList) {
                 QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(name, predicate);

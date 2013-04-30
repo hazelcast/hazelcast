@@ -662,7 +662,6 @@ public class QueryTest extends TestUtil {
 
     @Test
     public void testNullIndexing() {
-        // todo fails
         Config cfg = new Config();
         StaticNodeFactory nodeFactory = new StaticNodeFactory(2);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
@@ -1215,12 +1214,10 @@ public class QueryTest extends TestUtil {
      */
     @Test
     public void testIndexCleanupOnMigration() throws InterruptedException {
-        // todo fails
         Config cfg = new Config();
         final int n = 6;
         final int runCount = 500;
         final StaticNodeFactory nodeFactory = new StaticNodeFactory(n);
-        HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
         final Config config = new Config();
         config.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
         final String mapName = "testIndexCleanupOnMigration";

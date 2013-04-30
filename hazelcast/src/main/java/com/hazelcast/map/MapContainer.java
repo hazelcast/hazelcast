@@ -109,13 +109,12 @@ public class MapContainer {
             if (nodeEngine.getClusterService().isMaster() && initialLoaded.compareAndSet(false, true)) {
                 loadMapFromStore(true);
                 Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
-                Operation operation = new MapInitialLoadOperation(name);
                 for (Member member : members) {
                     try {
                         if (member.localMember())
                             continue;
                         MemberImpl memberImpl = (MemberImpl) member;
-                        Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, memberImpl.getAddress()).build();
+                        Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, new MapInitialLoadOperation(name), memberImpl.getAddress()).build();
                         invocation.invoke();
                     } catch (Throwable t) {
                         throw ExceptionUtil.rethrow(t);
