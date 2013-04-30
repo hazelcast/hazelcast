@@ -449,6 +449,7 @@ public class QueryTest extends TestUtil {
 
     @Test
     public void testQueryWithIndexesWhileMigrating() throws Exception {
+        // todo fails
         Config cfg = new Config();
         StaticNodeFactory nodeFactory = new StaticNodeFactory(4);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);

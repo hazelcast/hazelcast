@@ -30,7 +30,7 @@ public class ContainsKeyOperation extends KeyBasedMapOperation {
     }
 
     public void run() {
-        containsKey = recordStore.getRecords().containsKey(dataKey);
+        containsKey = recordStore.containsKey(dataKey);
     }
 
     @Override

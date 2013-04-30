@@ -541,8 +541,8 @@ public class MapStoreTest {
         assertNull(map.putIfAbsent("7", employee));
         assertEquals(employee, map.get("7"));
         assertEquals(employee, testMapStore.getStore().get("7"));
-        assertEquals(employee, map.get("8"));
         assertTrue(map.containsKey("8"));
+        assertEquals(employee, map.get("8"));
     }
 
 

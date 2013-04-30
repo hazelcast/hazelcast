@@ -26,6 +26,7 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 
 import java.util.*;
@@ -57,11 +58,17 @@ public class PartitionRecordStore implements RecordStore {
         for (Record record : records.values()) {
             keys.add(record.getKey());
         }
-        Set<Data> processedKeys = mapContainer.getMapStoreWriteScheduler().flush(keys);
-        for (Data key : processedKeys) {
-            records.get(key).onStore();
+        EntryTaskScheduler writeScheduler = mapContainer.getMapStoreWriteScheduler();
+        if (writeScheduler != null) {
+            Set<Data> processedKeys = writeScheduler.flush(keys);
+            for (Data key : processedKeys) {
+                records.get(key).onStore();
+            }
         }
-        mapContainer.getMapStoreDeleteScheduler().flush(toBeRemovedKeys);
+        EntryTaskScheduler deleteScheduler = mapContainer.getMapStoreDeleteScheduler();
+        if (deleteScheduler != null) {
+            deleteScheduler.flush(toBeRemovedKeys);
+        }
     }
 
     public MapContainer getMapContainer() {
