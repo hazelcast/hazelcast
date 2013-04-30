@@ -36,7 +36,6 @@ public class TimestampsRegionCache extends LocalRegionCache implements RegionCac
         return new MessageListener<Object>() {
             public void onMessage(final Message<Object> message) {
                 final Timestamp ts = (Timestamp) message.getMessageObject();
-//                System.err.println("ts = " + ts);
                 final Object key = ts.getKey();
 
                 for (;;) {
