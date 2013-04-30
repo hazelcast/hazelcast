@@ -231,6 +231,9 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
 
     public EntryView<K, V> getEntryView(K key) {
         SimpleEntryView<K, V> entryViewInternal = (SimpleEntryView) getEntryViewInternal(getService().toData(key));
+        if(entryViewInternal == null) {
+            return null;
+        }
         Data value = (Data) entryViewInternal.getValue();
         entryViewInternal.setKey(key);
         entryViewInternal.setValue((V) getService().toObject(value));
