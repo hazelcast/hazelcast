@@ -23,6 +23,8 @@ import java.util.Properties;
  */
 public interface ManagedService {
 
+    String getServiceName();
+
     void init(NodeEngine nodeEngine, Properties properties);
 
     /**

@@ -31,6 +31,7 @@ import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * @mdogan 2/12/13
@@ -42,6 +43,9 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
     private final LockStoreContainer[] containers;
     private final ConcurrentHashMap<ObjectNamespace, EntryTaskScheduler> evictionProcessors = new ConcurrentHashMap<ObjectNamespace, EntryTaskScheduler>();
 
+    final ConcurrentMap<String, ConcurrencyUtil.ConstructorFunction<ObjectNamespace, LockStoreInfo>> constructors
+            = new ConcurrentHashMap<String, ConcurrencyUtil.ConstructorFunction<ObjectNamespace, LockStoreInfo>>();
+
     public LockService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.containers = new LockStoreContainer[nodeEngine.getPartitionService().getPartitionCount()];
@@ -51,6 +55,23 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
     }
 
     public void init(NodeEngine nodeEngine, Properties properties) {
+        registerLockStoreConstructor(SERVICE_NAME, new ConcurrencyUtil.ConstructorFunction<ObjectNamespace, LockStoreInfo>() {
+            public LockStoreInfo createNew(ObjectNamespace key) {
+                return new LockStoreInfo() {
+                    public ObjectNamespace getObjectNamespace() {
+                        return new InternalLockNamespace();
+                    }
+
+                    public int getBackupCount() {
+                        return 1;
+                    }
+
+                    public int getAsyncBackupCount() {
+                        return 0;
+                    }
+                };
+            }
+        });
     }
 
     public void reset() {
@@ -67,9 +88,15 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
         }
     }
 
-    public LockStore createLockStore(int partitionId, ObjectNamespace namespace, int backupCount, int asyncBackupCount) {
+    public void registerLockStoreConstructor(String serviceName, ConcurrencyUtil.ConstructorFunction<ObjectNamespace, LockStoreInfo> constructorFunction) {
+        if (constructors.putIfAbsent(serviceName, constructorFunction) != null) {
+            throw new IllegalArgumentException("!!!");
+        }
+    }
+
+    public LockStore createLockStore(int partitionId, ObjectNamespace namespace) {
         final LockStoreContainer container = getLockContainer(partitionId);
-        container.createLockStore(namespace, backupCount, asyncBackupCount);
+        container.getOrCreateLockStore(namespace);
         return new LockStoreProxy(container, namespace);
     }
 
@@ -103,7 +130,7 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
     }
 
     LockStoreImpl getLockStore(int partitionId, ObjectNamespace namespace) {
-        return getLockContainer(partitionId).getOrCreateDefaultLockStore(namespace);
+        return getLockContainer(partitionId).getOrCreateLockStore(namespace);
     }
 
     public void memberAdded(MembershipServiceEvent event) {
@@ -183,7 +210,7 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
     public void destroyDistributedObject(Object objectId) {
         final Data key = nodeEngine.getSerializationService().toData(objectId);
         for (LockStoreContainer container : containers) {
-            final LockStoreImpl lockStore = container.getOrCreateDefaultLockStore(new InternalLockNamespace());
+            final LockStoreImpl lockStore = container.getOrCreateLockStore(new InternalLockNamespace());
             lockStore.forceUnlock(key);
         }
     }

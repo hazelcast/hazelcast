@@ -72,6 +72,7 @@ class ServiceManager {
         registerService(TransactionManagerServiceImpl.SERVICE_NAME, nodeEngine.getTransactionManagerService());
 
         final ServicesConfig servicesConfigConfig = node.getConfig().getServicesConfig();
+        final Map<String, Properties> serviceProps;
         if (servicesConfigConfig != null) {
             if (servicesConfigConfig.isEnableDefaults()) {
                 logger.log(Level.FINEST, "Registering default services...");
@@ -86,6 +87,7 @@ class ServiceManager {
                 registerService(SemaphoreService.SERVICE_NAME, new SemaphoreService(nodeEngine));
             }
 
+            serviceProps = new HashMap<String, Properties>();
             final Collection<ServiceConfig> serviceConfigs = servicesConfigConfig.getServiceConfigs();
             for (ServiceConfig serviceConfig : serviceConfigs) {
                 if (serviceConfig.isEnabled()) {
@@ -97,6 +99,22 @@ class ServiceManager {
                         registerService(serviceConfig.getName(), service, serviceConfig.getProperties());
                     }
                 }
+            }
+        } else {
+            serviceProps = Collections.emptyMap();
+        }
+
+        for (Object service : services.values()) {
+            if (service instanceof ManagedService) {
+                try {
+                    logger.log(Level.FINEST, "Initializing service -> " + service);
+                    ((ManagedService) service).init(nodeEngine, serviceProps.get(((ManagedService) service).getServiceName()));
+                } catch (Throwable t) {
+                    logger.log(Level.SEVERE, "Error while initializing service: " + t.getMessage(), t);
+                }
+            }
+            if (service instanceof ClientProtocolService) {
+                nodeEngine.getNode().clientCommandService.register((ClientProtocolService) service);
             }
         }
     }
@@ -155,17 +173,6 @@ class ServiceManager {
                 shutdownService((ManagedService) oldService);
             }
             services.put(serviceName, service);
-        }
-        if (service instanceof ManagedService) {
-            try {
-                logger.log(Level.FINEST, "Initializing service -> " + serviceName + ": " + service);
-                ((ManagedService) service).init(nodeEngine, props);
-            } catch (Throwable t) {
-                logger.log(Level.SEVERE, "Error while initializing service: " + t.getMessage(), t);
-            }
-        }
-        if (service instanceof ClientProtocolService) {
-            nodeEngine.getNode().clientCommandService.register((ClientProtocolService) service);
         }
     }
 

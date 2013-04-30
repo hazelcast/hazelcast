@@ -137,6 +137,10 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         }
     }
 
+    public String getServiceName() {
+        return SERVICE_NAME;
+    }
+
     public void init(final NodeEngine nodeEngine, Properties properties) {
         migrationThread.start();
 

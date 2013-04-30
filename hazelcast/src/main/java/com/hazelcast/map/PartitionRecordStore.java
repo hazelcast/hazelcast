@@ -16,7 +16,6 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.concurrent.lock.SharedLockService;
 import com.hazelcast.core.EntryView;
@@ -26,8 +25,8 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
-import com.hazelcast.util.scheduler.ScheduledEntry;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -49,8 +48,7 @@ public class PartitionRecordStore implements RecordStore {
         this.mapContainer = mapService.getMapContainer(name);
         final SharedLockService lockService = mapService.getNodeEngine().getSharedService(SharedLockService.SERVICE_NAME);
         this.lockStore = lockService == null ? null :
-                lockService.createLockStore(partitionContainer.partitionId, new DefaultObjectNamespace(MapService.SERVICE_NAME, name),
-                        mapContainer.getBackupCount(), mapContainer.getAsyncBackupCount());
+                lockService.createLockStore(partitionContainer.partitionId, new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
     }
 
     public void flush() {

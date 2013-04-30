@@ -112,6 +112,10 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         node.connectionManager.addConnectionListener(this);
     }
 
+    public String getServiceName() {
+        return SERVICE_NAME;
+    }
+
     public void init(final NodeEngine nodeEngine, Properties properties) {
         final long mergeFirstRunDelay = node.getGroupProperties().MERGE_FIRST_RUN_DELAY_SECONDS.getLong();
         final long mergeNextRunDelay = node.getGroupProperties().MERGE_NEXT_RUN_DELAY_SECONDS.getLong();

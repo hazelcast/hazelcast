@@ -36,27 +36,20 @@ public class LockStoreContainer {
     private final ConstructorFunction<ObjectNamespace, LockStoreImpl> lockStoreConstructor
             = new ConstructorFunction<ObjectNamespace, LockStoreImpl>() {
         public LockStoreImpl createNew(ObjectNamespace key) {
-            return new LockStoreImpl(key, 1, 0, lockService);
+            final ConstructorFunction<ObjectNamespace, LockStoreInfo> ctor = lockService.constructors.get(key.getServiceName());
+            if (ctor != null) {
+                final LockStoreInfo info = ctor.createNew(key);
+                if (info != null) {
+                    return new LockStoreImpl(key, info.getBackupCount(), info.getAsyncBackupCount(), lockService);
+                }
+            }
+            throw new IllegalArgumentException("No LockStore constructor is registered!");
         }
     };
 
     public LockStoreContainer(LockService lockService, int partitionId) {
         this.lockService = lockService;
         this.partitionId = partitionId;
-    }
-
-    public LockStoreImpl createLockStore(ObjectNamespace namespace, int backupCount, int asyncBackupCount) {
-        final LockStoreImpl ls = new LockStoreImpl(namespace, backupCount, asyncBackupCount, lockService);
-        final LockStoreImpl current;
-        if ((current = lockStores.putIfAbsent(namespace, ls)) != null) {
-            if (current.getBackupCount() != ls.getBackupCount()
-                    || current.getAsyncBackupCount() != ls.getAsyncBackupCount()) {
-                throw new IllegalStateException("LockStore for namespace[" + namespace + "] is already created! " +
-                        current + " - VS - " + ls);
-            }
-            return current;
-        }
-        return ls;
     }
 
     void clearLockStore(ObjectNamespace namespace) {
@@ -66,7 +59,7 @@ public class LockStoreContainer {
         }
     }
 
-    LockStoreImpl getOrCreateDefaultLockStore(ObjectNamespace namespace) {
+    LockStoreImpl getOrCreateLockStore(ObjectNamespace namespace) {
         return ConcurrencyUtil.getOrPutIfAbsent(lockStores, namespace, lockStoreConstructor);
     }
 

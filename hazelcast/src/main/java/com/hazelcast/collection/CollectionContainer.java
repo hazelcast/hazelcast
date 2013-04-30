@@ -64,8 +64,7 @@ public class CollectionContainer {
 
         this.lockNamespace = new DefaultObjectNamespace(CollectionService.SERVICE_NAME, proxyId);
         final SharedLockService lockService = nodeEngine.getSharedService(SharedLockService.SERVICE_NAME);
-        this.lockStore = lockService == null ? null :
-                lockService.createLockStore(partitionId, lockNamespace, config.getSyncBackupCount(), config.getAsyncBackupCount());
+        this.lockStore = lockService == null ? null : lockService.createLockStore(partitionId, lockNamespace);
         creationTime = Clock.currentTimeMillis();
     }
 

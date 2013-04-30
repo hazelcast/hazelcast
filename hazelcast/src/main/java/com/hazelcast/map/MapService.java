@@ -18,6 +18,8 @@ package com.hazelcast.map;
 
 import com.hazelcast.client.ClientCommandHandler;
 import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.concurrent.lock.LockStoreInfo;
+import com.hazelcast.concurrent.lock.SharedLockService;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
@@ -109,6 +111,27 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         for (int i = 0; i < partitionCount; i++) {
             partitionContainers[i] = new PartitionContainer(this, i);
+        }
+        final SharedLockService lockService = nodeEngine.getSharedService(SharedLockService.SERVICE_NAME);
+        if (lockService != null) {
+            lockService.registerLockStoreConstructor(SERVICE_NAME, new ConstructorFunction<ObjectNamespace, LockStoreInfo>() {
+                public LockStoreInfo createNew(final ObjectNamespace key) {
+                    final MapContainer mapContainer = getMapContainer(String.valueOf(key.getObjectId()));
+                    return new LockStoreInfo() {
+                        public ObjectNamespace getObjectNamespace() {
+                            return key;
+                        }
+
+                        public int getBackupCount() {
+                            return mapContainer.getBackupCount();
+                        }
+
+                        public int getAsyncBackupCount() {
+                            return mapContainer.getAsyncBackupCount();
+                        }
+                    };
+                }
+            });
         }
         nodeEngine.getExecutionService().scheduleAtFixedRate(new MapEvictTask(), 1, 1, TimeUnit.SECONDS);
     }
