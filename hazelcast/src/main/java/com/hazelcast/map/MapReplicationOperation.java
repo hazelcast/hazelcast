@@ -98,7 +98,7 @@ public class MapReplicationOperation extends AbstractOperation {
                         mapService.scheduleIdleEviction(mapName, key, recordState.getIdleDelayMillis());
                     }
                     if(recordState.getTtlDelayMillis() >= 0) {
-                        mapService.scheduleTtlEviction(mapName, key, recordState.getTtlDelayMillis());
+                        mapService.scheduleTtlEviction(mapName, record, recordState.getTtlDelayMillis());
                     }
                     if(recordState.getMapstoreWriteDelayMillis() >= 0) {
                         mapService.scheduleMapStoreWrite(mapName, key, record.getValue(), recordState.getMapstoreWriteDelayMillis());

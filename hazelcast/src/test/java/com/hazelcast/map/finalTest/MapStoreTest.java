@@ -46,7 +46,6 @@ public class MapStoreTest {
 
     @Test
     public void testMapInitialLoad() throws InterruptedException {
-        // todo fails
         int size = 10000;
 
         StaticNodeFactory nodeFactory = new StaticNodeFactory(3);

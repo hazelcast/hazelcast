@@ -23,7 +23,7 @@
         http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
     <title>Distributed Map</title>
     <para>Just like queue and set, Hazelcast will partition your map entries; and almost evenly
-        distribute onto all Hazelcast members. Distributed maps have 1 backup (replica-count) by
+        distribute onto all Hazelcast members. Distributed maps have 1 backup by
         default so that if a member goes down, we don't lose data. Backup operations are synchronous
         so when a
         <literal>map.put(key, value)</literal>
@@ -112,6 +112,8 @@ public boolean removeCustomer (Customer customer) {
     <xi:include href="map/MapEviction.xml"/>
     <xi:include href="map/MapPersistence.xml"/>
     <xi:include href="map/MapQuery.xml"/>
+    <xi:include href="map/MapEntryProcessor.xml"/>
+    <xi:include href="map/MapInterceptor.xml"/>
     <xi:include href="map/MapNearCache.xml"/>
     <xi:include href="map/MapEntry.xml"/>
     <xi:include href="map/MapIndex.xml"/>

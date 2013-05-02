@@ -494,15 +494,25 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         }
     }
 
-    public void executeOnAllKeys(EntryProcessor entryProcessor) {
+    public Map executeOnAllKeys(EntryProcessor entryProcessor) {
+        Map result = new HashMap();
         try {
             PartitionWideEntryOperation operation = new PartitionWideEntryOperation(name, entryProcessor);
             operation.setServiceName(SERVICE_NAME);
             Map<Integer, Object> results = getNodeEngine().getOperationService()
                     .invokeOnAllPartitions(SERVICE_NAME, operation);
+            for (Object o : results.values()) {
+                if (o != null) {
+                    Map tempMap = (Map)o;
+                    for (Object key : tempMap.keySet()) {
+                        result.put(getService().toObject(key), getService().toObject(tempMap.get(key)));
+                    }
+                }
+            }
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
+        return result;
     }
 
     protected Set query(final Predicate predicate, final QueryResultStream.IterationType iterationType, final boolean dataResult) {
@@ -539,7 +549,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
                     missingList.add(i);
                 }
             }
-            System.out.println("missings:"+missingList.size());
+            System.out.println("missings:" + missingList.size());
             List<Future> futures = new ArrayList<Future>(missingList.size());
             for (Integer pid : missingList) {
                 QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(name, predicate);

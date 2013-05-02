@@ -885,9 +885,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
 
     /**
      * Applies the user defined EntryProcessor to the all entries in the map.
+     * Returns the results mapped by each key in the map.
      * <p/>
      *
      */
-    void executeOnAllKeys(EntryProcessor entryProcessor);
+    Map<K,Object> executeOnAllKeys(EntryProcessor entryProcessor);
 
 }

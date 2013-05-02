@@ -31,14 +31,14 @@ public class MapMergeTest {
         cfg1.setProperty("hazelcast.merge.first.run.delay.seconds","0");
         cfg1.setProperty("hazelcast.merge.next.run.delay.seconds","1");
         cfg1.getGroupConfig().setName("group1");
-        cfg1.getMapConfig("default").setMergePolicy(HigherHitsMapMergePolicy.NAME);
+        cfg1.getMapConfig("default").setMergePolicy(HigherHitsMapMergePolicy.class.getName());
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg1);
 
         Config cfg2 = new Config();
         cfg2.setProperty("hazelcast.merge.first.run.delay.seconds","0");
         cfg2.setProperty("hazelcast.merge.next.run.delay.seconds","1");
         cfg2.getGroupConfig().setName("group2");
-        cfg2.getMapConfig("default").setMergePolicy(HigherHitsMapMergePolicy.NAME);
+        cfg2.getMapConfig("default").setMergePolicy(HigherHitsMapMergePolicy.class.getName());
         HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(cfg2);
 
         Map map1 = instance1.getMap("map");

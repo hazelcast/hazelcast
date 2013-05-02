@@ -76,9 +76,12 @@ public class EntryProcessorTest {
             map.put(i, i);
         }
         EntryProcessor entryProcessor = new IncrementorEntryProcessor();
-        map.executeOnAllKeys(entryProcessor);
+        Map<Integer, Object> res = map.executeOnAllKeys(entryProcessor);
         for (int i = 0; i < size; i++) {
             assertEquals(map.get(i), (Object) (i+1));
+        }
+        for (int i = 0; i < size; i++) {
+            assertEquals(map.get(i)+1, res.get(i));
         }
         instance1.getLifecycleService().shutdown();
         instance2.getLifecycleService().shutdown();
@@ -93,7 +96,7 @@ public class EntryProcessorTest {
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(cfg);
-        IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
+        IMap<Integer, Integer> map = instance1.getMap("testBackupMapEntryProcessorAllKeys");
         int size = 100;
         for (int i = 0; i < size; i++) {
             map.put(i, i);
@@ -105,7 +108,7 @@ public class EntryProcessorTest {
         }
         instance1.getLifecycleService().shutdown();
         Thread.sleep(1000);
-        IMap<Integer, Integer> map2 = instance2.getMap("testMapEntryProcessor");
+        IMap<Integer, Integer> map2 = instance2.getMap("testBackupMapEntryProcessorAllKeys");
         for (int i = 0; i < size; i++) {
             assertEquals(map2.get(i), (Object) (i+1));
         }
@@ -148,7 +151,7 @@ public class EntryProcessorTest {
         public Object process(Map.Entry entry) {
             Integer value = (Integer) entry.getValue();
             entry.setValue(value + 1);
-            return true;
+            return value + 1;
         }
 
         public EntryBackupProcessor getBackupProcessor() {

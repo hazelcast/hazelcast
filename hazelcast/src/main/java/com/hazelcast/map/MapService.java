@@ -17,7 +17,6 @@
 package com.hazelcast.map;
 
 import com.hazelcast.client.ClientCommandHandler;
-import com.hazelcast.clientv2.ClientBinaryService;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.concurrent.lock.LockStoreInfo;
 import com.hazelcast.concurrent.lock.SharedLockService;
@@ -56,6 +55,7 @@ import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.transaction.Transaction;
+import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
@@ -72,8 +72,7 @@ import java.util.logging.Level;
 
 public class MapService implements ManagedService, MigrationAwareService, MembershipAwareService,
         TransactionalService, RemoteService, EventPublishingService<EventData, EntryListener>,
-        ClientProtocolService, PostJoinAwareService, SplitBrainHandlerService,
-        ReplicationSupportingService, ClientBinaryService {
+        ClientProtocolService, PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService {
 
     public final static String SERVICE_NAME = "hz:impl:mapService";
 
@@ -92,10 +91,10 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         partitionContainers = new PartitionContainer[nodeEngine.getPartitionService().getPartitionCount()];
         ownedPartitions = new AtomicReference<List<Integer>>();
         mergePolicyMap = new ConcurrentHashMap<String, MapMergePolicy>();
-        mergePolicyMap.put(PutIfAbsentMapMergePolicy.NAME, new PutIfAbsentMapMergePolicy());
-        mergePolicyMap.put(HigherHitsMapMergePolicy.NAME, new HigherHitsMapMergePolicy());
-        mergePolicyMap.put(PassThroughMergePolicy.NAME, new PassThroughMergePolicy());
-        mergePolicyMap.put(LatestUpdateMapMergePolicy.NAME, new LatestUpdateMapMergePolicy());
+        mergePolicyMap.put(PutIfAbsentMapMergePolicy.class.getName(), new PutIfAbsentMapMergePolicy());
+        mergePolicyMap.put(HigherHitsMapMergePolicy.class.getName(), new HigherHitsMapMergePolicy());
+        mergePolicyMap.put(PassThroughMergePolicy.class.getName(), new PassThroughMergePolicy());
+        mergePolicyMap.put(LatestUpdateMapMergePolicy.class.getName(), new LatestUpdateMapMergePolicy());
     }
 
     private final ConcurrentMap<String, LocalMapStatsImpl> statsMap = new ConcurrentHashMap<String, LocalMapStatsImpl>(1000);
@@ -516,10 +515,10 @@ public class MapService implements ManagedService, MigrationAwareService, Member
 
         if (shouldSchedule) {
             if (ttl < 0 && mapContainer.getMapConfig().getTimeToLiveSeconds() > 0) {
-                scheduleTtlEviction(name, dataKey, mapContainer.getMapConfig().getTimeToLiveSeconds() * 1000);
+                scheduleTtlEviction(name, record, mapContainer.getMapConfig().getTimeToLiveSeconds() * 1000);
             }
             if (ttl > 0) {
-                scheduleTtlEviction(name, record.getKey(), ttl);
+                scheduleTtlEviction(name, record, ttl);
             }
             if (mapContainer.getMapConfig().getMaxIdleSeconds() > 0) {
                 scheduleIdleEviction(name, dataKey, mapContainer.getMapConfig().getMaxIdleSeconds() * 1000);
@@ -890,8 +889,11 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         getMapContainer(mapName).getIdleEvictionScheduler().schedule(delay, key, null);
     }
 
-    public void scheduleTtlEviction(String mapName, Data key, long delay) {
-        getMapContainer(mapName).getTtlEvictionScheduler().schedule(delay, key, null);
+    public void scheduleTtlEviction(String mapName, Record record, long delay) {
+        if (record.getStatistics() != null) {
+            record.getStatistics().setExpirationTime(Clock.currentTimeMillis() + delay);
+        }
+        getMapContainer(mapName).getTtlEvictionScheduler().schedule(delay, toData(record.getKey()), null);
     }
 
     public void scheduleMapStoreWrite(String mapName, Data key, Object value, long delay) {
@@ -1100,6 +1102,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         long hits = 0;
         long lockedEntryCount = 0;
 
+        int backupCount = mapContainer.getTotalBackupCount();
         ClusterService clusterService = nodeEngine.getClusterService();
         final PartitionService partitionService = nodeEngine.getPartitionService();
 
@@ -1122,7 +1125,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                     }
                 }
             } else {
-                final int backupCount = Math.min(mapContainer.getTotalBackupCount(), PartitionInfo.MAX_REPLICA_COUNT - 1);
                 for (int replica = 1; replica <= backupCount; replica++) {
                     Address replicaAddress = partitionInfo.getReplicaAddress(replica);
                     int tryCount = 30;

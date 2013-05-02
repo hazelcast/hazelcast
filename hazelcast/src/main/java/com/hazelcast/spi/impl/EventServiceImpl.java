@@ -90,8 +90,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
                 nodeEngine.getThisAddress(), listener, localOnly);
         if (segment.addRegistration(topic, reg)) {
             if (!localOnly) {
-                final RegistrationOperation op = new RegistrationOperation(reg);
-                invokeOnOtherNodes(serviceName, op);
+                invokeRegistrationOnOtherNodes(serviceName, reg);
             }
             return reg;
         } else {
@@ -109,8 +108,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         if (segment != null) {
             final Registration reg = segment.removeRegistration(topic, String.valueOf(id));
             if (reg != null && !reg.isLocalOnly()) {
-                final DeregistrationOperation op = new DeregistrationOperation(topic, String.valueOf(id));
-                invokeOnOtherNodes(serviceName, op);
+                invokeDeregistrationOnOtherNodes(serviceName, topic, String.valueOf(id));
             }
             return reg != null;
         }
@@ -131,13 +129,35 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         }
     }
 
-    private void invokeOnOtherNodes(String serviceName, Operation op) {
+    private void invokeRegistrationOnOtherNodes(String serviceName, Registration reg) {
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         Collection<Future> calls = new ArrayList<Future>(members.size());
         for (MemberImpl member : members) {
             if (!member.localMember()) {
                 Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(serviceName,
-                        op, member.getAddress()).build();
+                        new RegistrationOperation(reg), member.getAddress()).build();
+                calls.add(inv.invoke());
+            }
+        }
+        for (Future f : calls) {
+            try {
+                f.get(5, TimeUnit.SECONDS);
+            } catch (InterruptedException ignored) {
+            } catch (TimeoutException ignored) {
+            } catch (ExecutionException e) {
+                throw new HazelcastException(e);
+            }
+        }
+    }
+
+
+    private void invokeDeregistrationOnOtherNodes(String serviceName, String topic, String id) {
+        Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+        Collection<Future> calls = new ArrayList<Future>(members.size());
+        for (MemberImpl member : members) {
+            if (!member.localMember()) {
+                Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(serviceName,
+                        new DeregistrationOperation(topic, id), member.getAddress()).build();
                 calls.add(inv.invoke());
             }
         }

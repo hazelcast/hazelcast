@@ -29,7 +29,7 @@ public interface MapMergePolicy extends DataSerializable {
      * @param mapName       name of the map
      * @param mergingEntry  entry merging into the destination cluster
      * @param existingEntry existing entry in the destination cluster
-     * @return final value of the entry. If returns null then no change on the entry.
+     * @return final value of the entry. If returns null then entry will be removed.
      */
     Object merge(String mapName, EntryView mergingEntry, EntryView existingEntry);
 

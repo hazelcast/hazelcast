@@ -20,10 +20,36 @@ import java.io.Serializable;
 
 public interface MapInterceptor extends Serializable {
 
+    /**
+     * Intercept get operation before returning value.
+     * Return another object to change the return value of get(..)
+     * Returning null will cause the get(..) operation return original value, namely return null if you do not want to change anything.
+     * <p/>
+     *
+     * @param value the original value to be returned as the result of get(..) operation
+     * @return the new value that will be returned by get(..) operation
+     */
     Object interceptGet(Object value);
 
+
+    /**
+     * Called after get(..) operation is completed.
+     * <p/>
+     *
+     * @param value the value returned as the result of get(..) operation
+     */
     void afterGet(Object value);
 
+    /**
+     * Intercept put operation before modifying map data.
+     * Return another object to change the value to be put int
+     * Returning null will cause the get(..) operation return original value, namely return null if you do not want to change anything.
+     * <p/>
+     *
+     * @param oldValue the value currently in map
+     * @param newValue the new value to be put
+     * @return new value after intercept operation
+     */
     Object interceptPut(Object oldValue, Object newValue);
 
     void afterPut(Object value);

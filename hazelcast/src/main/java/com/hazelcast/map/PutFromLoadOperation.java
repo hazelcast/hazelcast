@@ -32,13 +32,18 @@ public class PutFromLoadOperation extends BasePutOperation {
     }
 
     @Override
+    public boolean returnsResponse() {
+        return false;
+    }
+
+    @Override
     public Object getResponse() {
-        return null;
+        return true;
     }
 
     @Override
     public void onWaitExpire() {
-        getResponseHandler().sendResponse(null);
+        getResponseHandler().sendResponse(true);
     }
 
     @Override
