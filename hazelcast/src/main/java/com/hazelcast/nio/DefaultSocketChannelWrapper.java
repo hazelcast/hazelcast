@@ -61,8 +61,8 @@ public class DefaultSocketChannelWrapper implements SocketChannelWrapper {
         return socketChannel.read(byteBuffer);
     }
 
-    public long read(ByteBuffer[] byteBuffers, int i, int i1) throws IOException {
-        return socketChannel.read(byteBuffers, i, i1);
+    public long read(ByteBuffer[] byteBuffers, int offset, int length) throws IOException {
+        return socketChannel.read(byteBuffers, offset, length);
     }
 
     public long read(ByteBuffer[] byteBuffers) throws IOException {
@@ -73,8 +73,8 @@ public class DefaultSocketChannelWrapper implements SocketChannelWrapper {
         return socketChannel.write(byteBuffer);
     }
 
-    public long write(ByteBuffer[] byteBuffers, int i, int i1) throws IOException {
-        return socketChannel.write(byteBuffers, i, i1);
+    public long write(ByteBuffer[] byteBuffers, int offset, int length) throws IOException {
+        return socketChannel.write(byteBuffers, offset, length);
     }
 
     public long write(ByteBuffer[] byteBuffers) throws IOException {
@@ -97,7 +97,7 @@ public class DefaultSocketChannelWrapper implements SocketChannelWrapper {
         return socketChannel.keyFor(selector);
     }
 
-    public SelectionKey register(Selector selector, int i, Object o) throws ClosedChannelException {
-        return socketChannel.register(selector, i, o);
+    public SelectionKey register(Selector selector, int ops, Object attachment) throws ClosedChannelException {
+        return socketChannel.register(selector, ops, attachment);
     }
 }

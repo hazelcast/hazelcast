@@ -16,16 +16,16 @@
 
 package com.hazelcast.security;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
 
 /**
  * Abstract implementation of {@link Credentials}
  */
-public abstract class AbstractCredentials implements Credentials, DataSerializable {
+public abstract class AbstractCredentials implements Credentials, Portable {
 
     private static final long serialVersionUID = 3587995040707072446L;
 
@@ -82,19 +82,20 @@ public abstract class AbstractCredentials implements Credentials, DataSerializab
         return true;
     }
 
-    public final void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(principal);
-        out.writeUTF(endpoint);
-        writeDataInternal(out);
+
+    public final void writePortable(PortableWriter writer) throws IOException {
+        writer.writeUTF("principal", principal);
+        writer.writeUTF("endpoint", endpoint);
+        writePortableInternal(writer);
     }
 
-    public final void readData(ObjectDataInput in) throws IOException {
-        principal = in.readUTF();
-        endpoint = in.readUTF();
-        readDataInternal(in);
+    public final void readPortable(PortableReader reader) throws IOException {
+        principal = reader.readUTF("principal");
+        endpoint = reader.readUTF("endpoint");
+        readPortableInternal(reader);
     }
 
-    protected abstract void writeDataInternal(ObjectDataOutput out) throws IOException;
+    protected abstract void writePortableInternal(PortableWriter writer) throws IOException;
 
-    protected abstract void readDataInternal(ObjectDataInput in) throws IOException;
+    protected abstract void readPortableInternal(PortableReader reader) throws IOException;
 }

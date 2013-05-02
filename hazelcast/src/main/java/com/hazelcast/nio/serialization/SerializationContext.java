@@ -25,13 +25,11 @@ public interface SerializationContext {
 
     int getVersion();
 
-    ClassDefinition lookup(int classId);
+    ClassDefinition lookup(int factoryId, int classId);
 
-    ClassDefinition lookup(int classId, int version);
+    ClassDefinition lookup(int factoryId, int classId, int version);
 
-    Portable createPortable(int classId);
-
-    ClassDefinition createClassDefinition(byte[] binary) throws IOException;
+    ClassDefinition createClassDefinition(int factoryId, byte[] binary) throws IOException;
 
     ClassDefinition registerClassDefinition(ClassDefinition cd);
 

@@ -166,17 +166,6 @@ public class ConfigXmlGenerator {
             xml.append("<iteration-count>").append(sec.getIterationCount()).append("</iteration-count>");
         }
         xml.append("</symmetric-encryption>");
-        final AsymmetricEncryptionConfig asec = netCfg.getAsymmetricEncryptionConfig();
-        xml.append("<asymmetric-encryption enabled=\"").append(asec != null && asec.isEnabled()).append("\">");
-        if (asec != null) {
-            xml.append("<algorithm>").append(asec.getAlgorithm()).append("</algorithm>");
-            xml.append("<keyPassword>").append(asec.getKeyPassword()).append("</keyPassword>");
-            xml.append("<keyAlias>").append(asec.getKeyAlias()).append("</keyAlias>");
-            xml.append("<storeType>").append(asec.getStoreType()).append("</storeType>");
-            xml.append("<storePassword>").append(asec.getStorePassword()).append("</storePassword>");
-            xml.append("<storePath>").append(asec.getStorePath()).append("</storePath>");
-        }
-        xml.append("</asymmetric-encryption>");
         xml.append("</network>");
         final Collection<ExecutorConfig> exCfgs = config.getExecutorConfigs();
         for (ExecutorConfig ex : exCfgs) {

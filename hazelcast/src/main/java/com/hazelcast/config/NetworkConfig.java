@@ -47,15 +47,13 @@ public class NetworkConfig implements DataSerializable {
 
     private SymmetricEncryptionConfig symmetricEncryptionConfig = null;
 
-    private AsymmetricEncryptionConfig asymmetricEncryptionConfig = null;
-
     private SocketInterceptorConfig socketInterceptorConfig = null;
 
     private SSLConfig sslConfig = null;
 
     public NetworkConfig() {
         String os = System.getProperty("os.name").toLowerCase();
-        reuseAddress = (os.indexOf("win") == -1);
+        reuseAddress = (!os.contains("win"));
     }
 
     /**
@@ -187,15 +185,6 @@ public class NetworkConfig implements DataSerializable {
         return this;
     }
 
-    public AsymmetricEncryptionConfig getAsymmetricEncryptionConfig() {
-        return asymmetricEncryptionConfig;
-    }
-
-    public NetworkConfig setAsymmetricEncryptionConfig(final AsymmetricEncryptionConfig asymmetricEncryptionConfig) {
-        this.asymmetricEncryptionConfig = asymmetricEncryptionConfig;
-        return this;
-    }
-
     public SSLConfig getSSLConfig() {
         return sslConfig;
     }
@@ -210,14 +199,9 @@ public class NetworkConfig implements DataSerializable {
         interfaces.writeData(out);
         join.writeData(out);
         boolean hasSymmetricEncryptionConfig = symmetricEncryptionConfig != null;
-        boolean hasAsymmetricEncryptionConfig = asymmetricEncryptionConfig != null;
-        out.writeByte(ByteUtil.toByte(portAutoIncrement, reuseAddress,
-                hasSymmetricEncryptionConfig, hasAsymmetricEncryptionConfig));
+        out.writeByte(ByteUtil.toByte(portAutoIncrement, reuseAddress, hasSymmetricEncryptionConfig));
         if (hasSymmetricEncryptionConfig) {
             symmetricEncryptionConfig.writeData(out);
-        }
-        if (hasAsymmetricEncryptionConfig) {
-            asymmetricEncryptionConfig.writeData(out);
         }
     }
 
@@ -231,14 +215,9 @@ public class NetworkConfig implements DataSerializable {
         portAutoIncrement = b[0];
         reuseAddress = b[1];
         boolean hasSymmetricEncryptionConfig = b[2];
-        boolean hasAsymmetricEncryptionConfig = b[3];
         if (hasSymmetricEncryptionConfig) {
             symmetricEncryptionConfig = new SymmetricEncryptionConfig();
             symmetricEncryptionConfig.readData(in);
-        }
-        if (hasAsymmetricEncryptionConfig) {
-            asymmetricEncryptionConfig = new AsymmetricEncryptionConfig();
-            asymmetricEncryptionConfig.readData(in);
         }
     }
 
@@ -254,7 +233,6 @@ public class NetworkConfig implements DataSerializable {
         sb.append(", sslConfig=").append(sslConfig);
         sb.append(", socketInterceptorConfig=").append(socketInterceptorConfig);
         sb.append(", symmetricEncryptionConfig=").append(symmetricEncryptionConfig);
-        sb.append(", asymmetricEncryptionConfig=").append(asymmetricEncryptionConfig);
         sb.append('}');
         return sb.toString();
     }

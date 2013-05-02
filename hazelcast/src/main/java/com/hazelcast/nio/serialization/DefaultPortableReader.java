@@ -236,9 +236,11 @@ public class DefaultPortableReader implements PortableReader {
             if (!NULL) {
                 final ContextAwareDataInput ctxIn = (ContextAwareDataInput) in;
                 try {
+                    ctxIn.setFactoryId(fd.getFactoryId());
                     ctxIn.setDataClassId(fd.getClassId());
                     return serializer.read(in);
                 } finally {
+                    ctxIn.setFactoryId(cd.getFactoryId());
                     ctxIn.setDataClassId(cd.getClassId());
                 }
             }
@@ -268,6 +270,7 @@ public class DefaultPortableReader implements PortableReader {
                 final int offset = in.position();
                 final ContextAwareDataInput ctxIn = (ContextAwareDataInput) in;
                 try {
+                    ctxIn.setFactoryId(fd.getFactoryId());
                     ctxIn.setDataClassId(fd.getClassId());
                     for (int i = 0; i < len; i++) {
                         final int start = in.readInt(offset + i * 4);
@@ -275,6 +278,7 @@ public class DefaultPortableReader implements PortableReader {
                         portables[i] = serializer.read(in);
                     }
                 } finally {
+                    ctxIn.setFactoryId(cd.getFactoryId());
                     ctxIn.setDataClassId(cd.getClassId());
                 }
             }

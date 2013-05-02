@@ -17,7 +17,6 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.ascii.TextCommandService;
-import com.hazelcast.config.AsymmetricEncryptionConfig;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
@@ -31,7 +30,7 @@ import java.util.Collection;
 
 public interface IOService {
 
-    public static final int KILO_BYTE = 1024;
+    static final int KILO_BYTE = 1024;
 
     boolean isActive();
 
@@ -53,13 +52,13 @@ public interface IOService {
 
     SymmetricEncryptionConfig getSymmetricEncryptionConfig();
 
-    AsymmetricEncryptionConfig getAsymmetricEncryptionConfig();
-
     SSLConfig getSSLConfig();
 
     void handleClientCommand(Protocol protocol);
 
     void handleMemberPacket(Packet p);
+
+    void handleClientPacket(ClientPacket p);
 
     TextCommandService getTextCommandService();
 

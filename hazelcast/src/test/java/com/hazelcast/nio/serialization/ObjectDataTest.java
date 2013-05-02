@@ -36,7 +36,7 @@ public class ObjectDataTest {
 
     @Test
     public void testDataWriter() throws IOException {
-        SerializationService ss = new SerializationServiceImpl(1, null);
+        SerializationService ss = new SerializationServiceImpl(1);
         final Person person = new Person(111, 123L, 89.56d, "test-person",
                 new Address("street", 987));
 
@@ -48,7 +48,7 @@ public class ObjectDataTest {
 
         ByteBuffer buffer = ByteBuffer.allocate(1024);
         DataAdapter dataAdapter = new DataAdapter(data1, ss.getSerializationContext());
-        dataAdapter.writeTo(buffer);
+        Assert.assertTrue(dataAdapter.writeTo(buffer));
 
         Assert.assertEquals(bytes1.length, buffer.position());
         byte[] bytes2 = new byte[buffer.position()];
@@ -67,7 +67,7 @@ public class ObjectDataTest {
 
     @Test
     public void testDataStreams() throws IOException {
-        SerializationService ss = new SerializationServiceImpl(1, null);
+        SerializationService ss = new SerializationServiceImpl(1);
 
         final Person person = new Person(111, 123L, 89.56d, "test-person",
                 new Address("street", 987));

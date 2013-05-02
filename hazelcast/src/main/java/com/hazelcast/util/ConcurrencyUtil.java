@@ -51,7 +51,4 @@ public class ConcurrencyUtil {
         return value;
     }
 
-    public static interface ConstructorFunction<K,V> {
-        V createNew(K key);
-    }
 }

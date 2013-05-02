@@ -19,6 +19,7 @@ package com.hazelcast.instance;
 import com.hazelcast.ascii.TextCommandService;
 import com.hazelcast.ascii.TextCommandServiceImpl;
 import com.hazelcast.client.ClientCommandService;
+import com.hazelcast.clientv2.ClientEngineImpl;
 import com.hazelcast.cluster.*;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
@@ -76,6 +77,8 @@ public class Node {
     public final SerializationServiceImpl serializationService;
 
     public final NodeEngineImpl nodeEngine;
+
+    public final ClientEngineImpl clientEngine;
 
     public final PartitionServiceImpl partitionService;
 
@@ -154,6 +157,7 @@ public class Node {
         }
         securityContext = config.getSecurityConfig().isEnabled() ? initializer.getSecurityContext() : null;
         nodeEngine = new NodeEngineImpl(this);
+        clientEngine = new ClientEngineImpl(this);
         connectionManager = nodeContext.createConnectionManager(this, serverSocketChannel);
         clusterService = new ClusterServiceImpl(this);
         partitionService = new PartitionServiceImpl(this);
@@ -385,6 +389,7 @@ public class Node {
                 managementCenterService.shutdown();
             }
             logger.log(Level.FINEST, "Shutting down client command service");
+            clientEngine.shutdown();
             clientCommandService.shutdown();
             logger.log(Level.FINEST, "Shutting down node engine");
             nodeEngine.shutdown();

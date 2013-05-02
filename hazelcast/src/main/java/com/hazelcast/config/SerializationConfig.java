@@ -17,20 +17,22 @@
 package com.hazelcast.config;
 
 import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Set;
+import java.util.*;
 
 public class SerializationConfig {
 
     private int portableVersion = 0;
 
-    private String portableFactoryClass;
+    private Map<Integer, String> dataSerializableFactoryClasses;
 
-    private PortableFactory portableFactory;
+    private Map<Integer, DataSerializableFactory> dataSerializableFactories;
+
+    private Map<Integer, String> portableFactoryClasses;
+
+    private Map<Integer, PortableFactory> portableFactories;
 
     private GlobalSerializerConfig globalSerializer;
 
@@ -81,21 +83,71 @@ public class SerializationConfig {
         return this;
     }
 
-    public String getPortableFactoryClass() {
-        return portableFactoryClass;
+    public Map<Integer, String> getDataSerializableFactoryClasses() {
+        if (dataSerializableFactoryClasses == null) {
+            dataSerializableFactoryClasses = new HashMap<Integer, String>();
+        }
+        return dataSerializableFactoryClasses;
     }
 
-    public SerializationConfig setPortableFactoryClass(String portableFactoryClass) {
-        this.portableFactoryClass = portableFactoryClass;
+    public SerializationConfig setDataSerializableFactoryClasses(Map<Integer, String> dataSerializableFactoryClasses) {
+        this.dataSerializableFactoryClasses = dataSerializableFactoryClasses;
         return this;
     }
 
-    public PortableFactory getPortableFactory() {
-        return portableFactory;
+    public SerializationConfig addDataSerializableFactoryClass(int factoryId, String dataSerializableFactoryClass) {
+        getDataSerializableFactoryClasses().put(factoryId, dataSerializableFactoryClass);
+        return this;
     }
 
-    public SerializationConfig setPortableFactory(PortableFactory portableFactory) {
-        this.portableFactory = portableFactory;
+    public Map<Integer, DataSerializableFactory> getDataSerializableFactories() {
+        if (dataSerializableFactories == null) {
+            dataSerializableFactories = new HashMap<Integer, DataSerializableFactory>();
+        }
+        return dataSerializableFactories;
+    }
+
+    public SerializationConfig setDataSerializablePortableFactories(Map<Integer, DataSerializableFactory> dataSerializableFactories) {
+        this.dataSerializableFactories = dataSerializableFactories;
+        return this;
+    }
+
+    public SerializationConfig addDataSerializableFactory(int factoryId, DataSerializableFactory dataSerializableFactory) {
+        getDataSerializableFactories().put(factoryId, dataSerializableFactory);
+        return this;
+    }
+
+    public Map<Integer, String> getPortableFactoryClasses() {
+        if (portableFactoryClasses == null) {
+            portableFactoryClasses = new HashMap<Integer, String>();
+        }
+        return portableFactoryClasses;
+    }
+
+    public SerializationConfig setPortableFactoryClasses(Map<Integer, String> portableFactoryClasses) {
+        this.portableFactoryClasses = portableFactoryClasses;
+        return this;
+    }
+
+    public SerializationConfig addPortableFactoryClass(int factoryId, String portableFactoryClass) {
+        getPortableFactoryClasses().put(factoryId, portableFactoryClass);
+        return this;
+    }
+
+    public Map<Integer, PortableFactory> getPortableFactories() {
+        if (portableFactories == null) {
+            portableFactories = new HashMap<Integer, PortableFactory>();
+        }
+        return portableFactories;
+    }
+
+    public SerializationConfig setPortableFactories(Map<Integer, PortableFactory> portableFactories) {
+        this.portableFactories = portableFactories;
+        return this;
+    }
+
+    public SerializationConfig addPortableFactory(int factoryId, PortableFactory portableFactory) {
+        getPortableFactories().put(factoryId, portableFactory);
         return this;
     }
 

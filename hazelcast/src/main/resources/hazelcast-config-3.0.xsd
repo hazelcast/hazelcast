@@ -122,7 +122,6 @@
         <xs:complexType>
             <xs:sequence>
                 <xs:element ref="initial-permits" minOccurs="0" maxOccurs="1"/>
-                <xs:element ref="semaphore-factory" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
             <xs:attribute name="name" use="required">
                 <xs:simpleType>
@@ -138,14 +137,6 @@
             </xs:restriction>
         </xs:simpleType>
     </xs:element>
-    <xs:element name="semaphore-factory">
-        <xs:complexType>
-            <xs:sequence>
-                <xs:element ref="class-name" minOccurs="0" maxOccurs="1"/>
-            </xs:sequence>
-            <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
-        </xs:complexType>
-    </xs:element>
     <xs:element name="network">
         <xs:complexType>
             <xs:sequence>
@@ -157,7 +148,6 @@
                 <xs:element ref="ssl" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="socket-interceptor" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="symmetric-encryption" minOccurs="0" maxOccurs="1"/>
-                <xs:element ref="asymmetric-encryption" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
         </xs:complexType>
     </xs:element>
@@ -206,6 +196,7 @@
                 </xs:choice>
             </xs:sequence>
             <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
+            <xs:attribute name="conn-timeout-seconds" type="xs:int" use="optional" default="5"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="storeType">
@@ -325,7 +316,7 @@
             <xs:restriction base="xs:string"/>
         </xs:simpleType>
     </xs:element>
-    <xs:element name="hostHeader">
+    <xs:element name="host-header">
         <xs:simpleType>
             <xs:restriction base="xs:string"/>
         </xs:simpleType>
@@ -361,12 +352,13 @@
                 <xs:element ref="access-key" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="secret-key" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="region" minOccurs="0" maxOccurs="1"/>
-                <xs:element ref="hostHeader" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="host-header" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="security-group-name" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="tag-key" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="tag-value" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
             <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
+            <xs:attribute name="conn-timeout-seconds" type="xs:int" use="optional" default="5"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="merge-policy">
@@ -439,33 +431,6 @@
             </xs:restriction>
         </xs:simpleType>
     </xs:element>
-    <xs:element name="keyPassword">
-        <xs:annotation>
-            <xs:documentation>
-                The private key password.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:simpleType>
-            <xs:restriction base="xs:string"/>
-        </xs:simpleType>
-    </xs:element>
-    <xs:element name="keyAlias">
-        <xs:annotation>
-            <xs:documentation>
-                The private key alias.
-            </xs:documentation>
-        </xs:annotation>
-        <xs:simpleType>
-            <xs:restriction base="xs:string"/>
-        </xs:simpleType>
-    </xs:element>
-    <!--<xs:element name="keep-alive-seconds" default="60">-->
-        <!--<xs:simpleType>-->
-            <!--<xs:restriction base="xs:int">-->
-                <!--<xs:minInclusive value="0"/>-->
-            <!--</xs:restriction>-->
-        <!--</xs:simpleType>-->
-    <!--</xs:element>-->
     <xs:element name="join">
         <xs:complexType>
             <xs:sequence>
@@ -619,13 +584,6 @@
             </xs:restriction>
         </xs:simpleType>
     </xs:element>
-    <!--<xs:element name="core-pool-size" default="16">-->
-        <!--<xs:simpleType>-->
-            <!--<xs:restriction base="xs:short">-->
-                <!--<xs:minInclusive value="0"/>-->
-            <!--</xs:restriction>-->
-        <!--</xs:simpleType>-->
-    <!--</xs:element>-->
     <xs:element name="backup-count" default="1">
         <xs:annotation>
             <xs:documentation>
@@ -673,19 +631,6 @@
                 <xs:element ref="salt"/>
                 <xs:element ref="password"/>
                 <xs:element ref="iteration-count"/>
-            </xs:sequence>
-            <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
-        </xs:complexType>
-    </xs:element>
-    <xs:element name="asymmetric-encryption">
-        <xs:complexType>
-            <xs:sequence>
-                <xs:element ref="algorithm"/>
-                <xs:element ref="keyPassword"/>
-                <xs:element ref="keyAlias"/>
-                <xs:element ref="storeType"/>
-                <xs:element ref="storePassword"/>
-                <xs:element ref="storePath"/>
             </xs:sequence>
             <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
         </xs:complexType>
@@ -944,7 +889,8 @@
         <xs:complexType>
             <xs:sequence>
                 <xs:element ref="portable-version" minOccurs="0" maxOccurs="1"/>
-                <xs:element ref="portable-factory-class" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="data-serializable-factories" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="portable-factories" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="serializers" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
         </xs:complexType>
@@ -956,7 +902,50 @@
             </xs:restriction>
         </xs:simpleType>
     </xs:element>
-    <xs:element name="portable-factory-class" type="xs:string" />
+    <xs:element name="data-serializable-factories">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="data-serializable-factory" minOccurs="0" maxOccurs="unbounded" />
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="portable-factories">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="portable-factory" minOccurs="0" maxOccurs="unbounded" />
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="data-serializable-factory">
+        <xs:complexType>
+            <xs:simpleContent>
+                <xs:extension base="xs:string">
+                    <xs:attribute name="factory-id" use="required">
+                        <xs:simpleType>
+                            <xs:restriction base="xs:int">
+                                <xs:minExclusive value="0" />
+                            </xs:restriction>
+                        </xs:simpleType>
+                    </xs:attribute>
+                </xs:extension>
+            </xs:simpleContent>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="portable-factory">
+        <xs:complexType>
+            <xs:simpleContent>
+                <xs:extension base="xs:string">
+                    <xs:attribute name="factory-id" use="required">
+                        <xs:simpleType>
+                            <xs:restriction base="xs:int">
+                                <xs:minExclusive value="0" />
+                            </xs:restriction>
+                        </xs:simpleType>
+                    </xs:attribute>
+                </xs:extension>
+            </xs:simpleContent>
+        </xs:complexType>
+    </xs:element>
     <xs:element name="serializers">
         <xs:complexType>
             <xs:sequence>

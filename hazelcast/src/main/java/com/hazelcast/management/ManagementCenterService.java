@@ -36,7 +36,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.ObjectDataInputStream;
 import com.hazelcast.nio.serialization.ObjectDataOutputStream;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.Operation;
@@ -87,7 +86,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 ? managementCenterConfig.getUpdateInterval() * 1000 : 5000;
         taskPoller = new TaskPoller();
         stateSender = new StateSender();
-        serializationService = new SerializationServiceImpl(1, null);
+        serializationService = instance.node.getSerializationService();
     }
 
     public void start() {

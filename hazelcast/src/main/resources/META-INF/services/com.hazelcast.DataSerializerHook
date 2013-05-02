@@ -1,6 +1,6 @@
-com.hazelcast.cluster.DataSerializerClusterHook
-com.hazelcast.spi.impl.DataSerializerSpiHook
-com.hazelcast.map.DataSerializerMapHook
-com.hazelcast.queue.DataSerializerQueueHook
-com.hazelcast.collection.DataSerializerCollectionHook
-com.hazelcast.executor.DataSerializerExecutorHook
+com.hazelcast.cluster.ClusterDataSerializerHook
+com.hazelcast.spi.impl.SpiDataSerializerHook
+com.hazelcast.map.MapDataSerializerHook
+com.hazelcast.queue.QueueDataSerializerHook
+com.hazelcast.collection.CollectionDataSerializerHook
+com.hazelcast.executor.ExecutorDataSerializerHook

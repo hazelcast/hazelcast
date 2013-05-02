@@ -22,6 +22,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.util.ConstructorFunction;
 
 import java.io.IOException;
 import java.util.*;
@@ -30,8 +31,8 @@ import java.util.concurrent.ConcurrentMap;
 
 public class LockStoreImpl implements DataSerializable, LockStore {
 
-    private final ConcurrencyUtil.ConstructorFunction<Data, DistributedLock> lockConstructor
-            = new ConcurrencyUtil.ConstructorFunction<Data, DistributedLock>() {
+    private final ConstructorFunction<Data, DistributedLock> lockConstructor
+            = new ConstructorFunction<Data, DistributedLock>() {
         public DistributedLock createNew(Data key) {
             return new DistributedLock(key, lockService, namespace);
         }

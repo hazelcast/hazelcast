@@ -26,12 +26,15 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.concurrent.ConcurrentMap;
 
 import static junit.framework.Assert.*;
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class IndexTest extends TestUtil {
+
+    static final int FACTORY_ID = 1;
 
     @Test
     public void testBasics() {
@@ -43,7 +46,7 @@ public class IndexTest extends TestUtil {
         return new QueryRecord(toData(key), attributeValue);
     }
 
-    final SerializationServiceImpl ss = new SerializationServiceImpl(1, new TestPortableFactory());
+    final SerializationServiceImpl ss = new SerializationServiceImpl(1, Collections.singletonMap(FACTORY_ID, new TestPortableFactory()));
 
     @Test
     public void testIndex() throws QueryException {
@@ -100,6 +103,10 @@ public class IndexTest extends TestUtil {
                     return new MainPortable();
             }
             return null;
+        }
+
+        public int getFactoryId() {
+            return FACTORY_ID;
         }
     }
 
@@ -212,6 +219,10 @@ public class IndexTest extends TestUtil {
                     ", d=" + d +
                     ", str='" + str + '\'' +
                     '}';
+        }
+
+        public int getFactoryId() {
+            return FACTORY_ID;
         }
     }
 

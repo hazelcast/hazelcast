@@ -30,19 +30,21 @@ class FieldDefinitionImpl implements DataSerializable, FieldDefinition {
     String fieldName;
     FieldType type;
     int classId;
+    int factoryId;
 
     FieldDefinitionImpl() {
     }
 
     FieldDefinitionImpl(int index, String fieldName, FieldType type) {
-        this(index, fieldName, type, Data.NO_CLASS_ID);
+        this(index, fieldName, type, 0, Data.NO_CLASS_ID);
     }
 
-    FieldDefinitionImpl(int index, String fieldName, FieldType type, int classId) {
+    FieldDefinitionImpl(int index, String fieldName, FieldType type, int factoryId, int classId) {
         this.classId = classId;
         this.type = type;
         this.fieldName = fieldName;
         this.index = index;
+        this.factoryId = factoryId;
     }
 
     public FieldType getType() {
@@ -57,6 +59,10 @@ class FieldDefinitionImpl implements DataSerializable, FieldDefinition {
         return index;
     }
 
+    public int getFactoryId() {
+        return factoryId;
+    }
+
     public int getClassId() {
         return classId;
     }
@@ -65,6 +71,7 @@ class FieldDefinitionImpl implements DataSerializable, FieldDefinition {
         out.writeInt(index);
         out.writeUTF(fieldName);
         out.writeByte(type.getId());
+        out.writeInt(factoryId);
         out.writeInt(classId);
     }
 
@@ -72,6 +79,7 @@ class FieldDefinitionImpl implements DataSerializable, FieldDefinition {
         index = in.readInt();
         fieldName = in.readUTF();
         type = FieldType.get(in.readByte());
+        factoryId = in.readInt();
         classId = in.readInt();
     }
 
@@ -83,29 +91,30 @@ class FieldDefinitionImpl implements DataSerializable, FieldDefinition {
         FieldDefinitionImpl that = (FieldDefinitionImpl) o;
 
         if (classId != that.classId) return false;
-        if (index != that.index) return false;
-        if (type != that.type) return false;
+        if (factoryId != that.factoryId) return false;
         if (fieldName != null ? !fieldName.equals(that.fieldName) : that.fieldName != null) return false;
+        if (type != that.type) return false;
 
         return true;
     }
 
     @Override
     public int hashCode() {
-        int result = index;
-        result = 31 * result + (fieldName != null ? fieldName.hashCode() : 0);
-        result = 31 * result + type.getId();
+        int result = fieldName != null ? fieldName.hashCode() : 0;
+        result = 31 * result + (type != null ? type.hashCode() : 0);
         result = 31 * result + classId;
+        result = 31 * result + factoryId;
         return result;
     }
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("FieldDefinition");
-        sb.append("{type=").append(type);
-        sb.append(", index=").append(index);
+        final StringBuilder sb = new StringBuilder("FieldDefinitionImpl{");
+        sb.append("index=").append(index);
         sb.append(", fieldName='").append(fieldName).append('\'');
+        sb.append(", type=").append(type);
+        sb.append(", classId=").append(classId);
+        sb.append(", namespace='").append(factoryId).append('\'');
         sb.append('}');
         return sb.toString();
     }

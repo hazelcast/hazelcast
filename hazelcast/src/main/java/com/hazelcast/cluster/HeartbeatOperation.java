@@ -27,7 +27,11 @@ public final class HeartbeatOperation extends AbstractClusterOperation implement
         // do nothing ...
     }
 
+    public int getFactoryId() {
+        return ClusterDataSerializerHook.F_ID;
+    }
+
     public int getId() {
-        return DataSerializerClusterHook.HEARTBEAT;
+        return ClusterDataSerializerHook.HEARTBEAT;
     }
 }

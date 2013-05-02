@@ -16,13 +16,16 @@
 
 package com.hazelcast.nio;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+
 public interface Connection {
+
+    boolean write(SocketWritable packet);
 
     Address getEndPoint();
 
     boolean live();
-
-    boolean write(Packet packet);
 
     long lastReadTime();
 
@@ -32,7 +35,9 @@ public interface Connection {
 
     boolean isClient();
 
-    void setEndPoint(Address remoteEndPoint);
+    InetAddress getInetAddress();
 
-    void setMonitor(ConnectionMonitor connectionMonitor);
+    InetSocketAddress getRemoteSocketAddress();
+
+    int getPort();
 }

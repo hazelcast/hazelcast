@@ -106,7 +106,11 @@ public final class OfferOperation extends QueueBackupAwareOperation implements W
         data = IOUtil.readData(in);
     }
 
+    public int getFactoryId() {
+        return QueueDataSerializerHook.F_ID;
+    }
+
     public int getId() {
-        return DataSerializerQueueHook.OFFER;
+        return QueueDataSerializerHook.OFFER;
     }
 }

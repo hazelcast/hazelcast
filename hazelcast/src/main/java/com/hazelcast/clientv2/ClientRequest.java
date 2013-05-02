@@ -14,26 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.collection;
+package com.hazelcast.clientv2;
 
-import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.DataSerializerHook;
-
-import java.util.HashMap;
-import java.util.Map;
+import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.serialization.Portable;
 
 /**
- * @ali 1/7/13
+ * @mdogan 2/20/13
  */
-//TODO register
-public class DataSerializerCollectionHook implements DataSerializerHook {
+public interface ClientRequest extends Portable {
 
-    static final int COLLECTION_OPERATION = 400;
-    static final int COLLECTION_BACKUP_OPERATION = 401;
+    Object process() throws Exception;
 
-    public Map<Integer, DataSerializableFactory> getFactories() {
-        final Map<Integer, DataSerializableFactory> factories = new HashMap<Integer, DataSerializableFactory>();
+    String getServiceName();
 
-        return factories;
-    }
+    void setClientEngine(ClientEngine clientEngine);
+
+    void setService(Object service);
+
+    void setConnection(Connection connection);
+
 }

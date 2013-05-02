@@ -16,22 +16,15 @@
 
 package com.hazelcast.nio.serialization;
 
-import java.util.Map;
-
 /**
- * <p> SPI              [0, 100)
- * <p> MAP              [100, 300)
- * <p> QUEUE            [300, 400)
- * <p> COLLECTION       [400, 500)
- * <p> EXECUTOR         [500, 600)
- * <p> THIRD-PARTIES    [1000, ∞)
- *
  * @mdogan 10/2/12
  */
 
 public interface DataSerializerHook {
 
-    Map<Integer, DataSerializableFactory> getFactories();
+    int getFactoryId();
+
+    DataSerializableFactory createFactory();
 
 }
 

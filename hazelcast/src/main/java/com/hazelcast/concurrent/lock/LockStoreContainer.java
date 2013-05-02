@@ -18,7 +18,7 @@ package com.hazelcast.concurrent.lock;
 
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConcurrencyUtil.ConstructorFunction;
+import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
 import java.util.Collections;

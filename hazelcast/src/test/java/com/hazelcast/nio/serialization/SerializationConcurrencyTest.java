@@ -22,6 +22,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -32,6 +33,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @mdogan 1/4/13
  */
 public class SerializationConcurrencyTest {
+
+    static final int FACTORY_ID = 1;
 
     @Test
     public void test() throws IOException, InterruptedException {
@@ -46,7 +49,7 @@ public class SerializationConcurrencyTest {
                 throw new IllegalArgumentException();
             }
         };
-        final SerializationService ss = new SerializationServiceImpl(0, portableFactory);
+        final SerializationService ss = new SerializationServiceImpl(0, Collections.singletonMap(FACTORY_ID, portableFactory));
 
         final int k = 10;
         final AtomicBoolean error = new AtomicBoolean(false);
@@ -265,6 +268,10 @@ public class SerializationConcurrencyTest {
             result = 31 * result + no;
             return result;
         }
+
+        public int getFactoryId() {
+            return FACTORY_ID;
+        }
     }
 
     static class PortablePerson implements Portable {
@@ -327,6 +334,10 @@ public class SerializationConcurrencyTest {
             result = 31 * result + (name != null ? name.hashCode() : 0);
             result = 31 * result + (address != null ? address.hashCode() : 0);
             return result;
+        }
+
+        public int getFactoryId() {
+            return FACTORY_ID;
         }
     }
 }

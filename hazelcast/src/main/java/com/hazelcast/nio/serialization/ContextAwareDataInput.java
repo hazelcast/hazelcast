@@ -42,6 +42,8 @@ class ContextAwareDataInput extends InputStream implements BufferObjectDataInput
 
     private final SerializationService service;
 
+    private int factoryId;
+
     private int dataClassId;
 
     private int dataVersion;
@@ -53,6 +55,7 @@ class ContextAwareDataInput extends InputStream implements BufferObjectDataInput
     public ContextAwareDataInput(Data data, SerializationService service) {
         this(data.buffer, 0, service);
         final ClassDefinition cd = data.classDefinition;
+        this.factoryId = cd != null ? cd.getFactoryId() : 0;
         this.dataClassId = cd != null ? cd.getClassId() : -1;
         this.dataVersion = cd != null ? cd.getVersion() : -1;
     }
@@ -453,12 +456,21 @@ class ContextAwareDataInput extends InputStream implements BufferObjectDataInput
 
     @Override
     public void close() {
+        factoryId = 0;
         dataClassId = -1;
         dataVersion = -1;
     }
 
     public SerializationContext getSerializationContext() {
         return service.getSerializationContext();
+    }
+
+    int getFactoryId() {
+        return factoryId;
+    }
+
+    void setFactoryId(int factoryId) {
+        this.factoryId = factoryId;
     }
 
     int getDataClassId() {

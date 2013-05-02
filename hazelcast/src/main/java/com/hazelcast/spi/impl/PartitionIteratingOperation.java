@@ -145,8 +145,12 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
             return results;
         }
 
+        public int getFactoryId() {
+            return SpiDataSerializerHook.F_ID;
+        }
+
         public int getId() {
-            return DataSerializerSpiHook.PARTITION_RESPONSE;
+            return SpiDataSerializerHook.PARTITION_RESPONSE;
         }
     }
 
@@ -172,7 +176,11 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
         operationFactory = in.readObject();
     }
 
+    public int getFactoryId() {
+        return SpiDataSerializerHook.F_ID;
+    }
+
     public int getId() {
-        return DataSerializerSpiHook.PARTITION_ITERATOR;
+        return SpiDataSerializerHook.PARTITION_ITERATOR;
     }
 }

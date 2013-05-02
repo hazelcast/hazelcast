@@ -17,6 +17,7 @@
 package com.hazelcast.logging;
 
 import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.util.ConstructorFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -25,8 +26,8 @@ public abstract class LoggerFactorySupport implements LoggerFactory {
 
     final ConcurrentMap<String, ILogger> mapLoggers = new ConcurrentHashMap<String, ILogger>(100);
 
-    final ConcurrencyUtil.ConstructorFunction<String, ILogger> loggerConstructor
-            = new ConcurrencyUtil.ConstructorFunction<String, ILogger>() {
+    final ConstructorFunction<String, ILogger> loggerConstructor
+            = new ConstructorFunction<String, ILogger>() {
         public ILogger createNew(String key) {
             return createLogger(key);
         }

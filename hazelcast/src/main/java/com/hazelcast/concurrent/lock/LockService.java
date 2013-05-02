@@ -25,6 +25,7 @@ import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 
@@ -105,7 +106,7 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
         container.clearLockStore(namespace);
     }
 
-    private final ConcurrencyUtil.ConstructorFunction<ObjectNamespace, EntryTaskScheduler> schedulerConstructor = new ConcurrencyUtil.ConstructorFunction<ObjectNamespace, EntryTaskScheduler>() {
+    private final ConstructorFunction<ObjectNamespace, EntryTaskScheduler> schedulerConstructor = new ConstructorFunction<ObjectNamespace, EntryTaskScheduler>() {
         public EntryTaskScheduler createNew(ObjectNamespace namespace) {
             return EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new LockEvictionProcessor(nodeEngine, namespace), true);
         }

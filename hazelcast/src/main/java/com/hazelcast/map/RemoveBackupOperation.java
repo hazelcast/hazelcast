@@ -53,7 +53,11 @@ public final class RemoveBackupOperation extends KeyBasedMapOperation implements
         return Boolean.TRUE;
     }
 
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
     public int getId() {
-        return DataSerializerMapHook.REMOVE_BACKUP;
+        return MapDataSerializerHook.REMOVE_BACKUP;
     }
 }

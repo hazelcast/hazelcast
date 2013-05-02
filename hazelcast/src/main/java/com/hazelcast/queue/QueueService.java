@@ -34,6 +34,7 @@ import com.hazelcast.queue.tx.TransactionalQueueProxy;
 import com.hazelcast.spi.*;
 import com.hazelcast.transaction.Transaction;
 import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.util.ConstructorFunction;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -57,7 +58,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     private final ConcurrentMap<String, LocalQueueStatsImpl> statsMap = new ConcurrentHashMap<String, LocalQueueStatsImpl>(1000);
     private final ConcurrentMap<ListenerKey, String> eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
     private final ILogger logger;
-    private final ConcurrencyUtil.ConstructorFunction<String, LocalQueueStatsImpl> localQueueStatsConstructorFunction = new ConcurrencyUtil.ConstructorFunction<String, LocalQueueStatsImpl>() {
+    private final ConstructorFunction<String, LocalQueueStatsImpl> localQueueStatsConstructorFunction = new ConstructorFunction<String, LocalQueueStatsImpl>() {
         public LocalQueueStatsImpl createNew(String key) {
             return new LocalQueueStatsImpl();
         }

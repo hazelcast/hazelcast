@@ -458,6 +458,10 @@ public class MapConfig implements DataSerializable {
         return this;
     }
 
+    public boolean isNearCacheEnabled() {
+        return nearCacheConfig != null;
+    }
+
     public boolean isCompatible(MapConfig other) {
         if (this == other) {
             return true;

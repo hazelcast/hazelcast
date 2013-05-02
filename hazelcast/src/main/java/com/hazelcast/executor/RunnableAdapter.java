@@ -72,7 +72,11 @@ public final class RunnableAdapter<V> implements IdentifiedDataSerializable, Cal
         return sb.toString();
     }
 
+    public int getFactoryId() {
+        return ExecutorDataSerializerHook.F_ID;
+    }
+
     public int getId() {
-        return DataSerializerExecutorHook.RUNNABLE_ADAPTER;
+        return ExecutorDataSerializerHook.RUNNABLE_ADAPTER;
     }
 }

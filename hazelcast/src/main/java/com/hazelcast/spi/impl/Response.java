@@ -94,8 +94,12 @@ final class Response extends Operation implements IdentifiedDataSerializable {
         backupCount = in.readInt();
     }
 
+    public int getFactoryId() {
+        return SpiDataSerializerHook.F_ID;
+    }
+
     public int getId() {
-        return DataSerializerSpiHook.RESPONSE;
+        return SpiDataSerializerHook.RESPONSE;
     }
 
     @Override

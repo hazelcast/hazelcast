@@ -61,7 +61,11 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
         return "PutBackupOperation{" + name + "}";
     }
 
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
     public int getId() {
-        return DataSerializerMapHook.PUT_BACKUP;
+        return MapDataSerializerHook.PUT_BACKUP;
     }
 }

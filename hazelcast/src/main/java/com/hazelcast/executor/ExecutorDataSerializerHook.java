@@ -18,40 +18,38 @@ package com.hazelcast.executor;
 
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
+import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @mdogan 2/19/13
  */
-public class DataSerializerExecutorHook implements DataSerializerHook {
+public class ExecutorDataSerializerHook implements DataSerializerHook {
 
+    static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.EXECUTOR_DS_FACTORY, -13);
     static final int CALLABLE_TASK = 500;
     static final int MEMBER_CALLABLE_TASK = 501;
     static final int RUNNABLE_ADAPTER = 502;
 
-    public Map<Integer, DataSerializableFactory> getFactories() {
-        Map<Integer, DataSerializableFactory> map = new HashMap<Integer, DataSerializableFactory>();
+    public int getFactoryId() {
+        return F_ID;
+    }
 
-        map.put(CALLABLE_TASK, new DataSerializableFactory() {
-            public IdentifiedDataSerializable create() {
-                return new CallableTaskOperation();
-            }
-        });
+    public DataSerializableFactory createFactory() {
+        return new DataSerializableFactory() {
+            public IdentifiedDataSerializable create(int typeId) {
+                switch (typeId) {
+                    case CALLABLE_TASK:
+                        return new CallableTaskOperation();
 
-        map.put(MEMBER_CALLABLE_TASK, new DataSerializableFactory() {
-            public IdentifiedDataSerializable create() {
-                return new MemberCallableTaskOperation();
-            }
-        });
+                    case MEMBER_CALLABLE_TASK:
+                        return new MemberCallableTaskOperation();
 
-        map.put(RUNNABLE_ADAPTER, new DataSerializableFactory() {
-            public IdentifiedDataSerializable create() {
-                return new RunnableAdapter();
+                    case RUNNABLE_ADAPTER:
+                        return new RunnableAdapter();
+                }
+                return null;
             }
-        });
-        return map;
+        };
     }
 }

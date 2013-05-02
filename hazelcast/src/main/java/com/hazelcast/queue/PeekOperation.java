@@ -41,7 +41,11 @@ public final class PeekOperation extends QueueOperation implements IdentifiedDat
         getQueueService().getLocalQueueStatsImpl(name).incrementOtherOperations();
     }
 
+    public int getFactoryId() {
+        return QueueDataSerializerHook.F_ID;
+    }
+
     public int getId() {
-        return DataSerializerQueueHook.PEEK;
+        return QueueDataSerializerHook.PEEK;
     }
 }

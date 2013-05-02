@@ -59,7 +59,11 @@ final class BackupResponse extends AbstractOperation implements IdentifiedDataSe
         return "BackupResponse";
     }
 
+    public int getFactoryId() {
+        return SpiDataSerializerHook.F_ID;
+    }
+
     public int getId() {
-        return DataSerializerSpiHook.BACKUP_RESPONSE;
+        return SpiDataSerializerHook.BACKUP_RESPONSE;
     }
 }

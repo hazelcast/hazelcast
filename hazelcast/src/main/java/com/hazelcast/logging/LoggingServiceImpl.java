@@ -19,6 +19,7 @@ package com.hazelcast.logging;
 import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.util.ConstructorFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -47,8 +48,8 @@ public class LoggingServiceImpl implements LoggingService {
         thisAddressString = "[" + thisMember.getAddress().getHost() + "]:" + thisMember.getAddress().getPort();
     }
 
-    final ConcurrencyUtil.ConstructorFunction<String, ILogger> loggerConstructor
-            = new ConcurrencyUtil.ConstructorFunction<String, ILogger>() {
+    final ConstructorFunction<String, ILogger> loggerConstructor
+            = new ConstructorFunction<String, ILogger>() {
         public ILogger createNew(String key) {
             return new DefaultLogger(key);
         }

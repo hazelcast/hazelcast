@@ -46,7 +46,7 @@
                 <!--optional, default is us-east-1 -->
                 <region>us-west-1</region>
                 <!--optional, default is ec2.amazonaws.com. If set, region shouldn't be set as it will override this property -->
-                <hostHeader>ec2.amazonaws.com</hostHeader>
+                <host-header>ec2.amazonaws.com</host-header>
                 <!-- optional, only instances belonging to this group will be discovered, default will try all running instances -->
                 <security-group-name>hazelcast-sg</security-group-name>
                 <tag-key>type</tag-key>
@@ -75,20 +75,6 @@
             <!-- iteration count to use when generating the secret key -->
             <iteration-count>19</iteration-count>
         </symmetric-encryption>
-        <asymmetric-encryption enabled="false">
-            <!-- encryption algorithm -->
-            <algorithm>RSA/NONE/PKCS1PADDING</algorithm>
-            <!-- private key password -->
-            <keyPassword>thekeypass</keyPassword>
-            <!-- private key alias -->
-            <keyAlias>local</keyAlias>
-            <!-- key store type -->
-            <storeType>JKS</storeType>
-            <!-- key store password -->
-            <storePassword>thestorepass</storePassword>
-            <!-- path to the key store -->
-            <storePath>keystore</storePath>
-        </asymmetric-encryption>
     </network>
     <partition-group enabled="false"/>
     <executor-service name="default">

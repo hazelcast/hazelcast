@@ -83,10 +83,6 @@ public class NodeIOService implements IOService {
         return node.getConfig().getNetworkConfig().getSymmetricEncryptionConfig();
     }
 
-    public AsymmetricEncryptionConfig getAsymmetricEncryptionConfig() {
-        return node.getConfig().getNetworkConfig().getAsymmetricEncryptionConfig();
-    }
-
     public SSLConfig getSSLConfig() {
         return node.getConfig().getNetworkConfig().getSSLConfig();
     }
@@ -97,6 +93,10 @@ public class NodeIOService implements IOService {
             member.didRead();
         }
         nodeEngine.handlePacket(packet);
+    }
+
+    public void handleClientPacket(ClientPacket p) {
+        node.clientEngine.handlePacket(p);
     }
 
     public void handleClientCommand(Protocol p) {

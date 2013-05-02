@@ -20,15 +20,50 @@ import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.ServiceLoader;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 public class PortableSerializer implements TypeSerializer<Portable> {
 
-    private final SerializationContext context;
+    private static final String FACTORY_ID = "com.hazelcast.PortableHook";
 
-    public PortableSerializer(SerializationContext context) {
-        this.context = context;
+    private final SerializationService service;
+    private final Map<Integer, PortableFactory> factories = new HashMap<Integer, PortableFactory>();
+
+    public PortableSerializer(SerializationService service, Map<Integer, ? extends PortableFactory> portableFactories) {
+        this.service = service;
+        try {
+            final Iterator<PortableHook> hooks = ServiceLoader.iterator(PortableHook.class, FACTORY_ID);
+            while (hooks.hasNext()) {
+                PortableHook hook = hooks.next();
+                final PortableFactory factory = hook.createFactory();
+                if (factory != null) {
+                    register(hook.getFactoryId(), factory);
+                }
+            }
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+
+        if (portableFactories != null) {
+            for (Map.Entry<Integer, ? extends PortableFactory> entry : portableFactories.entrySet()) {
+                register(entry.getKey(), entry.getValue());
+            }
+        }
+    }
+
+    private void register(int factoryId, PortableFactory factory) {
+        final PortableFactory current = factories.get(factoryId);
+        if (current != null && current != factory) {
+            throw new IllegalArgumentException("PortableFactory[" + factoryId + "] is already registered! " + current + " -> " + factory);
+        }
+        factories.put(factoryId, factory);
     }
 
     public int getTypeId() {
@@ -55,9 +90,9 @@ public class PortableSerializer implements TypeSerializer<Portable> {
     }
 
     private ClassDefinition getClassDefinition(Portable p, int classId) throws IOException {
-        ClassDefinition cd = context.lookup(classId);
+        ClassDefinition cd = getContext().lookup(p.getFactoryId(), classId);
         if (cd == null) {
-            ClassDefinitionWriter classDefinitionWriter = new ClassDefinitionWriter(classId);
+            ClassDefinitionWriter classDefinitionWriter = new ClassDefinitionWriter(p.getFactoryId(), classId);
             p.writePortable(classDefinitionWriter);
             cd = classDefinitionWriter.registerAndGet();
         }
@@ -69,31 +104,44 @@ public class PortableSerializer implements TypeSerializer<Portable> {
             throw new IllegalArgumentException("ObjectDataInput must be instance of BufferObjectDataInput!");
         }
         final ContextAwareDataInput ctxIn = (ContextAwareDataInput) in;
+        final int factoryId = ctxIn.getFactoryId();
         final int dataClassId = ctxIn.getDataClassId();
         final int dataVersion = ctxIn.getDataVersion();
-        final Portable p = context.createPortable(dataClassId);
+        final PortableFactory portableFactory = factories.get(factoryId);
+        if (portableFactory == null) {
+            throw new HazelcastSerializationException("Could not find PortableFactory for factoryId: " + factoryId);
+        }
+        final Portable portable = portableFactory.create(dataClassId);
+        if (portable == null) {
+            throw new HazelcastSerializationException("Could not create Portable for class-id: " + dataClassId);
+        }
         final PortableReader reader;
         final ClassDefinition cd;
+        final SerializationContext context = getContext();
         if (context.getVersion() == dataVersion) {
-            cd = context.lookup(dataClassId); // using context.version
+            cd = context.lookup(factoryId, dataClassId); // using context.version
             reader = new DefaultPortableReader(this, (BufferObjectDataInput) in, cd);
         } else {
-            cd = context.lookup(dataClassId, dataVersion); // registered during read
+            cd = context.lookup(factoryId, dataClassId, dataVersion); // registered during read
             reader = new MorphingPortableReader(this, (BufferObjectDataInput) in, cd);
         }
-        p.readPortable(reader);
-        return p;
+        portable.readPortable(reader);
+        return portable;
     }
 
     public void destroy() {
+    }
+
+    Map<Integer, PortableFactory> getFactories() {
+        return Collections.unmodifiableMap(factories);
     }
 
     private class ClassDefinitionWriter implements PortableWriter {
 
         final ClassDefinitionBuilder builder;
 
-        ClassDefinitionWriter(int classId) {
-            builder = new ClassDefinitionBuilder(classId);
+        ClassDefinitionWriter(int factoryId, int classId) {
+            builder = new ClassDefinitionBuilder(factoryId, classId);
         }
 
         private ClassDefinitionWriter(ClassDefinitionBuilder builder) {
@@ -101,7 +149,7 @@ public class PortableSerializer implements TypeSerializer<Portable> {
         }
 
         public int getVersion() {
-            return context.getVersion();
+            return getContext().getVersion();
         }
 
         public void writeInt(String fieldName, int value) {
@@ -173,21 +221,21 @@ public class PortableSerializer implements TypeSerializer<Portable> {
                 throw new HazelcastSerializationException("Cannot write null portable without explicitly " +
                         "registering class definition!");
             }
-            writePortable(fieldName, portable.getClassId(), portable);
+            writePortable(fieldName, portable.getFactoryId(), portable.getClassId(), portable);
         }
 
-        public void writePortable(String fieldName, int classId, Portable portable) throws IOException {
-            builder.addPortableField(fieldName, classId);
+        public void writePortable(String fieldName, int factoryId, int classId, Portable portable) throws IOException {
+            builder.addPortableField(fieldName, factoryId, classId);
             if (portable != null) {
-                addNestedField(portable, new ClassDefinitionBuilder(classId));
-            } else if (context.lookup(classId) == null) {
+                addNestedField(portable, new ClassDefinitionBuilder(portable.getFactoryId(), classId));
+            } else if (getContext().lookup(factoryId, classId) == null) {
                 throw new HazelcastSerializationException("Cannot write null portable without explicitly " +
                         "registering class definition!");
             }
         }
 
-        public void writeNullPortable(String fieldName, int classId) throws IOException {
-            writePortable(fieldName, classId, null);
+        public void writeNullPortable(String fieldName, int factoryId, int classId) throws IOException {
+            writePortable(fieldName, factoryId, classId, null);
         }
 
         public void writePortableArray(String fieldName, Portable[] portables) throws IOException {
@@ -202,8 +250,8 @@ public class PortableSerializer implements TypeSerializer<Portable> {
                     throw new IllegalArgumentException("Detected different class-ids in portable array!");
                 }
             }
-            builder.addPortableArrayField(fieldName, classId);
-            addNestedField(p, new ClassDefinitionBuilder(classId));
+            builder.addPortableArrayField(fieldName, p.getFactoryId(), classId);
+            addNestedField(p, new ClassDefinitionBuilder(p.getFactoryId(), classId));
         }
 
         public ObjectDataOutput getRawDataOutput() {
@@ -214,14 +262,18 @@ public class PortableSerializer implements TypeSerializer<Portable> {
             ClassDefinitionWriter nestedWriter = new ClassDefinitionWriter(nestedBuilder);
             portable.writePortable(nestedWriter);
             ClassDefinition cd = nestedBuilder.build();
-            context.registerClassDefinition(cd);
+            cd = getContext().registerClassDefinition(cd);
+            builder.getCd().add((ClassDefinitionImpl) cd);
         }
 
         ClassDefinition registerAndGet() {
             final ClassDefinition cd = builder.build();
-            context.registerClassDefinition(cd);
-            return cd;
+            return getContext().registerClassDefinition(cd);
         }
+    }
+
+    private SerializationContext getContext() {
+        return service.getSerializationContext();
     }
 }
 

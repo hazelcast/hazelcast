@@ -28,6 +28,7 @@ import com.hazelcast.topic.client.TopicPublishHandler;
 import com.hazelcast.topic.proxy.TopicProxy;
 import com.hazelcast.topic.proxy.TotalOrderedTopicProxy;
 import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.util.ConstructorFunction;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -50,7 +51,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
 
     private final ConcurrentMap<String, LocalTopicStatsImpl> statsMap = new ConcurrentHashMap<String, LocalTopicStatsImpl>();
 
-    private final ConcurrencyUtil.ConstructorFunction<String, LocalTopicStatsImpl> localTopicStatsConstructorFunction = new ConcurrencyUtil.ConstructorFunction<String, LocalTopicStatsImpl>() {
+    private final ConstructorFunction<String, LocalTopicStatsImpl> localTopicStatsConstructorFunction = new ConstructorFunction<String, LocalTopicStatsImpl>() {
         public LocalTopicStatsImpl createNew(String mapName) {
             return new LocalTopicStatsImpl();
         }
