@@ -33,7 +33,7 @@ import java.util.concurrent.Callable;
 /**
  * @mdogan 4/6/12
  */
-@SpringAware
+@SpringAware(beanName = "someTask")
 @Component("someTask")
 @Scope("prototype")
 public class SomeTask implements Callable<Long>, ApplicationContextAware, DataSerializable {
@@ -83,5 +83,15 @@ public class SomeTask implements Callable<Long>, ApplicationContextAware, DataSe
         int result = context != null ? context.hashCode() : 0;
         result = 31 * result + (someBean != null ? someBean.hashCode() : 0);
         return result;
+    }
+
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("SomeTask{");
+        sb.append("context=").append(context);
+        sb.append(", someBean=").append(someBean);
+        sb.append('}');
+        return sb.toString();
     }
 }

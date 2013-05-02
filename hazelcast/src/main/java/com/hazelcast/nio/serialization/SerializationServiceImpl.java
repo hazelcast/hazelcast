@@ -312,9 +312,9 @@ public final class SerializationServiceImpl implements SerializationService {
                 }
                 throw new HazelcastInstanceNotActiveException();
             }
-            final Object obj = serializer.read(in);
+            Object obj = serializer.read(in);
             if (managedContext != null) {
-                managedContext.initialize(obj);
+                obj = managedContext.initialize(obj);
             }
             return obj;
         } catch (Throwable e) {

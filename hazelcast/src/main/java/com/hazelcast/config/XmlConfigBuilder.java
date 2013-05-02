@@ -479,8 +479,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             final String value = getTextContent(att).trim();
             if ("enabled".equalsIgnoreCase(att.getNodeName())) {
                 awsConfig.setEnabled(checkTrue(value));
-            } else if (att.getNodeName().equals("conn-timeout-seconds")) {
-                awsConfig.setConnectionTimeoutSeconds(getIntegerValue("conn-timeout-seconds", value, 5));
+            } else if (att.getNodeName().equals("connection-timeout-seconds")) {
+                awsConfig.setConnectionTimeoutSeconds(getIntegerValue("connection-timeout-seconds", value, 5));
             }
         }
         for (Node n : new IterableNodeList(node.getChildNodes())) {
@@ -543,8 +543,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             final String value = getTextContent(att).trim();
             if (att.getNodeName().equals("enabled")) {
                 tcpIpConfig.setEnabled(checkTrue(value));
-            } else if (att.getNodeName().equals("conn-timeout-seconds")) {
-                tcpIpConfig.setConnectionTimeoutSeconds(getIntegerValue("conn-timeout-seconds", value, 5));
+            } else if (att.getNodeName().equals("connection-timeout-seconds")) {
+                tcpIpConfig.setConnectionTimeoutSeconds(getIntegerValue("connection-timeout-seconds", value, 5));
             }
         }
         final NodeList nodelist = node.getChildNodes();

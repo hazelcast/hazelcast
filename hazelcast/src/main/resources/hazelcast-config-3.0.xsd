@@ -196,7 +196,7 @@
                 </xs:choice>
             </xs:sequence>
             <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
-            <xs:attribute name="conn-timeout-seconds" type="xs:int" use="optional" default="5"/>
+            <xs:attribute name="connection-timeout-seconds" type="xs:int" use="optional" default="5"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="storeType">
@@ -358,7 +358,7 @@
                 <xs:element ref="tag-value" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
             <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
-            <xs:attribute name="conn-timeout-seconds" type="xs:int" use="optional" default="5"/>
+            <xs:attribute name="connection-timeout-seconds" type="xs:int" use="optional" default="5"/>
         </xs:complexType>
     </xs:element>
     <xs:element name="merge-policy">

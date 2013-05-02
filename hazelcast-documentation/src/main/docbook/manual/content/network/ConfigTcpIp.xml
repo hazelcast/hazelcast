@@ -32,7 +32,7 @@
         has to be set to true. For the none-multicast option, all or subset of cluster members' hostnames and/or ip
         addresses must be listed. Note that all of the cluster members don't have to be listed there but at least one of
         them has to be active in cluster when a new member joins. The tcp-ip tag accepts an attribute called
-        "conn-timeout-seconds".
+        "connection-timeout-seconds".
         The default value is 5. Increasing this value is recommended if you have many IP's listed and members
         can not properly build up the cluster.
 
