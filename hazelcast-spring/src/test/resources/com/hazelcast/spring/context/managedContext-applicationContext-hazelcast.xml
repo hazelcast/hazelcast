@@ -32,7 +32,7 @@
 
     <tx:annotation-driven transaction-manager="dummyTransactionManager" />
 
-    <context:annotation-config/>
+    <context:annotation-config />
     <context:component-scan base-package="com.hazelcast.spring.context" />
 
     <hz:hazelcast id="instance1">

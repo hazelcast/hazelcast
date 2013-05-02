@@ -18,7 +18,6 @@ package com.hazelcast.spring.context;
 
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -39,10 +38,6 @@ import java.util.concurrent.Future;
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"managedContext-applicationContext-hazelcast.xml"})
 public class TestManagedContext {
-
-    static {
-        System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
-    }
 
     @Resource(name = "instance1")
     private HazelcastInstance instance1;
@@ -82,18 +77,18 @@ public class TestManagedContext {
         Future<Long> f = instance1.getExecutorService("test").submit(task);
         Assert.assertEquals(bean.value, f.get().longValue());
 
-//        Future<Long> f2 = (Future<Long>) instance1.getExecutorService("test")
-//                .submit(new DistributedTask<Long>(new SomeTask()));
-//        Assert.assertEquals(bean.value, f2.get().longValue());
+        Future<Long> f2 = instance1.getExecutorService("test").submitToMember(new SomeTask(),
+                instance2.getCluster().getLocalMember());
+        Assert.assertEquals(bean.value, f2.get().longValue());
     }
 
     @Test
     public void testTransactionalTask() throws ExecutionException, InterruptedException {
-//        Future f = instance1.getExecutorService("test").submit(new DistributedTask(new SomeTransactionalTask(),
-//                instance2.getCluster().getLocalMember()));
-//        f.get();
-//        Assert.assertTrue("transaction manager could not proxy the submitted task.",
-//                transactionManager.isCommitted());
+        Future f = instance1.getExecutorService("test").submitToMember(new SomeTransactionalTask(),
+                instance2.getCluster().getLocalMember());
+        f.get();
+        Assert.assertTrue("transaction manager could not proxy the submitted task.",
+                transactionManager.isCommitted());
     }
 
     @Test
@@ -104,10 +99,9 @@ public class TestManagedContext {
 
     @Test
     public void testTransactionalRunnableTask() throws ExecutionException, InterruptedException {
-//        Future<?> future = instance1.getExecutorService("test").submit(new SomeTransactionalRunnableTask());
-//        future.get();
-//        Assert.assertTrue("transaction manager could not proxy the submitted task.",
-//                transactionManager.isCommitted());
+        Future<?> future = instance1.getExecutorService("test").submit(new SomeTransactionalRunnableTask());
+        future.get();
+        Assert.assertTrue("transaction manager could not proxy the submitted task.",
+                transactionManager.isCommitted());
     }
-
 }

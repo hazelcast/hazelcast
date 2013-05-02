@@ -29,4 +29,7 @@ import java.lang.annotation.*;
 @Inherited
 @Documented
 public @interface SpringAware {
+
+    String beanName() default "";
+
 }
