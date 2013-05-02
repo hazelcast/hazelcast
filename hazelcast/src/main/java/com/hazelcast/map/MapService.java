@@ -253,8 +253,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     public MapMergePolicy getMergePolicy(String mergePolicyName) {
-        MapMergePolicy mergePolicy = null;
-        mergePolicy = mergePolicyMap.get(mergePolicyName);
+        MapMergePolicy mergePolicy = mergePolicyMap.get(mergePolicyName);
         if (mergePolicy == null && mergePolicyName != null) {
             try {
                 // check if user has entered custom class name instead of policy name
@@ -262,7 +261,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                 mergePolicyMap.put(mergePolicyName, mergePolicy);
             } catch (Exception e) {
                 logger.log(Level.SEVERE, e.getMessage(), e);
-                ExceptionUtil.rethrow(e);
+                throw ExceptionUtil.rethrow(e);
             }
         }
         if (mergePolicy == null) {

@@ -91,12 +91,6 @@
                                          salt="thesalt"
                                          password="thepass"
                                          iteration-count="19"/>
-                <hz:asymmetric-encryption enabled="false"
-                                          key-password="thekeypass"
-                                          key-alias="local"
-                                          store-type="JKS"
-                                          store-password="thestorepass"
-                                          store-path="keystore"/>
             </hz:network>
             <hz:partition-group enabled="true" group-type="CUSTOM">
                 <hz:member-group>
@@ -185,7 +179,7 @@
                     eviction-percentage="30"
                     read-backup-data="true"
                     eviction-policy="NONE"
-                    merge-policy="PUT_IF_BSENT">
+                    merge-policy="PUT_IF_ABSENT">
                 <hz:map-store enabled="true" factory-implementation="dummyMapStoreFactory" write-delay-seconds="0"/>
             </hz:map>
             <hz:map name="simpleMap"
@@ -237,7 +231,6 @@
     <bean id="dummyMapStore" class="com.hazelcast.spring.DummyStore"/>
     <bean id="dummyMapStoreFactory" class="com.hazelcast.spring.DummyStoreFactory"/>
     <bean id="dummyWanReplication" class="com.hazelcast.spring.DummyWanReplication"/>
-    <bean id="dummyMergePolicy" class="com.hazelcast.spring.DummyMapMergePolicy"/>
     <bean id="dummyMembershipListener" class="com.hazelcast.spring.DummyMembershipListener"/>
     <bean id="dummyEntryListener" class="com.hazelcast.spring.DummyEntryListener"/>
     <bean id="dummySSLContextFactory" class="com.hazelcast.spring.DummySSLContextFactory"/>

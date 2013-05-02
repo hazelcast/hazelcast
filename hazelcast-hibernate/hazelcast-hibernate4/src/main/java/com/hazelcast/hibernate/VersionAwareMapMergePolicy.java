@@ -20,7 +20,7 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import org.hibernate.cache.entry.CacheEntry;
+import org.hibernate.cache.spi.entry.CacheEntry;
 
 import java.io.IOException;
 
