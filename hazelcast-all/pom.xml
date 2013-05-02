@@ -29,47 +29,80 @@
     <artifactId>hazelcast-all</artifactId>
     <packaging>jar</packaging>
 
-    <repositories>
-        <repository>
-            <id>jboss</id>
-            <url>http://repository.jboss.org/maven2/</url>
-        </repository>
-    </repositories>
-
+    <!--<repositories>-->
+        <!--<repository>-->
+            <!--<id>jboss</id>-->
+            <!--<url>http://repository.jboss.org/maven2/</url>-->
+        <!--</repository>-->
+    <!--</repositories>-->
 
     <build>
+        <resources>
+            <!-- Include all class files, that should be part of hazelcast-all.jar and should get processed by bnd-tool  -->
+            <resource><directory>../hazelcast/target/classes</directory></resource>
+            <resource><directory>../hazelcast-client/target/classes</directory></resource>
+            <resource><directory>../hazelcast-hibernate/hazelcast-hibernate3/target/classes</directory></resource>
+            <resource><directory>../hazelcast-hibernate/hazelcast-hibernate4/target/classes</directory></resource>
+            <resource><directory>../hazelcast-spring/target/classes</directory></resource>
+            <resource><directory>../hazelcast-cloud/target/classes</directory></resource>
+            <resource><directory>../hazelcast-wm/target/classes</directory></resource>
+        </resources>
+
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <version>${maven.antrun.plugin.version}</version>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <version>${maven.bundle.plugin.version}</version>
                 <executions>
                     <execution>
-                        <phase>package</phase>
-                        <configuration>
-                            <tasks>
-                                <property name="jar.name" value="hazelcast-all-${project.parent.version}.jar"/>
-                                <delete file="target/${jar.name}" failonerror="false"/>
-                                <jar jarfile="target/${jar.name}" manifest="src/main/resources/META-INF/MANIFEST.MF">
-                                    <fileset dir="../hazelcast/target/classes/"/>
-                                    <fileset dir="../hazelcast-client/target/classes/"/>
-                                    <fileset dir="../hazelcast-hibernate/hazelcast-hibernate3/target/classes/"/>
-                                    <fileset dir="../hazelcast-hibernate/hazelcast-hibernate4/target/classes/"/>
-                                    <fileset dir="../hazelcast-spring/target/classes/"/>
-                                    <fileset dir="../hazelcast-cloud/target/classes/"/>
-                                    <fileset dir="../hazelcast-wm/target/classes/"/>
-                                    <manifest>
-                                        <attribute name="Built-By" value="Hazelcast.com"/>
-                                        <attribute name="Main-Class" value="com.hazelcast.examples.TestApp"/>
-                                    </manifest>
-                                </jar>
-                            </tasks>
-                        </configuration>
+                        <id>bundle-manifest</id>
+                        <phase>process-classes</phase>
                         <goals>
-                            <goal>run</goal>
+                            <goal>manifest</goal>
                         </goals>
+                        <configuration>
+                            <instructions>
+                                <Import-Package>
+                                    !junit.framework,
+                                    !org.junit,
+                                    !org.mockito,
+                                    org.apache.log4j;resolution:=optional,
+                                    org.apache.log4j.*;resolution:=optional,
+                                    org.slf4j;resolution:=optional,
+                                    org.hibernate;resolution:=optional,
+                                    org.hibernate.*;resolution:=optional,
+                                    com.mongodb;resolution:=optional,
+                                    com.mongodb.*;resolution:=optional,
+                                    org.springframework;resolution:=optional,
+                                    org.springframework.*;resolution:=optional,
+                                    org.bson;resolution:=optional,
+                                    org.bson.*;resolution:=optional,
+                                    *
+                                </Import-Package>
+                                <!--<Embed-Dependency>*;scope=compile|runtime</Embed-Dependency>-->
+                            </instructions>
+                        </configuration>
                     </execution>
                 </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>${maven.jar.plugin.version}</version>
+                <configuration>
+                    <archive>
+                        <index>true</index>
+                        <compress>true</compress>
+                        <manifest>
+                            <mainClass>com.hazelcast.examples.TestApp</mainClass>
+                            <addClasspath>false</addClasspath>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                            <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                        </manifest>
+                        <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
+                    </archive>
+                </configuration>
             </plugin>
         </plugins>
     </build>
@@ -162,5 +195,4 @@
             </build>
         </profile>
     </profiles>
-
 </project>

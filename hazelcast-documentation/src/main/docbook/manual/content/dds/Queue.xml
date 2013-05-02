@@ -39,14 +39,13 @@ if (task != null) {
     //process task
 }
 ]]></programlisting>
-        If you have 10 million tasks in your "tasks" queue and you are running that
-        code over 10 JVMs (or servers), then each server carries 1 million task objects (plus
-        backups). FIFO ordering will apply to all queue operations cluster-wide. User objects (such
+        FIFO ordering will apply to all queue operations cluster-wide. User objects (such
         as
         <literal>MyTask</literal>
         in the example above), that are (en/de)queued have to
-        be<literal>Serializable</literal>. Maximum capacity per JVM and the TTL (Time to Live)
-        for a queue can be configured.
+        be <literal>Serializable</literal>.
+        By configuring max-size for queue one can obtain a bounded queue.
+
     </para>
 
     <para>
