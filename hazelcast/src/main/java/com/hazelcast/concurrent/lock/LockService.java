@@ -44,8 +44,8 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
     private final LockStoreContainer[] containers;
     private final ConcurrentHashMap<ObjectNamespace, EntryTaskScheduler> evictionProcessors = new ConcurrentHashMap<ObjectNamespace, EntryTaskScheduler>();
 
-    final ConcurrentMap<String, ConcurrencyUtil.ConstructorFunction<ObjectNamespace, LockStoreInfo>> constructors
-            = new ConcurrentHashMap<String, ConcurrencyUtil.ConstructorFunction<ObjectNamespace, LockStoreInfo>>();
+    final ConcurrentMap<String, ConstructorFunction<ObjectNamespace, LockStoreInfo>> constructors
+            = new ConcurrentHashMap<String, ConstructorFunction<ObjectNamespace, LockStoreInfo>>();
 
     public LockService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -56,7 +56,7 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
     }
 
     public void init(NodeEngine nodeEngine, Properties properties) {
-        registerLockStoreConstructor(SERVICE_NAME, new ConcurrencyUtil.ConstructorFunction<ObjectNamespace, LockStoreInfo>() {
+        registerLockStoreConstructor(SERVICE_NAME, new ConstructorFunction<ObjectNamespace, LockStoreInfo>() {
             public LockStoreInfo createNew(ObjectNamespace key) {
                 return new LockStoreInfo() {
                     public ObjectNamespace getObjectNamespace() {
@@ -89,7 +89,7 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
         }
     }
 
-    public void registerLockStoreConstructor(String serviceName, ConcurrencyUtil.ConstructorFunction<ObjectNamespace, LockStoreInfo> constructorFunction) {
+    public void registerLockStoreConstructor(String serviceName, ConstructorFunction<ObjectNamespace, LockStoreInfo> constructorFunction) {
         if (constructors.putIfAbsent(serviceName, constructorFunction) != null) {
             throw new IllegalArgumentException("!!!");
         }

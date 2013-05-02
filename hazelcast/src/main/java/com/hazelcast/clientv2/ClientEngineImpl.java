@@ -226,6 +226,10 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
         }
     }
 
+    public String getServiceName() {
+        return SERVICE_NAME;
+    }
+
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
         node.getConnectionManager().addConnectionListener(this);
