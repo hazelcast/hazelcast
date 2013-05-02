@@ -53,7 +53,8 @@
                                 <jar jarfile="target/${jar.name}" manifest="src/main/resources/META-INF/MANIFEST.MF">
                                     <fileset dir="../hazelcast/target/classes/"/>
                                     <fileset dir="../hazelcast-client/target/classes/"/>
-                                    <fileset dir="../hazelcast-hibernate/target/classes/"/>
+                                    <fileset dir="../hazelcast-hibernate/hazelcast-hibernate3/target/classes/"/>
+                                    <fileset dir="../hazelcast-hibernate/hazelcast-hibernate4/target/classes/"/>
                                     <fileset dir="../hazelcast-spring/target/classes/"/>
                                     <fileset dir="../hazelcast-cloud/target/classes/"/>
                                     <fileset dir="../hazelcast-wm/target/classes/"/>

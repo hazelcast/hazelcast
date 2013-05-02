@@ -36,13 +36,14 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.ObjectDataInputStream;
 import com.hazelcast.nio.serialization.ObjectDataOutputStream;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.Operation;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.management.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -85,7 +86,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 ? managementCenterConfig.getUpdateInterval() * 1000 : 5000;
         taskPoller = new TaskPoller();
         stateSender = new StateSender();
-        serializationService = new SerializationServiceImpl(1, null);
+        serializationService = instance.node.getSerializationService();
     }
 
     public void start() {
@@ -355,8 +356,10 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         final Future future = invocation.invoke();
         try {
             return future.get();
-        } catch (Throwable throwable) {
-            throw new HazelcastException(throwable);
+        } catch (Throwable t) {
+            StringWriter s = new StringWriter();
+            t.printStackTrace(new PrintWriter(s));
+            return s.toString();
         }
     }
 

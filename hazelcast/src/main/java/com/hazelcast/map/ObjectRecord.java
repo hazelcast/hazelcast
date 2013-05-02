@@ -63,7 +63,11 @@ public final class ObjectRecord extends AbstractRecord<Object> implements Record
         value = in.readObject();
     }
 
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
     public int getId() {
-        return DataSerializerMapHook.OBJECT_RECORD;
+        return MapDataSerializerHook.OBJECT_RECORD;
     }
 }

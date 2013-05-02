@@ -21,10 +21,14 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.logging.Level;
 
 /**
@@ -33,14 +37,14 @@ import java.util.logging.Level;
 public class ReplicaSyncResponse extends Operation implements PartitionAwareOperation, BackupOperation {
 
     private byte[] data;
-    private long version;
+    private long[] replicaVersions;
 
     public ReplicaSyncResponse() {
     }
 
-    public ReplicaSyncResponse(byte[] data, long version) {
+    public ReplicaSyncResponse(byte[] data, long[] replicaVersions) {
         this.data = data;
-        this.version = version;
+        this.replicaVersions = replicaVersions;
     }
 
     public void beforeRun() throws Exception {
@@ -79,7 +83,7 @@ public class ReplicaSyncResponse extends Operation implements PartitionAwareOper
             }
         } finally {
             IOUtil.closeResource(in);
-            partitionService.finalizeReplicaSync(partitionId, version);
+            partitionService.finalizeReplicaSync(partitionId, replicaVersions);
         }
     }
 
@@ -119,13 +123,18 @@ public class ReplicaSyncResponse extends Operation implements PartitionAwareOper
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeLong(version);
         IOUtil.writeByteArray(out, data);
+        for (int i = 0; i < PartitionInfo.MAX_BACKUP_COUNT; i++) {
+            out.writeLong(replicaVersions[i]);
+        }
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
-        version = in.readLong();
         data = IOUtil.readByteArray(in);
+        replicaVersions = new long[PartitionInfo.MAX_BACKUP_COUNT];
+        for (int i = 0; i < PartitionInfo.MAX_BACKUP_COUNT; i++) {
+            replicaVersions[i] = in.readLong();
+        }
     }
 
     @Override
@@ -134,7 +143,7 @@ public class ReplicaSyncResponse extends Operation implements PartitionAwareOper
         sb.append("ReplicaSyncResponse");
         sb.append("{partition=").append(getPartitionId());
         sb.append(", replica=").append(getReplicaIndex());
-        sb.append(", version=").append(version);
+        sb.append(", version=").append(Arrays.toString(replicaVersions));
         sb.append('}');
         return sb.toString();
     }

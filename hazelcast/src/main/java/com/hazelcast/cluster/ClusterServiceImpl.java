@@ -112,6 +112,10 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         node.connectionManager.addConnectionListener(this);
     }
 
+    public String getServiceName() {
+        return SERVICE_NAME;
+    }
+
     public void init(final NodeEngine nodeEngine, Properties properties) {
         final long mergeFirstRunDelay = node.getGroupProperties().MERGE_FIRST_RUN_DELAY_SECONDS.getLong();
         final long mergeNextRunDelay = node.getGroupProperties().MERGE_NEXT_RUN_DELAY_SECONDS.getLong();
@@ -627,20 +631,18 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 memberInfos.add(memberJoining);
             }
             final long time = getClusterTime();
-            final MemberInfoUpdateOperation memberInfoUpdateOp = new MemberInfoUpdateOperation(memberInfos, time, true);
             // Post join operations must be lock free; means no locks at all;
             // no partition locks, no key-based locks, no service level locks!
             final Operation[] postJoinOps = nodeEngine.getPostJoinOperations();
             final PostJoinOperation postJoinOp = postJoinOps != null && postJoinOps.length > 0
                     ? new PostJoinOperation(postJoinOps) : null;
-            final FinalizeJoinOperation finalizeJoinOp = new FinalizeJoinOperation(memberInfos, postJoinOp, time);
             final List<Future> calls = new ArrayList<Future>(members.size());
             for (MemberInfo member : setJoins) {
-                calls.add(invokeClusterOperation(finalizeJoinOp, member.getAddress()));
+                calls.add(invokeClusterOperation(new FinalizeJoinOperation(memberInfos, postJoinOp, time), member.getAddress()));
             }
             for (MemberImpl member : members) {
                 if (!member.getAddress().equals(thisAddress)) {
-                    calls.add(invokeClusterOperation(memberInfoUpdateOp, member.getAddress()));
+                    calls.add(invokeClusterOperation(new MemberInfoUpdateOperation(memberInfos, time, true), member.getAddress()));
                 }
             }
             updateMembers(memberInfos);

@@ -23,6 +23,8 @@ import java.util.Set;
  */
 public interface ClassDefinition extends DataSerializable {
 
+    int getFactoryId();
+
     FieldDefinition get(String name);
 
     FieldDefinition get(int fieldIndex);

@@ -25,18 +25,19 @@ import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.merge.MapMergePolicy;
-import com.hazelcast.map.merge.PassThroughMergePolicy;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
-import com.hazelcast.wan.WanReplicationListener;
+import com.hazelcast.wan.WanReplicationPublisher;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -60,11 +61,11 @@ public class MapContainer {
     private final IndexService indexService = new IndexService();
     private final boolean nearCacheEnabled;
     private final AtomicBoolean initialLoaded = new AtomicBoolean(false);
-    private EntryTaskScheduler idleEvictionScheduler;
+    private final EntryTaskScheduler idleEvictionScheduler;
     private final EntryTaskScheduler ttlEvictionScheduler;
     private final EntryTaskScheduler mapStoreWriteScheduler;
     private final EntryTaskScheduler mapStoreDeleteScheduler;
-    private final WanReplicationListener wanReplicationListener;
+    private final WanReplicationPublisher wanReplicationPublisher;
     private final MapMergePolicy wanMergePolicy;
     private volatile boolean mapReady = false;
 
@@ -108,13 +109,12 @@ public class MapContainer {
             if (nodeEngine.getClusterService().isMaster() && initialLoaded.compareAndSet(false, true)) {
                 loadMapFromStore(true);
                 Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
-                Operation operation = new MapInitialLoadOperation(name);
                 for (Member member : members) {
                     try {
                         if (member.localMember())
                             continue;
                         MemberImpl memberImpl = (MemberImpl) member;
-                        Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, memberImpl.getAddress()).build();
+                        Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, new MapInitialLoadOperation(name), memberImpl.getAddress()).build();
                         invocation.invoke();
                     } catch (Throwable t) {
                         throw ExceptionUtil.rethrow(t);
@@ -137,19 +137,15 @@ public class MapContainer {
             mapStoreWriteScheduler = null;
         }
         ttlEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new EvictionProcessor(nodeEngine, mapService, name), true);
-        if (mapConfig.getMaxIdleSeconds() > 0) {
-            idleEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new EvictionProcessor(nodeEngine, mapService, name), true);
-        } else {
-            idleEvictionScheduler = null;
-        }
+        idleEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new EvictionProcessor(nodeEngine, mapService, name), true);
 
         WanReplicationRef wanReplicationRef = mapConfig.getWanReplicationRef();
         if (wanReplicationRef != null) {
-            this.wanReplicationListener = nodeEngine.getWanReplicationService().getWanReplication(wanReplicationRef.getName());
+            this.wanReplicationPublisher = nodeEngine.getWanReplicationService().getWanReplicationListener(wanReplicationRef.getName());
             this.wanMergePolicy = mapService.getMergePolicy(wanReplicationRef.getMergePolicy());
         } else {
             wanMergePolicy = null;
-            wanReplicationListener = null;
+            wanReplicationPublisher = null;
         }
 
         interceptors = new CopyOnWriteArrayList<MapInterceptor>();
@@ -157,11 +153,6 @@ public class MapContainer {
         interceptorIdMap = new ConcurrentHashMap<MapInterceptor, String>();
         nearCacheEnabled = mapConfig.getNearCacheConfig() != null;
     }
-
-    public void createIdleEvictionScheduler(NodeEngine nodeEngine) {
-        idleEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new EvictionProcessor(nodeEngine, mapService, name), true);
-    }
-
 
     public boolean isMapReady() {
         // map ready states whether the map load operation has been finished. if not retry exception is sent.
@@ -185,7 +176,16 @@ public class MapContainer {
             for (Object key : keys) {
                 Data dataKey = mapService.toData(key);
                 int partitionId = nodeEngine.getPartitionService().getPartitionId(dataKey);
-                if (nodeEngine.getPartitionService().getPartitionOwner(partitionId).equals(nodeEngine.getClusterService().getThisAddress())) {
+                Address partitionOwner = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
+                while(partitionOwner == null) {
+                    partitionOwner = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
+                    try {
+                        Thread.sleep(10);
+                    } catch (InterruptedException e) {
+                        ExceptionUtil.rethrow(e);
+                    }
+                }
+                if (partitionOwner.equals(nodeEngine.getClusterService().getThisAddress())) {
                     chunk.put(dataKey, key);
                     if (chunk.size() >= chunkSize) {
                         chunkList.add(chunk);
@@ -229,8 +229,8 @@ public class MapContainer {
         return indexService;
     }
 
-    public WanReplicationListener getWanReplicationListener() {
-        return wanReplicationListener;
+    public WanReplicationPublisher getWanReplicationPublisher() {
+        return wanReplicationPublisher;
     }
 
     public MapMergePolicy getWanMergePolicy() {
@@ -320,6 +320,7 @@ public class MapContainer {
                 operation.setNodeEngine(nodeEngine);
                 operation.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
                 operation.setPartitionId(partitionId);
+                OperationAccessor.setCallerAddress(operation, nodeEngine.getThisAddress());
                 operation.setServiceName(MapService.SERVICE_NAME);
                 nodeEngine.getOperationService().executeOperation(operation);
             }

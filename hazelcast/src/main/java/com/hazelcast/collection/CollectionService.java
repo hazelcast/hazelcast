@@ -28,6 +28,9 @@ import com.hazelcast.collection.multimap.tx.TransactionalMultiMapProxy;
 import com.hazelcast.collection.set.ObjectSetProxy;
 import com.hazelcast.collection.set.client.*;
 import com.hazelcast.collection.set.tx.TransactionalSetProxy;
+import com.hazelcast.concurrent.lock.LockStoreInfo;
+import com.hazelcast.concurrent.lock.SharedLockService;
+import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMultiMapStatsImpl;
@@ -40,8 +43,9 @@ import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
 import com.hazelcast.transaction.Transaction;
-import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.transaction.TransactionalObject;
+import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.*;
@@ -59,7 +63,7 @@ public class CollectionService implements ManagedService, RemoteService, Members
     private final CollectionPartitionContainer[] partitionContainers;
     private final ConcurrentMap<ListenerKey, String> eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
     private final ConcurrentMap<CollectionProxyId, LocalMultiMapStatsImpl> statsMap = new ConcurrentHashMap<CollectionProxyId, LocalMultiMapStatsImpl>(1000);
-    private final ConcurrencyUtil.ConstructorFunction<CollectionProxyId, LocalMultiMapStatsImpl> localMultiMapStatsConstructorFunction = new ConcurrencyUtil.ConstructorFunction<CollectionProxyId, LocalMultiMapStatsImpl>() {
+    private final ConstructorFunction<CollectionProxyId, LocalMultiMapStatsImpl> localMultiMapStatsConstructorFunction = new ConstructorFunction<CollectionProxyId, LocalMultiMapStatsImpl>() {
         public LocalMultiMapStatsImpl createNew(CollectionProxyId key) {
             return new LocalMultiMapStatsImpl();
         }
@@ -71,10 +75,33 @@ public class CollectionService implements ManagedService, RemoteService, Members
         partitionContainers = new CollectionPartitionContainer[partitionCount];
     }
 
-    public void init(NodeEngine nodeEngine, Properties properties) {
+    public void init(final NodeEngine nodeEngine, Properties properties) {
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         for (int i = 0; i < partitionCount; i++) {
             partitionContainers[i] = new CollectionPartitionContainer(this, i);
+        }
+        final SharedLockService lockService = nodeEngine.getSharedService(SharedLockService.SERVICE_NAME);
+        if (lockService != null) {
+            lockService.registerLockStoreConstructor(SERVICE_NAME, new ConstructorFunction<ObjectNamespace, LockStoreInfo>() {
+                public LockStoreInfo createNew(final ObjectNamespace key) {
+                    CollectionProxyId id = (CollectionProxyId) key.getObjectId();
+                    final MultiMapConfig multiMapConfig = nodeEngine.getConfig().getMultiMapConfig(id.getName());
+
+                    return new LockStoreInfo() {
+                        public ObjectNamespace getObjectNamespace() {
+                            return key;
+                        }
+
+                        public int getBackupCount() {
+                            return multiMapConfig.getSyncBackupCount();
+                        }
+
+                        public int getAsyncBackupCount() {
+                            return multiMapConfig.getAsyncBackupCount();
+                        }
+                    };
+                }
+            });
         }
     }
 

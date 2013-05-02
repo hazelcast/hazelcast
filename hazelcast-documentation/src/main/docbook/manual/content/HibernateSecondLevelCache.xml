@@ -111,28 +111,26 @@
                 <link xlink:href="#NativeClient">Read more about NativeClient &amp; LiteMember</link>
             </para>
         </listitem>
+
         <listitem>
-            <para>If you are using one of Hibernate pre-3.3 version, add following property.
-                <programlisting language="xml">
-<![CDATA[<property name="hibernate.cache.provider_class">
-     com.hazelcast.hibernate.provider.HazelcastCacheProvider
-</property>]]>
-				</programlisting>
-            </para>
-        </listitem>
-        <listitem>
-            <para>If you are using Hibernate 3.3.x (or newer) version, you can choose to use either
-                configuration property above (Hibernate has a built-in bridge to use old-style cache
-                implementations) or following property.
+            <para>To define Hibernate RegionFacyory, add following property.
                 <programlisting language="xml">
 <![CDATA[<property name="hibernate.cache.region.factory_class">
      com.hazelcast.hibernate.HazelcastCacheRegionFactory
 </property>]]>
 				</programlisting>
+
+                Or as an alternative you can use <code>HazelcastLocalCacheRegionFactory</code>
+                which stores data in local node and sends invalidation messages when an entry is updated on local.
+                <programlisting language="xml">
+<![CDATA[<property name="hibernate.cache.region.factory_class">
+     com.hazelcast.hibernate.HazelcastLocalCacheRegionFactory
+</property>]]>
+                </programlisting>
             </para>
         </listitem>
     </itemizedlist>
-    Hazelcast creates a seperate distributed map for each Hibernate cache region. So
+    Hazelcast creates a separate distributed map for each Hibernate cache region. So
     these regions can be configured easily via Hazelcast map configuration. You can define 
     <emphasis role="bold">backup</emphasis>,
     <emphasis role="bold">eviction</emphasis>,

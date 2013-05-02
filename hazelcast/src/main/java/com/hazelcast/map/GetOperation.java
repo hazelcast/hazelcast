@@ -18,7 +18,6 @@ package com.hazelcast.map;
 
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.util.Clock;
 
 public final class GetOperation extends KeyBasedMapOperation implements IdentifiedDataSerializable {
 
@@ -49,7 +48,11 @@ public final class GetOperation extends KeyBasedMapOperation implements Identifi
         return "GetOperation{}";
     }
 
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
     public int getId() {
-        return DataSerializerMapHook.GET;
+        return MapDataSerializerHook.GET;
     }
 }

@@ -64,7 +64,11 @@ public final class DataRecord extends AbstractRecord<Data> implements Record<Dat
         value.readData(in);
     }
 
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
     public int getId() {
-        return DataSerializerMapHook.DATA_RECORD;
+        return MapDataSerializerHook.DATA_RECORD;
     }
 }

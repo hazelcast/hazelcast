@@ -43,7 +43,6 @@ public class EvictionProcessor implements ScheduledEntryProcessor<Data, Object>{
     }
 
     public void process(EntryTaskScheduler<Data, Object> scheduler, Collection<ScheduledEntry<Data, Object>> entries) {
-
         for (ScheduledEntry<Data, Object> entry : entries) {
             Data key = entry.getKey();
             Operation operation = new EvictOperation(mapName, key);

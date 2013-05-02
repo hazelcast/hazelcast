@@ -103,7 +103,7 @@ public class DefaultPortableWriter implements PortableWriter {
         }
     }
 
-    public void writePortable(String fieldName, int classId, Portable portable) throws IOException {
+    public void writePortable(String fieldName, int factoryId, int classId, Portable portable) throws IOException {
         setPosition(fieldName);
         final boolean NULL = portable == null;
         out.writeBoolean(NULL);
@@ -112,8 +112,8 @@ public class DefaultPortableWriter implements PortableWriter {
         }
     }
 
-    public void writeNullPortable(String fieldName, int classId) throws IOException {
-        writePortable(fieldName, classId, null);
+    public void writeNullPortable(String fieldName, int factoryId, int classId) throws IOException {
+        writePortable(fieldName, factoryId, classId, null);
     }
 
     public void writeByteArray(String fieldName, byte[] values) throws IOException {

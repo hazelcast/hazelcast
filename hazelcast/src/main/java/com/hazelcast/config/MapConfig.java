@@ -80,7 +80,7 @@ public class MapConfig implements DataSerializable {
 
     private StorageType storageType = null;
 
-    private boolean statisticsEnabled = false;
+    private boolean statisticsEnabled = true;
 
     public enum InMemoryFormat {
         BINARY, OBJECT, CACHED
@@ -383,16 +383,18 @@ public class MapConfig implements DataSerializable {
         return mergePolicy;
     }
 
-    public void setMergePolicy(String mergePolicy) {
+    public MapConfig setMergePolicy(String mergePolicy) {
         this.mergePolicy = mergePolicy;
+        return this;
     }
 
     public boolean isStatisticsEnabled() {
         return statisticsEnabled;
     }
 
-    public void setStatisticsEnabled(boolean statisticsEnabled) {
+    public MapConfig setStatisticsEnabled(boolean statisticsEnabled) {
         this.statisticsEnabled = statisticsEnabled;
+        return this;
     }
 
     public boolean isReadBackupData() {
@@ -454,6 +456,10 @@ public class MapConfig implements DataSerializable {
     public MapConfig setMapIndexConfigs(List<MapIndexConfig> mapIndexConfigs) {
         this.mapIndexConfigs = mapIndexConfigs;
         return this;
+    }
+
+    public boolean isNearCacheEnabled() {
+        return nearCacheConfig != null;
     }
 
     public boolean isCompatible(MapConfig other) {

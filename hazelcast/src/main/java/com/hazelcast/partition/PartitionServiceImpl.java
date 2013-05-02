@@ -52,11 +52,13 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
     private final ILogger logger;
     private final int partitionCount;
     private final PartitionInfo[] partitions;
-    private final PartitionVersion[] partitionVersions;
+    private final PartitionReplicaVersions[] replicaVersions;
     private final ConcurrentMap<Integer, ReplicaSyncInfo> replicaSyncRequests;
     private final MigrationThread migrationThread;
     private final int partitionMigrationInterval;
     private final long partitionMigrationTimeout;
+    private final PartitionStateGenerator partitionStateGenerator;
+    private final MemberGroupFactory memberGroupFactory;
     private final PartitionServiceProxy proxy;
     private final Lock lock = new ReentrantLock();
     private final AtomicInteger stateVersion = new AtomicInteger();
@@ -85,10 +87,13 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         for (int i = 0; i < partitionCount; i++) {
             this.partitions[i] = new PartitionInfo(i, partitionListener);
         }
-        partitionVersions = new PartitionVersion[partitionCount];
-        for (int i = 0; i < partitionVersions.length; i++) {
-            partitionVersions[i] = new PartitionVersion(i);
+        replicaVersions = new PartitionReplicaVersions[partitionCount];
+        for (int i = 0; i < replicaVersions.length; i++) {
+            replicaVersions[i] = new PartitionReplicaVersions(i);
         }
+
+        memberGroupFactory = PartitionStateGeneratorFactory.newMemberGroupFactory(node.getConfig().getPartitionGroupConfig());
+        partitionStateGenerator = PartitionStateGeneratorFactory.newCustomPartitionStateGenerator(memberGroupFactory);
 
         partitionMigrationInterval = node.groupProperties.PARTITION_MIGRATION_INTERVAL.getInteger() * 1000;
         // partitionMigrationTimeout is 1.5 times of real timeout
@@ -130,6 +135,10 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 stateVersion.incrementAndGet();
             }
         }
+    }
+
+    public String getServiceName() {
+        return SERVICE_NAME;
     }
 
     public void init(final NodeEngine nodeEngine, Properties properties) {
@@ -179,7 +188,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 if (initialized) {
                     return;
                 }
-                PartitionStateGenerator psg = getPartitionStateGenerator();
+                PartitionStateGenerator psg = partitionStateGenerator;
                 logger.log(Level.INFO, "Initializing cluster partition table first arrangement...");
                 PartitionInfo[] newState = psg.initialize(node.getClusterService().getMembers(), partitionCount);
                 if (newState != null) {
@@ -231,7 +240,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             // let all members notice the dead and fix their own records and indexes.
             // otherwise new master may take action fast and send new partition state
             // before other members realize the dead one and fix their records.
-            final boolean migrationStatus = migrationActive.getAndSet(false);
+            migrationActive.set(false);
             for (PartitionInfo partition : partitions) {
                 // shift partition table up.
                 while (partition.onDeadAddress(deadAddress));
@@ -244,7 +253,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                     * node.groupProperties.CONNECTION_MONITOR_MAX_FAULTS.getInteger() * 10;
             nodeEngine.getExecutionService().schedule(new Runnable() {
                 public void run() {
-                    migrationActive.compareAndSet(false, migrationStatus);
+                    migrationActive.set(true);
                 }
             }, waitBeforeMigrationActivate, TimeUnit.MILLISECONDS);
         } finally {
@@ -553,10 +562,6 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         }
     }
 
-    private PartitionStateGenerator getPartitionStateGenerator() {
-        return PartitionStateGeneratorFactory.newConfigPartitionStateGenerator(node.getConfig().getPartitionGroupConfig());
-    }
-
     public PartitionInfo[] getPartitions() {
         return partitions;
     }
@@ -589,8 +594,19 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
 
     public boolean hasActiveBackupTask() {
         if (!initialized) return false;
-        MemberGroupFactory mgf = PartitionStateGeneratorFactory.newMemberGroupFactory(node.config.getPartitionGroupConfig());
-        if (mgf.createMemberGroups(node.getClusterService().getMembers()).size() < 2) return false;
+
+        MemberGroupFactory mgf = memberGroupFactory;
+        final Collection<MemberGroup> memberGroups = mgf.createMemberGroups(node.getClusterService().getMembers());
+        if (memberGroups.size() < 2) return false;
+
+        int groups = 0;
+        for (MemberGroup memberGroup : memberGroups) {
+            if (memberGroup.size() > 0) {
+                groups++;
+            }
+        }
+        if (groups < 2) return false;
+
         final int size = migrationQueue.size();
         if (size == 0) {
             for (PartitionInfo partition : partitions) {
@@ -620,73 +636,78 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
     }
 
     // called in operation threads
+    // Caution: Returning version array without copying for performance reasons. Callers must not modify this array!
     @PrivateApi
-    public long incrementPartitionVersion(int partitionId) {
-        return partitionVersions[partitionId].incrementAndGet();
+    public long[] incrementPartitionReplicaVersions(int partitionId, int backupCount) {
+        return replicaVersions[partitionId].incrementAndGet(backupCount);
     }
 
     // called in operation threads
     @PrivateApi
-    public void updatePartitionVersion(int partitionId, int replicaIndex, long version) {
-        final PartitionVersion partitionVersion = partitionVersions[partitionId];
-        if (!partitionVersion.update(version)) {
+    public void updatePartitionReplicaVersions(int partitionId, long versions[], int replicaIndex) {
+        final PartitionReplicaVersions partitionVersion = replicaVersions[partitionId];
+        if (!partitionVersion.update(versions, replicaIndex)) {
             syncPartitionReplica(partitionId, replicaIndex, false);
         }
     }
 
-    @PrivateApi
-    long getPartitionVersion(int partitionId) {
-        return partitionVersions[partitionId].get();
+    // called in operation threads
+    // Caution: Returning version array without copying for performance reasons. Callers must not modify this array!
+    long[] getPartitionReplicaVersions(int partitionId) {
+        return replicaVersions[partitionId].get();
     }
 
     // called in operation threads
-    @PrivateApi
-    void setPartitionVersion(int partitionId, long version) {
-        partitionVersions[partitionId].reset(version);
+    void setPartitionReplicaVersions(int partitionId, long[] versions) {
+        replicaVersions[partitionId].reset(versions);
     }
 
     // called in operation threads
-    @PrivateApi
-    void finalizeReplicaSync(int partitionId, long version) {
-        partitionVersions[partitionId].reset(version);
+    void finalizeReplicaSync(int partitionId, long[] versions) {
+        setPartitionReplicaVersions(partitionId, versions);
         replicaSyncRequests.remove(partitionId);
     }
 
-    private class PartitionVersion {
+    private class PartitionReplicaVersions {
         final int partitionId;
-        long version = 0L; // read and updated only by operation/partition threads
+        final long versions[] = new long[PartitionInfo.MAX_BACKUP_COUNT]; // read and updated only by operation/partition threads
 
-        private PartitionVersion(int partitionId) {
+        private PartitionReplicaVersions(int partitionId) {
             this.partitionId = partitionId;
         }
 
-        long incrementAndGet() {
-            return ++version;
+        long[] incrementAndGet(int backupCount) {
+            for (int i = 0; i < backupCount; i++) {
+                versions[i]++;
+            }
+            return versions;
         }
 
-        long get() {
-            return version;
+        long[] get() {
+            return versions;
         }
 
-        boolean update(final long v) {
-            final long current = version;
-            final boolean updated = current == v - 1;
+        boolean update(final long[] newVersions, int currentReplica) {
+            final int index = currentReplica - 1;
+            final long current = versions[index];
+            final long next = newVersions[index];
+            final boolean updated = (current == next - 1);
             if (updated) {
-                version = v;
+                System.arraycopy(newVersions, 0, versions, 0, newVersions.length);
             }
             return updated;
         }
 
-        void reset(long v) {
-            version = v;
+        void reset(long[] newVersions) {
+            System.arraycopy(newVersions, 0, versions, 0, newVersions.length);
         }
 
         @Override
         public String toString() {
             final StringBuilder sb = new StringBuilder();
-            sb.append("PartitionVersion");
+            sb.append("PartitionReplicaVersions");
             sb.append("{partitionId=").append(partitionId);
-            sb.append(", version=").append(version);
+            sb.append(", versions=").append(Arrays.toString(versions));
             sb.append('}');
             return sb.toString();
         }
@@ -767,7 +788,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 final Address thisAddress = node.getThisAddress();
                 for (PartitionInfo partition : partitions) {
                     if (thisAddress.equals(partition.getOwner()) && partition.getReplicaAddress(1) != null) {
-                        SyncReplicaVersion op = new SyncReplicaVersion();
+                        SyncReplicaVersion op = new SyncReplicaVersion(1);
                         op.setService(PartitionServiceImpl.this);
                         op.setPartitionId(partition.getPartitionId());
                         nodeEngine.getOperationService().executeOperation(op);
@@ -783,7 +804,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
 
         public final void run() {
             if (node.isMaster() && node.isActive() && initialized) {
-                PartitionStateGenerator psg = getPartitionStateGenerator();
+                PartitionStateGenerator psg = partitionStateGenerator;
                 List<MigrationInfo> migrationQ = new ArrayList<MigrationInfo>(partitionCount);
                 PartitionInfo[] newState = psg.reArrange(partitions, node.getClusterService().getMembers(), partitionCount, migrationQ);
                 Set<Integer> migratingPartitions = new HashSet<Integer>(migrationQ.size());

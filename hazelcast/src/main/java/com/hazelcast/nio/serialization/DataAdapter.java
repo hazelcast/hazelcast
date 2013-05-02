@@ -31,6 +31,7 @@ public class DataAdapter implements SocketWritable, SocketReadable {
 
     private static final int stType = stBit++;
     private static final int stClassId = stBit++;
+    private static final int stFactoryId = stBit++;
     private static final int stVersion = stBit++;
     private static final int stClassDefSize = stBit++;
     private static final int stClassDef = stBit++;
@@ -40,6 +41,7 @@ public class DataAdapter implements SocketWritable, SocketReadable {
     private static final int stAll = stBit++;
 
     private ByteBuffer buffer;
+    private int factoryId = 0;
     private int classId = 0;
     private int version = 0;
     private int classDefSize = 0;
@@ -78,14 +80,22 @@ public class DataAdapter implements SocketWritable, SocketReadable {
             if (destination.remaining() < 4) {
                 return false;
             }
-            final int classId = data.classDefinition == null ? Data.NO_CLASS_ID : data.classDefinition.getClassId();
+            classId = data.classDefinition == null ? Data.NO_CLASS_ID : data.classDefinition.getClassId();
             destination.putInt(classId);
             if (classId == Data.NO_CLASS_ID) {
+                setStatus(stFactoryId);
                 setStatus(stVersion);
                 setStatus(stClassDefSize);
                 setStatus(stClassDef);
             }
             setStatus(stClassId);
+        }
+        if (!isStatusSet(stFactoryId)) {
+            if (destination.remaining() < 4) {
+                return false;
+            }
+            destination.putInt(data.classDefinition.getFactoryId());
+            setStatus(stFactoryId);
         }
         if (!isStatusSet(stVersion)) {
             if (destination.remaining() < 4) {
@@ -171,10 +181,18 @@ public class DataAdapter implements SocketWritable, SocketReadable {
             classId = source.getInt();
             setStatus(stClassId);
             if (classId == Data.NO_CLASS_ID) {
+                setStatus(stFactoryId);
                 setStatus(stVersion);
                 setStatus(stClassDefSize);
                 setStatus(stClassDef);
             }
+        }
+        if (!isStatusSet(stFactoryId)) {
+            if (source.remaining() < 4) {
+                return false;
+            }
+            factoryId = source.getInt();
+            setStatus(stFactoryId);
         }
         if (!isStatusSet(stVersion)) {
             if (source.remaining() < 4) {
@@ -185,7 +203,7 @@ public class DataAdapter implements SocketWritable, SocketReadable {
         }
         if (!isStatusSet(stClassDef)) {
             ClassDefinition cd;
-            if ((cd = context.lookup(classId, version)) != null) {
+            if ((cd = context.lookup(factoryId, classId, version)) != null) {
                 data.classDefinition = cd;
                 setStatus(stClassDefSize);
                 setStatus(stClassDef);
@@ -203,7 +221,7 @@ public class DataAdapter implements SocketWritable, SocketReadable {
                     }
                     final byte[] binary = new byte[classDefSize];
                     source.get(binary);
-                    data.classDefinition = new BinaryClassDefinitionProxy(classId, version, binary);
+                    data.classDefinition = new BinaryClassDefinitionProxy(factoryId, classId, version, binary);
                     setStatus(stClassDef);
                 }
             }

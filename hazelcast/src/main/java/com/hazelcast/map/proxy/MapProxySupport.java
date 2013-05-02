@@ -17,6 +17,7 @@
 package com.hazelcast.map.proxy;
 
 import com.hazelcast.concurrent.lock.LockProxySupport;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.Member;
@@ -24,6 +25,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.map.*;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.*;
@@ -40,18 +42,22 @@ import static com.hazelcast.map.MapService.SERVICE_NAME;
 abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
 
     protected final String name;
+    protected final MapConfig mapConfig;
+    protected final LocalMapStatsImpl localMapStats;
     protected final LockProxySupport lockSupport;
 
-    protected MapProxySupport(final String name, final MapService mapService, NodeEngine nodeEngine) {
-        super(nodeEngine, mapService);
+    protected MapProxySupport(final String name, final MapService service, NodeEngine nodeEngine) {
+        super(nodeEngine, service);
         this.name = name;
+        mapConfig = service.getMapContainer(name).getMapConfig();
+        localMapStats = service.getLocalMapStatsImpl(name);
         lockSupport = new LockProxySupport(new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
     }
 
     // this operation returns the object in data format except it is got from near-cache and near-cache memory format is object.
     protected Object getInternal(Data key) {
         final MapService mapService = getService();
-        final boolean nearCacheEnabled = mapService.getMapContainer(name).isNearCacheEnabled();
+        final boolean nearCacheEnabled = mapConfig.isNearCacheEnabled();
         if (nearCacheEnabled) {
             Object cached = mapService.getFromNearCache(name, key);
             if (cached != null) {
@@ -112,16 +118,16 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
                     .build();
             Future f;
             Object o;
-            if (getNodeEngine().getConfig().getMapConfig(name).isStatisticsEnabled()) {
+            if (mapConfig.isStatisticsEnabled()) {
                 long time = System.currentTimeMillis();
                 f = invocation.invoke();
                 o = f.get();
                 if (operation instanceof BasePutOperation)
-                    getService().getLocalMapStatsImpl(name).incrementPuts(System.currentTimeMillis() - time);
+                    localMapStats.incrementPuts(System.currentTimeMillis() - time);
                 else if (operation instanceof BaseRemoveOperation)
-                    getService().getLocalMapStatsImpl(name).incrementRemoves(System.currentTimeMillis() - time);
+                    localMapStats.incrementRemoves(System.currentTimeMillis() - time);
                 else if (operation instanceof GetOperation)
-                    getService().getLocalMapStatsImpl(name).incrementGets(System.currentTimeMillis() - time);
+                    localMapStats.incrementGets(System.currentTimeMillis() - time);
 
             } else {
                 f = invocation.invoke();
@@ -338,9 +344,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
     public void flush() {
         final NodeEngine nodeEngine = getNodeEngine();
         try {
-            // here the second parameter is for flushing all record either it is dirty or not.
-            // todo add a feature to mancenter to sync cache to db using the second parameter
-            MapFlushOperation mapFlushOperation = new MapFlushOperation(name, false);
+            // todo add a feature to mancenter to sync cache to db completely
+            MapFlushOperation mapFlushOperation = new MapFlushOperation(name);
             nodeEngine.getOperationService()
                     .invokeOnAllPartitions(SERVICE_NAME, mapFlushOperation);
         } catch (Throwable t) {
@@ -503,7 +508,6 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
     protected Set query(final Predicate predicate, final QueryResultStream.IterationType iterationType, final boolean dataResult) {
         final NodeEngine nodeEngine = getNodeEngine();
         OperationService operationService = nodeEngine.getOperationService();
-        QueryOperation operation = new QueryOperation(name, predicate);
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         Set<Integer> plist = new HashSet<Integer>(partitionCount);
@@ -512,7 +516,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
             List<Future> flist = new ArrayList<Future>();
             for (MemberImpl member : members) {
                 Invocation invocation = operationService
-                        .createInvocationBuilder(SERVICE_NAME, operation, member.getAddress()).build();
+                        .createInvocationBuilder(SERVICE_NAME, new QueryOperation(name, predicate), member.getAddress()).build();
                 Future future = invocation.invoke();
                 flist.add(future);
             }
@@ -535,6 +539,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
                     missingList.add(i);
                 }
             }
+            System.out.println("missings:"+missingList.size());
             List<Future> futures = new ArrayList<Future>(missingList.size());
             for (Integer pid : missingList) {
                 QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(name, predicate);

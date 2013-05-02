@@ -18,6 +18,8 @@ package com.hazelcast.nio.serialization;
 
 public interface IdentifiedDataSerializable extends DataSerializable {
 
+    int getFactoryId();
+
     int getId();
 
 }

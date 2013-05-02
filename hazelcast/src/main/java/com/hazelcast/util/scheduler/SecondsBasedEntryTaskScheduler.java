@@ -16,6 +16,7 @@
 
 package com.hazelcast.util.scheduler;
 
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.Clock;
 
 import java.util.HashSet;
@@ -61,6 +62,23 @@ class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K, V> {
         } else {
             return scheduleIfNew(delayMillis, key, value);
         }
+    }
+
+    public Set<K> flush(Set<K> keys) {
+        Set<ScheduledEntry<K, V>> res = new HashSet<ScheduledEntry<K, V>>(keys.size());
+        Set<K> processedKeys = new HashSet<K>();
+        for (K key : keys) {
+            final Integer second = secondsOfKeys.remove(key);
+            if (second != null) {
+                final ConcurrentMap<K, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
+                if (entries != null) {
+                    processedKeys.add(key);
+                    res.add(entries.remove(key));
+                }
+            }
+        }
+        entryProcessor.process(this, res);
+        return processedKeys;
     }
 
     public ScheduledEntry<K, V> cancel(K key) {
@@ -156,6 +174,11 @@ class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K, V> {
             }
             entryProcessor.process(SecondsBasedEntryTaskScheduler.this, values);
         }
+    }
+
+    @Override
+    public int size() {
+        return secondsOfKeys.size();
     }
 
     public void cancelAll() {

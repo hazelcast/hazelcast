@@ -17,9 +17,13 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
+
+import java.io.IOException;
 
 public class EvictOperation extends LockAwareOperation implements BackupAwareOperation {
 
@@ -68,6 +72,16 @@ public class EvictOperation extends LockAwareOperation implements BackupAwareOpe
         int eventType = EntryEvent.TYPE_EVICTED;
         mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataValue, null);
         invalidateNearCaches();
+    }
+
+    @Override
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
     }
 
     @Override

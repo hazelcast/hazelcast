@@ -39,7 +39,7 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
     public void run() {
         Record record = recordStore.getRecords().get(dataKey);
         if (record == null) {
-            record = mapService.createRecord(name, dataKey, dataValue, ttl, true);
+            record = mapService.createRecord(name, dataKey, dataValue, ttl, false);
             recordStore.getRecords().put(dataKey, record);
         } else {
             if (record instanceof DataRecord)
@@ -61,7 +61,11 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
         return "PutBackupOperation{" + name + "}";
     }
 
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
     public int getId() {
-        return DataSerializerMapHook.PUT_BACKUP;
+        return MapDataSerializerHook.PUT_BACKUP;
     }
 }

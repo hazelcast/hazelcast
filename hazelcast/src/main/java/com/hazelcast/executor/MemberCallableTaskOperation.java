@@ -42,7 +42,11 @@ public final class MemberCallableTaskOperation<V> extends BaseCallableTaskOperat
         return super.getActionOnException(throwable);
     }
 
+    public int getFactoryId() {
+        return ExecutorDataSerializerHook.F_ID;
+    }
+
     public int getId() {
-        return DataSerializerExecutorHook.MEMBER_CALLABLE_TASK;
+        return ExecutorDataSerializerHook.MEMBER_CALLABLE_TASK;
     }
 }

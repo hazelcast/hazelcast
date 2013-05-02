@@ -21,17 +21,12 @@ package com.hazelcast.nio.serialization;
  */
 public final class ClassDefinitionBuilder {
 
-    private final ClassDefinitionImpl cd = new ClassDefinitionImpl();
+    private final ClassDefinitionImpl cd;
     private int index = 0;
     private boolean done = false;
 
-    public ClassDefinitionBuilder(int classId) {
-        cd.classId = classId;
-    }
-
-    ClassDefinitionBuilder(int classId, int version) {
-        cd.classId = classId;
-        cd.version = version;
+    public ClassDefinitionBuilder(int factoryId, int classId) {
+        cd = new ClassDefinitionImpl(factoryId, classId);
     }
 
     public ClassDefinitionBuilder addIntField(String fieldName) {
@@ -130,21 +125,21 @@ public final class ClassDefinitionBuilder {
         return this;
     }
 
-    public ClassDefinitionBuilder addPortableField(String fieldName, int classId) {
+    public ClassDefinitionBuilder addPortableField(String fieldName, int factoryId, int classId) {
         check();
         if (classId == Data.NO_CLASS_ID) {
             throw new IllegalArgumentException("Portable class id cannot be zero!");
         }
-        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.PORTABLE, classId));
+        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.PORTABLE, factoryId, classId));
         return this;
     }
 
-    public ClassDefinitionBuilder addPortableArrayField(String fieldName, int classId) {
+    public ClassDefinitionBuilder addPortableArrayField(String fieldName, int factoryId, int classId) {
         check();
         if (classId == Data.NO_CLASS_ID) {
             throw new IllegalArgumentException("Portable class id cannot be zero!");
         }
-        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.PORTABLE_ARRAY, classId));
+        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.PORTABLE_ARRAY, factoryId, classId));
         return this;
     }
 

@@ -28,14 +28,12 @@ import java.io.IOException;
 public abstract class AbstractRecord<V> implements Record<V>, DataSerializable {
 
     // todo ea volatile is needed? if yes then make version atomic
-    protected volatile RecordState state;
     protected volatile RecordStatistics statistics;
     protected volatile Data key;
     protected volatile long version;
 
     public AbstractRecord(Data key, boolean statisticsEnabled) {
         this.key = key;
-        state = new RecordState();
         if (statisticsEnabled) {
             statistics = new RecordStatistics();
         }
@@ -47,14 +45,6 @@ public abstract class AbstractRecord<V> implements Record<V>, DataSerializable {
 
     public Data getKey() {
         return key;
-    }
-
-    public RecordState getState() {
-        return state;
-    }
-
-    public void setState(RecordState state) {
-        this.state = state;
     }
 
     public RecordStatistics getStatistics() {
@@ -87,8 +77,6 @@ public abstract class AbstractRecord<V> implements Record<V>, DataSerializable {
     public void onStore() {
         if (statistics != null)
             statistics.store();
-        if (state != null)
-            state.resetStoreTime();
     }
 
     public void onUpdate() {
@@ -104,13 +92,6 @@ public abstract class AbstractRecord<V> implements Record<V>, DataSerializable {
 
     public void writeData(ObjectDataOutput out) throws IOException {
         key.writeData(out);
-        if (state != null) {
-            out.writeBoolean(true);
-            state.writeData(out);
-        } else {
-            out.writeBoolean(false);
-        }
-
         if (statistics != null) {
             out.writeBoolean(true);
             statistics.writeData(out);
@@ -122,11 +103,6 @@ public abstract class AbstractRecord<V> implements Record<V>, DataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         key = new Data();
         key.readData(in);
-        boolean stateEnabled = in.readBoolean();
-        if (stateEnabled) {
-            state = new RecordState();
-            state.readData(in);
-        }
         boolean statsEnabled = in.readBoolean();
         if (statsEnabled) {
             statistics = new RecordStatistics();

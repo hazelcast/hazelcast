@@ -42,6 +42,4 @@ public interface ConnectionManager {
 
     int getAllTextConnections();
 
-    boolean bind(Connection connection, Address localAddress, Address targetAddress, boolean replyBack);
-
 }

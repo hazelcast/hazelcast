@@ -69,7 +69,7 @@ public class NodeEngineImpl implements NodeEngine {
         eventService = new EventServiceImpl(this);
         waitNotifyService = new WaitNotifyServiceImpl(this);
         transactionManagerService = new TransactionManagerServiceImpl(this);
-        wanReplicationService = new WanReplicationService(this.node);
+        wanReplicationService = new WanReplicationService(node);
     }
 
     @PrivateApi
@@ -318,7 +318,6 @@ public class NodeEngineImpl implements NodeEngine {
         proxyService.shutdown();
         serviceManager.shutdown();
         executionService.shutdown();
-//        asyncInvocationService.shutdown();
         eventService.shutdown();
         operationService.shutdown();
         wanReplicationService.shutdown();

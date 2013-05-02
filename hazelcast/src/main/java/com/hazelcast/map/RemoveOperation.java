@@ -49,7 +49,11 @@ public final class RemoveOperation extends BaseRemoveOperation implements Identi
         return "RemoveOperation{" + name + "}";
     }
 
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
     public int getId() {
-        return DataSerializerMapHook.REMOVE;
+        return MapDataSerializerHook.REMOVE;
     }
 }

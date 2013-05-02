@@ -90,6 +90,9 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         if (invokeCount > 0) {   // no need to be pessimistic.
             throw new IllegalStateException("An invocation can not be invoked more than once!");
         }
+        if (op.getCallId() != 0) {
+            throw new IllegalStateException("An operation[" + op + "] can not be used for multiple invocations!");
+        }
         if (nodeEngine.operationService.isOperationThread()
                 && (op instanceof PartitionAwareOperation) && !OperationAccessor.isMigrationOperation(op)) {
             throw new IllegalThreadStateException(Thread.currentThread() + " cannot make remote call: " + op);

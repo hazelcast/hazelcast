@@ -23,10 +23,11 @@ import java.io.IOException;
 
 public final class Data implements IdentifiedDataSerializable {
 
-    public static final int ID = 0;
-    public static final int NO_CLASS_ID = 0; // WARNING: Portable class-id cannot be zero.
+    static final int FACTORY_ID = 0;
+    static final int ID = 0;
+    static final int NO_CLASS_ID = 0; // WARNING: Portable class-id cannot be zero.
 
-    int type = -1;
+    int type = SerializationConstants.CONSTANT_TYPE_DATA;
     ClassDefinition classDefinition = null;
     byte[] buffer = null;
     int partitionHash = -1;
@@ -58,16 +59,17 @@ public final class Data implements IdentifiedDataSerializable {
         type = in.readInt();
         final int classId = in.readInt();
         if (classId != NO_CLASS_ID) {
+            final int factoryId = in.readInt();
             final int version = in.readInt();
             SerializationContext context = ((SerializationContextAware) in).getSerializationContext();
-            classDefinition = context.lookup(classId, version);
+            classDefinition = context.lookup(factoryId, classId, version);
             int classDefSize = in.readInt();
             if (classDefinition != null) {
                 in.skipBytes(classDefSize);
             } else {
                 byte[] classDefBytes = new byte[classDefSize];
                 in.readFully(classDefBytes);
-                classDefinition = context.createClassDefinition(classDefBytes);
+                classDefinition = context.createClassDefinition(factoryId, classDefBytes);
             }
         }
         int size = in.readInt();
@@ -89,6 +91,7 @@ public final class Data implements IdentifiedDataSerializable {
         out.writeInt(type);
         if (classDefinition != null) {
             out.writeInt(classDefinition.getClassId());
+            out.writeInt(classDefinition.getFactoryId());
             out.writeInt(classDefinition.getVersion());
             byte[] classDefBytes = ((BinaryClassDefinition) classDefinition).getBinary();
             out.writeInt(classDefBytes.length);
@@ -120,9 +123,12 @@ public final class Data implements IdentifiedDataSerializable {
         total += 4; // type
         if (classDefinition != null) {
             total += 4; // classDefinition-classId
+            total += 4; // classDefinition-namespace-size
+            total += 4; // // classDefinition-factory-id
             total += 4; // classDefinition-version
             total += 4; // classDefinition-binary-length
-            total += ((BinaryClassDefinition) classDefinition).getBinary().length; // classDefinition-binary
+            final byte[] binary = ((BinaryClassDefinition) classDefinition).getBinary();
+            total += binary != null ? binary.length : 0; // classDefinition-binary
         } else {
             total += 4; // no-classId
         }
@@ -146,10 +152,9 @@ public final class Data implements IdentifiedDataSerializable {
 
     public int getPartitionHash() {
         if (partitionHash == -1) {
-            if (buffer == null) {
-                throw new IllegalStateException("Cannot hash null buffer");
+            if (buffer != null) {
+                partitionHash = hashCode();
             }
-            partitionHash = hashCode();
         }
         return partitionHash;
     }
@@ -201,6 +206,10 @@ public final class Data implements IdentifiedDataSerializable {
         return true;
     }
 
+    public int getFactoryId() {
+        return FACTORY_ID;
+    }
+
     public int getId() {
         return ID;
     }
@@ -213,7 +222,7 @@ public final class Data implements IdentifiedDataSerializable {
     public String toString() {
         return "Data{" +
                 "type=" + type + ", " +
-                "partitionHash=" + partitionHash +
+                "partitionHash=" + getPartitionHash() +
                 "} size= " + bufferSize();
     }
 }

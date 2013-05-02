@@ -39,7 +39,8 @@ import java.util.logging.Level;
 
 import static com.hazelcast.core.DistributedObjectEvent.EventType.CREATED;
 import static com.hazelcast.core.DistributedObjectEvent.EventType.DESTROYED;
-import static com.hazelcast.util.ConcurrencyUtil.ConstructorFunction;
+
+import com.hazelcast.util.ConstructorFunction;
 
 /**
  * @mdogan 1/11/13
@@ -63,8 +64,8 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
         nodeEngine.getEventService().registerListener(SERVICE_NAME, SERVICE_NAME, new Object());
     }
 
-    private final ConcurrencyUtil.ConstructorFunction<String, ProxyRegistry> registryConstructor
-            = new ConcurrencyUtil.ConstructorFunction<String, ProxyRegistry>() {
+    private final ConstructorFunction<String, ProxyRegistry> registryConstructor
+            = new ConstructorFunction<String, ProxyRegistry>() {
         public ProxyRegistry createNew(String serviceName) {
             return new ProxyRegistry(serviceName);
         }

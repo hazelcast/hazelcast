@@ -23,6 +23,8 @@ import java.io.IOException;
  */
 public interface Portable {
 
+    int getFactoryId();
+
     int getClassId();
 
     void writePortable(PortableWriter writer) throws IOException;

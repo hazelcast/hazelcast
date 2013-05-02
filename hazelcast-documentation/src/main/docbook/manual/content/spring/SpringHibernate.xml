@@ -24,26 +24,10 @@
     <title>Hibernate 2nd Level Cache Config</title>
     <para>
     If you are using Hibernate with Hazelcast as 2nd level cache provider, you
-    can easily create
-    <code>CacheProvider</code>
-    or
-    <code>RegionFactory</code>
-    instances within
-    Spring configuration. That way it is possible to use same
-    <code>HazelcastInstance</code>
-    as Hibernate L2
-    cache instance.
-    <programlisting language="xml"><![CDATA[
-<hz:hibernate-cache-provider id="cacheProvider" instance-ref="instance" />
-...
+    can easily create <code>RegionFactory</code> instances within
+    Spring configuration (by Spring version 3.1). That way it is possible to use same
+    <code>HazelcastInstance</code> as Hibernate L2 cache instance.
 
-<bean id="sessionFactory" class="org.springframework.orm.hibernate3.LocalSessionFactoryBean" scope="singleton">
-    <property name="dataSource" ref="dataSource"/>
-    <property name="cacheProvider" ref="cacheProvider" />
-    ...
-</bean>
-]]></programlisting>
-    Or by Spring version 3.1
     <programlisting language="xml"><![CDATA[
 <hz:hibernate-region-factory id="regionFactory" instance-ref="instance" />
 ...

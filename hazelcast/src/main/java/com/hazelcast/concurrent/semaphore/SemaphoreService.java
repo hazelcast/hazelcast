@@ -25,6 +25,7 @@ import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.util.ConstructorFunction;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -49,7 +50,7 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
         this.nodeEngine = nodeEngine;
     }
 
-    private final ConcurrencyUtil.ConstructorFunction<String, Permit> permitConstructor = new ConcurrencyUtil.ConstructorFunction<String, Permit>() {
+    private final ConstructorFunction<String, Permit> permitConstructor = new ConstructorFunction<String, Permit>() {
         public Permit createNew(String name) {
             SemaphoreConfig config = nodeEngine.getConfig().getSemaphoreConfig(name);
             int partitionId = nodeEngine.getPartitionService().getPartitionId(name);

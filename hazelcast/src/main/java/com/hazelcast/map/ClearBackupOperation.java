@@ -58,11 +58,13 @@ public class ClearBackupOperation extends AbstractNamedOperation implements Back
         }
     }
 
+    public Set<Data> getKeys() {
+        return keys;
+    }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(name);
         if (keys == null)
             out.writeInt(-1);
         else {
@@ -76,7 +78,6 @@ public class ClearBackupOperation extends AbstractNamedOperation implements Back
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        name = in.readUTF();
         int size = in.readInt();
         if(size > -1) {
             keys = new HashSet<Data>(size);

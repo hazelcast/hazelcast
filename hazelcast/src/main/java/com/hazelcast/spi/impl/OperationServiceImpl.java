@@ -68,7 +68,7 @@ final class OperationServiceImpl implements OperationService {
         final int concurrencyLevel = reallyMultiCore ? coreSize * 4 : 16;
         remoteCalls = new ConcurrentHashMap<Long, RemoteCall>(1000, 0.75f, concurrencyLevel);
         final int opThreadCount = node.getGroupProperties().OPERATION_THREAD_COUNT.getInteger();
-        operationThreadCount =  opThreadCount > 0 ? opThreadCount : coreSize * 2;
+        operationThreadCount =  opThreadCount > 0 ? opThreadCount : coreSize * 2; // TODO: which thread count is best? coreSize OR coreSize * 2 ?
         opExecutors = new ExecutorService[operationThreadCount];
         for (int i = 0; i < opExecutors.length; i++) {
             opExecutors[i] = Executors.newSingleThreadExecutor(new OperationThreadFactory(i));
@@ -115,10 +115,10 @@ final class OperationServiceImpl implements OperationService {
     public void runOperation(Operation op) {
         final int partitionId = getPartitionIdForExecution(op);
         boolean runInCurrentThread = false;
-        final Thread currentThread = Thread.currentThread();
         if (partitionId < 0) {
             runInCurrentThread = true;
         } else {
+            final Thread currentThread = Thread.currentThread();
             if (currentThread instanceof OperationThread) {
                 int tid = ((OperationThread) currentThread).id;
                 runInCurrentThread = partitionId % operationThreadCount == tid;
@@ -258,18 +258,26 @@ final class OperationServiceImpl implements OperationService {
 
     private int sendBackups(BackupAwareOperation backupAwareOp) throws Exception {
         final Operation op = (Operation) backupAwareOp;
-        final int maxBackups = node.getClusterService().getSize() - 1;
-        final int syncBackupCount = backupAwareOp.getSyncBackupCount() > 0
+        final boolean returnsResponse = op.returnsResponse();
+        final int maxBackups = Math.min(node.getClusterService().getSize(), PartitionInfo.MAX_REPLICA_COUNT) - 1;
+
+        int syncBackupCount = backupAwareOp.getSyncBackupCount() > 0
                 ? Math.min(maxBackups, backupAwareOp.getSyncBackupCount()) : 0;
-        final int asyncBackupCount = (backupAwareOp.getAsyncBackupCount() > 0 && maxBackups > syncBackupCount)
+
+        int asyncBackupCount = (backupAwareOp.getAsyncBackupCount() > 0 && maxBackups > syncBackupCount)
                 ? Math.min(maxBackups - syncBackupCount, backupAwareOp.getAsyncBackupCount()) : 0;
+
+        if (!returnsResponse) {
+            asyncBackupCount += syncBackupCount;
+            syncBackupCount = 0;
+        }
 
         final int totalBackupCount = syncBackupCount + asyncBackupCount;
         if (totalBackupCount > 0) {
             final String serviceName = op.getServiceName();
             final int partitionId = op.getPartitionId();
             final PartitionServiceImpl partitionService = (PartitionServiceImpl) nodeEngine.getPartitionService();
-            final long version = partitionService.incrementPartitionVersion(partitionId);
+            final long[] replicaVersions = partitionService.incrementPartitionReplicaVersions(partitionId, totalBackupCount);
             final PartitionInfo partitionInfo = partitionService.getPartitionInfo(partitionId);
             for (int replicaIndex = 1; replicaIndex <= totalBackupCount; replicaIndex++) {
                 final Address target = partitionInfo.getReplicaAddress(replicaIndex);
@@ -282,7 +290,7 @@ final class OperationServiceImpl implements OperationService {
                         throw new IllegalStateException("Normally shouldn't happen!!");
                     } else {
                         backupOp.setPartitionId(partitionId).setReplicaIndex(replicaIndex).setServiceName(serviceName);
-                        Backup backup = new Backup(backupOp, op.getCallerAddress(), version, replicaIndex <= syncBackupCount);
+                        Backup backup = new Backup(backupOp, op.getCallerAddress(), replicaVersions, replicaIndex <= syncBackupCount);
                         backup.setPartitionId(partitionId).setReplicaIndex(replicaIndex).setServiceName(serviceName)
                                 .setCallerUuid(nodeEngine.getLocalMember().getUuid());
                         OperationAccessor.setCallId(backup, op.getCallId());

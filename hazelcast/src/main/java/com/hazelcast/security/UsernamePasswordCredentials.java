@@ -16,8 +16,9 @@
 
 package com.hazelcast.security;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.spi.impl.SpiPortableHook;
 
 import java.io.IOException;
 
@@ -49,7 +50,7 @@ public class UsernamePasswordCredentials extends AbstractCredentials {
     }
 
     public String getPassword() {
-        return password==null? "": new String(password);
+        return password == null ? "" : new String(password);
     }
 
     public void setUsername(String username) {
@@ -60,19 +61,23 @@ public class UsernamePasswordCredentials extends AbstractCredentials {
         this.password = password.getBytes();
     }
 
-    public void writeDataInternal(ObjectDataOutput out) throws IOException {
-        out.writeInt(password != null ? password.length : 0);
-        if (password != null) {
-            out.write(password);
-        }
+    @Override
+    protected void writePortableInternal(PortableWriter writer) throws IOException {
+        writer.writeByteArray("pwd", password);
     }
 
-    public void readDataInternal(ObjectDataInput in) throws IOException {
-        int s = in.readInt();
-        if (s > 0) {
-            password = new byte[s];
-            in.readFully(password);
-        }
+    @Override
+    protected void readPortableInternal(PortableReader reader) throws IOException {
+        password = reader.readByteArray("pwd");
+    }
+
+    public int getFactoryId() {
+        return SpiPortableHook.ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return SpiPortableHook.USERNAME_PWD_CRED;
     }
 
     @Override

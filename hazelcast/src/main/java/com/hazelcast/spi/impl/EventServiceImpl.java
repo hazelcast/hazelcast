@@ -31,7 +31,7 @@ import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConcurrencyUtil.ConstructorFunction;
+import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 
 import java.io.IOException;
@@ -578,8 +578,12 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
             event = in.readObject();
         }
 
+        public int getFactoryId() {
+            return SpiDataSerializerHook.F_ID;
+        }
+
         public int getId() {
-            return DataSerializerSpiHook.EVENT_PACKET;
+            return SpiDataSerializerHook.EVENT_PACKET;
         }
     }
 

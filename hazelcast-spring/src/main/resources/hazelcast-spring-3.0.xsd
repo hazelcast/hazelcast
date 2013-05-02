@@ -301,7 +301,6 @@
             <xs:element name="ssl" type="ssl" minOccurs="0" maxOccurs="1"/>
             <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0" maxOccurs="1"/>
             <xs:element name="symmetric-encryption" type="symmetric-encryption" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="asymmetric-encryption" type="asymmetric-encryption" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
         <xs:attribute name="public-address" type="xs:string" use="optional"/>
         <xs:attribute name="port" type="xs:string" use="required"/>
@@ -322,6 +321,7 @@
             </xs:choice>
         </xs:sequence>
         <xs:attribute name="enabled" type="xs:string" use="optional" default="false"/>
+        <xs:attribute name="conn-timeout-seconds" type="xs:string" use="optional" default="5"/>
     </xs:complexType>
 
     <xs:complexType name="multicast">
@@ -343,6 +343,7 @@
         <xs:attribute name="security-group-name" type="xs:string" use="optional" default=""/>
         <xs:attribute name="tag-key" type="xs:string" use="optional" default=""/>
         <xs:attribute name="tag-value" type="xs:string" use="optional" default=""/>
+        <xs:attribute name="conn-timeout-seconds" type="xs:string" use="optional" default="5"/>
     </xs:complexType>
 
     <xs:complexType name="merge-policies">
@@ -499,21 +500,12 @@
         <xs:attribute name="iteration-count" use="optional" type="xs:string"/>
     </xs:complexType>
 
-    <xs:complexType name="asymmetric-encryption">
-        <xs:sequence/>
-        <xs:attribute name="enabled" type="xs:string" use="optional" default="false"/>
-        <xs:attribute name="algorithm" use="optional" type="xs:string"/>
-        <xs:attribute name="key-password" use="optional" type="xs:string"/>
-        <xs:attribute name="key-alias" use="optional" type="xs:string"/>
-        <xs:attribute name="store-type" use="optional" type="xs:string"/>
-        <xs:attribute name="store-password" use="optional" type="xs:string"/>
-        <xs:attribute name="store-path" use="optional" type="xs:string"/>
-    </xs:complexType>
-
     <xs:complexType name="hibernate-cache">
         <xs:complexContent>
             <xs:extension base="hazelcast-bean">
                 <xs:attribute name="instance-ref" type="xs:string" use="required"/>
+                <!-- valid values are DISTRIBUTED and LOCAL -->
+                <xs:attribute name="mode" type="xs:string" use="optional" default="DISTRIBUTED" />
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>

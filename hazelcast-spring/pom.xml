@@ -181,7 +181,7 @@
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast-hibernate</artifactId>
+            <artifactId>hazelcast-hibernate3</artifactId>
             <version>${project.parent.version}</version>
             <scope>provided</scope>
             <optional>true</optional>

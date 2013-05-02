@@ -42,7 +42,7 @@ public class SimpleEntryView<K,V> implements EntryView<K,V>, DataSerializable {
         final RecordStatistics statistics = record.getStatistics();
         cost = statistics == null ? -1 : statistics.getCost();
         creationTime = statistics == null ? -1 : statistics.getCreationTime();
-        expirationTime = record.getState() == null ? -1 : record.getState().getExpirationTime();
+        // todo implement setting expiration date
         hits = statistics == null ? -1 : statistics.getHits();
         lastAccessTime = statistics == null ? -1 : statistics.getLastAccessTime();
         lastStoredTime = statistics == null ? -1 : statistics.getLastStoredTime();

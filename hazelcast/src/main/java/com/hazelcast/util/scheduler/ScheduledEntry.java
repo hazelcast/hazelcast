@@ -16,6 +16,8 @@
 
 package com.hazelcast.util.scheduler;
 
+import com.hazelcast.util.Clock;
+
 /**
  * @mdogan 2/25/13
  */
@@ -29,11 +31,15 @@ public final class ScheduledEntry<K, V> {
 
     private final int actualDelaySeconds;
 
+    private final long scheduleTime;
+
+
     public ScheduledEntry(K key, V value, long scheduledDelayMillis, int actualDelaySeconds) {
         this.key = key;
         this.value = value;
         this.scheduledDelayMillis = scheduledDelayMillis;
         this.actualDelaySeconds = actualDelaySeconds;
+        this.scheduleTime = Clock.currentTimeMillis();
     }
 
     public K getKey() {
@@ -50,6 +56,10 @@ public final class ScheduledEntry<K, V> {
 
     public int getActualDelaySeconds() {
         return actualDelaySeconds;
+    }
+
+    public long getScheduleTime() {
+        return scheduleTime;
     }
 
     public long getActualDelayMillis() {
@@ -76,16 +86,13 @@ public final class ScheduledEntry<K, V> {
         return result;
     }
 
-
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("ScheduledEntry");
-        sb.append("{key=").append(key);
-        sb.append(", value=").append(value);
-        sb.append(", scheduledDelayMillis=").append(scheduledDelayMillis);
-        sb.append(", actualDelaySeconds=").append(actualDelaySeconds);
-        sb.append('}');
-        return sb.toString();
+        return "ScheduledEntry{" +
+                "key=" + key +
+                ", value=" + value +
+                ", scheduledDelayMillis=" + scheduledDelayMillis +
+                ", actualDelaySeconds=" + actualDelaySeconds +
+                '}';
     }
 }

@@ -60,5 +60,6 @@
     </hz:hazelcast>
 
     <hz:hibernate-region-factory id="regionFactory" instance-ref="instance"/>
+    <hz:hibernate-region-factory id="localRegionFactory" instance-ref="instance" mode="LOCAL" />
 
 </beans>

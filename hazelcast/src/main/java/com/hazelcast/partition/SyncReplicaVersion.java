@@ -30,9 +30,17 @@ import java.util.logging.Level;
 /**
  * @mdogan 4/11/13
  */
+// runs locally
 public class SyncReplicaVersion extends Operation implements PartitionAwareOperation {
 
+    private int syncReplicaIndex;
+
     public SyncReplicaVersion() {
+        this(1);
+    }
+
+    public SyncReplicaVersion(int syncReplicaIndex) {
+        this.syncReplicaIndex = syncReplicaIndex;
     }
 
     public void beforeRun() throws Exception {
@@ -41,15 +49,15 @@ public class SyncReplicaVersion extends Operation implements PartitionAwareOpera
     public void run() throws Exception {
         final PartitionServiceImpl partitionService = getService();
         final int partitionId = getPartitionId();
-        final int replicaIndex = 1;
+        final int replicaIndex = syncReplicaIndex;
         final PartitionInfo partition = partitionService.getPartitionInfo(partitionId);
-        final Address firstReplica = partition.getReplicaAddress(replicaIndex);
-        if (firstReplica != null) {
-            final long currentVersion = partitionService.getPartitionVersion(partitionId);
+        final Address target = partition.getReplicaAddress(replicaIndex);
+        if (target != null) {
+            final long[] currentVersions = partitionService.getPartitionReplicaVersions(partitionId);
             final NodeEngine nodeEngine = getNodeEngine();
-            CheckReplicaVersion op = new CheckReplicaVersion(currentVersion);
-            op.setPartitionId(partitionId).setReplicaIndex(1).setServiceName(PartitionServiceImpl.SERVICE_NAME);
-            nodeEngine.getOperationService().send(op, firstReplica);
+            CheckReplicaVersion op = new CheckReplicaVersion(currentVersions[replicaIndex]);
+            op.setPartitionId(partitionId).setReplicaIndex(replicaIndex).setServiceName(PartitionServiceImpl.SERVICE_NAME);
+            nodeEngine.getOperationService().send(op, target);
         }
     }
 
@@ -78,8 +86,10 @@ public class SyncReplicaVersion extends Operation implements PartitionAwareOpera
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
+        throw new UnsupportedOperationException();
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
+        throw new UnsupportedOperationException();
     }
 }

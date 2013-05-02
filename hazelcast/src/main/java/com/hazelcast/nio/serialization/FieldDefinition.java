@@ -28,4 +28,6 @@ public interface FieldDefinition extends DataSerializable {
     int getIndex();
 
     int getClassId();
+
+    int getFactoryId();
 }

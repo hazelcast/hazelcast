@@ -32,7 +32,11 @@ public final class CallableTaskOperation<V> extends BaseCallableTaskOperation<V>
         super(name, callable);
     }
 
+    public int getFactoryId() {
+        return ExecutorDataSerializerHook.F_ID;
+    }
+
     public int getId() {
-        return DataSerializerExecutorHook.CALLABLE_TASK;
+        return ExecutorDataSerializerHook.CALLABLE_TASK;
     }
 }

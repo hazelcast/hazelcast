@@ -363,6 +363,7 @@ public class QueryTest extends TestUtil {
 
     @Test
     public void testTwoNodesWithPartialIndexes() throws Exception {
+        // todo fails
         Config cfg = new Config();
         StaticNodeFactory nodeFactory = new StaticNodeFactory(2);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
@@ -404,6 +405,7 @@ public class QueryTest extends TestUtil {
 
     @Test
     public void testTwoNodesWithIndexes() throws Exception {
+        // todo fails
         Config cfg = new Config();
         StaticNodeFactory nodeFactory = new StaticNodeFactory(2);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
@@ -447,6 +449,7 @@ public class QueryTest extends TestUtil {
 
     @Test
     public void testQueryWithIndexesWhileMigrating() throws Exception {
+        // todo fails
         Config cfg = new Config();
         StaticNodeFactory nodeFactory = new StaticNodeFactory(4);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
@@ -1209,14 +1212,12 @@ public class QueryTest extends TestUtil {
     /**
      * test for issue #359
      */
-    // todo fails
     @Test
     public void testIndexCleanupOnMigration() throws InterruptedException {
         Config cfg = new Config();
         final int n = 6;
         final int runCount = 500;
         final StaticNodeFactory nodeFactory = new StaticNodeFactory(n);
-        HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
         final Config config = new Config();
         config.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
         final String mapName = "testIndexCleanupOnMigration";

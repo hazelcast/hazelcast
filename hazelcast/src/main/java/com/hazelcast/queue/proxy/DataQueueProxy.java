@@ -37,7 +37,7 @@ public class DataQueueProxy extends QueueProxySupport implements QueueProxy<Data
     }
 
     public LocalQueueStats getLocalQueueStats() {
-        return null;
+        return getService().createLocalQueueStats(name, partitionId);
     }
 
     public boolean add(Data data) {

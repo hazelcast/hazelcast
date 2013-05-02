@@ -46,6 +46,7 @@ public class MapStoreTest {
 
     @Test
     public void testMapInitialLoad() throws InterruptedException {
+        // todo fails
         int size = 10000;
 
         StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
@@ -341,6 +342,24 @@ public class MapStoreTest {
         assertEquals(0, testMapStore.getStore().size());
     }
 
+    @Test
+    public void testOneMemberWriteBehindFlush() throws Exception {
+        TestMapStore testMapStore = new TestMapStore(1, 1, 1);
+        testMapStore.setLoadAllKeys(false);
+        Config config = newConfig(testMapStore, 2);
+        StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
+        IMap map = h1.getMap("default");
+        assertEquals(0, map.size());
+        assertEquals(null, map.put("1", "value1"));
+        assertEquals("value1", map.get("1"));
+        assertEquals(null, testMapStore.getStore().get("1"));
+        assertEquals(1, map.size());
+        map.flush();
+        assertEquals("value1", testMapStore.getStore().get("1"));
+    }
+
+
 
 
     @Test
@@ -363,8 +382,6 @@ public class MapStoreTest {
         assertEquals(0, map.size());
         assertEquals(0, testMapStore.getStore().size());
     }
-
-
 
     @Test
     public void testOneMemberFlush() throws Exception {
@@ -678,7 +695,7 @@ public class MapStoreTest {
 
     @Test
     public void testGetAllKeys() throws Exception {
-          TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
+        TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
         Map store = testMapStore.getStore();
         Set keys = new HashSet();
         int size = 1000;

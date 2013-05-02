@@ -51,6 +51,7 @@ public class BackupTest {
      * I should NOT shutdown before I backup everything
      */
     @Test
+    // todo fails
     public void testGracefulShutdown() throws Exception {
         int size = 250000;
         StaticNodeFactory nodeFactory = new StaticNodeFactory(5);

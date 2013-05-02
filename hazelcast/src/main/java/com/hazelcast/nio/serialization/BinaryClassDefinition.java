@@ -21,6 +21,7 @@ package com.hazelcast.nio.serialization;
  */
 public abstract class BinaryClassDefinition implements ClassDefinition {
 
+    protected int factoryId;
     protected int classId;
     protected int version = -1;
 
@@ -29,10 +30,8 @@ public abstract class BinaryClassDefinition implements ClassDefinition {
     public BinaryClassDefinition() {
     }
 
-    public BinaryClassDefinition(int classId, int version, byte[] binary) {
-        this.classId = classId;
-        this.version = version;
-        this.binary = binary;
+    public int getFactoryId() {
+        return factoryId;
     }
 
     public int getClassId() {

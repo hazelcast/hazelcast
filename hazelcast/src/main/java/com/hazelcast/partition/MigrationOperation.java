@@ -34,7 +34,7 @@ public final class MigrationOperation extends BaseMigrationOperation {
 
     private static final ResponseHandler ERROR_RESPONSE_HANDLER = new ErrorResponseHandler();
 
-    private long partitionVersion;
+    private long[] replicaVersions;
     private transient Collection<Operation> tasks;
     private byte[] zippedTaskData;
     private int taskCount;
@@ -42,9 +42,9 @@ public final class MigrationOperation extends BaseMigrationOperation {
     public MigrationOperation() {
     }
 
-    public MigrationOperation(MigrationInfo migrationInfo, long partitionVersion, byte[] taskData, int taskCount) {
+    public MigrationOperation(MigrationInfo migrationInfo, long[] replicaVersions, byte[] taskData, int taskCount) {
         super(migrationInfo);
-        this.partitionVersion = partitionVersion;
+        this.replicaVersions = replicaVersions;
         this.taskCount = taskCount;
         this.zippedTaskData = taskData;
     }
@@ -75,7 +75,7 @@ public final class MigrationOperation extends BaseMigrationOperation {
                 success = runMigrationTasks();
                 if (success) {
                     final PartitionServiceImpl partitionService = getService();
-                    partitionService.setPartitionVersion(migrationInfo.getPartitionId(), partitionVersion);
+                    partitionService.setPartitionReplicaVersions(migrationInfo.getPartitionId(), replicaVersions);
                 }
             } catch (Throwable e) {
                 Level level = Level.WARNING;
@@ -137,19 +137,24 @@ public final class MigrationOperation extends BaseMigrationOperation {
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(partitionVersion);
         out.writeInt(taskCount);
         out.writeInt(zippedTaskData.length);
         out.write(zippedTaskData);
+        for (int i = 0; i < PartitionInfo.MAX_BACKUP_COUNT; i++) {
+            out.writeLong(replicaVersions[i]);
+        }
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        partitionVersion = in.readLong();
         taskCount = in.readInt();
         int size = in.readInt();
         zippedTaskData = new byte[size];
         in.readFully(zippedTaskData);
+        replicaVersions = new long[PartitionInfo.MAX_BACKUP_COUNT];
+        for (int i = 0; i < PartitionInfo.MAX_BACKUP_COUNT; i++) {
+            replicaVersions[i] = in.readLong();
+        }
     }
 
     @Override

@@ -1,0 +1,3 @@
+com.hazelcast.spi.impl.SpiPortableHook
+com.hazelcast.map.MapPortableHook
+com.hazelcast.clientv2.ClientPortableHook
