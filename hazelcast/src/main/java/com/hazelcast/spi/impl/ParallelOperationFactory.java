@@ -66,7 +66,11 @@ public final class ParallelOperationFactory implements MultiPartitionOperationFa
         this.nodeEngine = node.nodeEngine;
     }
 
+    public int getFactoryId() {
+        return SpiDataSerializerHook.F_ID;
+    }
+
     public int getId() {
-        return DataSerializerSpiHook.PARALLEL_OPERATION_FACTORY;
+        return SpiDataSerializerHook.PARALLEL_OPERATION_FACTORY;
     }
 }

@@ -42,7 +42,11 @@ public final class PutOperation extends BasePutOperation implements IdentifiedDa
         return "PutOperation{" + name + "}";
     }
 
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
     public int getId() {
-        return DataSerializerMapHook.PUT;
+        return MapDataSerializerHook.PUT;
     }
 }

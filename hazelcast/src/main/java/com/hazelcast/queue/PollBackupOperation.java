@@ -43,8 +43,12 @@ public final class PollBackupOperation extends QueueOperation implements BackupO
         response = Boolean.TRUE;
     }
 
+    public int getFactoryId() {
+        return QueueDataSerializerHook.F_ID;
+    }
+
     public int getId() {
-        return DataSerializerQueueHook.POLL_BACKUP;
+        return QueueDataSerializerHook.POLL_BACKUP;
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

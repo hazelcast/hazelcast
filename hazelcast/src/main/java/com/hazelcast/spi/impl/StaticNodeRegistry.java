@@ -20,14 +20,15 @@ import com.hazelcast.cluster.*;
 import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.NodeContext;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ConnectionListener;
-import com.hazelcast.nio.ConnectionMonitor;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.*;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.util.ExceptionUtil;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -141,10 +142,6 @@ public class StaticNodeRegistry {
                 return 0;
             }
 
-            public boolean bind(Connection connection, Address localAddress, Address targetAddress, boolean replyBack) {
-                return false;
-            }
-
             class StaticConnection implements Connection {
                 final Address endpoint;
                 final NodeEngineImpl nodeEngine;
@@ -162,7 +159,8 @@ public class StaticNodeRegistry {
                     return true;
                 }
 
-                public boolean write(Packet packet) {
+                public boolean write(SocketWritable socketWritable) {
+                    Packet packet = (Packet) socketWritable;
                     if (nodeEngine.getNode().isActive()) {
                         packet.setConn(thisConnection);
                         nodeEngine.handlePacket(packet);
@@ -186,10 +184,20 @@ public class StaticNodeRegistry {
                     return false;
                 }
 
-                public void setEndPoint(Address remoteEndPoint) {
+                public InetAddress getInetAddress() {
+                    try {
+                        return InetAddress.getLocalHost();
+                    } catch (UnknownHostException e) {
+                        throw ExceptionUtil.rethrow(e);
+                    }
                 }
 
-                public void setMonitor(ConnectionMonitor connectionMonitor) {
+                public InetSocketAddress getRemoteSocketAddress() {
+                    return new InetSocketAddress(getInetAddress(), getPort());
+                }
+
+                public int getPort() {
+                    return 0;
                 }
             }
         }

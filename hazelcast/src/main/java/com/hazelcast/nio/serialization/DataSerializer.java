@@ -22,8 +22,6 @@ import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ServiceLoader;
 
 import java.io.IOException;
-import java.lang.reflect.Modifier;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -38,41 +36,41 @@ public final class DataSerializer implements TypeSerializer<DataSerializable> {
 
     private static final String FACTORY_ID = "com.hazelcast.DataSerializerHook";
 
-    private final Map<Integer, DataSerializableFactory> factories;
+    private final Map<Integer, DataSerializableFactory> factories = new HashMap<Integer, DataSerializableFactory>();
 
-    public DataSerializer() {
-        final Map<Integer, DataSerializableFactory> map = new HashMap<Integer, DataSerializableFactory>();
+    public DataSerializer(Map<Integer, ? extends DataSerializableFactory> dataSerializableFactories) {
+        factories.put(Data.FACTORY_ID, new DataSerializableFactory() {
+            public IdentifiedDataSerializable create(int typeId) {
+                return new Data();
+            }
+        });
+
         try {
             final Iterator<DataSerializerHook> hooks = ServiceLoader.iterator(DataSerializerHook.class, FACTORY_ID);
             while (hooks.hasNext()) {
                 DataSerializerHook hook = hooks.next();
-                final Map<Integer, DataSerializableFactory> f = hook.getFactories();
-                if (f != null) {
-                    for (Map.Entry<Integer, DataSerializableFactory> entry : f.entrySet()) {
-                        final DataSerializableFactory current = map.get(entry.getKey());
-                        final DataSerializableFactory factory = entry.getValue();
-                        if (current != null && current != factory) {
-                            throw new IllegalArgumentException("DataSerializable ID[" + entry.getKey()
-                                + "] is already registered for " + current);
-                        }
-                        final IdentifiedDataSerializable s = factory.create();
-                        final Class<? extends IdentifiedDataSerializable> clazz = s.getClass();
-                        final int mod = clazz.getModifiers();
-                        if (!Modifier.isFinal(mod)) {
-                            throw new IllegalArgumentException("Classes implementing IdentifiedDataSerializable " +
-                                    "must be final -> " + clazz.getName());
-                        }
-                        map.put(entry.getKey(), factory);
-                    }
+                final DataSerializableFactory factory = hook.createFactory();
+                if (factory != null) {
+                    register(hook.getFactoryId(), factory);
                 }
             }
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-        factories = Collections.unmodifiableMap(map);
-        factories.values();
-        factories.keySet();
-        factories.entrySet();
+
+        if (dataSerializableFactories != null) {
+            for (Map.Entry<Integer, ? extends DataSerializableFactory> entry : dataSerializableFactories.entrySet()) {
+                register(entry.getKey(), entry.getValue());
+            }
+        }
+    }
+
+    private void register(int factoryId, DataSerializableFactory factory) {
+        final DataSerializableFactory current = factories.get(factoryId);
+        if (current != null && current != factory) {
+            throw new IllegalArgumentException("DataSerializableFactory[" + factoryId + "] is already registered! " + current + " -> " + factory);
+        }
+        factories.put(factoryId, factory);
     }
 
     public int getTypeId() {
@@ -83,18 +81,24 @@ public final class DataSerializer implements TypeSerializer<DataSerializable> {
         final DataSerializable ds;
         final boolean identified = in.readBoolean();
         int id = 0;
+        int factoryId = 0;
         String className = null;
         try {
             if (identified) {
-                id = in.readInt();
-                final DataSerializableFactory dsf = factories.get(id);
+                factoryId = in.readInt();
+                final DataSerializableFactory dsf = factories.get(factoryId);
                 if (dsf == null) {
-                    throw new HazelcastSerializationException("No DataSerializer factory for id: " + id);
+                    throw new HazelcastSerializationException("No DataSerializerFactory registered for namespace: " + factoryId);
                 }
-                ds = dsf.create();
+                id = in.readInt();
+                ds = dsf.create(id);
+                if (ds == null) {
+                    throw new HazelcastSerializationException(dsf + " is not be able to create an instance for id: " + id);
+                }
+                // TODO: @mm - we can check if DS class is final.
             } else {
                 className = in.readUTF();
-                ds = (DataSerializable) newInstance(className);
+                ds = newInstance(className);
             }
             ds.readData(in);
             return ds;
@@ -102,8 +106,11 @@ public final class DataSerializer implements TypeSerializer<DataSerializable> {
             if (e instanceof IOException) {
                 throw (IOException) e;
             }
-            throw new HazelcastSerializationException("Problem while reading DataSerializable " +
-                    "id: " + id + ", class: " + className + ", exception: " + e.getMessage(), e);
+            if (e instanceof HazelcastSerializationException) {
+                throw (HazelcastSerializationException) e;
+            }
+            throw new HazelcastSerializationException("Problem while reading DataSerializable, namespace: " + factoryId +
+                    ", id: " + id + ", class: " + className + ", exception: " + e.getMessage(), e);
         }
     }
 
@@ -111,7 +118,9 @@ public final class DataSerializer implements TypeSerializer<DataSerializable> {
         final boolean identified = obj instanceof IdentifiedDataSerializable;
         out.writeBoolean(identified);
         if (identified) {
-            out.writeInt(((IdentifiedDataSerializable) obj).getId());
+            final IdentifiedDataSerializable ds = (IdentifiedDataSerializable) obj;
+            out.writeInt(ds.getFactoryId());
+            out.writeInt(ds.getId());
         } else {
             out.writeUTF(obj.getClass().getName());
         }

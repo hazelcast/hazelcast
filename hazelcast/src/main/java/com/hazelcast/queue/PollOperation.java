@@ -81,7 +81,11 @@ public final class PollOperation extends QueueBackupAwareOperation implements Wa
         getResponseHandler().sendResponse(null);
     }
 
+    public int getFactoryId() {
+        return QueueDataSerializerHook.F_ID;
+    }
+
     public int getId() {
-        return DataSerializerQueueHook.POLL;
+        return QueueDataSerializerHook.POLL;
     }
 }

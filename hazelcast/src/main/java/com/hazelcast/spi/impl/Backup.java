@@ -124,9 +124,12 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
         sync = in.readBoolean();
     }
 
-    @Override
+    public int getFactoryId() {
+        return SpiDataSerializerHook.F_ID;
+    }
+
     public int getId() {
-        return DataSerializerSpiHook.BACKUP;
+        return SpiDataSerializerHook.BACKUP;
     }
 
     @Override

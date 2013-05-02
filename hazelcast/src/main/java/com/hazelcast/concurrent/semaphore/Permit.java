@@ -28,7 +28,7 @@ import java.util.Map;
 /**
  * @ali 1/22/13
  */
-public class Permit implements DataSerializable{
+public class Permit implements DataSerializable {
 
     private int available;
 
@@ -48,38 +48,37 @@ public class Permit implements DataSerializable{
         attachMap = new HashMap<String, Integer>(10);
     }
 
-    private void attach(String caller, int permitCount){
+    private void attach(String caller, int permitCount) {
         Integer attached = attachMap.get(caller);
-        if (attached == null){
-            attached = new Integer(0);
+        if (attached == null) {
+            attached = 0;
         }
         attachMap.put(caller, attached + permitCount);
     }
 
-    private void detach(String caller, int permitCount){
+    private void detach(String caller, int permitCount) {
         Integer attached = attachMap.get(caller);
-        if (attached != null){
+        if (attached != null) {
             attached -= permitCount;
-            if (attached <= 0){
+            if (attached <= 0) {
                 attachMap.remove(caller);
-            }
-            else {
+            } else {
                 attachMap.put(caller, attached);
             }
         }
     }
 
-    public boolean memberRemoved(String caller){
+    public boolean memberRemoved(String caller) {
         Integer attached = attachMap.remove(caller);
-        if (attached != null){
+        if (attached != null) {
             available += attached;
             return true;
         }
         return false;
     }
 
-    public boolean init(int permitCount){
-        if (available != 0){
+    public boolean init(int permitCount) {
+        if (available != 0) {
             return false;
         }
         available = permitCount;
@@ -90,12 +89,12 @@ public class Permit implements DataSerializable{
         return available;
     }
 
-    public boolean isAvailable(int permitCount){
+    public boolean isAvailable(int permitCount) {
         return available - permitCount >= 0;
     }
 
-    public boolean acquire(int permitCount, String caller){
-        if (isAvailable(permitCount)){
+    public boolean acquire(int permitCount, String caller) {
+        if (isAvailable(permitCount)) {
             available -= permitCount;
             attach(caller, permitCount);
             return true;
@@ -103,27 +102,27 @@ public class Permit implements DataSerializable{
         return false;
     }
 
-    public int drain(String caller){
+    public int drain(String caller) {
         int drain = available;
         available = 0;
-        if (drain > 0){
+        if (drain > 0) {
             attach(caller, drain);
         }
         return drain;
     }
 
-    public boolean reduce(int permitCount){
-        if (available == 0 || permitCount == 0){
+    public boolean reduce(int permitCount) {
+        if (available == 0 || permitCount == 0) {
             return false;
         }
         available -= permitCount;
-        if (available < 0){
+        if (available < 0) {
             available = 0;
         }
         return true;
     }
 
-    public void release(int permitCount, String caller){
+    public void release(int permitCount, String caller) {
         available += permitCount;
         detach(caller, permitCount);
     }
@@ -145,7 +144,7 @@ public class Permit implements DataSerializable{
         out.writeInt(partitionId);
         config.writeData(out);
         out.writeInt(attachMap.size());
-        for (Map.Entry<String, Integer> entry: attachMap.entrySet()){
+        for (Map.Entry<String, Integer> entry : attachMap.entrySet()) {
             out.writeUTF(entry.getKey());
             out.writeInt(entry.getValue());
         }
@@ -158,7 +157,7 @@ public class Permit implements DataSerializable{
         config.readData(in);
         int size = in.readInt();
         attachMap = new HashMap<String, Integer>(size);
-        for (int i = 0; i < size; i++){
+        for (int i = 0; i < size; i++) {
             String caller = in.readUTF();
             Integer val = in.readInt();
             attachMap.put(caller, val);
@@ -172,7 +171,7 @@ public class Permit implements DataSerializable{
         sb.append(", partitionId=").append(partitionId);
         sb.append('}');
         sb.append("\n");
-        for (Map.Entry<String, Integer> entry: attachMap.entrySet()){
+        for (Map.Entry<String, Integer> entry : attachMap.entrySet()) {
             sb.append("{caller=").append(entry.getKey());
             sb.append(", attached=").append(entry.getValue());
             sb.append("} ");

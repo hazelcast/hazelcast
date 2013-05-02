@@ -23,8 +23,6 @@ import javax.crypto.ShortBufferException;
 import java.nio.ByteBuffer;
 import java.util.logging.Level;
 
-import static com.hazelcast.nio.IOUtil.copyToHeapBuffer;
-
 class SocketPacketReader implements SocketReader {
 
     Packet packet = null;
@@ -32,28 +30,16 @@ class SocketPacketReader implements SocketReader {
     final PacketReader packetReader;
     final TcpIpConnection connection;
     final IOService ioService;
-    final SocketChannelWrapper socketChannel;
     final ILogger logger;
 
-    public SocketPacketReader(SocketChannelWrapper socketChannel, TcpIpConnection connection) {
+    public SocketPacketReader(TcpIpConnection connection) {
         this.connection = connection;
         this.ioService = connection.getConnectionManager().ioService;
-        this.socketChannel = socketChannel;
-        this.logger = ioService.getLogger(SocketPacketReader.class.getName());
+        this.logger = ioService.getLogger(getClass().getName());
         boolean symmetricEncryptionEnabled = CipherHelper.isSymmetricEncryptionEnabled(ioService);
-        boolean asymmetricEncryptionEnabled = CipherHelper.isAsymmetricEncryptionEnabled(ioService);
-        if (asymmetricEncryptionEnabled || symmetricEncryptionEnabled) {
-            if (asymmetricEncryptionEnabled && symmetricEncryptionEnabled) {
-                logger.log(Level.INFO, "Incorrect encryption configuration.");
-                logger.log(Level.INFO, "You can enable either SymmetricEncryption or AsymmetricEncryption.");
-                throw new RuntimeException();
-            } else if (symmetricEncryptionEnabled) {
-                packetReader = new SymmetricCipherPacketReader();
-                logger.log(Level.INFO, "Reader started with SymmetricEncryption");
-            } else {
-                packetReader = new AsymmetricCipherPacketReader();
-                logger.log(Level.INFO, "Reader started with AsymmetricEncryption");
-            }
+        if (symmetricEncryptionEnabled) {
+            packetReader = new SymmetricCipherPacketReader();
+            logger.log(Level.INFO, "Reader started with SymmetricEncryption");
         } else {
             packetReader = new DefaultPacketReader();
         }
@@ -64,16 +50,6 @@ class SocketPacketReader implements SocketReader {
     }
 
     private void enqueueFullPacket(final Packet p) {
-//        p.flipBuffers();
-//        p.read();
-//        p.setFromConnection(connection);
-//        if (p.client) {
-//            connection.setType(Connection.Type.CLIENT);
-//            ioService.handleClientPacket(p);
-//        } else {
-//            connection.setType(Connection.Type.MEMBER);
-//            ioService.handleMemberPacket(p);
-//        }
         p.setConn(connection);
         connection.setType(TcpIpConnection.Type.MEMBER);
         ioService.handleMemberPacket(p);
@@ -96,51 +72,6 @@ class SocketPacketReader implements SocketReader {
                 } else {
                     break;
                 }
-            }
-        }
-    }
-
-    class AsymmetricCipherPacketReader implements PacketReader {
-        Cipher cipher = null;
-        ByteBuffer cipherBuffer = ByteBuffer.allocate(128);
-        ByteBuffer bbAlias = null;
-        boolean aliasSizeSet = false;
-
-        public void readPacket(ByteBuffer inBuffer) throws Exception {
-            if (cipher == null) {
-                if (!aliasSizeSet) {
-                    if (inBuffer.remaining() < 4) {
-                        return;
-                    } else {
-                        int aliasSize = inBuffer.getInt();
-                        bbAlias = ByteBuffer.allocate(aliasSize);
-                    }
-                }
-                copyToHeapBuffer(inBuffer, bbAlias);
-                if (!bbAlias.hasRemaining()) {
-                    bbAlias.flip();
-                    String remoteAlias = new String(bbAlias.array(), 0, bbAlias.limit());
-                    cipher = CipherHelper.createAsymmetricReaderCipher(connection.getConnectionManager().ioService, remoteAlias);
-                }
-            }
-            while (inBuffer.remaining() >= 128) {
-                if (cipherBuffer.position() > 0) throw new RuntimeException();
-                int oldLimit = inBuffer.limit();
-                inBuffer.limit(inBuffer.position() + 128);
-                int cipherReadSize = cipher.doFinal(inBuffer, cipherBuffer);
-                inBuffer.limit(oldLimit);
-                cipherBuffer.flip();
-                while (cipherBuffer.hasRemaining()) {
-                    if (packet == null) {
-                        packet = obtainReadable();
-                    }
-                    boolean complete = packet.readFrom(cipherBuffer);
-                    if (complete) {
-                        enqueueFullPacket(packet);
-                        packet = null;
-                    }
-                }
-                cipherBuffer.clear();
             }
         }
     }

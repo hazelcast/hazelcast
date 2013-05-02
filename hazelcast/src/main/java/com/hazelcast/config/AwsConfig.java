@@ -26,6 +26,7 @@ public class AwsConfig {
     private String tagKey;
     private String tagValue;
     private String hostHeader = "ec2.amazonaws.com";
+    private int connectionTimeoutSeconds;
 
     public void setSecurityGroupName(String securityGroupName) {
         this.securityGroupName = securityGroupName;
@@ -69,18 +70,6 @@ public class AwsConfig {
         this.hostHeader = hostHeader;
     }
 
-    @Override
-    public String toString() {
-        return "AwsConfig{" +
-                "enabled=" + enabled +
-                ", accessKey='" + accessKey + '\'' +
-                ", secretKey='" + secretKey + '\'' +
-                ", region='" + region + '\'' +
-                ", hostHeader='" + hostHeader + '\'' +
-                ", securityGroupName=" + securityGroupName +
-                '}';
-    }
-
     public boolean isEnabled() {
         return enabled;
     }
@@ -103,5 +92,32 @@ public class AwsConfig {
 
     public String getTagValue() {
         return tagValue;
+    }
+
+    /**
+     * @return the connectionTimeoutSeconds
+     */
+    public int getConnectionTimeoutSeconds() {
+        return connectionTimeoutSeconds;
+    }
+
+    /**
+     * @param connectionTimeoutSeconds the connectionTimeoutSeconds to set
+     */
+    public AwsConfig setConnectionTimeoutSeconds(final int connectionTimeoutSeconds) {
+        this.connectionTimeoutSeconds = connectionTimeoutSeconds;
+        return this;
+    }
+
+    @Override
+    public String toString() {
+        return "AwsConfig{" +
+                "enabled=" + enabled +
+                ", accessKey='" + accessKey + '\'' +
+                ", secretKey='" + secretKey + '\'' +
+                ", region='" + region + '\'' +
+                ", hostHeader='" + hostHeader + '\'' +
+                ", securityGroupName=" + securityGroupName +
+                '}';
     }
 }

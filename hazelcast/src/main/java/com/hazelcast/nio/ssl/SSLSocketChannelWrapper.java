@@ -154,12 +154,12 @@ public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
     }
 
     @Override
-    public long read(ByteBuffer[] byteBuffers, int i, int i1) throws IOException {
+    public long read(ByteBuffer[] byteBuffers, int offset, int length) throws IOException {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public long write(ByteBuffer[] byteBuffers, int i, int i1) throws IOException {
+    public long write(ByteBuffer[] byteBuffers, int offset, int length) throws IOException {
         throw new UnsupportedOperationException();
     }
 }

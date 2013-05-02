@@ -32,6 +32,14 @@ public class ClassDefinitionImpl extends BinaryClassDefinition implements ClassD
             FieldDefinition>();
     private Set<ClassDefinition> nestedClassDefinitions = new HashSet<ClassDefinition>();
 
+    public ClassDefinitionImpl() {
+    }
+
+    public ClassDefinitionImpl(int factoryId, int classId) {
+        this.factoryId = factoryId;
+        this.classId = classId;
+    }
+
     public void add(FieldDefinitionImpl fd) {
         fieldDefinitions.add(fd);
         fieldDefinitionsMap.put(fd.fieldName, fd);
@@ -78,6 +86,7 @@ public class ClassDefinitionImpl extends BinaryClassDefinition implements ClassD
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeInt(factoryId);
         out.writeInt(classId);
         out.writeInt(version);
         out.writeInt(fieldDefinitions.size());
@@ -91,6 +100,7 @@ public class ClassDefinitionImpl extends BinaryClassDefinition implements ClassD
     }
 
     public void readData(ObjectDataInput in) throws IOException {
+        factoryId = in.readInt();
         classId = in.readInt();
         version = in.readInt();
         int size = in.readInt();

@@ -107,7 +107,7 @@
                 <!--optional, default is us-east-1 -->
                 <region>us-west-1</region>
                 <!--optional, default is ec2.amazonaws.com. If set, region shouldn't be set as it will override this property -->
-                <hostHeader>ec2.amazonaws.com</hostHeader>
+                <host-header>ec2.amazonaws.com</host-header>
                 <!-- optional, only instances belonging to this group will be discovered, default will try all running instances -->
                 <security-group-name>hazelcast-sg</security-group-name>
                 <tag-key>type</tag-key>
@@ -146,20 +146,6 @@
             <!-- iteration count to use when generating the secret key -->
             <iteration-count>19</iteration-count>
         </symmetric-encryption>
-        <asymmetric-encryption enabled="false">
-            <!-- encryption algorithm -->
-            <algorithm>RSA/NONE/PKCS1PADDING</algorithm>
-            <!-- private key password -->
-            <keyPassword>thekeypass</keyPassword>
-            <!-- private key alias -->
-            <keyAlias>local</keyAlias>
-            <!-- key store type -->
-            <storeType>JKS</storeType>
-            <!-- key store password -->
-            <storePassword>thestorepass</storePassword>
-            <!-- path to the key store -->
-            <storePath>keystore</storePath>
-        </asymmetric-encryption>
     </network>
     <partition-group enabled="false" group-type="CUSTOM">
         <member-group>
@@ -317,9 +303,6 @@
 
     <semaphore name="default">
         <initial-permits>10</initial-permits>
-        <semaphore-factory enabled="true">
-            <class-name>com.hazelcast.examples.MySemaphoreFactory</class-name>
-        </semaphore-factory>
     </semaphore>
 
     <listeners>
@@ -330,7 +313,12 @@
 
     <serialization>
         <portable-version>0</portable-version>
-        <portable-factory-class>com.hazelcast.examples.PortableFactory</portable-factory-class>
+        <data-serializable-factories>
+            <data-serializable-factory factory-id="1">com.hazelcast.examples.DataSerializableFactory</data-serializable-factory>
+        </data-serializable-factories>
+        <portable-factories>
+            <portable-factory factory-id="1">com.hazelcast.examples.PortableFactory</portable-factory>
+        </portable-factories>
         <serializers>
             <global-serializer>com.hazelcast.examples.GlobalSerializerFactory</global-serializer>
             <type-serializer type-class="com.hazelcast.examples.DummyType">
@@ -339,13 +327,6 @@
     </serialization>
 
     <services enable-defaults="false">
-        <map-service />
-        <queue-service />
-        <topic-service />
-        <collection-service />
-        <atomiclong-service />
-        <countdownlatch-service />
-        <semaphore-service />
         <service enabled="true">
             <name>custom-service</name>
             <class-name>com.hazelcast.examples.MyService</class-name>

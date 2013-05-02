@@ -30,7 +30,7 @@ public class ConnectionPoolTest {
     @BeforeClass
     public void initPool(){
         ClientConfig config = new ClientConfig();
-        SerializationService ss = new SerializationServiceImpl(1,null);
+        SerializationService ss = new SerializationServiceImpl(1);
         pool = new ConnectionManager(config, ss);
     }
 

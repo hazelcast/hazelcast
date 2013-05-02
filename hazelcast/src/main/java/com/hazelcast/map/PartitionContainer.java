@@ -17,6 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.util.ConstructorFunction;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -35,8 +36,8 @@ public class PartitionContainer {
         return mapService;
     }
 
-    private final ConcurrencyUtil.ConstructorFunction<String, PartitionRecordStore> recordStoreConstructor
-            = new ConcurrencyUtil.ConstructorFunction<String, PartitionRecordStore>() {
+    private final ConstructorFunction<String, PartitionRecordStore> recordStoreConstructor
+            = new ConstructorFunction<String, PartitionRecordStore>() {
         public PartitionRecordStore createNew(String name) {
             return new PartitionRecordStore(name, PartitionContainer.this);
         }

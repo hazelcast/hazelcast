@@ -17,7 +17,12 @@
 package com.hazelcast.nio;
 
 import java.io.IOException;
+import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.SelectableChannel;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
 
 public interface SocketChannelWrapper {
 
@@ -25,33 +30,33 @@ public interface SocketChannelWrapper {
 
     int validOps();
 
-    java.net.Socket socket();
+    Socket socket();
 
     boolean isConnected();
 
     boolean isConnectionPending();
 
-    boolean connect(java.net.SocketAddress socketAddress) throws java.io.IOException;
+    boolean connect(java.net.SocketAddress socketAddress) throws IOException;
 
-    boolean finishConnect() throws java.io.IOException;
+    boolean finishConnect() throws IOException;
 
-    java.nio.channels.SelectionKey keyFor(java.nio.channels.Selector selector);
+    SelectionKey keyFor(Selector selector);
 
-    java.nio.channels.SelectionKey register(java.nio.channels.Selector selector, int i, java.lang.Object o) throws ClosedChannelException;
+    SelectionKey register(Selector selector, int ops, Object attachment) throws ClosedChannelException;
 
-    int read(java.nio.ByteBuffer byteBuffer) throws java.io.IOException;
+    int read(ByteBuffer byteBuffer) throws java.io.IOException;
 
-    long read(java.nio.ByteBuffer[] byteBuffers, int i, int i1) throws java.io.IOException;
+    long read(ByteBuffer[] byteBuffers, int offset, int length) throws IOException;
 
-    long read(java.nio.ByteBuffer[] byteBuffers) throws java.io.IOException;
+    long read(ByteBuffer[] byteBuffers) throws IOException;
 
-    int write(java.nio.ByteBuffer byteBuffer) throws java.io.IOException;
+    int write(ByteBuffer byteBuffer) throws IOException;
 
-    long write(java.nio.ByteBuffer[] byteBuffers, int i, int i1) throws java.io.IOException;
+    long write(ByteBuffer[] byteBuffers, int offset, int length) throws IOException;
 
-    long write(java.nio.ByteBuffer[] byteBuffers) throws java.io.IOException;
+    long write(ByteBuffer[] byteBuffers) throws IOException;
 
-    java.nio.channels.SelectableChannel configureBlocking(boolean b) throws java.io.IOException;
+    SelectableChannel configureBlocking(boolean b) throws IOException;
 
     boolean isOpen();
 

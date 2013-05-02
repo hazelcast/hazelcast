@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.clientv2.ClientEngineImpl;
 import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
@@ -70,6 +71,7 @@ class ServiceManager {
         registerService(PartitionServiceImpl.SERVICE_NAME, node.getPartitionService());
         registerService(ProxyServiceImpl.SERVICE_NAME, nodeEngine.getProxyService());
         registerService(TransactionManagerServiceImpl.SERVICE_NAME, nodeEngine.getTransactionManagerService());
+        registerService(ClientEngineImpl.SERVICE_NAME, node.clientEngine);
 
         final ServicesConfig servicesConfigConfig = node.getConfig().getServicesConfig();
         if (servicesConfigConfig != null) {

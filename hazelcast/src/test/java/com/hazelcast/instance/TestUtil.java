@@ -33,7 +33,7 @@ import java.util.concurrent.Callable;
 
 public class TestUtil {
 
-    static final private SerializationService serializationService = new SerializationServiceImpl(1, null);
+    static final private SerializationService serializationService = new SerializationServiceImpl(1);
 
     public static Data toData(Object obj) {
         return serializationService.toData(obj);

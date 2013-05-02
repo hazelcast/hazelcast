@@ -60,7 +60,11 @@ public final class OfferBackupOperation extends QueueOperation implements Backup
         itemId = in.readLong();
     }
 
+    public int getFactoryId() {
+        return QueueDataSerializerHook.F_ID;
+    }
+
     public int getId() {
-        return DataSerializerQueueHook.OFFER_BACKUP; //TODO do this for other operations
+        return QueueDataSerializerHook.OFFER_BACKUP; //TODO do this for other operations
     }
 }

@@ -67,7 +67,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     private volatile SocketWriter socketWriter = null; // accessed from ReadHandler
 
-    volatile long lastRegistration = 0;
+    private volatile long lastRegistration = 0;
 
     volatile long lastHandle = 0;
 
@@ -78,12 +78,14 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     void setProtocol(String protocol) {
         if (socketWriter == null) {
-            if ("HZC".equals(protocol)) {
+            if (Protocols.CLUSTER.equals(protocol)) {
                 socketWriter = new SocketPacketWriter(connection);
-                buffer.put("HZC".getBytes());
+                buffer.put(Protocols.CLUSTER.getBytes());
                 inOutSelector.addTask(this);
-            } else if ("P01".equals(protocol)) {
-                socketWriter = new SocketProtocolWriter();
+            } else if (Protocols.CLIENT_TEXT.equals(protocol)) {
+                socketWriter = new SocketProtocolWriter(connection);
+            } else if (Protocols.CLIENT_BINARY.equals(protocol)) {
+                socketWriter = new SocketClientDataWriter(connection);
             } else {
                 socketWriter = new SocketTextWriter(connection);
             }
@@ -107,19 +109,17 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         }
     }
 
-    SocketWritable poll() {
-        SocketWritable sw = writeQueue.poll();
-        return sw;
+    private SocketWritable poll() {
+        return writeQueue.poll();
     }
 
     public void handle() {
         lastHandle = Clock.currentTimeMillis();
         if (socketWriter == null) {
-            setProtocol("HZC");
+            setProtocol(Protocols.CLUSTER);
         }
         if (lastWritable == null) {
-            lastWritable = poll();
-            if (lastWritable == null && buffer.position() == 0) {
+            if ((lastWritable = poll()) == null && buffer.position() == 0) {
                 ready = true;
                 return;
             }

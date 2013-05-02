@@ -27,13 +27,16 @@ import java.util.Set;
  */
 public final class BinaryClassDefinitionProxy extends BinaryClassDefinition implements ClassDefinition {
 
-    public BinaryClassDefinitionProxy(int classId, int version, byte[] binary) {
-        super(classId, version, binary);
+    public BinaryClassDefinitionProxy(int factoryId, int classId, int version, byte[] binary) {
+        this.classId = classId;
+        this.version = version;
+        this.binary = binary;
+        this.factoryId = factoryId;
     }
 
     public ClassDefinition toReal(SerializationContext context) throws IOException {
-        final ClassDefinition cd = context.lookup(classId, version);
-        return cd != null ? cd : context.createClassDefinition(binary);
+        final ClassDefinition cd = context.lookup(factoryId, classId, version);
+        return cd != null ? cd : context.createClassDefinition(factoryId, binary);
     }
 
     public FieldDefinition get(String name) {

@@ -21,6 +21,7 @@ import com.hazelcast.nio.protocol.SocketProtocolReader;
 import com.hazelcast.util.Clock;
 
 import java.io.EOFException;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.util.logging.Level;
@@ -33,9 +34,8 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 
     private SocketReader socketReader = null;
 
-    @SuppressWarnings("VolatileLongOrDoubleField")
-    volatile long lastRegistration = 0;
-    @SuppressWarnings("VolatileLongOrDoubleField")
+    private volatile long lastRegistration = 0;
+
     volatile long lastHandle;
 
     public ReadHandler(TcpIpConnection connection) {
@@ -53,31 +53,11 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
         }
         try {
             if (socketReader == null) {
-                int readBytes = socketChannel.read(protocolBuffer);
-                if (readBytes == -1) {
-                    throw new EOFException();
-                }
-                if (!protocolBuffer.hasRemaining()) {
-                    String protocol = new String(protocolBuffer.array());
-                    WriteHandler writeHandler = connection.getWriteHandler();
-                    if ("HZC".equals(protocol)) {
-                        writeHandler.setProtocol("HZC");
-                        socketReader = new SocketPacketReader(socketChannel, connection);
-                    } else if ("P01".equals(protocol)) {
-                        writeHandler.setProtocol("P01");
-                        socketReader = new SocketProtocolReader(connection);
-                    } else {
-                        writeHandler.setProtocol("TEXT");
-                        buffer.put(protocolBuffer.array());
-                        socketReader = new SocketTextReader(connection);
-                        connection.getConnectionManager().incrementTextConnections();
-                    }
-                }
+                initializeSocketReader();
             }
-            if (socketReader == null) return;
             int readBytes = socketChannel.read(buffer);
             if (readBytes == -1) {
-                throw new EOFException();
+                throw new EOFException("Remote socket closed!");
             }
         } catch (Throwable e) {
             handleSocketException(e);
@@ -95,6 +75,35 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
         } catch (Throwable t) {
             handleSocketException(t);
         }
+    }
+
+    private void initializeSocketReader() throws IOException {
+        if (socketReader == null) {
+            int readBytes = socketChannel.read(protocolBuffer);
+            if (readBytes == -1) {
+                throw new EOFException("Could not read protocol type!");
+            }
+            if (!protocolBuffer.hasRemaining()) {
+                String protocol = new String(protocolBuffer.array());
+                WriteHandler writeHandler = connection.getWriteHandler();
+                if (Protocols.CLUSTER.equals(protocol)) {
+                    writeHandler.setProtocol(Protocols.CLUSTER);
+                    socketReader = new SocketPacketReader(connection);
+                } else if (Protocols.CLIENT_TEXT.equals(protocol)) {
+                    writeHandler.setProtocol(Protocols.CLIENT_TEXT);
+                    socketReader = new SocketProtocolReader(connection);
+                } else if (Protocols.CLIENT_BINARY.equals(protocol)) {
+                    writeHandler.setProtocol(Protocols.CLIENT_BINARY);
+                    socketReader = new SocketClientDataReader(connection);
+                } else {
+                    writeHandler.setProtocol(Protocols.TEXT);
+                    buffer.put(protocolBuffer.array());
+                    socketReader = new SocketTextReader(connection);
+                    connection.getConnectionManager().incrementTextConnections();
+                }
+            }
+        }
+        if (socketReader == null) throw new IOException("Could not initialize SocketReader!");
     }
 
     public final void run() {

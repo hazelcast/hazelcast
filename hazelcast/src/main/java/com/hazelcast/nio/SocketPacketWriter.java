@@ -24,15 +24,16 @@ import java.util.logging.Level;
 
 import static com.hazelcast.nio.IOUtil.copyToDirectBuffer;
 
-public class SocketPacketWriter implements SocketWriter<Packet> {
+class SocketPacketWriter implements SocketWriter<Packet> {
 
     private final PacketWriter packetWriter;
     final TcpIpConnection connection;
+    final IOService ioService;
     final ILogger logger;
 
     SocketPacketWriter(TcpIpConnection connection) {
         this.connection = connection;
-        final IOService ioService = connection.getConnectionManager().ioService;
+        this.ioService = connection.getConnectionManager().ioService;
         this.logger = ioService.getLogger(SocketPacketWriter.class.getName());
         boolean symmetricEncryptionEnabled = CipherHelper.isSymmetricEncryptionEnabled(ioService);
         if (symmetricEncryptionEnabled) {
@@ -59,8 +60,8 @@ public class SocketPacketWriter implements SocketWriter<Packet> {
 
     class SymmetricCipherPacketWriter implements PacketWriter {
         boolean sizeWritten = false;
-        ByteBuffer packetBuffer = ByteBuffer.allocate(SEND_SOCKET_BUFFER_SIZE);
-        final ByteBuffer cipherBuffer = ByteBuffer.allocate(SEND_SOCKET_BUFFER_SIZE);
+        ByteBuffer packetBuffer = ByteBuffer.allocate(ioService.getSocketSendBufferSize());
+        final ByteBuffer cipherBuffer = ByteBuffer.allocate(ioService.getSocketSendBufferSize());
         final Cipher cipher;
 
         SymmetricCipherPacketWriter() {

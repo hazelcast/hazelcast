@@ -29,6 +29,7 @@ import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.spi.*;
 import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.util.ConstructorFunction;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -46,7 +47,7 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
 
     private final ConcurrentMap<String, AtomicLong> numbers = new ConcurrentHashMap<String, AtomicLong>();
 
-    private final ConcurrencyUtil.ConstructorFunction<String, AtomicLong> atomicLongConstructorFunction = new ConcurrencyUtil.ConstructorFunction<String, AtomicLong>() {
+    private final ConstructorFunction<String, AtomicLong> atomicLongConstructorFunction = new ConstructorFunction<String, AtomicLong>() {
         public AtomicLong createNew(String key) {
             return new AtomicLong(0L);
         }

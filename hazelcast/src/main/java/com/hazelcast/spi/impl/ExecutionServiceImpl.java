@@ -22,6 +22,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.*;
 
 import java.lang.reflect.InvocationTargetException;
@@ -69,6 +70,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
         // default executors
         register(SYSTEM_EXECUTOR, coreSize * 2, Integer.MAX_VALUE);
         register(ASYNC_EXECUTOR, coreSize * 2, coreSize * 100000);
+        register(CLIENT_EXECUTOR, coreSize * 5, coreSize * 100000);
         scheduledManagedExecutor = register(SCHEDULED_EXECUTOR, coreSize * 5, coreSize * 100000);
     }
 
@@ -91,8 +93,8 @@ public final class ExecutionServiceImpl implements ExecutionService {
         return executor;
     }
 
-    private final ConcurrencyUtil.ConstructorFunction<String, ExecutorService> constructor =
-            new ConcurrencyUtil.ConstructorFunction<String, ExecutorService>() {
+    private final ConstructorFunction<String, ExecutorService> constructor =
+            new ConstructorFunction<String, ExecutorService>() {
                 public ManagedExecutorService createNew(String name) {
                     final ExecutorConfig cfg = nodeEngine.getConfig().getExecutorConfig(name);
                     final int queueCapacity = cfg.getQueueCapacity() == 0 ? Integer.MAX_VALUE : cfg.getQueueCapacity();

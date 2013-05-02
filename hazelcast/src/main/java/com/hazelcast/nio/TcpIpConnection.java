@@ -20,6 +20,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.SystemLogService;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.logging.Level;
@@ -47,7 +49,6 @@ public final class TcpIpConnection implements Connection {
     private final SystemLogService systemLogService;
 
     private final int connectionId;
-//    private final SimpleBoundedQueue<Packet> packetQueue = new SimpleBoundedQueue<Packet>(100);
 
     private ConnectionMonitor monitor;
 
@@ -74,11 +75,7 @@ public final class TcpIpConnection implements Connection {
         return connectionManager;
     }
 
-    public void write(SocketWritable packet) {
-        writeHandler.enqueueSocketWritable(packet);
-    }
-
-    public boolean write(Packet packet) {
+    public boolean write(SocketWritable packet) {
         if (!live) return false;
         writeHandler.enqueueSocketWritable(packet);
         return true;
@@ -87,7 +84,7 @@ public final class TcpIpConnection implements Connection {
     public enum Type {
         NONE(false, false),
         MEMBER(true, true),
-        CLIENT(false, true),
+        BINARY_CLIENT(false, true),
         PROTOCOL_CLIENT(false, true),
         REST_CLIENT(false, false),
         MEMCACHE_CLIENT(false, false);
@@ -121,6 +118,18 @@ public final class TcpIpConnection implements Connection {
 
     public SocketChannelWrapper getSocketChannelWrapper() {
         return socketChannel;
+    }
+
+    public InetAddress getInetAddress() {
+        return socketChannel.socket().getInetAddress();
+    }
+
+    public int getPort() {
+        return socketChannel.socket().getPort();
+    }
+
+    public InetSocketAddress getRemoteSocketAddress() {
+        return (InetSocketAddress) socketChannel.socket().getRemoteSocketAddress();
     }
 
     public ReadHandler getReadHandler() {

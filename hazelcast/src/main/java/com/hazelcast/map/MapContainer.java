@@ -40,6 +40,7 @@ import com.hazelcast.wan.WanReplicationPublisher;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -98,6 +99,7 @@ public class MapContainer {
 
         store = storeTemp;
 
+        final ScheduledExecutorService scheduledExecutor = nodeEngine.getExecutionService().getScheduledExecutor();
         if (store != null) {
             if (store instanceof MapLoaderLifecycleSupport) {
                 ((MapLoaderLifecycleSupport) store).init(nodeEngine.getHazelcastInstance(), mapConfig.getMapStoreConfig().getProperties(), name);
@@ -124,8 +126,8 @@ public class MapContainer {
             }
 
             if (mapStoreConfig.getWriteDelaySeconds() > 0) {
-                mapStoreWriteScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new MapStoreWriteProcessor(this, mapService), false);
-                mapStoreDeleteScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new MapStoreDeleteProcessor(this, mapService), false);
+                mapStoreWriteScheduler = EntryTaskSchedulerFactory.newScheduler(scheduledExecutor, new MapStoreWriteProcessor(this, mapService), false);
+                mapStoreDeleteScheduler = EntryTaskSchedulerFactory.newScheduler(scheduledExecutor, new MapStoreDeleteProcessor(this, mapService), false);
             } else {
                 mapStoreDeleteScheduler = null;
                 mapStoreWriteScheduler = null;
@@ -135,9 +137,9 @@ public class MapContainer {
             mapStoreDeleteScheduler = null;
             mapStoreWriteScheduler = null;
         }
-        ttlEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new EvictionProcessor(nodeEngine, mapService, name), true);
+        ttlEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(scheduledExecutor, new EvictionProcessor(nodeEngine, mapService, name), true);
         if (mapConfig.getMaxIdleSeconds() > 0) {
-            idleEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new EvictionProcessor(nodeEngine, mapService, name), true);
+            idleEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(scheduledExecutor, new EvictionProcessor(nodeEngine, mapService, name), true);
         } else {
             idleEvictionScheduler = null;
         }

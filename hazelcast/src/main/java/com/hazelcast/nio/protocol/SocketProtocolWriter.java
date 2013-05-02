@@ -18,10 +18,15 @@ package com.hazelcast.nio.protocol;
 
 import com.hazelcast.nio.Protocol;
 import com.hazelcast.nio.SocketWriter;
+import com.hazelcast.nio.TcpIpConnection;
 
 import java.nio.ByteBuffer;
 
 public class SocketProtocolWriter implements SocketWriter<Protocol> {
+    public SocketProtocolWriter(TcpIpConnection connection) {
+
+    }
+
     public boolean write(Protocol socketWritable, ByteBuffer socketBuffer) throws Exception {
         return socketWritable.writeTo(socketBuffer);
     }

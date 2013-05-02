@@ -27,6 +27,7 @@ import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.spi.*;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.util.ConstructorFunction;
 
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -42,7 +43,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
 
     private final Set<String> shutdownExecutors = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
     private final ConcurrentHashMap<String, LocalExecutorStatsImpl> statsMap = new ConcurrentHashMap<String, LocalExecutorStatsImpl>();
-    private final ConcurrencyUtil.ConstructorFunction<String, LocalExecutorStatsImpl> localExecutorStatsConstructorFunction = new ConcurrencyUtil.ConstructorFunction<String, LocalExecutorStatsImpl>() {
+    private final ConstructorFunction<String, LocalExecutorStatsImpl> localExecutorStatsConstructorFunction = new ConstructorFunction<String, LocalExecutorStatsImpl>() {
         public LocalExecutorStatsImpl createNew(String key) {
             return new LocalExecutorStatsImpl();
         }

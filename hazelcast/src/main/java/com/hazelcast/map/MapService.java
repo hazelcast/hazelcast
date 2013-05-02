@@ -17,6 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.client.ClientCommandHandler;
+import com.hazelcast.clientv2.ClientBinaryService;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.MapConfig;
@@ -54,7 +55,7 @@ import com.hazelcast.spi.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.transaction.Transaction;
 import com.hazelcast.util.ConcurrencyUtil;
-import com.hazelcast.util.ConcurrencyUtil.ConstructorFunction;
+import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.wan.WanReplicationEvent;
 
@@ -69,7 +70,8 @@ import java.util.logging.Level;
 
 public class MapService implements ManagedService, MigrationAwareService, MembershipAwareService,
         TransactionalService, RemoteService, EventPublishingService<EventData, EntryListener>,
-        ClientProtocolService, PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService {
+        ClientProtocolService, PostJoinAwareService, SplitBrainHandlerService,
+        ReplicationSupportingService, ClientBinaryService {
 
     public final static String SERVICE_NAME = "hz:impl:mapService";
 
@@ -95,7 +97,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     }
 
     private final ConcurrentMap<String, LocalMapStatsImpl> statsMap = new ConcurrentHashMap<String, LocalMapStatsImpl>(1000);
-    private final ConcurrencyUtil.ConstructorFunction<String, LocalMapStatsImpl> localMapStatsConstructorFunction = new ConcurrencyUtil.ConstructorFunction<String, LocalMapStatsImpl>() {
+    private final ConstructorFunction<String, LocalMapStatsImpl> localMapStatsConstructorFunction = new ConstructorFunction<String, LocalMapStatsImpl>() {
         public LocalMapStatsImpl createNew(String key) {
             return new LocalMapStatsImpl();
         }
@@ -1077,7 +1079,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         long hits = 0;
         long lockedEntryCount = 0;
 
-        int backupCount = mapContainer.getTotalBackupCount();
         ClusterService clusterService = nodeEngine.getClusterService();
         final PartitionService partitionService = nodeEngine.getPartitionService();
 
@@ -1104,6 +1105,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                     }
                 }
             } else {
+                final int backupCount = Math.min(mapContainer.getTotalBackupCount(), PartitionInfo.MAX_REPLICA_COUNT - 1);
                 for (int replica = 1; replica <= backupCount; replica++) {
                     Address replicaAddress = partitionInfo.getReplicaAddress(replica);
                     int tryCount = 30;

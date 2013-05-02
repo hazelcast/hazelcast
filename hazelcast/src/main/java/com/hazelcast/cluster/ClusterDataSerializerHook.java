@@ -18,27 +18,26 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
+import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @mdogan 8/24/12
  */
-public final class DataSerializerClusterHook implements DataSerializerHook {
+public final class ClusterDataSerializerHook implements DataSerializerHook {
 
-    static final int HEARTBEAT = -1;
+    static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.CLUSTER_DS_FACTORY, -2);
+    static final int HEARTBEAT = 0;
 
-    public Map<Integer, DataSerializableFactory> getFactories() {
-        final Map<Integer, DataSerializableFactory> factories = new HashMap<Integer, DataSerializableFactory>();
+    public int getFactoryId() {
+        return F_ID;
+    }
 
-        factories.put(HEARTBEAT, new DataSerializableFactory() {
-            public IdentifiedDataSerializable create() {
-                return new HeartbeatOperation();
+    public DataSerializableFactory createFactory() {
+        return new DataSerializableFactory() {
+            public IdentifiedDataSerializable create(int typeId) {
+                return typeId == HEARTBEAT ? new HeartbeatOperation() : null;
             }
-        });
-
-        return factories;
+        };
     }
 }

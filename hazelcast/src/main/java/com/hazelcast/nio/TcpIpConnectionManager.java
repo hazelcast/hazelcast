@@ -26,6 +26,7 @@ import com.hazelcast.nio.ssl.BasicSSLContextFactory;
 import com.hazelcast.nio.ssl.SSLContextFactory;
 import com.hazelcast.nio.ssl.SSLSocketChannelWrapper;
 import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.util.ConstructorFunction;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -162,9 +163,6 @@ public class TcpIpConnectionManager implements ConnectionManager {
             if (CipherHelper.isSymmetricEncryptionEnabled(ioService)) {
                 throw new RuntimeException("SSL and SymmetricEncryption cannot be both enabled!");
             }
-            if (CipherHelper.isAsymmetricEncryptionEnabled(ioService)) {
-                throw new RuntimeException("SSL and AsymmetricEncryption cannot be both enabled!");
-            }
             SSLContextFactory sslContextFactoryObject = (SSLContextFactory) sslConfig.getFactoryImplementation();
             try {
                 String factoryClassName = sslConfig.getFactoryClassName();
@@ -205,7 +203,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         setConnectionListeners.add(listener);
     }
 
-    public boolean bind(Connection connection, Address remoteEndPoint, Address localEndpoint, final boolean replyBack) {
+    public boolean bind(TcpIpConnection connection, Address remoteEndPoint, Address localEndpoint, final boolean replyBack) {
         log(Level.FINEST, "Binding " + connection + " to " + remoteEndPoint + ", replyBack is " + replyBack);
         final Address thisAddress = ioService.getThisAddress();
         if (!connection.isClient() && !thisAddress.equals(localEndpoint)) {
@@ -239,7 +237,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         return false;
     }
 
-    void sendBindRequest(final Connection connection, final Address remoteEndPoint, final boolean replyBack) {
+    void sendBindRequest(final TcpIpConnection connection, final Address remoteEndPoint, final boolean replyBack) {
         connection.setEndPoint(remoteEndPoint);
         //make sure bind packet is the first packet sent to the end point.
         final BindOperation bind = new BindOperation(ioService.getThisAddress(), remoteEndPoint, replyBack);
@@ -292,8 +290,8 @@ public class TcpIpConnectionManager implements ConnectionManager {
         return connection;
     }
 
-    private final ConcurrencyUtil.ConstructorFunction<Address, ConnectionMonitor> monitorConstructor
-            = new ConcurrencyUtil.ConstructorFunction<Address, ConnectionMonitor>() {
+    private final ConstructorFunction<Address, ConnectionMonitor> monitorConstructor
+            = new ConstructorFunction<Address, ConnectionMonitor>() {
         public ConnectionMonitor createNew(Address endpoint) {
             return new ConnectionMonitor(TcpIpConnectionManager.this, endpoint);
         }

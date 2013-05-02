@@ -42,6 +42,7 @@ import com.hazelcast.spi.*;
 import com.hazelcast.transaction.Transaction;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.transaction.TransactionalObject;
+import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.*;
@@ -59,7 +60,7 @@ public class CollectionService implements ManagedService, RemoteService, Members
     private final CollectionPartitionContainer[] partitionContainers;
     private final ConcurrentMap<ListenerKey, String> eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
     private final ConcurrentMap<CollectionProxyId, LocalMultiMapStatsImpl> statsMap = new ConcurrentHashMap<CollectionProxyId, LocalMultiMapStatsImpl>(1000);
-    private final ConcurrencyUtil.ConstructorFunction<CollectionProxyId, LocalMultiMapStatsImpl> localMultiMapStatsConstructorFunction = new ConcurrencyUtil.ConstructorFunction<CollectionProxyId, LocalMultiMapStatsImpl>() {
+    private final ConstructorFunction<CollectionProxyId, LocalMultiMapStatsImpl> localMultiMapStatsConstructorFunction = new ConstructorFunction<CollectionProxyId, LocalMultiMapStatsImpl>() {
         public LocalMultiMapStatsImpl createNew(CollectionProxyId key) {
             return new LocalMultiMapStatsImpl();
         }

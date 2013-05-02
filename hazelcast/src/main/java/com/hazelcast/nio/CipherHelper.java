@@ -16,7 +16,6 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.config.AsymmetricEncryptionConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -32,7 +31,6 @@ import java.security.spec.KeySpec;
 import java.util.logging.Level;
 
 final class CipherHelper {
-    private static AsymmetricCipherBuilder asymmetricCipherBuilder = null;
     private static SymmetricCipherBuilder symmetricCipherBuilder = null;
 
     final static ILogger logger = Logger.getLogger(CipherHelper.class.getName());
@@ -46,22 +44,6 @@ final class CipherHelper {
         } catch (Exception e) {
             logger.log(Level.WARNING, e.getMessage(), e);
         }
-    }
-
-    @SuppressWarnings("SynchronizedMethod")
-    public static synchronized Cipher createAsymmetricReaderCipher(IOService ioService, String remoteAlias) throws Exception {
-        if (asymmetricCipherBuilder == null) {
-            asymmetricCipherBuilder = new AsymmetricCipherBuilder(ioService);
-        }
-        return asymmetricCipherBuilder.getReaderCipher(remoteAlias);
-    }
-
-    @SuppressWarnings("SynchronizedMethod")
-    public static synchronized Cipher createAsymmetricWriterCipher(IOService ioService) throws Exception {
-        if (asymmetricCipherBuilder == null) {
-            asymmetricCipherBuilder = new AsymmetricCipherBuilder(ioService);
-        }
-        return asymmetricCipherBuilder.getWriterCipher();
     }
 
     @SuppressWarnings("SynchronizedMethod")
@@ -80,72 +62,15 @@ final class CipherHelper {
         return symmetricCipherBuilder.getWriterCipher();
     }
 
-    public static boolean isAsymmetricEncryptionEnabled(IOService ioService) {
-        AsymmetricEncryptionConfig aec = ioService.getAsymmetricEncryptionConfig();
-        return (aec != null && aec.isEnabled());
-    }
-
     public static boolean isSymmetricEncryptionEnabled(IOService ioService) {
         SymmetricEncryptionConfig sec = ioService.getSymmetricEncryptionConfig();
         return (sec != null && sec.isEnabled());
-    }
-
-    public static String getKeyAlias(IOService ioService) {
-        AsymmetricEncryptionConfig aec = ioService.getAsymmetricEncryptionConfig();
-        return aec.getKeyAlias();
     }
 
     interface CipherBuilder {
         Cipher getWriterCipher() throws Exception;
 
         Cipher getReaderCipher(String param) throws Exception;
-
-        boolean isAsymmetric();
-    }
-
-    static class AsymmetricCipherBuilder implements CipherBuilder {
-        String algorithm = "RSA/NONE/PKCS1PADDING";
-        KeyStore keyStore;
-        private final IOService ioService;
-
-        AsymmetricCipherBuilder(IOService ioService) {
-            this.ioService = ioService;
-            try {
-                AsymmetricEncryptionConfig aec = ioService.getAsymmetricEncryptionConfig();
-                algorithm = aec.getAlgorithm();
-                keyStore = KeyStore.getInstance(aec.getStoreType());
-                // get user password and file input stream
-                char[] password = aec.getStorePassword().toCharArray();
-                java.io.FileInputStream fis =
-                        new java.io.FileInputStream(aec.getStorePath());
-                keyStore.load(fis, password);
-                fis.close();
-            } catch (Exception e) {
-                logger.log(Level.WARNING, e.getMessage(), e);
-            }
-        }
-
-        public Cipher getReaderCipher(String remoteAlias) throws Exception {
-            java.security.cert.Certificate certificate = keyStore.getCertificate(remoteAlias);
-            PublicKey publicKey = certificate.getPublicKey();
-            Cipher cipher = Cipher.getInstance(algorithm);
-            cipher.init(Cipher.DECRYPT_MODE, publicKey);
-            return cipher;
-        }
-
-        public Cipher getWriterCipher() throws Exception {
-            AsymmetricEncryptionConfig aec = ioService.getAsymmetricEncryptionConfig();
-            Cipher cipher = Cipher.getInstance(algorithm);
-            KeyStore.PrivateKeyEntry pkEntry = (KeyStore.PrivateKeyEntry)
-                    keyStore.getEntry(aec.getKeyAlias(), new KeyStore.PasswordProtection(aec.getKeyPassword().toCharArray()));
-            PrivateKey privateKey = pkEntry.getPrivateKey();
-            cipher.init(Cipher.ENCRYPT_MODE, privateKey);
-            return cipher;
-        }
-
-        public boolean isAsymmetric() {
-            return true;
-        }
     }
 
     static class SymmetricCipherBuilder implements CipherBuilder {
@@ -239,10 +164,6 @@ final class CipherHelper {
 
         public Cipher getReaderCipher(String ignored) {
             return create(false);
-        }
-
-        public boolean isAsymmetric() {
-            return false;
         }
     }
 
