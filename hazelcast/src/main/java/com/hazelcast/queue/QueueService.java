@@ -129,6 +129,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         while (iterator.hasNext()) {
             QueueContainer container = iterator.next().getValue();
             if (container.getPartitionId() == partitionId) {
+                container.destroy();
                 iterator.remove();
             }
         }

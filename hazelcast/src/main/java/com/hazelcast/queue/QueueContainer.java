@@ -614,4 +614,15 @@ public class QueueContainer implements DataSerializable {
             setId(item.getItemId());
         }
     }
+
+    public void destroy(){
+        if (itemQueue != null){
+            itemQueue.clear();
+        }
+        if (backupMap != null){
+            backupMap.clear();
+        }
+        txMap.clear();
+        dataMap.clear();
+    }
 }
