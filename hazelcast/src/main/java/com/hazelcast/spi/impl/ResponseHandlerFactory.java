@@ -36,7 +36,7 @@ public final class ResponseHandlerFactory {
     }
 
     public static ResponseHandler createLocalResponseHandler(Operation op, Callback<Object> callback) {
-        return new LocalInvocationResponseHandler(callback);
+        return new LocalInvocationResponseHandler(callback, op.getCallId());
     }
 
     public static void setRemoteResponseHandler(NodeEngine nodeEngine, Operation op) {
@@ -99,35 +99,28 @@ public final class ResponseHandlerFactory {
                 throw new IllegalStateException("Response already sent for call: " + callId
                                                 + " to " + conn.getEndPoint() + ", current-response: " + obj);
             }
-            final Response response;
-            if (obj instanceof Response) {
-                response = (Response) obj;
-            } else {
-                response = new Response(obj);
-            }
-            OperationAccessor.setCallId(response, callId);
-            nodeEngine.getOperationService().send(response, conn);
+            final ResponseOperation responseOp = new ResponseOperation(obj);
+            OperationAccessor.setCallId(responseOp, callId);
+            nodeEngine.getOperationService().send(responseOp, conn);
         }
     }
 
     private static class LocalInvocationResponseHandler implements ResponseHandler {
 
         private final Callback<Object> callback;
+        private final long callId;
         private final AtomicBoolean sent = new AtomicBoolean(false);
-        private volatile Object response;
-        private volatile Throwable trace;
 
-        private LocalInvocationResponseHandler(Callback<Object> callback) {
+        private LocalInvocationResponseHandler(Callback<Object> callback, long callId) {
             this.callback = callback;
+            this.callId = callId;
         }
 
         public void sendResponse(Object obj) {
             if (!sent.compareAndSet(false, true)) {
                 throw new IllegalStateException("Response already sent for callback: " + callback
-                        + ", current-response: : " + obj + " -vs- " + response, trace);
+                        + ", current-response: : " + obj);
             }
-            response = obj;
-            trace = new Throwable();
             callback.notify(obj);
         }
     }

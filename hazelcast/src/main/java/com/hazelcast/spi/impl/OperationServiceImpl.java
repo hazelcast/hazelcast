@@ -55,7 +55,7 @@ final class OperationServiceImpl implements OperationService {
     private final ExecutorService systemExecutor;
     private final long defaultCallTimeout;
     private final Set<RemoteCallKey> executingCalls;
-    private final ConcurrentMap<Long, Semaphore> backupCalls; // TODO: may need to evict records...
+    private final ConcurrentMap<Long, Semaphore> backupCalls;
     private final int operationThreadCount;
 
     OperationServiceImpl(NodeEngineImpl nodeEngine) {
@@ -189,11 +189,12 @@ final class OperationServiceImpl implements OperationService {
             Object response = null;
             if (op instanceof BackupAwareOperation) {
                 final BackupAwareOperation backupAwareOp = (BackupAwareOperation) op;
+                int syncBackupCount = 0;
                 if (backupAwareOp.shouldBackup()) {
-                    int syncBackupCount = sendBackups(backupAwareOp);
-                    if (returnsResponse) {
-                        response = new ResponseObj(op.getResponse(), op.getCallId(), syncBackupCount);
-                    }
+                    syncBackupCount = sendBackups(backupAwareOp);
+                }
+                if (returnsResponse) {
+                    response = new Response(op.getResponse(), op.getCallId(), syncBackupCount);
                 }
             }
 
@@ -541,6 +542,8 @@ final class OperationServiceImpl implements OperationService {
             call.offerResponse(response);
         }
         remoteCalls.clear();
+        System.out.println("backupCalls.size() = " + backupCalls.size());
+        backupCalls.clear();
         for (ExecutorService executor : opExecutors) {
             try {
                 executor.awaitTermination(3, TimeUnit.SECONDS);
@@ -577,8 +580,8 @@ final class OperationServiceImpl implements OperationService {
                 op.setNodeEngine(nodeEngine);
                 OperationAccessor.setCallerAddress(op, caller);
                 OperationAccessor.setConnection(op, conn);
-                if (op instanceof Response) {
-                    processResponse((Response) op);
+                if (op instanceof ResponseOperation) {
+                    processResponse((ResponseOperation) op);
                 } else {
                     ResponseHandlerFactory.setRemoteResponseHandler(nodeEngine, op);
                     if (!OperationAccessor.isJoinOperation(op) && node.clusterService.getMember(op.getCallerAddress()) == null) {
@@ -594,7 +597,7 @@ final class OperationServiceImpl implements OperationService {
             }
         }
 
-        void processResponse(Response response) {
+        void processResponse(ResponseOperation response) {
             try {
                 response.beforeRun();
                 response.run();

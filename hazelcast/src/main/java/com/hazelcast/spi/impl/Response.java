@@ -16,97 +16,29 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
+/**
+ * @mdogan 4/10/13
+ */
+class Response {
 
-import java.io.IOException;
+    final Object response;
 
-final class Response extends Operation implements IdentifiedDataSerializable {
+    final long callId;
 
-    private Object result;
-    private boolean exception = false;
-    private int backupCount;
+    final int backupCount;
 
-    public Response() {
-    }
-
-    Response(Object result) {
-        if (result instanceof ResponseObj) {
-            final ResponseObj responseObj = (ResponseObj) result;
-            this.result = responseObj.response;
-            this.backupCount = responseObj.backupCount;
-        } else {
-            this.result = result;
-        }
-        this.exception = result instanceof Throwable;
-    }
-
-    @Override
-    public void beforeRun() throws Exception {
-    }
-
-    public void run() throws Exception {
-        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        if (exception) {
-            result = nodeEngine.toObject(result);
-        }
-        nodeEngine.operationService.notifyRemoteCall(getCallId(), getResponse());
-    }
-
-    @Override
-    public void afterRun() throws Exception {
-    }
-
-    @Override
-    public boolean returnsResponse() {
-        return false;
-    }
-
-    public Object getResponse() {
-        return exception ? result : new ResponseObj(result, getCallId(), backupCount);
-    }
-
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
-        final boolean isData = result instanceof Data;
-        out.writeBoolean(isData);
-        if (isData) {
-            ((Data) result).writeData(out);
-        } else {
-            out.writeObject(result);
-        }
-        out.writeBoolean(exception);
-        out.writeInt(backupCount);
-    }
-
-    protected void readInternal(ObjectDataInput in) throws IOException {
-        final boolean isData = in.readBoolean();
-        if (isData) {
-            Data data = new Data();
-            data.readData(in);
-            result = data;
-        } else {
-            result = in.readObject();
-        }
-        exception = in.readBoolean();
-        backupCount = in.readInt();
-    }
-
-    public int getFactoryId() {
-        return SpiDataSerializerHook.F_ID;
-    }
-
-    public int getId() {
-        return SpiDataSerializerHook.RESPONSE;
+    Response(Object response, long callId, int backupCount) {
+        this.response = response;
+        this.callId = callId;
+        this.backupCount = backupCount;
     }
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("Response{");
-        sb.append("result=").append(result);
-        sb.append(", exception=").append(exception);
+        final StringBuilder sb = new StringBuilder();
+        sb.append("Response");
+        sb.append("{response=").append(response);
+        sb.append(", callId=").append(callId);
         sb.append(", backupCount=").append(backupCount);
         sb.append('}');
         return sb.toString();

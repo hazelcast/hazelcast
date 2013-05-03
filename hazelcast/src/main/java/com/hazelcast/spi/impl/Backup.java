@@ -44,7 +44,7 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
     Backup() {
     }
 
-    public Backup(Operation backupOp, Address originalCaller, long[] replicaVersions, boolean sync) {
+    Backup(Operation backupOp, Address originalCaller, long[] replicaVersions, boolean sync) {
         this.backupOp = backupOp;
         this.originalCaller = originalCaller;
         this.sync = sync;
@@ -67,7 +67,6 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
                 }
             });
             backupOp.setCallerUuid(getCallerUuid());
-//            backupOp.setValidateTarget(false);
             OperationAccessor.setCallerAddress(backupOp, getCallerAddress());
             OperationAccessor.setInvocationTime(backupOp, Clock.currentTimeMillis());
         }
@@ -85,7 +84,7 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
     }
 
     public void afterRun() throws Exception {
-        if (sync) {
+        if (sync && getCallId() != 0 && originalCaller != null) {
             final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
             final long callId = getCallId();
             final OperationServiceImpl operationService = nodeEngine.operationService;

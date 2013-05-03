@@ -247,8 +247,8 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                 if (callbackLocal != null) {
                     try {
                         final Object realResponse;
-                        if (response instanceof ResponseObj) {
-                            final ResponseObj responseObj = (ResponseObj) response;
+                        if (response instanceof Response) {
+                            final Response responseObj = (Response) response;
                             realResponse = responseObj.response;
                         } else if (response == NULL_RESPONSE) {
                             realResponse = null;
@@ -286,16 +286,16 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
             final Object response = resolveResponse(waitForResponse(timeout, unit));
             done = true;
-            if (response instanceof ResponseObj) {
+            if (response instanceof Response) {
                 if (op instanceof BackupAwareOperation) {
-                    final Object obj = waitForBackupsAndGetResponse((ResponseObj) response);
+                    final Object obj = waitForBackupsAndGetResponse((Response) response);
                     if (obj == RETRY_RESPONSE) {
                         final Future f = resetAndReInvoke();
                         return f.get(timeout, unit);
                     }
                     return obj;
                 } else {
-                    return ((ResponseObj) response).response;
+                    return ((Response) response).response;
                 }
             }
             return response;
@@ -377,13 +377,13 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             return TIMEOUT_RESPONSE;
         }
 
-        private Object waitForBackupsAndGetResponse(ResponseObj response) {
+        private Object waitForBackupsAndGetResponse(Response response) {
             if (op instanceof BackupAwareOperation) {
                 try {
                     final boolean ok = nodeEngine.operationService.waitForBackups(response.callId, response.backupCount, 5, TimeUnit.SECONDS);
                     if (!ok) {
                         if (logger.isLoggable(Level.FINEST)) {
-                            logger.log(Level.FINEST, "Backup response cannot be received -> " + toString());
+                            logger.log(Level.FINEST, "Backup response cannot be received -> " + InvocationImpl.this.toString());
                         }
                         if (nodeEngine.getClusterService().getMember(target) == null) {
                             return RETRY_RESPONSE;

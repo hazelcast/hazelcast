@@ -43,7 +43,7 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
 
         constructors[RESPONSE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new Response();
+                return new ResponseOperation();
             }
         };
 
