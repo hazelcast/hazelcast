@@ -34,13 +34,13 @@ import java.util.*;
  */
 public class ObjectSetProxy<E> extends MultiMapProxySupport implements ISet<E>, CollectionProxy {
 
-    public static final String COLLECTION_SET_NAME = "hz:collection:name:set";
+    public static final String COLLECTION_SET_NAME = "hz:set:";
 
     final Data key;
 
     public ObjectSetProxy(CollectionService service, NodeEngine nodeEngine, CollectionProxyId proxyId) {
         super(service, nodeEngine,
-                nodeEngine.getConfig().getMultiMapConfig("set:" + proxyId.getKeyName()).setValueCollectionType(MultiMapConfig.ValueCollectionType.SET),
+                nodeEngine.getConfig().getMultiMapConfig(COLLECTION_SET_NAME + proxyId.getKeyName()).setValueCollectionType(MultiMapConfig.ValueCollectionType.SET),
                 proxyId);
         this.key = nodeEngine.toData(proxyId.getKeyName());
     }

@@ -16,13 +16,9 @@
 
 package com.hazelcast.spi;
 
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.instance.Node;
 
-/**
- * @mdogan 1/17/13
- */
-public interface MultiPartitionOperationFactory extends DataSerializable {
+public interface NodeAware {
 
-    Operation createOperation();
-
+    void setNode(Node node);
 }
