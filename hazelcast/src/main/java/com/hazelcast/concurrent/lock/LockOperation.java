@@ -16,6 +16,7 @@
 
 package com.hazelcast.concurrent.lock;
 
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.*;
 
@@ -61,6 +62,7 @@ public class LockOperation extends BaseLockOperation implements WaitSupport, Bac
     }
 
     public final void onWaitExpire() {
-        getResponseHandler().sendResponse(false);
+        final Object response = (timeout < 0 || timeout == Long.MAX_VALUE) ? new OperationTimeoutException() : Boolean.FALSE;
+        getResponseHandler().sendResponse(response);
     }
 }

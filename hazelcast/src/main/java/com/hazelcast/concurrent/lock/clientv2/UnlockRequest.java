@@ -14,19 +14,35 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cluster;
+package com.hazelcast.concurrent.lock.clientv2;
 
-import com.hazelcast.instance.Node;
-import com.hazelcast.spi.NodeAware;
+import com.hazelcast.concurrent.lock.InternalLockNamespace;
+import com.hazelcast.nio.serialization.Data;
 
-public class AbstractNodeAware implements NodeAware {
-    protected volatile Node node;
+/**
+ * @mdogan 5/3/13
+ */
+public final class UnlockRequest extends AbstractUnlockRequest{
 
-    public Node getNode() {
-        return node;
+    public UnlockRequest() {
     }
 
-    public void setNode(Node node) {
-        this.node = node;
+    public UnlockRequest(Data key, int threadId) {
+        super(key, threadId);
+    }
+
+    @Override
+    protected InternalLockNamespace getNamespace() {
+        return new InternalLockNamespace();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return LockPortableHook.FACTORY_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return 2;
     }
 }

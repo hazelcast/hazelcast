@@ -14,11 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cluster;
+package com.hazelcast.spi;
 
-import com.hazelcast.instance.Node;
+import com.hazelcast.nio.serialization.DataSerializable;
 
-public interface NodeAware {
+/**
+ * @mdogan 1/17/13
+ */
+public interface OperationFactory extends DataSerializable {
 
-    void setNode(Node node);
+    Operation createOperation();
+
 }

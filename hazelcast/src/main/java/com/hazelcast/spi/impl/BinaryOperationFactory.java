@@ -16,13 +16,13 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.cluster.NodeAware;
+import com.hazelcast.spi.NodeAware;
 import com.hazelcast.instance.Node;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.MultiPartitionOperationFactory;
+import com.hazelcast.spi.OperationFactory;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 
@@ -31,21 +31,20 @@ import java.io.IOException;
 /**
  * @mdogan 1/17/13
  */
-public final class ParallelOperationFactory implements MultiPartitionOperationFactory,
-        NodeAware, IdentifiedDataSerializable {
+public final class BinaryOperationFactory implements OperationFactory, NodeAware, IdentifiedDataSerializable {
 
     private Data operationData;
     private transient NodeEngine nodeEngine;
 
-    public ParallelOperationFactory() {
+    public BinaryOperationFactory() {
     }
 
-    public ParallelOperationFactory(Operation operation, NodeEngine nodeEngine) {
+    public BinaryOperationFactory(Operation operation, NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.operationData = nodeEngine.toData(operation);
     }
 
-    public ParallelOperationFactory(Data operationData) {
+    public BinaryOperationFactory(Data operationData) {
         this.operationData = operationData;
     }
 

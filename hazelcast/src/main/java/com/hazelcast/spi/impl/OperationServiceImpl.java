@@ -68,7 +68,7 @@ final class OperationServiceImpl implements OperationService {
         final int concurrencyLevel = reallyMultiCore ? coreSize * 4 : 16;
         remoteCalls = new ConcurrentHashMap<Long, RemoteCall>(1000, 0.75f, concurrencyLevel);
         final int opThreadCount = node.getGroupProperties().OPERATION_THREAD_COUNT.getInteger();
-        operationThreadCount =  opThreadCount > 0 ? opThreadCount : coreSize * 2; // TODO: which thread count is best? coreSize OR coreSize * 2 ?
+        operationThreadCount =  opThreadCount > 0 ? opThreadCount : coreSize * 2;
         opExecutors = new ExecutorService[operationThreadCount];
         for (int i = 0; i < opExecutors.length; i++) {
             opExecutors[i] = Executors.newSingleThreadExecutor(new OperationThreadFactory(i));
@@ -317,24 +317,12 @@ final class OperationServiceImpl implements OperationService {
         }
     }
 
-    public Map<Integer, Object> invokeOnAllPartitions(String serviceName, Operation operation) throws Exception {
-        final ParallelOperationFactory operationFactory = new ParallelOperationFactory(operation, nodeEngine);
-        return invokeOnAllPartitions(serviceName, operationFactory);
-    }
-
-    public Map<Integer, Object> invokeOnAllPartitions(String serviceName, MultiPartitionOperationFactory operationFactory)
-            throws Exception {
+    public Map<Integer, Object> invokeOnAllPartitions(String serviceName, OperationFactory operationFactory) throws Exception {
         final Map<Address, List<Integer>> memberPartitions = nodeEngine.getPartitionService().getMemberPartitionsMap();
         return invokeOnPartitions(serviceName, operationFactory, memberPartitions);
     }
 
-    public Map<Integer, Object> invokeOnPartitions(String serviceName, Operation operation,
-                                                   List<Integer> partitions) throws Exception {
-        final ParallelOperationFactory operationFactory = new ParallelOperationFactory(operation, nodeEngine);
-        return invokeOnPartitions(serviceName, operationFactory, partitions);
-    }
-
-    public Map<Integer, Object> invokeOnPartitions(String serviceName, MultiPartitionOperationFactory operationFactory,
+    public Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
                                                    List<Integer> partitions) throws Exception {
         final Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(3);
         for (int partition : partitions) {
@@ -347,20 +335,14 @@ final class OperationServiceImpl implements OperationService {
         return invokeOnPartitions(serviceName, operationFactory, memberPartitions);
     }
 
-    public Map<Integer, Object> invokeOnTargetPartitions(String serviceName, Operation operation,
+    public Map<Integer, Object> invokeOnTargetPartitions(String serviceName, OperationFactory operationFactory,
                                                          Address target) throws Exception {
-        final ParallelOperationFactory operationFactory = new ParallelOperationFactory(operation, nodeEngine);
-        return invokeOnTargetPartitions(serviceName, operationFactory, target);
-    }
-
-    public Map<Integer, Object> invokeOnTargetPartitions(String serviceName, MultiPartitionOperationFactory operationFactory,
-                                                         Address target) throws Exception {
-        final Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(1);
-        memberPartitions.put(target, nodeEngine.getPartitionService().getMemberPartitions(target));
+        final Map<Address, List<Integer>> memberPartitions = Collections.singletonMap(target,
+                nodeEngine.getPartitionService().getMemberPartitions(target));
         return invokeOnPartitions(serviceName, operationFactory, memberPartitions);
     }
 
-    private Map<Integer, Object> invokeOnPartitions(String serviceName, MultiPartitionOperationFactory operationFactory,
+    private Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
                                                     Map<Address, List<Integer>> memberPartitions) throws Exception {
         final Map<Address, Future> responses = new HashMap<Address, Future>(memberPartitions.size());
         for (Map.Entry<Address, List<Integer>> mp : memberPartitions.entrySet()) {
