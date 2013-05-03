@@ -1,7 +1,22 @@
+/*
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.map;
 
-import com.hazelcast.map.clientv2.MapGetRequest;
-import com.hazelcast.map.clientv2.MapPutRequest;
+import com.hazelcast.map.clientv2.*;
 import com.hazelcast.nio.serialization.FactoryIdHelper;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
@@ -16,6 +31,10 @@ public class MapPortableHook implements PortableHook {
 
     public static final int GET = 1;
     public static final int PUT = 2;
+    public static final int PUT_IF_ABSENT = 3;
+    public static final int TRY_PUT = 4;
+    public static final int PUT_TRANSIENT = 5;
+    public static final int SET = 5;
 
     public int getFactoryId() {
         return F_ID;
@@ -25,10 +44,16 @@ public class MapPortableHook implements PortableHook {
         return new PortableFactory() {
             public Portable create(int classId) {
                 switch (classId) {
-                    case 1:
+                    case GET:
                         return new MapGetRequest();
-                    case 2:
+                    case PUT:
                         return new MapPutRequest();
+                    case PUT_IF_ABSENT:
+                        return new MapPutIfAbsentRequest();
+                    case TRY_PUT:
+                        return new MapTryPutRequest();
+                    case PUT_TRANSIENT:
+                        return new MapPutTransientRequest();
                 }
                 return null;
             }

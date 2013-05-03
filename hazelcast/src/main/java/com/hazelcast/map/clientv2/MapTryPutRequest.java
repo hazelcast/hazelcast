@@ -16,64 +16,47 @@
 
 package com.hazelcast.map.clientv2;
 
-import com.hazelcast.clientv2.AbstractClientRequest;
-import com.hazelcast.clientv2.ClientRequest;
-import com.hazelcast.map.GetOperation;
 import com.hazelcast.map.MapPortableHook;
-import com.hazelcast.map.MapService;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.map.PutIfAbsentOperation;
+import com.hazelcast.map.TryPutOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
 
-public class MapGetRequest extends AbstractClientRequest implements ClientRequest {
+public class MapTryPutRequest extends MapPutRequest {
 
-    private String name;
+    private long timeout;
 
-    private Data key;
-
-    public MapGetRequest() {
+    public MapTryPutRequest() {
     }
 
-    public MapGetRequest(String name, Data key) {
-        this.name = name;
-        this.key = key;
-    }
-
-    public Object process() throws Exception {
-        System.err.println("Running MAP.GET");
-        GetOperation op = new GetOperation(name, key);
-        return clientEngine.invoke(getServiceName(), op, key);
-    }
-
-    public String getServiceName() {
-        return MapService.SERVICE_NAME;
-    }
-
-    @Override
-    public int getFactoryId() {
-        return MapPortableHook.F_ID;
+    public MapTryPutRequest(String name, Data key, Data value, int threadId, long timeout) {
+        super(name, key, value, threadId, -1);
+        this.timeout = timeout;
     }
 
     public int getClassId() {
-        return MapPortableHook.GET;
+        return MapPortableHook.TRY_PUT;
     }
 
+    public Object process() throws Exception {
+        System.err.println("Running MapTryPutRequest");
+        TryPutOperation op = new TryPutOperation(name, key, value, timeout);
+        op.setThreadId(threadId);
+        return clientEngine.invoke(getServiceName(), op, key);
+    }
+
+    @Override
     public void writePortable(PortableWriter writer) throws IOException {
-        writer.writeUTF("n", name);
-        // ...
-        final ObjectDataOutput out = writer.getRawDataOutput();
-        key.writeData(out);
+        writer.writeLong("timeout", timeout);
+        super.writePortable(writer);
     }
 
+    @Override
     public void readPortable(PortableReader reader) throws IOException {
-        name = reader.readUTF("n");
-        //....
-        final ObjectDataInput in = reader.getRawDataInput();
-        key = new Data();
-        key.readData(in);
+        timeout = reader.readLong("timeout");
+        super.readPortable(reader);
     }
 }
