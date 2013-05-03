@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.Operation;
 
 import java.util.concurrent.ExecutionException;
@@ -50,5 +51,11 @@ public interface ClientEngine {
     ILogger getILogger(Class clazz);
 
     ILogger getILogger(String className);
+
+    Object toObject(Data data);
+
+    Data toData(Object obj);
+
+    SerializationService getSerializationService();
 
 }

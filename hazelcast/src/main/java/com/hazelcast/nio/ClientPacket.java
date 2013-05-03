@@ -39,4 +39,17 @@ public final class ClientPacket extends DataAdapter implements SocketWritable, S
     public void setConn(final Connection conn) {
         this.conn = conn;
     }
+
+    public int size() {
+        return data != null ? data.totalSize() : 0;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("ClientPacket{");
+        sb.append("conn=").append(conn);
+        sb.append(", size=").append(size());
+        sb.append('}');
+        return sb.toString();
+    }
 }

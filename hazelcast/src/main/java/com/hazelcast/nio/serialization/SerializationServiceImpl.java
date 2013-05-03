@@ -547,7 +547,7 @@ public final class SerializationServiceImpl implements SerializationService {
             }
             final ClassDefinitionImpl cd = new ClassDefinitionImpl();
             cd.readData(new ContextAwareDataInput(binary, SerializationServiceImpl.this));
-            cd.setBinary(binary);
+            cd.setBinary(compressedBinary);
             final ClassDefinitionImpl currentCD = versionedDefinitions.putIfAbsent(combineToLong(cd.classId,
                     serializationContext.getVersion()), cd);
             if (currentCD == null) {

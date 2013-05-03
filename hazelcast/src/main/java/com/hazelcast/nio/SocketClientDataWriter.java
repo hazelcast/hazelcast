@@ -26,7 +26,6 @@ class SocketClientDataWriter implements SocketWriter<DataAdapter> {
     }
 
     public boolean write(DataAdapter writer, ByteBuffer socketBuffer) throws Exception {
-        System.err.println("writing data -> " + writer.getData());
         return writer.writeTo(socketBuffer);
     }
 }

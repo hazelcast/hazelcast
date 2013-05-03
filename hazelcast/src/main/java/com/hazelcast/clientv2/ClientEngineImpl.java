@@ -34,6 +34,8 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.UuidUtil;
 
 import javax.security.auth.login.LoginException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Collection;
 import java.util.Properties;
 import java.util.concurrent.*;
@@ -63,6 +65,18 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
 
     public void handlePacket(ClientPacket packet) {
         executor.execute(new ClientPacketProcessor(packet));
+    }
+
+    public Object toObject(Data data) {
+        return serializationService.toObject(data);
+    }
+
+    public Data toData(Object obj) {
+        return serializationService.toData(obj);
+    }
+
+    public SerializationService getSerializationService() {
+        return serializationService;
     }
 
     public Object invoke(String serviceName, Operation op, Object key)
@@ -213,18 +227,22 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
                 }
             } catch (Throwable e) {
                 logger.log(Level.SEVERE, e.getMessage(), e);
+                StringWriter w = new StringWriter();
+                e.printStackTrace(new PrintWriter(w));
+                sendResponse(conn, new GenericError(w.toString(), 0));
             } finally {
                 currentEndpoint.set(null);
             }
         }
 
-        private final Data NULL = new Data();
 
         private void sendResponse(Connection conn, Object result) {
             final Data resultData = result != null ? serializationService.toData(result) : NULL;
             conn.write(new DataAdapter(resultData, serializationService.getSerializationContext()));
         }
     }
+
+    private static final Data NULL = new Data();
 
     public String getServiceName() {
         return SERVICE_NAME;

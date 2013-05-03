@@ -123,7 +123,6 @@ public final class Data implements IdentifiedDataSerializable {
         total += 4; // type
         if (classDefinition != null) {
             total += 4; // classDefinition-classId
-            total += 4; // classDefinition-namespace-size
             total += 4; // // classDefinition-factory-id
             total += 4; // classDefinition-version
             total += 4; // classDefinition-binary-length
@@ -218,11 +217,15 @@ public final class Data implements IdentifiedDataSerializable {
         return SerializationConstants.CONSTANT_TYPE_PORTABLE == type;
     }
 
+
     @Override
     public String toString() {
-        return "Data{" +
-                "type=" + type + ", " +
-                "partitionHash=" + getPartitionHash() +
-                "} size= " + bufferSize();
+        final StringBuilder sb = new StringBuilder("Data{");
+        sb.append("type=").append(type);
+        sb.append(", partitionHash=").append(getPartitionHash());
+        sb.append(", bufferSize=").append(bufferSize());
+        sb.append(", totalSize=").append(totalSize());
+        sb.append('}');
+        return sb.toString();
     }
 }

@@ -72,10 +72,10 @@ final class ClientInvocation {
         } else {
             builder = nodeEngine.getOperationService().createInvocationBuilder(serviceName, op, target);
         }
-        builder.setTryCount(50).setCallTimeout(30 * 1000);
+        builder.setTryCount(100).setCallTimeout(20 * 1000);
         Invocation inv = builder.build();
         Future f = inv.invoke();
-        return f.get(60, TimeUnit.SECONDS);
+        return f.get(30, TimeUnit.SECONDS);
     }
 
 
