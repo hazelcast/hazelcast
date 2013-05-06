@@ -149,7 +149,7 @@ public class DefaultPortableReader implements PortableReader {
             int pos = getPosition(fieldName);
             in.position(pos);
             final int len = in.readInt();
-            final int [] values = new int[len];
+            final int[] values = new int[len];
             for (int i = 0; i < len; i++) {
                 values[i] = in.readInt();
             }
@@ -181,7 +181,7 @@ public class DefaultPortableReader implements PortableReader {
             int pos = getPosition(fieldName);
             in.position(pos);
             final int len = in.readInt();
-            final double [] values = new double[len];
+            final double[] values = new double[len];
             for (int i = 0; i < len; i++) {
                 values[i] = in.readDouble();
             }
@@ -197,7 +197,7 @@ public class DefaultPortableReader implements PortableReader {
             int pos = getPosition(fieldName);
             in.position(pos);
             final int len = in.readInt();
-            final float [] values = new float[len];
+            final float[] values = new float[len];
             for (int i = 0; i < len; i++) {
                 values[i] = in.readFloat();
             }
@@ -213,7 +213,7 @@ public class DefaultPortableReader implements PortableReader {
             int pos = getPosition(fieldName);
             in.position(pos);
             final int len = in.readInt();
-            final short [] values = new short[len];
+            final short[] values = new short[len];
             for (int i = 0; i < len; i++) {
                 values[i] = in.readShort();
             }
@@ -290,7 +290,7 @@ public class DefaultPortableReader implements PortableReader {
 
     protected int getPosition(String fieldName) throws IOException {
         if (raw) {
-            throw new HazelcastSerializationException("Can read Portable fields after getRawDataInput() is called!");
+            throw new HazelcastSerializationException("Cannot read Portable fields after getRawDataInput() is called!");
         }
         FieldDefinition fd = cd.get(fieldName);
         if (fd == null) {

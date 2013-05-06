@@ -210,7 +210,7 @@ public class DefaultPortableWriter implements PortableWriter {
 
     private void setPosition(String fieldName) throws IOException {
         if (raw) {
-            throw new HazelcastSerializationException("Can write Portable fields after getRawDataOutput() is called!");
+            throw new HazelcastSerializationException("Cannot write Portable fields after getRawDataOutput() is called!");
         }
         FieldDefinition fd = cd.get(fieldName);
         if (fd == null) {

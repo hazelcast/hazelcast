@@ -23,7 +23,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 
-public class SimpleEntryView<K,V> implements EntryView<K,V>, DataSerializable {
+public class SimpleEntryView<K, V> implements EntryView<K, V>, DataSerializable {
 
     private K key;
     private V value;
@@ -159,5 +159,21 @@ public class SimpleEntryView<K,V> implements EntryView<K,V>, DataSerializable {
         lastStoredTime = in.readLong();
         lastUpdateTime = in.readLong();
         version = in.readLong();
+    }
+
+    @Override
+    public String toString() {
+        return "SimpleEntryView{" +
+                "key=" + key +
+                ", value=" + value +
+                ", cost=" + cost +
+                ", creationTime=" + creationTime +
+                ", expirationTime=" + expirationTime +
+                ", hits=" + hits +
+                ", lastAccessTime=" + lastAccessTime +
+                ", lastStoredTime=" + lastStoredTime +
+                ", lastUpdateTime=" + lastUpdateTime +
+                ", version=" + version +
+                '}';
     }
 }
