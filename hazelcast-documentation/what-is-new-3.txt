@@ -1,0 +1,39 @@
+What is new:
+
+Core architecture:
+    * Single thread to multithread execution
+    * Flow control for executor service threads, async operations and topics
+    * CoreFramework handling anything from invocation to blocking operations to backup handling to events.
+
+SPI for developing new partitioned services, data structures.
+
+Serialization
+    * Portable serialization
+    * Support for multi-version
+    * Fetching individual fields by without having to rely on reflection
+    * Query and indexing support without deserialization and/or reflection.
+
+Map
+    * executeOnKey
+    * continues query
+    * interceptors
+    * lazy indexing
+    * support for delta updates
+
+Queue
+    * No more dependcy on the distributed map
+    * scales really well as you have thousands of separate queues.
+
+Multimap
+    * Values can be Set/List/Queue.
+
+
+Topic
+    * support for total ordering
+
+Transactions
+    * Support for both 1-phase (local) and 2 phase transactions.
+
+
+New Client Protocol
+    * Based on portable serialization
