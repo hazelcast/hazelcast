@@ -17,26 +17,27 @@
 package com.hazelcast.map.clientv2;
 
 import com.hazelcast.map.MapPortableHook;
-import com.hazelcast.map.PutTransientOperation;
-import com.hazelcast.map.SetOperation;
+import com.hazelcast.map.PutIfAbsentOperation;
+import com.hazelcast.map.ReplaceOperation;
 import com.hazelcast.nio.serialization.Data;
 
-public class MapSetRequest extends MapPutRequest {
+public class MapReplaceRequest extends MapPutRequest {
 
-    public MapSetRequest() {
+    public MapReplaceRequest() {
     }
 
-    public MapSetRequest(String name, Data key, Data value, int threadId, long ttl) {
+    public MapReplaceRequest(String name, Data key, Data value, int threadId, long ttl) {
         super(name, key, value, threadId, ttl);
     }
 
     public int getClassId() {
-        return MapPortableHook.SET;
+        return MapPortableHook.REPLACE;
     }
 
     public Object process() throws Exception {
-        SetOperation op = new SetOperation(name, key, value, ttl);
+        ReplaceOperation op = new ReplaceOperation(name, key, value);
         op.setThreadId(threadId);
         return clientEngine.invoke(getServiceName(), op, key);
     }
+
 }

@@ -18,9 +18,9 @@ package com.hazelcast.map.clientv2;
 
 import com.hazelcast.clientv2.AbstractClientRequest;
 import com.hazelcast.clientv2.ClientRequest;
+import com.hazelcast.core.EntryListener;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
-import com.hazelcast.map.PutOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -29,72 +29,47 @@ import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
 
-public class MapPutRequest extends AbstractClientRequest implements ClientRequest {
+public class MapGetEntryViewRequest extends AbstractClientRequest implements ClientRequest {
 
-    protected String name;
-    protected Data key;
-    protected Data value;
-    protected int threadId;
-    protected long ttl;
+    private String name;
+    private Data key;
 
-    public MapPutRequest() {
+    public MapGetEntryViewRequest() {
     }
 
-    public MapPutRequest(String name, Data key, Data value, int threadId, long ttl) {
+    public MapGetEntryViewRequest(String name, Data key) {
         this.name = name;
         this.key = key;
-        this.value = value;
-        this.threadId = threadId;
-        this.ttl = ttl;
-    }
-
-    public MapPutRequest(String name, Data key, Data value, int threadId) {
-        this.name = name;
-        this.key = key;
-        this.value = value;
-        this.threadId = threadId;
-        this.ttl = -1;
-    }
-
-    public int getFactoryId() {
-        return MapPortableHook.F_ID;
-    }
-
-    public int getClassId() {
-        return MapPortableHook.PUT;
     }
 
     public Object process() throws Exception {
-        System.err.println("Running MAP.PUT");
-        PutOperation op = new PutOperation(name, key, value, ttl);
-        op.setThreadId(threadId);
-        return clientEngine.invoke(getServiceName(), op, key);
+        // todo implement
+        return null;
     }
 
     public String getServiceName() {
         return MapService.SERVICE_NAME;
     }
 
+    @Override
+    public int getFactoryId() {
+        return MapPortableHook.F_ID;
+    }
+
+    public int getClassId() {
+        return MapPortableHook.GET_ENTRY_VIEW;
+    }
+
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
-        writer.writeInt("t", threadId);
-        writer.writeLong("ttl", ttl);
-        // ...
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
-        value.writeData(out);
     }
 
     public void readPortable(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
-        threadId = reader.readInt("t");
-        ttl = reader.readLong("ttl");
-        //....
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);
-        value = new Data();
-        value.readData(in);
     }
-
 }

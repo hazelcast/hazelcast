@@ -17,26 +17,30 @@
 package com.hazelcast.map.clientv2;
 
 import com.hazelcast.map.MapPortableHook;
-import com.hazelcast.map.PutTransientOperation;
-import com.hazelcast.map.SetOperation;
+import com.hazelcast.map.ReplaceIfSameOperation;
+import com.hazelcast.map.ReplaceOperation;
 import com.hazelcast.nio.serialization.Data;
 
-public class MapSetRequest extends MapPutRequest {
+public class MapReplaceIfSameRequest extends MapPutRequest {
 
-    public MapSetRequest() {
+    private Data oldValue;
+
+    public MapReplaceIfSameRequest() {
     }
 
-    public MapSetRequest(String name, Data key, Data value, int threadId, long ttl) {
-        super(name, key, value, threadId, ttl);
+    public MapReplaceIfSameRequest(String name, Data key, Data value, Data oldValue, int threadId) {
+        super(name, key, value, threadId);
+        this.oldValue = oldValue;
     }
 
     public int getClassId() {
-        return MapPortableHook.SET;
+        return MapPortableHook.REPLACE_IF_SAME;
     }
 
     public Object process() throws Exception {
-        SetOperation op = new SetOperation(name, key, value, ttl);
+        ReplaceIfSameOperation op = new ReplaceIfSameOperation(name, key, oldValue, value);
         op.setThreadId(threadId);
         return clientEngine.invoke(getServiceName(), op, key);
     }
+
 }
