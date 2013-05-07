@@ -614,11 +614,13 @@ public class ConcurrentMapManager extends BaseManager {
                 Record record = cMap.getOwnedRecord(dataKey);
                 if (record != null && record.isActive() && record.isValid() && record.hasValueData()) {
                     if (cMap.isReadBackupData()) {
+                        record.setLastAccessed();
                         return true;
                     } else {
                         PartitionServiceImpl.PartitionProxy partition = partitionServiceImpl.getPartition(record.getBlockId());
                         if (partition != null && !partitionManager.isOwnedPartitionMigrating(partition.getPartitionId())
                                 && partition.getOwner() != null && partition.getOwner().localMember()) {
+                            record.setLastAccessed();
                             return true;
                         }
                     }
