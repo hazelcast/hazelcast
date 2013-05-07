@@ -170,21 +170,21 @@ public class MapPortableHook implements PortableHook {
                     case EVICT:
                         return new MapEvictRequest();
                     case KEYSET:
-                        return new MapKeysetRequest();
+                        return new MapKeySetRequest();
                     case VALUES:
                         return new MapValuesRequest();
                     case ENTRY_SET:
                         return new MapEntrySetRequest();
                     case KEYSET_QUERY:
-                        return new MapKeysetQueryRequest();
+                        return new MapKeySetQueryRequest();
                     case ENTRY_SET_QUERY:
                         return new MapEntrySetQueryRequest();
                     case VALUES_QUERY:
                         return new MapValuesQueryRequest();
                     case LOCAL_KEYSET:
-                        return new MapLocalKeysetRequest();
+                        return new MapLocalKeySetRequest();
                     case LOCAL_KEYSET_QUERY:
-                        return new MapLocalKeysetQueryRequest();
+                        return new MapLocalKeySetQueryRequest();
                     case ADD_INDEX:
                         return new MapAddIndexRequest();
                     case GET_LOCAL_MAP_STATS:
