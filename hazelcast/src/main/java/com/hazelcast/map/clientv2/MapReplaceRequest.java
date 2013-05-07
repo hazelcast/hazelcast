@@ -17,7 +17,6 @@
 package com.hazelcast.map.clientv2;
 
 import com.hazelcast.map.MapPortableHook;
-import com.hazelcast.map.PutIfAbsentOperation;
 import com.hazelcast.map.ReplaceOperation;
 import com.hazelcast.nio.serialization.Data;
 
@@ -37,7 +36,7 @@ public class MapReplaceRequest extends MapPutRequest {
     public Object process() throws Exception {
         ReplaceOperation op = new ReplaceOperation(name, key, value);
         op.setThreadId(threadId);
-        return clientEngine.invoke(getServiceName(), op, key);
+        return null;
     }
 
 }

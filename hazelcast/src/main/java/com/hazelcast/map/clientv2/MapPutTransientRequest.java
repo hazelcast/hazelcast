@@ -18,12 +18,7 @@ package com.hazelcast.map.clientv2;
 
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.PutTransientOperation;
-import com.hazelcast.map.TryPutOperation;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.PortableWriter;
-
-import java.io.IOException;
 
 public class MapPutTransientRequest extends MapPutRequest {
 
@@ -42,6 +37,6 @@ public class MapPutTransientRequest extends MapPutRequest {
         System.err.println("Running MapPutTransientRequest");
         PutTransientOperation op = new PutTransientOperation(name, key, value, ttl);
         op.setThreadId(threadId);
-        return clientEngine.invoke(getServiceName(), op, key);
+        return null;
     }
 }

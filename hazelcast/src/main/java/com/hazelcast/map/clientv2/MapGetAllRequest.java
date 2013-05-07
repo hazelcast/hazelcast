@@ -16,18 +16,16 @@
 
 package com.hazelcast.map.clientv2;
 
-import com.hazelcast.clientv2.AbstractClientRequest;
-import com.hazelcast.clientv2.ClientRequest;
-import com.hazelcast.collection.operations.GetAllOperation;
-import com.hazelcast.map.MapFlushOperation;
+import com.hazelcast.clientv2.KeyBasedClientRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public class MapGetAllRequest extends AbstractClientRequest implements ClientRequest {
+public class MapGetAllRequest extends KeyBasedClientRequest {
 
     protected String name;
 
@@ -44,6 +42,16 @@ public class MapGetAllRequest extends AbstractClientRequest implements ClientReq
 
     public int getClassId() {
         return MapPortableHook.GET_ALL;
+    }
+
+    @Override
+    protected Object getKey() {
+        return null;
+    }
+
+    @Override
+    protected Operation prepareOperation() {
+        return null;
     }
 
     public Object process() throws Exception {

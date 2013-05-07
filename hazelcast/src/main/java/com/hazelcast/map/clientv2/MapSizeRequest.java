@@ -16,21 +16,17 @@
 
 package com.hazelcast.map.clientv2;
 
-import com.hazelcast.clientv2.AbstractClientRequest;
-import com.hazelcast.clientv2.ClientRequest;
-import com.hazelcast.map.GetOperation;
+import com.hazelcast.clientv2.PartitionClientRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
-import com.hazelcast.map.MapSizeOperation;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public class MapSizeRequest extends AbstractClientRequest implements ClientRequest {
+public class MapSizeRequest extends PartitionClientRequest {
 
     private String name;
 
@@ -41,8 +37,19 @@ public class MapSizeRequest extends AbstractClientRequest implements ClientReque
         this.name = name;
     }
 
-    public Object process() throws Exception {
+    @Override
+    protected Operation prepareOperation() {
         return null;
+    }
+
+    @Override
+    protected int getPartition() {
+        return 0;
+    }
+
+    @Override
+    protected int getReplicaIndex() {
+        return 0;
     }
 
     public String getServiceName() {

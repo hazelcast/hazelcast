@@ -23,7 +23,6 @@ import com.hazelcast.nio.serialization.Data;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentMap;
 
 public interface RecordStore {
 
@@ -57,7 +56,7 @@ public interface RecordStore {
 
     boolean merge(Data dataKey, EntryView mergingEntryView, MapMergePolicy mergePolicy);
 
-    ConcurrentMap<Data, Record> getRecords();
+    Map<Data, Record> getRecords();
 
     Set<Data> keySet();
 

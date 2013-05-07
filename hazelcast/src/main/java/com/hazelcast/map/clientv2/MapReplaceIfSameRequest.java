@@ -18,7 +18,6 @@ package com.hazelcast.map.clientv2;
 
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.ReplaceIfSameOperation;
-import com.hazelcast.map.ReplaceOperation;
 import com.hazelcast.nio.serialization.Data;
 
 public class MapReplaceIfSameRequest extends MapPutRequest {
@@ -40,7 +39,7 @@ public class MapReplaceIfSameRequest extends MapPutRequest {
     public Object process() throws Exception {
         ReplaceIfSameOperation op = new ReplaceIfSameOperation(name, key, oldValue, value);
         op.setThreadId(threadId);
-        return clientEngine.invoke(getServiceName(), op, key);
+        return null;
     }
 
 }

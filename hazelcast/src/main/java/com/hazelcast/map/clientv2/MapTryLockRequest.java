@@ -16,10 +16,7 @@
 
 package com.hazelcast.map.clientv2;
 
-import com.hazelcast.clientv2.AbstractClientRequest;
-import com.hazelcast.clientv2.ClientRequest;
-import com.hazelcast.concurrent.lock.LockOperation;
-import com.hazelcast.instance.ThreadContext;
+import com.hazelcast.clientv2.KeyBasedClientRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ObjectDataInput;
@@ -27,12 +24,11 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.spi.DefaultObjectNamespace;
-import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public class MapTryLockRequest extends AbstractClientRequest implements ClientRequest {
+public class MapTryLockRequest extends KeyBasedClientRequest {
 
     private String name;
     private long ttl;
@@ -51,10 +47,14 @@ public class MapTryLockRequest extends AbstractClientRequest implements ClientRe
         this.timeout = timeout;
     }
 
-    public Object process() throws Exception {
-        ObjectNamespace namespace = new DefaultObjectNamespace(MapService.SERVICE_NAME, name);
-        LockOperation op = new LockOperation(namespace, key, ThreadContext.getThreadId(), ttl, -1);
-        return clientEngine.invoke(getServiceName(), op, key);
+    @Override
+    protected Object getKey() {
+        return null;
+    }
+
+    @Override
+    protected Operation prepareOperation() {
+        return null;
     }
 
     public String getServiceName() {

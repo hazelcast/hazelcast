@@ -18,8 +18,8 @@ package com.hazelcast.map.clientv2;
 
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.PutIfAbsentOperation;
-import com.hazelcast.map.PutOperation;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.Operation;
 
 public class MapPutIfAbsentRequest extends MapPutRequest {
 
@@ -34,11 +34,11 @@ public class MapPutIfAbsentRequest extends MapPutRequest {
         return MapPortableHook.PUT_IF_ABSENT;
     }
 
-    public Object process() throws Exception {
+    protected Operation prepareOperation() {
         System.err.println("Running MapPutIfAbsentRequest");
         PutIfAbsentOperation op = new PutIfAbsentOperation(name, key, value, ttl);
         op.setThreadId(threadId);
-        return clientEngine.invoke(getServiceName(), op, key);
+        return op;
     }
 
 }

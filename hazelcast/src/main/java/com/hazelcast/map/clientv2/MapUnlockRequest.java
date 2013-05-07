@@ -16,15 +16,9 @@
 
 package com.hazelcast.map.clientv2;
 
-import com.hazelcast.clientv2.AbstractClientRequest;
-import com.hazelcast.clientv2.ClientRequest;
-import com.hazelcast.concurrent.lock.LockOperation;
-import com.hazelcast.concurrent.lock.UnlockOperation;
-import com.hazelcast.instance.ThreadContext;
+import com.hazelcast.concurrent.lock.clientv2.AbstractUnlockRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
@@ -33,29 +27,16 @@ import com.hazelcast.spi.ObjectNamespace;
 
 import java.io.IOException;
 
-public class MapUnlockRequest extends AbstractClientRequest implements ClientRequest {
+public class MapUnlockRequest extends AbstractUnlockRequest {
 
     private String name;
-    private int threadId;
-    private Data key;
 
     public MapUnlockRequest() {
     }
 
-    public MapUnlockRequest(String name, Data key, int threadId) {
+    public MapUnlockRequest(Data key, int threadId, String name, boolean force) {
+        super(key, threadId, force);
         this.name = name;
-        this.key = key;
-        this.threadId = threadId;
-    }
-
-    public Object process() throws Exception {
-        ObjectNamespace namespace = new DefaultObjectNamespace(MapService.SERVICE_NAME, name);
-        UnlockOperation op = new UnlockOperation(namespace, key, ThreadContext.getThreadId());
-        return clientEngine.invoke(getServiceName(), op, key);
-    }
-
-    public String getServiceName() {
-        return MapService.SERVICE_NAME;
     }
 
     @Override
@@ -67,20 +48,16 @@ public class MapUnlockRequest extends AbstractClientRequest implements ClientReq
         return MapPortableHook.UNLOCK;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
-        writer.writeUTF("n", name);
-        writer.writeInt("t", threadId);
-        // ...
-        final ObjectDataOutput out = writer.getRawDataOutput();
-        key.writeData(out);
+    @Override
+    protected ObjectNamespace getNamespace() {
+        return new DefaultObjectNamespace(MapService.SERVICE_NAME, name);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    protected void writePortableInternal(PortableWriter writer) throws IOException {
+        writer.writeUTF("n", name);
+    }
+
+    protected void readPortableInternal(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
-        threadId = reader.readInt("t");
-        //....
-        final ObjectDataInput in = reader.getRawDataInput();
-        key = new Data();
-        key.readData(in);
     }
 }

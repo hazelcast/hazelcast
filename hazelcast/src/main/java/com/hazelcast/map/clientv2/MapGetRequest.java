@@ -16,8 +16,7 @@
 
 package com.hazelcast.map.clientv2;
 
-import com.hazelcast.clientv2.AbstractClientRequest;
-import com.hazelcast.clientv2.ClientRequest;
+import com.hazelcast.clientv2.KeyBasedClientRequest;
 import com.hazelcast.map.GetOperation;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
@@ -26,10 +25,11 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public class MapGetRequest extends AbstractClientRequest implements ClientRequest {
+public class MapGetRequest extends KeyBasedClientRequest {
 
     private String name;
 
@@ -43,10 +43,13 @@ public class MapGetRequest extends AbstractClientRequest implements ClientReques
         this.key = key;
     }
 
-    public Object process() throws Exception {
-        System.err.println("Running MAP.GET");
-        GetOperation op = new GetOperation(name, key);
-        return clientEngine.invoke(getServiceName(), op, key);
+    protected Object getKey() {
+        return key;
+    }
+
+    @Override
+    protected Operation prepareOperation() {
+        return new GetOperation(name, key);
     }
 
     public String getServiceName() {

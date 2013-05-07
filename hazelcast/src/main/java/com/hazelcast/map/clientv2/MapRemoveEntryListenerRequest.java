@@ -16,8 +16,7 @@
 
 package com.hazelcast.map.clientv2;
 
-import com.hazelcast.clientv2.AbstractClientRequest;
-import com.hazelcast.clientv2.ClientRequest;
+import com.hazelcast.clientv2.RunnableClientRequest;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
@@ -29,7 +28,7 @@ import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
 
-public class MapRemoveEntryListenerRequest extends AbstractClientRequest implements ClientRequest {
+public class MapRemoveEntryListenerRequest extends RunnableClientRequest {
 
     private String name;
     private EntryListener listener;
@@ -42,6 +41,10 @@ public class MapRemoveEntryListenerRequest extends AbstractClientRequest impleme
         this.name = name;
         this.listener = listener;
         this.key = key;
+    }
+
+    public void run() {
+
     }
 
     public Object process() throws Exception {

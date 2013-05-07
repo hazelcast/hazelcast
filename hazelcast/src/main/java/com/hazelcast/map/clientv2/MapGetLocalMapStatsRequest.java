@@ -16,16 +16,17 @@
 
 package com.hazelcast.map.clientv2;
 
-import com.hazelcast.clientv2.AbstractClientRequest;
-import com.hazelcast.clientv2.ClientRequest;
+import com.hazelcast.clientv2.TargetClientRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public class MapGetLocalMapStatsRequest extends AbstractClientRequest implements ClientRequest {
+public class MapGetLocalMapStatsRequest extends TargetClientRequest {
 
     private String name;
 
@@ -34,6 +35,16 @@ public class MapGetLocalMapStatsRequest extends AbstractClientRequest implements
 
     public MapGetLocalMapStatsRequest(String name) {
         this.name = name;
+    }
+
+    @Override
+    protected Operation prepareOperation() {
+        return null;
+    }
+
+    @Override
+    public Address getTarget() {
+        return null;
     }
 
     public Object process() throws Exception {

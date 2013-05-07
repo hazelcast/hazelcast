@@ -16,21 +16,20 @@
 
 package com.hazelcast.map.clientv2;
 
-import com.hazelcast.clientv2.AbstractClientRequest;
-import com.hazelcast.clientv2.ClientRequest;
+import com.hazelcast.clientv2.KeyBasedClientRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
-import com.hazelcast.map.PutOperation;
 import com.hazelcast.map.RemoveOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public class MapRemoveRequest extends AbstractClientRequest implements ClientRequest {
+public class MapRemoveRequest extends KeyBasedClientRequest {
 
     protected String name;
     protected Data key;
@@ -53,10 +52,14 @@ public class MapRemoveRequest extends AbstractClientRequest implements ClientReq
         return MapPortableHook.REMOVE;
     }
 
-    public Object process() throws Exception {
+    public Object getKey() {
+        return key;
+    }
+
+    protected Operation prepareOperation() {
         RemoveOperation op = new RemoveOperation(name, key);
         op.setThreadId(threadId);
-        return clientEngine.invoke(getServiceName(), op, key);
+        return op;
     }
 
     public String getServiceName() {

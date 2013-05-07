@@ -17,10 +17,8 @@
 package com.hazelcast.map;
 
 import com.hazelcast.map.clientv2.*;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.nio.serialization.PortableHook;
+import com.hazelcast.nio.serialization.*;
+import com.hazelcast.util.ConstructorFunction;
 
 /**
  * @mdogan 5/2/13
@@ -49,14 +47,14 @@ public class MapPortableHook implements PortableHook {
     public static final int IS_LOCKED = 18;
     public static final int TRY_LOCK = 19;
     public static final int UNLOCK = 20;
-    public static final int FORCE_UNLOCK = 21;
+    public static final int EVICT = 21;
     public static final int ADD_LOCAL_ENTRY_LISTENER = 22;
     public static final int ADD_INTERCEPTOR = 23;
     public static final int REMOVE_INTERCEPTOR = 24;
     public static final int ADD_ENTRY_LISTENER = 25;
     public static final int REMOVE_ENTRY_LISTENER = 26;
     public static final int GET_ENTRY_VIEW = 27;
-    public static final int EVICT = 28;
+    public static final int ADD_INDEX = 28;
     public static final int KEYSET = 29;
     public static final int VALUES = 30;
     public static final int ENTRY_SET = 31;
@@ -65,12 +63,9 @@ public class MapPortableHook implements PortableHook {
     public static final int VALUES_QUERY = 34;
     public static final int LOCAL_KEYSET = 35;
     public static final int LOCAL_KEYSET_QUERY = 36;
-    public static final int ADD_INDEX = 37;
-    public static final int GET_LOCAL_MAP_STATS = 38;
-    public static final int EXECUTE_ON_KEY = 39;
-    public static final int EXECUTE_ON_ALL_KEYS = 40;
-
-
+    public static final int GET_LOCAL_MAP_STATS = 37;
+    public static final int EXECUTE_ON_KEY = 38;
+    public static final int EXECUTE_ON_ALL_KEYS = 39;
 
     public int getFactoryId() {
         return F_ID;
@@ -78,7 +73,47 @@ public class MapPortableHook implements PortableHook {
 
     public PortableFactory createFactory() {
         return new PortableFactory() {
+            final ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[39];
+
+            {
+                constructors[GET - 1] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapGetRequest();
+                    }
+                };
+
+                constructors[PUT - 1] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapPutRequest();
+                    }
+                };
+
+                constructors[PUT_IF_ABSENT - 1] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapPutIfAbsentRequest();
+                    }
+                };
+
+                constructors[TRY_PUT - 1] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapTryPutRequest();
+                    }
+                };
+
+                constructors[PUT_TRANSIENT - 1] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapPutTransientRequest();
+                    }
+                };
+
+                // ....
+                // ....
+
+            }
+
             public Portable create(int classId) {
+//                return (classId > 0 && classId <= constructors.length) ? constructors[classId].createNew(classId) : null;
+
                 switch (classId) {
                     case GET:
                         return new MapGetRequest();
@@ -120,8 +155,6 @@ public class MapPortableHook implements PortableHook {
                         return new MapTryLockRequest();
                     case UNLOCK:
                         return new MapUnlockRequest();
-                    case FORCE_UNLOCK:
-                        return new MapForceUnlockRequest();
                     case ADD_LOCAL_ENTRY_LISTENER:
                         return new MapAddLocalEntryListenerRequest();
                     case ADD_INTERCEPTOR:

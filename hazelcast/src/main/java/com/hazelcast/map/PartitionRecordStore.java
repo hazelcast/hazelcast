@@ -73,7 +73,7 @@ public class PartitionRecordStore implements RecordStore {
         return mapContainer;
     }
 
-    public ConcurrentMap<Data, Record> getRecords() {
+    public Map<Data, Record> getRecords() {
         return records;
     }
 

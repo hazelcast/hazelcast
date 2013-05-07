@@ -654,10 +654,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         return commandHandlers;
     }
 
-    public void clientDisconnected(String clientUuid) {
-        // TODO: @mm - release locks owned by this client.
-    }
-
     public String addInterceptor(String mapName, MapInterceptor interceptor) {
         return getMapContainer(mapName).addInterceptor(interceptor);
     }
@@ -1063,7 +1059,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
 
     public QueryableEntrySet getQueryableEntrySet(String mapName) {
         List<Integer> memberPartitions = nodeEngine.getPartitionService().getMemberPartitions(nodeEngine.getThisAddress());
-        List<ConcurrentMap<Data, Record>> mlist = new ArrayList<ConcurrentMap<Data, Record>>();
+        List<Map<Data, Record>> mlist = new ArrayList<Map<Data, Record>>();
         for (Integer partition : memberPartitions) {
             PartitionContainer container = getPartitionContainer(partition);
             RecordStore recordStore = container.getRecordStore(mapName);
@@ -1075,7 +1071,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     public void queryOnPartition(String mapName, Predicate predicate, int partitionId, QueryResult result) {
         PartitionContainer container = getPartitionContainer(partitionId);
         RecordStore recordStore = container.getRecordStore(mapName);
-        ConcurrentMap<Data, Record> records = recordStore.getRecords();
+        Map<Data, Record> records = recordStore.getRecords();
         SerializationServiceImpl serializationService = (SerializationServiceImpl) nodeEngine.getSerializationService();
         for (Record record : records.values()) {
             Data key = record.getKey();
@@ -1111,7 +1107,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             if (partitionInfo.getOwner().equals(thisAddress)) {
                 PartitionContainer partitionContainer = getPartitionContainer(partition);
                 RecordStore recordStore = partitionContainer.getRecordStore(mapName);
-                ConcurrentMap<Data, Record> records = recordStore.getRecords();
+                Map<Data, Record> records = recordStore.getRecords();
                 for (Record record : records.values()) {
                     RecordStatistics stats = record.getStatistics();
                     // there is map store and the record is dirty (waits to be stored)
@@ -1140,7 +1136,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
                     if (replicaAddress != null && replicaAddress.equals(thisAddress)) {
                         PartitionContainer partitionContainer = getPartitionContainer(partition);
                         RecordStore recordStore = partitionContainer.getRecordStore(mapName);
-                        ConcurrentMap<Data, Record> records = recordStore.getRecords();
+                        Map<Data, Record> records = recordStore.getRecords();
                         for (Record record : records.values()) {
                             backupEntryCount++;
                             backupEntryMemoryCost += record.getCost();

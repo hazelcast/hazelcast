@@ -16,17 +16,17 @@
 
 package com.hazelcast.map.clientv2;
 
-import com.hazelcast.clientv2.AbstractClientRequest;
-import com.hazelcast.clientv2.ClientRequest;
+import com.hazelcast.clientv2.AllPartitionsClientRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
+import java.util.Map;
 
-public class MapKeysetRequest extends AbstractClientRequest implements ClientRequest {
+public class MapKeysetRequest extends AllPartitionsClientRequest {
 
     private String name;
 
@@ -35,6 +35,16 @@ public class MapKeysetRequest extends AbstractClientRequest implements ClientReq
 
     public MapKeysetRequest(String name) {
         this.name = name;
+    }
+
+    @Override
+    protected OperationFactory createOperationFactory() {
+        return null;
+    }
+
+    @Override
+    protected Object reduce(Map<Integer, Object> map) {
+        return null;
     }
 
     public Object process() throws Exception {

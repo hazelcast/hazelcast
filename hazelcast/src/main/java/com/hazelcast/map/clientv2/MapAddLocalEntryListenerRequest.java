@@ -16,8 +16,7 @@
 
 package com.hazelcast.map.clientv2;
 
-import com.hazelcast.clientv2.AbstractClientRequest;
-import com.hazelcast.clientv2.ClientRequest;
+import com.hazelcast.clientv2.RunnableClientRequest;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
@@ -29,7 +28,7 @@ import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
 
-public class MapAddLocalEntryListenerRequest extends AbstractClientRequest implements ClientRequest {
+public class MapAddLocalEntryListenerRequest extends RunnableClientRequest {
 
     private String name;
     private EntryListener listener;
@@ -40,6 +39,11 @@ public class MapAddLocalEntryListenerRequest extends AbstractClientRequest imple
     public MapAddLocalEntryListenerRequest(String name, EntryListener listener, Data key, boolean includeValue) {
         this.name = name;
         this.listener = listener;
+    }
+
+    @Override
+    public void run() {
+
     }
 
     public Object process() throws Exception {

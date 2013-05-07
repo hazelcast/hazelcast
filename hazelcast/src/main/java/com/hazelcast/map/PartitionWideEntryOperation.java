@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentMap;
 
 public class PartitionWideEntryOperation extends AbstractMapOperation implements BackupAwareOperation, PartitionAwareOperation {
 
@@ -46,7 +45,7 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
         response = new HashMap<Data, Data>();
         Map.Entry entry;
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
-        ConcurrentMap<Data, Record> records = recordStore.getRecords();
+        Map<Data, Record> records = recordStore.getRecords();
         for (Map.Entry<Data, Record> recordEntry : records.entrySet()) {
             Data dataKey = recordEntry.getKey();
             Record record = recordEntry.getValue();

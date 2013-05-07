@@ -16,9 +16,7 @@
 
 package com.hazelcast.map.clientv2;
 
-import com.hazelcast.clientv2.AbstractClientRequest;
-import com.hazelcast.clientv2.ClientRequest;
-import com.hazelcast.map.GetOperation;
+import com.hazelcast.clientv2.KeyBasedClientRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ObjectDataInput;
@@ -26,10 +24,11 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public class MapContainsKeyRequest extends AbstractClientRequest implements ClientRequest {
+public class MapContainsKeyRequest extends KeyBasedClientRequest {
 
     private String name;
 
@@ -41,6 +40,16 @@ public class MapContainsKeyRequest extends AbstractClientRequest implements Clie
     public MapContainsKeyRequest(String name, Data key) {
         this.name = name;
         this.key = key;
+    }
+
+    @Override
+    protected Object getKey() {
+        return null;
+    }
+
+    @Override
+    protected Operation prepareOperation() {
+        return null;
     }
 
     public Object process() throws Exception {

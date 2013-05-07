@@ -25,7 +25,6 @@ import com.hazelcast.spi.PartitionAwareOperation;
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentMap;
 
 public class PartitionWideEntryBackupOperation extends AbstractMapOperation implements BackupOperation, PartitionAwareOperation {
 
@@ -43,7 +42,7 @@ public class PartitionWideEntryBackupOperation extends AbstractMapOperation impl
     public void run() {
         Map.Entry entry;
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
-        ConcurrentMap<Data,Record> records = recordStore.getRecords();
+        Map<Data,Record> records = recordStore.getRecords();
         for (Map.Entry<Data, Record> recordEntry : records.entrySet()) {
             Data dataKey = recordEntry.getKey();
             Record record = recordEntry.getValue();

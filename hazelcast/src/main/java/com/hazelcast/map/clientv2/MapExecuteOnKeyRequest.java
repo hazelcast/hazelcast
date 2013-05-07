@@ -16,8 +16,7 @@
 
 package com.hazelcast.map.clientv2;
 
-import com.hazelcast.clientv2.AbstractClientRequest;
-import com.hazelcast.clientv2.ClientRequest;
+import com.hazelcast.clientv2.KeyBasedClientRequest;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
@@ -26,10 +25,11 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public class MapExecuteOnKeyRequest extends AbstractClientRequest implements ClientRequest {
+public class MapExecuteOnKeyRequest extends KeyBasedClientRequest {
 
     private String name;
     private Data key;
@@ -42,6 +42,16 @@ public class MapExecuteOnKeyRequest extends AbstractClientRequest implements Cli
         this.name = name;
         this.processor = processor;
         this.key = key;
+    }
+
+    @Override
+    protected Object getKey() {
+        return null;
+    }
+
+    @Override
+    protected Operation prepareOperation() {
+        return null;
     }
 
     public Object process() throws Exception {

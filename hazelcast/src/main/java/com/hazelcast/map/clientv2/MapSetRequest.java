@@ -17,7 +17,6 @@
 package com.hazelcast.map.clientv2;
 
 import com.hazelcast.map.MapPortableHook;
-import com.hazelcast.map.PutTransientOperation;
 import com.hazelcast.map.SetOperation;
 import com.hazelcast.nio.serialization.Data;
 
@@ -37,6 +36,6 @@ public class MapSetRequest extends MapPutRequest {
     public Object process() throws Exception {
         SetOperation op = new SetOperation(name, key, value, ttl);
         op.setThreadId(threadId);
-        return clientEngine.invoke(getServiceName(), op, key);
+        return null;
     }
 }

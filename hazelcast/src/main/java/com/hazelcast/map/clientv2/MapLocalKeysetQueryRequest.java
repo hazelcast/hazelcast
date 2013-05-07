@@ -16,8 +16,7 @@
 
 package com.hazelcast.map.clientv2;
 
-import com.hazelcast.clientv2.AbstractClientRequest;
-import com.hazelcast.clientv2.ClientRequest;
+import com.hazelcast.clientv2.MultiPartitionClientRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ObjectDataInput;
@@ -26,10 +25,13 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
 
-public class MapLocalKeysetQueryRequest extends AbstractClientRequest implements ClientRequest {
+public class MapLocalKeysetQueryRequest extends MultiPartitionClientRequest {
 
     private String name;
     private Predicate predicate;
@@ -39,6 +41,21 @@ public class MapLocalKeysetQueryRequest extends AbstractClientRequest implements
 
     public MapLocalKeysetQueryRequest(String name, Data key) {
         this.name = name;
+    }
+
+    @Override
+    protected OperationFactory createOperationFactory() {
+        return null;
+    }
+
+    @Override
+    protected Object reduce(Map<Integer, Object> map) {
+        return null;
+    }
+
+    @Override
+    public Collection<Integer> getPartitions() {
+        return null;
     }
 
     public Object process() throws Exception {

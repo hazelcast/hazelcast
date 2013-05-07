@@ -16,11 +16,12 @@
 
 package com.hazelcast.map.clientv2;
 
-import com.hazelcast.clientv2.AbstractClientRequest;
-import com.hazelcast.clientv2.ClientRequest;
-import com.hazelcast.concurrent.lock.LockOperation;
+import com.hazelcast.clientv2.ClientEndpoint;
+import com.hazelcast.clientv2.ClientEngine;
+import com.hazelcast.clientv2.RunnableClientRequest;
+import com.hazelcast.core.EntryAdapter;
+import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
-import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ObjectDataInput;
@@ -28,31 +29,45 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.spi.DefaultObjectNamespace;
-import com.hazelcast.spi.ObjectNamespace;
 
 import java.io.IOException;
 
-public class MapAddEntryListenerRequest extends AbstractClientRequest implements ClientRequest {
+public class MapAddEntryListenerRequest extends RunnableClientRequest {
 
     private String name;
-    private EntryListener listener;
     private Data key;
     private boolean includeValue;
 
     public MapAddEntryListenerRequest() {
     }
 
-    public MapAddEntryListenerRequest(String name, EntryListener listener, Data key, boolean includeValue) {
+    public MapAddEntryListenerRequest(String name) {
         this.name = name;
-        this.listener = listener;
+    }
+
+    public MapAddEntryListenerRequest(String name, Data key, boolean includeValue) {
+        this.name = name;
         this.includeValue = includeValue;
         this.key = key;
     }
 
-    public Object process() throws Exception {
-        // todo implement
-        return null;
+    @Override
+    public void run() {
+        final ClientEndpoint endpoint = getEndpoint();
+        final ClientEngine clientEngine = getClientEngine();
+        final MapService mapService = getService();
+        EntryListener<Object, Object> listener = new EntryAdapter<Object, Object>() {
+            public void entryAdded(EntryEvent<Object, Object> event) {
+                if (endpoint.getConn().live()) {
+                    clientEngine.sendResponse(endpoint, event.toString());
+                } else {
+                    System.err.println("De-registering listener for " + name);
+                    mapService.removeEventListener(this, name, null);
+                }
+            }
+        };
+        mapService.addLocalEventListener(listener, name);
+
     }
 
     public String getServiceName() {
@@ -71,17 +86,17 @@ public class MapAddEntryListenerRequest extends AbstractClientRequest implements
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         writer.writeBoolean("i", includeValue);
+
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
-        out.writeObject(listener);
     }
 
     public void readPortable(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         includeValue = reader.readBoolean("i");
+
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);
-        listener = in.readObject();
     }
 }

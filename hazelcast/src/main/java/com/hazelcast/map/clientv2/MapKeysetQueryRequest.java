@@ -16,8 +16,7 @@
 
 package com.hazelcast.map.clientv2;
 
-import com.hazelcast.clientv2.AbstractClientRequest;
-import com.hazelcast.clientv2.ClientRequest;
+import com.hazelcast.clientv2.AllPartitionsClientRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ObjectDataInput;
@@ -26,10 +25,12 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
+import java.util.Map;
 
-public class MapKeysetQueryRequest extends AbstractClientRequest implements ClientRequest {
+public class MapKeysetQueryRequest extends AllPartitionsClientRequest {
 
     private String name;
     private Predicate predicate;
@@ -39,6 +40,16 @@ public class MapKeysetQueryRequest extends AbstractClientRequest implements Clie
 
     public MapKeysetQueryRequest(String name, Data key) {
         this.name = name;
+    }
+
+    @Override
+    protected OperationFactory createOperationFactory() {
+        return null;
+    }
+
+    @Override
+    protected Object reduce(Map<Integer, Object> map) {
+        return null;
     }
 
     public Object process() throws Exception {

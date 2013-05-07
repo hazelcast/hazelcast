@@ -16,49 +16,27 @@
 
 package com.hazelcast.map.clientv2;
 
-import com.hazelcast.clientv2.AbstractClientRequest;
-import com.hazelcast.clientv2.ClientRequest;
-import com.hazelcast.concurrent.lock.LockOperation;
-import com.hazelcast.instance.ThreadContext;
-import com.hazelcast.map.GetOperation;
+import com.hazelcast.concurrent.lock.clientv2.AbstractLockRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
 
-import javax.xml.stream.events.Namespace;
 import java.io.IOException;
 
-public class MapLockRequest extends AbstractClientRequest implements ClientRequest {
+public class MapLockRequest extends AbstractLockRequest {
 
     private String name;
-    private long ttl;
-    private int threadId;
-    private Data key;
 
     public MapLockRequest() {
     }
 
-    public MapLockRequest(String name, Data key, int threadId, long ttl) {
-        this.name = name;
-        this.key = key;
-        this.threadId = threadId;
-        this.ttl = ttl;
-    }
-
-    public Object process() throws Exception {
+    @Override
+    protected ObjectNamespace getNamespace() {
         ObjectNamespace namespace = new DefaultObjectNamespace(MapService.SERVICE_NAME, name);
-        LockOperation op = new LockOperation(namespace, key, ThreadContext.getThreadId(), ttl, -1);
-        return clientEngine.invoke(getServiceName(), op, key);
-    }
-
-    public String getServiceName() {
-        return MapService.SERVICE_NAME;
+        return namespace;
     }
 
     @Override
@@ -70,22 +48,11 @@ public class MapLockRequest extends AbstractClientRequest implements ClientReque
         return MapPortableHook.LOCK;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
+    public void writePortableInternal(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
-        writer.writeInt("t", threadId);
-        writer.writeLong("ttl", ttl);
-        // ...
-        final ObjectDataOutput out = writer.getRawDataOutput();
-        key.writeData(out);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    public void readPortableInternal(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
-        threadId = reader.readInt("t");
-        ttl = reader.readLong("ttl");
-        //....
-        final ObjectDataInput in = reader.getRawDataInput();
-        key = new Data();
-        key.readData(in);
     }
 }

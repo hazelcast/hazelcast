@@ -17,7 +17,6 @@
 package com.hazelcast.map.clientv2;
 
 import com.hazelcast.map.MapPortableHook;
-import com.hazelcast.map.PutIfAbsentOperation;
 import com.hazelcast.map.TryPutOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
@@ -45,7 +44,7 @@ public class MapTryPutRequest extends MapPutRequest {
         System.err.println("Running MapTryPutRequest");
         TryPutOperation op = new TryPutOperation(name, key, value, timeout);
         op.setThreadId(threadId);
-        return clientEngine.invoke(getServiceName(), op, key);
+        return null;
     }
 
     @Override
