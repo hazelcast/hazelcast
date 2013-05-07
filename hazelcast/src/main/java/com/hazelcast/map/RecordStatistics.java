@@ -31,6 +31,7 @@ public class RecordStatistics implements DataSerializable {
     protected volatile long lastUpdateTime = 0;
     protected volatile long lastAccessTime = 0;
     protected volatile long creationTime = 0;
+    protected volatile long expirationTime = 0;
     protected volatile long cost = 0;
 
     public RecordStatistics() {
@@ -54,6 +55,14 @@ public class RecordStatistics implements DataSerializable {
 
     public void setCreationTime(long creationTime) {
         this.creationTime = creationTime;
+    }
+
+    public long getExpirationTime() {
+        return expirationTime;
+    }
+
+    public void setExpirationTime(long expirationTime) {
+        this.expirationTime = expirationTime;
     }
 
     public long getCost() {

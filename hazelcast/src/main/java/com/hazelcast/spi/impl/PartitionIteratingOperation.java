@@ -30,11 +30,11 @@ import java.util.logging.Level;
 
 public final class PartitionIteratingOperation extends AbstractOperation implements IdentifiedDataSerializable {
     private List<Integer> partitions;
-    private MultiPartitionOperationFactory operationFactory;
+    private OperationFactory operationFactory;
 
     private transient Map<Integer, Object> results;
 
-    public PartitionIteratingOperation(List<Integer> partitions, MultiPartitionOperationFactory operationFactory) {
+    public PartitionIteratingOperation(List<Integer> partitions, OperationFactory operationFactory) {
         this.partitions = partitions;
         this.operationFactory = operationFactory;
     }
@@ -63,8 +63,8 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
                 final ResponseQueue queue = responseQueueEntry.getValue();
                 final Integer key = responseQueueEntry.getKey();
                 final Object result = queue.get();
-                if (result instanceof ResponseObj) {
-                    results.put(key, ((ResponseObj) result).response);
+                if (result instanceof Response) {
+                    results.put(key, ((Response) result).response);
                 } else {
                     results.put(key, result);
                 }

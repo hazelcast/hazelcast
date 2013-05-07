@@ -114,7 +114,7 @@ class FieldDefinitionImpl implements DataSerializable, FieldDefinition {
         sb.append(", fieldName='").append(fieldName).append('\'');
         sb.append(", type=").append(type);
         sb.append(", classId=").append(classId);
-        sb.append(", namespace='").append(factoryId).append('\'');
+        sb.append(", factoryId='").append(factoryId).append('\'');
         sb.append('}');
         return sb.toString();
     }

@@ -19,7 +19,7 @@ package com.hazelcast.client;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.MembershipAwareService;
+import com.hazelcast.spi.ClientAwareService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
@@ -41,8 +41,9 @@ public class ClientDisconnectionOperation extends AbstractOperation {
 
     public void run() throws Exception {
         final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        final Collection<MembershipAwareService> services = nodeEngine.getServices(MembershipAwareService.class);
-        for (MembershipAwareService service : services) {
+        nodeEngine.onClientDisconnected(clientUuid);
+        final Collection<ClientAwareService> services = nodeEngine.getServices(ClientAwareService.class);
+        for (ClientAwareService service : services) {
             service.clientDisconnected(clientUuid);
         }
     }

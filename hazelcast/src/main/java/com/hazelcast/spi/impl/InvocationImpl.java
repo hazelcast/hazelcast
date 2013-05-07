@@ -41,17 +41,17 @@ import java.util.logging.Level;
 abstract class InvocationImpl implements Invocation, Callback<Object> {
 
     private final BlockingQueue<Object> responseQ = new LinkedBlockingQueue<Object>();
-    private final long callTimeout;
-    private final NodeEngineImpl nodeEngine;
-    private final String serviceName;
-    private final Operation op;
-    private final int partitionId;
-    private final int replicaIndex;
-    private final int tryCount;
-    private final long tryPauseMillis;
-    private final Callback<Object> callback;
-    private final ResponseProcessor responseProcessor;
-    private final ILogger logger;
+    protected final long callTimeout;
+    protected final NodeEngineImpl nodeEngine;
+    protected final String serviceName;
+    protected final Operation op;
+    protected final int partitionId;
+    protected final int replicaIndex;
+    protected final int tryCount;
+    protected final long tryPauseMillis;
+    protected final Callback<Object> callback;
+    protected final ResponseProcessor responseProcessor;
+    protected final ILogger logger;
 
     private volatile int invokeCount = 0;
     private Address target; // set before invokeCount increment.
@@ -204,7 +204,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             response = NULL_RESPONSE;
         } else if (obj instanceof Throwable) {
             final Throwable error = (Throwable) obj;
-            final ExceptionAction action = op.onException(error);
+            final ExceptionAction action = onException(error);
             final int localInvokeCount = invokeCount;
             if (action == ExceptionAction.RETRY_INVOCATION && localInvokeCount < tryCount) {
                 response = RETRY_RESPONSE;
@@ -221,6 +221,8 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         }
         responseProcessor.process(response);
     }
+
+    abstract ExceptionAction onException(Throwable t);
 
     private interface ResponseProcessor {
         void process(final Object response);
@@ -247,8 +249,8 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                 if (callbackLocal != null) {
                     try {
                         final Object realResponse;
-                        if (response instanceof ResponseObj) {
-                            final ResponseObj responseObj = (ResponseObj) response;
+                        if (response instanceof Response) {
+                            final Response responseObj = (Response) response;
                             realResponse = responseObj.response;
                         } else if (response == NULL_RESPONSE) {
                             realResponse = null;
@@ -286,16 +288,16 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
             final Object response = resolveResponse(waitForResponse(timeout, unit));
             done = true;
-            if (response instanceof ResponseObj) {
+            if (response instanceof Response) {
                 if (op instanceof BackupAwareOperation) {
-                    final Object obj = waitForBackupsAndGetResponse((ResponseObj) response);
+                    final Object obj = waitForBackupsAndGetResponse((Response) response);
                     if (obj == RETRY_RESPONSE) {
                         final Future f = resetAndReInvoke();
                         return f.get(timeout, unit);
                     }
                     return obj;
                 } else {
-                    return ((ResponseObj) response).response;
+                    return ((Response) response).response;
                 }
             }
             return response;
@@ -377,13 +379,13 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             return TIMEOUT_RESPONSE;
         }
 
-        private Object waitForBackupsAndGetResponse(ResponseObj response) {
+        private Object waitForBackupsAndGetResponse(Response response) {
             if (op instanceof BackupAwareOperation) {
                 try {
                     final boolean ok = nodeEngine.operationService.waitForBackups(response.callId, response.backupCount, 5, TimeUnit.SECONDS);
                     if (!ok) {
                         if (logger.isLoggable(Level.FINEST)) {
-                            logger.log(Level.FINEST, "Backup response cannot be received -> " + toString());
+                            logger.log(Level.FINEST, "Backup response cannot be received -> " + InvocationImpl.this.toString());
                         }
                         if (nodeEngine.getClusterService().getMember(target) == null) {
                             return RETRY_RESPONSE;

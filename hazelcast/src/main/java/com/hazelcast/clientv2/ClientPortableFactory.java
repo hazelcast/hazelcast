@@ -30,7 +30,10 @@ public class ClientPortableFactory implements PortableFactory {
                 return new GenericError();
 
             case 2:
-                return new ClientAuthenticationRequest();
+                return new AuthenticationRequest();
+
+            case ClientPortableHook.PRINCIPAL:
+                return new ClientPrincipal();
         }
         return null;
     }

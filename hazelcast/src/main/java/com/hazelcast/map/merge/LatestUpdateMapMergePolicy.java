@@ -24,12 +24,11 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import java.io.IOException;
 
 public class LatestUpdateMapMergePolicy implements MapMergePolicy {
-    public static String NAME = "LATEST_UPDATE";
 
     public Object merge(String mapName, EntryView mergingEntry, EntryView existingEntry) {
         if(mergingEntry.getLastUpdateTime() > existingEntry.getLastUpdateTime())
             return mergingEntry.getValue();
-        return null;
+        return existingEntry.getValue();
     }
 
     @Override

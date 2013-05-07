@@ -24,12 +24,11 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import java.io.IOException;
 
 public class HigherHitsMapMergePolicy implements MapMergePolicy, DataSerializable {
-    public static String NAME = "HIGHER_HITS";
 
     public Object merge(String mapName, EntryView mergingEntry, EntryView existingEntry) {
         if(mergingEntry.getHits() > existingEntry.getHits())
             return mergingEntry.getValue();
-        return null;
+        return existingEntry.getValue();
     }
 
     @Override

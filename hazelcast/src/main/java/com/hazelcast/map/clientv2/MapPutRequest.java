@@ -16,8 +16,7 @@
 
 package com.hazelcast.map.clientv2;
 
-import com.hazelcast.clientv2.AbstractClientRequest;
-import com.hazelcast.clientv2.ClientRequest;
+import com.hazelcast.clientv2.KeyBasedClientRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.PutOperation;
@@ -26,27 +25,35 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-/**
- * @mdogan 2/20/13
- */
-public class MapPutRequest extends AbstractClientRequest implements ClientRequest {
+public class MapPutRequest extends KeyBasedClientRequest {
 
-    private String name;
-
-    private Data key;
-
-    private Data value;
+    protected String name;
+    protected Data key;
+    protected Data value;
+    protected int threadId;
+    protected long ttl;
 
     public MapPutRequest() {
     }
 
-    public MapPutRequest(String name, Data key, Data value) {
+    public MapPutRequest(String name, Data key, Data value, int threadId, long ttl) {
         this.name = name;
         this.key = key;
         this.value = value;
+        this.threadId = threadId;
+        this.ttl = ttl;
+    }
+
+    public MapPutRequest(String name, Data key, Data value, int threadId) {
+        this.name = name;
+        this.key = key;
+        this.value = value;
+        this.threadId = threadId;
+        this.ttl = -1;
     }
 
     public int getFactoryId() {
@@ -57,10 +64,15 @@ public class MapPutRequest extends AbstractClientRequest implements ClientReques
         return MapPortableHook.PUT;
     }
 
-    public Object process() throws Exception {
-        System.err.println("Running MAP.PUT");
-        PutOperation op = new PutOperation(name, key, value, -1);
-        return clientEngine.invoke(getServiceName(), op, key);
+    protected Object getKey() {
+        return key;
+    }
+
+    @Override
+    protected Operation prepareOperation() {
+        PutOperation op = new PutOperation(name, key, value, ttl);
+        op.setThreadId(threadId);
+        return op;
     }
 
     public String getServiceName() {
@@ -69,6 +81,8 @@ public class MapPutRequest extends AbstractClientRequest implements ClientReques
 
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
+        writer.writeInt("t", threadId);
+        writer.writeLong("ttl", ttl);
         // ...
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
@@ -77,6 +91,8 @@ public class MapPutRequest extends AbstractClientRequest implements ClientReques
 
     public void readPortable(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
+        threadId = reader.readInt("t");
+        ttl = reader.readLong("ttl");
         //....
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();

@@ -43,7 +43,7 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
 
         constructors[RESPONSE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new Response();
+                return new ResponseOperation();
             }
         };
 
@@ -79,7 +79,7 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
 
         constructors[PARALLEL_OPERATION_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ParallelOperationFactory();
+                return new BinaryOperationFactory();
             }
         };
 

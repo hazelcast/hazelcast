@@ -11,6 +11,8 @@ public class ClientPortableHook implements PortableHook {
 
     public static final int ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.CLIENT_PORTABLE_FACTORY, -3);
 
+    public static final int PRINCIPAL = 3;
+
     public int getFactoryId() {
         return ID;
     }

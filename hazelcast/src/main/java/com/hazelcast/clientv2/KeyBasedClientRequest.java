@@ -14,11 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cluster;
+package com.hazelcast.clientv2;
 
-import com.hazelcast.instance.Node;
+/**
+ * @mdogan 5/3/13
+ */
+public abstract class KeyBasedClientRequest extends PartitionClientRequest {
 
-public interface NodeAware {
+    protected abstract Object getKey();
 
-    void setNode(Node node);
+    protected final int getPartition() {
+        return clientEngine.getPartitionService().getPartitionId(getKey());
+    }
+
+    protected int getReplicaIndex() {
+        return 0;
+    }
 }

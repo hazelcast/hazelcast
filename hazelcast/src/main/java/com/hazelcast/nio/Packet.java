@@ -32,7 +32,6 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
     public static final int HEADER_OP = 0;
     public static final int HEADER_EVENT = 1;
     public static final int HEADER_WAN_REPLICATION = 2;
-    public static final int HEADER_CLIENT = 3;
 
     private short header;
     private int partitionId;
@@ -115,6 +114,6 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
     }
 
     public int size() {
-        return (data == null) ? 6 : data.totalSize() + 6; // 6 = short(header) + int(partitionId)
+        return (data != null  ? data.totalSize() : 0) + 6; // 6 = short(header) + int(partitionId)
     }
 }

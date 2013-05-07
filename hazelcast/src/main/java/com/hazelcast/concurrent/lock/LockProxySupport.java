@@ -63,7 +63,10 @@ public final class LockProxySupport {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                     .build();
             Future future = invocation.invoke();
-            future.get();
+            Boolean result = (Boolean) future.get();
+            if (!result) {
+                throw new IllegalStateException();
+            }
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }

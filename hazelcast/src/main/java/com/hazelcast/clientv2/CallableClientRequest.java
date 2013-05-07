@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
- *
+ *  
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,15 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.clientv2;
 
-import com.hazelcast.nio.serialization.DataSerializable;
+import java.util.concurrent.Callable;
+import java.util.logging.Level;
 
 /**
- * @mdogan 1/17/13
+ * @mdogan 5/6/13
  */
-public interface MultiPartitionOperationFactory extends DataSerializable {
+public abstract class CallableClientRequest extends ClientRequest implements Callable {
 
-    Operation createOperation();
-
+    final void process() throws Exception {
+        final Object result;
+        try {
+            result = call();
+            clientEngine.sendResponse(getEndpoint(), result);
+        } catch (Exception e) {
+            clientEngine.getILogger(getClass()).log(Level.WARNING, e.getMessage(), e);
+            clientEngine.sendResponse(getEndpoint(), e);
+        }
+    }
 }

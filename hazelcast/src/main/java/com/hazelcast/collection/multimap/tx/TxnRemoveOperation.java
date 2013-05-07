@@ -47,7 +47,6 @@ public class TxnRemoveOperation extends CollectionKeyBasedOperation {
     }
 
     public void run() throws Exception {
-        System.err.println("---------------------------- removing recordId: " + recordId );
         begin = Clock.currentTimeMillis();
         CollectionContainer container = getOrCreateContainer();
         CollectionWrapper wrapper = container.getCollectionWrapper(dataKey);

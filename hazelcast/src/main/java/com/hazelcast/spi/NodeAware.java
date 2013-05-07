@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.clientv2;
+package com.hazelcast.spi;
 
-/**
- * @mdogan 2/20/13
- */
-public interface ClientBinaryService {
+import com.hazelcast.instance.Node;
 
+public interface NodeAware {
+
+    void setNode(Node node);
 }

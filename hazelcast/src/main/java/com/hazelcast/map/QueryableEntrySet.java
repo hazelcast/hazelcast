@@ -24,14 +24,14 @@ import com.hazelcast.query.impl.QueryableEntry;
 import java.util.AbstractSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.ConcurrentMap;
+import java.util.Map;
 
 public class QueryableEntrySet extends AbstractSet<QueryableEntry> {
 
-    List<ConcurrentMap<Data, Record>> recordMapList;
+    List<Map<Data, Record>> recordMapList;
     SerializationServiceImpl serializationService;
 
-    public QueryableEntrySet(SerializationServiceImpl serializationService, List<ConcurrentMap<Data, Record>> recordMapList) {
+    public QueryableEntrySet(SerializationServiceImpl serializationService, List<Map<Data, Record>> recordMapList) {
         this.recordMapList = recordMapList;
         this.serializationService = serializationService;
     }
@@ -49,7 +49,7 @@ public class QueryableEntrySet extends AbstractSet<QueryableEntry> {
     class RecordIterator implements Iterator<QueryableEntry> {
 
         Iterator<Record> innerIterator;
-        Iterator<ConcurrentMap<Data, Record>> iter = null;
+        Iterator<Map<Data, Record>> iter = null;
         Record currentEntry = null;
 
         RecordIterator() {

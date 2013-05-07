@@ -133,11 +133,9 @@
             </emphasis>
         </emphasis>
     </para>
-    <para>As of 1.9.3
-        <literal>MapLoader</literal>
-        has the new
+    <para>
         <literal>MapLoader.loadAllKeys</literal>
-        API. It is used for pre-populating the
+        API is used for pre-populating the
         in-memory map when the map is first touched/used. If
         <literal>MapLoader.loadAllKeys</literal>
         returns NULL then nothing will be loaded.

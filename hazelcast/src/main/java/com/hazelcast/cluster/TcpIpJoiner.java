@@ -134,35 +134,41 @@ public class TcpIpJoiner extends AbstractJoiner {
                 if (colPossibleAddresses.size() == 0) {
                     break;
                 }
-                //noinspection BusyWait
-                Thread.sleep(1000L);
-                numberOfSeconds++;
                 logger.log(Level.FINEST, "We are going to try to connect to each address" + colPossibleAddresses);
                 for (Address possibleAddress : colPossibleAddresses) {
                     final Connection conn = node.connectionManager.getOrConnect(possibleAddress);
                     if (conn != null) {
                         foundConnection = true;
-                        logger.log(Level.FINEST, "Found and sending join request for " + possibleAddress);
+                        logger.log(Level.FINEST, "Found a connection and sending join request to " + possibleAddress);
                         node.clusterService.sendJoinRequest(possibleAddress, true);
                     }
+                }
+                if (!foundConnection) {
+                    Thread.sleep(1000L);
+                    numberOfSeconds++;
                 }
             }
             logger.log(Level.FINEST, "FOUND " + foundConnection);
             if (!foundConnection) {
-                logger.log(Level.FINEST, "This node will assume master role since no possible member where connected to");
+                logger.log(Level.FINEST, "This node will assume master role since no possible member where connected to.");
                 node.setAsMaster();
             } else {
                 if (!node.joined()) {
                     final int totalSleep = connectionTimeoutSeconds - numberOfSeconds;
-                    for (int i = 0; i < totalSleep * 10 && !joined.get(); i++) {
-                        logger.log(Level.FINEST, "Sleeping for 500 ms.");
+                    for (int i = 0; i < totalSleep * 2 && !node.joined(); i++) {
+                        logger.log(Level.FINEST, "Waiting for join request answer, sleeping for 500 ms...");
                         Thread.sleep(500L);
+                        Address masterAddress = node.getMasterAddress();
+                        if (masterAddress != null) {
+                            logger.log(Level.FINEST, "Sending join request to " + masterAddress);
+                            node.clusterService.sendJoinRequest(masterAddress, true);
+                        }
                     }
                     colPossibleAddresses.removeAll(node.getFailedConnections());
                     if (colPossibleAddresses.size() == 0) {
                         logger.log(Level.FINEST, "This node will assume master role since none of the possible members accepted join request.");
                         node.setAsMaster();
-                    } else {
+                    } else if (!node.joined()) {
                         boolean masterCandidate = true;
                         for (Address address : colPossibleAddresses) {
                             if (node.connectionManager.getConnection(address) != null) {

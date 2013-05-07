@@ -42,8 +42,6 @@ public class IdGeneratorProxy implements IdGenerator {
 
     AtomicLong local;
 
-    private final Object syncObject = new Object();
-
     public IdGeneratorProxy(HazelcastInstance ins, String name) {
         this.ins = ins;
         this.name = name;
@@ -58,7 +56,7 @@ public class IdGeneratorProxy implements IdGenerator {
         }
         long step = (id / BLOCK_SIZE);
 
-        synchronized (syncObject) {
+        synchronized (this) {
             boolean init = atomicNumber.compareAndSet(0, step+1);
             if (init){
                 local.set(step);
@@ -72,7 +70,7 @@ public class IdGeneratorProxy implements IdGenerator {
     public long newId() {
         int value = residue.getAndIncrement();
         if (value >= BLOCK_SIZE) {
-            synchronized (syncObject) {
+            synchronized (this) {
                 value = residue.get();
                 if (value >= BLOCK_SIZE) {
                     local.set(atomicNumber.getAndIncrement());

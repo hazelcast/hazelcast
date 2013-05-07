@@ -27,7 +27,7 @@ import com.hazelcast.spi.PartitionAwareOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 import java.io.IOException;
-import java.util.concurrent.ConcurrentMap;
+import java.util.Map;
 
 public class AddIndexOperation extends AbstractNamedOperation implements PartitionAwareOperation {
 
@@ -48,7 +48,7 @@ public class AddIndexOperation extends AbstractNamedOperation implements Partiti
         MapService mapService = getService();
         MapContainer mapContainer = mapService.getMapContainer(name);
         RecordStore rs = mapService.getPartitionContainer(getPartitionId()).getRecordStore(name);
-        ConcurrentMap<Data, Record> records = rs.getRecords();
+        Map<Data, Record> records = rs.getRecords();
         IndexService indexService = mapContainer.getIndexService();
         SerializationServiceImpl ss = (SerializationServiceImpl) getNodeEngine().getSerializationService();
         Index index = indexService.addOrGetIndex(attributeName, ordered);

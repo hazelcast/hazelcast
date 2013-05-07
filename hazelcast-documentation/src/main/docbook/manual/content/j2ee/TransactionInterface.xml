@@ -23,8 +23,10 @@
        http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
     <title>Transaction Interface</title>
     <para>
-        Hazelcast can be used in transactional context. Basically start a transaction, work with queues, maps, sets and
-        do other things then commit/rollback in one shot.
+        Hazelcast can be used in transactional context. Basically create a <literal>TransactionContext</literal>
+        which can be used to begin, commit, rollback transaction.
+        Obtain transaction aware instances of queues, maps, sets, lists, multimaps via <literal>TransactionContext</literal>,
+        work with them and commit/rollback in one shot.
 
         <programlisting language="java"><![CDATA[import java.util.Queue;
 import java.util.Map;
@@ -34,21 +36,23 @@ import com.hazelcast.core.Transaction;
 
 Config cfg = new Config();
 HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
-Queue queue = hz.getQueue("myqueue");
-Map map     = hz.getMap  ("mymap");
-Set set     = hz.getSet  ("myset");
 
-Transaction txn = hz.getTransaction();
-txn.begin();
-try {    
+TransactionContext context = hz.newTransactionContext()
+context.beginTransaction();
+
+TransactionalQueue queue = context.getQueue("myqueue");
+TransactionalMap map     = context.getMap  ("mymap");
+TransactionalSet set     = context.getSet  ("myset");
+
+try {
     Object obj = queue.poll();
     //process obj
     map.put ("1", "value1");
     set.add ("value");
     //do other things..
-    txn.commit();
+    context.commitTransaction();
 }catch (Throwable t)  {
-    txn.rollback();
+    context.rollbackTransaction();
 }
 ]]></programlisting>
 
@@ -60,10 +64,6 @@ try {
         to safely commit/rollback. For map/set, Hazelcast first acquires the locks for the write operations (put,
         remove) and holds the differences (what is added/removed/updated) locally for each transaction. When transaction
         is set to commit, Hazelcast will release the locks and apply the differences. When rolling back, Hazelcast will
-        simply releases the locks and discard the differences. Transaction instance is attached to the current thread
-        and each Hazelcast operation checks if the current thread holds a transaction, if so, operation will be
-        transaction aware. When transaction is committed, rolled back or timed out, it will be detached from the thread
-        holding it.
-
+        simply releases the locks and discard the differences.
     </para>
 </sect1>

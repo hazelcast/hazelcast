@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
- *
+ *  
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,28 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spring;
+package com.hazelcast.clientv2;
 
-import com.hazelcast.core.EntryView;
-import com.hazelcast.map.merge.MapMergePolicy;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
+import java.util.logging.Level;
 
-import java.io.IOException;
+/**
+ * @mdogan 5/6/13
+ */
+public abstract class RunnableClientRequest extends ClientRequest implements Runnable {
 
-public class DummyMapMergePolicy implements MapMergePolicy {
-    public static String NAME = "DUMMY";
-
-    public Object merge(String mapName, EntryView mergingEntry,
-                        EntryView existingEntry) {
-        return null;
-    }
-
-    public void writeData(ObjectDataOutput out) throws IOException {
-
-    }
-
-    public void readData(ObjectDataInput in) throws IOException {
-
+    final void process() throws Exception {
+        try {
+            run();
+        } catch (Throwable e) {
+            clientEngine.getILogger(getClass()).log(Level.SEVERE, e.getMessage(), e);
+        }
     }
 }

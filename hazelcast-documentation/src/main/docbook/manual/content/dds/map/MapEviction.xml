@@ -103,13 +103,13 @@
 
             <listitem>
                 <para>
-                    <emphasis role="bold">PER_NODE:</emphasis>  Max map size per JVM.
+                    <emphasis role="bold">PER_NODE:</emphasis>  Max map size per instance.
                     <programlisting language="xml"><![CDATA[<max-size policy="map_size_per_jvm">5000</max-size>]]></programlisting>
                 </para>
             </listitem>
             <listitem>
                 <para>
-                    <emphasis role="bold">PER_PARTITION:</emphasis> Partitions (default 271) wide max map size.
+                    <emphasis role="bold">PER_PARTITION:</emphasis> Max map size per each partition.
                     <programlisting language="xml"><![CDATA[<max-size policy="partitions_wide_map_size">27100</max-size>]]></programlisting>
                 </para>
             </listitem>

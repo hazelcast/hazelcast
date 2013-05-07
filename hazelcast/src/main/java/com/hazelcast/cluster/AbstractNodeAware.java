@@ -17,6 +17,7 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.instance.Node;
+import com.hazelcast.spi.NodeAware;
 
 public class AbstractNodeAware implements NodeAware {
     protected volatile Node node;

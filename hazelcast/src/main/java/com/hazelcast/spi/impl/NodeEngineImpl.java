@@ -274,6 +274,11 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @PrivateApi
+    public void onClientDisconnected(String clientUuid) {
+        waitNotifyService.onClientDisconnected(clientUuid);
+    }
+
+    @PrivateApi
     public void onPartitionMigrate(MigrationInfo migrationInfo) {
         waitNotifyService.onPartitionMigrate(getThisAddress(), migrationInfo);
     }

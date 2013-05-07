@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.partition.Partition;
 
 import java.util.LinkedList;
@@ -49,6 +48,7 @@ public class SimpleMapTest {
 
     static {
         System.setProperty("hazelcast.version.check.enabled", "false");
+        System.setProperty("hazelcast.socket.bind.any", "false");
         System.setProperty("java.net.preferIPv4Stack", "true");
     }
 
@@ -61,7 +61,6 @@ public class SimpleMapTest {
         this.putPercentage = putPercentage;
         this.load = load;
         Config cfg = new XmlConfigBuilder().build();
-        cfg.getMapConfig(NAMESPACE).setStatisticsEnabled(true);
         instance = Hazelcast.newHazelcastInstance(cfg);
         logger = instance.getLoggingService().getLogger("SimpleMapTest");
     }
@@ -175,14 +174,10 @@ public class SimpleMapTest {
             }
 
             public void run() {
-                final IMap<String, Object> map = instance.getMap(NAMESPACE);
                 while (true) {
                     try {
                         Thread.sleep(STATS_SECONDS * 1000);
                         stats.printAndReset();
-                        final LocalMapStats localMapStats = map.getLocalMapStats();
-                        logger.log(Level.INFO, "Owned-Entries= " + localMapStats.getOwnedEntryCount()
-                                + ", Backup-Entries:" + localMapStats.getBackupEntryCount() + '\n');
                     } catch (InterruptedException ignored) {
                         return;
                     }

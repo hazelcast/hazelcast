@@ -34,13 +34,13 @@ import java.util.*;
  */
 public class ObjectListProxy<E> extends MultiMapProxySupport implements CollectionProxy, IList<E> {
 
-    public static final String COLLECTION_LIST_NAME = "hz:collection:name:list:";
+    public static final String COLLECTION_LIST_NAME = "hz:list:";
 
     final Data key;
 
     public ObjectListProxy(CollectionService service, NodeEngine nodeEngine, CollectionProxyId proxyId) {
         super(service, nodeEngine,
-                nodeEngine.getConfig().getMultiMapConfig("list:" + proxyId.getKeyName()).setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST),
+                nodeEngine.getConfig().getMultiMapConfig(COLLECTION_LIST_NAME + proxyId.getKeyName()).setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST),
                 proxyId);
         key = nodeEngine.toData(proxyId.getKeyName());
     }

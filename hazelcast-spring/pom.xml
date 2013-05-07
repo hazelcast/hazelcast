@@ -109,7 +109,7 @@
                                     com.hazelcast.hibernate;resolution:=optional,
                                     *
                                 </Import-Package>
-                                <Embed-Dependency>*;scope=compile|runtime</Embed-Dependency>
+                                <!--<Embed-Dependency>*;scope=compile|runtime</Embed-Dependency>-->
                             </instructions>
                         </configuration>
                     </execution>
@@ -125,7 +125,7 @@
                         <index>true</index>
                         <compress>true</compress>
                         <manifest>
-                            <addClasspath>true</addClasspath>
+                            <addClasspath>false</addClasspath>
                             <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                             <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
                         </manifest>
@@ -171,6 +171,7 @@
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast</artifactId>
             <version>${project.parent.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.hazelcast</groupId>

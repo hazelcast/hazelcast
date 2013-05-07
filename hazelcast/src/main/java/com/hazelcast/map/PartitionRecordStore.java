@@ -73,7 +73,7 @@ public class PartitionRecordStore implements RecordStore {
         return mapContainer;
     }
 
-    public ConcurrentMap<Data, Record> getRecords() {
+    public Map<Data, Record> getRecords() {
         return records;
     }
 
@@ -412,10 +412,17 @@ public class PartitionRecordStore implements RecordStore {
             mapStoreWrite(record, dataKey, newValue);
             records.put(dataKey, record);
         } else {
+            Object oldValue = record.getValue();
             EntryView existingEntry = new SimpleEntryView(mapService.toObject(record.getKey()), mapService.toObject(record.getValue()), record);
             newValue = mergePolicy.merge(name, mergingEntry, existingEntry);
-            if (newValue == null) { // existing entry will stay
-                return false;
+            if (newValue == null) { // existing entry will be removed
+                records.remove(dataKey);
+                mapStoreDelete(record, dataKey);
+                return true;
+            }
+            // same with the existing entry so no need to mapstore etc operations.
+            if(mapService.compare(name, newValue, oldValue)){
+                return true;
             }
             mapStoreWrite(record, dataKey, newValue);
             if (record instanceof DataRecord)
@@ -565,7 +572,7 @@ public class PartitionRecordStore implements RecordStore {
 
     private void updateTtl(Record record, long ttl) {
         if (ttl > 0) {
-            mapService.scheduleTtlEviction(name, record.getKey(), ttl);
+            mapService.scheduleTtlEviction(name, record, ttl);
         } else if (ttl == 0) {
             mapContainer.getTtlEvictionScheduler().cancel(record.getKey());
         }

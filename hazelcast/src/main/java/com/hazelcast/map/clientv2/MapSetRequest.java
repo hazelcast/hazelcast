@@ -14,30 +14,28 @@
  * limitations under the License.
  */
 
-package com.hazelcast.clientv2;
+package com.hazelcast.map.clientv2;
 
-import com.hazelcast.nio.Connection;
+import com.hazelcast.map.MapPortableHook;
+import com.hazelcast.map.SetOperation;
+import com.hazelcast.nio.serialization.Data;
 
-/**
- * @mdogan 4/29/13
- */
-public abstract class AbstractClientRequest implements ClientRequest {
+public class MapSetRequest extends MapPutRequest {
 
-    protected ClientEngine clientEngine;
-
-    protected Object service;
-
-    protected Connection connection;
-
-    public final void setClientEngine(ClientEngine clientEngine) {
-        this.clientEngine = clientEngine;
+    public MapSetRequest() {
     }
 
-    public final void setService(Object service) {
-        this.service = service;
+    public MapSetRequest(String name, Data key, Data value, int threadId, long ttl) {
+        super(name, key, value, threadId, ttl);
     }
 
-    public final void setConnection(Connection connection) {
-        this.connection = connection;
+    public int getClassId() {
+        return MapPortableHook.SET;
+    }
+
+    public Object process() throws Exception {
+        SetOperation op = new SetOperation(name, key, value, ttl);
+        op.setThreadId(threadId);
+        return null;
     }
 }

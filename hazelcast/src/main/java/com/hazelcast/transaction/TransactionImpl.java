@@ -159,8 +159,11 @@ final class TransactionImpl implements Transaction {
     }
 
     void commit() throws TransactionException, IllegalStateException {
-        if (state != PREPARED) {
+        if (transactionType.equals(TransactionType.TWO_PHASE) && state != PREPARED) {
             throw new IllegalStateException("Transaction is not prepared");
+        }
+        if (transactionType.equals(TransactionType.LOCAL) && state != ACTIVE) {
+            throw new IllegalStateException("Transaction is not active");
         }
         checkThread();
         checkTimeout();

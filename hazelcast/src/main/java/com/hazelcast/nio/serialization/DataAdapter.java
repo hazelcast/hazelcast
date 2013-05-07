@@ -45,6 +45,7 @@ public class DataAdapter implements SocketWritable, SocketReadable {
     private int classId = 0;
     private int version = 0;
     private int classDefSize = 0;
+    private boolean skipClassDef = false;
     protected Data data;
 
     private transient short status = 0;
@@ -203,27 +204,29 @@ public class DataAdapter implements SocketWritable, SocketReadable {
         }
         if (!isStatusSet(stClassDef)) {
             ClassDefinition cd;
-            if ((cd = context.lookup(factoryId, classId, version)) != null) {
+            if (!skipClassDef && (cd = context.lookup(factoryId, classId, version)) != null) {
                 data.classDefinition = cd;
-                setStatus(stClassDefSize);
-                setStatus(stClassDef);
-            } else {
-                if (!isStatusSet(stClassDefSize)) {
-                    if (source.remaining() < 4) {
-                        return false;
-                    }
-                    classDefSize = source.getInt();
-                    setStatus(stClassDefSize);
+                skipClassDef = true;
+            }
+            if (!isStatusSet(stClassDefSize)) {
+                if (source.remaining() < 4) {
+                    return false;
                 }
-                if (!isStatusSet(stClassDef)) {
-                    if (source.remaining() < classDefSize) {
-                        return false;
-                    }
+                classDefSize = source.getInt();
+                setStatus(stClassDefSize);
+            }
+            if (!isStatusSet(stClassDef)) {
+                if (source.remaining() < classDefSize) {
+                    return false;
+                }
+                if (skipClassDef) {
+                    source.position(classDefSize + source.position());
+                } else {
                     final byte[] binary = new byte[classDefSize];
                     source.get(binary);
                     data.classDefinition = new BinaryClassDefinitionProxy(factoryId, classId, version, binary);
-                    setStatus(stClassDef);
                 }
+                setStatus(stClassDef);
             }
         }
         if (!isStatusSet(stSize)) {

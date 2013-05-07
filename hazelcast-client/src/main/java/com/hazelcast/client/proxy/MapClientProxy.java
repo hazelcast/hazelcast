@@ -408,9 +408,9 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K, V> {
         return proxyHelper.doCommandAsObject(dKey, Command.MEXECUTEONKEY, new String[]{getName()}, dKey, dEntryProcessor);
     }
 
-    public void executeOnAllKeys(EntryProcessor entryProcessor) {
+    public Map executeOnAllKeys(EntryProcessor entryProcessor) {
         Data dEntryProcessor = proxyHelper.toData(entryProcessor);
-        proxyHelper.doCommandAsObject(Command.MEXECUTEONALLKEYS, new String[]{getName()}, dEntryProcessor);
+        return (Map) proxyHelper.doCommandAsObject(Command.MEXECUTEONALLKEYS, new String[]{getName()}, dEntryProcessor);
     }
 
     public Set<K> keySet() {

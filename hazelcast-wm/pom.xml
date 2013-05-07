@@ -108,7 +108,7 @@
                                     org.slf4j;resolution:=optional,
                                     *
                                 </Import-Package>
-                                <Embed-Dependency>*;scope=compile|runtime</Embed-Dependency>
+                                <!--<Embed-Dependency>*;scope=compile|runtime</Embed-Dependency>-->
                             </instructions>
                         </configuration>
                     </execution>
@@ -124,7 +124,7 @@
                         <index>true</index>
                         <compress>true</compress>
                         <manifest>
-                            <addClasspath>true</addClasspath>
+                            <addClasspath>false</addClasspath>
                             <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
                             <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
                         </manifest>

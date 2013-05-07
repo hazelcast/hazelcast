@@ -19,7 +19,7 @@ package com.hazelcast.spi;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -43,18 +43,13 @@ public interface OperationService {
 
     InvocationBuilder createInvocationBuilder(String serviceName, Operation op, Address target);
 
-    Map<Integer, Object> invokeOnAllPartitions(String serviceName, Operation operation) throws Exception;
-
-    Map<Integer, Object> invokeOnPartitions(String serviceName, Operation operation, List<Integer> partitions) throws Exception;
-
-    Map<Integer, Object> invokeOnTargetPartitions(String serviceName, Operation operation, Address target) throws Exception;
-
-    Map<Integer, Object> invokeOnAllPartitions(String serviceName, MultiPartitionOperationFactory operationFactory)
+    Map<Integer, Object> invokeOnAllPartitions(String serviceName, OperationFactory operationFactory)
             throws Exception;
 
-    Map<Integer, Object> invokeOnPartitions(String serviceName, MultiPartitionOperationFactory operationFactory, List<Integer> partitions) throws Exception;
+    Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
+                                            Collection<Integer> partitions) throws Exception;
 
-    Map<Integer, Object> invokeOnTargetPartitions(String serviceName, MultiPartitionOperationFactory operationFactory,
+    Map<Integer, Object> invokeOnTargetPartitions(String serviceName, OperationFactory operationFactory,
                                                   Address target) throws Exception;
 
     boolean send(Operation op, int partitionId, int replicaIndex);

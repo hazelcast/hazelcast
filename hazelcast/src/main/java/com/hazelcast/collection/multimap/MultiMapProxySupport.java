@@ -24,6 +24,7 @@ import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.*;
+import com.hazelcast.spi.impl.BinaryOperationFactory;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.*;
@@ -98,8 +99,8 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
     protected Set<Data> keySetInternal() {
         final NodeEngine nodeEngine = getNodeEngine();
         try {
-            KeySetOperation operation = new KeySetOperation(proxyId);
-            Map<Integer, Object> results = nodeEngine.getOperationService().invokeOnAllPartitions(CollectionService.SERVICE_NAME, operation);
+            Map<Integer, Object> results = nodeEngine.getOperationService()
+                    .invokeOnAllPartitions(CollectionService.SERVICE_NAME, new BinaryOperationFactory(new KeySetOperation(proxyId), nodeEngine));
             Set<Data> keySet = new HashSet<Data>();
             for (Object result : results.values()) {
                 if (result == null) {
@@ -117,8 +118,8 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
     protected Map valuesInternal() {
         final NodeEngine nodeEngine = getNodeEngine();
         try {
-            ValuesOperation operation = new ValuesOperation(proxyId);
-            Map<Integer, Object> results = nodeEngine.getOperationService().invokeOnAllPartitions(CollectionService.SERVICE_NAME, operation);
+            Map<Integer, Object> results = nodeEngine.getOperationService()
+                    .invokeOnAllPartitions(CollectionService.SERVICE_NAME, new BinaryOperationFactory(new ValuesOperation(proxyId), nodeEngine));
             return results;
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);
@@ -129,7 +130,8 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
         final NodeEngine nodeEngine = getNodeEngine();
         try {
             EntrySetOperation operation = new EntrySetOperation(proxyId);
-            Map<Integer, Object> results = nodeEngine.getOperationService().invokeOnAllPartitions(CollectionService.SERVICE_NAME, operation);
+            Map<Integer, Object> results = nodeEngine.getOperationService()
+                    .invokeOnAllPartitions(CollectionService.SERVICE_NAME, new BinaryOperationFactory(operation, nodeEngine));
             return results;
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);
@@ -140,7 +142,8 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
         final NodeEngine nodeEngine = getNodeEngine();
         try {
             ContainsEntryOperation operation = new ContainsEntryOperation(proxyId, key, value);
-            Map<Integer, Object> results = nodeEngine.getOperationService().invokeOnAllPartitions(CollectionService.SERVICE_NAME, operation);
+            Map<Integer, Object> results = nodeEngine.getOperationService()
+                    .invokeOnAllPartitions(CollectionService.SERVICE_NAME, new BinaryOperationFactory(operation, nodeEngine));
             for (Object obj : results.values()) {
                 if (obj == null) {
                     continue;
@@ -160,7 +163,8 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
         final NodeEngine nodeEngine = getNodeEngine();
         try {
             SizeOperation operation = new SizeOperation(proxyId);
-            Map<Integer, Object> results = nodeEngine.getOperationService().invokeOnAllPartitions(CollectionService.SERVICE_NAME, operation);
+            Map<Integer, Object> results = nodeEngine.getOperationService()
+                    .invokeOnAllPartitions(CollectionService.SERVICE_NAME, new BinaryOperationFactory(operation, nodeEngine));
             int size = 0;
             for (Object obj : results.values()) {
                 if (obj == null) {
@@ -179,7 +183,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
         final NodeEngine nodeEngine = getNodeEngine();
         try {
             ClearOperation operation = new ClearOperation(proxyId);
-            nodeEngine.getOperationService().invokeOnAllPartitions(CollectionService.SERVICE_NAME, operation);
+            nodeEngine.getOperationService().invokeOnAllPartitions(CollectionService.SERVICE_NAME, new BinaryOperationFactory(operation, nodeEngine));
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);
         }

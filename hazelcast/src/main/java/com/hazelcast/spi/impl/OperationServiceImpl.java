@@ -55,7 +55,7 @@ final class OperationServiceImpl implements OperationService {
     private final ExecutorService systemExecutor;
     private final long defaultCallTimeout;
     private final Set<RemoteCallKey> executingCalls;
-    private final ConcurrentMap<Long, Semaphore> backupCalls; // TODO: may need to evict records...
+    private final ConcurrentMap<Long, Semaphore> backupCalls;
     private final int operationThreadCount;
 
     OperationServiceImpl(NodeEngineImpl nodeEngine) {
@@ -68,7 +68,7 @@ final class OperationServiceImpl implements OperationService {
         final int concurrencyLevel = reallyMultiCore ? coreSize * 4 : 16;
         remoteCalls = new ConcurrentHashMap<Long, RemoteCall>(1000, 0.75f, concurrencyLevel);
         final int opThreadCount = node.getGroupProperties().OPERATION_THREAD_COUNT.getInteger();
-        operationThreadCount =  opThreadCount > 0 ? opThreadCount : coreSize * 2; // TODO: which thread count is best? coreSize OR coreSize * 2 ?
+        operationThreadCount =  opThreadCount > 0 ? opThreadCount : coreSize * 2;
         opExecutors = new ExecutorService[operationThreadCount];
         for (int i = 0; i < opExecutors.length; i++) {
             opExecutors[i] = Executors.newSingleThreadExecutor(new OperationThreadFactory(i));
@@ -189,11 +189,12 @@ final class OperationServiceImpl implements OperationService {
             Object response = null;
             if (op instanceof BackupAwareOperation) {
                 final BackupAwareOperation backupAwareOp = (BackupAwareOperation) op;
+                int syncBackupCount = 0;
                 if (backupAwareOp.shouldBackup()) {
-                    int syncBackupCount = sendBackups(backupAwareOp);
-                    if (returnsResponse) {
-                        response = new ResponseObj(op.getResponse(), op.getCallId(), syncBackupCount);
-                    }
+                    syncBackupCount = sendBackups(backupAwareOp);
+                }
+                if (returnsResponse) {
+                    response = new Response(op.getResponse(), op.getCallId(), syncBackupCount);
                 }
             }
 
@@ -316,25 +317,13 @@ final class OperationServiceImpl implements OperationService {
         }
     }
 
-    public Map<Integer, Object> invokeOnAllPartitions(String serviceName, Operation operation) throws Exception {
-        final ParallelOperationFactory operationFactory = new ParallelOperationFactory(operation, nodeEngine);
-        return invokeOnAllPartitions(serviceName, operationFactory);
-    }
-
-    public Map<Integer, Object> invokeOnAllPartitions(String serviceName, MultiPartitionOperationFactory operationFactory)
-            throws Exception {
+    public Map<Integer, Object> invokeOnAllPartitions(String serviceName, OperationFactory operationFactory) throws Exception {
         final Map<Address, List<Integer>> memberPartitions = nodeEngine.getPartitionService().getMemberPartitionsMap();
         return invokeOnPartitions(serviceName, operationFactory, memberPartitions);
     }
 
-    public Map<Integer, Object> invokeOnPartitions(String serviceName, Operation operation,
-                                                   List<Integer> partitions) throws Exception {
-        final ParallelOperationFactory operationFactory = new ParallelOperationFactory(operation, nodeEngine);
-        return invokeOnPartitions(serviceName, operationFactory, partitions);
-    }
-
-    public Map<Integer, Object> invokeOnPartitions(String serviceName, MultiPartitionOperationFactory operationFactory,
-                                                   List<Integer> partitions) throws Exception {
+    public Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
+                                                   Collection<Integer> partitions) throws Exception {
         final Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(3);
         for (int partition : partitions) {
             Address owner = nodeEngine.getPartitionService().getPartitionOwner(partition);
@@ -346,28 +335,21 @@ final class OperationServiceImpl implements OperationService {
         return invokeOnPartitions(serviceName, operationFactory, memberPartitions);
     }
 
-    public Map<Integer, Object> invokeOnTargetPartitions(String serviceName, Operation operation,
+    public Map<Integer, Object> invokeOnTargetPartitions(String serviceName, OperationFactory operationFactory,
                                                          Address target) throws Exception {
-        final ParallelOperationFactory operationFactory = new ParallelOperationFactory(operation, nodeEngine);
-        return invokeOnTargetPartitions(serviceName, operationFactory, target);
-    }
-
-    public Map<Integer, Object> invokeOnTargetPartitions(String serviceName, MultiPartitionOperationFactory operationFactory,
-                                                         Address target) throws Exception {
-        final Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(1);
-        memberPartitions.put(target, nodeEngine.getPartitionService().getMemberPartitions(target));
+        final Map<Address, List<Integer>> memberPartitions = Collections.singletonMap(target,
+                nodeEngine.getPartitionService().getMemberPartitions(target));
         return invokeOnPartitions(serviceName, operationFactory, memberPartitions);
     }
 
-    private Map<Integer, Object> invokeOnPartitions(String serviceName, MultiPartitionOperationFactory operationFactory,
+    private Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
                                                     Map<Address, List<Integer>> memberPartitions) throws Exception {
         final Map<Address, Future> responses = new HashMap<Address, Future>(memberPartitions.size());
         for (Map.Entry<Address, List<Integer>> mp : memberPartitions.entrySet()) {
             final Address address = mp.getKey();
             final List<Integer> partitions = mp.getValue();
             final PartitionIteratingOperation pi = new PartitionIteratingOperation(partitions, operationFactory);
-            Invocation inv = createInvocationBuilder(serviceName, pi,
-                    address).setTryCount(5).setTryPauseMillis(300).build();
+            Invocation inv = createInvocationBuilder(serviceName, pi, address).setTryCount(10).setTryPauseMillis(300).build();
             Future future = inv.invoke();
             responses.put(address, future);
         }
@@ -541,6 +523,8 @@ final class OperationServiceImpl implements OperationService {
             call.offerResponse(response);
         }
         remoteCalls.clear();
+        System.out.println("backupCalls.size() = " + backupCalls.size());
+        backupCalls.clear();
         for (ExecutorService executor : opExecutors) {
             try {
                 executor.awaitTermination(3, TimeUnit.SECONDS);
@@ -577,8 +561,8 @@ final class OperationServiceImpl implements OperationService {
                 op.setNodeEngine(nodeEngine);
                 OperationAccessor.setCallerAddress(op, caller);
                 OperationAccessor.setConnection(op, conn);
-                if (op instanceof Response) {
-                    processResponse((Response) op);
+                if (op instanceof ResponseOperation) {
+                    processResponse((ResponseOperation) op);
                 } else {
                     ResponseHandlerFactory.setRemoteResponseHandler(nodeEngine, op);
                     if (!OperationAccessor.isJoinOperation(op) && node.clusterService.getMember(op.getCallerAddress()) == null) {
@@ -594,7 +578,7 @@ final class OperationServiceImpl implements OperationService {
             }
         }
 
-        void processResponse(Response response) {
+        void processResponse(ResponseOperation response) {
             try {
                 response.beforeRun();
                 response.run();

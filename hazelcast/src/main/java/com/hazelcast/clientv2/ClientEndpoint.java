@@ -28,34 +28,44 @@ import java.net.SocketAddress;
 
 public class ClientEndpoint implements Client {
 
-    final Connection conn;
-    final String uuid;
-    LoginContext loginContext = null;
-    volatile boolean authenticated = false;
+    private final Connection conn;
+    private final String uuid;
+    private LoginContext loginContext = null;
+    private ClientPrincipal principal;
+    private volatile boolean authenticated = false;
 
     ClientEndpoint(Connection conn, String uuid) {
         this.conn = conn;
         this.uuid = uuid;
     }
 
-    public void setLoginContext(LoginContext loginContext) {
-        this.loginContext = loginContext;
+    public Connection getConn() {
+        return conn;
     }
 
-    public LoginContext getLoginContext() {
-        return loginContext;
+    public String getUuid() {
+        return uuid;
+    }
+
+    void setLoginContext(LoginContext loginContext) {
+        this.loginContext = loginContext;
     }
 
     public Subject getSubject() {
         return loginContext != null ? loginContext.getSubject() : null;
     }
 
-    public void authenticated() {
-        this.authenticated = true;
+    void authenticated(ClientPrincipal principal) {
+        this.principal = principal;
+        authenticated = true;
     }
 
     public boolean isAuthenticated() {
         return authenticated;
+    }
+
+    public ClientPrincipal getPrincipal() {
+        return principal;
     }
 
     public SocketAddress getSocketAddress() {
@@ -69,7 +79,7 @@ public class ClientEndpoint implements Client {
         return ClientType.Native;
     }
 
-    public void destroy() throws LoginException {
+    void destroy() throws LoginException {
         final LoginContext lc = loginContext;
         if (lc != null) {
             lc.logout();

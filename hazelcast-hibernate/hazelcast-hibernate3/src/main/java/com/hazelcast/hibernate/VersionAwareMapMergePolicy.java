@@ -20,50 +20,43 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import org.hibernate.cache.entry.CacheEntry;
 
 import java.io.IOException;
 
-// TODO: implement hibernate version aware merge policy!
 public class VersionAwareMapMergePolicy implements MapMergePolicy {
-    public static final String NAME = "hz.HIBERNATE_VERSION_AWARE";
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
     public Object merge(String mapName, EntryView mergingEntry, EntryView existingEntry) {
-//        DataRecordEntry mergingDataEntry = (DataRecordEntry) mergingEntry;
-//        if (!mergingDataEntry.isValid()) {
-//            return REMOVE_EXISTING;
-//        } else {
-//            final Object existingObject = existingEntry != null ? existingEntry.getValue() : null;
-//            final Object mergingObject = mergingEntry.getValue();
-//            if (existingObject != null && existingObject instanceof CacheEntry
-//                    && mergingObject != null && mergingObject instanceof CacheEntry) {
-//                final CacheEntry existing = (CacheEntry) existingObject;
-//                final CacheEntry merging = (CacheEntry) mergingObject;
-//                final Object mergingVersionObject = merging.getVersion();
-//                final Object existingVersionObject = existing.getVersion();
-//                if (mergingVersionObject != null && existingVersionObject != null
-//                        && mergingVersionObject instanceof Comparable && existingVersionObject instanceof Comparable) {
-//                    final Comparable mergingVersion = (Comparable) mergingVersionObject;
-//                    final Comparable existingVersion = (Comparable) existingVersionObject;
-//                    if (mergingVersion.compareTo(existingVersion) > 0) {
-//                        return mergingDataEntry.getValueData();
-//                    } else {
-//                        return ((DataRecordEntry) existingEntry).getValueData();
-//                    }
-//                }
-//            }
-//            return mergingDataEntry.getValueData();
-//        }
-        return null;
+        final Object existingValue = existingEntry != null ? existingEntry.getValue() : null;
+        final Object mergingValue = mergingEntry.getValue();
+        if (existingValue != null && existingValue instanceof CacheEntry
+                && mergingValue != null && mergingValue instanceof CacheEntry) {
+
+            final CacheEntry existingCacheEntry = (CacheEntry) existingValue;
+            final CacheEntry mergingCacheEntry = (CacheEntry) mergingValue;
+            final Object mergingVersionObject = mergingCacheEntry.getVersion();
+            final Object existingVersionObject = existingCacheEntry.getVersion();
+            if (mergingVersionObject != null && existingVersionObject != null
+                    && mergingVersionObject instanceof Comparable && existingVersionObject instanceof Comparable) {
+
+                final Comparable mergingVersion = (Comparable) mergingVersionObject;
+                final Comparable existingVersion = (Comparable) existingVersionObject;
+
+                if (mergingVersion.compareTo(existingVersion) > 0) {
+                    return mergingValue;
+                } else {
+                    return existingValue;
+                }
+            }
+        }
+        return mergingValue;
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 }

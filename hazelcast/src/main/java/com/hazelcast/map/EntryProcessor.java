@@ -21,7 +21,20 @@ import java.util.Map;
 
 public interface EntryProcessor<K, V> extends Serializable {
 
+    /**
+     * Process the entry without worrying about concurrency.
+     * <p/>
+     *
+     * @param entry entry to be processes
+     * @return result of the process
+     */
     Object process(Map.Entry<K, V> entry);
 
+    /**
+     * Get the entry processor to be applied to backup entries.
+     * <p/>
+     *
+     * @return back up processor
+     */
     EntryBackupProcessor<K, V> getBackupProcessor();
 }

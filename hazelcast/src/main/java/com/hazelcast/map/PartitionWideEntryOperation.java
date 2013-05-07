@@ -25,13 +25,13 @@ import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
 import java.util.AbstractMap;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentMap;
 
 public class PartitionWideEntryOperation extends AbstractMapOperation implements BackupAwareOperation, PartitionAwareOperation {
 
     EntryProcessor entryProcessor;
-
+    Map<Data, Data> response;
 
     public PartitionWideEntryOperation(String name, EntryProcessor entryProcessor) {
         super(name);
@@ -42,14 +42,17 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
     }
 
     public void run() {
+        response = new HashMap<Data, Data>();
         Map.Entry entry;
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
-        ConcurrentMap<Data,Record> records = recordStore.getRecords();
+        Map<Data, Record> records = recordStore.getRecords();
         for (Map.Entry<Data, Record> recordEntry : records.entrySet()) {
             Data dataKey = recordEntry.getKey();
             Record record = recordEntry.getValue();
             entry = new AbstractMap.SimpleEntry(mapService.toObject(record.getKey()), mapService.toObject(record.getValue()));
-            entryProcessor.process(entry);
+            Object result = entryProcessor.process(entry);
+            if (result != null)
+                response.put(dataKey, mapService.toData(result));
             recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, entry.getValue()));
         }
     }
@@ -61,6 +64,11 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
     @Override
     public boolean returnsResponse() {
         return true;
+    }
+
+    @Override
+    public Object getResponse() {
+        return response;
     }
 
     @Override
@@ -76,11 +84,6 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
     }
 
     @Override
-    public Object getResponse() {
-        return true;
-    }
-
-    @Override
     public String toString() {
         return "PartitionWideEntryOperation{}";
     }
@@ -90,7 +93,7 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
     }
 
     public int getAsyncBackupCount() {
-        return mapContainer.getAsyncBackupCount();
+        return mapContainer.getAsyncBackupCount() + mapContainer.getBackupCount();
     }
 
     @Override
@@ -99,7 +102,7 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
     }
 
     public int getSyncBackupCount() {
-        return mapContainer.getBackupCount();
+        return 0;
     }
 
 }
