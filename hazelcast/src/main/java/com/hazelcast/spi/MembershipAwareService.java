@@ -30,9 +30,4 @@ public interface MembershipAwareService {
      * Invoked when an existing member leaves the cluster.
      */
     void memberRemoved(MembershipServiceEvent event);
-
-    /**
-     * Invoked when a client disconnected from a member.
-     */
-    void clientDisconnected(String clientUuid);
 }

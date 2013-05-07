@@ -16,8 +16,11 @@
 
 package com.hazelcast.clientv2;
 
+import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.GroupConfig;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
@@ -28,33 +31,44 @@ import com.hazelcast.security.UsernamePasswordCredentials;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.logging.Level;
 
-public class ClientAuthenticationRequest extends AbstractClientRequest implements ClientRequest {
+public final class AuthenticationRequest extends CallableClientRequest {
 
     private Credentials credentials;
 
-    public ClientAuthenticationRequest() {
+    private ClientPrincipal principal;
+
+    private boolean reAuth;
+
+    public AuthenticationRequest() {
     }
 
-    public ClientAuthenticationRequest(Credentials credentials) {
+    public AuthenticationRequest(Credentials credentials) {
         this.credentials = credentials;
     }
 
-    public Object process() throws Exception {
-        ClientEngineImpl clientService = (ClientEngineImpl) service;
+    public AuthenticationRequest(Credentials credentials, ClientPrincipal principal) {
+        this.credentials = credentials;
+        this.principal = principal;
+    }
+
+    public Object call() throws Exception {
+        ClientEngineImpl clientEngine = getService();
+        Connection connection = endpoint.getConn();
         ILogger logger = clientEngine.getILogger(getClass());
         boolean authenticated;
         if (credentials == null) {
             authenticated = false;
             logger.log(Level.SEVERE, "Could not retrieve Credentials object!");
-        } else if (clientService.getSecurityContext() != null) {
+        } else if (clientEngine.getSecurityContext() != null) {
             credentials.setEndpoint(connection.getInetAddress().getHostAddress());
             try {
-                SecurityContext securityContext = clientService.getSecurityContext();
+                SecurityContext securityContext = clientEngine.getSecurityContext();
                 LoginContext lc = securityContext.createClientLoginContext(credentials);
                 lc.login();
-                clientService.getEndpoint(connection).setLoginContext(lc);
+                clientEngine.getEndpoint(connection).setLoginContext(lc);
                 authenticated = true;
             } catch (LoginException e) {
                 logger.log(Level.WARNING, e.getMessage(), e);
@@ -77,14 +91,36 @@ public class ClientAuthenticationRequest extends AbstractClientRequest implement
         }
         logger.log((authenticated ? Level.INFO : Level.WARNING), "Received auth from " + connection
                 + ", " + (authenticated ? "successfully authenticated" : "authentication failed"));
-        if (!authenticated) {
-            clientService.removeEndpoint(connection);
-            return false;
+        if (authenticated) {
+            if (principal != null) {
+                final ClusterService clusterService = clientEngine.getClusterService();
+                if (reAuth) {
+                    if (clusterService.getMember(principal.getOwnerUuid()) != null) {
+                        return new GenericError("Owner member is already member of this cluster, cannot re-auth!", 0);
+                    } else {
+                        principal = new ClientPrincipal(principal.getUuid(), clientEngine.getLocalMember().getUuid());
+                        final Collection<MemberImpl> members = clientEngine.getClusterService().getMemberList();
+                        for (MemberImpl member : members) {
+                            if (!member.localMember()) {
+                                clientEngine.sendOperation(new ClientReAuthOperation(principal.getUuid()), member.getAddress());
+                            }
+                        }
+                    }
+                } else if (clusterService.getMember(principal.getOwnerUuid()) == null) {
+                    clientEngine.removeEndpoint(connection);
+                    return new GenericError("Owner member is not member of this cluster!", 0);
+                }
+            }
+            ClientEndpoint clientEndpoint = clientEngine.getEndpoint(connection);
+            if (principal == null) {
+                principal = new ClientPrincipal(clientEndpoint.getUuid(), clientEngine.getLocalMember().getUuid());
+            }
+            clientEndpoint.authenticated(principal);
+            clientEngine.bind(connection);
+            return principal;
         } else {
-            ClientEndpoint clientEndpoint = clientService.getEndpoint(connection);
-            clientEndpoint.authenticated();
-            clientService.bind(connection);
-            return true;
+            clientEngine.removeEndpoint(connection);
+            return new GenericError("Invalid credentials!", 0);
         }
     }
 
@@ -104,12 +140,19 @@ public class ClientAuthenticationRequest extends AbstractClientRequest implement
 
     @Override
     public void writePortable(PortableWriter writer) throws IOException {
-        writer.writePortable("cred", (Portable) credentials);
+        writer.writePortable("credentials", (Portable) credentials);
+        if (principal != null) {
+            writer.writePortable("principal", principal);
+        } else {
+            writer.writeNullPortable("principal", ClientPortableHook.ID, ClientPortableHook.PRINCIPAL);
+        }
+        writer.writeBoolean("reAuth", reAuth);
     }
 
     @Override
     public void readPortable(PortableReader reader) throws IOException {
-        credentials = (Credentials) reader.readPortable("cred");
-
+        credentials = (Credentials) reader.readPortable("credentials");
+        principal = reader.readPortable("principal");
+        reAuth = reader.readBoolean("reAuth");
     }
 }

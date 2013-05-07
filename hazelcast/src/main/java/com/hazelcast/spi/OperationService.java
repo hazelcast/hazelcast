@@ -19,7 +19,7 @@ package com.hazelcast.spi;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -46,7 +46,8 @@ public interface OperationService {
     Map<Integer, Object> invokeOnAllPartitions(String serviceName, OperationFactory operationFactory)
             throws Exception;
 
-    Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory, List<Integer> partitions) throws Exception;
+    Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
+                                            Collection<Integer> partitions) throws Exception;
 
     Map<Integer, Object> invokeOnTargetPartitions(String serviceName, OperationFactory operationFactory,
                                                   Address target) throws Exception;

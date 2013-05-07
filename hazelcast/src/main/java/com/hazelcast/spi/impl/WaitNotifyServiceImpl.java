@@ -149,13 +149,20 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
     }
 
     // invalidated waiting ops will removed from queue eventually by notifiers.
-    public void onMemberLeft(MemberImpl leftMember) {
-        final Address leftAddress = leftMember.getAddress();
+    void onMemberLeft(MemberImpl leftMember) {
+        invalidateWaitingOps(leftMember.getUuid());
+    }
+
+    void onClientDisconnected(String clientUuid) {
+        invalidateWaitingOps(clientUuid);
+    }
+
+    private void invalidateWaitingOps(String callerUuid) {
         for (Queue<WaitingOp> q : mapWaitingOps.values()) {
             for (WaitingOp waitingOp : q) {
                 if (waitingOp.isValid()) {
                     Operation op = waitingOp.getOperation();
-                    if (leftAddress.equals(op.getCallerAddress())) {
+                    if (callerUuid.equals(op.getCallerUuid())) {
                         waitingOp.setValid(false);
                     }
                 }
@@ -164,7 +171,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
     }
 
     // This is executed under partition migration lock!
-    public void onPartitionMigrate(Address thisAddress, MigrationInfo migrationInfo) {
+    void onPartitionMigrate(Address thisAddress, MigrationInfo migrationInfo) {
         if (thisAddress.equals(migrationInfo.getSource())) {
             int partitionId = migrationInfo.getPartitionId();
             for (Queue<WaitingOp> q : mapWaitingOps.values()) {

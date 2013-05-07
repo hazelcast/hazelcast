@@ -16,22 +16,45 @@
 
 package com.hazelcast.clientv2;
 
-import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.serialization.Portable;
 
 /**
- * @mdogan 2/20/13
+ *
+ * @mdogan 4/29/13
  */
-public interface ClientRequest extends Portable {
+abstract class ClientRequest implements Portable {
 
-    Object process() throws Exception;
+    transient ClientEngineImpl clientEngine;
 
-    String getServiceName();
+    transient Object service;
 
-    void setClientEngine(ClientEngine clientEngine);
+    transient ClientEndpoint endpoint;
 
-    void setService(Object service);
+    abstract void process() throws Exception;
 
-    void setConnection(Connection connection);
+    public ClientEngine getClientEngine() {
+        return clientEngine;
+    }
 
+    final void setClientEngine(ClientEngineImpl clientEngine) {
+        this.clientEngine = clientEngine;
+    }
+
+    public <S> S getService() {
+        return (S) service;
+    }
+
+    final void setService(Object service) {
+        this.service = service;
+    }
+
+    public ClientEndpoint getEndpoint() {
+        return endpoint;
+    }
+
+    final void setEndpoint(ClientEndpoint endpoint) {
+        this.endpoint = endpoint;
+    }
+
+    public abstract String getServiceName();
 }

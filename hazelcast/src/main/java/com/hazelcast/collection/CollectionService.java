@@ -347,9 +347,6 @@ public class CollectionService implements ManagedService, RemoteService, Members
         return map;
     }
 
-    public void clientDisconnected(String clientUuid) {
-    }
-
     public LocalMapStats createStats(CollectionProxyId proxyId) {
         LocalMultiMapStatsImpl stats = getLocalMultiMapStatsImpl(proxyId);
         long ownedEntryCount = 0;

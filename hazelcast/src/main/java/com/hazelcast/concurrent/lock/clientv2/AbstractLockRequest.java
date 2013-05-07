@@ -16,8 +16,7 @@
 
 package com.hazelcast.concurrent.lock.clientv2;
 
-import com.hazelcast.clientv2.AbstractClientRequest;
-import com.hazelcast.concurrent.lock.InternalLockNamespace;
+import com.hazelcast.clientv2.KeyBasedClientRequest;
 import com.hazelcast.concurrent.lock.LockOperation;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.nio.ObjectDataInput;
@@ -25,13 +24,15 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
 /**
  * @mdogan 5/3/13
  */
-public abstract class AbstractLockRequest extends AbstractClientRequest {
+public abstract class AbstractLockRequest extends KeyBasedClientRequest {
 
     private Data key;
 
@@ -56,13 +57,15 @@ public abstract class AbstractLockRequest extends AbstractClientRequest {
         this.timeout = timeout;
     }
 
-    @Override
-    public final Object process() throws Exception {
-        LockOperation op = new LockOperation(getNamespace(), key, threadId, ttl, timeout);
-        return clientEngine.invoke(getServiceName(), op, key);
+    protected final Operation prepareOperation() {
+        return new LockOperation(getNamespace(), key, threadId, ttl, timeout);
     }
 
-    protected abstract InternalLockNamespace getNamespace();
+    protected final Object getKey() {
+        return key;
+    }
+
+    protected abstract ObjectNamespace getNamespace();
 
     @Override
     public final String getServiceName() {
@@ -71,6 +74,8 @@ public abstract class AbstractLockRequest extends AbstractClientRequest {
 
     @Override
     public final void writePortable(PortableWriter writer) throws IOException {
+        writePortableInternal(writer);
+
         writer.writeInt("thread", threadId);
         writer.writeLong("ttl", ttl);
         writer.writeLong("timeout", timeout);
@@ -79,8 +84,13 @@ public abstract class AbstractLockRequest extends AbstractClientRequest {
         key.writeData(out);
     }
 
+    protected abstract void writePortableInternal(PortableWriter writer) throws IOException;
+
+
     @Override
     public final void readPortable(PortableReader reader) throws IOException {
+        readPortableInternal(reader);
+
         threadId = reader.readInt("thread");
         ttl = reader.readLong("ttl");
         timeout = reader.readLong("timeout");
@@ -89,4 +99,6 @@ public abstract class AbstractLockRequest extends AbstractClientRequest {
         key = new Data();
         key.readData(in);
     }
+
+    protected abstract void readPortableInternal(PortableReader reader) throws IOException;
 }

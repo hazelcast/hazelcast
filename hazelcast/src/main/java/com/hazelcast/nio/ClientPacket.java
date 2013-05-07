@@ -28,10 +28,6 @@ public final class ClientPacket extends DataAdapter implements SocketWritable, S
         super(context);
     }
 
-    public ClientPacket(Data value, SerializationContext context) {
-        super(value, context);
-    }
-
     public Connection getConn() {
         return conn;
     }

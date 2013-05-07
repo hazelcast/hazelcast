@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
- *
+ *  
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,28 +16,22 @@
 
 package com.hazelcast.clientv2;
 
-import com.hazelcast.nio.Connection;
+import java.util.concurrent.Callable;
+import java.util.logging.Level;
 
 /**
- * @mdogan 4/29/13
+ * @mdogan 5/6/13
  */
-public abstract class AbstractClientRequest implements ClientRequest {
+public abstract class CallableClientRequest extends ClientRequest implements Callable {
 
-    protected ClientEngine clientEngine;
-
-    protected Object service;
-
-    protected Connection connection;
-
-    public final void setClientEngine(ClientEngine clientEngine) {
-        this.clientEngine = clientEngine;
-    }
-
-    public final void setService(Object service) {
-        this.service = service;
-    }
-
-    public final void setConnection(Connection connection) {
-        this.connection = connection;
+    final void process() throws Exception {
+        final Object result;
+        try {
+            result = call();
+            clientEngine.sendResponse(getEndpoint(), result);
+        } catch (Exception e) {
+            clientEngine.getILogger(getClass()).log(Level.WARNING, e.getMessage(), e);
+            clientEngine.sendResponse(getEndpoint(), e);
+        }
     }
 }

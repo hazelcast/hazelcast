@@ -16,35 +16,25 @@
 
 package com.hazelcast.clientv2;
 
+import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.Config;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.spi.Operation;
-
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
+import com.hazelcast.partition.PartitionService;
 
 /**
  * @mdogan 4/25/13
  */
 public interface ClientEngine {
 
-    Object invoke(String serviceName, Operation op, Object key)
-            throws InterruptedException, ExecutionException, TimeoutException;
+    PartitionService getPartitionService();
 
-    Object invoke(String serviceName, Operation op, Data key)
-            throws InterruptedException, ExecutionException, TimeoutException;
+    ClusterService getClusterService();
 
-    Object invoke(String serviceName, Operation op, int partitionId)
-            throws InterruptedException, ExecutionException, TimeoutException;
-
-    Object invoke(String serviceName, Operation op, int partitionId, int replicaIndex)
-            throws InterruptedException, ExecutionException, TimeoutException;
-
-    Object invoke(String serviceName, Operation op, Address target)
-            throws InterruptedException, ExecutionException, TimeoutException;
+    SerializationService getSerializationService();
 
     Config getConfig();
 
@@ -56,6 +46,12 @@ public interface ClientEngine {
 
     Data toData(Object obj);
 
-    SerializationService getSerializationService();
+    Address getMasterAddress();
+
+    Address getThisAddress();
+
+    MemberImpl getLocalMember();
+
+    void sendResponse(ClientEndpoint endpoint, Object response);
 
 }

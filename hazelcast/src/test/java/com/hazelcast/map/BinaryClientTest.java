@@ -16,15 +16,14 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.clientv2.ClientAuthenticationRequest;
-import com.hazelcast.clientv2.ClientRequest;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
-import com.hazelcast.instance.ThreadContext;
-import com.hazelcast.map.clientv2.*;
+import com.hazelcast.clientv2.AuthenticationRequest;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.ThreadContext;
+import com.hazelcast.map.clientv2.*;
 import com.hazelcast.nio.serialization.*;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import org.junit.Test;
@@ -37,11 +36,9 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
@@ -63,7 +60,7 @@ public class BinaryClientTest {
         final ObjectDataInputStream in = service.createObjectDataInputStream(new BufferedInputStream(socket.getInputStream()));
         final ObjectDataOutputStream out = service.createObjectDataOutputStream(new BufferedOutputStream(outputStream));
 
-        ClientAuthenticationRequest auth = new ClientAuthenticationRequest(new UsernamePasswordCredentials("dev", "dev-pass"));
+        AuthenticationRequest auth = new AuthenticationRequest(new UsernamePasswordCredentials("dev", "dev-pass"));
         invoke(service, in, out, auth);
 
         int threadId = ThreadContext.getThreadId();
@@ -146,7 +143,7 @@ public class BinaryClientTest {
 
 
 
-    private static Object invoke(SerializationService service, ObjectDataInputStream in, ObjectDataOutputStream out, ClientRequest op) throws IOException {
+    private static Object invoke(SerializationService service, ObjectDataInputStream in, ObjectDataOutputStream out, Portable op) throws IOException {
         final Data data = service.toData(op);
         data.writeData(out);
         out.flush();

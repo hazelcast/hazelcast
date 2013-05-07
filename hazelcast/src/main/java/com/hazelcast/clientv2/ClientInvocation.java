@@ -41,30 +41,30 @@ final class ClientInvocation {
     private final int partitionId;
     private final int replicaIndex;
 
-    private final String uuid;
+    private final ClientEndpoint endpoint;
 
-    ClientInvocation(NodeEngine nodeEngine, Operation op, String serviceName, int partitionId, int replicaIndex, String uuid) {
+    ClientInvocation(NodeEngine nodeEngine, Operation op, String serviceName, int partitionId, int replicaIndex, ClientEndpoint endpoint) {
         this.nodeEngine = nodeEngine;
         this.op = op;
         this.serviceName = serviceName;
         this.partitionId = partitionId;
         this.replicaIndex = replicaIndex;
+        this.endpoint = endpoint;
         target = null;
-        this.uuid = uuid;
     }
 
-    ClientInvocation(NodeEngine nodeEngine, Operation operation, String serviceName, Address target, String uuid) {
+    ClientInvocation(NodeEngine nodeEngine, Operation operation, String serviceName, Address target, ClientEndpoint endpoint) {
         this.nodeEngine = nodeEngine;
         this.op = operation;
         this.serviceName = serviceName;
         this.target = target;
+        this.endpoint = endpoint;
         partitionId = -1;
         replicaIndex = 0;
-        this.uuid = uuid;
     }
 
     public Object invoke() throws InterruptedException, ExecutionException, TimeoutException {
-        op.setCallerUuid(uuid);
+        op.setCallerUuid(endpoint.getUuid());
         final InvocationBuilder builder;
         if (target == null) {
             builder = nodeEngine.getOperationService().createInvocationBuilder(serviceName, op, partitionId)

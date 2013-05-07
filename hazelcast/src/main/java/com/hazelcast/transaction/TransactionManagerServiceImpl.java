@@ -20,10 +20,7 @@ import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.MembershipAwareService;
-import com.hazelcast.spi.MembershipServiceEvent;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.ArrayList;
@@ -37,7 +34,8 @@ import java.util.logging.Level;
 /**
  * @mdogan 2/26/13
  */
-public class TransactionManagerServiceImpl implements TransactionManagerService, ManagedService, MembershipAwareService {
+public class TransactionManagerServiceImpl implements TransactionManagerService, ManagedService,
+        MembershipAwareService, ClientAwareService {
 
     public static final String SERVICE_NAME = "hz:core:txManagerService";
 

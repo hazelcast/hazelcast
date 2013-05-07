@@ -30,8 +30,6 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.protocol.Command;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.*;
-import com.hazelcast.spi.annotation.ExecutedBy;
-import com.hazelcast.spi.annotation.ThreadType;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.Clock;
 
@@ -432,7 +430,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         logger.log(Level.FINEST, "Now Master " + node.getMasterAddress());
     }
 
-    @ExecutedBy(ThreadType.EXECUTOR_THREAD)
     void handleJoinRequest(JoinRequestOperation joinRequest) {
         lock.lock();
         try {
@@ -624,9 +621,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             joinInProgress = true;
             final Collection<MemberImpl> members = getMemberList();
             final Collection<MemberInfo> memberInfos = createMemberInfos(members);
-            for (MemberImpl member : members) {
-                memberInfos.add(new MemberInfo(member.getAddress(), member.getUuid()));
-            }
             for (MemberInfo memberJoining : setJoins) {
                 memberInfos.add(memberJoining);
             }
@@ -648,7 +642,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             updateMembers(memberInfos);
             for (Future future : calls) {
                 try {
-                    future.get(3, TimeUnit.SECONDS);
+                    future.get(10, TimeUnit.SECONDS);
                 } catch (TimeoutException ignored) {
                     logger.log(Level.FINEST, "Finalize join call timed-out: " + future);
                 } catch (Exception e) {
@@ -731,8 +725,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     public void connectionRemoved(Connection connection) {
         logger.log(Level.FINEST, "Connection is removed " + connection.getEndPoint());
-        final Address masterAddress = node.getMasterAddress();
         if (!node.joined()) {
+            final Address masterAddress = node.getMasterAddress();
             if (masterAddress != null && masterAddress.equals(connection.getEndPoint())) {
                 node.setMasterAddress(null);
             }
@@ -752,7 +746,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         addMembers(member);
     }
 
-    public void addMembers(MemberImpl... members) {
+    private void addMembers(MemberImpl... members) {
         if (members == null || members.length == 0) return;
         logger.log(Level.FINEST, "Adding members -> " + Arrays.toString(members));
         lock.lock();

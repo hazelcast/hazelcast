@@ -16,8 +16,7 @@
 
 package com.hazelcast.concurrent.lock.clientv2;
 
-import com.hazelcast.clientv2.AbstractClientRequest;
-import com.hazelcast.concurrent.lock.InternalLockNamespace;
+import com.hazelcast.clientv2.KeyBasedClientRequest;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.UnlockOperation;
 import com.hazelcast.nio.ObjectDataInput;
@@ -25,6 +24,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
@@ -32,11 +32,13 @@ import java.io.IOException;
 /**
  * @mdogan 5/3/13
  */
-public abstract class AbstractUnlockRequest extends AbstractClientRequest {
+public abstract class AbstractUnlockRequest extends KeyBasedClientRequest {
 
     private Data key;
 
     private int threadId;
+
+    private boolean force;
 
     public AbstractUnlockRequest() {
     }
@@ -46,12 +48,21 @@ public abstract class AbstractUnlockRequest extends AbstractClientRequest {
         this.threadId = threadId;
     }
 
-    public final Object process() throws Exception {
-        Operation op = new UnlockOperation(getNamespace(), key, threadId);
-        return clientEngine.invoke(getServiceName(), op, key);
+    protected AbstractUnlockRequest(Data key, int threadId, boolean force) {
+        this.key = key;
+        this.threadId = threadId;
+        this.force = force;
     }
 
-    protected abstract InternalLockNamespace getNamespace();
+    protected final Object getKey() {
+        return key;
+    }
+
+    protected final Operation prepareOperation() {
+        return new UnlockOperation(getNamespace(), key, threadId, force);
+    }
+
+    protected abstract ObjectNamespace getNamespace();
 
     @Override
     public final String getServiceName() {
@@ -60,18 +71,28 @@ public abstract class AbstractUnlockRequest extends AbstractClientRequest {
 
     @Override
     public final void writePortable(PortableWriter writer) throws IOException {
+        writePortableInternal(writer);
+
         writer.writeInt("thread", threadId);
+        writer.writeBoolean("force", force);
 
         ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
     }
 
+    protected abstract void writePortableInternal(PortableWriter writer) throws IOException;
+
     @Override
     public final void readPortable(PortableReader reader) throws IOException {
+        readPortableInternal(reader);
+
         threadId = reader.readInt("thread");
+        force = reader.readBoolean("force");
 
         ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);
     }
+
+    protected abstract void readPortableInternal(PortableReader reader) throws IOException;
 }

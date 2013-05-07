@@ -323,7 +323,7 @@ final class OperationServiceImpl implements OperationService {
     }
 
     public Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
-                                                   List<Integer> partitions) throws Exception {
+                                                   Collection<Integer> partitions) throws Exception {
         final Map<Address, List<Integer>> memberPartitions = new HashMap<Address, List<Integer>>(3);
         for (int partition : partitions) {
             Address owner = nodeEngine.getPartitionService().getPartitionOwner(partition);
@@ -349,8 +349,7 @@ final class OperationServiceImpl implements OperationService {
             final Address address = mp.getKey();
             final List<Integer> partitions = mp.getValue();
             final PartitionIteratingOperation pi = new PartitionIteratingOperation(partitions, operationFactory);
-            Invocation inv = createInvocationBuilder(serviceName, pi,
-                    address).setTryCount(5).setTryPauseMillis(300).build();
+            Invocation inv = createInvocationBuilder(serviceName, pi, address).setTryCount(10).setTryPauseMillis(300).build();
             Future future = inv.invoke();
             responses.put(address, future);
         }

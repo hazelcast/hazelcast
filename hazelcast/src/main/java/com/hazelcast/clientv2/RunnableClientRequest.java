@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
- *
+ *  
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,9 +16,18 @@
 
 package com.hazelcast.clientv2;
 
-/**
- * @mdogan 2/20/13
- */
-public interface ClientBinaryService {
+import java.util.logging.Level;
 
+/**
+ * @mdogan 5/6/13
+ */
+public abstract class RunnableClientRequest extends ClientRequest implements Runnable {
+
+    final void process() throws Exception {
+        try {
+            run();
+        } catch (Throwable e) {
+            clientEngine.getILogger(getClass()).log(Level.SEVERE, e.getMessage(), e);
+        }
+    }
 }

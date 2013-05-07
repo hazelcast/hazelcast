@@ -14,43 +14,46 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client;
+package com.hazelcast.clientv2;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
-import com.hazelcast.spi.ClientAwareService;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
-import java.util.Collection;
 
 /**
- * @mdogan 2/11/13
+ * @mdogan 5/7/13
  */
-public class ClientDisconnectionOperation extends AbstractOperation {
+public class ClientReAuthOperation extends AbstractOperation {
 
     private String clientUuid;
 
-    public ClientDisconnectionOperation() {
+    public ClientReAuthOperation() {
     }
 
-    public ClientDisconnectionOperation(String clientUuid) {
+    public ClientReAuthOperation(String clientUuid) {
         this.clientUuid = clientUuid;
     }
 
     public void run() throws Exception {
-        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        nodeEngine.onClientDisconnected(clientUuid);
-        final Collection<ClientAwareService> services = nodeEngine.getServices(ClientAwareService.class);
-        for (ClientAwareService service : services) {
-            service.clientDisconnected(clientUuid);
+        ClientEngineImpl service = getService();
+        final ClientEndpoint endpoint = service.getEndpoint(clientUuid);
+        if (endpoint != null) {
+            endpoint.authenticated(new ClientPrincipal(clientUuid, getCallerUuid()));
         }
     }
 
-    @Override
     public boolean returnsResponse() {
-        return false;
+        return true;
+    }
+
+    public Object getResponse() {
+        return Boolean.TRUE;
+    }
+
+    public String getServiceName() {
+        return ClientEngineImpl.SERVICE_NAME;
     }
 
     @Override

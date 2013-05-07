@@ -16,8 +16,10 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Callback;
+import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
 
 public final class TargetInvocationImpl extends InvocationImpl {
@@ -32,7 +34,11 @@ public final class TargetInvocationImpl extends InvocationImpl {
         this.target = target;
     }
 
-    public Address getTarget() {
+    public final Address getTarget() {
         return target;
+    }
+
+    final ExceptionAction onException(Throwable t) {
+        return t instanceof MemberLeftException ? ExceptionAction.THROW_EXCEPTION : op.onException(t);
     }
 }

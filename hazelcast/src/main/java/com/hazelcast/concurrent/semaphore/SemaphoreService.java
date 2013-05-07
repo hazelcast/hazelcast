@@ -38,7 +38,7 @@ import java.util.concurrent.ConcurrentMap;
  * @ali 1/21/13
  */
 public class SemaphoreService implements ManagedService, MigrationAwareService, MembershipAwareService,
-        RemoteService, ClientProtocolService {
+        RemoteService, ClientProtocolService, ClientAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:semaphoreService";
 

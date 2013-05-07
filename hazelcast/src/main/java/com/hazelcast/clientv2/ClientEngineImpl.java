@@ -17,14 +17,14 @@
 package com.hazelcast.clientv2;
 
 import com.hazelcast.client.ClientDisconnectionOperation;
+import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.Config;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.*;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataAdapter;
-import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.nio.serialization.*;
+import com.hazelcast.partition.PartitionService;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -37,6 +37,8 @@ import javax.security.auth.login.LoginException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.*;
 import java.util.logging.Level;
@@ -44,7 +46,8 @@ import java.util.logging.Level;
 /**
  * @mdogan 2/20/13
  */
-public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreService, ManagedService {
+public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreService,
+        ManagedService, MembershipAwareService {
 
     public static final String SERVICE_NAME = "hz:core:clientEngine";
 
@@ -75,37 +78,64 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
         return serializationService.toData(obj);
     }
 
+    public PartitionService getPartitionService() {
+        return nodeEngine.getPartitionService();
+    }
+
+    public ClusterService getClusterService() {
+        return nodeEngine.getClusterService();
+    }
+
     public SerializationService getSerializationService() {
         return serializationService;
     }
 
-    public Object invoke(String serviceName, Operation op, Object key)
-            throws InterruptedException, ExecutionException, TimeoutException {
-        return invoke(serviceName, op, nodeEngine.getPartitionService().getPartitionId(key));
+    void sendOperation(Operation op, Address target) {
+        nodeEngine.getOperationService().send(op, target);
     }
 
-    public Object invoke(String serviceName, Operation op, Data key)
-            throws InterruptedException, ExecutionException, TimeoutException {
-        return invoke(serviceName, op, nodeEngine.getPartitionService().getPartitionId(key));
+    InvocationBuilder createInvocationBuilder(String serviceName, Operation op, final int partitionId) {
+        return nodeEngine.getOperationService().createInvocationBuilder(serviceName, op, partitionId);
     }
 
-    public Object invoke(String serviceName, Operation op, int partitionId)
-            throws InterruptedException, ExecutionException, TimeoutException {
-        return invoke(serviceName, op, partitionId, 0);
+    InvocationBuilder createInvocationBuilder(String serviceName, Operation op, Address target) {
+        return nodeEngine.getOperationService().createInvocationBuilder(serviceName, op, target);
     }
 
-    public Object invoke(String serviceName, Operation op, int partitionId, int replicaIndex)
-            throws InterruptedException, ExecutionException, TimeoutException {
-        final ClientEndpoint endpoint = getCurrentEndpoint();
-        final String uuid = endpoint != null ? endpoint.uuid : null;
-        return new ClientInvocation(nodeEngine, op, serviceName, partitionId, replicaIndex, uuid).invoke();
+    Map<Integer, Object> invokeOnAllPartitions(String serviceName, OperationFactory operationFactory)
+            throws Exception {
+        return nodeEngine.getOperationService().invokeOnAllPartitions(serviceName, operationFactory);
     }
 
-    public Object invoke(String serviceName, Operation op, Address target)
-            throws InterruptedException, ExecutionException, TimeoutException {
-        final ClientEndpoint endpoint = getCurrentEndpoint();
-        final String uuid = endpoint != null ? endpoint.uuid : null;
-        return new ClientInvocation(nodeEngine, op, serviceName, target, uuid).invoke();
+    Map<Integer, Object> invokeOnPartitions(String serviceName, OperationFactory operationFactory,
+                                            Collection<Integer> partitions) throws Exception {
+        return nodeEngine.getOperationService().invokeOnPartitions(serviceName, operationFactory, partitions);
+    }
+
+    private static final Data NULL = new Data();
+
+    public void sendResponse(ClientEndpoint endpoint, Object response) {
+        if (response instanceof Throwable) {
+            Throwable t = (Throwable) response;
+            StringWriter s = new StringWriter();
+            t.printStackTrace(new PrintWriter(s));
+            response = new GenericError(s.toString(), 0);
+        }
+        final Data resultData = response != null ? serializationService.toData(response) : NULL;
+        Connection conn = endpoint.getConn();
+        conn.write(new DataAdapter(resultData, serializationService.getSerializationContext()));
+    }
+
+    public Address getMasterAddress() {
+        return node.getMasterAddress();
+    }
+
+    public Address getThisAddress() {
+        return node.getThisAddress();
+    }
+
+    public MemberImpl getLocalMember() {
+        return node.getLocalMember();
     }
 
     public Config getConfig() {
@@ -127,12 +157,30 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
         }
     };
 
+    ClientEndpoint getEndpoint(String uuid) {
+        for (ClientEndpoint endpoint : endpoints.values()) {
+            if (uuid.equals(endpoint.getUuid())) {
+                return endpoint;
+            }
+        }
+        return null;
+    }
+
     ClientEndpoint getEndpoint(Connection conn) {
         return ConcurrencyUtil.getOrPutIfAbsent(endpoints, conn, endpointConstructor);
     }
 
     ClientEndpoint removeEndpoint(final Connection connection) {
+        return removeEndpoint(connection, false);
+    }
+
+    ClientEndpoint removeEndpoint(final Connection connection, boolean closeImmediately) {
         final ClientEndpoint endpoint = endpoints.remove(connection);
+        destroyEndpoint(endpoint, closeImmediately);
+        return endpoint;
+    }
+
+    private void destroyEndpoint(ClientEndpoint endpoint, boolean closeImmediately) {
         if (endpoint != null) {
             logger.log(Level.INFO, "Destroying " + endpoint);
             try {
@@ -140,33 +188,42 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
             } catch (LoginException e) {
                 logger.log(Level.WARNING, e.getMessage(), e);
             }
-            nodeEngine.getExecutionService().schedule(new Runnable() {
-                public void run() {
-                    if (connection.live()) {
-                        try {
-                            connection.close();
-                        } catch (Throwable e) {
-                            logger.log(Level.WARNING, "While closing client connection: " + e.toString());
+
+            final Connection connection = endpoint.getConn();
+            if (closeImmediately) {
+                try {
+                    connection.close();
+                } catch (Throwable e) {
+                    logger.log(Level.WARNING, "While closing client connection: " + e.toString());
+                }
+            } else {
+                nodeEngine.getExecutionService().schedule(new Runnable() {
+                    public void run() {
+                        if (connection.live()) {
+                            try {
+                                connection.close();
+                            } catch (Throwable e) {
+                                logger.log(Level.WARNING, "While closing client connection: " + e.toString());
+                            }
                         }
                     }
-                }
-            }, 1111, TimeUnit.MILLISECONDS);
+                }, 1111, TimeUnit.MILLISECONDS);
+            }
         }
-        return endpoint;
     }
 
-    @Override
     public void connectionAdded(Connection connection) {
     }
 
     public void connectionRemoved(Connection connection) {
         if (connection.isClient() && connection instanceof TcpIpConnection) {
-            final ClientEndpoint endpoint = removeEndpoint(connection);
-            if (endpoint != null) {
+            final ClientEndpoint endpoint = endpoints.get(connection);
+            if (endpoint != null && node.getLocalMember().getUuid().equals(endpoint.getPrincipal().getOwnerUuid())) {
+                removeEndpoint(connection, true);
                 NodeEngine nodeEngine = node.nodeEngine;
                 final Collection<MemberImpl> memberList = nodeEngine.getClusterService().getMemberList();
                 for (MemberImpl member : memberList) {
-                    final ClientDisconnectionOperation op = new ClientDisconnectionOperation(endpoint.uuid);
+                    final ClientDisconnectionOperation op = new ClientDisconnectionOperation(endpoint.getUuid());
                     op.setNodeEngine(nodeEngine).setServiceName(SERVICE_NAME).setService(this)
                             .setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
 
@@ -180,11 +237,11 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
         }
     }
 
-    public SecurityContext getSecurityContext() {
+    SecurityContext getSecurityContext() {
         return node.securityContext;
     }
 
-    public void bind(Connection connection) {
+    void bind(Connection connection) {
         if (connection instanceof TcpIpConnection) {
             Address endpoint = new Address(connection.getRemoteSocketAddress());
             TcpIpConnectionManager connectionManager = (TcpIpConnectionManager) node.getConnectionManager();
@@ -192,10 +249,23 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
         }
     }
 
-    private final ThreadLocal<ClientEndpoint> currentEndpoint = new ThreadLocal<ClientEndpoint>();
+    public void memberAdded(MembershipServiceEvent event) {
+    }
 
-    private ClientEndpoint getCurrentEndpoint() {
-        return currentEndpoint.get();
+    public void memberRemoved(MembershipServiceEvent event) {
+        final String uuid = event.getMember().getUuid();
+        nodeEngine.getExecutionService().schedule(new Runnable() {
+            public void run() {
+                final Iterator<ClientEndpoint> iter = endpoints.values().iterator();
+                while (iter.hasNext()) {
+                    final ClientEndpoint endpoint = iter.next();
+                    if (uuid.equals(endpoint.getPrincipal().getOwnerUuid())) {
+                        iter.remove();
+                        destroyEndpoint(endpoint, true);
+                    }
+                }
+            }
+        }, 10, TimeUnit.SECONDS);
     }
 
     private class ClientPacketProcessor implements Runnable {
@@ -207,42 +277,33 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
 
         public void run() {
             final Connection conn = packet.getConn();
+            final ClientEndpoint endpoint = getEndpoint(conn);
             try {
-                final ClientEndpoint endpoint = getEndpoint(conn);
-                currentEndpoint.set(endpoint);
                 final Data data = packet.getData();
                 final ClientRequest request = (ClientRequest) serializationService.toObject(data);
-                if (endpoint.isAuthenticated() || request instanceof ClientAuthenticationRequest) {
-                    request.setConnection(conn);
-                    request.setService(nodeEngine.getService(request.getServiceName()));
+                if (endpoint.isAuthenticated() || request instanceof AuthenticationRequest) {
+                    request.setEndpoint(endpoint);
+                    if (request.getServiceName() != null) {
+                        final Object service = nodeEngine.getService(request.getServiceName());
+                        if (service == null) {
+                            throw new IllegalArgumentException("No service registered with name: " + request.getServiceName());
+                        }
+                        request.setService(service);
+                    }
                     request.setClientEngine(ClientEngineImpl.this);
-                    final Object result = request.process();
-                    final Data resultData = result != null ? serializationService.toData(result) : new Data();
-                    sendResponse(conn, resultData);
+                    request.process();
                 } else {
                     String message = "Client " + conn + " must authenticate before any operation.";
                     logger.log(Level.SEVERE, message);
-                    sendResponse(conn, new GenericError(message, 0));
+                    sendResponse(endpoint, new GenericError(message, 0));
                     removeEndpoint(conn);
                 }
             } catch (Throwable e) {
                 logger.log(Level.SEVERE, e.getMessage(), e);
-                StringWriter w = new StringWriter();
-                e.printStackTrace(new PrintWriter(w));
-                sendResponse(conn, new GenericError(w.toString(), 0));
-            } finally {
-                currentEndpoint.set(null);
+                sendResponse(endpoint, e);
             }
         }
-
-
-        private void sendResponse(Connection conn, Object result) {
-            final Data resultData = result != null ? serializationService.toData(result) : NULL;
-            conn.write(new DataAdapter(resultData, serializationService.getSerializationContext()));
-        }
     }
-
-    private static final Data NULL = new Data();
 
     public String getServiceName() {
         return SERVICE_NAME;
@@ -250,6 +311,9 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
 
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
+        ClassDefinitionBuilder builder = new ClassDefinitionBuilder(ClientPortableHook.ID, ClientPortableHook.PRINCIPAL);
+        builder.addUTFField("uuid").addUTFField("ownerUuid");
+        serializationService.getSerializationContext().registerClassDefinition(builder.build());
         node.getConnectionManager().addConnectionListener(this);
     }
 
@@ -258,6 +322,21 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
     }
 
     public void shutdown() {
+        for (ClientEndpoint endpoint : endpoints.values()) {
+            try {
+                endpoint.destroy();
+            } catch (LoginException e) {
+                logger.log(Level.FINEST, e.getMessage());
+            }
+            try {
+                final Connection conn = endpoint.getConn();
+                if (conn.live()) {
+                    conn.close( );
+                }
+            } catch (Exception e) {
+                logger.log(Level.FINEST, e.getMessage(), e);
+            }
+        }
         endpoints.clear();
     }
 

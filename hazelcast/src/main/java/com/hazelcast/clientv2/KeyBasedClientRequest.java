@@ -16,25 +16,18 @@
 
 package com.hazelcast.clientv2;
 
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableFactory;
-
 /**
- * @mdogan 3/11/13
+ * @mdogan 5/3/13
  */
-public class ClientPortableFactory implements PortableFactory {
+public abstract class KeyBasedClientRequest extends PartitionClientRequest {
 
-    public Portable create(int classId) {
-        switch (classId) {
-            case 1:
-                return new GenericError();
+    protected abstract Object getKey();
 
-            case 2:
-                return new AuthenticationRequest();
+    protected final int getPartition() {
+        return clientEngine.getPartitionService().getPartitionId(getKey());
+    }
 
-            case ClientPortableHook.PRINCIPAL:
-                return new ClientPrincipal();
-        }
-        return null;
+    protected int getReplicaIndex() {
+        return 0;
     }
 }

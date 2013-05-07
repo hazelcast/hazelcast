@@ -18,11 +18,15 @@ package com.hazelcast.concurrent.lock.clientv2;
 
 import com.hazelcast.concurrent.lock.InternalLockNamespace;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
+
+import java.io.IOException;
 
 /**
  * @mdogan 5/3/13
  */
-public final class UnlockRequest extends AbstractUnlockRequest{
+public final class UnlockRequest extends AbstractUnlockRequest {
 
     public UnlockRequest() {
     }
@@ -44,5 +48,13 @@ public final class UnlockRequest extends AbstractUnlockRequest{
     @Override
     public int getClassId() {
         return 2;
+    }
+
+    @Override
+    protected void writePortableInternal(PortableWriter writer) throws IOException {
+    }
+
+    @Override
+    protected void readPortableInternal(PortableReader reader) throws IOException {
     }
 }

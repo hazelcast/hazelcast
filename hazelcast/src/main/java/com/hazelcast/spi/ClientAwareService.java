@@ -14,27 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.clientv2;
-
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableFactory;
+package com.hazelcast.spi;
 
 /**
- * @mdogan 3/11/13
+ * @mdogan 5/6/13
  */
-public class ClientPortableFactory implements PortableFactory {
 
-    public Portable create(int classId) {
-        switch (classId) {
-            case 1:
-                return new GenericError();
+public interface ClientAwareService {
 
-            case 2:
-                return new AuthenticationRequest();
+    /**
+     * Invoked when a client disconnected from a member.
+     */
+    void clientDisconnected(String clientUuid);
 
-            case ClientPortableHook.PRINCIPAL:
-                return new ClientPrincipal();
-        }
-        return null;
-    }
 }

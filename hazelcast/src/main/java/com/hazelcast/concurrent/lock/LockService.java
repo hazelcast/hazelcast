@@ -38,7 +38,7 @@ import java.util.concurrent.ConcurrentMap;
  * @mdogan 2/12/13
  */
 public class LockService implements ManagedService, RemoteService, MembershipAwareService,
-        MigrationAwareService, ClientProtocolService, SharedLockService {
+        MigrationAwareService, ClientProtocolService, SharedLockService, ClientAwareService{
 
     private final NodeEngine nodeEngine;
     private final LockStoreContainer[] containers;
