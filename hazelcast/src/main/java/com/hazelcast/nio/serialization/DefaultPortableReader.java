@@ -290,7 +290,7 @@ public class DefaultPortableReader implements PortableReader {
 
     protected int getPosition(String fieldName) throws IOException {
         if (raw) {
-            throw new HazelcastSerializationException("Can read Portable fields after getRawDataInput() is called!");
+            throw new HazelcastSerializationException("Cannot read Portable fields after getRawDataInput() is called!");
         }
         FieldDefinition fd = cd.get(fieldName);
         if (fd == null) {

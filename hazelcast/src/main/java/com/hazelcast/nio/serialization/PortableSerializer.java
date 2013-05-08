@@ -224,7 +224,7 @@ public class PortableSerializer implements TypeSerializer<Portable> {
             writePortable(fieldName, portable.getFactoryId(), portable.getClassId(), portable);
         }
 
-        public void writePortable(String fieldName, int factoryId, int classId, Portable portable) throws IOException {
+        private void writePortable(String fieldName, int factoryId, int classId, Portable portable) throws IOException {
             builder.addPortableField(fieldName, factoryId, classId);
             if (portable != null) {
                 addNestedField(portable, new ClassDefinitionBuilder(portable.getFactoryId(), classId));

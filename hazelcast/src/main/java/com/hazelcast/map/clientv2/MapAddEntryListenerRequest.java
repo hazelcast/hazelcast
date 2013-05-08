@@ -84,19 +84,26 @@ public class MapAddEntryListenerRequest extends RunnableClientRequest {
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
-        writer.writeUTF("n", name);
+        writer.writeUTF("name", name);
         writer.writeBoolean("i", includeValue);
+        final boolean hasKey = key != null;
+        writer.writeBoolean("key", hasKey);
 
-        final ObjectDataOutput out = writer.getRawDataOutput();
-        key.writeData(out);
+        if (hasKey) {
+            final ObjectDataOutput out = writer.getRawDataOutput();
+            key.writeData(out);
+        }
     }
 
     public void readPortable(PortableReader reader) throws IOException {
-        name = reader.readUTF("n");
+        name = reader.readUTF("name");
         includeValue = reader.readBoolean("i");
+        boolean hasKey = reader.readBoolean("key");
 
-        final ObjectDataInput in = reader.getRawDataInput();
-        key = new Data();
-        key.readData(in);
+        if (hasKey) {
+            final ObjectDataInput in = reader.getRawDataInput();
+            key = new Data();
+            key.readData(in);
+        }
     }
 }
