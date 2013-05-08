@@ -16,10 +16,9 @@
 
 package com.hazelcast.concurrent.lock.clientv2;
 
-import com.hazelcast.nio.serialization.FactoryIdHelper;
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.nio.serialization.PortableHook;
+import com.hazelcast.nio.serialization.*;
+
+import java.util.Collection;
 
 /**
  * @mdogan 5/3/13
@@ -44,5 +43,9 @@ public class LockPortableHook implements PortableHook {
                 }
             }
         };
+    }
+
+    public Collection<ClassDefinition> getBuiltinDefinitions() {
+        return null;
     }
 }

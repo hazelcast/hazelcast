@@ -1,8 +1,9 @@
 package com.hazelcast.clientv2;
 
-import com.hazelcast.nio.serialization.FactoryIdHelper;
-import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.nio.serialization.PortableHook;
+import com.hazelcast.nio.serialization.*;
+
+import java.util.Collection;
+import java.util.Collections;
 
 /**
  * @mdogan 4/30/13
@@ -19,5 +20,11 @@ public class ClientPortableHook implements PortableHook {
 
     public PortableFactory createFactory() {
         return new ClientPortableFactory();
+    }
+
+    public Collection<ClassDefinition> getBuiltinDefinitions() {
+        ClassDefinitionBuilder builder = new ClassDefinitionBuilder(ID, PRINCIPAL);
+        builder.addUTFField("uuid").addUTFField("ownerUuid");
+        return Collections.singleton(builder.build());
     }
 }

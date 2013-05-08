@@ -17,7 +17,6 @@
 package com.hazelcast.map;
 
 import com.hazelcast.clientv2.AuthenticationRequest;
-import com.hazelcast.clientv2.ClientPortableHook;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -94,10 +93,6 @@ public class BinaryClient {
             outputStream.flush();
             in = ss.createObjectDataInputStream(new BufferedInputStream(socket.getInputStream()));
             out = ss.createObjectDataOutputStream(new BufferedOutputStream(outputStream));
-
-            ClassDefinitionBuilder builder = new ClassDefinitionBuilder(ClientPortableHook.ID, ClientPortableHook.PRINCIPAL);
-            builder.addUTFField("uuid").addUTFField("ownerUuid");
-            ss.getSerializationContext().registerClassDefinition(builder.build());
         }
 
         void auth() throws IOException {

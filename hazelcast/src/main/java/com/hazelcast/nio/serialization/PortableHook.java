@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio.serialization;
 
+import java.util.Collection;
+
 /**
  * @mdogan 04/30/13
  */
@@ -25,6 +27,8 @@ public interface PortableHook {
     int getFactoryId();
 
     PortableFactory createFactory();
+
+    Collection<ClassDefinition> getBuiltinDefinitions();
 
 }
 
