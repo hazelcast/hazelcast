@@ -35,7 +35,7 @@ public abstract class TargetClientRequest extends ClientRequest {
                 .setTryCount(100)
                 .setCallback(new Callback<Object>() {
                     public void notify(Object object) {
-                        clientEngine.sendResponse(endpoint, object);
+                        clientEngine.sendResponse(endpoint, filter(object));
                     }
                 });
         Invocation inv = builder.build();
@@ -45,5 +45,9 @@ public abstract class TargetClientRequest extends ClientRequest {
     protected abstract Operation prepareOperation();
 
     public abstract Address getTarget();
+
+    protected Object filter(Object response) {
+        return response;
+    }
 
 }
