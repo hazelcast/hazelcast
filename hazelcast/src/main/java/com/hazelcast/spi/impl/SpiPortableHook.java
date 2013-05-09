@@ -1,10 +1,9 @@
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.nio.serialization.FactoryIdHelper;
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.nio.serialization.PortableHook;
+import com.hazelcast.nio.serialization.*;
 import com.hazelcast.security.UsernamePasswordCredentials;
+
+import java.util.Collection;
 
 /**
  * @mdogan 4/30/13
@@ -25,5 +24,9 @@ public final class SpiPortableHook implements PortableHook {
                 return classId == USERNAME_PWD_CRED ? new UsernamePasswordCredentials() : null;
             }
         };
+    }
+
+    public Collection<ClassDefinition> getBuiltinDefinitions() {
+        return null;
     }
 }

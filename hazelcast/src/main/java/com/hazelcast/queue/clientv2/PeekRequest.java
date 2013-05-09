@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,29 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.serialization;
+package com.hazelcast.queue.clientv2;
 
-import java.util.Collection;
+import com.hazelcast.queue.PeekOperation;
+import com.hazelcast.queue.QueuePortableHook;
+import com.hazelcast.spi.Operation;
 
 /**
- * @mdogan 04/30/13
+ * @ali 5/8/13
  */
+public class PeekRequest extends QueueRequest {
 
-public interface PortableHook {
+    public PeekRequest() {
+    }
 
-    int getFactoryId();
+    public PeekRequest(String name) {
+        super(name);
+    }
 
-    PortableFactory createFactory();
+    protected Operation prepareOperation() {
+        return new PeekOperation(name);
+    }
 
-    Collection<ClassDefinition> getBuiltinDefinitions();
-
+    public int getClassId() {
+        return QueuePortableHook.PEEK;
+    }
 }
-

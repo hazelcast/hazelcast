@@ -20,6 +20,8 @@ import com.hazelcast.map.clientv2.*;
 import com.hazelcast.nio.serialization.*;
 import com.hazelcast.util.ConstructorFunction;
 
+import java.util.Collection;
+
 /**
  * @mdogan 5/2/13
  */
@@ -197,5 +199,9 @@ public class MapPortableHook implements PortableHook {
                 return null;
             }
         };
+    }
+
+    public Collection<ClassDefinition> getBuiltinDefinitions() {
+        return null;
     }
 }
