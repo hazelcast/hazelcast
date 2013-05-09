@@ -34,7 +34,7 @@ public abstract class PartitionClientRequest extends ClientRequest {
                 .setReplicaIndex(getReplicaIndex()).setTryCount(100)
                 .setCallback(new Callback<Object>() {
                     public void notify(Object object) {
-                        clientEngine.sendResponse(endpoint, object);
+                        clientEngine.sendResponse(endpoint, filter(object));
                     }
                 });
         Invocation inv = builder.build();
@@ -46,5 +46,9 @@ public abstract class PartitionClientRequest extends ClientRequest {
     protected abstract int getPartition();
 
     protected abstract int getReplicaIndex();
+
+    protected Object filter(Object response) {
+        return response;
+    }
 
 }

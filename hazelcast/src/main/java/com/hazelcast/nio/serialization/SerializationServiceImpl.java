@@ -167,8 +167,14 @@ public final class SerializationServiceImpl implements SerializationService {
     public SerializationServiceImpl(int version, Map<Integer, ? extends DataSerializableFactory> dataSerializableFactories,
                                     Map<Integer, ? extends PortableFactory> portableFactories, ManagedContext managedContext) {
         this.managedContext = managedContext;
+        PortableHookLoader loader = new PortableHookLoader(portableFactories);
+        serializationContext = new SerializationContextImpl(loader.getFactories().keySet(), version);
+        for (ClassDefinition cd : loader.getDefinitions()) {
+            serializationContext.registerClassDefinition(cd);
+        }
+
         registerConstant(DataSerializable.class, dataSerializer = new DataSerializer(dataSerializableFactories));
-        registerConstant(Portable.class, portableSerializer = new PortableSerializer(this, portableFactories));
+        registerConstant(Portable.class, portableSerializer = new PortableSerializer(serializationContext, loader.getFactories()));
         registerConstant(Byte.class, new ByteSerializer());
         registerConstant(Boolean.class, new BooleanSerializer());
         registerConstant(Character.class, new CharSerializer());
@@ -192,7 +198,6 @@ public final class SerializationServiceImpl implements SerializationService {
         safeRegister(Serializable.class, new ObjectSerializer());
         safeRegister(Class.class, new ClassSerializer());
 
-        serializationContext = new SerializationContextImpl(portableSerializer.getFactories().keySet(), version);
     }
 
     @SuppressWarnings("unchecked")
