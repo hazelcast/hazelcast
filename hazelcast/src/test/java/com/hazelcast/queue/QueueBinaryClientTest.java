@@ -19,12 +19,16 @@ package com.hazelcast.queue;
 import com.hazelcast.clientv2.AuthenticationRequest;
 import com.hazelcast.clientv2.ClientPortableHook;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IQueue;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.nio.serialization.*;
-import com.hazelcast.queue.clientv2.OfferRequest;
+import com.hazelcast.queue.clientv2.*;
 import com.hazelcast.security.UsernamePasswordCredentials;
+import org.junit.*;
+import org.junit.runner.RunWith;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -33,59 +37,326 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+import static org.junit.Assert.*;
 
 /**
  * @ali 5/8/13
  */
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class QueueBinaryClientTest {
 
-    public static void main(String[] args) throws Exception {
+    static final String queueName = "test";
+    static HazelcastInstance hz = null;
+    static SerializationService ss = null;
+    Client c = null;
+
+    @BeforeClass
+    public static void init() {
         Config config = new Config();
-        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
-        final String queueName = "test";
+        hz = Hazelcast.newHazelcastInstance(config);
+        QueueConfig queueConfig = hz.getConfig().getQueueConfig(queueName);
+        queueConfig.setMaxSize(6);
+        ss = new SerializationServiceImpl(0);
+    }
 
-        final SerializationService ss = new SerializationServiceImpl(0);
-
-        final Client c = new Client();
-        c.auth();
-        final Thread thread = new Thread() {
-            public void run() {
-                try {
-                    c.send(new OfferRequest(queueName, ss.toData("item1")));
-                    while (!isInterrupted()) {
-                        System.err.println("--> " + c.receive());
-                    }
-                    c.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        };
-        thread.start();
-
-        Thread.sleep(2000);
-
-
-
-        Object item = hz.getQueue(queueName).peek();
-        System.err.println("done : " + item.equals("item1"));
-
-        thread.interrupt();
-        c.close();
-        thread.join();
-
-        hz.getMap("test").put(1111, 1111);
-
-//        try {
-//            c.close();
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-
-        Thread.sleep(2000);
+    @AfterClass
+    public static void destroy(){
         Hazelcast.shutdownAll();
+    }
+
+    @Before
+    public void startClient() throws IOException {
+        c = new Client();
+        c.auth();
+    }
+
+    @After
+    public void closeClient() throws IOException {
+        hz.getQueue(queueName).clear();
+        c.close();
+    }
+
+    @Test
+    public void testAddAll() throws IOException {
+        
+        List<Data> list = new ArrayList<Data>();
+        list.add(ss.toData("item1"));
+        list.add(ss.toData("item2"));
+        list.add(ss.toData("item3"));
+        list.add(ss.toData("item4"));
+        c.send(new AddAllRequest(queueName, list));
+        Object result = c.receive();
+        assertTrue((Boolean)result);
+        int size = hz.getQueue(queueName).size();
+        assertEquals(size, list.size());
+        
+    }
+
+    @Test
+    public void testAddListener() throws IOException {
+
+        
+
+        c.send(new AddListenerRequest(queueName, true));
+        c.receive();
+
+        hz.getQueue(queueName).offer("item");
+
+
+        String result = (String)c.receive();
+        assertTrue(result.startsWith("ItemEvent"));
+
+        
 
     }
+
+    @Test
+    public void testClear() throws Exception {
+
+        
+
+        IQueue q = hz.getQueue(queueName);
+        q.offer("item1");
+        q.offer("item2");
+        q.offer("item3");
+
+        c.send(new ClearRequest(queueName));
+        Object result = c.receive();
+        assertTrue((Boolean)result);
+        assertEquals(0, q.size());
+
+        
+    }
+
+    @Test
+    public void testCompareAndRemove() throws IOException {
+        
+
+        IQueue q = hz.getQueue(queueName);
+        q.offer("item1");
+        q.offer("item2");
+        q.offer("item3");
+        q.offer("item4");
+        q.offer("item5");
+
+        List<Data> list = new ArrayList<Data>();
+        list.add(ss.toData("item1"));
+        list.add(ss.toData("item2"));
+
+        c.send(new CompareAndRemoveRequest(queueName, list, true));
+        Boolean result = (Boolean)c.receive();
+        assertTrue(result);
+        assertEquals(2, q.size());
+
+
+        c.send(new CompareAndRemoveRequest(queueName, list, false));
+        result = (Boolean)c.receive();
+        assertTrue(result);
+        assertEquals(0, q.size());
+
+        
+    }
+
+    @Test
+    public void testContains() throws IOException {
+        
+
+        IQueue q = hz.getQueue(queueName);
+        q.offer("item1");
+        q.offer("item2");
+        q.offer("item3");
+        q.offer("item4");
+        q.offer("item5");
+
+        List<Data> list = new ArrayList<Data>();
+        list.add(ss.toData("item1"));
+        list.add(ss.toData("item2"));
+
+        c.send(new ContainsRequest(queueName, list));
+        Boolean result = (Boolean)c.receive();
+        assertTrue(result);
+
+        list.add(ss.toData("item0"));
+
+        c.send(new ContainsRequest(queueName, list));
+        result = (Boolean)c.receive();
+        assertFalse(result);
+
+        
+    }
+
+    @Test
+    public void testDrain() throws IOException {
+        
+
+        IQueue q = hz.getQueue(queueName);
+        q.offer("item1");
+        q.offer("item2");
+        q.offer("item3");
+        q.offer("item4");
+        q.offer("item5");
+
+        c.send(new DrainRequest(queueName, 1));
+        SerializableCollectionContainer result = (SerializableCollectionContainer)c.receive();
+        Collection<Data> coll = result.getCollection();
+        assertEquals(1, coll.size());
+        assertEquals("item1", ss.toObject(coll.iterator().next()));
+        assertEquals(4, q.size());
+        
+    }
+
+    @Test
+    public void testIterator() throws IOException {
+        
+        IQueue q = hz.getQueue(queueName);
+        q.offer("item1");
+        q.offer("item2");
+        q.offer("item3");
+        q.offer("item4");
+        q.offer("item5");
+
+        c.send(new IteratorRequest(queueName));
+        SerializableCollectionContainer result = (SerializableCollectionContainer)c.receive();
+        Collection<Data> coll = result.getCollection();
+        int i=1;
+        for (Data data: coll){
+            assertEquals("item"+i,ss.toObject(data));
+            i++;
+        }
+        
+    }
+
+    @Test
+    public void testOffer() throws IOException {
+        
+
+        final IQueue q = hz.getQueue(queueName);
+
+        c.send(new OfferRequest(queueName, ss.toData("item1")));
+        Object result = c.receive();
+        assertTrue((Boolean)result);
+        Object item = q.peek();
+        assertEquals(item, "item1");
+
+
+        q.offer("item2");
+        q.offer("item3");
+        q.offer("item4");
+        q.offer("item5");
+        q.offer("item6");
+
+        new Thread(){
+            public void run() {
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                q.poll();
+            }
+        }.start();
+        c.send(new OfferRequest(queueName, 500, ss.toData("item7")));
+        result = c.receive();
+        assertFalse((Boolean)result);
+
+        c.send(new OfferRequest(queueName, 10*1000, ss.toData("item7")));
+        result = c.receive();
+        assertTrue((Boolean) result);
+
+        
+
+    }
+
+    @Test
+    public void testPeek() throws IOException {
+        
+        IQueue q = hz.getQueue(queueName);
+
+        c.send(new PeekRequest(queueName));
+        Object result = c.receive();
+        assertNull(result);
+
+        q.offer("item1");
+        c.send(new PeekRequest(queueName));
+        result = c.receive();
+        assertEquals("item1", result);
+        assertEquals(1, q.size());
+        
+    }
+
+    @Test
+    public void testPoll() throws IOException {
+        
+
+        final IQueue q = hz.getQueue(queueName);
+
+        c.send(new PollRequest(queueName));
+        Object result = c.receive();
+        assertNull(result);
+
+        q.offer("item1");
+        c.send(new PollRequest(queueName));
+        result = c.receive();
+        assertEquals("item1", result);
+        assertEquals(0, q.size());
+
+
+        new Thread(){
+            public void run() {
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                q.offer("item2");
+            }
+        }.start();
+        c.send(new PollRequest(queueName, 10*1000));
+        result = c.receive();
+        assertEquals("item2", result);
+        assertEquals(0, q.size());
+        
+
+    }
+
+    @Test
+    public void testRemove() throws IOException {
+        
+        final IQueue q = hz.getQueue(queueName);
+        q.offer("item1");
+        q.offer("item2");
+        q.offer("item3");
+
+        c.send(new RemoveRequest(queueName, ss.toData("item2")));
+        Boolean result = (Boolean)c.receive();
+        assertTrue(result);
+        assertEquals(2,q.size());
+
+        c.send(new RemoveRequest(queueName, ss.toData("item2")));
+        result = (Boolean)c.receive();
+        assertFalse(result);
+        assertEquals(2,q.size());
+        
+    }
+
+    @Test
+    public void testSize() throws IOException {
+        
+        final IQueue q = hz.getQueue(queueName);
+        q.offer("item1");
+        q.offer("item2");
+        q.offer("item3");
+
+        c.send(new SizeRequest(queueName));
+        int result = (Integer)c.receive();
+        assertEquals(result, q.size());
+        
+    }
+
 
     static class Client {
         final Socket socket = new Socket();
@@ -129,7 +400,6 @@ public class QueueBinaryClientTest {
             socket.close();
         }
     }
-
 
     static {
         System.setProperty("hazelcast.logging.type", "log4j");

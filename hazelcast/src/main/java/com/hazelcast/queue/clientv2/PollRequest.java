@@ -28,6 +28,10 @@ public class PollRequest extends QueueRequest {
     public PollRequest() {
     }
 
+    public PollRequest(String name) {
+        super(name);
+    }
+
     public PollRequest(String name, long timeoutMillis) {
         super(name, timeoutMillis);
     }

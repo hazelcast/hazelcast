@@ -36,6 +36,14 @@ public class AddAllRequest extends QueueRequest {
 
     private Collection<Data> dataList;
 
+    public AddAllRequest() {
+    }
+
+    public AddAllRequest(String name, Collection<Data> dataList) {
+        super(name);
+        this.dataList = dataList;
+    }
+
     protected Operation prepareOperation() {
         return new AddAllOperation(name, dataList);
     }
