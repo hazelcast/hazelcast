@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.clientv2;
 
-import com.hazelcast.clientv2.RunnableClientRequest;
+import com.hazelcast.clientv2.CallableClientRequest;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
@@ -27,7 +27,7 @@ import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
 
-public class MapRemoveInterceptorRequest extends RunnableClientRequest {
+public class MapRemoveInterceptorRequest extends CallableClientRequest {
 
     private String name;
     private MapInterceptor mapInterceptor;
@@ -41,12 +41,7 @@ public class MapRemoveInterceptorRequest extends RunnableClientRequest {
     }
 
     @Override
-    public void run() {
-
-    }
-
-    public Object process() throws Exception {
-        // todo implement
+    public Object call() throws Exception {
         return null;
     }
 

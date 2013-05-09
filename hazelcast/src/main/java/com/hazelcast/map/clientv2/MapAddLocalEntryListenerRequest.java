@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.clientv2;
 
-import com.hazelcast.clientv2.RunnableClientRequest;
+import com.hazelcast.clientv2.CallableClientRequest;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
@@ -28,7 +28,7 @@ import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
 
-public class MapAddLocalEntryListenerRequest extends RunnableClientRequest {
+public class MapAddLocalEntryListenerRequest extends CallableClientRequest {
 
     private String name;
     private EntryListener listener;
@@ -42,8 +42,8 @@ public class MapAddLocalEntryListenerRequest extends RunnableClientRequest {
     }
 
     @Override
-    public void run() {
-
+    public Object call() throws Exception {
+        return null;
     }
 
     public Object process() throws Exception {
