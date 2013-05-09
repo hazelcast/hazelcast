@@ -16,11 +16,10 @@
 
 package com.hazelcast.queue;
 
-import com.hazelcast.nio.serialization.FactoryIdHelper;
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.nio.serialization.PortableHook;
+import com.hazelcast.nio.serialization.*;
 import com.hazelcast.queue.clientv2.*;
+
+import java.util.Collection;
 
 /**
  * @ali 5/8/13
@@ -80,5 +79,9 @@ public class QueuePortableHook implements PortableHook {
                 return null;
             }
         };
+    }
+
+    public Collection<ClassDefinition> getBuiltinDefinitions() {
+        return null;
     }
 }
