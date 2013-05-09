@@ -115,6 +115,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
     public long getLastWrite() {
         return lastWrite;
     }
+
     void setUuid(String uuid) {
         this.uuid = uuid;
     }
@@ -132,19 +133,12 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
     public void readData(ObjectDataInput in) throws IOException {
         address = new Address();
         address.readData(in);
-        lastRead = Clock.currentTimeMillis();
-        if (in.readBoolean()) {
-            uuid = in.readUTF();
-        }
+        uuid = in.readUTF();
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
         address.writeData(out);
-        boolean hasUuid = uuid != null;
-        out.writeBoolean(hasUuid);
-        if (hasUuid) {
-            out.writeUTF(uuid);
-        }
+        out.writeUTF(uuid);
     }
 
     @Override

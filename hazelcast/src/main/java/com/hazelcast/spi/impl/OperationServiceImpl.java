@@ -523,7 +523,6 @@ final class OperationServiceImpl implements OperationService {
             call.offerResponse(response);
         }
         remoteCalls.clear();
-        System.out.println("backupCalls.size() = " + backupCalls.size());
         backupCalls.clear();
         for (ExecutorService executor : opExecutors) {
             try {
