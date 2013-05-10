@@ -38,7 +38,7 @@ public class AddAllOperation extends CollectionBackupAwareOperation {
     List<Data> dataList;
     transient Collection<CollectionRecord> recordList;
 
-    int index;
+    int index = -1;
 
     public AddAllOperation() {
     }
@@ -52,7 +52,6 @@ public class AddAllOperation extends CollectionBackupAwareOperation {
     public void run() throws Exception {
         CollectionContainer container = getOrCreateContainer();
         Collection<CollectionRecord> coll = container.getOrCreateCollectionWrapper(dataKey).getCollection();
-        List list = (List) coll;
         recordList = new ArrayList<CollectionRecord>(dataList.size());
         try {
             int i = 0;
@@ -62,6 +61,7 @@ public class AddAllOperation extends CollectionBackupAwareOperation {
                 if (index == -1) {
                     added = coll.add(record);
                 } else {
+                    List list = (List) coll;
                     list.add(index+(i++), record);
                 }
                 if (added) {
