@@ -3,3 +3,4 @@ com.hazelcast.map.MapPortableHook
 com.hazelcast.clientv2.ClientPortableHook
 com.hazelcast.concurrent.lock.clientv2.LockPortableHook
 com.hazelcast.queue.QueuePortableHook
+com.hazelcast.collection.CollectionPortableHook
