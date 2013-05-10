@@ -3,10 +3,12 @@ package com.hazelcast.collection;
 import com.hazelcast.clientv2.AuthenticationRequest;
 import com.hazelcast.clientv2.ClientPortableHook;
 import com.hazelcast.collection.operations.clientv2.AddAllRequest;
+import com.hazelcast.collection.operations.clientv2.ClearRequest;
 import com.hazelcast.collection.set.ObjectSetProxy;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.MultiMap;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.nio.serialization.*;
 import com.hazelcast.security.UsernamePasswordCredentials;
@@ -24,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -77,13 +80,31 @@ public class CollectionBinaryClientTest {
         list.add(ss.toData("item4"));
 
 
-        int threadId = (int)Thread.currentThread().getId();
-        c.send(new AddAllRequest(setProxyId, dataKey, threadId, list));
+
+        c.send(new AddAllRequest(setProxyId, dataKey, getThreadId(), list));
         Object result = c.receive();
         assertTrue((Boolean) result);
         int size = hz.getSet(name).size();
         assertEquals(size, list.size());
 
+    }
+
+    @Test
+    public void testClear() throws IOException {
+        MultiMap mm = hz.getMultiMap(name);
+        mm.put("key1","value1");
+        mm.put("key1","value2");
+
+        mm.put("key2","value3");
+
+        c.send(new ClearRequest(mmProxyId));
+        assertNull(c.receive());
+        assertEquals(0, mm.size());
+    }
+
+    private int getThreadId(){
+        int threadId = (int)Thread.currentThread().getId();
+        return threadId;
     }
 
     static class Client {

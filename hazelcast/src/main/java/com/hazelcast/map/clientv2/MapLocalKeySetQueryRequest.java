@@ -73,7 +73,7 @@ public class MapLocalKeySetQueryRequest extends MultiPartitionClientRequest {
     }
 
     public int getClassId() {
-        return MapPortableHook.LOCAL_KEYSET_QUERY;
+        return MapPortableHook.QUERY;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {

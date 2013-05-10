@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,12 @@
 
 package com.hazelcast.map.clientv2;
 
-import com.hazelcast.clientv2.AllPartitionsClientRequest;
 import com.hazelcast.clientv2.MultiTargetClientRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicate;
@@ -75,7 +73,7 @@ public class MapQueryRequest extends MultiTargetClientRequest {
     }
 
     public int getClassId() {
-        return MapPortableHook.ENTRY_SET_QUERY;
+        return MapPortableHook.QUERY;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {

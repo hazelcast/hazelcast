@@ -16,7 +16,7 @@
 
 package com.hazelcast.collection.operations.clientv2;
 
-import com.hazelcast.clientv2.PartitionClientRequest;
+import com.hazelcast.clientv2.AllPartitionsClientRequest;
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionService;
@@ -28,21 +28,17 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import java.io.IOException;
 
 /**
- * @ali 5/9/13
+ * @ali 5/10/13
  */
-public abstract class CollectionRequest extends PartitionClientRequest {
+public abstract class CollectionAllPartitionRequest extends AllPartitionsClientRequest{
 
     CollectionProxyId proxyId;
 
-    protected CollectionRequest() {
+    protected CollectionAllPartitionRequest() {
     }
 
-    protected CollectionRequest(CollectionProxyId proxyId) {
+    protected CollectionAllPartitionRequest(CollectionProxyId proxyId) {
         this.proxyId = proxyId;
-    }
-
-    protected int getReplicaIndex() {
-        return 0;
     }
 
     public String getServiceName() {

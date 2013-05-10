@@ -16,22 +16,34 @@
 
 package com.hazelcast.collection.operations.clientv2;
 
-import com.hazelcast.spi.Operation;
+import com.hazelcast.collection.CollectionPortableHook;
+import com.hazelcast.collection.CollectionProxyId;
+import com.hazelcast.collection.operations.MultiMapOperationFactory;
+import com.hazelcast.spi.OperationFactory;
+
+import java.util.Map;
 
 /**
  * @ali 5/10/13
  */
-public class ClearRequest extends CollectionRequest {
+public class ClearRequest extends CollectionAllPartitionRequest {
 
-    protected Operation prepareOperation() {
+    public ClearRequest() {
+    }
+
+    public ClearRequest(CollectionProxyId proxyId) {
+        super(proxyId);
+    }
+
+    protected OperationFactory createOperationFactory() {
+        return new MultiMapOperationFactory(proxyId, MultiMapOperationFactory.OperationFactoryType.CLEAR);
+    }
+
+    protected Object reduce(Map<Integer, Object> map) {
         return null;
     }
 
-    protected int getPartition() {
-        return 0;
-    }
-
     public int getClassId() {
-        return 0;
+        return CollectionPortableHook.CLEAR;
     }
 }
