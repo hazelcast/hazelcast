@@ -35,7 +35,6 @@ public class MapPutIfAbsentRequest extends MapPutRequest {
     }
 
     protected Operation prepareOperation() {
-        System.err.println("Running MapPutIfAbsentRequest");
         PutIfAbsentOperation op = new PutIfAbsentOperation(name, key, value, ttl);
         op.setThreadId(threadId);
         return op;

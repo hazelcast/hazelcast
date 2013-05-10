@@ -17,6 +17,7 @@
 package com.hazelcast.map.clientv2;
 
 import com.hazelcast.clientv2.KeyBasedClientRequest;
+import com.hazelcast.map.ContainsKeyOperation;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ObjectDataInput;
@@ -31,7 +32,6 @@ import java.io.IOException;
 public class MapContainsKeyRequest extends KeyBasedClientRequest {
 
     private String name;
-
     private Data key;
 
     public MapContainsKeyRequest() {
@@ -44,17 +44,12 @@ public class MapContainsKeyRequest extends KeyBasedClientRequest {
 
     @Override
     protected Object getKey() {
-        return null;
+        return key;
     }
 
     @Override
     protected Operation prepareOperation() {
-        return null;
-    }
-
-    public Object process() throws Exception {
-        // todo implement
-        return null;
+        return new ContainsKeyOperation(name, key);
     }
 
     public String getServiceName() {
@@ -72,14 +67,12 @@ public class MapContainsKeyRequest extends KeyBasedClientRequest {
 
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
-        // ...
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
     }
 
     public void readPortable(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
-        //....
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);

@@ -31,9 +31,9 @@ import java.io.IOException;
 
 public class MapPutRequest extends KeyBasedClientRequest {
 
-    protected String name;
     protected Data key;
     protected Data value;
+    protected String name;
     protected int threadId;
     protected long ttl;
 
@@ -83,7 +83,6 @@ public class MapPutRequest extends KeyBasedClientRequest {
         writer.writeUTF("n", name);
         writer.writeInt("t", threadId);
         writer.writeLong("ttl", ttl);
-        // ...
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
         value.writeData(out);
@@ -93,7 +92,6 @@ public class MapPutRequest extends KeyBasedClientRequest {
         name = reader.readUTF("n");
         threadId = reader.readInt("t");
         ttl = reader.readLong("ttl");
-        //....
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);

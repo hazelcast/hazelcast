@@ -17,6 +17,7 @@
 package com.hazelcast.map.clientv2;
 
 import com.hazelcast.clientv2.KeyBasedClientRequest;
+import com.hazelcast.map.EvictOperation;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ObjectDataInput;
@@ -32,28 +33,27 @@ public class MapEvictRequest extends KeyBasedClientRequest {
 
     private String name;
     private Data key;
+    private int threadId;
 
     public MapEvictRequest() {
     }
 
-    public MapEvictRequest(String name, Data key) {
+    public MapEvictRequest(String name, Data key, int threadId) {
         this.name = name;
         this.key = key;
+        this.threadId = threadId;
     }
 
     @Override
     protected Object getKey() {
-        return null;
+        return key;
     }
 
     @Override
     protected Operation prepareOperation() {
-        return null;
-    }
-
-    public Object process() throws Exception {
-        // todo implement
-        return null;
+        EvictOperation operation = new EvictOperation(name, key);
+        operation.setThreadId(threadId);
+        return operation;
     }
 
     public String getServiceName() {
@@ -71,12 +71,14 @@ public class MapEvictRequest extends KeyBasedClientRequest {
 
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
+        writer.writeInt("t", threadId);
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
     }
 
     public void readPortable(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
+        threadId = reader.readInt("t");
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);

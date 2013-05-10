@@ -17,17 +17,23 @@
 package com.hazelcast.map.clientv2;
 
 import com.hazelcast.clientv2.CallableClientRequest;
-import com.hazelcast.map.MapInterceptor;
-import com.hazelcast.map.MapPortableHook;
-import com.hazelcast.map.MapService;
+import com.hazelcast.clientv2.MultiTargetClientRequest;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.map.*;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
-public class MapAddInterceptorRequest extends CallableClientRequest {
+public class MapAddInterceptorRequest extends MultiTargetClientRequest {
 
     private String name;
     private MapInterceptor mapInterceptor;
@@ -38,10 +44,6 @@ public class MapAddInterceptorRequest extends CallableClientRequest {
     public MapAddInterceptorRequest(String name, MapInterceptor mapInterceptor) {
         this.name = name;
         this.mapInterceptor = mapInterceptor;
-    }
-
-    public Object call() throws Exception {
-        return null;
     }
 
     public String getServiceName() {
@@ -57,6 +59,29 @@ public class MapAddInterceptorRequest extends CallableClientRequest {
         return MapPortableHook.ADD_INTERCEPTOR;
     }
 
+    @Override
+    protected OperationFactory createOperationFactory() {
+        final MapService mapService = getService();
+        String id = mapService.addInterceptor(name, mapInterceptor);
+        return new AddInterceptorOperationFactory(id, name, mapInterceptor);
+    }
+
+    @Override
+    protected Object reduce(Map<Address, Object> map) {
+        return true;
+    }
+
+    @Override
+    public Collection<Address> getTargets() {
+        Collection<MemberImpl> memberList = getClientEngine().getClusterService().getMemberList();
+        Collection<Address> addresses = new HashSet<Address>();
+        for (MemberImpl member : memberList) {
+            if(!member.localMember())
+            addresses.add(member.getAddress());
+        }
+        return addresses;
+    }
+
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         final ObjectDataOutput out = writer.getRawDataOutput();
@@ -68,4 +93,5 @@ public class MapAddInterceptorRequest extends CallableClientRequest {
         final ObjectDataInput in = reader.getRawDataInput();
         mapInterceptor = in.readObject();
     }
+
 }

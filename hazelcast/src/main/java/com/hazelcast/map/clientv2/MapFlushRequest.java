@@ -16,17 +16,21 @@
 
 package com.hazelcast.map.clientv2;
 
+import com.hazelcast.clientv2.AllPartitionsClientRequest;
 import com.hazelcast.clientv2.PartitionClientRequest;
 import com.hazelcast.map.MapFlushOperation;
+import com.hazelcast.map.MapFlushOperationFactory;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
+import java.util.Map;
 
-public class MapFlushRequest extends PartitionClientRequest {
+public class MapFlushRequest extends AllPartitionsClientRequest {
 
     protected String name;
 
@@ -46,25 +50,13 @@ public class MapFlushRequest extends PartitionClientRequest {
     }
 
     @Override
-    protected Operation prepareOperation() {
-        return null;
+    protected OperationFactory createOperationFactory() {
+        return new MapFlushOperationFactory(name);
     }
 
     @Override
-    protected int getPartition() {
-        return 0;
-    }
-
-    @Override
-    protected int getReplicaIndex() {
-        return 0;
-    }
-
-    public Object process() throws Exception {
-        MapFlushOperation op = new MapFlushOperation(name);
-//        return clientEngine.invoke(getServiceName(), op, key);
-        // todo implement
-        return null;
+    protected Object reduce(Map<Integer, Object> map) {
+        return true;
     }
 
     public String getServiceName() {

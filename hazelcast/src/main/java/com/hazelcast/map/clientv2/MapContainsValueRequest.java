@@ -16,7 +16,10 @@
 
 package com.hazelcast.map.clientv2;
 
+import com.hazelcast.clientv2.AllPartitionsClientRequest;
 import com.hazelcast.clientv2.KeyBasedClientRequest;
+import com.hazelcast.map.ContainsValueOperation;
+import com.hazelcast.map.ContainsValueOperationFactory;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ObjectDataInput;
@@ -25,13 +28,14 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
+import java.util.Map;
 
-public class MapContainsValueRequest extends KeyBasedClientRequest {
+public class MapContainsValueRequest extends AllPartitionsClientRequest {
 
     private String name;
-
     private Data value;
 
     public MapContainsValueRequest() {
@@ -43,18 +47,17 @@ public class MapContainsValueRequest extends KeyBasedClientRequest {
     }
 
     @Override
-    protected Object getKey() {
-        return null;
+    protected OperationFactory createOperationFactory() {
+        return new ContainsValueOperationFactory(name, value);
     }
 
     @Override
-    protected Operation prepareOperation() {
-        return null;
-    }
-
-    public Object process() throws Exception {
-        // todo implement
-        return null;
+    protected Object reduce(Map<Integer, Object> map) {
+        for (Object contains : map.values()) {
+            if(Boolean.TRUE.equals(contains))
+                return true;
+        }
+        return false;
     }
 
     public String getServiceName() {
@@ -67,7 +70,7 @@ public class MapContainsValueRequest extends KeyBasedClientRequest {
     }
 
     public int getClassId() {
-        return MapPortableHook.CONTAINS_KEY;
+        return MapPortableHook.CONTAINS_VALUE;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {

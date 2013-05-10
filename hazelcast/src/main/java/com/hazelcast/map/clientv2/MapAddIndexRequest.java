@@ -16,16 +16,23 @@
 
 package com.hazelcast.map.clientv2;
 
-import com.hazelcast.clientv2.KeyBasedClientRequest;
+import com.hazelcast.clientv2.*;
+import com.hazelcast.map.AddIndexOperation;
+import com.hazelcast.map.AddIndexOperationFactory;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.impl.BinaryOperationFactory;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
 
-public class MapAddIndexRequest extends KeyBasedClientRequest {
+public class MapAddIndexRequest extends AllPartitionsClientRequest {
 
     private String name;
     private String attribute;
@@ -40,20 +47,6 @@ public class MapAddIndexRequest extends KeyBasedClientRequest {
         this.ordered = ordered;
     }
 
-    @Override
-    protected Object getKey() {
-        return null;
-    }
-
-    @Override
-    protected Operation prepareOperation() {
-        return null;
-    }
-
-    public Object process() throws Exception {
-        // todo implement
-        return null;
-    }
 
     public String getServiceName() {
         return MapService.SERVICE_NAME;
@@ -79,4 +72,16 @@ public class MapAddIndexRequest extends KeyBasedClientRequest {
         attribute = reader.readUTF("a");
         ordered = reader.readBoolean("o");
     }
+
+    @Override
+    protected OperationFactory createOperationFactory() {
+        return new AddIndexOperationFactory(name, attribute, ordered);
+    }
+
+    @Override
+    protected Object reduce(Map<Integer, Object> map) {
+        return null;
+    }
+
+
 }

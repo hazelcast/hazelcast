@@ -16,39 +16,53 @@
 
 package com.hazelcast.map.clientv2;
 
-import com.hazelcast.clientv2.RunnableClientRequest;
-import com.hazelcast.core.EntryListener;
+import com.hazelcast.clientv2.AllPartitionsClientRequest;
+import com.hazelcast.clientv2.MultiTargetClientRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.util.QueryResultStream;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
 
-public class MapAddLocalEntryListenerRequest extends RunnableClientRequest {
+public class MapQueryRequest extends MultiTargetClientRequest {
 
     private String name;
-    private EntryListener listener;
+    private Predicate predicate;
+    private QueryResultStream.IterationType iterationType;
 
-    public MapAddLocalEntryListenerRequest() {
+    public MapQueryRequest() {
     }
 
-    public MapAddLocalEntryListenerRequest(String name, EntryListener listener, Data key, boolean includeValue) {
+    public MapQueryRequest(String name, Predicate predicate, QueryResultStream.IterationType iterationType) {
         this.name = name;
-        this.listener = listener;
+        this.predicate = predicate;
+        this.iterationType = iterationType;
     }
 
     @Override
-    public void run() {
-
-    }
-
-    public Object process() throws Exception {
+    protected OperationFactory createOperationFactory() {
         // todo implement
         return null;
+    }
+
+    @Override
+    protected Object reduce(Map<Address, Object> map) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public Collection<Address> getTargets() {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public String getServiceName() {
@@ -61,18 +75,20 @@ public class MapAddLocalEntryListenerRequest extends RunnableClientRequest {
     }
 
     public int getClassId() {
-        return MapPortableHook.ADD_LOCAL_ENTRY_LISTENER;
+        return MapPortableHook.ENTRY_SET_QUERY;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
+        writer.writeUTF("t", iterationType.name());
         final ObjectDataOutput out = writer.getRawDataOutput();
-        out.writeObject(listener);
+        out.writeObject(predicate);
     }
 
     public void readPortable(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
+        iterationType = QueryResultStream.IterationType.valueOf(reader.readUTF("t"));
         final ObjectDataInput in = reader.getRawDataInput();
-        listener = in.readObject();
+        predicate = in.readObject();
     }
 }

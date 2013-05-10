@@ -17,6 +17,7 @@
 package com.hazelcast.map.clientv2;
 
 import com.hazelcast.clientv2.KeyBasedClientRequest;
+import com.hazelcast.map.GetEntryViewOperation;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ObjectDataInput;
@@ -46,8 +47,8 @@ public class MapGetEntryViewRequest extends KeyBasedClientRequest {
     }
 
     protected Operation prepareOperation() {
-        // todo implement
-        return null;
+        GetEntryViewOperation op = new GetEntryViewOperation(name, key);
+        return op;
     }
 
     public String getServiceName() {

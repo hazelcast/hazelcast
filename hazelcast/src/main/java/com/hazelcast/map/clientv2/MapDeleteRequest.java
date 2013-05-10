@@ -54,18 +54,14 @@ public class MapDeleteRequest extends KeyBasedClientRequest {
 
     @Override
     protected Object getKey() {
-        return null;
+        return key;
     }
 
     @Override
     protected Operation prepareOperation() {
-        return null;
-    }
-
-    public Object process() throws Exception {
         DeleteOperation op = new DeleteOperation(name, key);
         op.setThreadId(threadId);
-        return null;
+        return op;
     }
 
     public String getServiceName() {
@@ -75,7 +71,6 @@ public class MapDeleteRequest extends KeyBasedClientRequest {
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         writer.writeInt("t", threadId);
-        // ...
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
     }
@@ -83,7 +78,6 @@ public class MapDeleteRequest extends KeyBasedClientRequest {
     public void readPortable(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         threadId = reader.readInt("t");
-        //....
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);

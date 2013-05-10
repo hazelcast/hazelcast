@@ -39,10 +39,11 @@ public class MapTryRemoveRequest extends KeyBasedClientRequest {
     public MapTryRemoveRequest() {
     }
 
-    public MapTryRemoveRequest(String name, Data key, int threadId) {
+    public MapTryRemoveRequest(String name, Data key, int threadId, long timeout) {
         this.name = name;
         this.key = key;
         this.threadId = threadId;
+        this.timeout = timeout;
     }
 
     public int getFactoryId() {
@@ -55,18 +56,14 @@ public class MapTryRemoveRequest extends KeyBasedClientRequest {
 
     @Override
     protected Object getKey() {
-        return null;
+        return key;
     }
 
     @Override
     protected Operation prepareOperation() {
-        return null;
-    }
-
-    public Object process() throws Exception {
-        TryRemoveOperation op = new TryRemoveOperation(name, key, timeout);
-        op.setThreadId(threadId);
-        return null;
+        TryRemoveOperation operation = new TryRemoveOperation(name, key, timeout);
+        operation.setThreadId(threadId);
+        return operation;
     }
 
     public String getServiceName() {
@@ -77,7 +74,6 @@ public class MapTryRemoveRequest extends KeyBasedClientRequest {
         writer.writeUTF("n", name);
         writer.writeInt("t", threadId);
         writer.writeLong("timeout", timeout);
-        // ...
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
     }
@@ -86,7 +82,6 @@ public class MapTryRemoveRequest extends KeyBasedClientRequest {
         name = reader.readUTF("n");
         threadId = reader.readInt("t");
         timeout = reader.readLong("timeout");
-        //....
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);

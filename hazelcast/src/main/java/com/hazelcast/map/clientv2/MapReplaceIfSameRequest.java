@@ -17,8 +17,10 @@
 package com.hazelcast.map.clientv2;
 
 import com.hazelcast.map.MapPortableHook;
+import com.hazelcast.map.PutIfAbsentOperation;
 import com.hazelcast.map.ReplaceIfSameOperation;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.Operation;
 
 public class MapReplaceIfSameRequest extends MapPutRequest {
 
@@ -36,10 +38,10 @@ public class MapReplaceIfSameRequest extends MapPutRequest {
         return MapPortableHook.REPLACE_IF_SAME;
     }
 
-    public Object process() throws Exception {
+    protected Operation prepareOperation() {
         ReplaceIfSameOperation op = new ReplaceIfSameOperation(name, key, oldValue, value);
         op.setThreadId(threadId);
-        return null;
+        return op;
     }
 
 }

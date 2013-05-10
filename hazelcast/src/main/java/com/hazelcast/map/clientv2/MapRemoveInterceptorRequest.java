@@ -16,18 +16,24 @@
 
 package com.hazelcast.map.clientv2;
 
+import com.hazelcast.clientv2.CallableClientRequest;
+import com.hazelcast.clientv2.MultiTargetClientRequest;
 import com.hazelcast.clientv2.RunnableClientRequest;
-import com.hazelcast.map.MapInterceptor;
-import com.hazelcast.map.MapPortableHook;
-import com.hazelcast.map.MapService;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.map.*;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
 
-public class MapRemoveInterceptorRequest extends RunnableClientRequest {
+public class MapRemoveInterceptorRequest extends MultiTargetClientRequest {
 
     private String name;
     private MapInterceptor mapInterceptor;
@@ -38,16 +44,6 @@ public class MapRemoveInterceptorRequest extends RunnableClientRequest {
     public MapRemoveInterceptorRequest(String name, MapInterceptor mapInterceptor) {
         this.name = name;
         this.mapInterceptor = mapInterceptor;
-    }
-
-    @Override
-    public void run() {
-
-    }
-
-    public Object process() throws Exception {
-        // todo implement
-        return null;
     }
 
     public String getServiceName() {
@@ -63,10 +59,33 @@ public class MapRemoveInterceptorRequest extends RunnableClientRequest {
         return MapPortableHook.REMOVE_INTERCEPTOR;
     }
 
+    @Override
+    protected OperationFactory createOperationFactory() {
+        final MapService mapService = getService();
+        String id = mapService.removeInterceptor(name, mapInterceptor);
+        return new RemoveInterceptorOperationFactory(id, name, mapInterceptor);
+    }
+
+    @Override
+    protected Object reduce(Map<Address, Object> map) {
+        return true;
+    }
+
+    @Override
+    public Collection<Address> getTargets() {
+        Collection<MemberImpl> memberList = getClientEngine().getClusterService().getMemberList();
+        Collection<Address> addresses = new HashSet<Address>();
+        for (MemberImpl member : memberList) {
+            if(!member.localMember())
+                addresses.add(member.getAddress());
+        }
+        return addresses;
+    }
+
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        out.writeObject(out);
+        out.writeObject(mapInterceptor);
     }
 
     public void readPortable(PortableReader reader) throws IOException {

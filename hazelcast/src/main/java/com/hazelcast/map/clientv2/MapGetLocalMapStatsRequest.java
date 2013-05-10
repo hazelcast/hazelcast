@@ -16,9 +16,11 @@
 
 package com.hazelcast.map.clientv2;
 
+import com.hazelcast.clientv2.CallableClientRequest;
 import com.hazelcast.clientv2.TargetClientRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
+import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
@@ -26,7 +28,7 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public class MapGetLocalMapStatsRequest extends TargetClientRequest {
+public class MapGetLocalMapStatsRequest extends CallableClientRequest {
 
     private String name;
 
@@ -38,18 +40,11 @@ public class MapGetLocalMapStatsRequest extends TargetClientRequest {
     }
 
     @Override
-    protected Operation prepareOperation() {
-        return null;
-    }
-
-    @Override
-    public Address getTarget() {
-        return null;
-    }
-
-    public Object process() throws Exception {
-        // todo implement
-        return null;
+    public Object call() throws Exception {
+        MapService mapService = getService();
+        LocalMapStatsImpl mapStats = mapService.createLocalMapStats(name);
+        // todo make mapstats portable
+        return mapStats;
     }
 
     public String getServiceName() {
@@ -72,4 +67,5 @@ public class MapGetLocalMapStatsRequest extends TargetClientRequest {
     public void readPortable(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
     }
+
 }

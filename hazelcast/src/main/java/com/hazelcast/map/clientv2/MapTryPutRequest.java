@@ -17,10 +17,12 @@
 package com.hazelcast.map.clientv2;
 
 import com.hazelcast.map.MapPortableHook;
+import com.hazelcast.map.PutOperation;
 import com.hazelcast.map.TryPutOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
@@ -40,11 +42,11 @@ public class MapTryPutRequest extends MapPutRequest {
         return MapPortableHook.TRY_PUT;
     }
 
-    public Object process() throws Exception {
-        System.err.println("Running MapTryPutRequest");
+    @Override
+    protected Operation prepareOperation() {
         TryPutOperation op = new TryPutOperation(name, key, value, timeout);
         op.setThreadId(threadId);
-        return null;
+        return op;
     }
 
     @Override
