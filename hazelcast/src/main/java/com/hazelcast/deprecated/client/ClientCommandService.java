@@ -16,7 +16,7 @@
 
 package com.hazelcast.deprecated.client;
 
-import com.hazelcast.clientv2.ClientDisconnectionOperation;
+import com.hazelcast.client.ClientDisconnectionOperation;
 import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;

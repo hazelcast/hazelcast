@@ -17,7 +17,7 @@
 package com.hazelcast.queue;
 
 import com.hazelcast.nio.serialization.*;
-import com.hazelcast.queue.clientv2.*;
+import com.hazelcast.queue.client.*;
 
 import java.util.Collection;
 

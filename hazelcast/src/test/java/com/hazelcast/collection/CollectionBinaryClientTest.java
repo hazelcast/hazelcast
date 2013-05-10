@@ -1,9 +1,9 @@
 package com.hazelcast.collection;
 
-import com.hazelcast.clientv2.AuthenticationRequest;
-import com.hazelcast.clientv2.ClientPortableHook;
-import com.hazelcast.collection.operations.clientv2.AddAllRequest;
-import com.hazelcast.collection.operations.clientv2.ClearRequest;
+import com.hazelcast.client.AuthenticationRequest;
+import com.hazelcast.client.ClientPortableHook;
+import com.hazelcast.collection.operations.client.AddAllRequest;
+import com.hazelcast.collection.operations.client.ClearRequest;
 import com.hazelcast.collection.set.ObjectSetProxy;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;

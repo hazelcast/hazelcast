@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,38 +14,33 @@
  * limitations under the License.
  */
 
-package com.hazelcast.collection;
+package com.hazelcast.concurrent.lock.client;
 
-import com.hazelcast.collection.operations.client.AddAllRequest;
-import com.hazelcast.collection.operations.client.ClearRequest;
 import com.hazelcast.nio.serialization.*;
 
 import java.util.Collection;
 
 /**
- * @ali 5/9/13
+ * @mdogan 5/3/13
  */
-public class CollectionPortableHook implements PortableHook {
+public class LockPortableHook implements PortableHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.COLLECTION_PORTABLE_FACTORY, -12);
+    static final int FACTORY_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.LOCK_PORTABLE_FACTORY, -15);
 
-    public static final int ADD_ALL = 1;
-    public static final int CLEAR = 2;
-
+    @Override
     public int getFactoryId() {
-        return F_ID;
+        return FACTORY_ID;
     }
 
+    @Override
     public PortableFactory createFactory() {
         return new PortableFactory() {
             public Portable create(int classId) {
-                switch (classId){
-                    case ADD_ALL:
-                        return new AddAllRequest();
-                    case CLEAR:
-                        return new ClearRequest();
+                if (classId == 1) {
+                    return new LockRequest();
+                } else {
+                    return new UnlockRequest();
                 }
-                return null;
             }
         };
     }

@@ -19,7 +19,7 @@ package com.hazelcast.instance;
 import com.hazelcast.ascii.TextCommandService;
 import com.hazelcast.ascii.TextCommandServiceImpl;
 import com.hazelcast.deprecated.client.ClientCommandService;
-import com.hazelcast.clientv2.ClientEngineImpl;
+import com.hazelcast.client.ClientEngineImpl;
 import com.hazelcast.cluster.*;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
