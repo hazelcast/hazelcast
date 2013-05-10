@@ -42,7 +42,7 @@ public class RemoveIndexBackupOperation extends CollectionKeyBasedOperation impl
     }
 
     public void run() throws Exception {
-        List<CollectionRecord> list = (List<CollectionRecord>) getOrCreateCollectionWrapper();
+        List<CollectionRecord> list = (List<CollectionRecord>) getOrCreateCollectionWrapper().getCollection();
         list.remove(index);
         response = true;
     }

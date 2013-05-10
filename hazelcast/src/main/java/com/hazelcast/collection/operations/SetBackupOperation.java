@@ -47,7 +47,7 @@ public class SetBackupOperation extends CollectionKeyBasedOperation implements B
 
     public void run() throws Exception {
         CollectionRecord record = new CollectionRecord(recordId, isBinary() ? value : toObject(value));
-        List<CollectionRecord> list = (List<CollectionRecord>) getOrCreateCollectionWrapper();
+        List<CollectionRecord> list = (List<CollectionRecord>) getOrCreateCollectionWrapper().getCollection();
         list.set(index, record);
         response = true;
     }

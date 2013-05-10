@@ -2,12 +2,13 @@ package com.hazelcast.collection;
 
 import com.hazelcast.clientv2.AuthenticationRequest;
 import com.hazelcast.clientv2.ClientPortableHook;
-import com.hazelcast.collection.operations.clientv2.AddAllRequest;
-import com.hazelcast.collection.operations.clientv2.ClearRequest;
-import com.hazelcast.collection.set.ObjectSetProxy;
+import com.hazelcast.collection.list.ObjectListProxy;
+import com.hazelcast.collection.operations.CollectionResponse;
+import com.hazelcast.collection.operations.clientv2.*;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IList;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.nio.serialization.*;
@@ -22,12 +23,9 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @ali 5/10/13
@@ -38,7 +36,7 @@ public class CollectionBinaryClientTest {
 
     static final String name = "test";
     static final CollectionProxyId mmProxyId = new CollectionProxyId(name, null, CollectionProxyType.MULTI_MAP);
-    static final CollectionProxyId setProxyId = new CollectionProxyId(ObjectSetProxy.COLLECTION_SET_NAME, name, CollectionProxyType.SET);
+    static final CollectionProxyId listProxyId = new CollectionProxyId(ObjectListProxy.COLLECTION_LIST_NAME, name, CollectionProxyType.LIST);
     static Data dataKey = null;
     static HazelcastInstance hz = null;
     static SerializationService ss = null;
@@ -48,6 +46,10 @@ public class CollectionBinaryClientTest {
     public static void init() {
         Config config = new Config();
         hz = Hazelcast.newHazelcastInstance(config);
+
+        HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(config);
+
         ss = new SerializationServiceImpl(0);
         dataKey = ss.toData(name);
     }
@@ -66,7 +68,7 @@ public class CollectionBinaryClientTest {
     @After
     public void closeClient() throws IOException {
         hz.getMultiMap(name).clear();
-        hz.getSet(name).clear();
+        hz.getList(name).clear();
         c.close();
     }
 
@@ -81,10 +83,10 @@ public class CollectionBinaryClientTest {
 
 
 
-        c.send(new AddAllRequest(setProxyId, dataKey, getThreadId(), list));
+        c.send(new AddAllRequest(listProxyId, dataKey, getThreadId(), list));
         Object result = c.receive();
         assertTrue((Boolean) result);
-        int size = hz.getSet(name).size();
+        int size = hz.getList(name).size();
         assertEquals(size, list.size());
 
     }
@@ -100,6 +102,383 @@ public class CollectionBinaryClientTest {
         c.send(new ClearRequest(mmProxyId));
         assertNull(c.receive());
         assertEquals(0, mm.size());
+    }
+
+    @Test
+    public void testCompareAndRemove() throws IOException {
+        MultiMap mm = hz.getMultiMap(name);
+        mm.put("key1","value1");
+        mm.put("key1","value2");
+        mm.put("key1","value3");
+
+        List<Data> list = new ArrayList<Data>();
+        list.add(ss.toData("value1"));
+        list.add(ss.toData("value2"));
+
+        c.send(new CompareAndRemoveRequest(mmProxyId, ss.toData("key1"),list, true, getThreadId()));
+        Boolean result = (Boolean)c.receive();
+        assertTrue(result);
+        assertEquals(2, mm.size());
+        assertEquals(2, mm.valueCount("key1"));
+
+
+        c.send(new CompareAndRemoveRequest(mmProxyId, ss.toData("key1"),list, false, getThreadId()));
+        result = (Boolean)c.receive();
+        assertTrue(result);
+        assertEquals(0, mm.size());
+    }
+
+    @Test
+    public void testContainsAll() throws IOException {
+        IList<Object> list = hz.getList(name);
+        list.add("value1");
+        list.add("value2");
+        list.add("value3");
+
+        Set<Data> dataSet = new HashSet<Data>(2);
+        dataSet.add(ss.toData("value2"));
+        dataSet.add(ss.toData("value3"));
+
+        c.send(new ContainsAllRequest(listProxyId, dataKey, dataSet));
+        boolean result = (Boolean)c.receive();
+        assertTrue(result);
+
+        dataSet.add(ss.toData("value"));
+        c.send(new ContainsAllRequest(listProxyId, dataKey, dataSet));
+        result = (Boolean)c.receive();
+        assertFalse(result);
+    }
+
+    @Test
+    public void testContainsEntry() throws IOException {
+        MultiMap mm = hz.getMultiMap(name);
+        mm.put("key1","value1");
+        mm.put("key2","value2");
+        mm.put("key3","value3");
+
+        //contains key value
+        c.send(new ContainsEntryRequest(mmProxyId, ss.toData("key1"), ss.toData("value1")));
+        boolean result = (Boolean)c.receive();
+        assertTrue(result);
+
+        //not contains key value
+        c.send(new ContainsEntryRequest(mmProxyId, ss.toData("key1"), ss.toData("value2")));
+        result = (Boolean)c.receive();
+        assertFalse(result);
+
+        //contains key
+        c.send(new ContainsEntryRequest(mmProxyId, ss.toData("key2"), null));
+        result = (Boolean)c.receive();
+        assertTrue(result);
+
+        //not contains key
+        c.send(new ContainsEntryRequest(mmProxyId, ss.toData("key4"), null));
+        result = (Boolean)c.receive();
+        assertFalse(result);
+
+        //contains value
+        c.send(new ContainsEntryRequest(mmProxyId, null, ss.toData("value3")));
+        result = (Boolean)c.receive();
+        assertTrue(result);
+
+        //not contains value
+        c.send(new ContainsEntryRequest(mmProxyId, null, ss.toData("value0")));
+        result = (Boolean)c.receive();
+        assertFalse(result);
+    }
+
+    @Test
+    public void testContains() throws IOException {
+        IList<Object> list = hz.getList(name);
+        list.add("value1");
+        list.add("value2");
+        list.add("value3");
+
+        c.send(new ContainsRequest(listProxyId, dataKey, ss.toData("value2")));
+        boolean result = (Boolean)c.receive();
+        assertTrue(result);
+
+        c.send(new ContainsRequest(listProxyId, dataKey, ss.toData("value")));
+        result = (Boolean)c.receive();
+        assertFalse(result);
+    }
+
+    @Test
+    public void testCount() throws IOException {
+        IList<Object> list = hz.getList(name);
+        list.add("value1");
+        list.add("value2");
+        list.add("value3");
+
+        c.send(new CountRequest(listProxyId, dataKey));
+        int result = (Integer)c.receive();
+        assertEquals(result, 3);
+        assertEquals(result, list.size());
+
+        MultiMap<Object, Object> mm = hz.getMultiMap(name);
+        mm.put("key1","value1");
+        mm.put("key1","value2");
+
+        mm.put("key2","value2");
+
+        c.send(new CountRequest(mmProxyId, ss.toData("key1")));
+        result = (Integer)c.receive();
+        assertEquals(result, 2);
+        assertEquals(result, mm.valueCount("key1"));
+
+        c.send(new CountRequest(mmProxyId, ss.toData("key2")));
+        result = (Integer)c.receive();
+        assertEquals(result, 1);
+        assertEquals(result, mm.valueCount("key2"));
+    }
+
+    @Test
+    public void testEntrySet() throws IOException {
+        MultiMap<Object, Object> mm = hz.getMultiMap(name);
+        mm.put("key1","value1");
+        mm.put("key1","value2");
+
+        mm.put("key2","value2");
+
+        mm.put("key3","value3");
+
+        mm.put("key4","value4");
+
+        mm.put("key5","value3");
+
+        c.send(new EntrySetRequest(mmProxyId));
+        Set<Map.Entry> entrySet = (Set<Map.Entry>)c.receive();
+        Data key = (Data)entrySet.iterator().next().getValue();
+        String s = (String)ss.toObject(key);
+        assertTrue(s.startsWith("key"));
+
+        assertEquals(6, entrySet.size());
+
+    }
+
+    @Test
+    public void testGetAll() throws IOException {
+        MultiMap<Object, Object> mm = hz.getMultiMap(name);
+        mm.put("key1","value1");
+
+        mm.put("key2","value1");
+        mm.put("key2","value2");
+
+
+        c.send(new GetAllRequest(mmProxyId, ss.toData("key1")));
+        CollectionResponse result = (CollectionResponse)c.receive();
+        Collection<CollectionRecord> coll = result.getCollection();
+        assertEquals(1, coll.size());
+        assertEquals("value1", ss.toObject((Data) coll.iterator().next().getObject()));
+
+        c.send(new GetAllRequest(mmProxyId, ss.toData("key2")));
+        result = (CollectionResponse)c.receive();
+        coll = result.getCollection();
+        assertEquals(2, coll.size());
+    }
+
+    @Test
+    public void testGet() throws IOException {
+        IList<Object> list = hz.getList(name);
+        list.add("value1");
+        list.add("value2");
+        list.add("value3");
+
+        c.send(new GetRequest(listProxyId, dataKey, 1));
+        Object result = c.receive();
+        assertEquals(result, "value2");
+
+        c.send(new GetRequest(listProxyId, dataKey, 2));
+        result = c.receive();
+        assertEquals(result, "value3");
+    }
+
+    @Test
+    public void testIndexOf() throws IOException {
+        IList<Object> list = hz.getList(name);
+        list.add("value1");
+        list.add("value2");
+        list.add("value3");
+        list.add("value2");
+
+        c.send(new IndexOfRequest(listProxyId, dataKey, ss.toData("value2"), false));
+        int result = (Integer)c.receive();
+        assertEquals(1, result);
+
+        c.send(new IndexOfRequest(listProxyId, dataKey, ss.toData("value2"), true));
+        result = (Integer)c.receive();
+        assertEquals(3, result);
+
+        c.send(new IndexOfRequest(listProxyId, dataKey, ss.toData("value4"), false));
+        result = (Integer)c.receive();
+        assertEquals(-1, result);
+    }
+
+    @Test
+    public void testKeySet() throws IOException {
+        MultiMap<Object, Object> mm = hz.getMultiMap(name);
+        mm.put("key1","value1");
+        mm.put("key1","value2");
+        mm.put("key1","value3");
+
+        mm.put("key2","value1");
+        mm.put("key2","value2");
+
+        c.send(new KeySetRequest(mmProxyId));
+        Set<Data> keySet = (Set<Data>)c.receive();
+        assertEquals(2, keySet.size());
+
+        String s = (String)ss.toObject(keySet.iterator().next());
+        assertTrue(s.startsWith("key"));
+    }
+
+    @Test
+    public void testPut() throws IOException {
+        MultiMap<Object, Object> mm = hz.getMultiMap(name);
+
+        c.send(new PutRequest(mmProxyId, ss.toData("key1"),ss.toData("value1"),-1, getThreadId()));
+        boolean result = (Boolean)c.receive();
+        assertTrue(result);
+        assertEquals("value1", mm.get("key1").iterator().next());
+
+        c.send(new PutRequest(mmProxyId, ss.toData("key1"),ss.toData("value1"),-1, getThreadId()));
+        result = (Boolean)c.receive();
+        assertFalse(result);
+
+        assertEquals(1, mm.size());
+
+        IList<Object> list = hz.getList(name);
+
+        c.send(new PutRequest(listProxyId, dataKey, ss.toData("value3"),-1, getThreadId()));
+        result = (Boolean)c.receive();
+        assertTrue(result);
+
+        c.send(new PutRequest(listProxyId, dataKey, ss.toData("value4"),-1, getThreadId()));
+        result = (Boolean)c.receive();
+        assertTrue(result);
+
+        c.send(new PutRequest(listProxyId, dataKey, ss.toData("value5"),1, getThreadId()));
+        result = (Boolean)c.receive();
+        assertTrue(result);
+
+        assertEquals(3, list.size());
+        assertEquals("value3", list.get(0));
+        assertEquals("value5", list.get(1));
+        assertEquals("value4", list.get(2));
+    }
+
+    @Test
+    public void testRemoveAll() throws IOException {
+        MultiMap<Object, Object> mm = hz.getMultiMap(name);
+        mm.put("key1","value1");
+
+        mm.put("key2","value1");
+        mm.put("key2","value2");
+
+
+        c.send(new RemoveAllRequest(mmProxyId, ss.toData("key1"), getThreadId()));
+        CollectionResponse result = (CollectionResponse)c.receive();
+        Collection<CollectionRecord> coll = result.getCollection();
+        assertEquals(1, coll.size());
+        assertEquals("value1", ss.toObject((Data) coll.iterator().next().getObject()));
+
+        c.send(new RemoveAllRequest(mmProxyId, ss.toData("key2"), getThreadId()));
+        result = (CollectionResponse)c.receive();
+        coll = result.getCollection();
+        assertEquals(2, coll.size());
+
+        assertEquals(0, mm.size());
+
+    }
+
+    @Test
+    public void testRemoveIndex() throws IOException {
+        IList<Object> list = hz.getList(name);
+
+        list.add("value1");
+        list.add("value2");
+        list.add("value3");
+
+        c.send(new RemoveIndexRequest(listProxyId,dataKey, 0, getThreadId()));
+        Object result = c.receive();
+        assertEquals(result, "value1");
+        assertEquals(2, list.size());
+
+        c.send(new RemoveIndexRequest(listProxyId,dataKey, 1, getThreadId()));
+        result = c.receive();
+        assertEquals(result, "value3");
+        assertEquals(1, list.size());
+
+        assertEquals("value2", list.get(0));
+    }
+
+    @Test
+    public void testRemove() throws IOException {
+        IList<Object> list = hz.getList(name);
+
+        list.add("value1");
+        list.add("value2");
+        list.add("value3");
+
+        c.send(new RemoveRequest(listProxyId,dataKey, ss.toData("value"), getThreadId()));
+        boolean result = (Boolean)c.receive();
+        assertFalse(result);
+        assertEquals(3, list.size());
+
+        c.send(new RemoveRequest(listProxyId,dataKey, ss.toData("value2"), getThreadId()));
+        result = (Boolean)c.receive();
+        assertTrue(result);
+        assertEquals(2, list.size());
+    }
+
+    @Test
+    public void testSet() throws IOException {
+        IList<Object> list = hz.getList(name);
+
+        list.add("value1");
+        list.add("value2");
+        list.add("value3");
+
+        c.send(new SetRequest(listProxyId, dataKey, ss.toData("value"), 1, getThreadId()));
+        Object result = c.receive();
+        assertEquals(result, "value2");
+        assertEquals(list.size(), 3);
+        assertEquals("value",list.get(1));
+    }
+
+    @Test
+    public void testSize() throws IOException {
+        MultiMap<Object, Object> mm = hz.getMultiMap(name);
+        mm.put("key1","value1");
+
+        mm.put("key2","value1");
+        mm.put("key2","value2");
+
+        mm.put("key3","value2");
+
+        c.send(new SizeRequest(mmProxyId));
+        int result = (Integer) c.receive();
+        assertEquals(result, 4);
+        assertEquals(result, mm.size());
+    }
+
+    @Test
+    public void testValues() throws IOException {
+        MultiMap<Object, Object> mm = hz.getMultiMap(name);
+        mm.put("key1","value1");
+
+        mm.put("key2","value1");
+        mm.put("key2","value2");
+
+        mm.put("key3","value2");
+
+        c.send(new ValuesRequest(mmProxyId));
+        Collection coll = (Collection)c.receive();
+        assertEquals(4, coll.size());
+
+        for (Object obj: coll){
+            assertTrue(((String)obj).startsWith("value"));
+        }
     }
 
     private int getThreadId(){

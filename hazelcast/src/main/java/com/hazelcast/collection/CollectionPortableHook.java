@@ -16,8 +16,7 @@
 
 package com.hazelcast.collection;
 
-import com.hazelcast.collection.operations.clientv2.AddAllRequest;
-import com.hazelcast.collection.operations.clientv2.ClearRequest;
+import com.hazelcast.collection.operations.clientv2.*;
 import com.hazelcast.nio.serialization.*;
 
 import java.util.Collection;
@@ -31,6 +30,23 @@ public class CollectionPortableHook implements PortableHook {
 
     public static final int ADD_ALL = 1;
     public static final int CLEAR = 2;
+    public static final int COMPARE_AND_REMOVE = 3;
+    public static final int CONTAINS_ALL = 4;
+    public static final int CONTAINS_ENTRY = 5;
+    public static final int CONTAINS = 6;
+    public static final int COUNT = 7;
+    public static final int ENTRY_SET = 8;
+    public static final int GET_ALL = 9;
+    public static final int GET = 10;
+    public static final int INDEX_OF = 11;
+    public static final int KEY_SET = 12;
+    public static final int PUT = 13;
+    public static final int REMOVE_ALL = 14;
+    public static final int REMOVE_INDEX = 15;
+    public static final int REMOVE = 16;
+    public static final int SET = 17;
+    public static final int SIZE = 18;
+    public static final int VALUES = 19;
 
     public int getFactoryId() {
         return F_ID;
@@ -44,6 +60,40 @@ public class CollectionPortableHook implements PortableHook {
                         return new AddAllRequest();
                     case CLEAR:
                         return new ClearRequest();
+                    case COMPARE_AND_REMOVE:
+                        return new CompareAndRemoveRequest();
+                    case CONTAINS_ALL:
+                        return new ContainsAllRequest();
+                    case CONTAINS_ENTRY:
+                        return new ContainsEntryRequest();
+                    case CONTAINS:
+                        return new ContainsRequest();
+                    case COUNT:
+                        return new CountRequest();
+                    case ENTRY_SET:
+                        return new EntrySetRequest();
+                    case GET_ALL:
+                        return new GetAllRequest();
+                    case GET:
+                        return new GetRequest();
+                    case INDEX_OF:
+                        return new IndexOfRequest();
+                    case KEY_SET:
+                        return new KeySetRequest();
+                    case PUT:
+                        return new PutRequest();
+                    case REMOVE_ALL:
+                        return new RemoveAllRequest();
+                    case REMOVE_INDEX:
+                        return new RemoveIndexRequest();
+                    case REMOVE:
+                        return new RemoveRequest();
+                    case SET:
+                        return new SetRequest();
+                    case SIZE:
+                        return new SizeRequest();
+                    case VALUES:
+                        return new ValuesRequest();
                 }
                 return null;
             }

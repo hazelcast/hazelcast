@@ -36,6 +36,8 @@ public class MultiMapOperationFactory implements OperationFactory {
 
     private Data value;
 
+    public MultiMapOperationFactory() {
+    }
 
     public MultiMapOperationFactory(CollectionProxyId proxyId, OperationFactoryType operationFactoryType) {
         this.proxyId = proxyId;

@@ -18,6 +18,7 @@ package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
+import com.hazelcast.collection.CollectionWrapper;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -41,7 +42,8 @@ public class GetOperation extends CollectionKeyBasedOperation {
     }
 
     public void run() throws Exception {
-        List<CollectionRecord> list = (List<CollectionRecord>) getCollectionWrapper();
+        CollectionWrapper wrapper = getCollectionWrapper();
+        List<CollectionRecord> list = (List<CollectionRecord>)wrapper.getCollection();
         try {
             CollectionRecord record = list.get(index);
             response = isBinary() ? (Data) record.getObject() : toData(record.getObject());

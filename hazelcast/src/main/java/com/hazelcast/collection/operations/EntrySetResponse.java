@@ -49,7 +49,7 @@ public class EntrySetResponse implements DataSerializable {
         }
     }
 
-    public Set<Map.Entry<Data, Data>> getDataEntrySet(NodeEngine nodeEngine) {
+    public Set<Map.Entry<Data, Data>> getDataEntrySet() {
         Set<Map.Entry<Data, Data>> entrySet = new HashSet<Map.Entry<Data, Data>>();
         for (Map.Entry<Data, Collection<Data>> entry : map.entrySet()) {
             Data key = entry.getKey();
