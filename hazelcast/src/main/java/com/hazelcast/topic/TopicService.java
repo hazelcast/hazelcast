@@ -16,15 +16,16 @@
 
 package com.hazelcast.topic;
 
-import com.hazelcast.client.ClientCommandHandler;
+import com.hazelcast.deprecated.client.ClientCommandHandler;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
+import com.hazelcast.deprecated.spi.ClientProtocolService;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
-import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.deprecated.nio.protocol.Command;
 import com.hazelcast.spi.*;
-import com.hazelcast.topic.client.TopicListenHandler;
-import com.hazelcast.topic.client.TopicPublishHandler;
+import com.hazelcast.deprecated.topic.client.TopicListenHandler;
+import com.hazelcast.deprecated.topic.client.TopicPublishHandler;
 import com.hazelcast.topic.proxy.TopicProxy;
 import com.hazelcast.topic.proxy.TotalOrderedTopicProxy;
 import com.hazelcast.util.ConcurrencyUtil;

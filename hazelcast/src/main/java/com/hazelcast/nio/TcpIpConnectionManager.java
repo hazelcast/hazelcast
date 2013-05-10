@@ -41,17 +41,17 @@ import java.util.logging.Level;
 
 public class TcpIpConnectionManager implements ConnectionManager {
 
-    protected final ILogger logger;
+    private final ILogger logger;
 
-    final int SOCKET_RECEIVE_BUFFER_SIZE;
+    final int socketReceiveBufferSize;
 
-    final int SOCKET_SEND_BUFFER_SIZE;
+    final int socketSendBufferSize;
 
-    final int SOCKET_LINGER_SECONDS;
+    private final int socketLingerSeconds;
 
-    final boolean SOCKET_KEEP_ALIVE;
+    private final boolean socketKeepAlive;
 
-    final boolean SOCKET_NO_DELAY;
+    private final boolean socketNoDelay;
 
     private final ConcurrentMap<Address, Connection> mapConnections = new ConcurrentHashMap<Address, Connection>(100);
 
@@ -73,7 +73,11 @@ public class TcpIpConnectionManager implements ConnectionManager {
 
     private final ServerSocketChannel serverSocketChannel;
 
-    private final InOutSelector[] selectors;
+    private final int selectorThreadCount;
+
+    private final IOSelector[] inSelectors;
+
+    private final IOSelector[] outSelectors;
 
     private final AtomicInteger nextSelectorIndex = new AtomicInteger();
 
@@ -93,13 +97,14 @@ public class TcpIpConnectionManager implements ConnectionManager {
         this.ioService = ioService;
         this.serverSocketChannel = serverSocketChannel;
         this.logger = ioService.getLogger(TcpIpConnectionManager.class.getName());
-        this.SOCKET_RECEIVE_BUFFER_SIZE = ioService.getSocketReceiveBufferSize() * IOService.KILO_BYTE;
-        this.SOCKET_SEND_BUFFER_SIZE = ioService.getSocketSendBufferSize() * IOService.KILO_BYTE;
-        this.SOCKET_LINGER_SECONDS = ioService.getSocketLingerSeconds();
-        this.SOCKET_KEEP_ALIVE = ioService.getSocketKeepAlive();
-        this.SOCKET_NO_DELAY = ioService.getSocketNoDelay();
-        int selectorCount = ioService.getSelectorThreadCount();
-        selectors = new InOutSelector[selectorCount];
+        this.socketReceiveBufferSize = ioService.getSocketReceiveBufferSize() * IOService.KILO_BYTE;
+        this.socketSendBufferSize = ioService.getSocketSendBufferSize() * IOService.KILO_BYTE;
+        this.socketLingerSeconds = ioService.getSocketLingerSeconds();
+        this.socketKeepAlive = ioService.getSocketKeepAlive();
+        this.socketNoDelay = ioService.getSocketNoDelay();
+        selectorThreadCount = ioService.getSelectorThreadCount();
+        inSelectors = new IOSelector[selectorThreadCount];
+        outSelectors = new IOSelector[selectorThreadCount];
         final Collection<Integer> ports = ioService.getOutboundPorts();
         outboundPortCount = ports == null ? 0 : ports.size();
         if (ports != null) {
@@ -192,19 +197,12 @@ public class TcpIpConnectionManager implements ConnectionManager {
         return memberSocketInterceptor;
     }
 
-    private InOutSelector nextSelector() {
-        if (nextSelectorIndex.get() > 1000000) {
-            nextSelectorIndex.set(0);
-        }
-        return selectors[Math.abs(nextSelectorIndex.incrementAndGet()) % selectors.length];
-    }
-
     public void addConnectionListener(ConnectionListener listener) {
         setConnectionListeners.add(listener);
     }
 
     public boolean bind(TcpIpConnection connection, Address remoteEndPoint, Address localEndpoint, final boolean replyBack) {
-        log(Level.FINEST, "Binding " + connection + " to " + remoteEndPoint + ", replyBack is " + replyBack);
+        log(Level.WARNING, "Binding " + connection + " to " + remoteEndPoint + ", replyBack is " + replyBack);
         final Address thisAddress = ioService.getThisAddress();
         if (!connection.isClient() && !thisAddress.equals(localEndpoint)) {
             log(Level.WARNING, "Wrong bind request from " + remoteEndPoint
@@ -248,12 +246,16 @@ public class TcpIpConnectionManager implements ConnectionManager {
         //now you can send anything...
     }
 
+    private int nextSelectorIndex() {
+        return Math.abs(nextSelectorIndex.getAndIncrement()) % selectorThreadCount;
+    }
+
     TcpIpConnection assignSocketChannel(SocketChannelWrapper channel) {
-        InOutSelector selectorAssigned = nextSelector();
-        final TcpIpConnection connection = new TcpIpConnection(this, selectorAssigned, connectionIdGen.incrementAndGet(), channel);
+        final int index = nextSelectorIndex();
+        final TcpIpConnection connection = new TcpIpConnection(this, inSelectors[index], outSelectors[index],
+                connectionIdGen.incrementAndGet(), channel);
         setActiveConnections.add(connection);
-        selectorAssigned.addTask(connection.getReadHandler());
-        selectorAssigned.selector.wakeup();
+        connection.getReadHandler().register();
         log(Level.INFO, channel.socket().getLocalPort() + " accepted socket connection from "
                 + channel.socket().getRemoteSocketAddress());
         return connection;
@@ -327,22 +329,24 @@ public class TcpIpConnectionManager implements ConnectionManager {
     }
 
     protected void initSocket(Socket socket) throws Exception {
-        if (SOCKET_LINGER_SECONDS > 0) {
-            socket.setSoLinger(true, SOCKET_LINGER_SECONDS);
+        if (socketLingerSeconds > 0) {
+            socket.setSoLinger(true, socketLingerSeconds);
         }
-        socket.setKeepAlive(SOCKET_KEEP_ALIVE);
-        socket.setTcpNoDelay(SOCKET_NO_DELAY);
-        socket.setReceiveBufferSize(SOCKET_RECEIVE_BUFFER_SIZE);
-        socket.setSendBufferSize(SOCKET_SEND_BUFFER_SIZE);
+        socket.setKeepAlive(socketKeepAlive);
+        socket.setTcpNoDelay(socketNoDelay);
+        socket.setReceiveBufferSize(socketReceiveBufferSize);
+        socket.setSendBufferSize(socketSendBufferSize);
     }
 
     public synchronized void start() {
         if (live) return;
         live = true;
         log(Level.FINEST, "Starting ConnectionManager and IO selectors.");
-        for (int i = 0; i < selectors.length; i++) {
-            selectors[i] = new InOutSelector(this, i);
-            selectors[i].start();
+        for (int i = 0; i < inSelectors.length; i++) {
+            inSelectors[i] = new InSelectorImpl(ioService, i);
+            outSelectors[i] = new OutSelectorImpl(ioService, i);
+            inSelectors[i].start();
+            outSelectors[i].start();
         }
         if (serverSocketChannel != null) {
             if (socketAcceptorThread != null) {
@@ -406,13 +410,19 @@ public class TcpIpConnectionManager implements ConnectionManager {
     }
 
     private synchronized void shutdownIOSelectors() {
-        log(Level.FINEST, "Shutting down IO selectors, total: " + selectors.length);
-        for (int i = 0; i < selectors.length; i++) {
-            InOutSelector ioSelector = selectors[i];
+        log(Level.FINEST, "Shutting down IO selectors... Total: " + selectorThreadCount);
+        for (int i = 0; i < selectorThreadCount; i++) {
+            IOSelector ioSelector = inSelectors[i];
             if (ioSelector != null) {
                 ioSelector.shutdown();
             }
-            selectors[i] = null;
+            inSelectors[i] = null;
+
+            ioSelector = outSelectors[i];
+            if (ioSelector != null) {
+                ioSelector.shutdown();
+            }
+            outSelectors[i] = null;
         }
     }
 

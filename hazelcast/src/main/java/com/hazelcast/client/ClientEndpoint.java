@@ -18,141 +18,81 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientType;
-import com.hazelcast.instance.Node;
-import com.hazelcast.nio.ConnectionListener;
-import com.hazelcast.nio.TcpIpConnection;
 import com.hazelcast.nio.Connection;
+import com.hazelcast.nio.TcpIpConnection;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
+import javax.security.auth.login.LoginException;
 import java.net.SocketAddress;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
-public class ClientEndpoint implements ConnectionListener, Client {
-    final TcpIpConnection conn;
-    final Set<ClientRequestHandler> currentRequests = Collections.newSetFromMap(new ConcurrentHashMap<ClientRequestHandler, Boolean>());
-    final Node node;
-    final String uuid;
-    volatile boolean authenticated = false;
-    LoginContext loginContext = null;
+public class ClientEndpoint implements Client {
 
-    ClientEndpoint(Node node, TcpIpConnection conn, String uuid) {
-        this.node = node;
+    private final Connection conn;
+    private final String uuid;
+    private LoginContext loginContext = null;
+    private ClientPrincipal principal;
+    private volatile boolean authenticated = false;
+
+    ClientEndpoint(Connection conn, String uuid) {
         this.conn = conn;
         this.uuid = uuid;
     }
 
-//    public CallContext getCallContext(int threadId) {
-//        CallContext context = callContexts.get(threadId);
-//        if (context == null) {
-//            int locallyMappedThreadId = ThreadContext.createNewThreadId();
-//            context = new CallContext(locallyMappedThreadId, true);
-//            callContexts.put(threadId, context);
-//        }
-//        return context;
-//    }
-
-    @Override
-    public int hashCode() {
-        return this.conn.hashCode();
+    public Connection getConn() {
+        return conn;
     }
 
-    public void connectionAdded(Connection connection) {
+    public String getUuid() {
+        return uuid;
     }
 
-    public void connectionRemoved(Connection connection) {
-//        LifecycleServiceImpl lifecycleService = (LifecycleServiceImpl) node.factory.getLifecycleService();
-//        if (connection.equals(this.conn) && !lifecycleService.paused.get()) {
-//            destroyEndpointThreads();
-//            rollbackTransactions();
-//            removeEntryListeners();
-//            removeEntryListenersWithKey();
-//            removeMessageListeners();
-//            cancelRunningOperations();
-//            releaseAttachedSemaphorePermits();
-//            node.clusterImpl.sendProcessableToAll(new ClientHandlerService.CountDownLatchLeave(conn.getEndPoint()), true);
-//            node.clientService.remove(this);
-//        }
-    }
-
-    private void cancelRunningOperations() {
-        for (ClientRequestHandler clientRequestHandler : currentRequests) {
-            clientRequestHandler.cancel();
-        }
-        currentRequests.clear();
-    }
-//
-//    private void rollbackTransactions() {
-//        for (CallContext callContext : callContexts.values()) {
-//            ThreadContext.get().setCallContext(callContext);
-//            if (callContext.getTransaction() != null && callContext.getTransaction().getStatus() == Transaction.TXN_STATUS_ACTIVE) {
-//                callContext.getTransaction().rollback();
-//            }
-//        }
-//    }
-
-
-    public void addRequest(ClientRequestHandler clientRequestHandler) {
-        this.currentRequests.add(clientRequestHandler);
-    }
-
-    public void removeRequest(ClientRequestHandler clientRequestHandler) {
-        this.currentRequests.remove(clientRequestHandler);
-    }
-
-    public void setLoginContext(LoginContext loginContext) {
+    void setLoginContext(LoginContext loginContext) {
         this.loginContext = loginContext;
-    }
-
-    public LoginContext getLoginContext() {
-        return loginContext;
     }
 
     public Subject getSubject() {
         return loginContext != null ? loginContext.getSubject() : null;
     }
 
-    public void authenticated() {
-        this.authenticated = true;
-//        node.clientService.add(this);
+    void authenticated(ClientPrincipal principal) {
+        this.principal = principal;
+        authenticated = true;
     }
 
     public boolean isAuthenticated() {
         return authenticated;
     }
 
+    public ClientPrincipal getPrincipal() {
+        return principal;
+    }
+
     public SocketAddress getSocketAddress() {
-        return conn.getSocketChannelWrapper().socket().getRemoteSocketAddress();
+        if (conn instanceof TcpIpConnection) {
+            ((TcpIpConnection) conn).getSocketChannelWrapper().socket().getRemoteSocketAddress();
+        }
+        return null;
     }
 
     public ClientType getClientType() {
         return ClientType.Native;
     }
 
-    static class Entry implements Map.Entry {
-        Object key;
-        Object value;
-
-        Entry(Object k, Object v) {
-            key = k;
-            value = v;
+    void destroy() throws LoginException {
+        final LoginContext lc = loginContext;
+        if (lc != null) {
+            lc.logout();
         }
+    }
 
-        public Object getKey() {
-            return key;
-        }
-
-        public Object getValue() {
-            return value;
-        }
-
-        public Object setValue(Object value) {
-            Object r = key;
-            key = value;
-            return r;
-        }
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("ClientEndpoint{");
+        sb.append("conn=").append(conn);
+        sb.append(", uuid='").append(uuid).append('\'');
+        sb.append(", authenticated=").append(authenticated);
+        sb.append('}');
+        return sb.toString();
     }
 }

@@ -1,10 +1,13 @@
 package com.hazelcast.collection;
 
-import com.hazelcast.clientv2.AuthenticationRequest;
-import com.hazelcast.clientv2.ClientPortableHook;
+
 import com.hazelcast.collection.list.ObjectListProxy;
 import com.hazelcast.collection.operations.CollectionResponse;
-import com.hazelcast.collection.operations.clientv2.*;
+import com.hazelcast.collection.operations.client.*;
+import com.hazelcast.client.AuthenticationRequest;
+import com.hazelcast.client.ClientPortableHook;
+import com.hazelcast.collection.operations.client.AddAllRequest;
+import com.hazelcast.collection.operations.client.ClearRequest;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -47,8 +50,8 @@ public class CollectionBinaryClientTest {
         Config config = new Config();
         hz = Hazelcast.newHazelcastInstance(config);
 
-        HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(config);
+//        HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(config);
+//        HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(config);
 
         ss = new SerializationServiceImpl(0);
         dataKey = ss.toData(name);
@@ -248,9 +251,9 @@ public class CollectionBinaryClientTest {
 
         c.send(new EntrySetRequest(mmProxyId));
         Set<Map.Entry> entrySet = (Set<Map.Entry>)c.receive();
-        Data key = (Data)entrySet.iterator().next().getValue();
-        String s = (String)ss.toObject(key);
-        assertTrue(s.startsWith("key"));
+        Data value = (Data)entrySet.iterator().next().getValue();
+        String s = (String)ss.toObject(value);
+        assertTrue(s.startsWith("value"));
 
         assertEquals(6, entrySet.size());
 

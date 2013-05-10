@@ -16,8 +16,7 @@
 
 package com.hazelcast.client.connection;
 
-import com.hazelcast.client.connection.Connection;
-import com.hazelcast.nio.Protocol;
+import com.hazelcast.deprecated.nio.Protocol;
 import com.hazelcast.nio.serialization.ObjectDataOutputStream;
 import com.hazelcast.nio.serialization.SerializationService;
 

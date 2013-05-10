@@ -16,15 +16,13 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.clientv2.AuthenticationRequest;
+import com.hazelcast.client.AuthenticationRequest;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.TestUtil;
-import com.hazelcast.map.clientv2.MapAddEntryListenerRequest;
-import com.hazelcast.map.clientv2.MapPutRequest;
+import com.hazelcast.map.client.MapAddEntryListenerRequest;
 import com.hazelcast.nio.serialization.*;
 import com.hazelcast.security.UsernamePasswordCredentials;
 

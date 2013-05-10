@@ -251,7 +251,7 @@ public class DefaultPortableReader implements PortableReader {
     }
 
     private HazelcastSerializationException throwUnknownFieldException(String fieldName) {
-        return new HazelcastSerializationException("Invalid field name: '" + fieldName
+        return new HazelcastSerializationException("Unknown field name: '" + fieldName
                 + "' for ClassDefinition {id: " + cd.getClassId() + ", version: " + cd.getVersion() + "}");
     }
 

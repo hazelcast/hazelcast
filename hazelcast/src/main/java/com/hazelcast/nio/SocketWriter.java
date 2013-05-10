@@ -18,7 +18,7 @@ package com.hazelcast.nio;
 
 import java.nio.ByteBuffer;
 
-public interface SocketWriter<T> {
+public interface SocketWriter<T extends SocketWritable> {
 
     boolean write(T socketWritable, ByteBuffer socketBuffer) throws Exception;
 }

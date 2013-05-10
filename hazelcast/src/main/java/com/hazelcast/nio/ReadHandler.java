@@ -17,7 +17,7 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.nio.ascii.SocketTextReader;
-import com.hazelcast.nio.protocol.SocketProtocolReader;
+import com.hazelcast.deprecated.nio.protocol.SocketProtocolReader;
 import com.hazelcast.util.Clock;
 
 import java.io.EOFException;
@@ -30,17 +30,16 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 
     private final ByteBuffer buffer;
 
-    private final ByteBuffer protocolBuffer = ByteBuffer.allocate(3);
+    private final IOSelector ioSelector;
 
-    private SocketReader socketReader = null;
+    private SocketReader socketReader;
 
-    private volatile long lastRegistration = 0;
+    private volatile long lastHandle;
 
-    volatile long lastHandle;
-
-    public ReadHandler(TcpIpConnection connection) {
-        super(connection, connection.getInOutSelector());
-        buffer = ByteBuffer.allocate(connectionManager.SOCKET_RECEIVE_BUFFER_SIZE);
+    public ReadHandler(TcpIpConnection connection, IOSelector ioSelector) {
+        super(connection);
+        this.ioSelector = ioSelector;
+        buffer = ByteBuffer.allocate(connectionManager.socketReceiveBufferSize);
     }
 
     public final void handle() {
@@ -79,6 +78,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
 
     private void initializeSocketReader() throws IOException {
         if (socketReader == null) {
+            final ByteBuffer protocolBuffer = ByteBuffer.allocate(3);
             int readBytes = socketChannel.read(protocolBuffer);
             if (readBytes == -1) {
                 throw new EOFException("Could not read protocol type!");
@@ -102,12 +102,22 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
                     connection.getConnectionManager().incrementTextConnections();
                 }
             }
+            if (socketReader == null) {
+                throw new IOException("Could not initialize SocketReader!");
+            }
         }
-        if (socketReader == null) throw new IOException("Could not initialize SocketReader!");
     }
 
     public final void run() {
-        lastRegistration = Clock.currentTimeMillis();
-        registerOp(inOutSelector.selector, SelectionKey.OP_READ);
+        registerOp(ioSelector.getSelector(), SelectionKey.OP_READ);
+    }
+
+    long getLastHandle() {
+        return lastHandle;
+    }
+
+    public void register() {
+        ioSelector.addTask(this);
+        ioSelector.wakeup();
     }
 }

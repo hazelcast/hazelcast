@@ -20,8 +20,8 @@ package com.hazelcast.client.proxy.listener;
 import com.hazelcast.client.connection.Connection;
 import com.hazelcast.client.connection.ProtocolReader;
 import com.hazelcast.client.connection.ProtocolWriter;
-import com.hazelcast.nio.Protocol;
-import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.deprecated.nio.Protocol;
+import com.hazelcast.deprecated.nio.protocol.Command;
 import com.hazelcast.nio.serialization.SerializationService;
 
 import java.io.IOException;

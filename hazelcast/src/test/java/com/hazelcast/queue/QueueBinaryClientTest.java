@@ -16,8 +16,8 @@
 
 package com.hazelcast.queue;
 
-import com.hazelcast.clientv2.AuthenticationRequest;
-import com.hazelcast.clientv2.ClientPortableHook;
+import com.hazelcast.client.AuthenticationRequest;
+import com.hazelcast.client.ClientPortableHook;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.Hazelcast;
@@ -25,7 +25,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.nio.serialization.*;
-import com.hazelcast.queue.clientv2.*;
+import com.hazelcast.queue.client.*;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import org.junit.*;
 import org.junit.runner.RunWith;

@@ -19,7 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationServiceImpl;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
@@ -49,7 +49,7 @@ public class QueryOperation extends AbstractMapOperation {
         List<Integer> initialPartitions = mapService.getOwnedPartitions().get();
         IndexService indexService = mapService.getMapContainer(name).getIndexService();
         Set<QueryableEntry> entries = indexService.query(predicate);
-        SerializationServiceImpl ss = (SerializationServiceImpl) getNodeEngine().getSerializationService();
+        SerializationService ss = getNodeEngine().getSerializationService();
         result = new QueryResult();
         if (entries != null) {
             for (QueryableEntry entry : entries) {
@@ -69,7 +69,7 @@ public class QueryOperation extends AbstractMapOperation {
     }
 
     private void runParallel(final List<Integer> initialPartitions) throws InterruptedException, ExecutionException {
-        final SerializationServiceImpl ss = (SerializationServiceImpl) getNodeEngine().getSerializationService();
+        final SerializationService ss = getNodeEngine().getSerializationService();
         final ExecutorService executor = getNodeEngine().getExecutionService().getExecutor("hz:query");
         final List<Future<ConcurrentMap<Object, QueryableEntry>>> lsFutures = new ArrayList<Future<ConcurrentMap<Object, QueryableEntry>>>(initialPartitions.size());
         for (final Integer partition : initialPartitions) {

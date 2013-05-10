@@ -39,7 +39,6 @@ public class SocketAcceptor implements Runnable {
 
     public void run() {
         try {
-            connectionManager.ioService.onIOThreadStart();
             log(Level.FINEST, "Starting SocketAcceptor on " + serverSocketChannel);
             selector = Selector.open();
             serverSocketChannel.configureBlocking(false);
@@ -122,11 +121,9 @@ public class SocketAcceptor implements Runnable {
                         connectionManager.assignSocketChannel(socketChannel);
                     } catch (Exception e) {
                         log(Level.WARNING, e.getClass().getName() + ": " + e.getMessage(), e);
-                        if (socketChannel != null) {
-                            try {
-                                socketChannel.close();
-                            } catch (IOException ignored) {
-                            }
+                        try {
+                            socketChannel.close();
+                        } catch (IOException ignored) {
                         }
                     }
                 }

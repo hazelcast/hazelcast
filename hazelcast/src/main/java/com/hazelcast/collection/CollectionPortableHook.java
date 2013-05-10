@@ -16,7 +16,7 @@
 
 package com.hazelcast.collection;
 
-import com.hazelcast.collection.operations.clientv2.*;
+import com.hazelcast.collection.operations.client.*;
 import com.hazelcast.nio.serialization.*;
 
 import java.util.Collection;

@@ -22,8 +22,8 @@ import com.hazelcast.client.proxy.listener.ListenerThread;
 import com.hazelcast.collection.list.ObjectListProxy;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.ItemListener;
-import com.hazelcast.nio.Protocol;
-import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.deprecated.nio.Protocol;
+import com.hazelcast.deprecated.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.*;

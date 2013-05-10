@@ -20,6 +20,7 @@ import com.hazelcast.ascii.TextCommandService;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
+import com.hazelcast.deprecated.nio.Protocol;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.nio.serialization.Data;
@@ -39,10 +40,6 @@ public interface IOService {
     SystemLogService getSystemLogService();
 
     void onOutOfMemory(OutOfMemoryError oom);
-
-    void handleInterruptedException(Thread thread, RuntimeException e);
-
-    void onIOThreadStart();
 
     Address getThisAddress();
 

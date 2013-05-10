@@ -20,7 +20,7 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.core.ISemaphore;
 import com.hazelcast.monitor.LocalSemaphoreStats;
-import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.deprecated.nio.protocol.Command;
 
 import java.util.concurrent.TimeUnit;
 

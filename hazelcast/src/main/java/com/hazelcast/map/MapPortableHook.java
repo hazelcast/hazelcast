@@ -16,7 +16,7 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.map.clientv2.*;
+import com.hazelcast.map.client.*;
 import com.hazelcast.nio.serialization.*;
 import com.hazelcast.util.ConstructorFunction;
 

@@ -16,10 +16,11 @@
 
 package com.hazelcast.concurrent.lock;
 
-import com.hazelcast.client.ClientCommandHandler;
+import com.hazelcast.deprecated.client.ClientCommandHandler;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.deprecated.spi.ClientProtocolService;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.deprecated.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.spi.*;

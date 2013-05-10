@@ -24,8 +24,8 @@ import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.executor.RunnableAdapter;
 import com.hazelcast.monitor.LocalExecutorStats;
-import com.hazelcast.nio.Protocol;
-import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.deprecated.nio.Protocol;
+import com.hazelcast.deprecated.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
 
 import java.net.InetSocketAddress;
