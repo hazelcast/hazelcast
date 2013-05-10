@@ -16,16 +16,17 @@
 
 package com.hazelcast.concurrent.atomiclong;
 
-import com.hazelcast.client.ClientCommandHandler;
+import com.hazelcast.deprecated.client.ClientCommandHandler;
 
-import com.hazelcast.concurrent.atomiclong.client.AddAndGetHandler;
-import com.hazelcast.concurrent.atomiclong.client.GetAndAddHandler;
-import com.hazelcast.concurrent.atomiclong.client.CompareAndSetHandler;
+import com.hazelcast.deprecated.concurrent.atomiclong.client.AddAndGetHandler;
+import com.hazelcast.deprecated.concurrent.atomiclong.client.GetAndAddHandler;
+import com.hazelcast.deprecated.concurrent.atomiclong.client.CompareAndSetHandler;
 
-import com.hazelcast.concurrent.atomiclong.client.GetAndSetHandler;
+import com.hazelcast.deprecated.concurrent.atomiclong.client.GetAndSetHandler;
 import com.hazelcast.concurrent.atomiclong.proxy.AtomicLongProxy;
 import com.hazelcast.config.Config;
-import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.deprecated.spi.ClientProtocolService;
+import com.hazelcast.deprecated.nio.protocol.Command;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.spi.*;
 import com.hazelcast.util.ConcurrencyUtil;

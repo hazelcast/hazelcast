@@ -23,10 +23,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.PartitionAware;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
-import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.nio.IOUtil;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.*;
 import com.hazelcast.nio.serialization.ConstantSerializers.*;
 import com.hazelcast.nio.serialization.DefaultSerializers.*;
 
@@ -339,15 +336,15 @@ public final class SerializationServiceImpl implements SerializationService {
         throw new HazelcastSerializationException(e);
     }
 
-    public ObjectDataInput createObjectDataInput(byte[] data) {
+    public BufferObjectDataInput createObjectDataInput(byte[] data) {
         return new ContextAwareDataInput(data, this);
     }
 
-    public ObjectDataInput createObjectDataInput(Data data) {
+    public BufferObjectDataInput createObjectDataInput(Data data) {
         return createObjectDataInput(data.buffer);
     }
 
-    public ObjectDataOutput createObjectDataOutput(int size) {
+    public BufferObjectDataOutput createObjectDataOutput(int size) {
         return new ContextAwareDataOutput(size, this);
     }
 
@@ -463,6 +460,10 @@ public final class SerializationServiceImpl implements SerializationService {
 
     public SerializationContext getSerializationContext() {
         return serializationContext;
+    }
+
+    public PortableReader createPortableReader(Data data) {
+        return new DefaultPortableReader(portableSerializer, createObjectDataInput(data), data.getClassDefinition());
     }
 
     public void destroy() {

@@ -30,8 +30,8 @@ import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.SimpleEntryView;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.nio.Protocol;
-import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.deprecated.nio.Protocol;
+import com.hazelcast.deprecated.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 

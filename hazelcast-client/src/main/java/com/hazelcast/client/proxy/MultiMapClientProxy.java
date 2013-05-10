@@ -25,8 +25,8 @@ import com.hazelcast.client.util.ValueCollection;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.monitor.LocalMultiMapStats;
-import com.hazelcast.nio.Protocol;
-import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.deprecated.nio.Protocol;
+import com.hazelcast.deprecated.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.*;

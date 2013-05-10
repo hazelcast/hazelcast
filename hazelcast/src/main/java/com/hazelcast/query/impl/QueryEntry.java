@@ -16,7 +16,6 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.serialization.*;
 
 import java.io.IOException;
@@ -151,11 +150,7 @@ public class QueryEntry implements QueryableEntry {
 
     PortableReader getOrCreatePortableReader() {
         if (reader != null) return reader;
-        ClassDefinitionImpl cd = (ClassDefinitionImpl) valueData.getClassDefinition();
-        PortableSerializer portableSerializer = ((SerializationServiceImpl) serializationService).getPortableSerializer();
-        BufferObjectDataInput in = (BufferObjectDataInput) serializationService.createObjectDataInput(valueData);
-        reader = new DefaultPortableReader(portableSerializer, in, cd);
-        return reader;
+        return reader = serializationService.createPortableReader(valueData);
     }
 
     static class PortableExtractor {

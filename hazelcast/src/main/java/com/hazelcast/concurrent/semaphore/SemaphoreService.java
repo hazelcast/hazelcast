@@ -16,10 +16,11 @@
 
 package com.hazelcast.concurrent.semaphore;
 
-import com.hazelcast.client.ClientCommandHandler;
-import com.hazelcast.concurrent.semaphore.client.*;
+import com.hazelcast.deprecated.client.ClientCommandHandler;
+import com.hazelcast.deprecated.concurrent.semaphore.client.*;
 import com.hazelcast.config.SemaphoreConfig;
-import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.deprecated.spi.ClientProtocolService;
+import com.hazelcast.deprecated.nio.protocol.Command;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;

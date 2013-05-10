@@ -33,7 +33,7 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.partition.PartitionServiceImpl;
 import com.hazelcast.queue.QueueService;
-import com.hazelcast.spi.ClientProtocolService;
+import com.hazelcast.deprecated.spi.ClientProtocolService;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;

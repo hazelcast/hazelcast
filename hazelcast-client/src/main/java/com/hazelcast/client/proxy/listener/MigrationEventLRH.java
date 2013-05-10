@@ -22,7 +22,7 @@ import com.hazelcast.client.proxy.PartitionClientProxy;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Protocol;
+import com.hazelcast.deprecated.nio.Protocol;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.MigrationEvent;
 import com.hazelcast.partition.MigrationListener;

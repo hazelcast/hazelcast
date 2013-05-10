@@ -16,9 +16,10 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.client.ClientCommandHandler;
-import com.hazelcast.cluster.client.*;
+import com.hazelcast.deprecated.client.ClientCommandHandler;
+import com.hazelcast.deprecated.cluster.client.*;
 import com.hazelcast.core.*;
+import com.hazelcast.deprecated.spi.ClientProtocolService;
 import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -27,7 +28,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.deprecated.nio.protocol.Command;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.NodeEngineImpl;

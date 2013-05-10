@@ -16,27 +16,28 @@
 
 package com.hazelcast.collection;
 
-import com.hazelcast.client.ClientCommandHandler;
+import com.hazelcast.deprecated.client.ClientCommandHandler;
 import com.hazelcast.cluster.ClusterServiceImpl;
-import com.hazelcast.collection.client.CollectionItemListenHandler;
+import com.hazelcast.deprecated.collection.client.CollectionItemListenHandler;
 import com.hazelcast.collection.list.ObjectListProxy;
-import com.hazelcast.collection.list.client.*;
+import com.hazelcast.deprecated.collection.list.client.*;
 import com.hazelcast.collection.list.tx.TransactionalListProxy;
 import com.hazelcast.collection.multimap.ObjectMultiMapProxy;
-import com.hazelcast.collection.multimap.client.*;
+import com.hazelcast.deprecated.collection.multimap.client.*;
 import com.hazelcast.collection.multimap.tx.TransactionalMultiMapProxy;
 import com.hazelcast.collection.set.ObjectSetProxy;
-import com.hazelcast.collection.set.client.*;
+import com.hazelcast.deprecated.collection.set.client.*;
 import com.hazelcast.collection.set.tx.TransactionalSetProxy;
 import com.hazelcast.concurrent.lock.LockStoreInfo;
 import com.hazelcast.concurrent.lock.SharedLockService;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.*;
+import com.hazelcast.deprecated.spi.ClientProtocolService;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMultiMapStatsImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Protocol;
-import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.deprecated.nio.Protocol;
+import com.hazelcast.deprecated.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.MigrationEndpoint;

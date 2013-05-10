@@ -16,7 +16,6 @@
 
 package com.hazelcast.clientv2;
 
-import com.hazelcast.client.ClientDisconnectionOperation;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.Config;
 import com.hazelcast.instance.MemberImpl;

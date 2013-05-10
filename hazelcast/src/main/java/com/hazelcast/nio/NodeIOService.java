@@ -18,6 +18,7 @@ package com.hazelcast.nio;
 
 import com.hazelcast.ascii.TextCommandService;
 import com.hazelcast.config.*;
+import com.hazelcast.deprecated.nio.Protocol;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;

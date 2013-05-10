@@ -16,18 +16,19 @@
 
 package com.hazelcast.queue;
 
-import com.hazelcast.client.ClientCommandHandler;
+import com.hazelcast.deprecated.client.ClientCommandHandler;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
+import com.hazelcast.deprecated.spi.ClientProtocolService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.deprecated.nio.protocol.Command;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.PartitionInfo;
-import com.hazelcast.queue.client.*;
+import com.hazelcast.deprecated.queue.client.*;
 import com.hazelcast.queue.proxy.DataQueueProxy;
 import com.hazelcast.queue.proxy.ObjectQueueProxy;
 import com.hazelcast.queue.tx.TransactionalQueueProxy;

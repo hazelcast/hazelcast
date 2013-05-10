@@ -26,7 +26,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Protocol;
+import com.hazelcast.deprecated.nio.Protocol;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 

@@ -16,14 +16,15 @@
 
 package com.hazelcast.executor;
 
-import com.hazelcast.client.ClientCommandHandler;
+import com.hazelcast.deprecated.client.ClientCommandHandler;
 
-import com.hazelcast.executor.client.ExecuteIsShutdownHandler;
-import com.hazelcast.executor.client.ExecuteShutdownHandler;
+import com.hazelcast.deprecated.spi.ClientProtocolService;
+import com.hazelcast.deprecated.executor.client.ExecuteIsShutdownHandler;
+import com.hazelcast.deprecated.executor.client.ExecuteShutdownHandler;
 import com.hazelcast.monitor.impl.LocalExecutorStatsImpl;
 
-import com.hazelcast.executor.client.ExecuteHandler;
-import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.deprecated.executor.client.ExecuteHandler;
+import com.hazelcast.deprecated.nio.protocol.Command;
 import com.hazelcast.spi.*;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;

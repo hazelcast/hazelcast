@@ -18,8 +18,8 @@
 package com.hazelcast.client.connection;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.nio.Protocol;
-import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.deprecated.nio.Protocol;
+import com.hazelcast.deprecated.nio.protocol.Command;
 import com.hazelcast.nio.serialization.SerializationService;
 
 import java.io.IOException;

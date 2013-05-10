@@ -17,7 +17,7 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.nio.ascii.SocketTextWriter;
-import com.hazelcast.nio.protocol.SocketProtocolWriter;
+import com.hazelcast.deprecated.nio.protocol.SocketProtocolWriter;
 import com.hazelcast.util.Clock;
 
 import java.nio.ByteBuffer;
