@@ -543,7 +543,6 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
                     missingList.add(i);
                 }
             }
-            System.out.println("missings:" + missingList.size());
             List<Future> futures = new ArrayList<Future>(missingList.size());
             for (Integer pid : missingList) {
                 QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(name, predicate);
@@ -575,9 +574,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         final NodeEngine nodeEngine = getNodeEngine();
         if (attribute == null) throw new IllegalArgumentException("attribute name cannot be null");
         try {
-            AddIndexOperation mapKeySetOperation = new AddIndexOperation(name, attribute, ordered);
+            AddIndexOperation addIndexOperation = new AddIndexOperation(name, attribute, ordered);
             Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(SERVICE_NAME, new BinaryOperationFactory(mapKeySetOperation, nodeEngine));
+                    .invokeOnAllPartitions(SERVICE_NAME, new BinaryOperationFactory(addIndexOperation, nodeEngine));
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }

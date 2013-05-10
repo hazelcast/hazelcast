@@ -17,8 +17,10 @@
 package com.hazelcast.map.clientv2;
 
 import com.hazelcast.map.MapPortableHook;
+import com.hazelcast.map.ReplaceIfSameOperation;
 import com.hazelcast.map.ReplaceOperation;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.Operation;
 
 public class MapReplaceRequest extends MapPutRequest {
 
@@ -33,10 +35,9 @@ public class MapReplaceRequest extends MapPutRequest {
         return MapPortableHook.REPLACE;
     }
 
-    public Object process() throws Exception {
+    protected Operation prepareOperation() {
         ReplaceOperation op = new ReplaceOperation(name, key, value);
         op.setThreadId(threadId);
-        return null;
+        return op;
     }
-
 }

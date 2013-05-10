@@ -19,6 +19,7 @@ package com.hazelcast.map.clientv2;
 import com.hazelcast.concurrent.lock.clientv2.AbstractLockRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.DefaultObjectNamespace;
@@ -31,6 +32,16 @@ public class MapLockRequest extends AbstractLockRequest {
     private String name;
 
     public MapLockRequest() {
+    }
+
+    public MapLockRequest(Data key, int threadId, String name) {
+        super(key, threadId);
+        this.name = name;
+    }
+
+    public MapLockRequest(Data key, int threadId, long ttl, long timeout, String name) {
+        super(key, threadId, ttl, timeout);
+        this.name = name;
     }
 
     @Override

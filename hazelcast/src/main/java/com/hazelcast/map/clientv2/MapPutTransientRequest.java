@@ -17,8 +17,10 @@
 package com.hazelcast.map.clientv2;
 
 import com.hazelcast.map.MapPortableHook;
+import com.hazelcast.map.PutIfAbsentOperation;
 import com.hazelcast.map.PutTransientOperation;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.Operation;
 
 public class MapPutTransientRequest extends MapPutRequest {
 
@@ -33,10 +35,11 @@ public class MapPutTransientRequest extends MapPutRequest {
         return MapPortableHook.PUT_TRANSIENT;
     }
 
-    public Object process() throws Exception {
-        System.err.println("Running MapPutTransientRequest");
+    protected Operation prepareOperation() {
         PutTransientOperation op = new PutTransientOperation(name, key, value, ttl);
         op.setThreadId(threadId);
-        return null;
+        return op;
     }
+
+
 }

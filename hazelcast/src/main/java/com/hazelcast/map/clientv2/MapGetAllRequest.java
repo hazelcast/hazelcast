@@ -16,16 +16,19 @@
 
 package com.hazelcast.map.clientv2;
 
+import com.hazelcast.clientv2.AllPartitionsClientRequest;
 import com.hazelcast.clientv2.KeyBasedClientRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
+import java.util.Map;
 
-public class MapGetAllRequest extends KeyBasedClientRequest {
+public class MapGetAllRequest extends AllPartitionsClientRequest {
 
     protected String name;
 
@@ -45,17 +48,14 @@ public class MapGetAllRequest extends KeyBasedClientRequest {
     }
 
     @Override
-    protected Object getKey() {
+    protected OperationFactory createOperationFactory() {
+        // todo implement
+
         return null;
     }
 
     @Override
-    protected Operation prepareOperation() {
-        return null;
-    }
-
-    public Object process() throws Exception {
-        // todo implement
+    protected Object reduce(Map<Integer, Object> map) {
         return null;
     }
 

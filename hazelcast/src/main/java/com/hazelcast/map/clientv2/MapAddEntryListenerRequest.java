@@ -16,12 +16,14 @@
 
 package com.hazelcast.map.clientv2;
 
+import com.hazelcast.clientv2.CallableClientRequest;
 import com.hazelcast.clientv2.ClientEndpoint;
 import com.hazelcast.clientv2.ClientEngine;
 import com.hazelcast.clientv2.RunnableClientRequest;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.map.EntryEventFilter;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ObjectDataInput;
@@ -29,14 +31,16 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.spi.EventFilter;
 
 import java.io.IOException;
 
-public class MapAddEntryListenerRequest extends RunnableClientRequest {
+public class MapAddEntryListenerRequest extends CallableClientRequest {
 
     private String name;
     private Data key;
     private boolean includeValue;
+    private boolean local;
 
     public MapAddEntryListenerRequest() {
     }
@@ -45,29 +49,58 @@ public class MapAddEntryListenerRequest extends RunnableClientRequest {
         this.name = name;
     }
 
-    public MapAddEntryListenerRequest(String name, Data key, boolean includeValue) {
+    public MapAddEntryListenerRequest(String name, Data key, boolean includeValue, boolean local) {
         this.name = name;
         this.includeValue = includeValue;
         this.key = key;
+        this.local = local;
     }
 
     @Override
-    public void run() {
+    public Object call() {
         final ClientEndpoint endpoint = getEndpoint();
         final ClientEngine clientEngine = getClientEngine();
         final MapService mapService = getService();
-        EntryListener<Object, Object> listener = new EntryAdapter<Object, Object>() {
-            public void entryAdded(EntryEvent<Object, Object> event) {
+        EntryListener<Object, Object> listener = new EntryListener<Object, Object>() {
+
+            private void handleEvent(EntryEvent<Object, Object> event){
                 if (endpoint.getConn().live()) {
-                    clientEngine.sendResponse(endpoint, event.toString());
+                    clientEngine.sendResponse(endpoint, new PortableEntryEvent(event));
                 } else {
-                    System.err.println("De-registering listener for " + name);
                     mapService.removeEventListener(this, name, null);
                 }
             }
-        };
-        mapService.addLocalEventListener(listener, name);
 
+            @Override
+            public void entryAdded(EntryEvent<Object, Object> event) {
+                handleEvent(event);
+            }
+
+            @Override
+            public void entryRemoved(EntryEvent<Object, Object> event) {
+                handleEvent(event);
+            }
+
+            @Override
+            public void entryUpdated(EntryEvent<Object, Object> event) {
+                handleEvent(event);
+            }
+
+            @Override
+            public void entryEvicted(EntryEvent<Object, Object> event) {
+                handleEvent(event);
+            }
+        };
+
+        EventFilter eventFilter = new EntryEventFilter(includeValue, key);
+        if(local) {
+            mapService.addLocalEventListener(listener, name);
+        }
+        else {
+            mapService.addEventListener(listener, eventFilter, name);
+        }
+
+        return true;
     }
 
     public String getServiceName() {
@@ -86,6 +119,7 @@ public class MapAddEntryListenerRequest extends RunnableClientRequest {
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeUTF("name", name);
         writer.writeBoolean("i", includeValue);
+        writer.writeBoolean("local", local);
         final boolean hasKey = key != null;
         writer.writeBoolean("key", hasKey);
 
@@ -98,6 +132,7 @@ public class MapAddEntryListenerRequest extends RunnableClientRequest {
     public void readPortable(PortableReader reader) throws IOException {
         name = reader.readUTF("name");
         includeValue = reader.readBoolean("i");
+        local = reader.readBoolean("local");
         boolean hasKey = reader.readBoolean("key");
 
         if (hasKey) {

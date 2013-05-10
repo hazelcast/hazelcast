@@ -17,6 +17,7 @@
 package com.hazelcast.map.clientv2;
 
 import com.hazelcast.clientv2.KeyBasedClientRequest;
+import com.hazelcast.map.EntryOperation;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
@@ -46,17 +47,12 @@ public class MapExecuteOnKeyRequest extends KeyBasedClientRequest {
 
     @Override
     protected Object getKey() {
-        return null;
+        return key;
     }
 
     @Override
     protected Operation prepareOperation() {
-        return null;
-    }
-
-    public Object process() throws Exception {
-        // todo implement
-        return null;
+        return new EntryOperation(name, key, processor);
     }
 
     public String getServiceName() {

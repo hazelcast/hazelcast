@@ -32,10 +32,10 @@ public class DataAwareEntryEvent extends EntryEvent {
     private final transient SerializationService serializationService;
 
     public DataAwareEntryEvent(Member from, int eventType,
-                               String name, Data dataKey,
+                               String source, Data dataKey,
                                Data dataNewValue, Data dataOldValue,
                                SerializationService serializationService) {
-        super(name, from, eventType, null, null);
+        super(source, from, eventType, null, null);
         this.dataKey = dataKey;
         this.dataNewValue = dataNewValue;
         this.dataOldValue = dataOldValue;

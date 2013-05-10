@@ -17,6 +17,8 @@
 package com.hazelcast.map.clientv2;
 
 import com.hazelcast.clientv2.AllPartitionsClientRequest;
+import com.hazelcast.map.MapKeySet;
+import com.hazelcast.map.MapKeySetOperationFactory;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.serialization.PortableReader;
@@ -24,7 +26,9 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class MapKeySetRequest extends AllPartitionsClientRequest {
 
@@ -39,17 +43,18 @@ public class MapKeySetRequest extends AllPartitionsClientRequest {
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return null;
+        return new MapKeySetOperationFactory(name);
     }
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        return null;
-    }
-
-    public Object process() throws Exception {
-        // todo implement
-        return null;
+        Set res = new HashSet();
+        MapService service = getService();
+        for (Object o : map.values()) {
+            Set keys = ((MapKeySet) service.toObject(o)).getKeySet();
+            res.addAll(keys);
+        }
+        return res;
     }
 
     public String getServiceName() {

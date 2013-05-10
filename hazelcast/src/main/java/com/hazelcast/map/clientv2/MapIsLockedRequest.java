@@ -17,6 +17,7 @@
 package com.hazelcast.map.clientv2;
 
 import com.hazelcast.clientv2.KeyBasedClientRequest;
+import com.hazelcast.concurrent.lock.IsLockedOperation;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ObjectDataInput;
@@ -33,16 +34,14 @@ import java.io.IOException;
 public class MapIsLockedRequest extends KeyBasedClientRequest {
 
     private String name;
-    private int threadId;
     private Data key;
 
     public MapIsLockedRequest() {
     }
 
-    public MapIsLockedRequest(String name, Data key, int threadId) {
+    public MapIsLockedRequest(String name, Data key) {
         this.name = name;
         this.key = key;
-        this.threadId = threadId;
     }
 
     public Object getKey() {
@@ -51,7 +50,8 @@ public class MapIsLockedRequest extends KeyBasedClientRequest {
 
     protected Operation prepareOperation() {
         ObjectNamespace namespace = new DefaultObjectNamespace(MapService.SERVICE_NAME, name);
-        return null;
+        IsLockedOperation op = new IsLockedOperation(namespace, key);
+        return op;
     }
 
     public String getServiceName() {
@@ -69,16 +69,12 @@ public class MapIsLockedRequest extends KeyBasedClientRequest {
 
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
-        writer.writeInt("t", threadId);
-        // ...
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
     }
 
     public void readPortable(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
-        threadId = reader.readInt("t");
-        //....
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);

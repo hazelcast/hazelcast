@@ -32,7 +32,6 @@ import java.io.IOException;
 public class MapGetRequest extends KeyBasedClientRequest {
 
     private String name;
-
     private Data key;
 
     public MapGetRequest() {
@@ -67,14 +66,12 @@ public class MapGetRequest extends KeyBasedClientRequest {
 
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
-        // ...
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
     }
 
     public void readPortable(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
-        //....
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);

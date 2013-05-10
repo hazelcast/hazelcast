@@ -19,11 +19,16 @@ package com.hazelcast.map.clientv2;
 import com.hazelcast.clientv2.AllPartitionsClientRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
+import com.hazelcast.map.MapValueCollection;
+import com.hazelcast.map.MapValuesOperationFactory;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class MapValuesRequest extends AllPartitionsClientRequest {
@@ -39,17 +44,18 @@ public class MapValuesRequest extends AllPartitionsClientRequest {
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return null;
+        return new MapValuesOperationFactory(name);
     }
 
     @Override
-    protected Object reduce(Map<Integer, Object> map) {
-        return null;
-    }
-
-    public Object process() throws Exception {
-        // todo implement
-        return null;
+    protected Object reduce(Map<Integer, Object> results) {
+        List<Data> values = new ArrayList<Data>();
+        MapService mapService = getService();
+        for (Object result : results.values()) {
+            values.addAll(((MapValueCollection) mapService.toObject(result)).getValues());
+        }
+        // todo make list portable
+        return values;
     }
 
     public String getServiceName() {

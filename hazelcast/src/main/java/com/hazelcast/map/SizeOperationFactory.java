@@ -14,30 +14,35 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.clientv2;
+package com.hazelcast.map;
 
-import com.hazelcast.map.MapPortableHook;
-import com.hazelcast.map.ReplaceOperation;
-import com.hazelcast.map.SetOperation;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationFactory;
 
-public class MapSetRequest extends MapPutRequest {
+import java.io.IOException;
 
-    public MapSetRequest() {
+public class SizeOperationFactory implements OperationFactory {
+
+    String name;
+
+    public SizeOperationFactory(String name) {
+        this.name = name;
     }
 
-    public MapSetRequest(String name, Data key, Data value, int threadId, long ttl) {
-        super(name, key, value, threadId, ttl);
+    @Override
+    public Operation createOperation() {
+        return new MapSizeOperation(name);
     }
 
-    public int getClassId() {
-        return MapPortableHook.SET;
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
     }
 
-    protected Operation prepareOperation() {
-        SetOperation op = new SetOperation(name, key, value, ttl);
-        op.setThreadId(threadId);
-        return op;
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
     }
 }

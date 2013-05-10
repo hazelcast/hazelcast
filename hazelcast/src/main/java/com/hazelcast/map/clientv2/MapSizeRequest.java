@@ -16,17 +16,21 @@
 
 package com.hazelcast.map.clientv2;
 
+import com.hazelcast.clientv2.AllPartitionsClientRequest;
 import com.hazelcast.clientv2.PartitionClientRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
+import com.hazelcast.map.SizeOperationFactory;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
+import java.util.Map;
 
-public class MapSizeRequest extends PartitionClientRequest {
+public class MapSizeRequest extends AllPartitionsClientRequest {
 
     private String name;
 
@@ -35,21 +39,6 @@ public class MapSizeRequest extends PartitionClientRequest {
 
     public MapSizeRequest(String name, Data key) {
         this.name = name;
-    }
-
-    @Override
-    protected Operation prepareOperation() {
-        return null;
-    }
-
-    @Override
-    protected int getPartition() {
-        return 0;
-    }
-
-    @Override
-    protected int getReplicaIndex() {
-        return 0;
     }
 
     public String getServiceName() {
@@ -62,16 +51,30 @@ public class MapSizeRequest extends PartitionClientRequest {
     }
 
     public int getClassId() {
-        return MapPortableHook.GET;
+        return MapPortableHook.SIZE;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
-        // ...
     }
 
     public void readPortable(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
-        //....
+    }
+
+    @Override
+    protected OperationFactory createOperationFactory() {
+        return new SizeOperationFactory(name);
+    }
+
+    @Override
+    protected Object reduce(Map<Integer, Object> map) {
+        int total = 0;
+        MapService mapService = getService();
+        for (Object result : map.values()) {
+            Integer size = (Integer) mapService.toObject(result);
+            total += size;
+        }
+        return total;
     }
 }

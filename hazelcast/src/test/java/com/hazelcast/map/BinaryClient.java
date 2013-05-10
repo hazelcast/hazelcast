@@ -1,18 +1,18 @@
 /*
-* Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package com.hazelcast.map;
 
@@ -20,8 +20,11 @@ import com.hazelcast.clientv2.AuthenticationRequest;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.TestUtil;
 import com.hazelcast.map.clientv2.MapAddEntryListenerRequest;
+import com.hazelcast.map.clientv2.MapPutRequest;
 import com.hazelcast.nio.serialization.*;
 import com.hazelcast.security.UsernamePasswordCredentials;
 
@@ -38,6 +41,9 @@ public class BinaryClient {
     public static void main(String[] args) throws Exception {
         Config config = new Config();
         final HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+        IMap<Object, Object> map = hz.getMap("test");
+
+        map.put(1,1);
 
         final SerializationService ss = new SerializationServiceImpl(0);
 
@@ -47,6 +53,7 @@ public class BinaryClient {
             public void run() {
                 try {
                     c.send(new MapAddEntryListenerRequest("test"));
+//                    c.send(new MapPutRequest("test", TestUtil.toData(1), TestUtil.toData(1), 778 ));
                     while (!isInterrupted()) {
                         System.err.println("--> " + c.receive());
                     }
@@ -57,17 +64,19 @@ public class BinaryClient {
             }
         };
         thread.start();
+        Thread.sleep(100);
 
 
         for (int i = 0; i < 10; i++) {
-            hz.getMap("test").put(i, i);
+            map.put(i, i);
         }
-
+        Thread.sleep(10);
         thread.interrupt();
+        Thread.sleep(1000);
         c.close();
         thread.join();
 
-        hz.getMap("test").put(1111, 1111);
+        map.put(1111, 1111);
 
 //        try {
 //            c.close();

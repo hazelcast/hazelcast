@@ -29,6 +29,8 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class PostJoinMapOperation extends AbstractOperation implements JoinOperation {
+
+    // todo add interceptors
     private List<MapIndexInfo> lsMapIndexes = new LinkedList<MapIndexInfo>();
 
     @Override

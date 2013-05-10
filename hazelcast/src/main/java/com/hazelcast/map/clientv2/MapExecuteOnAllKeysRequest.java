@@ -20,6 +20,7 @@ import com.hazelcast.clientv2.AllPartitionsClientRequest;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
+import com.hazelcast.map.PartitionWideEntryOperationFactory;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.PortableReader;
@@ -27,6 +28,7 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 public class MapExecuteOnAllKeysRequest extends AllPartitionsClientRequest {
@@ -44,17 +46,22 @@ public class MapExecuteOnAllKeysRequest extends AllPartitionsClientRequest {
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return null;
+        return new PartitionWideEntryOperationFactory(name, processor);
     }
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        return null;
-    }
-
-    public Object process() throws Exception {
-        // todo implement
-        return null;
+        Map result = new HashMap();
+        for (Object o : map.values()) {
+            if (o != null) {
+                Map tempMap = (Map)o;
+                for (Object key : tempMap.keySet()) {
+                    result.put(key, tempMap.get(key));
+                }
+            }
+        }
+        // todo make map portable
+        return result;
     }
 
     public String getServiceName() {
