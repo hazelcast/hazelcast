@@ -47,6 +47,8 @@ public class CollectionPortableHook implements PortableHook {
     public static final int SET = 17;
     public static final int SIZE = 18;
     public static final int VALUES = 19;
+    public static final int ADD_LISTENER = 20;
+
 
     public int getFactoryId() {
         return F_ID;
@@ -94,6 +96,8 @@ public class CollectionPortableHook implements PortableHook {
                         return new SizeRequest();
                     case VALUES:
                         return new ValuesRequest();
+                    case ADD_LISTENER:
+                        return new AddListenerRequest();
                 }
                 return null;
             }

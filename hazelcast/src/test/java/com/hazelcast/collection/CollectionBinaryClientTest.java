@@ -481,6 +481,30 @@ public class CollectionBinaryClientTest {
         }
     }
 
+    @Test
+    public void testListener() throws IOException {
+        c.send(new AddListenerRequest(mmProxyId, null, true, false));
+        c.receive();
+
+        hz.getMultiMap(name).put("key1","value1");
+
+        String result = (String)c.receive();
+        assertTrue(result.contains("value1"));
+    }
+
+    @Test
+    public void testKeyListener() throws IOException {
+        c.send(new AddListenerRequest(mmProxyId, ss.toData("key2"), true, false));
+        c.receive();
+
+        hz.getMultiMap(name).put("key1","value1");
+
+        hz.getMultiMap(name).put("key2","value8");
+        String result = (String)c.receive();
+        assertFalse(result.contains("value1"));
+        assertTrue(result.contains("value8"));
+    }
+
     private int getThreadId(){
         int threadId = (int)Thread.currentThread().getId();
         return threadId;

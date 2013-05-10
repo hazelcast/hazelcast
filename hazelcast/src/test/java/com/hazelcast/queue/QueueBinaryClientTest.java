@@ -99,8 +99,6 @@ public class QueueBinaryClientTest {
     @Test
     public void testAddListener() throws IOException {
 
-        
-
         c.send(new AddListenerRequest(queueName, true));
         c.receive();
 
@@ -109,9 +107,6 @@ public class QueueBinaryClientTest {
 
         String result = (String)c.receive();
         assertTrue(result.startsWith("ItemEvent"));
-
-        
-
     }
 
     @Test
