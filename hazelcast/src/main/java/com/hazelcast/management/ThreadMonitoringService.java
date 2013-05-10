@@ -85,11 +85,11 @@ public class ThreadMonitoringService {
             for (Thread thread : threads) {
                 ThreadCpuInfo t = knownThreads.get(thread.getId());
                 if (t == null) {
-                    knownThreads.putIfAbsent(thread.getId(), new ThreadCpuInfo(thread));
-                } else {
-                    int percentage = (int) ((t.setNewValue(threadMXBean.getThreadCpuTime(thread.getId()), now)) * 100);
-                    monitoredThreads.add(new MonitoredThread(thread.getName(), thread.getId(), percentage));
+                    t = new ThreadCpuInfo(thread);
+                    knownThreads.putIfAbsent(thread.getId(), t);
                 }
+                int percentage = (int) ((t.setNewValue(threadMXBean.getThreadCpuTime(thread.getId()), now)) * 100);
+                monitoredThreads.add(new MonitoredThread(thread.getName(), thread.getId(), percentage));
             }
             return monitoredThreads;
         } catch (Exception e) {
@@ -102,10 +102,13 @@ public class ThreadMonitoringService {
         StringBuilder sb = new StringBuilder("ThreadStats {\n");
         final Set<MonitoredThread> stats = getStats();
         if (stats != null) {
+            int total = 0;
             for (MonitoredThread monitoredThread : stats) {
                 sb.append(monitoredThread.toString());
                 sb.append("\n");
+                total += monitoredThread.cpuPercentage;
             }
+            sb.append("Total::: ").append(total).append('\n');
         }
         sb.append("}");
         return sb.toString();

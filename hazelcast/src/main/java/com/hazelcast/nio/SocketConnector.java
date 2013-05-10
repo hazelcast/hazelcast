@@ -41,13 +41,11 @@ public class SocketConnector implements Runnable {
 
     public void run() {
         if (!connectionManager.isLive()) {
-            String message = "ConnectionManager is not live, connection attempt to " +
-                             address + " is cancelled!";
+            String message = "ConnectionManager is not live, connection attempt to " + address + " is cancelled!";
             log(Level.FINEST, message);
             return;
         }
         try {
-            connectionManager.ioService.onIOThreadStart();
             log(Level.FINEST, "Starting to connect to " + address);
             final Address thisAddress = connectionManager.ioService.getThisAddress();
             if (address.isIPv4()) {
@@ -94,8 +92,7 @@ public class SocketConnector implements Runnable {
         final SocketChannel socketChannel = SocketChannel.open();
         connectionManager.initSocket(socketChannel.socket());
         bindSocket(socketChannel);
-        final String message = "Connecting to " + socketAddress
-                               + ", timeout: " + timeout
+        final String message = "Connecting to " + socketAddress + ", timeout: " + timeout
                                + ", bind-any: " + connectionManager.ioService.isSocketBindAny();
         final Level level = silent ? Level.FINEST : Level.INFO;
         log(level, message);
@@ -114,14 +111,12 @@ public class SocketConnector implements Runnable {
                 memberSocketInterceptor.onConnect(socketChannel.socket());
             }
             socketChannel.configureBlocking(false);
-            final SocketChannelWrapper socketChannelWrapper = connectionManager
-                    .wrapSocketChannel(socketChannel, true);
+            final SocketChannelWrapper socketChannelWrapper = connectionManager.wrapSocketChannel(socketChannel, true);
             TcpIpConnection connection = connectionManager.assignSocketChannel(socketChannelWrapper);
             connectionManager.sendBindRequest(connection, address, true);
         } catch (Exception e) {
             closeSocket(socketChannel);
-            log(level, "Could not connect to: "
-                                      + socketAddress + ". Reason: " + e.getClass().getSimpleName()
+            log(level, "Could not connect to: " + socketAddress + ". Reason: " + e.getClass().getSimpleName()
                                       + "[" + e.getMessage() + "]");
             throw e;
         }

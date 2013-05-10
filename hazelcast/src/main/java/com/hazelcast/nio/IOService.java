@@ -40,10 +40,6 @@ public interface IOService {
 
     void onOutOfMemory(OutOfMemoryError oom);
 
-    void handleInterruptedException(Thread thread, RuntimeException e);
-
-    void onIOThreadStart();
-
     Address getThisAddress();
 
     void onFatalError(Exception e);

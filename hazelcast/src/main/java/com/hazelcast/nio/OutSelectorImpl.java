@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
- *  
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,20 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.clientv2;
+package com.hazelcast.nio;
 
-import java.util.logging.Level;
+import java.nio.channels.SelectionKey;
 
 /**
- * @mdogan 5/6/13
+ * @mdogan 5/10/13
  */
-public abstract class RunnableClientRequest extends ClientRequest implements Runnable {
+final class OutSelectorImpl extends AbstractIOSelector {
 
-    final void process() throws Exception {
-        try {
-            run();
-        } catch (Throwable e) {
-            clientEngine.getILogger(getClass()).log(Level.SEVERE, e.getMessage(), e);
+    OutSelectorImpl(IOService ioService, int id) {
+        super(ioService, ioService.getThreadPrefix() + "out-" + id);
+    }
+
+    protected void handleSelectionKey(SelectionKey sk) {
+        if (sk.isValid() && sk.isWritable()) {
+            sk.interestOps(sk.interestOps() & ~SelectionKey.OP_WRITE);
+            final SelectionHandler handler = (SelectionHandler) sk.attachment();
+            handler.handle();
         }
     }
 }

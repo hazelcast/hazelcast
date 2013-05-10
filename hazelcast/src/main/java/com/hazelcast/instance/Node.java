@@ -284,10 +284,6 @@ public class Node {
         return getThreadNamePrefix(poolName) + ".thread-";
     }
 
-    public void handleInterruptedException(Thread thread, Exception e) {
-        logger.log(Level.FINEST, thread.getName() + " is interrupted ", e);
-    }
-
     public boolean joined() {
         return joined.get();
     }

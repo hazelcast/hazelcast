@@ -16,6 +16,21 @@
 
 package com.hazelcast.nio;
 
-interface SelectionHandler {
-    void handle();
+import java.nio.channels.SelectionKey;
+
+/**
+ * @mdogan 5/10/13
+ */
+final class InSelectorImpl extends AbstractIOSelector {
+
+    InSelectorImpl(IOService ioService, int id) {
+        super(ioService, ioService.getThreadPrefix() + "in-" + id);
+    }
+
+    protected void handleSelectionKey(SelectionKey sk) {
+        if (sk.isValid() && sk.isReadable()) {
+            final SelectionHandler handler = (SelectionHandler) sk.attachment();
+            handler.handle();
+        }
+    }
 }

@@ -36,8 +36,6 @@ public final class TcpIpConnection implements Connection {
 
     private final TcpIpConnectionManager connectionManager;
 
-    private final InOutSelector inOutSelector;
-
     private volatile boolean live = true;
 
     private volatile Type type = Type.NONE;
@@ -52,15 +50,15 @@ public final class TcpIpConnection implements Connection {
 
     private ConnectionMonitor monitor;
 
-    public TcpIpConnection(TcpIpConnectionManager connectionManager, InOutSelector inOutSelector, int connectionId, SocketChannelWrapper socketChannel) {
-        this.inOutSelector = inOutSelector;
+    public TcpIpConnection(TcpIpConnectionManager connectionManager, IOSelector in, IOSelector out,
+                           int connectionId, SocketChannelWrapper socketChannel) {
         this.connectionId = connectionId;
         this.logger = connectionManager.ioService.getLogger(TcpIpConnection.class.getName());
         this.systemLogService = connectionManager.ioService.getSystemLogService();
         this.connectionManager = connectionManager;
         this.socketChannel = socketChannel;
-        this.writeHandler = new WriteHandler(this);
-        this.readHandler = new ReadHandler(this);
+        this.readHandler = new ReadHandler(this, in);
+        this.writeHandler = new WriteHandler(this, out);
     }
 
     public SystemLogService getSystemLogService() {
@@ -76,7 +74,10 @@ public final class TcpIpConnection implements Connection {
     }
 
     public boolean write(SocketWritable packet) {
-        if (!live) return false;
+        if (!live) {
+            logger.log(Level.FINEST, "Connection is closed, won't write packet -> " + packet);
+            return false;
+        }
         writeHandler.enqueueSocketWritable(packet);
         return true;
     }
@@ -140,20 +141,16 @@ public final class TcpIpConnection implements Connection {
         return writeHandler;
     }
 
-    public InOutSelector getInOutSelector() {
-        return inOutSelector;
-    }
-
     public boolean live() {
         return live;
     }
 
     public long lastWriteTime() {
-        return writeHandler.lastHandle;
+        return writeHandler.getLastHandle();
     }
 
     public long lastReadTime() {
-        return readHandler.lastHandle;
+        return readHandler.getLastHandle();
     }
 
     public Address getEndPoint() {
