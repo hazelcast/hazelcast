@@ -19,8 +19,6 @@ package com.hazelcast.map.clientv2;
 import com.hazelcast.clientv2.CallableClientRequest;
 import com.hazelcast.clientv2.ClientEndpoint;
 import com.hazelcast.clientv2.ClientEngine;
-import com.hazelcast.clientv2.RunnableClientRequest;
-import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.map.EntryEventFilter;
