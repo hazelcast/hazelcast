@@ -16,9 +16,7 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.core.RuntimeInterruptedException;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
@@ -31,28 +29,24 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-public final class InOutSelector extends Thread implements Runnable {
+abstract class AbstractIOSelector extends Thread implements IOSelector {
 
-    final static long TEN_SECOND_MILLIS = TimeUnit.SECONDS.toMillis(10);
+    protected final ILogger logger;
 
-    private final ILogger logger;
+    protected final Queue<Runnable> selectorQueue = new ConcurrentLinkedQueue<Runnable>();
 
-    private final Queue<Runnable> selectorQueue = new ConcurrentLinkedQueue<Runnable>();
+    protected final IOService ioService;
 
-    private final TcpIpConnectionManager connectionManager;
+    protected final int waitTime;
 
-    private final int waitTime;
+    protected final Selector selector;
 
-    private boolean live = true;
+    protected boolean live = true;
 
-    private long lastPublish = 0;
-
-    final Selector selector;
-
-    public InOutSelector(TcpIpConnectionManager connectionManager, int id) {
-        super(connectionManager.ioService.getThreadGroup(), connectionManager.ioService.getThreadPrefix() + id);
-        this.connectionManager = connectionManager;
-        this.logger = connectionManager.ioService.getLogger(this.getClass().getName());
+    protected AbstractIOSelector(IOService ioService, String tname) {
+        super(ioService.getThreadGroup(), tname);
+        this.ioService = ioService;
+        this.logger = ioService.getLogger(getClass().getName());
         this.waitTime = 5000;  // WARNING: This value has significant effect on idle CPU usage!
         Selector selectorTemp = null;
         try {
@@ -61,31 +55,33 @@ public final class InOutSelector extends Thread implements Runnable {
             handleSelectorException(e);
         }
         this.selector = selectorTemp;
-        live = true;
     }
 
-    public void shutdown() {
+    private final CountDownLatch shutdownLatch = new CountDownLatch(1);
+
+    public final void shutdown() {
         selectorQueue.clear();
         try {
-            final CountDownLatch l = new CountDownLatch(1);
             addTask(new Runnable() {
                 public void run() {
                     live = false;
-                    threadLocalShutdown();
-                    l.countDown();
+                    shutdownLatch.countDown();
                 }
             });
             interrupt();
-            l.await(3, TimeUnit.SECONDS);
         } catch (Throwable ignored) {
         }
     }
 
-    protected void threadLocalShutdown() {
+    public final void awaitShutdown() {
+        try {
+            shutdownLatch.await(3, TimeUnit.SECONDS);
+        } catch (InterruptedException ignored) {
+        }
     }
 
-    public void addTask(final Runnable runnable) {
-        selectorQueue.offer(runnable);
+    public final void addTask(Runnable runnable) {
+        selectorQueue.add(runnable);
     }
 
     private void processSelectionQueue() {
@@ -99,30 +95,21 @@ public final class InOutSelector extends Thread implements Runnable {
         }
     }
 
-    public void publishUtilization() {
-    }
-
     public final void run() {
         try {
-            connectionManager.ioService.onIOThreadStart();
             //noinspection WhileLoopSpinsOnField
             while (live) {
-                long currentMillis = Clock.currentTimeMillis();
-                if ((currentMillis - lastPublish) > TEN_SECOND_MILLIS) {
-                    publishUtilization();
-                    lastPublish = currentMillis;
-                }
                 processSelectionQueue();
-                if (!live) return;
-                if (isInterrupted()) {
-                    connectionManager.ioService.handleInterruptedException(this, new RuntimeInterruptedException());
+                if (!live || isInterrupted()) {
+                    logger.log(Level.FINEST, getName() + " is interrupted!");
                     live = false;
                     return;
                 }
                 int selectedKeyCount;
                 try {
                     selectedKeyCount = selector.select(waitTime);
-                } catch (Throwable exp) {
+                } catch (Throwable e) {
+                    logger.log(Level.WARNING, e.toString());
                     continue;
                 }
                 if (selectedKeyCount == 0) {
@@ -134,38 +121,40 @@ public final class InOutSelector extends Thread implements Runnable {
                     final SelectionKey sk = it.next();
                     try {
                         it.remove();
-                        if (sk.isValid() && sk.isReadable()) {
-                            TcpIpConnection connection = (TcpIpConnection) sk.attachment();
-                            connection.getReadHandler().handle();
-                        }
-                        if (sk.isValid() && sk.isWritable()) {
-                            sk.interestOps(sk.interestOps() & ~SelectionKey.OP_WRITE);
-                            TcpIpConnection connection = (TcpIpConnection) sk.attachment();
-                            connection.getWriteHandler().handle();
-                        }
+                        handleSelectionKey(sk);
                     } catch (Throwable e) {
                         handleSelectorException(e);
                     }
                 }
             }
         } catch (OutOfMemoryError e) {
-            connectionManager.ioService.onOutOfMemory(e);
+            ioService.onOutOfMemory(e);
         } catch (Throwable e) {
-            logger.log(Level.WARNING, "unhandled exception in " + Thread.currentThread().getName(), e);
+            logger.log(Level.WARNING, "Unhandled exception in " + getName(), e);
         } finally {
             try {
-                logger.log(Level.FINEST, "closing selector " + Thread.currentThread().getName());
+                logger.log(Level.FINEST, "Closing selector " + getName());
                 selector.close();
             } catch (final Exception ignored) {
             }
         }
     }
 
-    protected void handleSelectorException(final Throwable e) {
-        String msg = "Selector exception at  " + Thread.currentThread().getName() + ", cause= " + e.toString();
+    protected abstract void handleSelectionKey(SelectionKey sk);
+
+    private void handleSelectorException(final Throwable e) {
+        String msg = "Selector exception at  " + getName() + ", cause= " + e.toString();
         logger.log(Level.WARNING, msg, e);
         if (e instanceof OutOfMemoryError) {
-            connectionManager.ioService.onOutOfMemory((OutOfMemoryError) e);
+            ioService.onOutOfMemory((OutOfMemoryError) e);
         }
+    }
+
+    public final Selector getSelector() {
+        return selector;
+    }
+
+    public final void wakeup() {
+        selector.wakeup();
     }
 }

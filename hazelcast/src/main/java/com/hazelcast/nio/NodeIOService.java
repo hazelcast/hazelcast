@@ -59,13 +59,6 @@ public class NodeIOService implements IOService {
         OutOfMemoryErrorDispatcher.onOutOfMemory(oom);
     }
 
-    public void handleInterruptedException(Thread thread, RuntimeException e) {
-        node.handleInterruptedException(thread, e);
-    }
-
-    public void onIOThreadStart() {
-    }
-
     public Address getThisAddress() {
         return node.getThisAddress();
     }

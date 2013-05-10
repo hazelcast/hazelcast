@@ -32,18 +32,15 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
 
     protected final TcpIpConnection connection;
 
-    protected final InOutSelector inOutSelector;
-
     protected final TcpIpConnectionManager connectionManager;
 
     protected final SystemLogService systemLogService;
 
-    protected SelectionKey sk = null;
+    private SelectionKey sk = null;
 
-    public AbstractSelectionHandler(final TcpIpConnection connection, final InOutSelector inOutSelector) {
+    public AbstractSelectionHandler(final TcpIpConnection connection) {
         super();
         this.connection = connection;
-        this.inOutSelector = inOutSelector;
         this.socketChannel = connection.getSocketChannelWrapper();
         this.connectionManager = connection.getConnectionManager();
         this.logger = connectionManager.ioService.getLogger(this.getClass().getName());
@@ -85,11 +82,11 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
                 sk = socketChannel.keyFor(selector);
             }
             if (sk == null) {
-                sk = socketChannel.register(selector, operation, connection);
+                sk = socketChannel.register(selector, operation, this);
             } else {
                 sk.interestOps(sk.interestOps() | operation);
-                if (sk.attachment() != connection) {
-                    sk.attach(connection);
+                if (sk.attachment() != this) {
+                    sk.attach(this);
                 }
             }
         } catch (Throwable e) {

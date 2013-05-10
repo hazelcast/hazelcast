@@ -16,6 +16,23 @@
 
 package com.hazelcast.nio;
 
-interface SelectionHandler {
-    void handle();
+import java.nio.channels.Selector;
+
+/**
+ * @mdogan 5/9/13
+ */
+public interface IOSelector {
+
+    Selector getSelector();
+
+    void addTask(Runnable runnable);
+
+    void wakeup();
+
+    void start();
+
+    void shutdown();
+
+    void awaitShutdown();
+
 }

@@ -25,63 +25,47 @@ import java.nio.channels.SelectionKey;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 public final class WriteHandler extends AbstractSelectionHandler implements Runnable {
 
-    private final Queue<SocketWritable> writeQueue = new ConcurrentLinkedQueue<SocketWritable>() {
-        final AtomicInteger size = new AtomicInteger();
-
-        @Override
-        public boolean offer(SocketWritable socketWritable) {
-            if (super.offer(socketWritable)) {
-                size.incrementAndGet();
-                return true;
-            }
-            return false;
-        }
-
-        @Override
-        public SocketWritable poll() {
-            final SocketWritable socketWritable = super.poll();
-            if (socketWritable != null) {
-                size.decrementAndGet();
-            }
-            return socketWritable;
-        }
-
-        @Override
-        public int size() {
-            return size.get();
-        }
-    };
+    private final Queue<SocketWritable> writeQueue = new ConcurrentLinkedQueue<SocketWritable>();
 
     private final AtomicBoolean informSelector = new AtomicBoolean(true);
 
     private final ByteBuffer buffer;
 
+    private final IOSelector ioSelector;
+
     private boolean ready = false;
 
-    private SocketWritable lastWritable = null;
+    private SocketWritable lastWritable;
 
-    private volatile SocketWriter socketWriter = null; // accessed from ReadHandler
+    private volatile SocketWriter socketWriter;
 
-    private volatile long lastRegistration = 0;
+    private volatile long lastHandle = 0;
 
-    volatile long lastHandle = 0;
-
-    WriteHandler(TcpIpConnection connection) {
-        super(connection, connection.getInOutSelector());
-        buffer = ByteBuffer.allocate(connectionManager.SOCKET_SEND_BUFFER_SIZE);
+    WriteHandler(TcpIpConnection connection, IOSelector ioSelector) {
+        super(connection);
+        this.ioSelector = ioSelector;
+        buffer = ByteBuffer.allocate(connectionManager.socketSendBufferSize);
     }
 
-    void setProtocol(String protocol) {
+    // accessed from ReadHandler
+    void setProtocol(final String protocol) {
+        ioSelector.addTask(new Runnable() {
+            public void run() {
+                createWriter(protocol);
+            }
+        });
+    }
+
+    private void createWriter(String protocol) {
         if (socketWriter == null) {
             if (Protocols.CLUSTER.equals(protocol)) {
                 socketWriter = new SocketPacketWriter(connection);
                 buffer.put(Protocols.CLUSTER.getBytes());
-                inOutSelector.addTask(this);
+                registerWrite();
             } else if (Protocols.CLIENT_TEXT.equals(protocol)) {
                 socketWriter = new SocketProtocolWriter(connection);
             } else if (Protocols.CLIENT_BINARY.equals(protocol)) {
@@ -104,8 +88,8 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
             // already in the task queue.
             // we can have a counter to check this later on.
             // for now, wake up regardless.
-            inOutSelector.addTask(this);
-            inOutSelector.selector.wakeup();
+            ioSelector.addTask(this);
+            ioSelector.wakeup();
         }
     }
 
@@ -113,33 +97,24 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         return writeQueue.poll();
     }
 
+    @SuppressWarnings("unchecked")
     public void handle() {
         lastHandle = Clock.currentTimeMillis();
-        if (socketWriter == null) {
-            setProtocol(Protocols.CLUSTER);
-        }
-        if (lastWritable == null) {
-            if ((lastWritable = poll()) == null && buffer.position() == 0) {
-                ready = true;
-                return;
-            }
-        }
-        if (!connection.live())
+        if (!connection.live()) {
             return;
+        }
+        if (socketWriter == null) {
+            createWriter(Protocols.CLUSTER);
+        }
+        if (lastWritable == null && (lastWritable = poll()) == null && buffer.position() == 0) {
+            ready = true;
+            return;
+        }
         try {
-            while (buffer.hasRemaining()) {
-                if (lastWritable == null) {
+            while (buffer.hasRemaining() && lastWritable != null) {
+                boolean complete = socketWriter.write(lastWritable, buffer);
+                if (complete) {
                     lastWritable = poll();
-                }
-                if (lastWritable != null) {
-                    boolean complete = socketWriter.write(lastWritable, buffer);
-                    if (complete) {
-                        lastWritable = null;
-                    } else {
-                        if (buffer.hasRemaining()) {
-                            break;
-                        }
-                    }
                 } else {
                     break;
                 }
@@ -180,8 +155,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
     }
 
     private void registerWrite() {
-        lastRegistration = Clock.currentTimeMillis();
-        registerOp(inOutSelector.selector, SelectionKey.OP_WRITE);
+        registerOp(ioSelector.getSelector(), SelectionKey.OP_WRITE);
     }
 
     @Override
@@ -189,7 +163,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         while (poll() != null) ;
     }
 
-    public int size() {
-        return writeQueue.size();
+    long getLastHandle() {
+        return lastHandle;
     }
 }
