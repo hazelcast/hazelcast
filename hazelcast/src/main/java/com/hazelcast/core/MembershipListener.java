@@ -20,6 +20,12 @@ import java.util.EventListener;
 
 /**
  * Cluster membership listener.
+ *
+ * The MembershipListener will never be called concurrently and all MembershipListeners will receive the events
+ * in the same order.
+ *
+ * @see {@link InitialMembershipListener}
+ * @see {@link Cluster#addMembershipListener(MembershipListener)}
  */
 public interface MembershipListener extends EventListener {
 

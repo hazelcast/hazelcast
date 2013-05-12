@@ -17,12 +17,17 @@
 package com.hazelcast.core;
 
 import java.util.EventObject;
+import java.util.Set;
 
 /**
  * Membership event fired when a new member is added
  * to the cluster and/or when a member leaves the cluster.
  *
+ * If you also need to receive the initial members of the cluster, you can have a look at the {@link InitialMembershipListener}.
+ *
  * @see MembershipListener
+ * @see InitialMembershipEvent
+ * @see InitialMembershipListener
  */
 public class MembershipEvent extends EventObject {
 
@@ -32,14 +37,36 @@ public class MembershipEvent extends EventObject {
 
     public static final int MEMBER_REMOVED = 3;
 
-    private Member member;
+    private final Set<Member> members;
 
-    private int eventType;
+    private final Member member;
 
-    public MembershipEvent(Cluster cluster, Member member, int eventType) {
+    private final int eventType;
+
+    public MembershipEvent(Cluster cluster, Member member, int eventType, Set<Member> members) {
         super(cluster);
         this.member = member;
         this.eventType = eventType;
+        this.members = members;
+    }
+
+    /**
+     * Returns a consistent view of the the members exactly after this MembershipEvent has been processed. So if a
+     * member is removed, the returned set will not include this member. And if a member is added it will include
+     * this member.
+     *
+     * The problem with calling the {@link com.hazelcast.core.Cluster#getMembers()} is that the content could already
+     * have changed while processing this event so it becomes very difficult to write a deterministic algorithm since
+     * you can't get a deterministic view of the members. This method solves that problem.
+     *
+     * The set is immutable and ordered. For more information see {@link com.hazelcast.core.Cluster#getMembers()}.
+     *
+     * On the client null is returned to indicate that this functionality is not implemented.
+     *
+     * @return the members at the moment after this event. Or null if this event is send on the client side.
+     */
+    public Set<Member> getMembers() {
+        return members;
     }
 
     /**

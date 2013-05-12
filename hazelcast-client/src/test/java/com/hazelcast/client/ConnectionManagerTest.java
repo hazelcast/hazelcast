@@ -149,7 +149,7 @@ public class ConnectionManagerTest {
         Cluster cluster = mock(Cluster.class);
         Member member = mock(Member.class);
         when(member.getInetSocketAddress()).thenReturn(inetSocketAddress);
-        MembershipEvent membershipEvent = new MembershipEvent(cluster, member, MembershipEvent.MEMBER_ADDED);
+        MembershipEvent membershipEvent = new MembershipEvent(cluster, member, MembershipEvent.MEMBER_ADDED,null);
         connectionManager.memberAdded(membershipEvent);
         connectionManager.getClusterMembers().contains(inetSocketAddress);
         assertEquals(1, connectionManager.getClusterMembers().size());
@@ -177,7 +177,7 @@ public class ConnectionManagerTest {
         InetSocketAddress inetSocketAddress2 = new InetSocketAddress("hostname", 5702);
         Member member = mock(Member.class);
         when(member.getInetSocketAddress()).thenReturn(inetSocketAddress2);
-        MembershipEvent membershipEvent = new MembershipEvent(cluster, member, MembershipEvent.MEMBER_ADDED);
+        MembershipEvent membershipEvent = new MembershipEvent(cluster, member, MembershipEvent.MEMBER_ADDED, null);
         connectionManager.memberAdded(membershipEvent);
         connectionManager.getClusterMembers().contains(inetSocketAddress2);
         assertEquals(2, connectionManager.getClusterMembers().size());
@@ -203,7 +203,7 @@ public class ConnectionManagerTest {
         Cluster cluster = mock(Cluster.class);
         Member member = mock(Member.class);
         when(member.getInetSocketAddress()).thenReturn(inetSocketAddress);
-        MembershipEvent membershipEvent = new MembershipEvent(cluster, member, MembershipEvent.MEMBER_REMOVED);
+        MembershipEvent membershipEvent = new MembershipEvent(cluster, member, MembershipEvent.MEMBER_REMOVED, null);
         connectionManager.memberRemoved(membershipEvent);
         assertEquals(0, connectionManager.getClusterMembers().size());
         assertArrayEquals(new Object[0], lifecycleEvents.toArray());
