@@ -4,3 +4,4 @@ com.hazelcast.client.ClientPortableHook
 com.hazelcast.concurrent.lock.client.LockPortableHook
 com.hazelcast.queue.QueuePortableHook
 com.hazelcast.collection.CollectionPortableHook
+com.hazelcast.concurrent.semaphore.SemaphorePortableHook
