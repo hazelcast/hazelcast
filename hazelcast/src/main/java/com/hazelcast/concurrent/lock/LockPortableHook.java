@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.lock.client;
+package com.hazelcast.concurrent.lock;
 
+import com.hazelcast.concurrent.lock.client.IsLockedRequest;
+import com.hazelcast.concurrent.lock.client.LockRequest;
+import com.hazelcast.concurrent.lock.client.UnlockRequest;
 import com.hazelcast.nio.serialization.*;
 
 import java.util.Collection;
@@ -25,7 +28,7 @@ import java.util.Collection;
  */
 public class LockPortableHook implements PortableHook {
 
-    static final int FACTORY_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.LOCK_PORTABLE_FACTORY, -15);
+    public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.LOCK_PORTABLE_FACTORY, -15);
 
     @Override
     public int getFactoryId() {
@@ -38,8 +41,10 @@ public class LockPortableHook implements PortableHook {
             public Portable create(int classId) {
                 if (classId == 1) {
                     return new LockRequest();
-                } else {
+                } else if (classId == 2) {
                     return new UnlockRequest();
+                } else {
+                    return new IsLockedRequest();
                 }
             }
         };

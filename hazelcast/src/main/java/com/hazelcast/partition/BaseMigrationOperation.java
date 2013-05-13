@@ -59,14 +59,14 @@ public abstract class BaseMigrationOperation extends AbstractOperation
         return false;
     }
 
-    public final ExceptionAction getActionOnException(Throwable throwable) {
+    public final ExceptionAction onException(Throwable throwable) {
         if (throwable instanceof MemberLeftException) {
             return ExceptionAction.THROW_EXCEPTION;
         }
         if (!migrationInfo.isValid()) {
             return ExceptionAction.THROW_EXCEPTION;
         }
-        return super.getActionOnException(throwable);
+        return super.onException(throwable);
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

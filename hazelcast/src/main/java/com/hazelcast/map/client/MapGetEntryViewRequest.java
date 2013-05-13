@@ -23,13 +23,14 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public class MapGetEntryViewRequest extends KeyBasedClientRequest {
+public class MapGetEntryViewRequest extends KeyBasedClientRequest implements Portable {
 
     private String name;
     private Data key;

@@ -46,8 +46,7 @@ public class MapLockRequest extends AbstractLockRequest {
 
     @Override
     protected ObjectNamespace getNamespace() {
-        ObjectNamespace namespace = new DefaultObjectNamespace(MapService.SERVICE_NAME, name);
-        return namespace;
+        return new DefaultObjectNamespace(MapService.SERVICE_NAME, name);
     }
 
     @Override

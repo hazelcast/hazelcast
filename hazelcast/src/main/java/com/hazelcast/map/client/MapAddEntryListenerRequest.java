@@ -27,13 +27,14 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.EventFilter;
 
 import java.io.IOException;
 
-public class MapAddEntryListenerRequest extends CallableClientRequest {
+public class MapAddEntryListenerRequest extends CallableClientRequest implements Portable {
 
     private String name;
     private Data key;

@@ -17,8 +17,16 @@
 package com.hazelcast.map.client;
 
 import com.hazelcast.client.AllPartitionsClientRequest;
+<<<<<<< HEAD
 import com.hazelcast.map.*;
 import com.hazelcast.map.MapKeySetOperationFactory;
+=======
+import com.hazelcast.map.MapKeySet;
+import com.hazelcast.map.MapKeySetOperationFactory;
+import com.hazelcast.map.MapPortableHook;
+import com.hazelcast.map.MapService;
+import com.hazelcast.nio.serialization.Portable;
+>>>>>>> 335220655de9f901f32ee0756a0a54de1e394ad3
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.OperationFactory;
@@ -28,7 +36,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class MapKeySetRequest extends AllPartitionsClientRequest {
+public class MapKeySetRequest extends AllPartitionsClientRequest implements Portable {
 
     private String name;
 

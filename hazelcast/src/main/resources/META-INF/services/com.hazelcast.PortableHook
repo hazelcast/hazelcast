@@ -1,6 +1,8 @@
 com.hazelcast.spi.impl.SpiPortableHook
 com.hazelcast.map.MapPortableHook
 com.hazelcast.client.ClientPortableHook
-com.hazelcast.concurrent.lock.client.LockPortableHook
+com.hazelcast.concurrent.lock.LockPortableHook
 com.hazelcast.queue.QueuePortableHook
 com.hazelcast.collection.CollectionPortableHook
+com.hazelcast.concurrent.semaphore.SemaphorePortableHook
+com.hazelcast.executor.ExecutorPortableHook

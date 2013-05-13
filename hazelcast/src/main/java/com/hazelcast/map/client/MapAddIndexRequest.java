@@ -16,10 +16,11 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.*;
+import com.hazelcast.client.AllPartitionsClientRequest;
 import com.hazelcast.map.AddIndexOperationFactory;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
+import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.OperationFactory;
@@ -27,7 +28,7 @@ import com.hazelcast.spi.OperationFactory;
 import java.io.IOException;
 import java.util.Map;
 
-public class MapAddIndexRequest extends AllPartitionsClientRequest {
+public class MapAddIndexRequest extends AllPartitionsClientRequest implements Portable {
 
     private String name;
     private String attribute;

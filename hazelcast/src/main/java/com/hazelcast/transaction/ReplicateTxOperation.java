@@ -73,11 +73,11 @@ public final class ReplicateTxOperation extends Operation {
     }
 
     @Override
-    public ExceptionAction getActionOnException(Throwable throwable) {
+    public ExceptionAction onException(Throwable throwable) {
         if (throwable instanceof MemberLeftException) {
             return ExceptionAction.THROW_EXCEPTION;
         }
-        return super.getActionOnException(throwable);
+        return super.onException(throwable);
     }
 
     @Override

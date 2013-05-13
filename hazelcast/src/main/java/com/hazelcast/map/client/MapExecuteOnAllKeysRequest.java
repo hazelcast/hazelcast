@@ -23,6 +23,7 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.map.PartitionWideEntryOperationFactory;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.OperationFactory;
@@ -31,7 +32,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MapExecuteOnAllKeysRequest extends AllPartitionsClientRequest {
+public class MapExecuteOnAllKeysRequest extends AllPartitionsClientRequest implements Portable {
 
     private String name;
     private EntryProcessor processor;

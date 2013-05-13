@@ -20,12 +20,13 @@ import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
+import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
 
-public class MapGetLocalMapStatsRequest extends CallableClientRequest {
+public class MapGetLocalMapStatsRequest extends CallableClientRequest implements Portable {
 
     private String name;
 

@@ -25,6 +25,7 @@ import com.hazelcast.map.RemoveInterceptorOperationFactory;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.OperationFactory;
@@ -34,7 +35,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 
-public class MapRemoveInterceptorRequest extends MultiTargetClientRequest {
+public class MapRemoveInterceptorRequest extends MultiTargetClientRequest implements Portable {
 
     private String name;
     private MapInterceptor mapInterceptor;

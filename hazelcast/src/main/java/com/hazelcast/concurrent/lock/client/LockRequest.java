@@ -17,6 +17,7 @@
 package com.hazelcast.concurrent.lock.client;
 
 import com.hazelcast.concurrent.lock.InternalLockNamespace;
+import com.hazelcast.concurrent.lock.LockPortableHook;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;

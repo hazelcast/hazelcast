@@ -20,6 +20,11 @@ import com.hazelcast.client.AllPartitionsClientRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.SizeOperationFactory;
+<<<<<<< HEAD
+=======
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.Portable;
+>>>>>>> 335220655de9f901f32ee0756a0a54de1e394ad3
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.OperationFactory;
@@ -27,7 +32,7 @@ import com.hazelcast.spi.OperationFactory;
 import java.io.IOException;
 import java.util.Map;
 
-public class MapSizeRequest extends AllPartitionsClientRequest {
+public class MapSizeRequest extends AllPartitionsClientRequest implements Portable {
 
     private String name;
 

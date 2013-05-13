@@ -34,7 +34,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.logging.Level;
 
-public final class AuthenticationRequest extends CallableClientRequest {
+public final class AuthenticationRequest extends CallableClientRequest implements Portable {
 
     private Credentials credentials;
 

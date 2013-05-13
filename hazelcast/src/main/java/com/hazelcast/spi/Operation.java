@@ -17,7 +17,6 @@
 package com.hazelcast.spi;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
@@ -206,15 +205,7 @@ public abstract class Operation implements DataSerializable {
         return this;
     }
 
-    public final ExceptionAction onException(Throwable throwable) {
-        if (this instanceof BackupOperation && throwable instanceof MemberLeftException) {
-            return ExceptionAction.THROW_EXCEPTION;
-        }
-        final ExceptionAction action = getActionOnException(throwable);
-        return action != null ? action : ExceptionAction.THROW_EXCEPTION;
-    }
-
-    protected ExceptionAction getActionOnException(Throwable throwable) {
+    public ExceptionAction onException(Throwable throwable) {
         return (throwable instanceof RetryableException)
                 ? ExceptionAction.RETRY_INVOCATION : ExceptionAction.THROW_EXCEPTION;
     }

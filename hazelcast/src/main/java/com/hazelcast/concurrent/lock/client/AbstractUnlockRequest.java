@@ -22,6 +22,7 @@ import com.hazelcast.concurrent.lock.UnlockOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.ObjectNamespace;
@@ -32,7 +33,7 @@ import java.io.IOException;
 /**
  * @mdogan 5/3/13
  */
-public abstract class AbstractUnlockRequest extends KeyBasedClientRequest {
+public abstract class AbstractUnlockRequest extends KeyBasedClientRequest implements Portable  {
 
     private Data key;
 
