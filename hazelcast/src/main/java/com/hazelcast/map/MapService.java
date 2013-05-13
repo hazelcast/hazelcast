@@ -40,9 +40,9 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.deprecated.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.PartitionInfo;
-import com.hazelcast.partition.PartitionService;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
@@ -976,7 +976,7 @@ public class MapService implements ManagedService, MigrationAwareService,
 
         int backupCount = mapContainer.getTotalBackupCount();
         ClusterService clusterService = nodeEngine.getClusterService();
-        final PartitionService partitionService = nodeEngine.getPartitionService();
+        final IPartitionService partitionService = nodeEngine.getPartitionService();
 
         Address thisAddress = clusterService.getThisAddress();
         for (int partition = 0; partition < partitionService.getPartitionCount(); partition++) {

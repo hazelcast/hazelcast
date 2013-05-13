@@ -26,7 +26,7 @@ import com.hazelcast.deprecated.nio.Protocol;
 import com.hazelcast.deprecated.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.MigrationListener;
-import com.hazelcast.partition.Partition;
+import com.hazelcast.core.Partition;
 
 import java.net.UnknownHostException;
 import java.util.*;

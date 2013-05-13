@@ -17,7 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.*;
-import com.hazelcast.partition.Partition;
+import com.hazelcast.core.Partition;
 import org.junit.Ignore;
 import org.junit.Test;
 

@@ -23,7 +23,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.partition.Partition;
+import com.hazelcast.core.Partition;
 import org.junit.Ignore;
 
 import java.io.InputStream;

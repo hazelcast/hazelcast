@@ -32,7 +32,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationContext;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.MigrationInfo;
-import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.transaction.TransactionManagerService;
@@ -114,7 +114,7 @@ public class NodeEngineImpl implements NodeEngine {
         return executionService;
     }
 
-    public PartitionService getPartitionService() {
+    public IPartitionService getPartitionService() {
         return node.getPartitionService();
     }
 

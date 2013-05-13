@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.partition.Partition;
+import com.hazelcast.core.Partition;
 
 import java.util.LinkedList;
 import java.util.List;
