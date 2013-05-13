@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map;
+package com.hazelcast.map.finalTest;
 
 import com.hazelcast.client.AuthenticationRequest;
 import com.hazelcast.client.ClientPortableHook;
@@ -28,6 +28,8 @@ import com.hazelcast.core.IQueue;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.instance.ThreadContext;
+import com.hazelcast.map.MapKeySet;
+import com.hazelcast.map.MapValueCollection;
 import com.hazelcast.map.client.*;
 import com.hazelcast.nio.serialization.*;
 import com.hazelcast.queue.SerializableCollectionContainer;
@@ -278,22 +280,6 @@ public class MapBinaryClientTest {
     public void testVoid() throws IOException {
         c.send(new MapPutRequest(mapName, TestUtil.toData(1), TestUtil.toData(5), ThreadContext.getThreadId()));
         assertEquals(3, c.receive());
-    }
-
-    @Test
-    public void testClear() throws Exception {
-
-        IQueue q = hz.getQueue(mapName);
-        q.offer("item1");
-        q.offer("item2");
-        q.offer("item3");
-
-        c.send(new ClearRequest(mapName));
-        Object result = c.receive();
-        assertTrue((Boolean) result);
-        assertEquals(0, q.size());
-
-
     }
 
     static class Client {

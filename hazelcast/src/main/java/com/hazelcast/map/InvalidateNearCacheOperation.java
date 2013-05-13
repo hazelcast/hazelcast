@@ -16,6 +16,7 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.map.MapService;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
