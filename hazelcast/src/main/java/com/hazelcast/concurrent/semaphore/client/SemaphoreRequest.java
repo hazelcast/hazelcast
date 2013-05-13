@@ -20,6 +20,7 @@ import com.hazelcast.client.PartitionClientRequest;
 import com.hazelcast.concurrent.semaphore.SemaphorePortableHook;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 
@@ -28,7 +29,7 @@ import java.io.IOException;
 /**
  * @ali 5/13/13
  */
-public abstract class SemaphoreRequest extends PartitionClientRequest {
+public abstract class SemaphoreRequest extends PartitionClientRequest implements Portable {
 
     String name;
 
