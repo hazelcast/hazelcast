@@ -26,6 +26,10 @@ public class MapPutTransientRequest extends MapPutRequest {
     public MapPutTransientRequest() {
     }
 
+    public MapPutTransientRequest(String name, Data key, Data value, int threadId) {
+        super(name, key, value, threadId);
+    }
+
     public MapPutTransientRequest(String name, Data key, Data value, int threadId, long ttl) {
         super(name, key, value, threadId, ttl);
     }

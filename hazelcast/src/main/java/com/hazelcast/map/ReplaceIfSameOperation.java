@@ -29,9 +29,9 @@ public class ReplaceIfSameOperation extends BasePutOperation {
     private transient boolean successful = false;
 
 
-    public ReplaceIfSameOperation(String name, Data dataKey, Data oldValue, Data value) {
+    public ReplaceIfSameOperation(String name, Data dataKey, Data testValue, Data value) {
         super(name, dataKey, value);
-        testValue = oldValue;
+        this.testValue = testValue;
     }
 
     public ReplaceIfSameOperation() {

@@ -17,10 +17,7 @@
 package com.hazelcast.map.client;
 
 import com.hazelcast.client.AllPartitionsClientRequest;
-import com.hazelcast.map.MapKeySet;
-import com.hazelcast.map.MapKeySetOperationFactory;
-import com.hazelcast.map.MapPortableHook;
-import com.hazelcast.map.MapService;
+import com.hazelcast.map.*;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.OperationFactory;
@@ -54,7 +51,7 @@ public class MapKeySetRequest extends AllPartitionsClientRequest {
             Set keys = ((MapKeySet) service.toObject(o)).getKeySet();
             res.addAll(keys);
         }
-        return res;
+        return new MapKeySet(res);
     }
 
     public String getServiceName() {

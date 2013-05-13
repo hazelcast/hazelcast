@@ -28,9 +28,9 @@ public class RemoveIfSameOperation extends BaseRemoveOperation {
     private Data testValue;
     private transient boolean successful = false;
 
-    public RemoveIfSameOperation(String name, Data dataKey, Data oldValue) {
+    public RemoveIfSameOperation(String name, Data dataKey, Data value) {
         super(name, dataKey);
-        testValue = oldValue;
+        testValue = value;
     }
 
     public RemoveIfSameOperation() {

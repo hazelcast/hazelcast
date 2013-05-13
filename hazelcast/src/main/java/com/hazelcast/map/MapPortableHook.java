@@ -130,6 +130,12 @@ public class MapPortableHook implements PortableHook {
                     }
                 };
 
+                constructors[REMOVE_IF_SAME] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapRemoveIfSameRequest();
+                    }
+                };
+
                 constructors[DELETE] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
                         return new MapDeleteRequest();
@@ -279,6 +285,7 @@ public class MapPortableHook implements PortableHook {
                         return new PortableEntryEvent();
                     }
                 };
+
 
             }
 

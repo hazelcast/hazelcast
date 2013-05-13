@@ -218,7 +218,10 @@ public class PartitionRecordStore implements RecordStore {
         final ConcurrentMap<Data, Record> temp = new ConcurrentHashMap<Data, Record>(locks.size());
 //        keys with locks will be re-inserted
         for (Data key : locks) {
-            temp.put(key, records.get(key));
+            Record record = records.get(key);
+            if (record != null) {
+                temp.put(key, record);
+            }
         }
         records.clear();
         records.putAll(temp);
@@ -421,7 +424,7 @@ public class PartitionRecordStore implements RecordStore {
                 return true;
             }
             // same with the existing entry so no need to mapstore etc operations.
-            if(mapService.compare(name, newValue, oldValue)){
+            if (mapService.compare(name, newValue, oldValue)) {
                 return true;
             }
             mapStoreWrite(record, dataKey, newValue);
