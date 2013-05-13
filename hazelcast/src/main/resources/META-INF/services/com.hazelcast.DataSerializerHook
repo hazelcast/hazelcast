@@ -1,5 +1,5 @@
-com.hazelcast.nio.NioDataSerializerHook
 com.hazelcast.cluster.ClusterDataSerializerHook
+com.hazelcast.partition.PartitionDataSerializerHook
 com.hazelcast.spi.impl.SpiDataSerializerHook
 com.hazelcast.map.MapDataSerializerHook
 com.hazelcast.queue.QueueDataSerializerHook

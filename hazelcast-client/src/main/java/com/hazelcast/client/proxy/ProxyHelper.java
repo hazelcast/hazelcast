@@ -33,7 +33,7 @@ import com.hazelcast.deprecated.nio.Protocol;
 import com.hazelcast.deprecated.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.partition.Partition;
+import com.hazelcast.core.Partition;
 
 import java.io.IOException;
 import java.io.Serializable;

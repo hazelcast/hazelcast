@@ -17,7 +17,7 @@
 package com.hazelcast.examples;
 
 import com.hazelcast.core.*;
-import com.hazelcast.partition.Partition;
+import com.hazelcast.core.Partition;
 import com.hazelcast.util.Clock;
 
 import java.io.*;

@@ -18,7 +18,7 @@ package com.hazelcast.deprecated.partition.client;
 
 import com.hazelcast.instance.Node;
 import com.hazelcast.deprecated.nio.Protocol;
-import com.hazelcast.partition.Partition;
+import com.hazelcast.core.Partition;
 import com.hazelcast.partition.PartitionServiceImpl;
 
 import java.util.ArrayList;

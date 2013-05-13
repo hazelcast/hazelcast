@@ -14,15 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.partition;
-
-import com.hazelcast.core.Member;
-
-/**
- * will be moved to com.hazelcast.core package
- */
+package com.hazelcast.core;
 
 public interface Partition {
+
     int getPartitionId();
 
     Member getOwner();

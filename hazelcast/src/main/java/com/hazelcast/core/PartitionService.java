@@ -17,7 +17,6 @@
 package com.hazelcast.core;
 
 import com.hazelcast.partition.MigrationListener;
-import com.hazelcast.partition.Partition;
 
 import java.util.Set;
 

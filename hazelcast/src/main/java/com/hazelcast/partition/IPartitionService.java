@@ -26,7 +26,7 @@ import java.util.Map;
 /**
  * @mdogan 1/24/13
  */
-public interface PartitionService extends CoreService {
+public interface IPartitionService extends CoreService {
 
     Address getPartitionOwner(int partitionId);
 

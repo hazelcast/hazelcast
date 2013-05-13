@@ -6,3 +6,5 @@ com.hazelcast.queue.QueuePortableHook
 com.hazelcast.collection.CollectionPortableHook
 com.hazelcast.concurrent.semaphore.SemaphorePortableHook
 com.hazelcast.executor.ExecutorPortableHook
+com.hazelcast.concurrent.atomiclong.AtomicLongPortableHook
+

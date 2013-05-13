@@ -23,14 +23,14 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.IPartitionService;
 
 /**
  * @mdogan 4/25/13
  */
 public interface ClientEngine {
 
-    PartitionService getPartitionService();
+    IPartitionService getPartitionService();
 
     ClusterService getClusterService();
 
