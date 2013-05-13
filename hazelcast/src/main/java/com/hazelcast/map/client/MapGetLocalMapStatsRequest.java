@@ -41,7 +41,6 @@ public class MapGetLocalMapStatsRequest extends CallableClientRequest implements
     public Object call() throws Exception {
         MapService mapService = getService();
         LocalMapStatsImpl mapStats = mapService.createLocalMapStats(name);
-        // todo make mapstats portable
         return mapStats;
     }
 

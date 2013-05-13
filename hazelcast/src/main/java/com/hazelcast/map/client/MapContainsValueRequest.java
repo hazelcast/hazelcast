@@ -73,14 +73,12 @@ public class MapContainsValueRequest extends AllPartitionsClientRequest implemen
 
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
-        // ...
         final ObjectDataOutput out = writer.getRawDataOutput();
         value.writeData(out);
     }
 
     public void readPortable(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
-        //....
         final ObjectDataInput in = reader.getRawDataInput();
         value = new Data();
         value.readData(in);

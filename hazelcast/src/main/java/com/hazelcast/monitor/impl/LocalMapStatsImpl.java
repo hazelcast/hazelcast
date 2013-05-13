@@ -16,15 +16,17 @@
 
 package com.hazelcast.monitor.impl;
 
+import com.hazelcast.map.MapDataSerializerHook;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class LocalMapStatsImpl implements LocalMapStats {
+public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializable {
     private final AtomicLong lastAccessTime = new AtomicLong(0);
     private final AtomicLong hits = new AtomicLong(0);
     private final AtomicLong numberOfOtherOperations = new AtomicLong(0);
@@ -257,5 +259,15 @@ public class LocalMapStatsImpl implements LocalMapStats {
                 ", lockedEntryCount=" + lockedEntryCount +
                 ", dirtyEntryCount=" + dirtyEntryCount +
                 '}';
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.ENTRY_VIEW;
     }
 }

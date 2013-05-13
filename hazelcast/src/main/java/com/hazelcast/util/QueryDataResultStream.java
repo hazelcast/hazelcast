@@ -16,36 +16,40 @@
 
 package com.hazelcast.util;
 
+import com.hazelcast.map.MapDataSerializerHook;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.impl.QueryResultEntry;
 import com.hazelcast.query.impl.QueryResultEntryImpl;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-public class QueryResultStream extends AbstractSet<QueryResultEntry> {
+public class QueryDataResultStream extends AbstractSet<QueryResultEntry> implements IdentifiedDataSerializable {
     final BlockingQueue<QueryResultEntry> q = new LinkedBlockingQueue<QueryResultEntry>();
     volatile int size = 0;
     boolean ended = false; // guarded by endLock
     final Object endLock = new Object();
     private static final QueryResultEntry END = new QueryResultEntryImpl(null, null, null);
 
-    private final SerializationService serializationService;
-    private final boolean set;
-    private final Set<Object> keys;
-    private final boolean data;
-    private final IterationType iterationType;
+    private boolean set;
+    private Set<Object> keys;
+    private IterationType iterationType;
 
-    public QueryResultStream(SerializationService serializationService, IterationType iterationType, boolean data) {
-        this(serializationService, iterationType, data, (iterationType != IterationType.VALUE));
+    public QueryDataResultStream() {
     }
 
-    public QueryResultStream(SerializationService serializationService, IterationType iterationType, boolean data, boolean set) {
-        this.serializationService = serializationService;
+    public QueryDataResultStream(IterationType iterationType) {
+        this(iterationType, (iterationType != IterationType.VALUE));
+    }
+
+    public QueryDataResultStream(IterationType iterationType, boolean set) {
         this.set = set;
-        this.data = data;
         this.iterationType = iterationType;
         if (set) {
             keys = new HashSet<Object>();
@@ -95,14 +99,14 @@ public class QueryResultStream extends AbstractSet<QueryResultEntry> {
                 return null;
             if (iterationType == IterationType.VALUE) {
                 Data valueData = currentEntry.getValueData();
-                return (data) ? valueData : serializationService.toObject(valueData);
+                return valueData;
             } else if (iterationType == IterationType.KEY) {
                 Data keyData = currentEntry.getKeyData();
-                return (data) ? keyData : serializationService.toObject(keyData);
+                return keyData;
             } else {
                 Data keyData = currentEntry.getKeyData();
                 Data valueData = currentEntry.getValueData();
-                return (data) ? new AbstractMap.SimpleImmutableEntry(keyData, valueData) : new AbstractMap.SimpleImmutableEntry(serializationService.toObject(keyData), serializationService.toObject(valueData));
+                return new AbstractMap.SimpleImmutableEntry(keyData, valueData);
             }
         }
 
@@ -125,4 +129,34 @@ public class QueryResultStream extends AbstractSet<QueryResultEntry> {
         }
     }
 
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.QUERY_RESULT_STREAM;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeBoolean(set);
+        out.writeUTF(iterationType.name());
+        out.writeInt(size);
+        for (QueryResultEntry queryResultEntry : q) {
+            out.writeObject(queryResultEntry);
+        }
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        set = in.readBoolean();
+        iterationType = IterationType.valueOf(in.readUTF());
+        size = in.readInt();
+        for (int i = 0; i < size; i++) {
+            q.add((QueryResultEntry) in.readObject());
+        }
+    }
 }

@@ -61,16 +61,19 @@ public class MapGetEntryViewRequest extends KeyBasedClientRequest implements Por
         return MapPortableHook.F_ID;
     }
 
+    @Override
     public int getClassId() {
         return MapPortableHook.GET_ENTRY_VIEW;
     }
 
+    @Override
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
     }
 
+    @Override
     public void readPortable(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         final ObjectDataInput in = reader.getRawDataInput();

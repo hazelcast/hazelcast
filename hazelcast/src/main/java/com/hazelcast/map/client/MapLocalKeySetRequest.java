@@ -57,7 +57,7 @@ public class MapLocalKeySetRequest extends MultiPartitionClientRequest implement
             Set keys = ((MapKeySet) service.toObject(o)).getKeySet();
             res.addAll(keys);
         }
-        return res;
+        return new MapKeySet(res);
     }
 
     @Override

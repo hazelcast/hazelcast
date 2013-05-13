@@ -31,6 +31,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.BinaryOperationFactory;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryResultStream;
 
 import java.util.*;
@@ -509,7 +510,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         return result;
     }
 
-    protected Set query(final Predicate predicate, final QueryResultStream.IterationType iterationType, final boolean dataResult) {
+    protected Set query(final Predicate predicate, final IterationType iterationType, final boolean dataResult) {
         final NodeEngine nodeEngine = getNodeEngine();
         OperationService operationService = nodeEngine.getOperationService();
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();

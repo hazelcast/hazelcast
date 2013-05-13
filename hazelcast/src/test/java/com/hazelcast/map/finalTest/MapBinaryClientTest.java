@@ -18,8 +18,6 @@ package com.hazelcast.map.finalTest;
 
 import com.hazelcast.client.AuthenticationRequest;
 import com.hazelcast.client.ClientPortableHook;
-import com.hazelcast.collection.operations.client.AddListenerRequest;
-import com.hazelcast.collection.operations.client.CompareAndRemoveRequest;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -32,9 +30,11 @@ import com.hazelcast.map.MapKeySet;
 import com.hazelcast.map.MapValueCollection;
 import com.hazelcast.map.client.*;
 import com.hazelcast.nio.serialization.*;
-import com.hazelcast.queue.SerializableCollectionContainer;
-import com.hazelcast.queue.client.ClearRequest;
+import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.impl.QueryResultEntry;
 import com.hazelcast.security.UsernamePasswordCredentials;
+import com.hazelcast.util.IterationType;
+import com.hazelcast.util.QueryDataResultStream;
 import org.junit.*;
 import org.junit.runner.RunWith;
 
@@ -274,6 +274,25 @@ public class MapBinaryClientTest {
         map.unlock(1);
         c.send(new MapIsLockedRequest(mapName, TestUtil.toData(1)));
         assertEquals(false, c.receive());
+    }
+
+    @Test
+    public void testMapQuery() throws IOException {
+        Set testSet = new HashSet();
+        testSet.add("serra");
+        testSet.add("met");
+        map.put(1, new TestUtil.Employee("enes", 29, true, 100d));
+        map.put(2, new TestUtil.Employee("serra", 3, true, 100d));
+        map.put(3, new TestUtil.Employee("met", 7, true, 100d));
+        MapQueryRequest request = new MapQueryRequest(mapName, new SqlPredicate("age < 10"), IterationType.VALUE);
+        c.send(request);
+        QueryDataResultStream result = (QueryDataResultStream) c.receive();
+        Iterator iterator = result.iterator();
+        while(iterator.hasNext()) {
+            TestUtil.Employee x = (TestUtil.Employee) TestUtil.toObject((Data) iterator.next());
+            testSet.remove(x.getName());
+        }
+        assertEquals(0, testSet.size());
     }
 
     @Test

@@ -24,6 +24,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryResultStream;
 import com.hazelcast.util.executor.DelegatingFuture;
 
@@ -278,15 +279,15 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public Set<K> keySet(final Predicate predicate) {
-        return query(predicate, QueryResultStream.IterationType.KEY, false);
+        return query(predicate, IterationType.KEY, false);
     }
 
     public Set entrySet(final Predicate predicate) {
-        return query(predicate, QueryResultStream.IterationType.ENTRY, false);
+        return query(predicate, IterationType.ENTRY, false);
     }
 
     public Collection<V> values(final Predicate predicate) {
-        return query(predicate, QueryResultStream.IterationType.VALUE, false);
+        return query(predicate, IterationType.VALUE, false);
     }
 
     public Set<K> localKeySet() {

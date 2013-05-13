@@ -20,10 +20,11 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
-public class SimpleEntryView<K,V> implements EntryView<K,V>, DataSerializable {
+public class SimpleEntryView<K,V> implements EntryView<K,V>, IdentifiedDataSerializable {
 
     private K key;
     private V value;
@@ -159,5 +160,13 @@ public class SimpleEntryView<K,V> implements EntryView<K,V>, DataSerializable {
         lastStoredTime = in.readLong();
         lastUpdateTime = in.readLong();
         version = in.readLong();
+    }
+
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    public int getId() {
+        return MapDataSerializerHook.ENTRY_VIEW;
     }
 }

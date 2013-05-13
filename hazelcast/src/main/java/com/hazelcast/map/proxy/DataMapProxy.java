@@ -24,6 +24,7 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryResultStream;
 
 import java.util.Collection;
@@ -218,15 +219,15 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
     }
 
     public Set<Data> keySet(final Predicate predicate) {
-        return query(predicate, QueryResultStream.IterationType.KEY, true);
+        return query(predicate, IterationType.KEY, true);
     }
 
     public Set<Entry<Data, Data>> entrySet(final Predicate predicate) {
-        return query(predicate, QueryResultStream.IterationType.ENTRY, true);
+        return query(predicate, IterationType.ENTRY, true);
     }
 
     public Collection<Data> values(final Predicate predicate) {
-        return query(predicate, QueryResultStream.IterationType.VALUE, true);
+        return query(predicate, IterationType.VALUE, true);
     }
 
     public Set<Data> localKeySet() {
