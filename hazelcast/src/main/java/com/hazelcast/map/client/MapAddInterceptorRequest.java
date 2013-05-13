@@ -18,15 +18,10 @@ package com.hazelcast.map.client;
 
 import com.hazelcast.client.MultiTargetClientRequest;
 import com.hazelcast.instance.MemberImpl;
-<<<<<<< HEAD
-import com.hazelcast.map.*;
-import com.hazelcast.map.AddInterceptorOperationFactory;
-=======
 import com.hazelcast.map.AddInterceptorOperationFactory;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
->>>>>>> 335220655de9f901f32ee0756a0a54de1e394ad3
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;

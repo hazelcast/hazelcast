@@ -280,22 +280,6 @@ public class MapBinaryClientTest {
         assertEquals(3, c.receive());
     }
 
-    @Test
-    public void testClear() throws Exception {
-
-        IQueue q = hz.getQueue(mapName);
-        q.offer("item1");
-        q.offer("item2");
-        q.offer("item3");
-
-        c.send(new ClearRequest(mapName));
-        Object result = c.receive();
-        assertTrue((Boolean) result);
-        assertEquals(0, q.size());
-
-
-    }
-
     static class Client {
         final Socket socket = new Socket();
         final SerializationService ss = new SerializationServiceImpl(0);
