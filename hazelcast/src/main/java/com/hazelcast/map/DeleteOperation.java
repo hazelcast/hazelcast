@@ -17,7 +17,6 @@
 package com.hazelcast.map;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 public class DeleteOperation extends BaseRemoveOperation {
     boolean success = false;

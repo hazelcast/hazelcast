@@ -15,7 +15,7 @@ Serialization
 
 Map
     * executeOnKey
-    * continues query
+    * continuous query
     * interceptors
     * lazy indexing
     * support for delta updates

@@ -18,6 +18,7 @@ package com.hazelcast.map.client;
 
 import com.hazelcast.client.AllPartitionsClientRequest;
 import com.hazelcast.map.*;
+import com.hazelcast.map.MapKeySetOperationFactory;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.OperationFactory;

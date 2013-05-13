@@ -19,6 +19,7 @@ package com.hazelcast.map.client;
 import com.hazelcast.client.MultiTargetClientRequest;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.*;
+import com.hazelcast.map.AddInterceptorOperationFactory;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
