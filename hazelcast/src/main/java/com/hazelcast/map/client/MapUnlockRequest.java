@@ -34,7 +34,12 @@ public class MapUnlockRequest extends AbstractUnlockRequest {
     public MapUnlockRequest() {
     }
 
-    public MapUnlockRequest(Data key, int threadId, String name, boolean force) {
+    public MapUnlockRequest(String name, Data key, int threadId) {
+        super(key, threadId, false);
+        this.name = name;
+    }
+
+    public MapUnlockRequest(String name, Data key, int threadId, boolean force) {
         super(key, threadId, force);
         this.name = name;
     }

@@ -54,8 +54,7 @@ public class MapValuesRequest extends AllPartitionsClientRequest {
         for (Object result : results.values()) {
             values.addAll(((MapValueCollection) mapService.toObject(result)).getValues());
         }
-        // todo make list portable
-        return values;
+        return new MapValueCollection(values);
     }
 
     public String getServiceName() {

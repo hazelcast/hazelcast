@@ -26,6 +26,10 @@ public class MapPutIfAbsentRequest extends MapPutRequest {
     public MapPutIfAbsentRequest() {
     }
 
+    public MapPutIfAbsentRequest(String name, Data key, Data value, int threadId) {
+        super(name, key, value, threadId);
+    }
+
     public MapPutIfAbsentRequest(String name, Data key, Data value, int threadId, long ttl) {
         super(name, key, value, threadId, ttl);
     }

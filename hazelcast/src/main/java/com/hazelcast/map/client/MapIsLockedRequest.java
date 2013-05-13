@@ -18,6 +18,7 @@ package com.hazelcast.map.client;
 
 import com.hazelcast.client.KeyBasedClientRequest;
 import com.hazelcast.concurrent.lock.IsLockedOperation;
+import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ObjectDataInput;
@@ -55,7 +56,7 @@ public class MapIsLockedRequest extends KeyBasedClientRequest {
     }
 
     public String getServiceName() {
-        return MapService.SERVICE_NAME;
+        return LockService.SERVICE_NAME;
     }
 
     @Override

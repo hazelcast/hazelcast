@@ -18,19 +18,30 @@ package com.hazelcast.map.client;
 
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.ReplaceIfSameOperation;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.Operation;
+
+import java.io.IOException;
 
 public class MapReplaceIfSameRequest extends MapPutRequest {
 
-    private Data oldValue;
+    private Data testValue;
 
     public MapReplaceIfSameRequest() {
     }
 
-    public MapReplaceIfSameRequest(String name, Data key, Data value, Data oldValue, int threadId) {
+    public MapReplaceIfSameRequest(String name, Data key, Data testValue, Data value, int threadId) {
         super(name, key, value, threadId);
-        this.oldValue = oldValue;
+        this.testValue = testValue;
+    }
+
+    @Override
+    protected Object filter(Object response) {
+        return super.filter(response);
     }
 
     public int getClassId() {
@@ -38,9 +49,23 @@ public class MapReplaceIfSameRequest extends MapPutRequest {
     }
 
     protected Operation prepareOperation() {
-        ReplaceIfSameOperation op = new ReplaceIfSameOperation(name, key, oldValue, value);
+        ReplaceIfSameOperation op = new ReplaceIfSameOperation(name, key, testValue, value);
         op.setThreadId(threadId);
         return op;
     }
 
+    @Override
+    public void writePortable(PortableWriter writer) throws IOException {
+        super.writePortable(writer);
+        final ObjectDataOutput out = writer.getRawDataOutput();
+        testValue.writeData(out);
+    }
+
+    @Override
+    public void readPortable(PortableReader reader) throws IOException {
+        super.readPortable(reader);
+        final ObjectDataInput in = reader.getRawDataInput();
+        testValue = new Data();
+        testValue.readData(in);
+    }
 }

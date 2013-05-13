@@ -141,8 +141,6 @@ public class BinaryClientTest {
 
     }
 
-
-
     private static Object invoke(SerializationService service, ObjectDataInputStream in, ObjectDataOutputStream out, Portable op) throws IOException {
         final Data data = service.toData(op);
         data.writeData(out);

@@ -33,15 +33,16 @@ public class MapRemoveIfSameRequest extends KeyBasedClientRequest {
 
     protected String name;
     protected Data key;
-    protected Data oldValue;
+    protected Data value;
     protected int threadId;
 
     public MapRemoveIfSameRequest() {
     }
 
-    public MapRemoveIfSameRequest(String name, Data key, int threadId) {
+    public MapRemoveIfSameRequest(String name, Data key, Data value, int threadId) {
         this.name = name;
         this.key = key;
+        this.value = value;
         this.threadId = threadId;
     }
 
@@ -58,7 +59,7 @@ public class MapRemoveIfSameRequest extends KeyBasedClientRequest {
     }
 
     protected Operation prepareOperation() {
-        RemoveIfSameOperation op = new RemoveIfSameOperation(name, key, oldValue);
+        RemoveIfSameOperation op = new RemoveIfSameOperation(name, key, value);
         op.setThreadId(threadId);
         return op;
     }
@@ -72,7 +73,7 @@ public class MapRemoveIfSameRequest extends KeyBasedClientRequest {
         writer.writeInt("t", threadId);
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
-        oldValue.writeData(out);
+        value.writeData(out);
     }
 
     public void readPortable(PortableReader reader) throws IOException {
@@ -81,8 +82,8 @@ public class MapRemoveIfSameRequest extends KeyBasedClientRequest {
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);
-        oldValue = new Data();
-        oldValue.readData(in);
+        value = new Data();
+        value.readData(in);
     }
 
 }

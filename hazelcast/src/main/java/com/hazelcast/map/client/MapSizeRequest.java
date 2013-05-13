@@ -35,7 +35,7 @@ public class MapSizeRequest extends AllPartitionsClientRequest {
     public MapSizeRequest() {
     }
 
-    public MapSizeRequest(String name, Data key) {
+    public MapSizeRequest(String name) {
         this.name = name;
     }
 
