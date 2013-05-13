@@ -27,17 +27,13 @@ import java.io.IOException;
 /**
  * @mdogan 5/3/13
  */
-public final class LockRequest extends AbstractLockRequest {
+public final class IsLockedRequest extends AbstractIsLockedRequest {
 
-    public LockRequest() {
+    public IsLockedRequest() {
     }
 
-    public LockRequest(Data key, int threadId) {
-        super(key, threadId);
-    }
-
-    public LockRequest(Data key, int threadId, long ttl, long timeout) {
-        super(key, threadId, ttl, timeout);
+    public IsLockedRequest(Data key) {
+        super(key);
     }
 
     @Override
@@ -52,7 +48,7 @@ public final class LockRequest extends AbstractLockRequest {
 
     @Override
     public int getClassId() {
-        return 1;
+        return 3;
     }
 
     @Override

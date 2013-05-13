@@ -22,6 +22,7 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.map.MapValueCollection;
 import com.hazelcast.map.MapValuesOperationFactory;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.OperationFactory;
@@ -31,7 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class MapValuesRequest extends AllPartitionsClientRequest {
+public class MapValuesRequest extends AllPartitionsClientRequest implements Portable {
 
     private String name;
 

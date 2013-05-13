@@ -28,6 +28,7 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 
@@ -36,7 +37,7 @@ import java.io.IOException;
 /**
  * @ali 5/10/13
  */
-public class AddListenerRequest extends CallableClientRequest {
+public class AddListenerRequest extends CallableClientRequest implements Portable {
 
     CollectionProxyId proxyId;
 

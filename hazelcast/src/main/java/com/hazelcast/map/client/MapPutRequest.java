@@ -23,13 +23,14 @@ import com.hazelcast.map.PutOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public class MapPutRequest extends KeyBasedClientRequest {
+public class MapPutRequest extends KeyBasedClientRequest implements Portable {
 
     protected Data key;
     protected Data value;

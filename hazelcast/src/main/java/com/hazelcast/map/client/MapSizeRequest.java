@@ -21,6 +21,7 @@ import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.SizeOperationFactory;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.OperationFactory;
@@ -28,7 +29,7 @@ import com.hazelcast.spi.OperationFactory;
 import java.io.IOException;
 import java.util.Map;
 
-public class MapSizeRequest extends AllPartitionsClientRequest {
+public class MapSizeRequest extends AllPartitionsClientRequest implements Portable {
 
     private String name;
 

@@ -34,6 +34,7 @@ public final class PartitionInvocationImpl extends InvocationImpl {
     }
 
     final ExceptionAction onException(Throwable t) {
-        return op.onException(t);
+        final ExceptionAction action = op.onException(t);
+        return action != null ? action : ExceptionAction.THROW_EXCEPTION;
     }
 }

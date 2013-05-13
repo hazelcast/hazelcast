@@ -22,6 +22,7 @@ import com.hazelcast.map.MapKeySetOperationFactory;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.OperationFactory;
@@ -32,7 +33,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class MapLocalKeySetRequest extends MultiPartitionClientRequest {
+public class MapLocalKeySetRequest extends MultiPartitionClientRequest implements Portable {
 
     private String name;
 

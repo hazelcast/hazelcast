@@ -22,6 +22,7 @@ import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 
@@ -30,7 +31,7 @@ import java.io.IOException;
 /**
  * @ali 5/10/13
  */
-public abstract class CollectionAllPartitionRequest extends AllPartitionsClientRequest{
+public abstract class CollectionAllPartitionRequest extends AllPartitionsClientRequest implements Portable {
 
     CollectionProxyId proxyId;
 

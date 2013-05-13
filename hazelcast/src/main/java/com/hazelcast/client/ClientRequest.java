@@ -22,7 +22,7 @@ import com.hazelcast.nio.serialization.Portable;
  *
  * @mdogan 4/29/13
  */
-abstract class ClientRequest implements Portable {
+abstract class ClientRequest {
 
     transient ClientEngineImpl clientEngine;
 

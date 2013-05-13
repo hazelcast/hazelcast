@@ -22,6 +22,7 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicate;
@@ -32,7 +33,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 
-public class MapQueryRequest extends MultiTargetClientRequest {
+public class MapQueryRequest extends MultiTargetClientRequest implements Portable {
 
     private String name;
     private Predicate predicate;

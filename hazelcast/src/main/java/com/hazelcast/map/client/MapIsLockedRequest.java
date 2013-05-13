@@ -16,47 +16,27 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.KeyBasedClientRequest;
-import com.hazelcast.concurrent.lock.IsLockedOperation;
-import com.hazelcast.concurrent.lock.LockService;
+import com.hazelcast.concurrent.lock.client.AbstractIsLockedRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
-import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public class MapIsLockedRequest extends KeyBasedClientRequest {
+public class MapIsLockedRequest extends AbstractIsLockedRequest {
 
     private String name;
-    private Data key;
 
     public MapIsLockedRequest() {
     }
 
     public MapIsLockedRequest(String name, Data key) {
+        super(key);
         this.name = name;
-        this.key = key;
-    }
-
-    public Object getKey() {
-        return key;
-    }
-
-    protected Operation prepareOperation() {
-        ObjectNamespace namespace = new DefaultObjectNamespace(MapService.SERVICE_NAME, name);
-        IsLockedOperation op = new IsLockedOperation(namespace, key);
-        return op;
-    }
-
-    public String getServiceName() {
-        return LockService.SERVICE_NAME;
     }
 
     @Override
@@ -68,16 +48,18 @@ public class MapIsLockedRequest extends KeyBasedClientRequest {
         return MapPortableHook.IS_LOCKED;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
-        writer.writeUTF("n", name);
-        final ObjectDataOutput out = writer.getRawDataOutput();
-        key.writeData(out);
+    @Override
+    protected ObjectNamespace getNamespace() {
+        return new DefaultObjectNamespace(MapService.SERVICE_NAME, name);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
+    @Override
+    protected void writePortableInternal(PortableWriter writer) throws IOException {
+        writer.writeUTF("n", name);
+    }
+
+    @Override
+    protected void readPortableInternal(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
-        final ObjectDataInput in = reader.getRawDataInput();
-        key = new Data();
-        key.readData(in);
     }
 }

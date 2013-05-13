@@ -5,6 +5,7 @@ import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngine;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
+import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.queue.QueuePortableHook;
@@ -15,7 +16,7 @@ import java.io.IOException;
 /**
  * @ali 5/9/13
  */
-public class AddListenerRequest extends CallableClientRequest {
+public class AddListenerRequest extends CallableClientRequest implements Portable {
 
     private String name;
     private boolean includeValue;

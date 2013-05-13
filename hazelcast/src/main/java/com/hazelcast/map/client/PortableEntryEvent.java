@@ -60,10 +60,11 @@ public class PortableEntryEvent implements Portable {
     public void writePortable(PortableWriter writer) throws IOException {
         DataAwareEntryEvent dataAwareEvent = (DataAwareEntryEvent) event;
         writer.writeInt("type", dataAwareEvent.getEventType().getType());
-        writer.writeUTF("host", dataAwareEvent.getMember().getInetSocketAddress().getHostName());
-        writer.writeInt("port", dataAwareEvent.getMember().getInetSocketAddress().getPort());
-        writer.writeUTF("uuid", dataAwareEvent.getMember().getUuid());
-        writer.writeBoolean("local", dataAwareEvent.getMember().localMember());
+        final MemberImpl member = (MemberImpl) dataAwareEvent.getMember();
+        writer.writeUTF("host", member.getAddress().getHost());
+        writer.writeInt("port", member.getAddress().getPort());
+        writer.writeUTF("uuid", member.getUuid());
+        writer.writeBoolean("local", member.localMember());
         writer.writeUTF("source", dataAwareEvent.getSource().toString());
         final ObjectDataOutput out = writer.getRawDataOutput();
         dataAwareEvent.getKeyData().writeData(out);

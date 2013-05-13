@@ -21,8 +21,10 @@ package com.hazelcast.nio.serialization;
  */
 public final class FactoryIdHelper {
 
+    public static final String NIO_DS_FACTORY = "hazelcast.serialization.ds.nio";
     public static final String SPI_DS_FACTORY = "hazelcast.serialization.ds.spi";
     public static final String CLUSTER_DS_FACTORY = "hazelcast.serialization.ds.cluster";
+    public static final String CLIENT_DS_FACTORY = "hazelcast.serialization.ds.client";
     public static final String MAP_DS_FACTORY = "hazelcast.serialization.ds.map";
     public static final String QUEUE_DS_FACTORY = "hazelcast.serialization.ds.queue";
     public static final String COLLECTION_DS_FACTORY = "hazelcast.serialization.ds.collection";

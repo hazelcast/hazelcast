@@ -17,8 +17,8 @@
 package com.hazelcast.concurrent.lock.client;
 
 import com.hazelcast.client.KeyBasedClientRequest;
+import com.hazelcast.concurrent.lock.IsLockedOperation;
 import com.hazelcast.concurrent.lock.LockService;
-import com.hazelcast.concurrent.lock.UnlockOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -33,34 +33,23 @@ import java.io.IOException;
 /**
  * @mdogan 5/3/13
  */
-public abstract class AbstractUnlockRequest extends KeyBasedClientRequest implements Portable  {
+public abstract class AbstractIsLockedRequest extends KeyBasedClientRequest implements Portable {
 
     private Data key;
 
-    private int threadId;
-
-    private boolean force;
-
-    public AbstractUnlockRequest() {
+    public AbstractIsLockedRequest() {
     }
 
-    public AbstractUnlockRequest(Data key, int threadId) {
+    public AbstractIsLockedRequest(Data key) {
         this.key = key;
-        this.threadId = threadId;
     }
 
-    protected AbstractUnlockRequest(Data key, int threadId, boolean force) {
-        this.key = key;
-        this.threadId = threadId;
-        this.force = force;
+    protected final Operation prepareOperation() {
+        return new IsLockedOperation(getNamespace(), key);
     }
 
     protected final Object getKey() {
         return key;
-    }
-
-    protected final Operation prepareOperation() {
-        return new UnlockOperation(getNamespace(), key, threadId, force);
     }
 
     protected abstract ObjectNamespace getNamespace();
@@ -73,23 +62,16 @@ public abstract class AbstractUnlockRequest extends KeyBasedClientRequest implem
     @Override
     public final void writePortable(PortableWriter writer) throws IOException {
         writePortableInternal(writer);
-
-        writer.writeInt("thread", threadId);
-        writer.writeBoolean("force", force);
-
         ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
     }
 
     protected abstract void writePortableInternal(PortableWriter writer) throws IOException;
 
+
     @Override
     public final void readPortable(PortableReader reader) throws IOException {
         readPortableInternal(reader);
-
-        threadId = reader.readInt("thread");
-        force = reader.readBoolean("force");
-
         ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);

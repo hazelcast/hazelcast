@@ -18,10 +18,14 @@ package com.hazelcast.map.client;
 
 import com.hazelcast.client.MultiTargetClientRequest;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.map.*;
+import com.hazelcast.map.AddInterceptorOperationFactory;
+import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.map.MapPortableHook;
+import com.hazelcast.map.MapService;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.OperationFactory;
@@ -31,7 +35,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 
-public class MapAddInterceptorRequest extends MultiTargetClientRequest {
+public class MapAddInterceptorRequest extends MultiTargetClientRequest implements Portable {
 
     private String name;
     private MapInterceptor mapInterceptor;
