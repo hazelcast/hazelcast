@@ -18,6 +18,7 @@ package com.hazelcast.queue;
 
 import com.hazelcast.nio.serialization.*;
 import com.hazelcast.queue.client.*;
+import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
 
@@ -28,6 +29,7 @@ public class QueuePortableHook implements PortableHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.QUEUE_PORTABLE_FACTORY, -11);
 
+    public static final int COLLECTION_CONTAINER = 0;
     public static final int OFFER = 1;
     public static final int SIZE = 2;
     public static final int REMOVE = 3;
@@ -40,7 +42,7 @@ public class QueuePortableHook implements PortableHook {
     public static final int CLEAR = 10;
     public static final int ADD_ALL = 11;
     public static final int ADD_LISTENER = 12;
-    public static final int COLLECTION_CONTAINER = 13;
+
 
     public int getFactoryId() {
         return F_ID;
@@ -48,40 +50,90 @@ public class QueuePortableHook implements PortableHook {
 
     @Override
     public PortableFactory createFactory() {
-        return new PortableFactory(){
 
-            public Portable create(int classId) {
-                switch (classId){
-                    case OFFER:
-                        return new OfferRequest();
-                    case SIZE:
-                        return new SizeRequest();
-                    case REMOVE:
-                        return new RemoveRequest();
-                    case POLL:
-                        return new PollRequest();
-                    case PEEK:
-                        return new PeekRequest();
-                    case ITERATOR:
-                        return new IteratorRequest();
-                    case DRAIN:
-                        return new DrainRequest();
-                    case CONTAINS:
-                        return new ContainsRequest();
-                    case COMPARE_AND_REMOVE:
-                        return new CompareAndRemoveRequest();
-                    case CLEAR:
-                        return new ClearRequest();
-                    case ADD_ALL:
-                        return new AddAllRequest();
-                    case ADD_LISTENER:
-                        return new AddListenerRequest();
-                    case COLLECTION_CONTAINER:
-                        return new PortableCollectionContainer();
-                }
-                return null;
+        ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[22];
+
+
+        constructors[COLLECTION_CONTAINER] = new ConstructorFunction<Integer, Portable>() {
+            @Override
+            public Portable createNew(Integer arg) {
+                return new PortableCollectionContainer();
             }
         };
+        constructors[OFFER] = new ConstructorFunction<Integer, Portable>() {
+            @Override
+            public Portable createNew(Integer arg) {
+                return new OfferRequest();
+            }
+        };
+        constructors[SIZE] = new ConstructorFunction<Integer, Portable>() {
+            @Override
+            public Portable createNew(Integer arg) {
+                return new SizeRequest();
+            }
+        };
+        constructors[REMOVE] = new ConstructorFunction<Integer, Portable>() {
+            @Override
+            public Portable createNew(Integer arg) {
+                return new RemoveRequest();
+            }
+        };
+        constructors[POLL] = new ConstructorFunction<Integer, Portable>() {
+            @Override
+            public Portable createNew(Integer arg) {
+                return new PollRequest();
+            }
+        };
+        constructors[PEEK] = new ConstructorFunction<Integer, Portable>() {
+            @Override
+            public Portable createNew(Integer arg) {
+                return new PeekRequest();
+            }
+        };
+        constructors[ITERATOR] = new ConstructorFunction<Integer, Portable>() {
+            @Override
+            public Portable createNew(Integer arg) {
+                return new IteratorRequest();
+            }
+        };
+        constructors[DRAIN] = new ConstructorFunction<Integer, Portable>() {
+            @Override
+            public Portable createNew(Integer arg) {
+                return new DrainRequest();
+            }
+        };
+        constructors[CONTAINS] = new ConstructorFunction<Integer, Portable>() {
+            @Override
+            public Portable createNew(Integer arg) {
+                return new ContainsRequest();
+            }
+        };
+        constructors[COMPARE_AND_REMOVE] = new ConstructorFunction<Integer, Portable>() {
+            @Override
+            public Portable createNew(Integer arg) {
+                return new CompareAndRemoveRequest();
+            }
+        };
+        constructors[CLEAR] = new ConstructorFunction<Integer, Portable>() {
+            @Override
+            public Portable createNew(Integer arg) {
+                return new ClearRequest();
+            }
+        };
+        constructors[ADD_ALL] = new ConstructorFunction<Integer, Portable>() {
+            @Override
+            public Portable createNew(Integer arg) {
+                return new AddAllRequest();
+            }
+        };
+        constructors[ADD_LISTENER] = new ConstructorFunction<Integer, Portable>() {
+            @Override
+            public Portable createNew(Integer arg) {
+                return new AddListenerRequest();
+            }
+        };
+
+        return new ArrayPortableFactory(constructors);
     }
 
     public Collection<ClassDefinition> getBuiltinDefinitions() {

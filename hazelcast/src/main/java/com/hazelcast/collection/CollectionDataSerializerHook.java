@@ -17,10 +17,8 @@
 package com.hazelcast.collection;
 
 import com.hazelcast.collection.operations.*;
-import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.DataSerializerHook;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.*;
+import com.hazelcast.util.ConstructorFunction;
 
 /**
  * @ali 1/7/13
@@ -30,33 +28,33 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.COLLECTION_DS_FACTORY, -12);
 
-    public static final int ADD_ALL_BACKUP = 1;
-    public static final int ADD_ALL = 2;
-    public static final int CLEAR_BACKUP = 3;
-    public static final int CLEAR = 4;
-    public static final int COMPARE_AND_REMOVE_BACKUP = 5;
-    public static final int COMPARE_AND_REMOVE = 6;
-    public static final int CONTAINS_ALL = 7;
-    public static final int CONTAINS_ENTRY = 8;
-    public static final int CONTAINS = 9;
-    public static final int COUNT = 10;
-    public static final int ENTRY_SET = 11;
-    public static final int GET_ALL = 12;
-    public static final int GET = 13;
-    public static final int INDEX_OF = 14;
-    public static final int KEY_SET = 15;
-    public static final int PUT_BACKUP = 16;
-    public static final int PUT = 17;
-    public static final int REMOVE_ALL_BACKUP = 18;
-    public static final int REMOVE_ALL = 19;
-    public static final int REMOVE_BACKUP = 20;
-    public static final int REMOVE = 21;
-    public static final int REMOVE_INDEX_BACKUP = 22;
-    public static final int REMOVE_INDEX = 23;
-    public static final int SET_BACKUP = 24;
-    public static final int SET = 25;
-    public static final int SIZE = 26;
-    public static final int VALUES = 27;
+    public static final int ADD_ALL_BACKUP = 0;
+    public static final int ADD_ALL = 1;
+    public static final int CLEAR_BACKUP = 2;
+    public static final int CLEAR = 3;
+    public static final int COMPARE_AND_REMOVE_BACKUP = 4;
+    public static final int COMPARE_AND_REMOVE = 5;
+    public static final int CONTAINS_ALL = 6;
+    public static final int CONTAINS_ENTRY = 7;
+    public static final int CONTAINS = 8;
+    public static final int COUNT = 9;
+    public static final int ENTRY_SET = 10;
+    public static final int GET_ALL = 11;
+    public static final int GET = 12;
+    public static final int INDEX_OF = 13;
+    public static final int KEY_SET = 14;
+    public static final int PUT_BACKUP = 15;
+    public static final int PUT = 16;
+    public static final int REMOVE_ALL_BACKUP = 17;
+    public static final int REMOVE_ALL = 18;
+    public static final int REMOVE_BACKUP = 19;
+    public static final int REMOVE = 20;
+    public static final int REMOVE_INDEX_BACKUP = 21;
+    public static final int REMOVE_INDEX = 22;
+    public static final int SET_BACKUP = 23;
+    public static final int SET = 24;
+    public static final int SIZE = 25;
+    public static final int VALUES = 26;
 
 
     public int getFactoryId() {
@@ -64,67 +62,141 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
     }
 
     public DataSerializableFactory createFactory() {
-        return new DataSerializableFactory() {
-            public IdentifiedDataSerializable create(int typeId) {
-                switch (typeId) {
-                    case ADD_ALL_BACKUP:
-                        return new AddAllBackupOperation();
-                    case ADD_ALL:
-                        return new AddAllOperation();
-                    case CLEAR_BACKUP:
-                        return new ClearBackupOperation();
-                    case CLEAR:
-                        return new ClearOperation();
-                    case COMPARE_AND_REMOVE_BACKUP:
-                        return new CompareAndRemoveBackupOperation();
-                    case COMPARE_AND_REMOVE:
-                        return new CompareAndRemoveOperation();
-                    case CONTAINS_ALL:
-                        return new ContainsAllOperation();
-                    case CONTAINS_ENTRY:
-                        return new ContainsEntryOperation();
-                    case CONTAINS:
-                        return new ContainsOperation();
-                    case COUNT:
-                        return new CountOperation();
-                    case ENTRY_SET:
-                        return new EntrySetOperation();
-                    case GET_ALL:
-                        return new GetAllOperation();
-                    case GET:
-                        return new GetOperation();
-                    case INDEX_OF:
-                        return new IndexOfOperation();
-                    case KEY_SET:
-                        return new KeySetOperation();
-                    case PUT_BACKUP:
-                        return new PutBackupOperation();
-                    case PUT:
-                        return new PutOperation();
-                    case REMOVE_ALL_BACKUP:
-                        return new RemoveAllBackupOperation();
-                    case REMOVE_ALL:
-                        return new RemoveAllOperation();
-                    case REMOVE_BACKUP:
-                        return new RemoveBackupOperation();
-                    case REMOVE:
-                        return new RemoveOperation();
-                    case REMOVE_INDEX_BACKUP:
-                        return new RemoveIndexBackupOperation();
-                    case REMOVE_INDEX:
-                        return new RemoveIndexOperation();
-                    case SET_BACKUP:
-                        return new SetBackupOperation();
-                    case SET:
-                        return new SetOperation();
-                    case SIZE:
-                        return new SizeOperation();
-                    case VALUES:
-                        return new ValuesOperation();
-
-                }
-                return null;
+        ConstructorFunction<Integer, IdentifiedDataSerializable> constructors[] = new ConstructorFunction[27];
+        constructors[ADD_ALL_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new AddAllBackupOperation();
             }
         };
+        constructors[ADD_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new AddAllOperation();
+            }
+        };
+        constructors[CLEAR_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ClearBackupOperation();
+            }
+        };
+        constructors[CLEAR] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ClearOperation();
+            }
+        };constructors[COMPARE_AND_REMOVE_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CompareAndRemoveBackupOperation();
+            }
+        };
+        constructors[COMPARE_AND_REMOVE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CompareAndRemoveOperation();
+            }
+        };
+        constructors[CONTAINS_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ContainsAllOperation();
+            }
+        };
+        constructors[CONTAINS_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ContainsEntryOperation();
+            }
+        };
+        constructors[CONTAINS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ContainsOperation();
+            }
+        };
+        constructors[COUNT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CountOperation();
+            }
+        };
+        constructors[ENTRY_SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new EntrySetOperation();
+            }
+        };
+        constructors[GET_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new GetAllOperation();
+            }
+        };
+        constructors[GET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new GetOperation();
+            }
+        };
+        constructors[INDEX_OF] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new IndexOfOperation();
+            }
+        };
+        constructors[KEY_SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new KeySetOperation();
+            }
+        };
+        constructors[PUT_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new PutBackupOperation();
+            }
+        };
+        constructors[PUT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new PutOperation();
+            }
+        };
+        constructors[REMOVE_ALL_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new RemoveAllBackupOperation();
+            }
+        };
+        constructors[REMOVE_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new RemoveAllOperation();
+            }
+        };
+        constructors[REMOVE_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new RemoveBackupOperation();
+            }
+        };
+        constructors[REMOVE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new RemoveOperation();
+            }
+        };
+        constructors[REMOVE_INDEX_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new RemoveIndexBackupOperation();
+            }
+        };
+        constructors[REMOVE_INDEX] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new RemoveIndexOperation();
+            }
+        };
+        constructors[SET_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new SetBackupOperation();
+            }
+        };
+        constructors[SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new SetOperation();
+            }
+        };
+        constructors[SIZE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new SizeOperation();
+            }
+        };
+        constructors[VALUES] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ValuesOperation();
+            }
+        };
+        return new ArrayDataSerializableFactory(constructors);
     }
 }
