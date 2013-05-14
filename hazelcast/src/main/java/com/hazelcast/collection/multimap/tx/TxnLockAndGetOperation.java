@@ -16,10 +16,7 @@
 
 package com.hazelcast.collection.multimap.tx;
 
-import com.hazelcast.collection.CollectionContainer;
-import com.hazelcast.collection.CollectionProxyId;
-import com.hazelcast.collection.CollectionService;
-import com.hazelcast.collection.CollectionWrapper;
+import com.hazelcast.collection.*;
 import com.hazelcast.collection.operations.CollectionKeyBasedOperation;
 import com.hazelcast.collection.operations.CollectionResponse;
 import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
@@ -90,5 +87,9 @@ public class TxnLockAndGetOperation extends CollectionKeyBasedOperation implemen
         timeout = in.readLong();
         ttl = in.readLong();
         threadId = in.readInt();
+    }
+
+    public int getId() {
+        return CollectionDataSerializerHook.TXN_LOCK_AND_GET;
     }
 }

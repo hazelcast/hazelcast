@@ -29,7 +29,7 @@ public class QueuePortableHook implements PortableHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.QUEUE_PORTABLE_FACTORY, -11);
 
-    public static final int COLLECTION_CONTAINER = 0;
+
     public static final int OFFER = 1;
     public static final int SIZE = 2;
     public static final int REMOVE = 3;
@@ -42,7 +42,7 @@ public class QueuePortableHook implements PortableHook {
     public static final int CLEAR = 10;
     public static final int ADD_ALL = 11;
     public static final int ADD_LISTENER = 12;
-
+    public static final int COLLECTION_CONTAINER = 13;
 
     public int getFactoryId() {
         return F_ID;
@@ -51,7 +51,7 @@ public class QueuePortableHook implements PortableHook {
     @Override
     public PortableFactory createFactory() {
 
-        ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[22];
+        ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[14];
 
 
         constructors[COLLECTION_CONTAINER] = new ConstructorFunction<Integer, Portable>() {

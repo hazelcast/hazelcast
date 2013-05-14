@@ -18,6 +18,7 @@ package com.hazelcast.queue.tx;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.queue.QueueDataSerializerHook;
 import com.hazelcast.queue.QueueOperation;
 
 import java.io.IOException;
@@ -49,6 +50,10 @@ public class TxnPollBackupOperation extends QueueOperation {
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         itemId = in.readLong();
+    }
+
+    public int getId() {
+        return QueueDataSerializerHook.TXN_POLL_BACKUP;
     }
 
 }

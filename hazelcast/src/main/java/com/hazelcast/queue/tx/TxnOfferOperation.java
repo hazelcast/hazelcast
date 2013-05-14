@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.QueueBackupAwareOperation;
+import com.hazelcast.queue.QueueDataSerializerHook;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
@@ -85,5 +86,9 @@ public class TxnOfferOperation extends QueueBackupAwareOperation implements Noti
         itemId = in.readLong();
         data = new Data();
         data.readData(in);
+    }
+
+    public int getId() {
+        return QueueDataSerializerHook.TXN_OFFER;
     }
 }

@@ -29,7 +29,7 @@ public class CollectionPortableHook implements PortableHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.COLLECTION_PORTABLE_FACTORY, -12);
 
-    public static final int ENTRY_SET_RESPONSE = 0;
+
     public static final int ADD_ALL = 1;
     public static final int CLEAR = 2;
     public static final int COMPARE_AND_REMOVE = 3;
@@ -51,6 +51,7 @@ public class CollectionPortableHook implements PortableHook {
     public static final int VALUES = 19;
     public static final int ADD_LISTENER = 20;
     public static final int COLLECTION_RESPONSE = 21;
+    public static final int ENTRY_SET_RESPONSE = 22;
 
 
 
@@ -59,7 +60,7 @@ public class CollectionPortableHook implements PortableHook {
     }
 
     public PortableFactory createFactory() {
-        ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[22];
+        ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[23];
         constructors[ENTRY_SET_RESPONSE] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
                 return new PortableEntrySetResponse();

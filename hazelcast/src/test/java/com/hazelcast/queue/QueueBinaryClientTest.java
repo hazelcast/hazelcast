@@ -58,6 +58,9 @@ public class QueueBinaryClientTest {
     public static void init() {
         Config config = new Config();
         hz = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(config);
+
         QueueConfig queueConfig = hz.getConfig().getQueueConfig(queueName);
         queueConfig.setMaxSize(6);
         ss = new SerializationServiceImpl(0);

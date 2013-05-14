@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection;
 
+import com.hazelcast.collection.multimap.tx.*;
 import com.hazelcast.collection.operations.*;
 import com.hazelcast.nio.serialization.*;
 import com.hazelcast.util.ConstructorFunction;
@@ -23,7 +24,6 @@ import com.hazelcast.util.ConstructorFunction;
 /**
  * @ali 1/7/13
  */
-//TODO register
 public class CollectionDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.COLLECTION_DS_FACTORY, -12);
@@ -56,13 +56,25 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
     public static final int SIZE = 25;
     public static final int VALUES = 26;
 
+    public static final int TXN_COMMIT_BACKUP = 27;
+    public static final int TXN_COMMIT = 28;
+    public static final int TXN_GENERATE_RECORD_ID = 29;
+    public static final int TXN_LOCK_AND_GET = 30;
+    public static final int TXN_PREPARE_BACKUP = 31;
+    public static final int TXN_PREPARE = 32;
+    public static final int TXN_PUT = 33;
+    public static final int TXN_REMOVE_ALL = 34;
+    public static final int TXN_REMOVE = 35;
+    public static final int TXN_ROLLBACK_BACKUP = 36;
+    public static final int TXN_ROLLBACK = 37;
+
 
     public int getFactoryId() {
         return F_ID;
     }
 
     public DataSerializableFactory createFactory() {
-        ConstructorFunction<Integer, IdentifiedDataSerializable> constructors[] = new ConstructorFunction[27];
+        ConstructorFunction<Integer, IdentifiedDataSerializable> constructors[] = new ConstructorFunction[38];
         constructors[ADD_ALL_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new AddAllBackupOperation();
@@ -197,6 +209,66 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
                 return new ValuesOperation();
             }
         };
+
+        
+        
+        constructors[TXN_COMMIT_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new TxnCommitBackupOperation();
+            }
+        };
+        constructors[TXN_COMMIT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new TxnCommitOperation();
+            }
+        };
+        constructors[TXN_GENERATE_RECORD_ID] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new TxnGenerateRecordIdOperation();
+            }
+        };
+        constructors[TXN_LOCK_AND_GET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new TxnLockAndGetOperation();
+            }
+        };
+        constructors[TXN_PREPARE_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new TxnPrepareBackupOperation();
+            }
+        };
+        constructors[TXN_PREPARE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new TxnPrepareOperation();
+            }
+        };
+        constructors[TXN_PUT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new TxnPutOperation();
+            }
+        };
+        constructors[TXN_REMOVE_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new TxnRemoveAllOperation();
+            }
+        };
+        constructors[TXN_REMOVE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new TxnRemoveOperation();
+            }
+        };
+        constructors[TXN_ROLLBACK_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new TxnRollbackBackupOperation();
+            }
+        };
+        constructors[TXN_ROLLBACK] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new TxnRollbackOperation();
+            }
+        };
+
+        
         return new ArrayDataSerializableFactory(constructors);
     }
 }

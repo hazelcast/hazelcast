@@ -95,4 +95,8 @@ public class TxnRemoveOperation extends CollectionKeyBasedOperation {
         value.readData(in);
     }
 
+    public int getId() {
+        return CollectionDataSerializerHook.TXN_REMOVE;
+    }
+
 }

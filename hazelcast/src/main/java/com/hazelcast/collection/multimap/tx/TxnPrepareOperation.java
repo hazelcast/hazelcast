@@ -17,6 +17,7 @@
 package com.hazelcast.collection.multimap.tx;
 
 import com.hazelcast.collection.CollectionContainer;
+import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.operations.CollectionBackupAwareOperation;
 import com.hazelcast.nio.ObjectDataInput;
@@ -67,9 +68,12 @@ public class TxnPrepareOperation extends CollectionBackupAwareOperation {
         out.writeLong(ttl);
     }
 
-    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         ttl = in.readLong();
+    }
+
+    public int getId() {
+        return CollectionDataSerializerHook.TXN_PREPARE;
     }
 }

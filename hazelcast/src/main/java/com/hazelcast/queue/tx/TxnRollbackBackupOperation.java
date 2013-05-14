@@ -18,6 +18,7 @@ package com.hazelcast.queue.tx;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.queue.QueueDataSerializerHook;
 import com.hazelcast.queue.QueueOperation;
 import com.hazelcast.spi.BackupOperation;
 
@@ -60,5 +61,9 @@ public class TxnRollbackBackupOperation extends QueueOperation implements Backup
         super.readInternal(in);
         itemId = in.readLong();
         pollOperation = in.readBoolean();
+    }
+
+    public int getId() {
+        return QueueDataSerializerHook.TXN_ROLLBACK_BACKUP;
     }
 }

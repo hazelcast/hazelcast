@@ -47,8 +47,8 @@ public class CollectionBinaryClientTest {
         Config config = new Config();
         hz = Hazelcast.newHazelcastInstance(config);
 
-//        HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(config);
-//        HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(config);
 
         ss = new SerializationServiceImpl(0);
         dataKey = ss.toData(name);

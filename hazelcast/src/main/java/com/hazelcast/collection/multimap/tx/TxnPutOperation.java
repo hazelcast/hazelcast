@@ -85,4 +85,8 @@ public class TxnPutOperation extends CollectionKeyBasedOperation {
         value.readData(in);
     }
 
+    public int getId() {
+        return CollectionDataSerializerHook.TXN_PUT;
+    }
+
 }
