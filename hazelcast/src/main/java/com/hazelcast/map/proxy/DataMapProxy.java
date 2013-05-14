@@ -181,12 +181,12 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
         return entrySetInternal();
     }
 
-    public void addInterceptor(MapInterceptor interceptor) {
-        addMapInterceptorInternal(interceptor);
+    public String addInterceptor(MapInterceptor interceptor) {
+        return addMapInterceptorInternal(interceptor);
     }
 
-    public void removeInterceptor(MapInterceptor interceptor) {
-        removeMapInterceptorInternal(interceptor);
+    public void removeInterceptor(String id) {
+        removeMapInterceptorInternal(id);
     }
 
     public String addEntryListener(final EntryListener<Data, Data> listener, final boolean includeValue) {

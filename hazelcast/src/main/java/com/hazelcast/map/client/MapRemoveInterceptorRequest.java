@@ -38,14 +38,14 @@ import java.util.Map;
 public class MapRemoveInterceptorRequest extends MultiTargetClientRequest implements Portable {
 
     private String name;
-    private MapInterceptor mapInterceptor;
+    private String id;
 
     public MapRemoveInterceptorRequest() {
     }
 
-    public MapRemoveInterceptorRequest(String name, MapInterceptor mapInterceptor) {
+    public MapRemoveInterceptorRequest(String name, String id) {
         this.name = name;
-        this.mapInterceptor = mapInterceptor;
+        this.id = id;
     }
 
     public String getServiceName() {
@@ -63,9 +63,7 @@ public class MapRemoveInterceptorRequest extends MultiTargetClientRequest implem
 
     @Override
     protected OperationFactory createOperationFactory() {
-        final MapService mapService = getService();
-        String id = mapService.removeInterceptor(name, mapInterceptor);
-        return new RemoveInterceptorOperationFactory(id, name, mapInterceptor);
+        return new RemoveInterceptorOperationFactory(name, id);
     }
 
     @Override
@@ -78,7 +76,6 @@ public class MapRemoveInterceptorRequest extends MultiTargetClientRequest implem
         Collection<MemberImpl> memberList = getClientEngine().getClusterService().getMemberList();
         Collection<Address> addresses = new HashSet<Address>();
         for (MemberImpl member : memberList) {
-            if(!member.localMember())
                 addresses.add(member.getAddress());
         }
         return addresses;
@@ -86,13 +83,11 @@ public class MapRemoveInterceptorRequest extends MultiTargetClientRequest implem
 
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
-        final ObjectDataOutput out = writer.getRawDataOutput();
-        out.writeObject(mapInterceptor);
+        writer.writeUTF("id", id);
     }
 
     public void readPortable(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
-        final ObjectDataInput in = reader.getRawDataInput();
-        mapInterceptor = in.readObject();
+        id = reader.readUTF("id");
     }
 }

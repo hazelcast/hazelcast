@@ -533,8 +533,8 @@ public class MapService implements ManagedService, MigrationAwareService,
         return getMapContainer(mapName).addInterceptor(interceptor);
     }
 
-    public String removeInterceptor(String mapName, MapInterceptor interceptor) {
-        return getMapContainer(mapName).removeInterceptor(interceptor);
+    public void removeInterceptor(String mapName, String id) {
+        getMapContainer(mapName).removeInterceptor(id);
     }
 
     // todo interceptors should get a wrapped object which includes the serialized version

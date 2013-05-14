@@ -202,12 +202,12 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         lockSupport.forceUnlock(nodeEngine, k);
     }
 
-    public void addInterceptor(MapInterceptor interceptor) {
-        addMapInterceptorInternal(interceptor);
+    public String addInterceptor(MapInterceptor interceptor) {
+        return addMapInterceptorInternal(interceptor);
     }
 
-    public void removeInterceptor(MapInterceptor interceptor) {
-        removeMapInterceptorInternal(interceptor);
+    public void removeInterceptor(String id) {
+        removeMapInterceptorInternal(id);
     }
 
     public String addEntryListener(final EntryListener listener, final boolean includeValue) {

@@ -376,7 +376,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         }
     }
 
-    public void addMapInterceptorInternal(MapInterceptor interceptor) {
+    public String addMapInterceptorInternal(MapInterceptor interceptor) {
         final NodeEngine nodeEngine = getNodeEngine();
         final MapService mapService = getService();
         String id = mapService.addInterceptor(name, interceptor);
@@ -393,13 +393,14 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
                 throw ExceptionUtil.rethrow(t);
             }
         }
+        return id;
     }
 
-    public void removeMapInterceptorInternal(MapInterceptor interceptor) {
+    public void removeMapInterceptorInternal(String id) {
         final NodeEngine nodeEngine = getNodeEngine();
         final MapService mapService = getService();
-        String id = mapService.removeInterceptor(name, interceptor);
-        RemoveInterceptorOperation operation = new RemoveInterceptorOperation(interceptor, name, id);
+        mapService.removeInterceptor(name, id);
+        RemoveInterceptorOperation operation = new RemoveInterceptorOperation(name, id);
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         for (Member member : members) {
             try {

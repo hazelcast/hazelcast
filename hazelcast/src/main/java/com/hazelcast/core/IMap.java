@@ -603,16 +603,17 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p/>
      *
      * @param interceptor map interceptor
+     * @return id of registered interceptor
      */
-    void addInterceptor(MapInterceptor interceptor);
+    String addInterceptor(MapInterceptor interceptor);
 
     /**
      * Removes the given interceptor for this map. So it will not intercept operations anymore.
      * <p/>
      *
-     * @param interceptor map interceptor
+     * @param id registration id of map interceptor
      */
-    void removeInterceptor(MapInterceptor interceptor);
+    void removeInterceptor(String id);
 
     /**
      * Adds an entry listener for this map. Listener will get notified
