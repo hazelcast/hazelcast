@@ -42,6 +42,7 @@ public final class FactoryIdHelper {
     public static final String LOCK_PORTABLE_FACTORY = "hazelcast.serialization.portable.lock";
     public static final String SEMAPHORE_PORTABLE_FACTORY = "hazelcast.serialization.portable.semaphore";
     public static final String ATOMIC_LONG_PORTABLE_FACTORY = "hazelcast.serialization.portable.atomic_long";
+    public static final String TOPIC_PORTABLE_FACTORY = "hazelcast.serialization.portable.topic";
 
 
     public static int getFactoryId(String prop, int defaultId) {
