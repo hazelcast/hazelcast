@@ -29,28 +29,25 @@ public class RemoveInterceptorOperationFactory implements OperationFactory {
     String name;
     MapInterceptor mapInterceptor;
 
-    public RemoveInterceptorOperationFactory(String id, String name, MapInterceptor mapInterceptor) {
+    public RemoveInterceptorOperationFactory(String id, String name) {
         this.id = id;
-        this.mapInterceptor = mapInterceptor;
         this.name = name;
     }
 
     @Override
     public Operation createOperation() {
-        return new RemoveInterceptorOperation(mapInterceptor, name, id);
+        return new RemoveInterceptorOperation(name, id);
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeUTF(id);
-        out.writeObject(mapInterceptor);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         id = in.readUTF();
-        mapInterceptor = in.readObject();
     }
 }

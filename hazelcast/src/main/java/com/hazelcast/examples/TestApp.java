@@ -696,9 +696,10 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             getSet().removeItemListener(this);
         } else if (first.startsWith("m.")) {
             if (args.length > 1) {
-                getMap().removeEntryListener(this, args[1]);
+                // todo revise here
+                getMap().removeEntryListener(args[1]);
             } else {
-                getMap().removeEntryListener(this);
+                getMap().removeEntryListener(args[0]);
             }
         } else if (first.startsWith("q.")) {
             getQueue().removeItemListener(this);

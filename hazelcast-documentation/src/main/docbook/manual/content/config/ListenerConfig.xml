@@ -67,8 +67,8 @@ hazelcastInstance.getCluster().addMembershipListener(listener);
 hazelcastInstance.getCluster().removeMembershipListener(listener);</programlisting>
         <programlisting language="java">EntryListener listener = new MyEntryListener();
 IMap map = hazelcastInstance.getMap("default");
-map.addEntryListener(listener, true);
-map.removeEntryListener(listener);</programlisting>
+String id =map.addEntryListener(listener, true);
+map.removeEntryListener(id);</programlisting>
         <programlisting language="java">ItemListener listener = new MyItemListener();
 IQueue queue = hazelcastInstance.getQueue("default");
 queue.addItemListener(listener, true);

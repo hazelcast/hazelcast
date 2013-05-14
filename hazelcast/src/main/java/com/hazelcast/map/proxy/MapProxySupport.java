@@ -376,7 +376,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         }
     }
 
-    public void addMapInterceptorInternal(MapInterceptor interceptor) {
+    public String addMapInterceptorInternal(MapInterceptor interceptor) {
         final NodeEngine nodeEngine = getNodeEngine();
         final MapService mapService = getService();
         String id = mapService.addInterceptor(name, interceptor);
@@ -393,13 +393,14 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
                 throw ExceptionUtil.rethrow(t);
             }
         }
+        return id;
     }
 
-    public void removeMapInterceptorInternal(MapInterceptor interceptor) {
+    public void removeMapInterceptorInternal(String id) {
         final NodeEngine nodeEngine = getNodeEngine();
         final MapService mapService = getService();
-        String id = mapService.removeInterceptor(name, interceptor);
-        RemoveInterceptorOperation operation = new RemoveInterceptorOperation(interceptor, name, id);
+        mapService.removeInterceptor(name, id);
+        RemoveInterceptorOperation operation = new RemoveInterceptorOperation(name, id);
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         for (Member member : members) {
             try {
@@ -414,30 +415,26 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         }
     }
 
-    public void addLocalEntryListener(final EntryListener listener) {
+    public String addLocalEntryListener(final EntryListener listener) {
         final MapService mapService = getService();
-        mapService.addLocalEventListener(listener, name);
+        return mapService.addLocalEventListener(listener, name);
     }
 
-    protected void removeEntryListenerInternal(final EntryListener listener) {
-        removeEntryListenerInternal(listener, null);
-    }
-
-    protected void addEntryListenerInternal(final EntryListener listener, final Data key, final boolean includeValue) {
+    protected String addEntryListenerInternal(final EntryListener listener, final Data key, final boolean includeValue) {
         EventFilter eventFilter = new EntryEventFilter(includeValue, key);
         final MapService mapService = getService();
-        mapService.addEventListener(listener, eventFilter, name);
+        return mapService.addEventListener(listener, eventFilter, name);
     }
 
-    protected void addEntryListenerInternal(EntryListener listener, Predicate predicate, final Data key, final boolean includeValue) {
+    protected String addEntryListenerInternal(EntryListener listener, Predicate predicate, final Data key, final boolean includeValue) {
         EventFilter eventFilter = new QueryEventFilter(includeValue, key, predicate);
         final MapService mapService = getService();
-        mapService.addEventListener(listener, eventFilter, name);
+        return mapService.addEventListener(listener, eventFilter, name);
     }
 
-    protected void removeEntryListenerInternal(final EntryListener listener, final Data key) {
+    protected void removeEntryListenerInternal(String id) {
         final MapService mapService = getService();
-        mapService.removeEventListener(listener, name, key);
+        mapService.removeEventListener(name, id);
     }
 
     protected EntryView getEntryViewInternal(final Data key) {

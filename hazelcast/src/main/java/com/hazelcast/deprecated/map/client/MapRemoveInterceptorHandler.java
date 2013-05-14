@@ -33,10 +33,10 @@ public class MapRemoveInterceptorHandler extends MapCommandHandler {
     @Override
     public Protocol processCall(Node node, Protocol protocol) {
         String name = protocol.args[0];
-        Data dInterceptor = protocol.buffers[0];
-        MapInterceptor mapInterceptor = (MapInterceptor) node.serializationService.toObject(dInterceptor);
+        Data interceptorId = protocol.buffers[0];
+        String id = (String) node.serializationService.toObject(interceptorId);
         DataMapProxy dataMapProxy = getMapProxy(name);
-        dataMapProxy.removeInterceptor(mapInterceptor);
+        dataMapProxy.removeInterceptor(id);
         return protocol.success();
     }
 }
