@@ -17,6 +17,7 @@
 package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionContainer;
+import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.core.EntryEventType;
@@ -79,6 +80,10 @@ public class ClearOperation extends CollectionOperation implements BackupAwareOp
 
     public Operation getBackupOperation() {
         return new ClearBackupOperation(proxyId);
+    }
+
+    public int getId() {
+        return CollectionDataSerializerHook.CLEAR;
     }
 
 }

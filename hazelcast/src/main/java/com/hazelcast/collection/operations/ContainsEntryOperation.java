@@ -17,6 +17,7 @@
 package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionContainer;
+import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.nio.IOUtil;
@@ -66,5 +67,9 @@ public class ContainsEntryOperation extends CollectionOperation {
         super.readInternal(in);
         key = IOUtil.readNullableData(in);
         value = IOUtil.readNullableData(in);
+    }
+
+    public int getId() {
+        return CollectionDataSerializerHook.CONTAINS_ENTRY;
     }
 }

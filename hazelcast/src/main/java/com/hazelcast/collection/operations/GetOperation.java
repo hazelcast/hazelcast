@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.operations;
 
+import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.collection.CollectionWrapper;
@@ -61,5 +62,9 @@ public class GetOperation extends CollectionKeyBasedOperation {
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         index = in.readInt();
+    }
+
+    public int getId() {
+        return CollectionDataSerializerHook.GET;
     }
 }

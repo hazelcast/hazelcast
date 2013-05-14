@@ -17,6 +17,7 @@
 package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionContainer;
+import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionProxyId;
 
 /**
@@ -34,5 +35,9 @@ public class SizeOperation extends CollectionOperation {
     public void run() throws Exception {
         CollectionContainer container = getOrCreateContainer();
         response = container.size();
+    }
+
+    public int getId() {
+        return CollectionDataSerializerHook.SIZE;
     }
 }

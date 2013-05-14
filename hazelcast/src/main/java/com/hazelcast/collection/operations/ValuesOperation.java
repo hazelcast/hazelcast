@@ -17,6 +17,7 @@
 package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionContainer;
+import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionService;
 
@@ -36,5 +37,9 @@ public class ValuesOperation extends CollectionOperation {
         CollectionContainer container = getOrCreateContainer();
         ((CollectionService) getService()).getLocalMultiMapStatsImpl(proxyId).incrementOtherOperations();
         response = new CollectionResponse(container.values());
+    }
+
+    public int getId() {
+        return CollectionDataSerializerHook.VALUES;
     }
 }

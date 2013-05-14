@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.operations;
 
+import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.nio.ObjectDataInput;
@@ -65,5 +66,9 @@ public class SetBackupOperation extends CollectionKeyBasedOperation implements B
         recordId = in.readLong();
         value = new Data();
         value.readData(in);
+    }
+
+    public int getId() {
+        return CollectionDataSerializerHook.SET_BACKUP;
     }
 }
