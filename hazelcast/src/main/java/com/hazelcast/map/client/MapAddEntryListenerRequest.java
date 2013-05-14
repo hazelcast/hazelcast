@@ -65,7 +65,7 @@ public class MapAddEntryListenerRequest extends CallableClientRequest implements
         EntryListener<Object, Object> listener = new EntryListener<Object, Object>() {
 
             private void handleEvent(EntryEvent<Object, Object> event){
-                if (endpoint.getConn().live()) {
+                if (endpoint.live()) {
                     clientEngine.sendResponse(endpoint, new PortableEntryEvent(event));
                 } else {
                     mapService.removeEventListener(name, id.getString());

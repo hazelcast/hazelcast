@@ -56,7 +56,7 @@ public final class AuthenticationRequest extends CallableClientRequest implement
 
     public Object call() throws Exception {
         ClientEngineImpl clientEngine = getService();
-        Connection connection = endpoint.getConn();
+        Connection connection = endpoint.getConnection();
         ILogger logger = clientEngine.getILogger(getClass());
         boolean authenticated;
         if (credentials == null) {
@@ -68,7 +68,7 @@ public final class AuthenticationRequest extends CallableClientRequest implement
                 SecurityContext securityContext = clientEngine.getSecurityContext();
                 LoginContext lc = securityContext.createClientLoginContext(credentials);
                 lc.login();
-                clientEngine.getEndpoint(connection).setLoginContext(lc);
+                endpoint.setLoginContext(lc);
                 authenticated = true;
             } catch (LoginException e) {
                 logger.log(Level.WARNING, e.getMessage(), e);
@@ -111,12 +111,11 @@ public final class AuthenticationRequest extends CallableClientRequest implement
                     return new GenericError("Owner member is not member of this cluster!", 0);
                 }
             }
-            ClientEndpoint clientEndpoint = clientEngine.getEndpoint(connection);
             if (principal == null) {
-                principal = new ClientPrincipal(clientEndpoint.getUuid(), clientEngine.getLocalMember().getUuid());
+                principal = new ClientPrincipal(endpoint.getUuid(), clientEngine.getLocalMember().getUuid());
             }
-            clientEndpoint.authenticated(principal);
-            clientEngine.bind(connection);
+            endpoint.authenticated(principal);
+            clientEngine.bind(endpoint);
             return principal;
         } else {
             clientEngine.removeEndpoint(connection);

@@ -196,7 +196,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public ClientService getClientService() {
-        return null;
+        return node.clientEngine.getClientService();
     }
 
     public LoggingService getLoggingService() {

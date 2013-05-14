@@ -155,4 +155,8 @@ public class ClientEndpoint implements ConnectionListener, Client {
             return r;
         }
     }
+
+    public String getUuid() {
+        return null;
+    }
 }

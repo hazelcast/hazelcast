@@ -18,6 +18,8 @@ package com.hazelcast.client;
 
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.Config;
+import com.hazelcast.core.ClientListener;
+import com.hazelcast.core.ClientService;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
@@ -46,7 +48,7 @@ import java.util.logging.Level;
  * @mdogan 2/20/13
  */
 public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreService,
-        ManagedService, MembershipAwareService {
+        ManagedService, MembershipAwareService, EventPublishingService<ClientEndpoint, ClientListener> {
 
     public static final String SERVICE_NAME = "hz:core:clientEngine";
 
@@ -121,7 +123,7 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
             response = new GenericError(s.toString(), 0);
         }
         final Data resultData = response != null ? serializationService.toData(response) : NULL;
-        Connection conn = endpoint.getConn();
+        Connection conn = endpoint.getConnection();
         conn.write(new DataAdapter(resultData, serializationService.getSerializationContext()));
     }
 
@@ -165,7 +167,7 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
         return null;
     }
 
-    ClientEndpoint getEndpoint(Connection conn) {
+    private ClientEndpoint getEndpoint(Connection conn) {
         return ConcurrencyUtil.getOrPutIfAbsent(endpoints, conn, endpointConstructor);
     }
 
@@ -188,7 +190,7 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
                 logger.log(Level.WARNING, e.getMessage(), e);
             }
 
-            final Connection connection = endpoint.getConn();
+            final Connection connection = endpoint.getConnection();
             if (closeImmediately) {
                 try {
                     connection.close();
@@ -208,6 +210,7 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
                     }
                 }, 1111, TimeUnit.MILLISECONDS);
             }
+            sendClientEvent(endpoint);
         }
     }
 
@@ -240,11 +243,27 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
         return node.securityContext;
     }
 
-    void bind(Connection connection) {
-        if (connection instanceof TcpIpConnection) {
-            Address endpoint = new Address(connection.getRemoteSocketAddress());
+    void bind(final ClientEndpoint endpoint) {
+        final Connection conn = endpoint.getConnection();
+        if (conn instanceof TcpIpConnection) {
+            Address address = new Address(conn.getRemoteSocketAddress());
             TcpIpConnectionManager connectionManager = (TcpIpConnectionManager) node.getConnectionManager();
-            connectionManager.bind((TcpIpConnection) connection, endpoint, null, false);
+            connectionManager.bind((TcpIpConnection) conn, address, null, false);
+        }
+        sendClientEvent(endpoint);
+    }
+
+    private void sendClientEvent(ClientEndpoint endpoint) {
+        final EventService eventService = nodeEngine.getEventService();
+        final Collection<EventRegistration> regs = eventService.getRegistrations(SERVICE_NAME, SERVICE_NAME);
+        eventService.publishEvent(SERVICE_NAME, regs, endpoint);
+    }
+
+    public void dispatchEvent(ClientEndpoint event, ClientListener listener) {
+        if (event.isAuthenticated()) {
+            listener.clientConnected(event);
+        } else {
+            listener.clientDisconnected(event);
         }
     }
 
@@ -265,6 +284,17 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
                 }
             }
         }, 10, TimeUnit.SECONDS);
+    }
+
+    void addClientListener(ClientListener clientListener) {
+        nodeEngine.getEventService().registerLocalListener(SERVICE_NAME, SERVICE_NAME, clientListener);
+    }
+
+    void removeClientListener(ClientListener clientListener) {
+    }
+
+    public ClientService getClientService() {
+        return new ClientServiceProxy(this);
     }
 
     private class ClientPacketProcessor implements Runnable {
@@ -328,7 +358,7 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
                 logger.log(Level.FINEST, e.getMessage());
             }
             try {
-                final Connection conn = endpoint.getConn();
+                final Connection conn = endpoint.getConnection();
                 if (conn.live()) {
                     conn.close( );
                 }

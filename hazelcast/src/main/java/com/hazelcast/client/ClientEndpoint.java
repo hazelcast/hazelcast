@@ -39,7 +39,7 @@ public class ClientEndpoint implements Client {
         this.uuid = uuid;
     }
 
-    public Connection getConn() {
+    Connection getConnection() {
         return conn;
     }
 
@@ -47,11 +47,15 @@ public class ClientEndpoint implements Client {
         return uuid;
     }
 
+    public boolean live() {
+        return conn.live();
+    }
+
     void setLoginContext(LoginContext loginContext) {
         this.loginContext = loginContext;
     }
 
-    public Subject getSubject() {
+    Subject getSubject() {
         return loginContext != null ? loginContext.getSubject() : null;
     }
 
@@ -84,6 +88,7 @@ public class ClientEndpoint implements Client {
         if (lc != null) {
             lc.logout();
         }
+        authenticated = false;
     }
 
     @Override

@@ -80,7 +80,7 @@ public class AddListenerRequest extends CallableClientRequest implements Portabl
             }
 
             private void send(EntryEvent event){
-                if (endpoint.getConn().live()){
+                if (endpoint.live()){
                     clientEngine.sendResponse(endpoint, event.toString());
                 }
                 else {
