@@ -23,7 +23,7 @@ import com.hazelcast.nio.serialization.FactoryIdHelper;
 /**
  * @ali 5/13/13
  */
-// TODO Register
+
 public class SemaphoreDataSerializerHook implements DataSerializerHook {
 
     static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.SEMAPHORE_DS_FACTORY, -16);
