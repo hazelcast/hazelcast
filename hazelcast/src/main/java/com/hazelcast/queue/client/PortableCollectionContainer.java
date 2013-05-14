@@ -42,6 +42,10 @@ public class PortableCollectionContainer implements Portable {
         this.collection = collection;
     }
 
+    public Collection<Data> getCollection() {
+        return collection;
+    }
+
     public int getFactoryId() {
         return QueuePortableHook.F_ID;
     }
