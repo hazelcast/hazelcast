@@ -18,6 +18,7 @@ package com.hazelcast.instance;
 
 import com.hazelcast.ascii.TextCommandService;
 import com.hazelcast.ascii.TextCommandServiceImpl;
+import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.deprecated.client.ClientCommandService;
 import com.hazelcast.client.ClientEngineImpl;
 import com.hazelcast.cluster.*;
@@ -217,6 +218,9 @@ public class Node {
                 } catch (Exception e) {
                     logger.log(Level.SEVERE, e.getMessage(), e);
                 }
+            }
+            if (listener instanceof HazelcastInstanceAware) {
+                ((HazelcastInstanceAware) listener).setHazelcastInstance(hazelcastInstance);
             }
             if (listener instanceof DistributedObjectListener) {
                 final ProxyServiceImpl proxyService = (ProxyServiceImpl) nodeEngine.getProxyService();

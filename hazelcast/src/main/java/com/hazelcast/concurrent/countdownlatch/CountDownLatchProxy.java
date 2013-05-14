@@ -45,10 +45,6 @@ public class CountDownLatchProxy extends AbstractDistributedObject<CountDownLatc
         return name;
     }
 
-//    public void await() throws MemberLeftException, InterruptedException {
-//        awaitInternal(-1L);
-//    }
-
     public boolean await(long timeout, TimeUnit unit) throws MemberLeftException, InterruptedException {
         final NodeEngine nodeEngine = getNodeEngine();
         Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(CountDownLatchService.SERVICE_NAME,
