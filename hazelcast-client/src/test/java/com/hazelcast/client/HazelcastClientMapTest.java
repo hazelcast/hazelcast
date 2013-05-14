@@ -640,7 +640,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         final CountDownLatch entryRemovedLatch = new CountDownLatch(5);
         CountDownLatchEntryListener<String, String> listener1 = new CountDownLatchEntryListener<String, String>(entryAddLatch, entryUpdatedLatch, entryRemovedLatch);
         CountDownLatchEntryListener<String, String> listener2 = new CountDownLatchEntryListener<String, String>(entryAddLatch, entryUpdatedLatch, entryRemovedLatch);
-        map.addEntryListener(listener1, true);
+        final String id = map.addEntryListener(listener1, true);
         Thread.sleep(500);
         map.put("hello", "world");
         map.put("hello", "new world");
@@ -649,7 +649,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         assertEquals(4, entryAddLatch.getCount());
         assertEquals(4, entryRemovedLatch.getCount());
         assertEquals(4, entryUpdatedLatch.getCount());
-        map.removeEntryListener(listener1);
+        map.removeEntryListener(id);
         map.put("hello", "world");
         map.put("hello", "new world");
         map.remove("hello");

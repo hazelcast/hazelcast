@@ -26,9 +26,19 @@ public interface PartitionService {
 
     Partition getPartition(Object key);
 
-    void addMigrationListener(MigrationListener migrationListener);
+    /**
+     * @param migrationListener
+     *
+     * @return returns registration id.
+     */
+    String addMigrationListener(MigrationListener migrationListener);
 
-    void removeMigrationListener(MigrationListener migrationListener);
+    /**
+     * @param registrationId Id of listener registration.
+     *
+     * @return true if registration is removed, false otherwise
+     */
+    boolean removeMigrationListener(final String registrationId);
 
     // TODO: @mm - method name and/or signature can change!
     boolean hasOngoingMigration();

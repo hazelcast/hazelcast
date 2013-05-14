@@ -629,9 +629,12 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * Removes the specified entry listener
      * Returns silently if there is no such listener added before.
      *
-     * @param registrationId id of registered listener
+     *
+     * @param id id of registered listener
+     *
+     * @return true if registration is removed, false otherwise
      */
-    void removeEntryListener(String registrationId);
+    boolean removeEntryListener(String id);
 
     /**
      * Adds the specified entry listener for the specified key.

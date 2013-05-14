@@ -52,16 +52,20 @@ public interface ITopic<E> extends DistributedObject {
      * added on one instance.
      *
      * @param listener
+     *
+     * @return returns registration id.
      */
-    void addMessageListener(MessageListener<E> listener);
+    String addMessageListener(MessageListener<E> listener);
 
     /**
      * Stops receiving messages for the given message listener. If the given listener already removed,
      * this method does nothing.
      *
-     * @param listener
+     * @param registrationId Id of listener registration.
+     *
+     * @return true if registration is removed, false otherwise
      */
-    void removeMessageListener(MessageListener<E> listener);
+    boolean removeMessageListener(final String registrationId );
 
     /**
      * Returns statistics of this topic,like total number of publishes/receives

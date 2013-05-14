@@ -53,7 +53,7 @@ public class SetListenHandler extends SetCommandHandler {
                     Protocol event = new Protocol(connection, Command.EVENT, args, node.serializationService.toData(itemEvent.getItem()));
                     sendResponse(node, event, connection);
                 } else {
-                    proxy.removeItemListener(this);
+//                    proxy.removeItemListener(this);
                 }
             }
         }, includeValue);

@@ -685,8 +685,8 @@ public class MapService implements ManagedService, MigrationAwareService,
         return registration.getId();
     }
 
-    public void removeEventListener(String mapName, String registrationId) {
-        nodeEngine.getEventService().deregisterListener(SERVICE_NAME, mapName, registrationId);
+    public boolean removeEventListener(String mapName, String registrationId) {
+        return nodeEngine.getEventService().deregisterListener(SERVICE_NAME, mapName, registrationId);
     }
 
     public Object toObject(Object data) {

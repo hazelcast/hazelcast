@@ -16,28 +16,28 @@
 
 package com.hazelcast.collection;
 
-import com.hazelcast.deprecated.client.ClientCommandHandler;
 import com.hazelcast.cluster.ClusterServiceImpl;
-import com.hazelcast.deprecated.collection.client.CollectionItemListenHandler;
 import com.hazelcast.collection.list.ObjectListProxy;
-import com.hazelcast.deprecated.collection.list.client.*;
 import com.hazelcast.collection.list.tx.TransactionalListProxy;
 import com.hazelcast.collection.multimap.ObjectMultiMapProxy;
-import com.hazelcast.deprecated.collection.multimap.client.*;
 import com.hazelcast.collection.multimap.tx.TransactionalMultiMapProxy;
 import com.hazelcast.collection.set.ObjectSetProxy;
-import com.hazelcast.deprecated.collection.set.client.*;
 import com.hazelcast.collection.set.tx.TransactionalSetProxy;
 import com.hazelcast.concurrent.lock.LockStoreInfo;
 import com.hazelcast.concurrent.lock.SharedLockService;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.*;
+import com.hazelcast.deprecated.client.ClientCommandHandler;
+import com.hazelcast.deprecated.collection.client.CollectionItemListenHandler;
+import com.hazelcast.deprecated.collection.list.client.*;
+import com.hazelcast.deprecated.collection.multimap.client.*;
+import com.hazelcast.deprecated.collection.set.client.*;
+import com.hazelcast.deprecated.nio.Protocol;
+import com.hazelcast.deprecated.nio.protocol.Command;
 import com.hazelcast.deprecated.spi.ClientProtocolService;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMultiMapStatsImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.deprecated.nio.Protocol;
-import com.hazelcast.deprecated.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.MigrationEndpoint;
@@ -62,7 +62,6 @@ public class CollectionService implements ManagedService, RemoteService, Members
     public static final String SERVICE_NAME = "hz:impl:collectionService";
     private final NodeEngine nodeEngine;
     private final CollectionPartitionContainer[] partitionContainers;
-    private final ConcurrentMap<ListenerKey, String> eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
     private final ConcurrentMap<CollectionProxyId, LocalMultiMapStatsImpl> statsMap = new ConcurrentHashMap<CollectionProxyId, LocalMultiMapStatsImpl>(1000);
     private final ConstructorFunction<CollectionProxyId, LocalMultiMapStatsImpl> localMultiMapStatsConstructorFunction = new ConstructorFunction<CollectionProxyId, LocalMultiMapStatsImpl>() {
         public LocalMultiMapStatsImpl createNew(CollectionProxyId key) {
@@ -119,7 +118,6 @@ public class CollectionService implements ManagedService, RemoteService, Members
         for (int i = 0; i < partitionContainers.length; i++) {
             partitionContainers[i] = null;
         }
-        eventRegistrations.clear();
     }
 
     public CollectionContainer getOrCreateCollectionContainer(int partitionId, CollectionProxyId proxyId) {
@@ -195,29 +193,20 @@ public class CollectionService implements ManagedService, RemoteService, Members
         return nodeEngine;
     }
 
-    public void addListener(String name, EventListener listener, Data key, boolean includeValue, boolean local) {
-        ListenerKey listenerKey = new ListenerKey(name, key, listener);
-        String id = eventRegistrations.putIfAbsent(listenerKey, "tempId");
-        if (id != null) {
-            return;
-        }
+    public String addListener(String name, EventListener listener, Data key, boolean includeValue, boolean local) {
         EventService eventService = nodeEngine.getEventService();
-        EventRegistration registration = null;
+        EventRegistration registration;
         if (local) {
             registration = eventService.registerLocalListener(SERVICE_NAME, name, new CollectionEventFilter(includeValue, key), listener);
         } else {
             registration = eventService.registerListener(SERVICE_NAME, name, new CollectionEventFilter(includeValue, key), listener);
         }
-        eventRegistrations.put(listenerKey, registration.getId());
+        return registration.getId();
     }
 
-    public void removeListener(String name, EventListener listener, Data key) {
-        ListenerKey listenerKey = new ListenerKey(name, key, listener);
-        String id = eventRegistrations.remove(listenerKey);
-        if (id != null) {
-            EventService eventService = nodeEngine.getEventService();
-            eventService.deregisterListener(SERVICE_NAME, name, id);
-        }
+    public boolean removeListener(String name, String registrationId) {
+        EventService eventService = nodeEngine.getEventService();
+        return eventService.deregisterListener(SERVICE_NAME, name, registrationId);
     }
 
     public void dispatchEvent(CollectionEvent event, EventListener listener) {

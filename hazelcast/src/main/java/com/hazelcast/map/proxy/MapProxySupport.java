@@ -432,9 +432,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         return mapService.addEventListener(listener, eventFilter, name);
     }
 
-    protected void removeEntryListenerInternal(String id) {
+    protected boolean removeEntryListenerInternal(String id) {
         final MapService mapService = getService();
-        mapService.removeEventListener(name, id);
+        return mapService.removeEventListener(name, id);
     }
 
     protected EntryView getEntryViewInternal(final Data key) {

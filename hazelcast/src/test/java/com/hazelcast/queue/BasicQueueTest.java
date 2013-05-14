@@ -331,7 +331,7 @@ public class BasicQueueTest {
                 }
             }
         };
-        q.addItemListener(listener, true);
+        final String id = q.addItemListener(listener, true);
 
         for (int i = 0; i < 10; i++) {
             getQueue(instances, name).offer("item" + i);
@@ -340,7 +340,7 @@ public class BasicQueueTest {
             getQueue(instances, name).poll();
         }
         assertTrue(latch.await(5, TimeUnit.SECONDS));
-        q.removeItemListener(listener);
+        q.removeItemListener(id);
         getQueue(instances, name).offer("item-a");
         getQueue(instances, name).poll();
         Thread.sleep(2*1000);

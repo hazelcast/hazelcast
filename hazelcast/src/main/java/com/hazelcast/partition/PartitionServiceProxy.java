@@ -49,12 +49,12 @@ public class PartitionServiceProxy implements com.hazelcast.core.PartitionServic
         return getPartition(partitionId);
     }
 
-    public void addMigrationListener(final MigrationListener migrationListener) {
-        partitionService.addMigrationListener(migrationListener);
+    public String addMigrationListener(final MigrationListener migrationListener) {
+        return partitionService.addMigrationListener(migrationListener);
     }
 
-    public void removeMigrationListener(final MigrationListener migrationListener) {
-        partitionService.removeMigrationListener(migrationListener);
+    public boolean removeMigrationListener(final String registrationId) {
+        return partitionService.removeMigrationListener(registrationId);
     }
 
     public boolean hasOngoingMigration() {

@@ -76,7 +76,7 @@ public class ListenHandler extends MultiMapCommandHandler {
                     Protocol event = new Protocol(connection, Command.EVENT, args, list.toArray(new Data[]{}));
                     sendResponse(node, event, connection);
                 } else {
-                    proxy.removeEntryListener(this, key);
+//                    proxy.removeEntryListener(this, key);
                 }
             }
         };

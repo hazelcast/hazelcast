@@ -286,11 +286,13 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
         }, 10, TimeUnit.SECONDS);
     }
 
-    void addClientListener(ClientListener clientListener) {
-        nodeEngine.getEventService().registerLocalListener(SERVICE_NAME, SERVICE_NAME, clientListener);
+    String addClientListener(ClientListener clientListener) {
+        final EventRegistration registration = nodeEngine.getEventService().registerLocalListener(SERVICE_NAME, SERVICE_NAME, clientListener);
+        return registration.getId();
     }
 
-    void removeClientListener(ClientListener clientListener) {
+    boolean removeClientListener(String registrationId) {
+        return nodeEngine.getEventService().deregisterListener(SERVICE_NAME, SERVICE_NAME, registrationId);
     }
 
     public ClientService getClientService() {

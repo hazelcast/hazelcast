@@ -53,12 +53,18 @@ public class TopicClientProxy<T> implements ITopic {
         proxyHelper.doFireNForget(Command.TPUBLISH, new String[]{getName(), "noreply"}, proxyHelper.toData(message));
     }
 
-    public void addMessageListener(MessageListener messageListener) {
+    public String addMessageListener(MessageListener messageListener) {
         Protocol request = proxyHelper.createProtocol(Command.TLISTEN, new String[]{getName()}, null);
         ListenerThread thread = proxyHelper.createAListenerThread("hz.client.topicListener.",
                 client, request, new MessageLRH(messageListener, this));
         listenerMap.put(messageListener, thread);
         thread.start();
+        return null;
+    }
+
+    @Override
+    public boolean removeMessageListener(String registrationId) {
+        return false;
     }
 
     public void removeMessageListener(MessageListener messageListener) {

@@ -152,12 +152,12 @@ public final class HazelcastInstanceProxy implements HazelcastInstance {
         getOriginal().registerGlobalSerializer(serializer);
     }
 
-    public void addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
-        getOriginal().addDistributedObjectListener(distributedObjectListener);
+    public String addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
+        return getOriginal().addDistributedObjectListener(distributedObjectListener);
     }
 
-    public void removeDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
-        getOriginal().removeDistributedObjectListener(distributedObjectListener);
+    public boolean removeDistributedObjectListener(String registrationId) {
+        return getOriginal().removeDistributedObjectListener(registrationId);
     }
 
     public ConcurrentMap<String, Object> getUserContext() {

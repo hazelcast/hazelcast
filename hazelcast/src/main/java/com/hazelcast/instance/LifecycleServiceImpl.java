@@ -22,8 +22,9 @@ import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.logging.ILogger;
 
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTDOWN;
@@ -31,7 +32,7 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
 
 public class LifecycleServiceImpl implements LifecycleService {
     private final HazelcastInstanceImpl instance;
-    private final List<LifecycleListener> lifecycleListeners = new CopyOnWriteArrayList<LifecycleListener>();
+    private final ConcurrentMap<String, LifecycleListener> lifecycleListeners = new ConcurrentHashMap<String, LifecycleListener>();
     private final Object lifecycleLock = new Object();
 
     public LifecycleServiceImpl(HazelcastInstanceImpl instance) {
@@ -42,12 +43,14 @@ public class LifecycleServiceImpl implements LifecycleService {
         return instance.node.getLogger(LifecycleService.class.getName());
     }
 
-    public void addLifecycleListener(LifecycleListener lifecycleListener) {
-        lifecycleListeners.add(lifecycleListener);
+    public String addLifecycleListener(LifecycleListener lifecycleListener) {
+        final String id = UUID.randomUUID().toString();
+        lifecycleListeners.put(id, lifecycleListener);
+        return id;
     }
 
-    public void removeLifecycleListener(LifecycleListener lifecycleListener) {
-        lifecycleListeners.remove(lifecycleListener);
+    public boolean removeLifecycleListener(String registrationId) {
+        return lifecycleListeners.remove(registrationId) != null;
     }
 
     public void fireLifecycleEvent(LifecycleState lifecycleState) {
@@ -56,7 +59,7 @@ public class LifecycleServiceImpl implements LifecycleService {
 
     public void fireLifecycleEvent(LifecycleEvent lifecycleEvent) {
         getLogger().log(Level.INFO, instance.node.getThisAddress() + " is " + lifecycleEvent.getState());
-        for (LifecycleListener lifecycleListener : lifecycleListeners) {
+        for (LifecycleListener lifecycleListener : lifecycleListeners.values()) {
             lifecycleListener.stateChanged(lifecycleEvent);
         }
     }

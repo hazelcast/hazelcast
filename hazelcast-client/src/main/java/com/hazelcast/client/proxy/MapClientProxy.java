@@ -62,9 +62,13 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K, V> {
         proxyHelper.doCommand(Command.MFLUSH, new String[]{getName()});
     }
 
-    public void addInterceptor(MapInterceptor interceptor) {
+    public String addInterceptor(MapInterceptor interceptor) {
         Data dInterceptor = proxyHelper.toData(interceptor);
         proxyHelper.doCommand(Command.MADDINTERCEPTOR, new String[]{getName()}, dInterceptor);
+        return null;
+    }
+
+    public void removeInterceptor(String id) {
     }
 
     public void removeInterceptor(MapInterceptor interceptor) {
@@ -80,8 +84,8 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K, V> {
         return addEntryListener(listener, null, includeValue);
     }
 
-    @Override
-    public void removeEntryListener(String registrationId) {
+    public boolean removeEntryListener(String registrationId) {
+        return false;
     }
 
     public String addEntryListener(final EntryListener<K, V> entryListener, final Predicate<K, V> predicate, final K key,

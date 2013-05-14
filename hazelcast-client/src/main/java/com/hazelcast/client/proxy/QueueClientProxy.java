@@ -174,13 +174,18 @@ public class QueueClientProxy<E> extends AbstractQueue<E> implements IQueue<E> {
         return new QueueItemIterator(list.toArray(), this);
     }
 
-    public void addItemListener(ItemListener<E> listener, boolean includeValue) {
+    public String addItemListener(ItemListener<E> listener, boolean includeValue) {
         check(listener);
         Protocol request = proxyHelper.createProtocol(Command.QLISTEN, new String[]{getName(), String.valueOf(includeValue)}, null);
         ListenerThread thread = proxyHelper.createAListenerThread("hz.client.qListener.",
                 client, request, new ItemEventLRH<E>(listener, includeValue, this));
         listenerMap.put(listener, thread);
         thread.start();
+        return null;
+    }
+
+    public boolean removeItemListener(String registrationId) {
+        return false;
     }
 
     public void removeItemListener(ItemListener<E> listener) {

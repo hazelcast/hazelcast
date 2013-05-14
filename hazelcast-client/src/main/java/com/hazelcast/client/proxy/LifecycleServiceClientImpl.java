@@ -25,22 +25,19 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.util.Clock;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.UUID;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
-import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTDOWN;
+import static com.hazelcast.core.LifecycleEvent.LifecycleState.SHUTTING_DOWN;
 
 public class LifecycleServiceClientImpl implements LifecycleService {
     final static ILogger logger = Logger.getLogger(LifecycleServiceClientImpl.class.getName());
     final AtomicBoolean paused = new AtomicBoolean(false);
     final AtomicBoolean running = new AtomicBoolean(true);
-    final CopyOnWriteArrayList<LifecycleListener> lsLifecycleListeners = new CopyOnWriteArrayList<LifecycleListener>();
+    final ConcurrentMap<String, LifecycleListener> lifecycleListeners = new ConcurrentHashMap<String, LifecycleListener>();
     final Object lifecycleLock = new Object();
     final HazelcastClient hazelcastClient;
     final ExecutorService es = Executors.newSingleThreadExecutor();
@@ -48,22 +45,22 @@ public class LifecycleServiceClientImpl implements LifecycleService {
     public LifecycleServiceClientImpl(HazelcastClient hazelcastClient) {
         this.hazelcastClient = hazelcastClient;
         if (hazelcastClient.getClientConfig() != null) {
-            final List<LifecycleListener> listeners = new LinkedList<LifecycleListener>();
             for (Object listener : hazelcastClient.getClientConfig().getListeners()) {
                 if (listener instanceof LifecycleListener) {
-                    listeners.add((LifecycleListener) listener);
+                    addLifecycleListener((LifecycleListener) listener);
                 }
             }
-            lsLifecycleListeners.addAll(listeners);
         }
     }
 
-    public void addLifecycleListener(LifecycleListener lifecycleListener) {
-        lsLifecycleListeners.add(lifecycleListener);
+    public String addLifecycleListener(LifecycleListener lifecycleListener) {
+        final String id = UUID.randomUUID().toString();
+        lifecycleListeners.put(id, lifecycleListener);
+        return id;
     }
 
-    public void removeLifecycleListener(LifecycleListener lifecycleListener) {
-        lsLifecycleListeners.remove(lifecycleListener);
+    public boolean removeLifecycleListener(String registrationId) {
+        return false;
     }
 
     public void fireLifecycleEvent(final LifecycleState lifecycleState) {
@@ -81,7 +78,7 @@ public class LifecycleServiceClientImpl implements LifecycleService {
 
     public void fireLifecycleEvent(final LifecycleEvent event) {
         logger.log(Level.INFO, "HazelcastClient is " + event.getState());
-        for (LifecycleListener lifecycleListener : lsLifecycleListeners) {
+        for (LifecycleListener lifecycleListener : lifecycleListeners.values()) {
             lifecycleListener.stateChanged(event);
         }
     }

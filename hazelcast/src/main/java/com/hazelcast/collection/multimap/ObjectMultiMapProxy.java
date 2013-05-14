@@ -16,12 +16,13 @@
 
 package com.hazelcast.collection.multimap;
 
-import com.hazelcast.collection.*;
+import com.hazelcast.collection.CollectionProxy;
+import com.hazelcast.collection.CollectionProxyId;
+import com.hazelcast.collection.CollectionService;
 import com.hazelcast.collection.operations.CollectionResponse;
 import com.hazelcast.collection.operations.EntrySetResponse;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MultiMap;
-import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
@@ -131,28 +132,22 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
         return countInternal(dataKey);
     }
 
-    public void addLocalEntryListener(EntryListener<K, V> listener) {
-        getService().addListener(proxyId.getName(), listener, null, false, true);
+    public String addLocalEntryListener(EntryListener<K, V> listener) {
+        return getService().addListener(proxyId.getName(), listener, null, false, true);
     }
 
-    public void addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
-        getService().addListener(proxyId.getName(), listener, null, includeValue, false);
+    public String addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
+        return getService().addListener(proxyId.getName(), listener, null, includeValue, false);
     }
 
-    public void removeEntryListener(EntryListener<K, V> listener) {
-        getService().removeListener(proxyId.getName(), listener, null);
+    public boolean removeEntryListener(String registrationId) {
+        return getService().removeListener(proxyId.getName(), registrationId);
     }
 
-    public void addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
+    public String addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
         final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
-        getService().addListener(proxyId.getName(), listener, dataKey, includeValue, false);
-    }
-
-    public void removeEntryListener(EntryListener<K, V> listener, K key) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        Data dataKey = nodeEngine.toData(key);
-        getService().removeListener(proxyId.getName(), listener, dataKey);
+        return getService().addListener(proxyId.getName(), listener, dataKey, includeValue, false);
     }
 
     public void lock(K key) {

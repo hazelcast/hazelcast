@@ -233,7 +233,7 @@ public class MapContainer {
     }
 
     public String addInterceptor(MapInterceptor interceptor) {
-        String id = "i:" + UUID.randomUUID();
+        String id = UUID.randomUUID().toString();
         interceptorMap.put(id, interceptor);
         interceptors.add(interceptor);
         return id;

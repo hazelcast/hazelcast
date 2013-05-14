@@ -57,8 +57,9 @@ public class MembershipListenHandler extends ClientCommandHandler {
                     int port = event.getMember().getInetSocketAddress().getPort();
                     Protocol response = new Protocol(connection, Command.EVENT, new String[]{eventType, hostName, String.valueOf(port)});
                     sendResponse(node, response, connection);
-                } else
-                    cluster.removeMembershipListener(this);
+                } else {
+//                    cluster.removeMembershipListener(this);
+                }
             }
         });
         return null;

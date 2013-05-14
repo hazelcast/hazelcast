@@ -84,13 +84,19 @@ public class SetClientProxy<E> extends CollectionClientProxy<E> implements ISet<
         proxyHelper.doCommand(Command.DESTROY, new String[]{ObjectSetProxy.COLLECTION_SET_NAME, getName()});
     }
 
-    public void addItemListener(ItemListener<E> listener, boolean includeValue) {
+    public String addItemListener(ItemListener<E> listener, boolean includeValue) {
         check(listener);
         Protocol request = proxyHelper.createProtocol(Command.SLISTEN, new String[]{getName(), String.valueOf(includeValue)}, null);
         ListenerThread thread = proxyHelper.createAListenerThread("hz.client.setListener.",
                 client, request, new ItemEventLRH<E>(listener, includeValue, this));
         listenerMap.put(listener, thread);
         thread.start();
+        return null;
+    }
+
+    @Override
+    public boolean removeItemListener(String registrationId) {
+        return false;
     }
 
     public void removeItemListener(ItemListener<E> listener) {

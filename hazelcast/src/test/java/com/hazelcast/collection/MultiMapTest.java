@@ -38,6 +38,8 @@ import static org.junit.Assert.*;
 @RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class MultiMapTest {
 
+    private EntryListener listener;
+
     @BeforeClass
     public static void init() {
 //        System.setProperty("hazelcast.test.use.network","true");
@@ -224,7 +226,7 @@ public class MultiMapTest {
             }
         };
 
-        instances[0].getMultiMap(name).addLocalEntryListener(listener);
+        final String id = instances[0].getMultiMap(name).addLocalEntryListener(listener);
         instances[0].getMultiMap(name).put("key1","val1");
         instances[0].getMultiMap(name).put("key2","val2");
         instances[0].getMultiMap(name).put("key3","val3");
@@ -240,11 +242,11 @@ public class MultiMapTest {
         }
         Thread.sleep(1500);
         assertTrue(instances[0].getMultiMap(name).localKeySet().containsAll(keys));
-        instances[0].getMultiMap(name).removeEntryListener(listener);
+        instances[0].getMultiMap(name).removeEntryListener(id);
         getMultiMap(instances, name).clear();
         keys.clear();
 
-        instances[0].getMultiMap(name).addEntryListener(listener, true);
+        final String id2 = instances[0].getMultiMap(name).addEntryListener(listener, true);
         getMultiMap(instances, name).put("key3","val3");
         getMultiMap(instances, name).put("key3","val33");
         getMultiMap(instances, name).put("key4","val4");
@@ -255,7 +257,7 @@ public class MultiMapTest {
         Thread.sleep(1500);
         assertEquals(0, keys.size());
 
-        instances[0].getMultiMap(name).removeEntryListener(listener);
+        instances[0].getMultiMap(name).removeEntryListener(id2);
         instances[0].getMultiMap(name).addEntryListener(listener, "key7", true);
         getMultiMap(instances, name).put("key2","val2");
         getMultiMap(instances, name).put("key3","val3");

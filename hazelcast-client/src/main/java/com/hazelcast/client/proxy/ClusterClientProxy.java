@@ -44,12 +44,17 @@ public class ClusterClientProxy implements Cluster {
 
     Map<MembershipListener, ListenerThread> listenerMap = new ConcurrentHashMap<MembershipListener, ListenerThread>();
 
-    public void addMembershipListener(MembershipListener listener) {
+    public String addMembershipListener(MembershipListener listener) {
         Protocol request = proxyHelper.createProtocol(Command.MEMBERLISTEN, null, null);
         ListenerThread thread = proxyHelper.createAListenerThread("hz.client.membershipListener.",
                 client, request, new MembershipLRH(listener, this));
         listenerMap.put(listener, thread);
         thread.start();
+        return null;
+    }
+
+    public boolean removeMembershipListener(String registrationId) {
+        return false;
     }
 
     public void removeMembershipListener(MembershipListener listener) {

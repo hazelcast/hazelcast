@@ -58,7 +58,7 @@ public class QListenHandler extends QueueCommandHandler {
                     sendResponse(node, event, connection);
                 } else {
                     System.out.println("on Server removing the listener");
-                    queue.removeItemListener(this);
+//                    queue.removeItemListener(this);
                 }
             }
         };

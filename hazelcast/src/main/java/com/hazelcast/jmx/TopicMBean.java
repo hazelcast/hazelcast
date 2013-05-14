@@ -24,21 +24,20 @@ import com.hazelcast.core.MessageListener;
  * @ali 2/11/13
  */
 @ManagedDescription("ITopic")
-public class TopicMBean extends HazelcastMBean<ITopic>{
+public class TopicMBean extends HazelcastMBean<ITopic> {
 
     private long totalMessageCount;
-
-    private final MessageListener messageListener;
+    private final String registrationId;
 
     protected TopicMBean(ITopic managedObject, ManagementService service) {
         super(managedObject, service);
         objectName = createObjectName("Topic", managedObject.getName());
-        messageListener = new MessageListener() {
+        MessageListener messageListener = new MessageListener() {
             public void onMessage(Message message) {
                 totalMessageCount++;
             }
         };
-        managedObject.addMessageListener(messageListener);
+        registrationId = managedObject.addMessageListener(messageListener);
     }
 
     @ManagedAnnotation("name")
@@ -48,19 +47,19 @@ public class TopicMBean extends HazelcastMBean<ITopic>{
     }
 
     @ManagedAnnotation("totalMessageCount")
-    public long getTotalMessageCount(){
+    public long getTotalMessageCount() {
         return totalMessageCount;
     }
 
     @ManagedAnnotation("config")
-    public String getConfig(){
+    public String getConfig() {
         return service.instance.getConfig().getTopicConfig(managedObject.getName()).toString();
     }
 
 
     public void preDeregister() throws Exception {
         super.preDeregister();
-        managedObject.removeMessageListener(messageListener);
+        managedObject.removeMessageListener(registrationId);
     }
 
 

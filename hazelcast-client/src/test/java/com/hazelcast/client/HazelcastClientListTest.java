@@ -55,12 +55,12 @@ public class HazelcastClientListTest extends HazelcastClientTestBase {
         final CountDownLatch addLatch = new CountDownLatch(4);
         final CountDownLatch removeLatch = new CountDownLatch(4);
         ItemListener<String> listener = new CountDownItemListener<String>(addLatch, removeLatch);
-        list.addItemListener(listener, true);
+        final String id = list.addItemListener(listener, true);
         list.add("hello");
         list.add("hello");
         list.remove("hello");
         list.remove("hello");
-        list.removeItemListener(listener);
+        list.removeItemListener(id);
         list.add("hello");
         list.add("hello");
         list.remove("hello");

@@ -86,7 +86,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
             throw new IllegalArgumentException("EventFilter required!");
         }
         EventServiceSegment segment = getSegment(serviceName, true);
-        Registration reg = new Registration(createId(serviceName), serviceName, topic, filter,
+        Registration reg = new Registration(UUID.randomUUID().toString(), serviceName, topic, filter,
                 nodeEngine.getThisAddress(), listener, localOnly);
         if (segment.addRegistration(topic, reg)) {
             if (!localOnly) {
@@ -170,10 +170,6 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
                 throw new HazelcastException(e);
             }
         }
-    }
-
-    private String createId(String serviceName) {
-        return serviceName + "[" + UUID.randomUUID().toString() + "]";
     }
 
     public EventRegistration[] getRegistrationsAsArray(String serviceName, String topic) {

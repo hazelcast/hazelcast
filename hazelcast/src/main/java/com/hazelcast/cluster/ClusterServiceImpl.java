@@ -925,12 +925,13 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         return localTime + ((clusterTimeDiff == Long.MAX_VALUE) ? 0 : clusterTimeDiff);
     }
 
-    public void addMembershipListener(MembershipListener listener) {
-        nodeEngine.getEventService().registerLocalListener(SERVICE_NAME, SERVICE_NAME, listener);
+    public String addMembershipListener(MembershipListener listener) {
+        final EventRegistration registration = nodeEngine.getEventService().registerLocalListener(SERVICE_NAME, SERVICE_NAME, listener);
+        return registration.getId();
     }
 
-    public void removeMembershipListener(MembershipListener listener) {
-        //listeners.remove(listener);
+    public boolean removeMembershipListener(final String registrationId) {
+        return nodeEngine.getEventService().deregisterListener(SERVICE_NAME, SERVICE_NAME, registrationId);
     }
 
     public void dispatchEvent(MembershipEvent event, MembershipListener listener) {

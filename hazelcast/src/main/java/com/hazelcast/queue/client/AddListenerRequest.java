@@ -69,8 +69,8 @@ public class AddListenerRequest extends CallableClientRequest implements Portabl
                     clientEngine.sendResponse(endpoint, event.toString());
                 }
                 else {
-                    System.err.println("De-registering listener for " + name);
-                    service.removeItemListener(name, this);
+//                    System.err.println("De-registering listener for " + name);
+//                    service.removeItemListener(name, this);
                 }
             }
         };

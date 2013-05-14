@@ -34,6 +34,8 @@ public class ManagementService implements DistributedObjectListener {
 
     final boolean showDetails;
 
+    private String registrationId;
+
     public ManagementService(HazelcastInstanceImpl instance) {
         this.instance = instance;
         this.enabled = instance.node.groupProperties.ENABLE_JMX.getBoolean();
@@ -51,7 +53,7 @@ public class ManagementService implements DistributedObjectListener {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        instance.addDistributedObjectListener(this);
+        registrationId = instance.addDistributedObjectListener(this);
         for (final DistributedObject distributedObject : instance.getDistributedObjects()) {
             registerDistributedObject(distributedObject);
         }
@@ -61,7 +63,7 @@ public class ManagementService implements DistributedObjectListener {
         if (!enabled) {
             return;
         }
-        instance.removeDistributedObjectListener(this);
+        instance.removeDistributedObjectListener(registrationId);
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         try {
             Set<ObjectName> entries = mbs.queryNames(new ObjectName(

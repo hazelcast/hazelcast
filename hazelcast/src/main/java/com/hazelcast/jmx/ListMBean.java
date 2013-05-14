@@ -30,12 +30,12 @@ public class ListMBean extends HazelcastMBean<IList<?>> {
 
     private long totalRemovedItemCount;
 
-    private final ItemListener itemListener;
+    private final String registrationId;
 
     protected ListMBean(IList<?> managedObject, ManagementService service) {
         super(managedObject, service);
         objectName = createObjectName("List", managedObject.getName());
-        itemListener = new ItemListener() {
+        ItemListener itemListener = new ItemListener() {
             public void itemAdded(ItemEvent item) {
                 totalAddedItemCount++;
             }
@@ -44,7 +44,7 @@ public class ListMBean extends HazelcastMBean<IList<?>> {
                 totalRemovedItemCount++;
             }
         };
-        managedObject.addItemListener(itemListener, false);
+        registrationId = managedObject.addItemListener(itemListener, false);
     }
 
     @ManagedAnnotation(value = "clear", operation = true)
@@ -71,6 +71,6 @@ public class ListMBean extends HazelcastMBean<IList<?>> {
 
     public void preDeregister() throws Exception {
         super.preDeregister();
-        managedObject.removeItemListener(itemListener);
+        managedObject.removeItemListener(registrationId);
     }
 }

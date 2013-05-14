@@ -38,14 +38,19 @@ public interface ICollection<E> extends DistributedObject, Collection<E> {
      * @param listener     item listener
      * @param includeValue <tt>true</tt> updated item should be passed
      *                     to the item listener, <tt>false</tt> otherwise.
+     * @return returns registration id.
      */
-    void addItemListener(ItemListener<E> listener, boolean includeValue);
+    String addItemListener(ItemListener<E> listener, boolean includeValue);
 
     /**
      * Removes the specified item listener.
      * Returns silently if the specified listener is not added before.
      *
-     * @param listener item listener for this collection
+     *
+     *
+     * @param registrationId Id of listener registration.
+     *
+     * @return true if registration is removed, false otherwise
      */
-    void removeItemListener(ItemListener<E> listener);
+    boolean removeItemListener(String registrationId);
 }

@@ -49,12 +49,12 @@ public class ObjectListProxy<E> extends MultiMapProxySupport implements Collecti
         return proxyId.getKeyName();
     }
 
-    public void addItemListener(ItemListener<E> listener, boolean includeValue) {
-        getService().addListener(proxyId.getName(), listener, key, includeValue, false);
+    public String addItemListener(ItemListener<E> listener, boolean includeValue) {
+        return getService().addListener(proxyId.getName(), listener, key, includeValue, false);
     }
 
-    public void removeItemListener(ItemListener<E> listener) {
-        getService().removeListener(proxyId.getName(), listener, key);
+    public boolean removeItemListener(String registrationId) {
+        return getService().removeListener(proxyId.getName(), registrationId);
     }
 
     public int size() {

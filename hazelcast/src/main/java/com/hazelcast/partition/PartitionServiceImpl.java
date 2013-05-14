@@ -1117,12 +1117,13 @@ public class PartitionServiceImpl implements IPartitionService, ManagedService,
         eventService.publishEvent(SERVICE_NAME, registrations, event);
     }
 
-    public void addMigrationListener(MigrationListener migrationListener) {
-        nodeEngine.getEventService().registerListener(SERVICE_NAME, SERVICE_NAME, migrationListener);
+    public String addMigrationListener(MigrationListener migrationListener) {
+        final EventRegistration registration = nodeEngine.getEventService().registerListener(SERVICE_NAME, SERVICE_NAME, migrationListener);
+        return registration.getId();
     }
 
-    public void removeMigrationListener(MigrationListener migrationListener) {
-        // TODO: @mm - implement migration listener removal.
+    public boolean removeMigrationListener(final String registrationId) {
+        return nodeEngine.getEventService().deregisterListener(SERVICE_NAME, SERVICE_NAME, registrationId);
     }
 
     public void dispatchEvent(MigrationEvent migrationEvent, MigrationListener migrationListener) {

@@ -21,11 +21,11 @@ final class ClientServiceProxy implements ClientService {
         return null;
     }
 
-    public void addClientListener(ClientListener clientListener) {
-        clientEngine.addClientListener(clientListener);
+    public String addClientListener(ClientListener clientListener) {
+        return clientEngine.addClientListener(clientListener);
     }
 
-    public void removeClientListener(ClientListener clientListener) {
-        clientEngine.removeClientListener(clientListener);
+    public boolean removeClientListener(String registrationId) {
+        return clientEngine.removeClientListener(registrationId);
     }
 }

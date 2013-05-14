@@ -43,11 +43,11 @@ public class ClusterProxy implements Cluster {
         return clusterService.getClusterTime();
     }
 
-    public void addMembershipListener(MembershipListener listener) {
-        clusterService.addMembershipListener(listener);
+    public String addMembershipListener(MembershipListener listener) {
+        return clusterService.addMembershipListener(listener);
     }
 
-    public void removeMembershipListener(MembershipListener listener) {
-        clusterService.removeMembershipListener(listener);
+    public boolean removeMembershipListener(final String registrationId) {
+        return clusterService.removeMembershipListener(registrationId);
     }
 }

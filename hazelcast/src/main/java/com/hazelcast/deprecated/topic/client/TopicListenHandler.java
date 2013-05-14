@@ -47,8 +47,9 @@ public class TopicListenHandler extends ClientCommandHandler {
                     Object obj = message.getMessageObject();
                     Protocol response = new Protocol(connection, Command.EVENT, new String[]{}, node.serializationService.toData(obj));
                     sendResponse(node, response, connection);
-                }else 
-                    t.removeMessageListener(this);
+                } else {
+//                    t.removeMessageListener(this);
+                }
             }
         });
         return null;

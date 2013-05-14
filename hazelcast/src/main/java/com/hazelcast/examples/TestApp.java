@@ -691,23 +691,23 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     }
 
     protected void handleRemoveListener(String[] args) {
-        String first = args[0];
-        if (first.startsWith("s.")) {
-            getSet().removeItemListener(this);
-        } else if (first.startsWith("m.")) {
-            if (args.length > 1) {
-                // todo revise here
-                getMap().removeEntryListener(args[1]);
-            } else {
-                getMap().removeEntryListener(args[0]);
-            }
-        } else if (first.startsWith("q.")) {
-            getQueue().removeItemListener(this);
-        } else if (first.startsWith("t.")) {
-            getTopic().removeMessageListener(this);
-        } else if (first.startsWith("l.")) {
-            getList().removeItemListener(this);
-        }
+//        String first = args[0];
+//        if (first.startsWith("s.")) {
+//            getSet().removeItemListener(this);
+//        } else if (first.startsWith("m.")) {
+//            if (args.length > 1) {
+//                // todo revise here
+//                getMap().removeEntryListener(args[1]);
+//            } else {
+//                getMap().removeEntryListener(args[0]);
+//            }
+//        } else if (first.startsWith("q.")) {
+//            getQueue().removeItemListener(this);
+//        } else if (first.startsWith("t.")) {
+//            getTopic().removeMessageListener(this);
+//        } else if (first.startsWith("l.")) {
+//            getList().removeItemListener(this);
+//        }
     }
 
     protected void handleMapLocalKeys() {

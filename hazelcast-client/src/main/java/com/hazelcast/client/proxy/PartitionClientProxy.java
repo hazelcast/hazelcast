@@ -118,12 +118,17 @@ public class PartitionClientProxy implements PartitionService {
         return partition(Integer.valueOf(protocol.args[0]), protocol.args[1], Integer.valueOf(protocol.args[2]));
     }
 
-    public void addMigrationListener(MigrationListener migrationListener) {
+    public String addMigrationListener(MigrationListener migrationListener) {
         Protocol request = proxyHelper.createProtocol(Command.MIGRATIONLISTEN, null, null);
         ListenerThread thread = proxyHelper.createAListenerThread("hz.client.migrationListener.",
                 client, request, new MigrationEventLRH(migrationListener, this));
         listenerMap.put(migrationListener, thread);
         thread.start();
+        return null;
+    }
+
+    public boolean removeMigrationListener(String registrationId) {
+        return false;
     }
 
     public void removeMigrationListener(MigrationListener migrationListener) {

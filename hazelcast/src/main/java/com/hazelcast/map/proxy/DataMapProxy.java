@@ -25,7 +25,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.IterationType;
-import com.hazelcast.util.QueryResultStream;
 
 import java.util.Collection;
 import java.util.Map;
@@ -197,8 +196,8 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
         return addEntryListenerInternal(listener, predicate, key, includeValue);
     }
 
-    public void removeEntryListener(final String id) {
-        removeEntryListenerInternal(id);
+    public boolean removeEntryListener(final String id) {
+        return removeEntryListenerInternal(id);
     }
 
     public String addEntryListener(final EntryListener<Data, Data> listener, final Data key, final boolean includeValue) {
