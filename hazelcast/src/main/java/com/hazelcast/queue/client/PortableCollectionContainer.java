@@ -16,55 +16,56 @@
 
 package com.hazelcast.queue.client;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.queue.DrainOperation;
 import com.hazelcast.queue.QueuePortableHook;
-import com.hazelcast.queue.SerializableCollectionContainer;
-import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- * @ali 5/8/13
+ * @ali 5/14/13
  */
-public class DrainRequest extends QueueRequest {
+public class PortableCollectionContainer implements Portable {
 
-    int maxSize;
+    private Collection<Data> collection;
 
-    public DrainRequest() {
+    public PortableCollectionContainer() {
     }
 
-    public DrainRequest(String name, int maxSize) {
-        super(name);
-        this.maxSize = maxSize;
+    public PortableCollectionContainer(Collection<Data> collection) {
+        this.collection = collection;
     }
 
-    protected Operation prepareOperation() {
-        return new DrainOperation(name, maxSize);
+    public int getFactoryId() {
+        return QueuePortableHook.F_ID;
     }
 
     public int getClassId() {
-        return QueuePortableHook.DRAIN;
-    }
-
-    protected Object filter(Object response) {
-        if (response instanceof SerializableCollectionContainer){
-            Collection<Data> coll = ((SerializableCollectionContainer) response).getCollection();
-            return new PortableCollectionContainer(coll);
-        }
-        return super.filter(response);
+        return QueuePortableHook.COLLECTION_CONTAINER;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
-        super.writePortable(writer);
-        writer.writeInt("m",maxSize);
+        writer.writeInt("s",collection.size());
+        final ObjectDataOutput out = writer.getRawDataOutput();
+        for (Data data: collection){
+            data.writeData(out);
+        }
     }
 
     public void readPortable(PortableReader reader) throws IOException {
-        super.readPortable(reader);
-        maxSize = reader.readInt("m");
+        int size = reader.readInt("s");
+        final ObjectDataInput in = reader.getRawDataInput();
+        collection = new ArrayList<Data>(size);
+        for (int i=0; i<size; i++){
+            Data data = new Data();
+            data.readData(in);
+            collection.add(data);
+        }
     }
 }
