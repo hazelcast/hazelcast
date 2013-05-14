@@ -534,13 +534,13 @@ public class AllTest {
                         latch.countDown();
                     }
                 };
-                map.addEntryListener(listener, true);
+                String id = map.addEntryListener(listener, true);
                 try {
                     latch.await();
                 } catch (InterruptedException e) {
                     e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
                 }
-                map.removeEntryListener(listener);
+                map.removeEntryListener(id);
             }
         }, 1);
         addOperation(operations, new Runnable() {
@@ -570,13 +570,13 @@ public class AllTest {
                         latch.countDown();
                     }
                 };
-                map.addLocalEntryListener(listener);
+                String id = map.addLocalEntryListener(listener);
                 try {
                     latch.await();
                 } catch (InterruptedException e) {
                     e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
                 }
-                map.removeEntryListener(listener);
+                map.removeEntryListener(id);
             }
         }, 1);
         return operations;

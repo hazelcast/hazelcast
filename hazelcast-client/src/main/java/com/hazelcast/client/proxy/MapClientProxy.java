@@ -72,19 +72,24 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K, V> {
         proxyHelper.doCommand(Command.MREMOVEINTERCEPTOR, new String[]{getName()}, dInterceptor);
     }
 
-    public void addLocalEntryListener(EntryListener<K, V> listener) {
+    public String addLocalEntryListener(EntryListener<K, V> listener) {
         throw new UnsupportedOperationException("client doesn't support local entry listener");
     }
 
-    public void addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
-        addEntryListener(listener, null, includeValue);
+    public String addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
+        return addEntryListener(listener, null, includeValue);
     }
 
-    public void addEntryListener(final EntryListener<K, V> entryListener, final Predicate<K, V> predicate, final K key,
+    @Override
+    public void removeEntryListener(String registrationId) {
+    }
+
+    public String addEntryListener(final EntryListener<K, V> entryListener, final Predicate<K, V> predicate, final K key,
                                  final boolean includeValue) {
+        return null;
     }
 
-    public void addEntryListener(final EntryListener<K, V> listener, final K key, final boolean includeValue) {
+    public String addEntryListener(final EntryListener<K, V> listener, final K key, final boolean includeValue) {
         Data dKey = key == null ? null : proxyHelper.toData(key);
         Data[] datas = dKey == null ? null : new Data[]{dKey};
         Protocol request = proxyHelper.createProtocol(Command.MLISTEN, new String[]{name, valueOf(includeValue)}, datas);
@@ -92,6 +97,8 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K, V> {
                 client, request, new EntryEventLRH<K, V>(listener, key, includeValue, this));
         storeListener(listener, key, thread);
         thread.start();
+        // todo return reg-id
+        return null;
     }
 
     public void removeEntryListener(EntryListener<K, V> listener) {

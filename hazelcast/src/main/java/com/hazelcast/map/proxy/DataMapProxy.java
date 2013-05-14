@@ -189,24 +189,20 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
         removeMapInterceptorInternal(interceptor);
     }
 
-    public void addEntryListener(final EntryListener<Data, Data> listener, final boolean includeValue) {
-        addEntryListenerInternal(listener, null, includeValue);
+    public String addEntryListener(final EntryListener<Data, Data> listener, final boolean includeValue) {
+        return addEntryListenerInternal(listener, null, includeValue);
     }
 
-    public void addEntryListener(EntryListener listener, Predicate predicate, Data key, boolean includeValue) {
-        addEntryListenerInternal(listener, predicate, key, includeValue);
+    public String addEntryListener(EntryListener listener, Predicate predicate, Data key, boolean includeValue) {
+        return addEntryListenerInternal(listener, predicate, key, includeValue);
     }
 
-    public void removeEntryListener(final EntryListener<Data, Data> listener) {
-        removeEntryListenerInternal(listener);
+    public void removeEntryListener(final String id) {
+        removeEntryListenerInternal(id);
     }
 
-    public void addEntryListener(final EntryListener<Data, Data> listener, final Data key, final boolean includeValue) {
-        addEntryListenerInternal(listener, key, includeValue);
-    }
-
-    public void removeEntryListener(final EntryListener<Data, Data> listener, final Data key) {
-        removeEntryListenerInternal(listener, key);
+    public String addEntryListener(final EntryListener<Data, Data> listener, final Data key, final boolean includeValue) {
+        return addEntryListenerInternal(listener, key, includeValue);
     }
 
     @Override

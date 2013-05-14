@@ -76,7 +76,6 @@ public class MapService implements ManagedService, MigrationAwareService,
     private final PartitionContainer[] partitionContainers;
     private final ConcurrentMap<String, MapContainer> mapContainers = new ConcurrentHashMap<String, MapContainer>();
     private final ConcurrentMap<String, NearCache> nearCacheMap = new ConcurrentHashMap<String, NearCache>();
-    private final ConcurrentMap<ListenerKey, String> eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
     private final AtomicReference<List<Integer>> ownedPartitions;
     private final Map<String, MapMergePolicy> mergePolicyMap;
 
@@ -165,7 +164,6 @@ public class MapService implements ManagedService, MigrationAwareService,
         }
         nearCacheMap.clear();
         mapContainers.clear();
-        eventRegistrations.clear();
     }
 
     private void destroyMapStores() {
@@ -677,18 +675,17 @@ public class MapService implements ManagedService, MigrationAwareService,
         nodeEngine.getEventService().publishEvent(SERVICE_NAME, registrationsWithoutValue, event.cloneWithoutValues());
     }
 
-    public void addLocalEventListener(EntryListener entryListener, String mapName) {
+    public String addLocalEventListener(EntryListener entryListener, String mapName) {
         EventRegistration registration = nodeEngine.getEventService().registerLocalListener(SERVICE_NAME, mapName, entryListener);
-        eventRegistrations.put(new ListenerKey(entryListener, null), registration.getId());
+        return registration.getId();
     }
 
-    public void addEventListener(EntryListener entryListener, EventFilter eventFilter, String mapName) {
+    public String addEventListener(EntryListener entryListener, EventFilter eventFilter, String mapName) {
         EventRegistration registration = nodeEngine.getEventService().registerListener(SERVICE_NAME, mapName, eventFilter, entryListener);
-        eventRegistrations.put(new ListenerKey(entryListener, ((EntryEventFilter) eventFilter).getKey()), registration.getId());
+        return registration.getId();
     }
 
-    public void removeEventListener(EntryListener entryListener, String mapName, Object key) {
-        String registrationId = eventRegistrations.get(new ListenerKey(entryListener, key));
+    public void removeEventListener(String mapName, String registrationId) {
         nodeEngine.getEventService().deregisterListener(SERVICE_NAME, mapName, registrationId);
     }
 

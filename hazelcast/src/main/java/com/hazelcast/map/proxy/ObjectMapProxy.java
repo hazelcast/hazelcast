@@ -210,24 +210,20 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         removeMapInterceptorInternal(interceptor);
     }
 
-    public void addEntryListener(final EntryListener listener, final boolean includeValue) {
-        addEntryListenerInternal(listener, null, includeValue);
+    public String addEntryListener(final EntryListener listener, final boolean includeValue) {
+        return addEntryListenerInternal(listener, null, includeValue);
     }
 
-    public void addEntryListener(final EntryListener<K, V> listener, final K key, final boolean includeValue) {
-        addEntryListenerInternal(listener, getService().toData(key), includeValue);
+    public String addEntryListener(final EntryListener<K, V> listener, final K key, final boolean includeValue) {
+        return addEntryListenerInternal(listener, getService().toData(key), includeValue);
     }
 
-    public void addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue) {
-        addEntryListenerInternal(listener, predicate, getService().toData(key), includeValue);
+    public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue) {
+        return addEntryListenerInternal(listener, predicate, getService().toData(key), includeValue);
     }
 
-    public void removeEntryListener(final EntryListener<K, V> listener) {
-        removeEntryListenerInternal(listener);
-    }
-
-    public void removeEntryListener(final EntryListener<K, V> listener, final K key) {
-        removeEntryListenerInternal(listener, getService().toData(key));
+    public void removeEntryListener(String id) {
+        removeEntryListenerInternal(id);
     }
 
     public EntryView<K, V> getEntryView(K key) {

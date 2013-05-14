@@ -80,7 +80,9 @@ public class MapListenHandler extends MapCommandHandler {
                     sendResponse(node, event, connection);
                 } else {
                     System.out.println("on Server removing the listener");
-                    dataMapProxy.removeEntryListener(this, key);
+                    // todo the returned regid should be given as parameter below
+                    String regid = null;
+                    dataMapProxy.removeEntryListener(regid);
                 }
             }
         };

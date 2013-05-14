@@ -31,6 +31,7 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.EventFilter;
+import com.hazelcast.util.MutableString;
 
 import java.io.IOException;
 
@@ -60,13 +61,14 @@ public class MapAddEntryListenerRequest extends CallableClientRequest implements
         final ClientEndpoint endpoint = getEndpoint();
         final ClientEngine clientEngine = getClientEngine();
         final MapService mapService = getService();
+        final MutableString id = new MutableString();
         EntryListener<Object, Object> listener = new EntryListener<Object, Object>() {
 
             private void handleEvent(EntryEvent<Object, Object> event){
                 if (endpoint.getConn().live()) {
                     clientEngine.sendResponse(endpoint, new PortableEntryEvent(event));
                 } else {
-                    mapService.removeEventListener(this, name, null);
+                    mapService.removeEventListener(name, id.getString());
                 }
             }
 
@@ -93,10 +95,10 @@ public class MapAddEntryListenerRequest extends CallableClientRequest implements
 
         EventFilter eventFilter = new EntryEventFilter(includeValue, key);
         if(local) {
-            mapService.addLocalEventListener(listener, name);
+            id.setString(mapService.addLocalEventListener(listener, name));
         }
         else {
-            mapService.addEventListener(listener, eventFilter, name);
+            id.setString(mapService.addEventListener(listener, eventFilter, name));
         }
 
         return true;

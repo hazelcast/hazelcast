@@ -84,6 +84,19 @@ public class ListenerTest {
     }
 
     @Test
+    public void globalListenerRemoveTest() throws InterruptedException {
+        String id1 = map1.addEntryListener(createEntryListener(false), false);
+        String id2 = map1.addEntryListener(createEntryListener(false), true);
+        String id3 = map2.addEntryListener(createEntryListener(false), true);
+        int k = 3;
+        map1.removeEntryListener(id1);
+        map1.removeEntryListener(id2);
+        map1.removeEntryListener(id3);
+        putDummyData(k);
+        checkCountWithExpected(0, 0, 0);
+    }
+
+    @Test
     public void localListenerTest() throws InterruptedException {
         map1.addLocalEntryListener(createEntryListener(true));
         map2.addLocalEntryListener(createEntryListener(true));

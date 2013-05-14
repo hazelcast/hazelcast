@@ -414,30 +414,26 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         }
     }
 
-    public void addLocalEntryListener(final EntryListener listener) {
+    public String addLocalEntryListener(final EntryListener listener) {
         final MapService mapService = getService();
-        mapService.addLocalEventListener(listener, name);
+        return mapService.addLocalEventListener(listener, name);
     }
 
-    protected void removeEntryListenerInternal(final EntryListener listener) {
-        removeEntryListenerInternal(listener, null);
-    }
-
-    protected void addEntryListenerInternal(final EntryListener listener, final Data key, final boolean includeValue) {
+    protected String addEntryListenerInternal(final EntryListener listener, final Data key, final boolean includeValue) {
         EventFilter eventFilter = new EntryEventFilter(includeValue, key);
         final MapService mapService = getService();
-        mapService.addEventListener(listener, eventFilter, name);
+        return mapService.addEventListener(listener, eventFilter, name);
     }
 
-    protected void addEntryListenerInternal(EntryListener listener, Predicate predicate, final Data key, final boolean includeValue) {
+    protected String addEntryListenerInternal(EntryListener listener, Predicate predicate, final Data key, final boolean includeValue) {
         EventFilter eventFilter = new QueryEventFilter(includeValue, key, predicate);
         final MapService mapService = getService();
-        mapService.addEventListener(listener, eventFilter, name);
+        return mapService.addEventListener(listener, eventFilter, name);
     }
 
-    protected void removeEntryListenerInternal(final EntryListener listener, final Data key) {
+    protected void removeEntryListenerInternal(String id) {
         final MapService mapService = getService();
-        mapService.removeEventListener(listener, name, key);
+        mapService.removeEventListener(name, id);
     }
 
     protected EntryView getEntryViewInternal(final Data key) {

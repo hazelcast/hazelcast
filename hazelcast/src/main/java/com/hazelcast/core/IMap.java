@@ -595,7 +595,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param listener entry listener
      * @see #localKeySet()
      */
-    void addLocalEntryListener(EntryListener<K, V> listener);
+    String addLocalEntryListener(EntryListener<K, V> listener);
 
     /**
      * Adds an interceptor for this map. Added interceptor will intercept operations
@@ -622,19 +622,15 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
      */
-    // TODO: @mm - proposal for new addEntryListener
-    // String /* id of registration */ addEntryListener(EntryListener<K, V> listener, boolean includeValue)
-    void addEntryListener(EntryListener<K, V> listener, boolean includeValue);
+    String addEntryListener(EntryListener<K, V> listener, boolean includeValue);
 
     /**
      * Removes the specified entry listener
      * Returns silently if there is no such listener added before.
      *
-     * @param listener entry listener
+     * @param registrationId id of registered listener
      */
-    // TODO: @mm - proposal for new removeEntryListener
-    // void removeEntryListener(String idOfRegistration)
-    void removeEntryListener(EntryListener<K, V> listener);
+    void removeEntryListener(String registrationId);
 
     /**
      * Adds the specified entry listener for the specified key.
@@ -651,7 +647,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
      */
-    void addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue);
+    String addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue);
 
     /**
      * Adds an continuous entry listener for this map. Listener will get notified
@@ -660,22 +656,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param listener  entry listener
      * @param predicate predicate for filtering entries
      */
-    void addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue);
-
-    /**
-     * Removes the specified entry listener for the specified key.
-     * Returns silently if there is no such listener added before for
-     * the key.
-     * <p/>
-     * <p><b>Warning:</b></p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
-     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in <tt>key</tt>'s class.
-     *
-     * @param listener
-     * @param key
-     */
-    void removeEntryListener(EntryListener<K, V> listener, K key);
+    String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue);
 
     /**
      * Returns the <tt>EntryView</tt> for the specified key.

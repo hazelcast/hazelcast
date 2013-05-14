@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.util;
+package com.hazelcast.util;
 
-import com.hazelcast.core.EntryListener;
+public class MutableString {
+    String string;
 
-public interface EntryHolder<K, V> {
+    public String getString() {
+        return string;
+    }
 
-    V get(K key);
-
-    boolean remove(Object key, Object value);
-
-    int size();
-
-    public String addEntryListener(final EntryListener<K, V> listener, final K key, final boolean includeValue);
+    public void setString(String string) {
+        this.string = string;
+    }
 }
