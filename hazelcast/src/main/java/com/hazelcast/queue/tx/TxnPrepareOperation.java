@@ -3,6 +3,7 @@ package com.hazelcast.queue.tx;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.queue.QueueBackupAwareOperation;
+import com.hazelcast.queue.QueueDataSerializerHook;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
@@ -47,5 +48,9 @@ public class TxnPrepareOperation extends QueueBackupAwareOperation {
         super.readInternal(in);
         itemId = in.readLong();
         pollOperation = in.readBoolean();
+    }
+
+    public int getId() {
+        return QueueDataSerializerHook.TXN_PREPARE;
     }
 }

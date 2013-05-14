@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.operations;
 
+import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.collection.CollectionWrapper;
@@ -75,5 +76,9 @@ public class CompareAndRemoveBackupOperation extends CollectionKeyBasedOperation
         for (int i = 0; i < size; i++) {
             idSet.add(in.readLong());
         }
+    }
+
+    public int getId() {
+        return CollectionDataSerializerHook.COMPARE_AND_REMOVE_BACKUP;
     }
 }

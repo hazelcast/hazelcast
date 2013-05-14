@@ -82,4 +82,8 @@ public class RemoveOperation extends QueueBackupAwareOperation implements Notifi
     public WaitNotifyKey getNotifiedKey() {
         return getOrCreateContainer().getOfferWaitNotifyKey();
     }
+
+    public int getId() {
+        return QueueDataSerializerHook.REMOVE;
+    }
 }

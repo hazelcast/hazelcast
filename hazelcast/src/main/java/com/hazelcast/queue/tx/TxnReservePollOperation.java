@@ -16,6 +16,7 @@
 
 package com.hazelcast.queue.tx;
 
+import com.hazelcast.queue.QueueDataSerializerHook;
 import com.hazelcast.queue.QueueOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
@@ -46,5 +47,9 @@ public class TxnReservePollOperation extends QueueOperation implements WaitSuppo
 
     public void onWaitExpire() {
         getResponseHandler().sendResponse(null);
+    }
+
+    public int getId() {
+        return QueueDataSerializerHook.TXN_RESERVE_POLL;
     }
 }

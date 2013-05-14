@@ -16,10 +16,7 @@
 
 package com.hazelcast.collection.operations;
 
-import com.hazelcast.collection.CollectionProxyId;
-import com.hazelcast.collection.CollectionRecord;
-import com.hazelcast.collection.CollectionWrapper;
-import com.hazelcast.collection.CollectionService;
+import com.hazelcast.collection.*;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -102,5 +99,9 @@ public class RemoveOperation extends CollectionBackupAwareOperation {
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         value = IOUtil.readData(in);
+    }
+
+    public int getId() {
+        return CollectionDataSerializerHook.REMOVE;
     }
 }

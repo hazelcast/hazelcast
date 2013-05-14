@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.operations;
 
+import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.collection.CollectionWrapper;
@@ -102,5 +103,9 @@ public class CompareAndRemoveOperation extends CollectionBackupAwareOperation {
             Data data = IOUtil.readData(in);
             dataList.add(data);
         }
+    }
+
+    public int getId() {
+        return CollectionDataSerializerHook.COMPARE_AND_REMOVE;
     }
 }

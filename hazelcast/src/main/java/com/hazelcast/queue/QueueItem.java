@@ -20,7 +20,7 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
@@ -28,7 +28,7 @@ import java.io.IOException;
 /**
  * @ali 12/12/12
  */
-public class QueueItem implements DataSerializable, Comparable<QueueItem> {
+public class QueueItem implements IdentifiedDataSerializable, Comparable<QueueItem> {
 
     private long itemId;
 
@@ -118,5 +118,13 @@ public class QueueItem implements DataSerializable, Comparable<QueueItem> {
             return 1;
         }
         return 0;
+    }
+
+    public int getFactoryId() {
+        return QueueDataSerializerHook.F_ID;
+    }
+
+    public int getId() {
+        return QueueDataSerializerHook.QUEUE_ITEM;
     }
 }

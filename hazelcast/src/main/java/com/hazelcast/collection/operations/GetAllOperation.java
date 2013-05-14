@@ -16,8 +16,8 @@
 
 package com.hazelcast.collection.operations;
 
+import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionProxyId;
-import com.hazelcast.collection.CollectionService;
 import com.hazelcast.collection.CollectionWrapper;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.Clock;
@@ -51,5 +51,9 @@ public class GetAllOperation extends CollectionKeyBasedOperation {
 
     public void afterRun() throws Exception {
         long elapsed = Math.max(0, Clock.currentTimeMillis() - begin);
+    }
+
+    public int getId() {
+        return CollectionDataSerializerHook.GET_ALL;
     }
 }

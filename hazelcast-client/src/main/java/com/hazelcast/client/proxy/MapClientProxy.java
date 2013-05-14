@@ -81,7 +81,8 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K, V> {
     }
 
     public String addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
-        return addEntryListener(listener, null, includeValue);
+        addEntryListener(listener, null, includeValue);
+        return null;
     }
 
     public boolean removeEntryListener(String registrationId) {
@@ -101,7 +102,6 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K, V> {
                 client, request, new EntryEventLRH<K, V>(listener, key, includeValue, this));
         storeListener(listener, key, thread);
         thread.start();
-        // todo return reg-id
         return null;
     }
 

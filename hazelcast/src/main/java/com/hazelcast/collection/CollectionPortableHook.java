@@ -18,6 +18,7 @@ package com.hazelcast.collection;
 
 import com.hazelcast.collection.operations.client.*;
 import com.hazelcast.nio.serialization.*;
+import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
 
@@ -27,6 +28,7 @@ import java.util.Collection;
 public class CollectionPortableHook implements PortableHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.COLLECTION_PORTABLE_FACTORY, -12);
+
 
     public static final int ADD_ALL = 1;
     public static final int CLEAR = 2;
@@ -52,62 +54,125 @@ public class CollectionPortableHook implements PortableHook {
     public static final int ENTRY_SET_RESPONSE = 22;
 
 
+
     public int getFactoryId() {
         return F_ID;
     }
 
     public PortableFactory createFactory() {
-        return new PortableFactory() {
-            public Portable create(int classId) {
-                switch (classId){
-                    case ADD_ALL:
-                        return new AddAllRequest();
-                    case CLEAR:
-                        return new ClearRequest();
-                    case COMPARE_AND_REMOVE:
-                        return new CompareAndRemoveRequest();
-                    case CONTAINS_ALL:
-                        return new ContainsAllRequest();
-                    case CONTAINS_ENTRY:
-                        return new ContainsEntryRequest();
-                    case CONTAINS:
-                        return new ContainsRequest();
-                    case COUNT:
-                        return new CountRequest();
-                    case ENTRY_SET:
-                        return new EntrySetRequest();
-                    case GET_ALL:
-                        return new GetAllRequest();
-                    case GET:
-                        return new GetRequest();
-                    case INDEX_OF:
-                        return new IndexOfRequest();
-                    case KEY_SET:
-                        return new KeySetRequest();
-                    case PUT:
-                        return new PutRequest();
-                    case REMOVE_ALL:
-                        return new RemoveAllRequest();
-                    case REMOVE_INDEX:
-                        return new RemoveIndexRequest();
-                    case REMOVE:
-                        return new RemoveRequest();
-                    case SET:
-                        return new SetRequest();
-                    case SIZE:
-                        return new SizeRequest();
-                    case VALUES:
-                        return new ValuesRequest();
-                    case ADD_LISTENER:
-                        return new AddListenerRequest();
-                    case COLLECTION_RESPONSE:
-                        return new PortableCollectionResponse();
-                    case ENTRY_SET_RESPONSE:
-                        return new PortableEntrySetResponse();
-                }
-                return null;
+        ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[23];
+        constructors[ENTRY_SET_RESPONSE] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new PortableEntrySetResponse();
             }
         };
+        constructors[ADD_ALL] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new AddAllRequest();
+            }
+        };
+        constructors[CLEAR] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new ClearRequest();
+            }
+        };
+        constructors[COMPARE_AND_REMOVE] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new CompareAndRemoveRequest();
+            }
+        };
+        constructors[CONTAINS_ALL] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new ContainsAllRequest();
+            }
+        };
+        constructors[CONTAINS_ENTRY] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new ContainsEntryRequest();
+            }
+        };
+        constructors[CONTAINS] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new ContainsRequest();
+            }
+        };
+        constructors[COUNT] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new CountRequest();
+            }
+        };
+        constructors[ENTRY_SET] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new EntrySetRequest();
+            }
+        };
+        constructors[GET_ALL] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new GetAllRequest();
+            }
+        };
+        constructors[GET] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new GetRequest();
+            }
+        };
+        constructors[INDEX_OF] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new IndexOfRequest();
+            }
+        };
+        constructors[KEY_SET] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new KeySetRequest();
+            }
+        };
+        constructors[PUT] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new PutRequest();
+            }
+        };
+        constructors[REMOVE_ALL] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new RemoveAllRequest();
+            }
+        };
+        constructors[REMOVE_INDEX] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new RemoveIndexRequest();
+            }
+        };
+        constructors[REMOVE] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new RemoveRequest();
+            }
+        };
+        constructors[SET] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new SetRequest();
+            }
+        };
+        constructors[SIZE] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new SizeRequest();
+            }
+        };
+        constructors[VALUES] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new ValuesRequest();
+            }
+        };
+        constructors[ADD_LISTENER] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new AddListenerRequest();
+            }
+        };
+        constructors[COLLECTION_RESPONSE] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new PortableCollectionResponse();
+            }
+        };
+
+        return new ArrayPortableFactory(constructors);
     }
 
     public Collection<ClassDefinition> getBuiltinDefinitions() {

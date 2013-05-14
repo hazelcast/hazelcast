@@ -60,4 +60,8 @@ public class CompareAndRemoveBackupOperation extends QueueOperation implements B
             keySet.add(in.readLong());
         }
     }
+
+    public int getId() {
+        return QueueDataSerializerHook.COMPARE_AND_REMOVE_BACKUP;
+    }
 }

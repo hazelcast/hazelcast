@@ -22,14 +22,14 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
 /**
  * @ali 12/24/12
  */
-public class QueueEvent implements DataSerializable {
+public class QueueEvent implements IdentifiedDataSerializable {
 
     String name;
 
@@ -62,5 +62,13 @@ public class QueueEvent implements DataSerializable {
         caller = new Address();
         caller.readData(in);
         data = IOUtil.readNullableData(in);
+    }
+
+    public int getFactoryId() {
+        return QueueDataSerializerHook.F_ID;
+    }
+
+    public int getId() {
+        return QueueDataSerializerHook.QUEUE_EVENT;
     }
 }

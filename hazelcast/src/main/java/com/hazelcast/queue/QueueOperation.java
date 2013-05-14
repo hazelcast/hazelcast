@@ -20,6 +20,7 @@ import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 
@@ -29,7 +30,7 @@ import java.util.Collection;
 /**
  * @ali 12/6/12
  */
-public abstract class QueueOperation extends Operation implements PartitionAwareOperation {
+public abstract class QueueOperation extends Operation implements PartitionAwareOperation, IdentifiedDataSerializable {
 
     protected String name;
 
@@ -119,4 +120,7 @@ public abstract class QueueOperation extends Operation implements PartitionAware
         return getService();
     }
 
+    public int getFactoryId() {
+        return QueueDataSerializerHook.F_ID;
+    }
 }

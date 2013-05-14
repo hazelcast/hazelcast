@@ -100,4 +100,8 @@ public class AddAllOperation extends QueueBackupAwareOperation implements Notifi
     public WaitNotifyKey getNotifiedKey() {
         return getOrCreateContainer().getPollWaitNotifyKey();
     }
+
+    public int getId() {
+        return QueueDataSerializerHook.ADD_ALL;
+    }
 }

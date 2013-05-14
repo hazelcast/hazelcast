@@ -60,4 +60,8 @@ public class ClearBackupOperation extends QueueOperation implements BackupOperat
             itemIdSet.add(in.readLong());
         }
     }
+
+    public int getId() {
+        return QueueDataSerializerHook.CLEAR_BACKUP;
+    }
 }

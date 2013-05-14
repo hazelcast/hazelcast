@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.operations;
 
+import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.collection.CollectionWrapper;
@@ -66,5 +67,9 @@ public class IndexOfOperation extends CollectionKeyBasedOperation {
         super.readInternal(in);
         last = in.readBoolean();
         value = IOUtil.readData(in);
+    }
+
+    public int getId() {
+        return CollectionDataSerializerHook.INDEX_OF;
     }
 }

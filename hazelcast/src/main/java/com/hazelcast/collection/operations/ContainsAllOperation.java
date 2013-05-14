@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.operations;
 
+import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.collection.CollectionWrapper;
@@ -74,5 +75,9 @@ public class ContainsAllOperation extends CollectionKeyBasedOperation {
             data.readData(in);
             dataSet.add(data);
         }
+    }
+
+    public int getId() {
+        return CollectionDataSerializerHook.CONTAINS_ALL;
     }
 }

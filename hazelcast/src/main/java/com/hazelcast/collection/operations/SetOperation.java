@@ -17,6 +17,7 @@
 package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionContainer;
+import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.nio.ObjectDataInput;
@@ -80,5 +81,9 @@ public class SetOperation extends CollectionBackupAwareOperation {
         index = in.readInt();
         value = new Data();
         value.readData(in);
+    }
+
+    public int getId() {
+        return CollectionDataSerializerHook.SET;
     }
 }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.operations;
 
+import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
@@ -35,5 +36,9 @@ public class RemoveAllBackupOperation extends CollectionKeyBasedOperation implem
     public void run() throws Exception {
         removeCollection();
         response = true;
+    }
+
+    public int getId() {
+        return CollectionDataSerializerHook.REMOVE_ALL_BACKUP;
     }
 }

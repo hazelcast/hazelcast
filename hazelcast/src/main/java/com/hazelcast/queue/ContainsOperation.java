@@ -64,4 +64,8 @@ public class ContainsOperation extends QueueOperation {
             dataList.add(IOUtil.readData(in));
         }
     }
+
+    public int getId() {
+        return QueueDataSerializerHook.CONTAINS;
+    }
 }

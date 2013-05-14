@@ -16,9 +16,9 @@
 
 package com.hazelcast.collection.operations;
 
+import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
-import com.hazelcast.collection.CollectionService;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
@@ -68,5 +68,9 @@ public class RemoveAllOperation extends CollectionBackupAwareOperation {
 
     public void onWaitExpire() {
         getResponseHandler().sendResponse(new CollectionResponse(null));
+    }
+
+    public int getId() {
+        return CollectionDataSerializerHook.REMOVE_ALL;
     }
 }
