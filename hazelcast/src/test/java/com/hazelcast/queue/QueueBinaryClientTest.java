@@ -196,7 +196,7 @@ public class QueueBinaryClientTest {
         q.offer("item5");
 
         c.send(new DrainRequest(queueName, 1));
-        SerializableCollectionContainer result = (SerializableCollectionContainer)c.receive();
+        PortableCollectionContainer result = (PortableCollectionContainer)c.receive();
         Collection<Data> coll = result.getCollection();
         assertEquals(1, coll.size());
         assertEquals("item1", ss.toObject(coll.iterator().next()));
@@ -215,7 +215,7 @@ public class QueueBinaryClientTest {
         q.offer("item5");
 
         c.send(new IteratorRequest(queueName));
-        SerializableCollectionContainer result = (SerializableCollectionContainer)c.receive();
+        PortableCollectionContainer result = (PortableCollectionContainer)c.receive();
         Collection<Data> coll = result.getCollection();
         int i=1;
         for (Data data: coll){

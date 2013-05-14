@@ -48,6 +48,8 @@ public class CollectionPortableHook implements PortableHook {
     public static final int SIZE = 18;
     public static final int VALUES = 19;
     public static final int ADD_LISTENER = 20;
+    public static final int COLLECTION_RESPONSE = 21;
+    public static final int ENTRY_SET_RESPONSE = 22;
 
 
     public int getFactoryId() {
@@ -98,6 +100,10 @@ public class CollectionPortableHook implements PortableHook {
                         return new ValuesRequest();
                     case ADD_LISTENER:
                         return new AddListenerRequest();
+                    case COLLECTION_RESPONSE:
+                        return new PortableCollectionResponse();
+                    case ENTRY_SET_RESPONSE:
+                        return new PortableEntrySetResponse();
                 }
                 return null;
             }

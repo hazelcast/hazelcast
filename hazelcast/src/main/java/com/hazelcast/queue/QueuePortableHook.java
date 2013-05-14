@@ -40,6 +40,7 @@ public class QueuePortableHook implements PortableHook {
     public static final int CLEAR = 10;
     public static final int ADD_ALL = 11;
     public static final int ADD_LISTENER = 12;
+    public static final int COLLECTION_CONTAINER = 13;
 
     public int getFactoryId() {
         return F_ID;
@@ -75,6 +76,8 @@ public class QueuePortableHook implements PortableHook {
                         return new AddAllRequest();
                     case ADD_LISTENER:
                         return new AddListenerRequest();
+                    case COLLECTION_CONTAINER:
+                        return new PortableCollectionContainer();
                 }
                 return null;
             }

@@ -18,6 +18,8 @@ package com.hazelcast.collection.operations.client;
 
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.collection.CollectionProxyId;
+import com.hazelcast.collection.CollectionRecord;
+import com.hazelcast.collection.operations.CollectionResponse;
 import com.hazelcast.collection.operations.RemoveAllOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
@@ -25,6 +27,8 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * @ali 5/10/13
@@ -54,9 +58,20 @@ public class RemoveAllRequest extends CollectionKeyBasedRequest{
         super.writePortable(writer);
     }
 
-    @Override
     public void readPortable(PortableReader reader) throws IOException {
         threadId = reader.readInt("t");
         super.readPortable(reader);
+    }
+
+    protected Object filter(Object response) {
+        if (response instanceof CollectionResponse){
+            Collection<CollectionRecord> coll = ((CollectionResponse) response).getCollection();
+            Collection<Data> collection = new ArrayList<Data>(coll.size());
+            for (CollectionRecord record: coll){
+                collection.add(getClientEngine().toData(record.getObject()));
+            }
+            return new PortableCollectionResponse(collection);
+        }
+        return super.filter(response);
     }
 }

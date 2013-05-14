@@ -54,7 +54,7 @@ public class KeySetRequest extends CollectionAllPartitionRequest {
             Collection<Data> coll = response.getCollection();
             keySet.addAll(coll);
         }
-        return keySet;
+        return new PortableCollectionResponse(keySet);
     }
 
     public int getClassId() {

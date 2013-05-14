@@ -18,9 +18,14 @@ package com.hazelcast.collection.operations.client;
 
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.collection.CollectionProxyId;
+import com.hazelcast.collection.CollectionRecord;
+import com.hazelcast.collection.operations.CollectionResponse;
 import com.hazelcast.collection.operations.GetAllOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
+
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * @ali 5/10/13
@@ -40,5 +45,17 @@ public class GetAllRequest extends CollectionKeyBasedRequest {
 
     public int getClassId() {
         return CollectionPortableHook.GET_ALL;
+    }
+
+    protected Object filter(Object response) {
+        if (response instanceof CollectionResponse){
+            Collection<CollectionRecord> coll = ((CollectionResponse) response).getCollection();
+            Collection<Data> collection = new ArrayList<Data>(coll.size());
+            for (CollectionRecord record: coll){
+                collection.add(getClientEngine().toData(record.getObject()));
+            }
+            return new PortableCollectionResponse(collection);
+        }
+        return super.filter(response);
     }
 }

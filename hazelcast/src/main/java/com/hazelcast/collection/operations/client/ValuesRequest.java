@@ -45,7 +45,7 @@ public class ValuesRequest extends CollectionAllPartitionRequest {
     }
 
     protected Object reduce(Map<Integer, Object> map) {
-        Collection list = new LinkedList();
+        Collection<Data> list = new LinkedList();
         for (Object obj : map.values()) {
             if (obj == null) {
                 continue;
@@ -53,11 +53,10 @@ public class ValuesRequest extends CollectionAllPartitionRequest {
             CollectionResponse response = (CollectionResponse)obj;
             Collection<CollectionRecord> coll = response.getCollection();
             for (CollectionRecord record: coll){
-                Object o = getClientEngine().getSerializationService().toObject((Data)record.getObject());
-                list.add(o);
+                list.add(getClientEngine().toData(record.getObject()));
             }
         }
-        return list;
+        return new PortableCollectionResponse(list);
     }
 
     public int getClassId() {

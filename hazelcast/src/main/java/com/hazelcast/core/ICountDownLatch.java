@@ -39,39 +39,6 @@ import java.util.concurrent.TimeUnit;
  */
 public interface ICountDownLatch extends DistributedObject {
 
-//    /**
-//     * Causes the current thread to wait until the latch has counted down to
-//     * zero or an exception is thrown.
-//     * <p/>
-//     * <p>If the current count is zero then this method returns immediately.
-//     * <p/>
-//     * <p>If the current count is greater than zero then the current
-//     * thread becomes disabled for thread scheduling purposes and lies
-//     * dormant until one of four things happen:
-//     * <ul>
-//     * <li>The count reaches zero due to invocations of the
-//     * {@link #countDown} method;
-//     * <li>This ICountDownLatch instance is destroyed;
-//     * <li>The countdown owner becomes disconnected; or
-//     * <li>Some other thread {@linkplain Thread#interrupt interrupts}
-//     * the current thread.
-//     * </ul>
-//     * <p/>If the countdown owner becomes disconnected while waiting then
-//     * {@link MemberLeftException} will be thrown.
-//     * <p>If the current thread:
-//     * <ul>
-//     * <li>has its interrupted status set on entry to this method; or
-//     * <li>is {@linkplain Thread#interrupt interrupted} while waiting,
-//     * </ul>
-//     * then {@link InterruptedException} is thrown and the current thread's
-//     * interrupted status is cleared.
-//     *
-//     * @throws MemberLeftException        if the countdown owner becomes disconnected while waiting
-//     * @throws InterruptedException       if the current thread is interrupted
-//     * @throws IllegalStateException      if hazelcast instance is shutdown while waiting
-//     */
-//    public void await() throws MemberLeftException, InterruptedException;
-
     /**
      * Causes the current thread to wait until the latch has counted down to
      * zero, an exception is thrown, or the specified waiting time elapses.

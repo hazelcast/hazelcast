@@ -1,8 +1,13 @@
 com.hazelcast.cluster.ClusterDataSerializerHook
-com.hazelcast.partition.PartitionDataSerializerHook
 com.hazelcast.spi.impl.SpiDataSerializerHook
+com.hazelcast.partition.PartitionDataSerializerHook
+com.hazelcast.client.ClientDataSerializerHook
 com.hazelcast.map.MapDataSerializerHook
 com.hazelcast.queue.QueueDataSerializerHook
 com.hazelcast.collection.CollectionDataSerializerHook
 com.hazelcast.executor.ExecutorDataSerializerHook
-com.hazelcast.client.ClientDataSerializerHook
+com.hazelcast.topic.TopicDataSerializerHook
+com.hazelcast.concurrent.lock.LockDataSerializerHook
+com.hazelcast.concurrent.semaphore.SemaphoreDataSerializerHook
+com.hazelcast.concurrent.atomiclong.AtomicLongDataSerializerHook
+com.hazelcast.concurrent.countdownlatch.CountDownLatchDataSerializerHook

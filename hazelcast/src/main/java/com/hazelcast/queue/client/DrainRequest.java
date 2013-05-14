@@ -16,13 +16,16 @@
 
 package com.hazelcast.queue.client;
 
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.queue.DrainOperation;
 import com.hazelcast.queue.QueuePortableHook;
+import com.hazelcast.queue.SerializableCollectionContainer;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
+import java.util.Collection;
 
 /**
  * @ali 5/8/13
@@ -45,6 +48,14 @@ public class DrainRequest extends QueueRequest {
 
     public int getClassId() {
         return QueuePortableHook.DRAIN;
+    }
+
+    protected Object filter(Object response) {
+        if (response instanceof SerializableCollectionContainer){
+            Collection<Data> coll = ((SerializableCollectionContainer) response).getCollection();
+            return new PortableCollectionContainer(coll);
+        }
+        return super.filter(response);
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
