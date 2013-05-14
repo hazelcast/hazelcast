@@ -46,8 +46,8 @@
         <maven.build.timestamp.format>yyyyMMdd</maven.build.timestamp.format>
         <timestamp>${maven.build.timestamp}</timestamp>
 
-        <maven.compiler.plugin.version>2.3.2</maven.compiler.plugin.version>
-        <!--<maven.compiler.plugin.version>3.0</maven.compiler.plugin.version>-->
+        <!--<maven.compiler.plugin.version>2.3.2</maven.compiler.plugin.version>-->
+        <maven.compiler.plugin.version>3.1</maven.compiler.plugin.version>
         <maven.jar.plugin.version>2.4</maven.jar.plugin.version>
         <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
         <maven.antrun.plugin.version>1.7</maven.antrun.plugin.version>
