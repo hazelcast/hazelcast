@@ -22,6 +22,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStore;
+import com.hazelcast.instance.StaticNodeFactory;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -42,8 +43,10 @@ public class MapLoaderTest {
         mapStoreConfig.setImplementation(new SimpleMapLoader());
         cfg.getMapConfig("default").setMapStoreConfig(mapStoreConfig);
 
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(cfg);
+        StaticNodeFactory factory = new StaticNodeFactory(3);
+
+        HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(cfg);
         IMap map = instance1.getMap("testMapInitialLoad");
 
 
@@ -53,7 +56,7 @@ public class MapLoaderTest {
             assertEquals(i, map.get(i));
         }
 
-        HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(cfg);
+        HazelcastInstance instance3 = factory.newHazelcastInstance(cfg);
 
         for (int i = 0; i < size; i++) {
             assertEquals(i, map.get(i));
