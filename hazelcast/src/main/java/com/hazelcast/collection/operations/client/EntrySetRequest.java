@@ -43,7 +43,6 @@ public class EntrySetRequest extends CollectionAllPartitionRequest {
         return new MultiMapOperationFactory(proxyId, MultiMapOperationFactory.OperationFactoryType.ENTRY_SET);
     }
 
-    @Override
     protected Object reduce(Map<Integer, Object> map) {
         Set<Map.Entry> entrySet = new HashSet<Map.Entry>();
         for (Object obj : map.values()) {
@@ -54,10 +53,9 @@ public class EntrySetRequest extends CollectionAllPartitionRequest {
             Set<Map.Entry<Data, Data>> entries = response.getDataEntrySet();
             entrySet.addAll(entries);
         }
-        return entrySet;
+        return new PortableEntrySetResponse(entrySet);
     }
 
-    @Override
     public int getClassId() {
         return CollectionPortableHook.ENTRY_SET;
     }

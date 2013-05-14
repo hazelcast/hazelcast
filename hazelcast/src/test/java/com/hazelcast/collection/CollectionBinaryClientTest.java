@@ -1,13 +1,10 @@
 package com.hazelcast.collection;
 
 
-import com.hazelcast.collection.list.ObjectListProxy;
-import com.hazelcast.collection.operations.CollectionResponse;
-import com.hazelcast.collection.operations.client.*;
 import com.hazelcast.client.AuthenticationRequest;
 import com.hazelcast.client.ClientPortableHook;
-import com.hazelcast.collection.operations.client.AddAllRequest;
-import com.hazelcast.collection.operations.client.ClearRequest;
+import com.hazelcast.collection.list.ObjectListProxy;
+import com.hazelcast.collection.operations.client.*;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -250,7 +247,8 @@ public class CollectionBinaryClientTest {
         mm.put("key5","value3");
 
         c.send(new EntrySetRequest(mmProxyId));
-        Set<Map.Entry> entrySet = (Set<Map.Entry>)c.receive();
+        PortableEntrySetResponse result = (PortableEntrySetResponse)c.receive();
+        Set<Map.Entry> entrySet = result.getEntrySet();
         Data value = (Data)entrySet.iterator().next().getValue();
         String s = (String)ss.toObject(value);
         assertTrue(s.startsWith("value"));
@@ -269,13 +267,13 @@ public class CollectionBinaryClientTest {
 
 
         c.send(new GetAllRequest(mmProxyId, ss.toData("key1")));
-        CollectionResponse result = (CollectionResponse)c.receive();
-        Collection<CollectionRecord> coll = result.getCollection();
+        PortableCollectionResponse result = (PortableCollectionResponse)c.receive();
+        Collection<Data> coll = result.getCollection();
         assertEquals(1, coll.size());
-        assertEquals("value1", ss.toObject((Data) coll.iterator().next().getObject()));
+        assertEquals("value1", ss.toObject(coll.iterator().next()));
 
         c.send(new GetAllRequest(mmProxyId, ss.toData("key2")));
-        result = (CollectionResponse)c.receive();
+        result = (PortableCollectionResponse)c.receive();
         coll = result.getCollection();
         assertEquals(2, coll.size());
     }
@@ -328,7 +326,8 @@ public class CollectionBinaryClientTest {
         mm.put("key2","value2");
 
         c.send(new KeySetRequest(mmProxyId));
-        Set<Data> keySet = (Set<Data>)c.receive();
+        PortableCollectionResponse result = (PortableCollectionResponse)c.receive();
+        Collection<Data> keySet = result.getCollection();
         assertEquals(2, keySet.size());
 
         String s = (String)ss.toObject(keySet.iterator().next());
@@ -380,13 +379,13 @@ public class CollectionBinaryClientTest {
 
 
         c.send(new RemoveAllRequest(mmProxyId, ss.toData("key1"), getThreadId()));
-        CollectionResponse result = (CollectionResponse)c.receive();
-        Collection<CollectionRecord> coll = result.getCollection();
+        PortableCollectionResponse result = (PortableCollectionResponse)c.receive();
+        Collection<Data> coll = result.getCollection();
         assertEquals(1, coll.size());
-        assertEquals("value1", ss.toObject((Data) coll.iterator().next().getObject()));
+        assertEquals("value1", ss.toObject(coll.iterator().next()));
 
         c.send(new RemoveAllRequest(mmProxyId, ss.toData("key2"), getThreadId()));
-        result = (CollectionResponse)c.receive();
+        result = (PortableCollectionResponse)c.receive();
         coll = result.getCollection();
         assertEquals(2, coll.size());
 
@@ -476,10 +475,12 @@ public class CollectionBinaryClientTest {
         mm.put("key3","value2");
 
         c.send(new ValuesRequest(mmProxyId));
-        Collection coll = (Collection)c.receive();
+        PortableCollectionResponse result = (PortableCollectionResponse)c.receive();
+        Collection<Data> coll = result.getCollection();
         assertEquals(4, coll.size());
 
-        for (Object obj: coll){
+        for (Data data: coll){
+            Object obj = ss.toObject(data);
             assertTrue(((String)obj).startsWith("value"));
         }
     }
