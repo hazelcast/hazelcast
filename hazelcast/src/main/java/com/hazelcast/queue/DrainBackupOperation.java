@@ -72,4 +72,8 @@ public class DrainBackupOperation extends QueueOperation implements BackupOperat
             }
         }
     }
+
+    public int getId() {
+        return QueueDataSerializerHook.DRAIN_BACKUP;
+    }
 }

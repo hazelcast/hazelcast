@@ -65,4 +65,8 @@ public class ClearOperation extends QueueBackupAwareOperation implements Notifie
     public WaitNotifyKey getNotifiedKey() {
         return getOrCreateContainer().getOfferWaitNotifyKey();
     }
+
+    public int getId() {
+        return QueueDataSerializerHook.CLEAR;
+    }
 }

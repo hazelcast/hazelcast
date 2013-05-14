@@ -65,6 +65,6 @@ public final class OfferBackupOperation extends QueueOperation implements Backup
     }
 
     public int getId() {
-        return QueueDataSerializerHook.OFFER_BACKUP; //TODO do this for other operations
+        return QueueDataSerializerHook.OFFER_BACKUP;
     }
 }

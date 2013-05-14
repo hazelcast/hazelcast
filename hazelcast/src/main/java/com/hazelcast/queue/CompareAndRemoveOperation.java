@@ -98,4 +98,8 @@ public class CompareAndRemoveOperation extends QueueBackupAwareOperation impleme
     public WaitNotifyKey getNotifiedKey() {
         return getOrCreateContainer().getOfferWaitNotifyKey();
     }
+
+    public int getId() {
+        return QueueDataSerializerHook.COMPARE_AND_REMOVE;
+    }
 }

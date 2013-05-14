@@ -20,7 +20,7 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -29,7 +29,7 @@ import java.util.Collection;
 /**
  * @ali 1/4/13
  */
-public class SerializableCollectionContainer implements DataSerializable {
+public class SerializableCollectionContainer implements IdentifiedDataSerializable {
 
     private Collection<Data> collection;
 
@@ -64,5 +64,13 @@ public class SerializableCollectionContainer implements DataSerializable {
         for (int i = 0; i < size; i++) {
             collection.add(IOUtil.readData(in));
         }
+    }
+
+    public int getFactoryId() {
+        return QueueDataSerializerHook.F_ID;
+    }
+
+    public int getId() {
+        return QueueDataSerializerHook.COLLECTION_CONTAINER;
     }
 }

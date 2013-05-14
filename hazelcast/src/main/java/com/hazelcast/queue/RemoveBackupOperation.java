@@ -51,4 +51,8 @@ public class RemoveBackupOperation extends QueueOperation implements BackupOpera
         super.readInternal(in);
         itemId = in.readLong();
     }
+
+    public int getId() {
+        return QueueDataSerializerHook.REMOVE_BACKUP;
+    }
 }

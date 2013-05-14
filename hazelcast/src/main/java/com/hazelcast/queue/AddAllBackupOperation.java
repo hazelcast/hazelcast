@@ -66,4 +66,8 @@ public class AddAllBackupOperation extends QueueOperation implements BackupOpera
             dataMap.put(itemId, value);
         }
     }
+
+    public int getId() {
+        return QueueDataSerializerHook.ADD_ALL_BACKUP;
+    }
 }
