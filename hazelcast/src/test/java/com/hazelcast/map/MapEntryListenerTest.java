@@ -17,6 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.*;
+import com.hazelcast.instance.StaticNodeFactory;
 import org.junit.*;
 import org.junit.runner.RunWith;
 
@@ -44,8 +45,9 @@ public class MapEntryListenerTest {
 
     @Before
     public void before() {
-        h1 = Hazelcast.newHazelcastInstance(null);
-        h2 = Hazelcast.newHazelcastInstance(null);
+        StaticNodeFactory factory = new StaticNodeFactory(2);
+        h1 = factory.newHazelcastInstance(null);
+        h2 = factory.newHazelcastInstance(null);
         createMaps();
     }
 

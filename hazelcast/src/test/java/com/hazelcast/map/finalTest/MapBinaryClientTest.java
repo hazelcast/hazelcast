@@ -21,6 +21,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.map.MapKeySet;
@@ -58,7 +59,8 @@ public class MapBinaryClientTest extends ClientTestSupport {
     @BeforeClass
     public static void init() {
         Config config = new Config();
-        hz = Hazelcast.newHazelcastInstance(config);
+        StaticNodeFactory factory = new StaticNodeFactory(3);
+        hz = factory.newHazelcastInstance(config);
         map = hz.getMap(mapName);
     }
 
