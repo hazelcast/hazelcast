@@ -19,6 +19,7 @@ package com.hazelcast.queue.tx;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.queue.QueueDataSerializerHook;
 import com.hazelcast.queue.QueueOperation;
 import com.hazelcast.spi.BackupOperation;
 
@@ -57,5 +58,9 @@ public class TxnOfferBackupOperation extends QueueOperation implements BackupOpe
         itemId = in.readLong();
         data = new Data();
         data.readData(in);
+    }
+
+    public int getId() {
+        return QueueDataSerializerHook.TXN_OFFER_BACKUP;
     }
 }

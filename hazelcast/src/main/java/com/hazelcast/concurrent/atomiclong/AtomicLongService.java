@@ -16,16 +16,15 @@
 
 package com.hazelcast.concurrent.atomiclong;
 
-import com.hazelcast.client.ClientCommandHandler;
-
-import com.hazelcast.concurrent.atomiclong.client.AddAndGetHandler;
-import com.hazelcast.concurrent.atomiclong.client.GetAndAddHandler;
-import com.hazelcast.concurrent.atomiclong.client.CompareAndSetHandler;
-
-import com.hazelcast.concurrent.atomiclong.client.GetAndSetHandler;
 import com.hazelcast.concurrent.atomiclong.proxy.AtomicLongProxy;
 import com.hazelcast.config.Config;
-import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.deprecated.client.ClientCommandHandler;
+import com.hazelcast.deprecated.concurrent.atomiclong.client.AddAndGetHandler;
+import com.hazelcast.deprecated.concurrent.atomiclong.client.CompareAndSetHandler;
+import com.hazelcast.deprecated.concurrent.atomiclong.client.GetAndAddHandler;
+import com.hazelcast.deprecated.concurrent.atomiclong.client.GetAndSetHandler;
+import com.hazelcast.deprecated.nio.protocol.Command;
+import com.hazelcast.deprecated.spi.ClientProtocolService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.spi.*;
 import com.hazelcast.util.ConcurrencyUtil;
@@ -37,7 +36,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 // author: sancar - 21.12.2012
 public class AtomicLongService implements ManagedService, RemoteService, MigrationAwareService, ClientProtocolService {
@@ -45,18 +43,18 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
     public static final String SERVICE_NAME = "hz:impl:atomicLongService";
     private NodeEngine nodeEngine;
 
-    private final ConcurrentMap<String, AtomicLong> numbers = new ConcurrentHashMap<String, AtomicLong>();
+    private final ConcurrentMap<String, AtomicLongWrapper> numbers = new ConcurrentHashMap<String, AtomicLongWrapper>();
 
-    private final ConstructorFunction<String, AtomicLong> atomicLongConstructorFunction = new ConstructorFunction<String, AtomicLong>() {
-        public AtomicLong createNew(String key) {
-            return new AtomicLong(0L);
+    private final ConstructorFunction<String, AtomicLongWrapper> atomicLongConstructorFunction = new ConstructorFunction<String, AtomicLongWrapper>() {
+        public AtomicLongWrapper createNew(String key) {
+            return new AtomicLongWrapper();
         }
     };
 
     public AtomicLongService() {
     }
 
-    public AtomicLong getNumber(String name) {
+    public AtomicLongWrapper getNumber(String name) {
         return ConcurrencyUtil.getOrPutIfAbsent(numbers, name, atomicLongConstructorFunction);
     }
 

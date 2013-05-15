@@ -19,6 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.map.proxy.ObjectMapProxy;
 import com.hazelcast.monitor.LocalMapStats;
 import org.junit.Test;
@@ -34,7 +35,9 @@ public class MapLocalStatsTest {
     public void test() throws InterruptedException {
 
         Config cfg = new Config();
-        HazelcastInstance instance = Hazelcast.newHazelcastInstance(cfg);
+        StaticNodeFactory factory = new StaticNodeFactory(3);
+
+        HazelcastInstance instance = factory.newHazelcastInstance(cfg);
         ObjectMapProxy map = (ObjectMapProxy) instance.getMap("map");
 
         for (int i = 0; i < 1000; i++) {
@@ -61,8 +64,9 @@ public class MapLocalStatsTest {
     public void testMultiNodes() throws InterruptedException {
 
         Config cfg = new Config();
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(cfg);
+        StaticNodeFactory factory = new StaticNodeFactory(3);
+        HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(cfg);
         ObjectMapProxy map1 = (ObjectMapProxy) instance1.getMap("map");
         ObjectMapProxy map2 = (ObjectMapProxy) instance2.getMap("map");
 

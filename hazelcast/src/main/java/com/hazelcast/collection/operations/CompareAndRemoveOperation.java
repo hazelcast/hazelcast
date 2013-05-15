@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.operations;
 
+import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.collection.CollectionWrapper;
@@ -54,19 +55,26 @@ public class CompareAndRemoveOperation extends CollectionBackupAwareOperation {
             return;
         }
         idSet = new HashSet<Long>();
-        for (Data data : dataList) {
-            Object obj = isBinary() ? data : toObject(data);
-            Iterator<CollectionRecord> iter = wrapper.getCollection().iterator();
-            while (iter.hasNext()) {
-                CollectionRecord record = iter.next();
-                boolean equals = obj.equals(record.getObject());
-                if ((equals && !retain) || (!equals && retain)) {
-                    idSet.add(record.getRecordId());
-                    iter.remove();
-                }
+        List objList = dataList;
+        if (!isBinary()){
+            objList = new ArrayList(dataList.size());
+            for (Data data: dataList){
+                objList.add(toObject(data));
+            }
+        }
+        Iterator<CollectionRecord> iter = wrapper.getCollection().iterator();
+        while (iter.hasNext()) {
+            CollectionRecord record = iter.next();
+            boolean contains = objList.contains(record.getObject());
+            if ((contains && !retain) || (!contains && retain)) {
+                idSet.add(record.getRecordId());
+                iter.remove();
             }
         }
         response = !idSet.isEmpty();
+        if (wrapper.getCollection().isEmpty()){
+            removeCollection();
+        }
     }
 
     public boolean shouldBackup() {
@@ -95,5 +103,9 @@ public class CompareAndRemoveOperation extends CollectionBackupAwareOperation {
             Data data = IOUtil.readData(in);
             dataList.add(data);
         }
+    }
+
+    public int getId() {
+        return CollectionDataSerializerHook.COMPARE_AND_REMOVE;
     }
 }

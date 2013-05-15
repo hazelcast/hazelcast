@@ -727,15 +727,11 @@ public class MapStoreTest {
         assertEquals(1000, map2.size());
     }
 
-
-
-
-
-    protected Config newConfig(Object storeImpl, int writeDelaySeconds) {
+    public static Config newConfig(Object storeImpl, int writeDelaySeconds) {
         return newConfig("default", storeImpl, writeDelaySeconds);
     }
 
-    protected Config newConfig(String mapName, Object storeImpl, int writeDelaySeconds) {
+    public static Config newConfig(String mapName, Object storeImpl, int writeDelaySeconds) {
         Config config = new XmlConfigBuilder().build();
         MapConfig mapConfig = config.getMapConfig(mapName);
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
@@ -744,7 +740,6 @@ public class MapStoreTest {
         mapConfig.setMapStoreConfig(mapStoreConfig);
         return config;
     }
-
 
     public static class TestEventBasedMapStore<K, V> implements MapLoaderLifecycleSupport, MapStore<K, V> {
 
@@ -1140,7 +1135,7 @@ public class MapStoreTest {
             assertTrue("Load-al remaining: " + latchLoadAll.getCount(), latchLoadAll.await(seconds, TimeUnit.SECONDS));
         }
 
-        Map getStore() {
+        public Map getStore() {
             return store;
         }
 

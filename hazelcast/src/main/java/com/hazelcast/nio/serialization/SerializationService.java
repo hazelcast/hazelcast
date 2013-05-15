@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.nio.BufferObjectDataInput;
+import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -35,11 +37,11 @@ public interface SerializationService {
 
     Object readObject(ObjectDataInput in);
 
-    ObjectDataInput createObjectDataInput(byte[] data);
+    BufferObjectDataInput createObjectDataInput(byte[] data);
 
-    ObjectDataInput createObjectDataInput(Data data);
+    BufferObjectDataInput createObjectDataInput(Data data);
 
-    ObjectDataOutput createObjectDataOutput(int size);
+    BufferObjectDataOutput createObjectDataOutput(int size);
 
     ObjectDataOutputStream createObjectDataOutputStream(OutputStream out);
 
@@ -50,5 +52,7 @@ public interface SerializationService {
     void registerFallback(TypeSerializer serializer);
 
     SerializationContext getSerializationContext();
+
+    PortableReader createPortableReader(Data data);
 
 }

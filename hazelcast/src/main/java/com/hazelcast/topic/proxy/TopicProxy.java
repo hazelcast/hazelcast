@@ -37,12 +37,12 @@ public class TopicProxy<E> extends TopicProxySupport implements ITopic<E> {
         publishInternal(getNodeEngine().toData(message));
     }
 
-    public void addMessageListener(MessageListener<E> listener) {
-        addMessageListenerInternal(listener);
+    public String addMessageListener(MessageListener<E> listener) {
+        return addMessageListenerInternal(listener);
     }
 
-    public void removeMessageListener(MessageListener<E> listener) {
-        removeMessageListenerInternal(listener);
+    public boolean removeMessageListener(final String registrationId) {
+        return removeMessageListenerInternal(registrationId);
     }
 
     public LocalTopicStats getLocalTopicStats() {

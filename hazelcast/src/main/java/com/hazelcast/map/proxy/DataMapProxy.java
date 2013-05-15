@@ -24,7 +24,7 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.util.QueryResultStream;
+import com.hazelcast.util.IterationType;
 
 import java.util.Collection;
 import java.util.Map;
@@ -180,32 +180,28 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
         return entrySetInternal();
     }
 
-    public void addInterceptor(MapInterceptor interceptor) {
-        addMapInterceptorInternal(interceptor);
+    public String addInterceptor(MapInterceptor interceptor) {
+        return addMapInterceptorInternal(interceptor);
     }
 
-    public void removeInterceptor(MapInterceptor interceptor) {
-        removeMapInterceptorInternal(interceptor);
+    public void removeInterceptor(String id) {
+        removeMapInterceptorInternal(id);
     }
 
-    public void addEntryListener(final EntryListener<Data, Data> listener, final boolean includeValue) {
-        addEntryListenerInternal(listener, null, includeValue);
+    public String addEntryListener(final EntryListener<Data, Data> listener, final boolean includeValue) {
+        return addEntryListenerInternal(listener, null, includeValue);
     }
 
-    public void addEntryListener(EntryListener listener, Predicate predicate, Data key, boolean includeValue) {
-        addEntryListenerInternal(listener, predicate, key, includeValue);
+    public String addEntryListener(EntryListener listener, Predicate predicate, Data key, boolean includeValue) {
+        return addEntryListenerInternal(listener, predicate, key, includeValue);
     }
 
-    public void removeEntryListener(final EntryListener<Data, Data> listener) {
-        removeEntryListenerInternal(listener);
+    public boolean removeEntryListener(final String id) {
+        return removeEntryListenerInternal(id);
     }
 
-    public void addEntryListener(final EntryListener<Data, Data> listener, final Data key, final boolean includeValue) {
-        addEntryListenerInternal(listener, key, includeValue);
-    }
-
-    public void removeEntryListener(final EntryListener<Data, Data> listener, final Data key) {
-        removeEntryListenerInternal(listener, key);
+    public String addEntryListener(final EntryListener<Data, Data> listener, final Data key, final boolean includeValue) {
+        return addEntryListenerInternal(listener, key, includeValue);
     }
 
     @Override
@@ -218,15 +214,15 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
     }
 
     public Set<Data> keySet(final Predicate predicate) {
-        return query(predicate, QueryResultStream.IterationType.KEY, true);
+        return query(predicate, IterationType.KEY, true);
     }
 
     public Set<Entry<Data, Data>> entrySet(final Predicate predicate) {
-        return query(predicate, QueryResultStream.IterationType.ENTRY, true);
+        return query(predicate, IterationType.ENTRY, true);
     }
 
     public Collection<Data> values(final Predicate predicate) {
-        return query(predicate, QueryResultStream.IterationType.VALUE, true);
+        return query(predicate, IterationType.VALUE, true);
     }
 
     public Set<Data> localKeySet() {

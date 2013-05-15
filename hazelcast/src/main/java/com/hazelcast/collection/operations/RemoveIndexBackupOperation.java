@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.operations;
 
+import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.nio.ObjectDataInput;
@@ -42,7 +43,7 @@ public class RemoveIndexBackupOperation extends CollectionKeyBasedOperation impl
     }
 
     public void run() throws Exception {
-        List<CollectionRecord> list = (List<CollectionRecord>) getOrCreateCollectionWrapper();
+        List<CollectionRecord> list = (List<CollectionRecord>) getOrCreateCollectionWrapper().getCollection();
         list.remove(index);
         response = true;
     }
@@ -55,5 +56,9 @@ public class RemoveIndexBackupOperation extends CollectionKeyBasedOperation impl
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         index = in.readInt();
+    }
+
+    public int getId() {
+        return CollectionDataSerializerHook.REMOVE_INDEX_BACKUP;
     }
 }

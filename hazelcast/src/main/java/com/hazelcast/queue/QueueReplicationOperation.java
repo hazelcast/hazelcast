@@ -19,6 +19,7 @@ package com.hazelcast.queue;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.AbstractOperation;
 
 import java.io.IOException;
@@ -31,7 +32,7 @@ import java.util.Map;
  * Time: 11:23 AM
  */
 
-public class QueueReplicationOperation extends AbstractOperation {
+public class QueueReplicationOperation extends AbstractOperation implements IdentifiedDataSerializable {
 
     Map<String, QueueContainer> migrationData;
 
@@ -76,5 +77,13 @@ public class QueueReplicationOperation extends AbstractOperation {
 
     public String getServiceName() {
         return QueueService.SERVICE_NAME;
+    }
+
+    public int getFactoryId() {
+        return QueueDataSerializerHook.F_ID;
+    }
+
+    public int getId() {
+        return QueueDataSerializerHook.QUEUE_REPLICATION;
     }
 }

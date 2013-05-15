@@ -27,15 +27,20 @@ public interface Cluster {
      * Adds MembershipListener to listen for membership updates.
      *
      * @param listener membership listener
+     *
+     * @return returns registration id.
      */
-    void addMembershipListener(MembershipListener listener);
+    String addMembershipListener(MembershipListener listener);
 
     /**
      * Removes the specified membership listener.
      *
-     * @param listener membership listener to remove
+     *
+     * @param registrationId Id of listener registration.
+     *
+     * @return true if registration is removed, false otherwise
      */
-    void removeMembershipListener(MembershipListener listener);
+    boolean removeMembershipListener(final String registrationId);
 
     /**
      * Set of current members of the cluster.

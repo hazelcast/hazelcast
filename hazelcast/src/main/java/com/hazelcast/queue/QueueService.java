@@ -16,18 +16,19 @@
 
 package com.hazelcast.queue;
 
-import com.hazelcast.client.ClientCommandHandler;
+import com.hazelcast.deprecated.client.ClientCommandHandler;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
+import com.hazelcast.deprecated.spi.ClientProtocolService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.deprecated.nio.protocol.Command;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.PartitionInfo;
-import com.hazelcast.queue.client.*;
+import com.hazelcast.deprecated.queue.client.*;
 import com.hazelcast.queue.proxy.DataQueueProxy;
 import com.hazelcast.queue.proxy.ObjectQueueProxy;
 import com.hazelcast.queue.tx.TransactionalQueueProxy;
@@ -56,7 +57,6 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     private final NodeEngine nodeEngine;
     private final ConcurrentMap<String, QueueContainer> containerMap = new ConcurrentHashMap<String, QueueContainer>();
     private final ConcurrentMap<String, LocalQueueStatsImpl> statsMap = new ConcurrentHashMap<String, LocalQueueStatsImpl>(1000);
-    private final ConcurrentMap<ListenerKey, String> eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
     private final ILogger logger;
     private final ConstructorFunction<String, LocalQueueStatsImpl> localQueueStatsConstructorFunction = new ConstructorFunction<String, LocalQueueStatsImpl>() {
         public LocalQueueStatsImpl createNew(String key) {
@@ -74,7 +74,6 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
 
     public void reset() {
         containerMap.clear();
-        eventRegistrations.clear();
     }
 
     public void shutdown() {
@@ -169,24 +168,15 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, name);
     }
 
-    public void addItemListener(String name, ItemListener listener, boolean includeValue) {
-        ListenerKey listenerKey = new ListenerKey(listener, name);
-        String id = eventRegistrations.putIfAbsent(listenerKey, "tempId");
-        if (id != null) {
-            return;
-        }
+    public String addItemListener(String name, ItemListener listener, boolean includeValue) {
         EventService eventService = nodeEngine.getEventService();
         EventRegistration registration = eventService.registerListener(QueueService.SERVICE_NAME, name, new QueueEventFilter(includeValue), listener);
-        eventRegistrations.put(listenerKey, registration.getId());
+        return registration.getId();
     }
 
-    public void removeItemListener(String name, ItemListener listener) {
-        ListenerKey listenerKey = new ListenerKey(listener, name);
-        String id = eventRegistrations.remove(listenerKey);
-        if (id != null) {
-            EventService eventService = nodeEngine.getEventService();
-            eventService.deregisterListener(SERVICE_NAME, name, id);
-        }
+    public boolean removeItemListener(String name, String registrationId) {
+        EventService eventService = nodeEngine.getEventService();
+        return eventService.deregisterListener(SERVICE_NAME, name, registrationId);
     }
 
     public Map<Command, ClientCommandHandler> getCommandsAsMap() {

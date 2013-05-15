@@ -36,7 +36,7 @@ public interface ProxyService extends CoreService {
 
     Collection<DistributedObject> getAllDistributedObjects();
 
-    void addProxyListener(DistributedObjectListener distributedObjectListener);
+    String addProxyListener(DistributedObjectListener distributedObjectListener);
 
-    void removeProxyListener(DistributedObjectListener distributedObjectListener);
+    boolean removeProxyListener(String registrationId);
 }

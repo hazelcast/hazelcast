@@ -17,6 +17,8 @@
 package com.hazelcast.map.tx;
 
 import com.hazelcast.map.*;
+import com.hazelcast.map.BasePutOperation;
+import com.hazelcast.map.PutBackupOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;

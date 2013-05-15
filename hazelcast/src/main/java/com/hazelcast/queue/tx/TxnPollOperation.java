@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.QueueBackupAwareOperation;
+import com.hazelcast.queue.QueueDataSerializerHook;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
@@ -82,6 +83,10 @@ public class TxnPollOperation extends QueueBackupAwareOperation implements Notif
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         itemId = in.readLong();
+    }
+
+    public int getId() {
+        return QueueDataSerializerHook.TXN_POLL;
     }
 
 }

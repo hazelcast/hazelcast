@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.operations;
 
+import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.nio.ObjectDataInput;
@@ -47,7 +48,7 @@ public class SetBackupOperation extends CollectionKeyBasedOperation implements B
 
     public void run() throws Exception {
         CollectionRecord record = new CollectionRecord(recordId, isBinary() ? value : toObject(value));
-        List<CollectionRecord> list = (List<CollectionRecord>) getOrCreateCollectionWrapper();
+        List<CollectionRecord> list = (List<CollectionRecord>) getOrCreateCollectionWrapper().getCollection();
         list.set(index, record);
         response = true;
     }
@@ -65,5 +66,9 @@ public class SetBackupOperation extends CollectionKeyBasedOperation implements B
         recordId = in.readLong();
         value = new Data();
         value.readData(in);
+    }
+
+    public int getId() {
+        return CollectionDataSerializerHook.SET_BACKUP;
     }
 }

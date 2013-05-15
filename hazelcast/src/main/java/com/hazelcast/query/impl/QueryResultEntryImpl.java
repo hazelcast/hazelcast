@@ -16,14 +16,17 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.map.MapDataSerializerHook;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
-public class QueryResultEntryImpl implements DataSerializable, QueryResultEntry {
+public class QueryResultEntryImpl implements IdentifiedDataSerializable, QueryResultEntry {
     Data indexKey;
     Data keyData;
     Data valueData;
@@ -38,18 +41,15 @@ public class QueryResultEntryImpl implements DataSerializable, QueryResultEntry 
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
-        getIndexKey().writeData(out);
-        getKeyData().writeData(out);
-        getValueData().writeData(out);
+        IOUtil.writeNullableData(out, getIndexKey());
+        IOUtil.writeNullableData(out, getKeyData());
+        IOUtil.writeNullableData(out, getValueData());
     }
 
     public void readData(ObjectDataInput in) throws IOException {
-        indexKey = new Data();
-        indexKey.readData(in);
-        keyData = new Data();
-        keyData.readData(in);
-        valueData = new Data();
-        valueData.readData(in);
+        indexKey = IOUtil.readNullableData(in);
+        keyData = IOUtil.readNullableData(in);
+        valueData = IOUtil.readNullableData(in);
     }
 
     @Override
@@ -76,5 +76,15 @@ public class QueryResultEntryImpl implements DataSerializable, QueryResultEntry 
 
     public Data getIndexKey() {
         return indexKey;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.QUERY_RESULT_ENTRY;
     }
 }

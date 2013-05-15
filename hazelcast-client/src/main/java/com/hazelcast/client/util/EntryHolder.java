@@ -26,5 +26,5 @@ public interface EntryHolder<K, V> {
 
     int size();
 
-    public void addEntryListener(final EntryListener<K, V> listener, final K key, final boolean includeValue);
+    public String addEntryListener(final EntryListener<K, V> listener, final K key, final boolean includeValue);
 }

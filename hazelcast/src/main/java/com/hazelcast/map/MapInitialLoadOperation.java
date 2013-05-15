@@ -16,8 +16,6 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.spi.PartitionAwareOperation;
-
 public class MapInitialLoadOperation extends AbstractMapOperation {
 
     public MapInitialLoadOperation(String name) {

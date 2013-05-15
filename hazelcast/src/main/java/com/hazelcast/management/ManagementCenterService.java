@@ -36,7 +36,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.ObjectDataInputStream;
 import com.hazelcast.nio.serialization.ObjectDataOutputStream;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.partition.Partition;
+import com.hazelcast.core.Partition;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.Operation;
 

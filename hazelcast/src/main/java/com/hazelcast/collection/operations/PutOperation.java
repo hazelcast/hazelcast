@@ -17,9 +17,9 @@
 package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionContainer;
+import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
-import com.hazelcast.collection.CollectionService;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -39,7 +39,7 @@ public class PutOperation extends CollectionBackupAwareOperation {
 
     Data value;
 
-    int index;
+    int index = -1;
 
     transient long begin = -1;
     transient long recordId;
@@ -100,5 +100,9 @@ public class PutOperation extends CollectionBackupAwareOperation {
         super.readInternal(in);
         index = in.readInt();
         value = IOUtil.readData(in);
+    }
+
+    public int getId() {
+        return CollectionDataSerializerHook.PUT;
     }
 }

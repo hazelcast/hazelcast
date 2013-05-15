@@ -22,11 +22,11 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.PartitionService;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Protocol;
-import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.deprecated.nio.Protocol;
+import com.hazelcast.deprecated.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.MigrationListener;
-import com.hazelcast.partition.Partition;
+import com.hazelcast.core.Partition;
 
 import java.net.UnknownHostException;
 import java.util.*;
@@ -118,12 +118,17 @@ public class PartitionClientProxy implements PartitionService {
         return partition(Integer.valueOf(protocol.args[0]), protocol.args[1], Integer.valueOf(protocol.args[2]));
     }
 
-    public void addMigrationListener(MigrationListener migrationListener) {
+    public String addMigrationListener(MigrationListener migrationListener) {
         Protocol request = proxyHelper.createProtocol(Command.MIGRATIONLISTEN, null, null);
         ListenerThread thread = proxyHelper.createAListenerThread("hz.client.migrationListener.",
                 client, request, new MigrationEventLRH(migrationListener, this));
         listenerMap.put(migrationListener, thread);
         thread.start();
+        return null;
+    }
+
+    public boolean removeMigrationListener(String registrationId) {
+        return false;
     }
 
     public void removeMigrationListener(MigrationListener migrationListener) {

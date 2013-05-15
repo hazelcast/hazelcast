@@ -22,7 +22,7 @@ import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.core.ICondition;
 import com.hazelcast.core.ILock;
 import com.hazelcast.monitor.LocalLockStats;
-import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.deprecated.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.concurrent.TimeUnit;

@@ -38,11 +38,11 @@ public class QueryResultStream extends AbstractSet<QueryResultEntry> {
     private final boolean data;
     private final IterationType iterationType;
 
-    public QueryResultStream(SerializationService serializationService, QueryResultStream.IterationType iterationType, boolean data) {
+    public QueryResultStream(SerializationService serializationService, IterationType iterationType, boolean data) {
         this(serializationService, iterationType, data, (iterationType != IterationType.VALUE));
     }
 
-    public QueryResultStream(SerializationService serializationService, QueryResultStream.IterationType iterationType, boolean data, boolean set) {
+    public QueryResultStream(SerializationService serializationService, IterationType iterationType, boolean data, boolean set) {
         this.serializationService = serializationService;
         this.set = set;
         this.data = data;
@@ -52,10 +52,6 @@ public class QueryResultStream extends AbstractSet<QueryResultEntry> {
         } else {
             keys = null;
         }
-    }
-
-    public enum IterationType {
-        KEY, VALUE, ENTRY
     }
 
     public void end() {
@@ -128,4 +124,5 @@ public class QueryResultStream extends AbstractSet<QueryResultEntry> {
             return size;
         }
     }
+
 }

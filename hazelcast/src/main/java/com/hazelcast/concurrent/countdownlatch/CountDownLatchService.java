@@ -16,12 +16,13 @@
 
 package com.hazelcast.concurrent.countdownlatch;
 
-import com.hazelcast.client.ClientCommandHandler;
-import com.hazelcast.concurrent.countdownlatch.client.CDLAwaitHandler;
-import com.hazelcast.concurrent.countdownlatch.client.CDLCountdownHandler;
-import com.hazelcast.concurrent.countdownlatch.client.CDLGetCountHandler;
-import com.hazelcast.concurrent.countdownlatch.client.CDLSetCountHandler;
-import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.deprecated.client.ClientCommandHandler;
+import com.hazelcast.deprecated.concurrent.countdownlatch.client.CDLAwaitHandler;
+import com.hazelcast.deprecated.concurrent.countdownlatch.client.CDLCountdownHandler;
+import com.hazelcast.deprecated.concurrent.countdownlatch.client.CDLGetCountHandler;
+import com.hazelcast.deprecated.concurrent.countdownlatch.client.CDLSetCountHandler;
+import com.hazelcast.deprecated.spi.ClientProtocolService;
+import com.hazelcast.deprecated.nio.protocol.Command;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.spi.*;
 

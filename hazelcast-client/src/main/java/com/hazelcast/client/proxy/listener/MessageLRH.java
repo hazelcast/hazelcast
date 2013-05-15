@@ -22,7 +22,7 @@ import com.hazelcast.client.impl.DataMessage;
 import com.hazelcast.client.proxy.TopicClientProxy;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
-import com.hazelcast.nio.Protocol;
+import com.hazelcast.deprecated.nio.Protocol;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 

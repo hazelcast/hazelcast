@@ -31,6 +31,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.BinaryOperationFactory;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryResultStream;
 
 import java.util.*;
@@ -375,7 +376,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         }
     }
 
-    public void addMapInterceptorInternal(MapInterceptor interceptor) {
+    public String addMapInterceptorInternal(MapInterceptor interceptor) {
         final NodeEngine nodeEngine = getNodeEngine();
         final MapService mapService = getService();
         String id = mapService.addInterceptor(name, interceptor);
@@ -392,13 +393,14 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
                 throw ExceptionUtil.rethrow(t);
             }
         }
+        return id;
     }
 
-    public void removeMapInterceptorInternal(MapInterceptor interceptor) {
+    public void removeMapInterceptorInternal(String id) {
         final NodeEngine nodeEngine = getNodeEngine();
         final MapService mapService = getService();
-        String id = mapService.removeInterceptor(name, interceptor);
-        RemoveInterceptorOperation operation = new RemoveInterceptorOperation(interceptor, name, id);
+        mapService.removeInterceptor(name, id);
+        RemoveInterceptorOperation operation = new RemoveInterceptorOperation(name, id);
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         for (Member member : members) {
             try {
@@ -413,30 +415,26 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         }
     }
 
-    public void addLocalEntryListener(final EntryListener listener) {
+    public String addLocalEntryListener(final EntryListener listener) {
         final MapService mapService = getService();
-        mapService.addLocalEventListener(listener, name);
+        return mapService.addLocalEventListener(listener, name);
     }
 
-    protected void removeEntryListenerInternal(final EntryListener listener) {
-        removeEntryListenerInternal(listener, null);
-    }
-
-    protected void addEntryListenerInternal(final EntryListener listener, final Data key, final boolean includeValue) {
+    protected String addEntryListenerInternal(final EntryListener listener, final Data key, final boolean includeValue) {
         EventFilter eventFilter = new EntryEventFilter(includeValue, key);
         final MapService mapService = getService();
-        mapService.addEventListener(listener, eventFilter, name);
+        return mapService.addEventListener(listener, eventFilter, name);
     }
 
-    protected void addEntryListenerInternal(EntryListener listener, Predicate predicate, final Data key, final boolean includeValue) {
+    protected String addEntryListenerInternal(EntryListener listener, Predicate predicate, final Data key, final boolean includeValue) {
         EventFilter eventFilter = new QueryEventFilter(includeValue, key, predicate);
         final MapService mapService = getService();
-        mapService.addEventListener(listener, eventFilter, name);
+        return mapService.addEventListener(listener, eventFilter, name);
     }
 
-    protected void removeEntryListenerInternal(final EntryListener listener, final Data key) {
+    protected boolean removeEntryListenerInternal(String id) {
         final MapService mapService = getService();
-        mapService.removeEventListener(listener, name, key);
+        return mapService.removeEventListener(name, id);
     }
 
     protected EntryView getEntryViewInternal(final Data key) {
@@ -509,7 +507,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         return result;
     }
 
-    protected Set query(final Predicate predicate, final QueryResultStream.IterationType iterationType, final boolean dataResult) {
+    protected Set query(final Predicate predicate, final IterationType iterationType, final boolean dataResult) {
         final NodeEngine nodeEngine = getNodeEngine();
         OperationService operationService = nodeEngine.getOperationService();
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
@@ -543,7 +541,6 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
                     missingList.add(i);
                 }
             }
-            System.out.println("missings:" + missingList.size());
             List<Future> futures = new ArrayList<Future>(missingList.size());
             for (Integer pid : missingList) {
                 QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(name, predicate);
@@ -575,9 +572,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         final NodeEngine nodeEngine = getNodeEngine();
         if (attribute == null) throw new IllegalArgumentException("attribute name cannot be null");
         try {
-            AddIndexOperation mapKeySetOperation = new AddIndexOperation(name, attribute, ordered);
+            AddIndexOperation addIndexOperation = new AddIndexOperation(name, attribute, ordered);
             Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(SERVICE_NAME, new BinaryOperationFactory(mapKeySetOperation, nodeEngine));
+                    .invokeOnAllPartitions(SERVICE_NAME, new BinaryOperationFactory(addIndexOperation, nodeEngine));
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }

@@ -31,7 +31,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.util.ExceptionUtil;
@@ -53,11 +52,8 @@ public class MapContainer {
     private final MapConfig mapConfig;
     private final MapService mapService;
     private final MapStore store;
-    // TODO: do we really need to store interceptors in 3 separate collections?
-    // TODO: at first phase you can remove the ability to removeInterceptor
     private final List<MapInterceptor> interceptors;
     private final Map<String, MapInterceptor> interceptorMap;
-    private final Map<MapInterceptor, String> interceptorIdMap;
     private final IndexService indexService = new IndexService();
     private final boolean nearCacheEnabled;
     private final AtomicBoolean initialLoaded = new AtomicBoolean(false);
@@ -150,7 +146,6 @@ public class MapContainer {
 
         interceptors = new CopyOnWriteArrayList<MapInterceptor>();
         interceptorMap = new ConcurrentHashMap<String, MapInterceptor>();
-        interceptorIdMap = new ConcurrentHashMap<MapInterceptor, String>();
         nearCacheEnabled = mapConfig.getNearCacheConfig() != null;
     }
 
@@ -238,16 +233,14 @@ public class MapContainer {
     }
 
     public String addInterceptor(MapInterceptor interceptor) {
-        String id = "interceptor" + UUID.randomUUID();
+        String id = UUID.randomUUID().toString();
         interceptorMap.put(id, interceptor);
-        interceptorIdMap.put(interceptor, id);
         interceptors.add(interceptor);
         return id;
     }
 
     public void addInterceptor(MapInterceptor interceptor, String id) {
         interceptorMap.put(id, interceptor);
-        interceptorIdMap.put(interceptor, id);
         interceptors.add(interceptor);
     }
 
@@ -255,16 +248,8 @@ public class MapContainer {
         return interceptors;
     }
 
-    public String removeInterceptor(MapInterceptor interceptor) {
-        String id = interceptorIdMap.remove(interceptor);
-        interceptorMap.remove(id);
-        interceptors.remove(interceptor);
-        return id;
-    }
-
     public void removeInterceptor(String id) {
         MapInterceptor interceptor = interceptorMap.remove(id);
-        interceptorIdMap.remove(interceptor);
         interceptors.remove(interceptor);
     }
 

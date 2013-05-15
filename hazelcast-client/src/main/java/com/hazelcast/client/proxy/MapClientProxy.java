@@ -30,8 +30,8 @@ import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.SimpleEntryView;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.nio.Protocol;
-import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.deprecated.nio.Protocol;
+import com.hazelcast.deprecated.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 
@@ -62,9 +62,13 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K, V> {
         proxyHelper.doCommand(Command.MFLUSH, new String[]{getName()});
     }
 
-    public void addInterceptor(MapInterceptor interceptor) {
+    public String addInterceptor(MapInterceptor interceptor) {
         Data dInterceptor = proxyHelper.toData(interceptor);
         proxyHelper.doCommand(Command.MADDINTERCEPTOR, new String[]{getName()}, dInterceptor);
+        return null;
+    }
+
+    public void removeInterceptor(String id) {
     }
 
     public void removeInterceptor(MapInterceptor interceptor) {
@@ -72,19 +76,25 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K, V> {
         proxyHelper.doCommand(Command.MREMOVEINTERCEPTOR, new String[]{getName()}, dInterceptor);
     }
 
-    public void addLocalEntryListener(EntryListener<K, V> listener) {
+    public String addLocalEntryListener(EntryListener<K, V> listener) {
         throw new UnsupportedOperationException("client doesn't support local entry listener");
     }
 
-    public void addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
+    public String addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
         addEntryListener(listener, null, includeValue);
+        return null;
     }
 
-    public void addEntryListener(final EntryListener<K, V> entryListener, final Predicate<K, V> predicate, final K key,
+    public boolean removeEntryListener(String registrationId) {
+        return false;
+    }
+
+    public String addEntryListener(final EntryListener<K, V> entryListener, final Predicate<K, V> predicate, final K key,
                                  final boolean includeValue) {
+        return null;
     }
 
-    public void addEntryListener(final EntryListener<K, V> listener, final K key, final boolean includeValue) {
+    public String addEntryListener(final EntryListener<K, V> listener, final K key, final boolean includeValue) {
         Data dKey = key == null ? null : proxyHelper.toData(key);
         Data[] datas = dKey == null ? null : new Data[]{dKey};
         Protocol request = proxyHelper.createProtocol(Command.MLISTEN, new String[]{name, valueOf(includeValue)}, datas);
@@ -92,6 +102,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder<K, V> {
                 client, request, new EntryEventLRH<K, V>(listener, key, includeValue, this));
         storeListener(listener, key, thread);
         thread.start();
+        return null;
     }
 
     public void removeEntryListener(EntryListener<K, V> listener) {

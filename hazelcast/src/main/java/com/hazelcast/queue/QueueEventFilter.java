@@ -18,7 +18,7 @@ package com.hazelcast.queue;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.EventFilter;
 
 import java.io.IOException;
@@ -26,7 +26,7 @@ import java.io.IOException;
 /**
  * @ali 12/24/12
  */
-public class QueueEventFilter implements EventFilter, DataSerializable {
+public class QueueEventFilter implements EventFilter, IdentifiedDataSerializable {
 
     boolean includeValue;
 
@@ -51,5 +51,13 @@ public class QueueEventFilter implements EventFilter, DataSerializable {
 
     public void readData(ObjectDataInput in) throws IOException {
         includeValue = in.readBoolean();
+    }
+
+    public int getFactoryId() {
+        return QueueDataSerializerHook.F_ID;
+    }
+
+    public int getId() {
+        return QueueDataSerializerHook.QUEUE_EVENT_FILTER;
     }
 }

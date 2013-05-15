@@ -82,4 +82,8 @@ public class DrainOperation extends QueueBackupAwareOperation implements Notifie
     public WaitNotifyKey getNotifiedKey() {
         return getOrCreateContainer().getOfferWaitNotifyKey();
     }
+
+    public int getId() {
+        return QueueDataSerializerHook.DRAIN;
+    }
 }

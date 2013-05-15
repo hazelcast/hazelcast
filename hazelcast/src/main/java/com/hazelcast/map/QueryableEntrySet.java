@@ -17,7 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationServiceImpl;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
 
@@ -28,10 +28,10 @@ import java.util.Map;
 
 public class QueryableEntrySet extends AbstractSet<QueryableEntry> {
 
-    List<Map<Data, Record>> recordMapList;
-    SerializationServiceImpl serializationService;
+    private final List<Map<Data, Record>> recordMapList;
+    private final SerializationService serializationService;
 
-    public QueryableEntrySet(SerializationServiceImpl serializationService, List<Map<Data, Record>> recordMapList) {
+    public QueryableEntrySet(SerializationService serializationService, List<Map<Data, Record>> recordMapList) {
         this.recordMapList = recordMapList;
         this.serializationService = serializationService;
     }
@@ -48,8 +48,8 @@ public class QueryableEntrySet extends AbstractSet<QueryableEntry> {
 
     class RecordIterator implements Iterator<QueryableEntry> {
 
+        final Iterator<Map<Data, Record>> iter;
         Iterator<Record> innerIterator;
-        Iterator<Map<Data, Record>> iter = null;
         Record currentEntry = null;
 
         RecordIterator() {

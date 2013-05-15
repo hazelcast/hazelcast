@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.multimap.tx;
 
+import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.operations.CollectionKeyBasedOperation;
 import com.hazelcast.nio.serialization.Data;
@@ -34,5 +35,9 @@ public class TxnGenerateRecordIdOperation extends CollectionKeyBasedOperation im
 
     public void run() throws Exception {
         response = getOrCreateContainer().nextId();
+    }
+
+    public int getId() {
+        return CollectionDataSerializerHook.TXN_GENERATE_RECORD_ID;
     }
 }

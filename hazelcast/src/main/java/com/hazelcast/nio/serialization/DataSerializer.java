@@ -39,12 +39,6 @@ public final class DataSerializer implements TypeSerializer<DataSerializable> {
     private final Map<Integer, DataSerializableFactory> factories = new HashMap<Integer, DataSerializableFactory>();
 
     public DataSerializer(Map<Integer, ? extends DataSerializableFactory> dataSerializableFactories) {
-        factories.put(Data.FACTORY_ID, new DataSerializableFactory() {
-            public IdentifiedDataSerializable create(int typeId) {
-                return new Data();
-            }
-        });
-
         try {
             final Iterator<DataSerializerHook> hooks = ServiceLoader.iterator(DataSerializerHook.class, FACTORY_ID);
             while (hooks.hasNext()) {

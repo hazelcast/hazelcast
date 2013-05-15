@@ -26,9 +26,6 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.topic.TopicEvent;
 import com.hazelcast.topic.TopicService;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
 /**
  * User: sancar
  * Date: 2/26/13
@@ -38,7 +35,6 @@ public class TopicProxySupport extends AbstractDistributedObject<TopicService> {
 
     private final String name;
     private final EventService eventService;
-    private final ConcurrentMap<MessageListener, String> registeredIds = new ConcurrentHashMap<MessageListener, String>();
 
     TopicProxySupport(String name, NodeEngine nodeEngine, TopicService service) {
         super(nodeEngine, service);
@@ -57,19 +53,13 @@ public class TopicProxySupport extends AbstractDistributedObject<TopicService> {
         eventService.publishEvent(TopicService.SERVICE_NAME, eventService.getRegistrations(TopicService.SERVICE_NAME, name), topicEvent);
     }
 
-    public void addMessageListenerInternal(MessageListener listener) {
+    public String addMessageListenerInternal(MessageListener listener) {
         EventRegistration eventRegistration = eventService.registerListener(TopicService.SERVICE_NAME, name, listener);
-        String currentId = registeredIds.put(listener, eventRegistration.getId());
-        if (currentId != null) {
-            eventService.deregisterListener(TopicService.SERVICE_NAME, name, currentId);
-        }
+        return eventRegistration.getId();
     }
 
-    public void removeMessageListenerInternal(MessageListener listener) {
-        String id = registeredIds.remove(listener);
-        if (id != null) {
-            eventService.deregisterListener(TopicService.SERVICE_NAME, name, id);
-        }
+    public boolean removeMessageListenerInternal(final String registrationId) {
+        return eventService.deregisterListener(TopicService.SERVICE_NAME, name, registrationId);
     }
 
     public String getServiceName() {

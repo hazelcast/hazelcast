@@ -23,8 +23,8 @@ import java.io.IOException;
 
 public final class Data implements IdentifiedDataSerializable {
 
-    static final int FACTORY_ID = 0;
-    static final int ID = 0;
+    public static final int FACTORY_ID = 0;
+    public static final int ID = 0;
     static final int NO_CLASS_ID = 0; // WARNING: Portable class-id cannot be zero.
 
     int type = SerializationConstants.CONSTANT_TYPE_DATA;

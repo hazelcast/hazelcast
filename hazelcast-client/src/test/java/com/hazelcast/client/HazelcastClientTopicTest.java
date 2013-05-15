@@ -105,10 +105,10 @@ public class HazelcastClientTopicTest extends HazelcastClientTestBase {
             }
         };
         final String message = "message_" + messageListener.hashCode() + "_";
-        topic.addMessageListener(messageListener);
+        final String id = topic.addMessageListener(messageListener);
         topic.publish(message + "1");
         cp.await();
-        topic.removeMessageListener(messageListener);
+        topic.removeMessageListener(id);
         topic.publish(message + "2");
         Thread.sleep(50);
         assertEquals(1, latch.getCount());
@@ -182,12 +182,12 @@ public class HazelcastClientTopicTest extends HazelcastClientTestBase {
                 }
             }
         };
-        topic.addMessageListener(messageListener1);
+        final String id = topic.addMessageListener(messageListener1);
         topic.addMessageListener(messageListener2);
         Thread.sleep(50);
         topic.publish(message + "1");
         latch2.await();
-        topic.removeMessageListener(messageListener1);
+        topic.removeMessageListener(id);
         topic.publish(message + "2");
         latch3.await();
         assertEquals(1, latch4.getCount());

@@ -81,7 +81,7 @@ public class EntryProcessorTest {
             assertEquals(map.get(i), (Object) (i+1));
         }
         for (int i = 0; i < size; i++) {
-            assertEquals(map.get(i)+1, res.get(i));
+            assertEquals(map.get(i)*2, res.get(i));
         }
         instance1.getLifecycleService().shutdown();
         instance2.getLifecycleService().shutdown();
@@ -149,9 +149,9 @@ public class EntryProcessorTest {
     static class IncrementorEntryProcessor implements EntryProcessor, EntryBackupProcessor, Serializable {
 
         public Object process(Map.Entry entry) {
-            Integer value = (Integer) entry.getValue();
-            entry.setValue(value + 1);
-            return value + 1;
+            Integer value = (Integer) entry.getValue() +1;
+            entry.setValue(value);
+            return value*2;
         }
 
         public EntryBackupProcessor getBackupProcessor() {

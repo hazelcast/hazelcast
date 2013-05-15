@@ -204,16 +204,20 @@ public interface HazelcastInstance {
      * added or removed.
      *
      * @param distributedObjectListener instance listener
+     *
+     * @return returns registration id.
      */
-    void addDistributedObjectListener(DistributedObjectListener distributedObjectListener);
+    String addDistributedObjectListener(DistributedObjectListener distributedObjectListener);
 
     /**
      * Removes the specified instance listener. Returns silently
      * if specified instance listener doesn't exist.
      *
-     * @param distributedObjectListener instance listener to remove
+     * @param registrationId Id of listener registration.
+     *
+     * @return true if registration is removed, false otherwise
      */
-    void removeDistributedObjectListener(DistributedObjectListener distributedObjectListener);
+    boolean removeDistributedObjectListener(String registrationId);
 
     /**
      * Returns the configuration of this Hazelcast instance.

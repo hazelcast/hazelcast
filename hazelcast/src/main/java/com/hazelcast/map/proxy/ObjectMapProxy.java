@@ -18,13 +18,16 @@ package com.hazelcast.map.proxy;
 
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
-import com.hazelcast.map.*;
+import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.MapInterceptor;
+import com.hazelcast.map.MapService;
+import com.hazelcast.map.SimpleEntryView;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.util.QueryResultStream;
+import com.hazelcast.util.IterationType;
 import com.hazelcast.util.executor.DelegatingFuture;
 
 import java.util.*;
@@ -201,32 +204,28 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
         lockSupport.forceUnlock(nodeEngine, k);
     }
 
-    public void addInterceptor(MapInterceptor interceptor) {
-        addMapInterceptorInternal(interceptor);
+    public String addInterceptor(MapInterceptor interceptor) {
+        return addMapInterceptorInternal(interceptor);
     }
 
-    public void removeInterceptor(MapInterceptor interceptor) {
-        removeMapInterceptorInternal(interceptor);
+    public void removeInterceptor(String id) {
+        removeMapInterceptorInternal(id);
     }
 
-    public void addEntryListener(final EntryListener listener, final boolean includeValue) {
-        addEntryListenerInternal(listener, null, includeValue);
+    public String addEntryListener(final EntryListener listener, final boolean includeValue) {
+        return addEntryListenerInternal(listener, null, includeValue);
     }
 
-    public void addEntryListener(final EntryListener<K, V> listener, final K key, final boolean includeValue) {
-        addEntryListenerInternal(listener, getService().toData(key), includeValue);
+    public String addEntryListener(final EntryListener<K, V> listener, final K key, final boolean includeValue) {
+        return addEntryListenerInternal(listener, getService().toData(key), includeValue);
     }
 
-    public void addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue) {
-        addEntryListenerInternal(listener, predicate, getService().toData(key), includeValue);
+    public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue) {
+        return addEntryListenerInternal(listener, predicate, getService().toData(key), includeValue);
     }
 
-    public void removeEntryListener(final EntryListener<K, V> listener) {
-        removeEntryListenerInternal(listener);
-    }
-
-    public void removeEntryListener(final EntryListener<K, V> listener, final K key) {
-        removeEntryListenerInternal(listener, getService().toData(key));
+    public boolean removeEntryListener(String id) {
+        return removeEntryListenerInternal(id);
     }
 
     public EntryView<K, V> getEntryView(K key) {
@@ -278,15 +277,15 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public Set<K> keySet(final Predicate predicate) {
-        return query(predicate, QueryResultStream.IterationType.KEY, false);
+        return query(predicate, IterationType.KEY, false);
     }
 
     public Set entrySet(final Predicate predicate) {
-        return query(predicate, QueryResultStream.IterationType.ENTRY, false);
+        return query(predicate, IterationType.ENTRY, false);
     }
 
     public Collection<V> values(final Predicate predicate) {
-        return query(predicate, QueryResultStream.IterationType.VALUE, false);
+        return query(predicate, IterationType.VALUE, false);
     }
 
     public Set<K> localKeySet() {

@@ -237,10 +237,10 @@ public class TopicTest {
             }
         };
         final String message = "message_" + messageListener.hashCode() + "_";
-        topic.addMessageListener(messageListener);
+        final String id = topic.addMessageListener(messageListener);
         topic.publish(message + "1");
         cp.await();
-        topic.removeMessageListener(messageListener);
+        topic.removeMessageListener(id);
         topic.publish(message + "2");
         Thread.sleep(50);
         Assert.assertEquals(1, latch.getCount());
@@ -313,11 +313,11 @@ public class TopicTest {
                         }
                     }
                 };
-        topic.addMessageListener(messageListener1);
+        final String id1 = topic.addMessageListener(messageListener1);
         topic.addMessageListener(messageListener2);
         topic.publish(message + "1");
         Thread.sleep(50);
-        topic.removeMessageListener(messageListener1);
+        topic.removeMessageListener(id1);
         cp.await();
         topic.publish(message + "2");
         Thread.sleep(100);

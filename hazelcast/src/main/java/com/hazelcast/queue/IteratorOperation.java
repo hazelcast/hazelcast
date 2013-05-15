@@ -35,4 +35,8 @@ public class IteratorOperation extends QueueOperation {
     public void afterRun() throws Exception {
         getQueueService().getLocalQueueStatsImpl(name).incrementOtherOperations();
     }
+
+    public int getId() {
+        return QueueDataSerializerHook.ITERATOR;
+    }
 }

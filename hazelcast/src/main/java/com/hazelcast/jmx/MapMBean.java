@@ -42,6 +42,8 @@ public class MapMBean extends HazelcastMBean<IMap> {
 
     private final EntryListener entryListener;
 
+    private String listenerId;
+
     protected MapMBean(IMap managedObject, ManagementService service) {
         super(managedObject, service);
         objectName = createObjectName("Map", managedObject.getName());
@@ -62,12 +64,12 @@ public class MapMBean extends HazelcastMBean<IMap> {
                 totalEvictedEntryCount++;
             }
         };
-        managedObject.addEntryListener(entryListener, false);
+        listenerId = managedObject.addEntryListener(entryListener, false);
     }
 
     public void preDeregister() throws Exception {
         super.preDeregister();
-        managedObject.removeEntryListener(entryListener);
+        managedObject.removeEntryListener(listenerId);
     }
 
     @ManagedAnnotation(value = "clear", operation = true)

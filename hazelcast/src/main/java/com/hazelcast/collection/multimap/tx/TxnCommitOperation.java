@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.multimap.tx;
 
+import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionWrapper;
 import com.hazelcast.collection.operations.CollectionBackupAwareOperation;
@@ -97,5 +98,9 @@ public class TxnCommitOperation extends CollectionBackupAwareOperation implement
         for (int i=0; i<size; i++){
             opList.add((Operation)in.readObject());
         }
+    }
+
+    public int getId() {
+        return CollectionDataSerializerHook.TXN_COMMIT;
     }
 }

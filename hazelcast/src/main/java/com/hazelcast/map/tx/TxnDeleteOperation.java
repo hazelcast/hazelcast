@@ -17,7 +17,6 @@
 package com.hazelcast.map.tx;
 
 import com.hazelcast.map.BaseRemoveOperation;
-import com.hazelcast.map.PutBackupOperation;
 import com.hazelcast.map.Record;
 import com.hazelcast.map.RemoveBackupOperation;
 import com.hazelcast.nio.ObjectDataInput;

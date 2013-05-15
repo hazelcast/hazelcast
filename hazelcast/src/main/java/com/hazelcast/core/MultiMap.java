@@ -261,8 +261,10 @@ public interface MultiMap<K, V> extends DistributedObject {
      *
      * @param listener entry listener
      * @see #localKeySet()
+     *
+     * @return returns registration id.
      */
-    void addLocalEntryListener(EntryListener<K, V> listener);
+    String addLocalEntryListener(EntryListener<K, V> listener);
 
     /**
      * Adds an entry listener for this multimap. Listener will get notified
@@ -271,16 +273,20 @@ public interface MultiMap<K, V> extends DistributedObject {
      * @param listener     entry listener
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
+     *
+     * @return returns registration id.
      */
-    void addEntryListener(EntryListener<K, V> listener, boolean includeValue);
+    String addEntryListener(EntryListener<K, V> listener, boolean includeValue);
 
     /**
      * Removes the specified entry listener
      * Returns silently if there is no such listener added before.
      *
-     * @param listener entry listener
+     * @param registrationId Id of listener registration
+     *
+     * @return true if registration is removed, false otherwise
      */
-    void removeEntryListener(EntryListener<K, V> listener);
+    boolean removeEntryListener(String registrationId);
 
     /**
      * Adds the specified entry listener for the specified key.
@@ -298,25 +304,10 @@ public interface MultiMap<K, V> extends DistributedObject {
      * @param key          the key to listen
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
-     */
-    void addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue);
-
-    /**
-     * Removes the specified entry listener for the specified key.
-     * Returns silently if there is no such listener added before for
-     * the key.
-     * <p/>
-     * <p><b>Warning:</b></p>
-     * <p>
-     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
-     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
-     * defined in <tt>key</tt>'s class.
-     * </p>
      *
-     * @param listener
-     * @param key
+     * @return returns registration id.
      */
-    void removeEntryListener(EntryListener<K, V> listener, K key);
+    String addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue);
 
     /**
      * Acquires the lock for the specified key.

@@ -17,7 +17,6 @@
 package com.hazelcast.map;
 
 import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 public class MapIsEmptyOperation extends AbstractMapOperation implements PartitionAwareOperation {
 

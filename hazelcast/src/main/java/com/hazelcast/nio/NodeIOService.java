@@ -18,6 +18,7 @@ package com.hazelcast.nio;
 
 import com.hazelcast.ascii.TextCommandService;
 import com.hazelcast.config.*;
+import com.hazelcast.deprecated.nio.Protocol;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
@@ -57,13 +58,6 @@ public class NodeIOService implements IOService {
 
     public void onOutOfMemory(OutOfMemoryError oom) {
         OutOfMemoryErrorDispatcher.onOutOfMemory(oom);
-    }
-
-    public void handleInterruptedException(Thread thread, RuntimeException e) {
-        node.handleInterruptedException(thread, e);
-    }
-
-    public void onIOThreadStart() {
     }
 
     public Address getThisAddress() {

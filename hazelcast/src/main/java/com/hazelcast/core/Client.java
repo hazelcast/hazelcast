@@ -20,7 +20,9 @@ import java.net.SocketAddress;
 
 public interface Client {
 
-    public SocketAddress getSocketAddress();
+    String getUuid();
 
-    public ClientType getClientType();
+    SocketAddress getSocketAddress();
+
+    ClientType getClientType();
 }

@@ -16,6 +16,7 @@
 
 package com.hazelcast.instance;
 
+import com.hazelcast.cluster.ClusterDataSerializerHook;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.Member;
@@ -23,7 +24,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
@@ -32,7 +33,7 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.logging.Level;
 
-public final class MemberImpl implements Member, HazelcastInstanceAware, DataSerializable {
+public final class MemberImpl implements Member, HazelcastInstanceAware, IdentifiedDataSerializable {
 
     private boolean localMember;
     private Address address;
@@ -115,6 +116,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
     public long getLastWrite() {
         return lastWrite;
     }
+
     void setUuid(String uuid) {
         this.uuid = uuid;
     }
@@ -132,19 +134,12 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
     public void readData(ObjectDataInput in) throws IOException {
         address = new Address();
         address.readData(in);
-        lastRead = Clock.currentTimeMillis();
-        if (in.readBoolean()) {
-            uuid = in.readUTF();
-        }
+        uuid = in.readUTF();
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
         address.writeData(out);
-        boolean hasUuid = uuid != null;
-        out.writeBoolean(hasUuid);
-        if (hasUuid) {
-            out.writeUTF(uuid);
-        }
+        out.writeUTF(uuid);
     }
 
     @Override
@@ -183,5 +178,14 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, DataSer
         } else if (!address.equals(other.address))
             return false;
         return true;
+    }
+
+    public int getFactoryId() {
+        return ClusterDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return ClusterDataSerializerHook.MEMBER;
     }
 }

@@ -16,20 +16,19 @@
 
 package com.hazelcast.partition;
 
-import com.hazelcast.client.ClientCommandHandler;
+import com.hazelcast.deprecated.client.ClientCommandHandler;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.deprecated.spi.ClientProtocolService;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.deprecated.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.client.PartitionsHandler;
+import com.hazelcast.deprecated.partition.client.PartitionsHandler;
 import com.hazelcast.spi.*;
-import com.hazelcast.spi.annotation.ExecutedBy;
 import com.hazelcast.spi.annotation.PrivateApi;
-import com.hazelcast.spi.annotation.ThreadType;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.Clock;
 
@@ -42,7 +41,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 
-public class PartitionServiceImpl implements PartitionService, ManagedService,
+public class PartitionServiceImpl implements IPartitionService, ManagedService,
         EventPublishingService<MigrationEvent, MigrationListener>, ClientProtocolService {
 
     public static final String SERVICE_NAME = "hz:core:partitionService";
@@ -80,7 +79,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         this.partitionCount = node.groupProperties.PARTITION_COUNT.getInteger();
         this.node = node;
         this.nodeEngine = node.nodeEngine;
-        this.logger = node.getLogger(PartitionService.class);
+        this.logger = node.getLogger(IPartitionService.class);
         this.systemLogService = node.getSystemLogService();
         this.partitions = new PartitionInfo[partitionCount];
         final PartitionListener partitionListener = new LocalPartitionListener(node.getThisAddress());
@@ -884,7 +883,6 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         }
     }
 
-    @ExecutedBy(ThreadType.MIGRATION_THREAD)
     private class Migrator implements Runnable {
         final MigrationRequestOperation migrationRequestOp;
         final MigrationInfo migrationInfo;
@@ -1119,12 +1117,13 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         eventService.publishEvent(SERVICE_NAME, registrations, event);
     }
 
-    public void addMigrationListener(MigrationListener migrationListener) {
-        nodeEngine.getEventService().registerListener(SERVICE_NAME, SERVICE_NAME, migrationListener);
+    public String addMigrationListener(MigrationListener migrationListener) {
+        final EventRegistration registration = nodeEngine.getEventService().registerListener(SERVICE_NAME, SERVICE_NAME, migrationListener);
+        return registration.getId();
     }
 
-    public void removeMigrationListener(MigrationListener migrationListener) {
-        // TODO: @mm - implement migration listener removal.
+    public boolean removeMigrationListener(final String registrationId) {
+        return nodeEngine.getEventService().deregisterListener(SERVICE_NAME, SERVICE_NAME, registrationId);
     }
 
     public void dispatchEvent(MigrationEvent migrationEvent, MigrationListener migrationListener) {

@@ -16,28 +16,73 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.nio.serialization.DataSerializableFactory;
-import com.hazelcast.nio.serialization.DataSerializerHook;
-import com.hazelcast.nio.serialization.FactoryIdHelper;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.cluster.client.AddMembershipListenerRequest;
+import com.hazelcast.cluster.client.GetMembersRequest;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.*;
+import com.hazelcast.util.ConstructorFunction;
 
 /**
  * @mdogan 8/24/12
  */
 public final class ClusterDataSerializerHook implements DataSerializerHook {
 
-    static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.CLUSTER_DS_FACTORY, -2);
-    static final int HEARTBEAT = 0;
+    public static final int F_ID = Data.FACTORY_ID;
+
+    public static final int DATA = Data.ID;
+    public static final int ADDRESS = Address.ID;
+    public static final int MEMBER = 2;
+    public static final int HEARTBEAT = 3;
+
+    public static final int GET_MEMBERS = 6;
+    public static final int ADD_MS_LISTENER = 7;
 
     public int getFactoryId() {
         return F_ID;
     }
 
     public DataSerializableFactory createFactory() {
-        return new DataSerializableFactory() {
-            public IdentifiedDataSerializable create(int typeId) {
-                return typeId == HEARTBEAT ? new HeartbeatOperation() : null;
+        ConstructorFunction<Integer, IdentifiedDataSerializable> ctors[] = new ConstructorFunction[10];
+        ctors[DATA] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new Data();
             }
         };
+
+        ctors[ADDRESS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new Address();
+            }
+        };
+
+        ctors[MEMBER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new MemberImpl();
+            }
+        };
+
+        ctors[HEARTBEAT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new HeartbeatOperation();
+            }
+        };
+
+
+
+        ctors[GET_MEMBERS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new GetMembersRequest();
+            }
+        };
+
+        ctors[ADD_MS_LISTENER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new AddMembershipListenerRequest();
+            }
+        };
+
+
+        return new ArrayDataSerializableFactory(ctors);
     }
 }

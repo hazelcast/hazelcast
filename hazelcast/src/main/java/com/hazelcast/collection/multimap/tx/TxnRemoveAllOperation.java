@@ -112,4 +112,8 @@ public class TxnRemoveAllOperation extends CollectionKeyBasedOperation {
             recordIds.add(in.readLong());
         }
     }
+
+    public int getId() {
+        return CollectionDataSerializerHook.TXN_REMOVE_ALL;
+    }
 }

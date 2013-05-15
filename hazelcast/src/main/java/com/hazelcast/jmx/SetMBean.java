@@ -29,18 +29,14 @@ public class SetMBean extends HazelcastMBean<ISet> {
 
     private long totalRemovedItemCount;
 
-    private final ItemListener itemListener;
-
     protected SetMBean(ISet managedObject, ManagementService service) {
         super(managedObject, service);
         objectName = createObjectName("Set", managedObject.getName());
-        itemListener = new ItemListener() {
+        ItemListener itemListener = new ItemListener() {
             public void itemAdded(ItemEvent item) {
-
             }
 
             public void itemRemoved(ItemEvent item) {
-
             }
         };
     }
@@ -69,6 +65,5 @@ public class SetMBean extends HazelcastMBean<ISet> {
 
     public void preDeregister() throws Exception {
         super.preDeregister();
-        managedObject.removeItemListener(itemListener);
     }
 }

@@ -25,12 +25,10 @@ import java.io.IOException;
 public class RemoveInterceptorOperation extends AbstractOperation {
 
     MapService mapService;
-    MapInterceptor mapInterceptor;
     String mapName;
     String id;
 
-    public RemoveInterceptorOperation(MapInterceptor mapInterceptor, String mapName, String id) {
-        this.mapInterceptor = mapInterceptor;
+    public RemoveInterceptorOperation(String mapName, String id) {
         this.mapName = mapName;
         this.id = id;
     }
@@ -53,7 +51,6 @@ public class RemoveInterceptorOperation extends AbstractOperation {
         super.readInternal(in);
         mapName = in.readUTF();
         id = in.readUTF();
-        mapInterceptor = in.readObject();
     }
 
     @Override
@@ -61,7 +58,6 @@ public class RemoveInterceptorOperation extends AbstractOperation {
         super.writeInternal(out);
         out.writeUTF(mapName);
         out.writeUTF(id);
-        out.writeObject(mapInterceptor);
     }
 
     @Override

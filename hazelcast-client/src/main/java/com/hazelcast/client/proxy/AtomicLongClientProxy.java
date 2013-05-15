@@ -19,7 +19,7 @@ package com.hazelcast.client.proxy;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.core.IAtomicLong;
-import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.deprecated.nio.protocol.Command;
 
 public class AtomicLongClientProxy implements IAtomicLong {
     private final String name;

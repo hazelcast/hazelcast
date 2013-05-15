@@ -22,8 +22,8 @@ import com.hazelcast.client.proxy.listener.ListenerThread;
 import com.hazelcast.collection.list.ObjectListProxy;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.ItemListener;
-import com.hazelcast.nio.Protocol;
-import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.deprecated.nio.Protocol;
+import com.hazelcast.deprecated.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.*;
@@ -132,13 +132,18 @@ public class ListClientProxy<E> extends CollectionClientProxy<E> implements ILis
         return getTheCollection().subList(fromIndex, toIndex);
     }
 
-    public void addItemListener(ItemListener<E> listener, boolean includeValue) {
+    public String addItemListener(ItemListener<E> listener, boolean includeValue) {
         check(listener);
         Protocol request = proxyHelper.createProtocol(Command.SLISTEN, new String[]{getName(), String.valueOf(includeValue)}, null);
         ListenerThread thread = proxyHelper.createAListenerThread("hz.client.listListener.",
                 client, request, new ItemEventLRH<E>(listener, includeValue, this));
         listenerMap.put(listener, thread);
         thread.start();
+        return null;
+    }
+
+    public boolean removeItemListener(String registrationId) {
+        return false;
     }
 
     public void removeItemListener(ItemListener<E> listener) {

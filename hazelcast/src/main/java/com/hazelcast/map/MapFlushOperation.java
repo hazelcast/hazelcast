@@ -18,13 +18,9 @@ package com.hazelcast.map;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.concurrent.ConcurrentMap;
 
 public class MapFlushOperation extends AbstractMapOperation implements PartitionAwareOperation {
 

@@ -58,7 +58,7 @@ public class InterceptorTest {
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         final IMap<Object, Object> map = instance1.getMap("testMapInterceptor");
         SimpleInterceptor interceptor = new SimpleInterceptor();
-        map.addInterceptor(interceptor);
+        String id = map.addInterceptor(interceptor);
         map.put(1, "New York");
         map.put(2, "Istanbul");
         map.put(3, "Tokyo");
@@ -77,7 +77,6 @@ public class InterceptorTest {
         }
 
         assertEquals(map.size(), 6);
-
         assertEquals(map.get(1), null);
         assertEquals(map.get(2), "ISTANBUL:");
         assertEquals(map.get(3), "TOKYO:");
@@ -86,7 +85,7 @@ public class InterceptorTest {
         assertEquals(map.get(6), "CAIRO:");
         assertEquals(map.get(7), "HONG KONG:");
 
-        map.removeInterceptor(interceptor);
+        map.removeInterceptor(id);
         map.put(8, "Moscow");
 
         assertEquals(map.get(8), "Moscow");

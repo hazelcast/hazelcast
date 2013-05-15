@@ -17,6 +17,7 @@
 package com.hazelcast.partition;
 
 import com.hazelcast.core.Member;
+import com.hazelcast.core.Partition;
 import com.hazelcast.nio.Address;
 
 import java.util.Set;
@@ -48,12 +49,12 @@ public class PartitionServiceProxy implements com.hazelcast.core.PartitionServic
         return getPartition(partitionId);
     }
 
-    public void addMigrationListener(final MigrationListener migrationListener) {
-        partitionService.addMigrationListener(migrationListener);
+    public String addMigrationListener(final MigrationListener migrationListener) {
+        return partitionService.addMigrationListener(migrationListener);
     }
 
-    public void removeMigrationListener(final MigrationListener migrationListener) {
-        partitionService.removeMigrationListener(migrationListener);
+    public boolean removeMigrationListener(final String registrationId) {
+        return partitionService.removeMigrationListener(registrationId);
     }
 
     public boolean hasOngoingMigration() {

@@ -196,7 +196,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public ClientService getClientService() {
-        return null;
+        return node.clientEngine.getClientService();
     }
 
     public LoggingService getLoggingService() {
@@ -223,14 +223,14 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         node.serializationService.registerFallback(serializer);
     }
 
-    public void addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
+    public String addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
         final ProxyService proxyService = node.nodeEngine.getProxyService();
-        proxyService.addProxyListener(distributedObjectListener);
+        return proxyService.addProxyListener(distributedObjectListener);
     }
 
-    public void removeDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
+    public boolean removeDistributedObjectListener(String registrationId) {
         final ProxyService proxyService = node.nodeEngine.getProxyService();
-        proxyService.removeProxyListener(distributedObjectListener);
+        return proxyService.removeProxyListener(registrationId);
     }
 
     public ThreadGroup getThreadGroup() {

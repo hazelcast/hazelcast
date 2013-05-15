@@ -16,7 +16,7 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.map.clientv2.*;
+import com.hazelcast.map.client.*;
 import com.hazelcast.nio.serialization.*;
 import com.hazelcast.util.ConstructorFunction;
 
@@ -47,27 +47,25 @@ public class MapPortableHook implements PortableHook {
     public static final int REPLACE_IF_SAME = 16;
     public static final int LOCK = 17;
     public static final int IS_LOCKED = 18;
-    public static final int TRY_LOCK = 19;
     public static final int UNLOCK = 20;
     public static final int EVICT = 21;
-    public static final int ADD_LOCAL_ENTRY_LISTENER = 22;
     public static final int ADD_INTERCEPTOR = 23;
     public static final int REMOVE_INTERCEPTOR = 24;
     public static final int ADD_ENTRY_LISTENER = 25;
-    public static final int REMOVE_ENTRY_LISTENER = 26;
     public static final int GET_ENTRY_VIEW = 27;
     public static final int ADD_INDEX = 28;
     public static final int KEYSET = 29;
     public static final int VALUES = 30;
     public static final int ENTRY_SET = 31;
-    public static final int KEYSET_QUERY = 32;
-    public static final int ENTRY_SET_QUERY = 33;
-    public static final int VALUES_QUERY = 34;
+    public static final int SIZE = 33;
+    public static final int QUERY = 34;
     public static final int LOCAL_KEYSET = 35;
-    public static final int LOCAL_KEYSET_QUERY = 36;
     public static final int GET_LOCAL_MAP_STATS = 37;
     public static final int EXECUTE_ON_KEY = 38;
     public static final int EXECUTE_ON_ALL_KEYS = 39;
+
+    public static final int PORTABLE_ENTRY_EVENT = 40;
+
 
     public int getFactoryId() {
         return F_ID;
@@ -75,128 +73,224 @@ public class MapPortableHook implements PortableHook {
 
     public PortableFactory createFactory() {
         return new PortableFactory() {
-            final ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[39];
+            final ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[41];
 
             {
-                constructors[GET - 1] = new ConstructorFunction<Integer, Portable>() {
+                constructors[GET] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
                         return new MapGetRequest();
                     }
                 };
 
-                constructors[PUT - 1] = new ConstructorFunction<Integer, Portable>() {
+                constructors[PUT] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
                         return new MapPutRequest();
                     }
                 };
 
-                constructors[PUT_IF_ABSENT - 1] = new ConstructorFunction<Integer, Portable>() {
+                constructors[PUT_IF_ABSENT] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
                         return new MapPutIfAbsentRequest();
                     }
                 };
 
-                constructors[TRY_PUT - 1] = new ConstructorFunction<Integer, Portable>() {
+                constructors[TRY_PUT] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
                         return new MapTryPutRequest();
                     }
                 };
 
-                constructors[PUT_TRANSIENT - 1] = new ConstructorFunction<Integer, Portable>() {
+                constructors[PUT_TRANSIENT] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
                         return new MapPutTransientRequest();
                     }
                 };
 
-                // ....
-                // ....
+                constructors[SET] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapSetRequest();
+                    }
+                };
+
+                constructors[CONTAINS_KEY] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapContainsKeyRequest();
+                    }
+                };
+
+                constructors[CONTAINS_VALUE] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapContainsValueRequest();
+                    }
+                };
+
+                constructors[REMOVE] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapRemoveRequest();
+                    }
+                };
+
+                constructors[REMOVE_IF_SAME] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapRemoveIfSameRequest();
+                    }
+                };
+
+                constructors[DELETE] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapDeleteRequest();
+                    }
+                };
+
+                constructors[FLUSH] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapFlushRequest();
+                    }
+                };
+
+                constructors[GET_ALL] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapGetAllRequest();
+                    }
+                };
+
+                constructors[TRY_REMOVE] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapTryRemoveRequest();
+                    }
+                };
+
+                constructors[REPLACE] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapReplaceRequest();
+                    }
+                };
+
+                constructors[REPLACE_IF_SAME] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapReplaceIfSameRequest();
+                    }
+                };
+
+                constructors[LOCK] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapLockRequest();
+                    }
+                };
+
+                constructors[IS_LOCKED] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapIsLockedRequest();
+                    }
+                };
+
+                constructors[UNLOCK] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapUnlockRequest();
+                    }
+                };
+
+                constructors[EVICT] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapEvictRequest();
+                    }
+                };
+
+                constructors[ADD_INTERCEPTOR] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapAddInterceptorRequest();
+                    }
+                };
+
+                constructors[REMOVE_INTERCEPTOR] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapRemoveRequest();
+                    }
+                };
+
+                constructors[ADD_ENTRY_LISTENER] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapAddEntryListenerRequest();
+                    }
+                };
+
+                constructors[GET_ENTRY_VIEW] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapGetEntryViewRequest();
+                    }
+                };
+
+                constructors[ADD_INDEX] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapAddIndexRequest();
+                    }
+                };
+
+                constructors[KEYSET] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapKeySetRequest();
+                    }
+                };
+
+                constructors[VALUES] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapValuesRequest();
+                    }
+                };
+
+                constructors[ENTRY_SET] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapEntrySetRequest();
+                    }
+                };
+
+                constructors[SIZE] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapSizeRequest();
+                    }
+                };
+
+                constructors[QUERY] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapQueryRequest();
+                    }
+                };
+
+                constructors[LOCAL_KEYSET] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapLocalKeySetRequest();
+                    }
+                };
+
+                constructors[GET_LOCAL_MAP_STATS] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapGetLocalMapStatsRequest();
+                    }
+                };
+
+                constructors[EXECUTE_ON_KEY] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapExecuteOnKeyRequest();
+                    }
+                };
+
+                constructors[EXECUTE_ON_ALL_KEYS] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapExecuteOnAllKeysRequest();
+                    }
+                };
+
+                constructors[PORTABLE_ENTRY_EVENT] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new PortableEntryEvent();
+                    }
+                };
+
 
             }
 
             public Portable create(int classId) {
-//                return (classId > 0 && classId <= constructors.length) ? constructors[classId].createNew(classId) : null;
-
-                switch (classId) {
-                    case GET:
-                        return new MapGetRequest();
-                    case PUT:
-                        return new MapPutRequest();
-                    case PUT_IF_ABSENT:
-                        return new MapPutIfAbsentRequest();
-                    case TRY_PUT:
-                        return new MapTryPutRequest();
-                    case PUT_TRANSIENT:
-                        return new MapPutTransientRequest();
-                    case SET:
-                        return new MapSetRequest();
-                    case CONTAINS_KEY:
-                        return new MapContainsKeyRequest();
-                    case CONTAINS_VALUE:
-                        return new MapContainsValueRequest();
-                    case REMOVE:
-                        return new MapRemoveRequest();
-                    case REMOVE_IF_SAME:
-                        return new MapRemoveIfSameRequest();
-                    case DELETE:
-                        return new MapDeleteRequest();
-                    case FLUSH:
-                        return new MapFlushRequest();
-                    case GET_ALL:
-                        return new MapGetAllRequest();
-                    case TRY_REMOVE:
-                        return new MapTryRemoveRequest();
-                    case REPLACE:
-                        return new MapReplaceRequest();
-                    case REPLACE_IF_SAME:
-                        return new MapReplaceIfSameRequest();
-                    case LOCK:
-                        return new MapLockRequest();
-                    case IS_LOCKED:
-                        return new MapIsLockedRequest();
-                    case TRY_LOCK:
-                        return new MapTryLockRequest();
-                    case UNLOCK:
-                        return new MapUnlockRequest();
-                    case ADD_LOCAL_ENTRY_LISTENER:
-                        return new MapAddLocalEntryListenerRequest();
-                    case ADD_INTERCEPTOR:
-                        return new MapAddInterceptorRequest();
-                    case REMOVE_INTERCEPTOR:
-                        return new MapRemoveInterceptorRequest();
-                    case ADD_ENTRY_LISTENER:
-                        return new MapAddEntryListenerRequest();
-                    case REMOVE_ENTRY_LISTENER:
-                        return new MapRemoveEntryListenerRequest();
-                    case GET_ENTRY_VIEW:
-                        return new MapGetEntryViewRequest();
-                    case EVICT:
-                        return new MapEvictRequest();
-                    case KEYSET:
-                        return new MapKeySetRequest();
-                    case VALUES:
-                        return new MapValuesRequest();
-                    case ENTRY_SET:
-                        return new MapEntrySetRequest();
-                    case KEYSET_QUERY:
-                        return new MapKeySetQueryRequest();
-                    case ENTRY_SET_QUERY:
-                        return new MapEntrySetQueryRequest();
-                    case VALUES_QUERY:
-                        return new MapValuesQueryRequest();
-                    case LOCAL_KEYSET:
-                        return new MapLocalKeySetRequest();
-                    case LOCAL_KEYSET_QUERY:
-                        return new MapLocalKeySetQueryRequest();
-                    case ADD_INDEX:
-                        return new MapAddIndexRequest();
-                    case GET_LOCAL_MAP_STATS:
-                        return new MapGetLocalMapStatsRequest();
-                    case EXECUTE_ON_KEY:
-                        return new MapExecuteOnKeyRequest();
-                    case EXECUTE_ON_ALL_KEYS:
-                        return new MapExecuteOnAllKeysRequest();
-                }
-                return null;
+                return (classId > 0 && classId <= constructors.length) ? constructors[classId].createNew(classId) : null;
             }
         };
     }

@@ -30,12 +30,12 @@ public class QueueMBean extends HazelcastMBean<IQueue> {
 
     private long totalRemovedItemCount;
 
-    private final ItemListener itemListener;
+    private final String registrationId;
 
     protected QueueMBean(IQueue managedObject, ManagementService service) {
         super(managedObject, service);
         objectName = createObjectName("Queue", managedObject.getName());
-        itemListener = new ItemListener() {
+        ItemListener itemListener = new ItemListener() {
             public void itemAdded(ItemEvent item) {
                 totalAddedItemCount++;
             }
@@ -44,7 +44,7 @@ public class QueueMBean extends HazelcastMBean<IQueue> {
                 totalRemovedItemCount++;
             }
         };
-        managedObject.addItemListener(itemListener, false);
+        registrationId = managedObject.addItemListener(itemListener, false);
     }
 
     @ManagedAnnotation("name")
@@ -71,7 +71,7 @@ public class QueueMBean extends HazelcastMBean<IQueue> {
 
     public void preDeregister() throws Exception {
         super.preDeregister();
-        managedObject.removeItemListener(itemListener);
+        managedObject.removeItemListener(registrationId);
     }
 
 

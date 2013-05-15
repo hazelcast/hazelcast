@@ -20,12 +20,13 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
-public class MapValueCollection implements DataSerializable {
+public class MapValueCollection implements IdentifiedDataSerializable {
 
     Collection<Data> values;
 
@@ -59,4 +60,13 @@ public class MapValueCollection implements DataSerializable {
         }
     }
 
+    @Override
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getId() {
+        return MapDataSerializerHook.VALUES;
+    }
 }

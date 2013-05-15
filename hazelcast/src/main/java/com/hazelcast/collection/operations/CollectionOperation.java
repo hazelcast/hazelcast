@@ -21,6 +21,7 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.*;
 
 import java.io.IOException;
@@ -29,7 +30,7 @@ import java.util.Collection;
 /**
  * @ali 1/8/13
  */
-public abstract class CollectionOperation extends Operation implements PartitionAwareOperation {
+public abstract class CollectionOperation extends Operation implements PartitionAwareOperation, IdentifiedDataSerializable{
 
     protected CollectionProxyId proxyId;
 
@@ -117,5 +118,9 @@ public abstract class CollectionOperation extends Operation implements Partition
     protected void readInternal(ObjectDataInput in) throws IOException {
         proxyId = new CollectionProxyId();
         proxyId.readData(in);
+    }
+
+    public int getFactoryId() {
+        return CollectionDataSerializerHook.F_ID;
     }
 }

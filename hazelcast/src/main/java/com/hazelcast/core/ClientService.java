@@ -22,7 +22,17 @@ public interface ClientService {
 
     Collection<Client> getConnectedClients();
 
-    void addClientListener(ClientListener clientListener);
+    /**
+     * @param clientListener
+     *
+     * @return returns registration id.
+     */
+    String addClientListener(ClientListener clientListener);
 
-    void removeClientListener(ClientListener clientListener);
+    /**
+     * @param registrationId Id of listener registration.
+     *
+     * @return true if registration is removed, false otherwise
+     */
+    boolean removeClientListener(String registrationId);
 }

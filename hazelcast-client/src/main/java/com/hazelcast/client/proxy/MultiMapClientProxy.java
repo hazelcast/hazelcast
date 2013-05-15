@@ -25,8 +25,8 @@ import com.hazelcast.client.util.ValueCollection;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.monitor.LocalMultiMapStats;
-import com.hazelcast.nio.Protocol;
-import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.deprecated.nio.Protocol;
+import com.hazelcast.deprecated.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
 
 import java.util.*;
@@ -51,15 +51,16 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder<K,
         return name;
     }
 
-    public void addLocalEntryListener(EntryListener<K, V> listener) {
+    public String addLocalEntryListener(EntryListener<K, V> listener) {
         throw new UnsupportedOperationException("client doesn't support local entry listener");
     }
 
-    public void addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
+    public String addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
         addEntryListener(listener, null, includeValue);
+        return null;
     }
 
-    public void addEntryListener(final EntryListener<K, V> listener, final K key, final boolean includeValue) {
+    public String addEntryListener(final EntryListener<K, V> listener, final K key, final boolean includeValue) {
         Data dKey = key == null ? null : proxyHelper.toData(key);
         Data[] datas = dKey == null ? null : new Data[]{dKey};
         Protocol request = proxyHelper.createProtocol(Command.MMLISTEN, new String[]{name, valueOf(includeValue)}, datas);
@@ -67,11 +68,13 @@ public class MultiMapClientProxy<K, V> implements MultiMap<K, V>, EntryHolder<K,
                 client, request, new EntryEventLRH<K, V>(listener, key, includeValue, this));
         storeListener(listener, key, thread);
         thread.start();
+        return null;
     }
 
-    public void removeEntryListener(EntryListener<K, V> listener) {
-        check(listener);
-        removeEntryListener(listener, null);
+    public boolean removeEntryListener(String registrationId) {
+//        check(listener);
+//        removeEntryListener(listener, null);
+        return false;
     }
 
     public void removeEntryListener(EntryListener<K, V> listener, K key) {

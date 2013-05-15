@@ -28,8 +28,8 @@ public interface LifecycleService {
 
     void kill();
 
-    void addLifecycleListener(LifecycleListener lifecycleListener);
+    String addLifecycleListener(LifecycleListener lifecycleListener);
 
-    void removeLifecycleListener(LifecycleListener lifecycleListener);
+    boolean removeLifecycleListener(String registrationId);
 
 }

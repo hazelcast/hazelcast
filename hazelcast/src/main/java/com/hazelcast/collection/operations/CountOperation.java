@@ -19,8 +19,6 @@ package com.hazelcast.collection.operations;
 import com.hazelcast.collection.*;
 import com.hazelcast.nio.serialization.Data;
 
-import java.util.Collection;
-
 /**
  * @ali 1/16/13
  */
@@ -39,4 +37,9 @@ public class CountOperation extends CollectionKeyBasedOperation {
         CollectionWrapper wrapper = container.getCollectionWrapper(dataKey);
         response = wrapper == null ? 0 : wrapper.getCollection().size();
     }
+
+    public int getId() {
+        return CollectionDataSerializerHook.COUNT;
+    }
+
 }

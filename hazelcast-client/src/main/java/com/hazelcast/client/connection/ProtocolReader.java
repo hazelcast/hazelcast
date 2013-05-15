@@ -16,11 +16,10 @@
 
 package com.hazelcast.client.connection;
 
-import com.hazelcast.client.connection.Connection;
-import com.hazelcast.nio.Protocol;
+import com.hazelcast.deprecated.nio.Protocol;
 import com.hazelcast.nio.ascii.SocketTextReader;
-import com.hazelcast.nio.protocol.Command;
-import com.hazelcast.nio.protocol.SocketProtocolReader;
+import com.hazelcast.deprecated.nio.protocol.Command;
+import com.hazelcast.deprecated.nio.protocol.SocketProtocolReader;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.ObjectDataInputStream;
 import com.hazelcast.nio.serialization.SerializationService;

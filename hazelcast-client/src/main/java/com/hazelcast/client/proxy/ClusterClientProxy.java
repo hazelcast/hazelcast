@@ -24,8 +24,8 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.Protocol;
-import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.deprecated.nio.Protocol;
+import com.hazelcast.deprecated.nio.protocol.Command;
 
 import java.net.UnknownHostException;
 import java.util.HashSet;
@@ -44,12 +44,17 @@ public class ClusterClientProxy implements Cluster {
 
     Map<MembershipListener, ListenerThread> listenerMap = new ConcurrentHashMap<MembershipListener, ListenerThread>();
 
-    public void addMembershipListener(MembershipListener listener) {
+    public String addMembershipListener(MembershipListener listener) {
         Protocol request = proxyHelper.createProtocol(Command.MEMBERLISTEN, null, null);
         ListenerThread thread = proxyHelper.createAListenerThread("hz.client.membershipListener.",
                 client, request, new MembershipLRH(listener, this));
         listenerMap.put(listener, thread);
         thread.start();
+        return null;
+    }
+
+    public boolean removeMembershipListener(String registrationId) {
+        return false;
     }
 
     public void removeMembershipListener(MembershipListener listener) {

@@ -1,0 +1,67 @@
+package com.hazelcast.concurrent.countdownlatch.client;
+
+import com.hazelcast.client.KeyBasedClientRequest;
+import com.hazelcast.concurrent.countdownlatch.CountDownLatchPortableHook;
+import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
+import com.hazelcast.concurrent.countdownlatch.SetCountOperation;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableReader;
+import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.spi.Operation;
+
+import java.io.IOException;
+
+/**
+ * @mdogan 5/14/13
+ */
+
+public final class SetCountRequest extends KeyBasedClientRequest implements Portable {
+
+    private String name;
+    private int count;
+
+    public SetCountRequest() {
+    }
+
+    public SetCountRequest(String name, int count) {
+        this.name = name;
+        this.count = count;
+    }
+
+    @Override
+    protected Object getKey() {
+        return name;
+    }
+
+    @Override
+    protected Operation prepareOperation() {
+        return new SetCountOperation(name, count);
+    }
+
+    @Override
+    public String getServiceName() {
+        return CountDownLatchService.SERVICE_NAME;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return CountDownLatchPortableHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return CountDownLatchPortableHook.SET_COUNT;
+    }
+
+    @Override
+    public void writePortable(PortableWriter writer) throws IOException {
+        writer.writeUTF("name", name);
+        writer.writeInt("count", count);
+    }
+
+    @Override
+    public void readPortable(PortableReader reader) throws IOException {
+        name = reader.readUTF("name");
+        count = reader.readInt("count");
+    }
+}

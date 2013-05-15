@@ -181,8 +181,12 @@ public class HazelcastClient implements HazelcastInstance {
         return (IMap<K, V>) proxy;
     }
 
-    public void addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
+    public String addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
         throw new UnsupportedOperationException();
+    }
+
+    public boolean removeDistributedObjectListener(String registrationId) {
+        return false;
     }
 
     public Cluster getCluster() {
@@ -307,7 +311,7 @@ public class HazelcastClient implements HazelcastInstance {
         return (ITopic<E>) proxy;
     }
 
-    public void removeDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
+    public boolean removeDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
         throw new UnsupportedOperationException();
     }
 

@@ -17,7 +17,7 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.deprecated.nio.protocol.Command;
 import com.hazelcast.transaction.Transaction;
 import com.hazelcast.transaction.TransactionLog;
 

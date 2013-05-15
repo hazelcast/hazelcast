@@ -16,7 +16,7 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.client.ClientCommandHandler;
+import com.hazelcast.deprecated.client.ClientCommandHandler;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.concurrent.lock.LockStoreInfo;
 import com.hazelcast.concurrent.lock.SharedLockService;
@@ -24,9 +24,10 @@ import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.*;
+import com.hazelcast.deprecated.spi.ClientProtocolService;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.map.client.*;
+import com.hazelcast.deprecated.map.client.*;
 import com.hazelcast.map.merge.*;
 import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.map.proxy.ObjectMapProxy;
@@ -36,18 +37,13 @@ import com.hazelcast.map.wan.MapReplicationUpdate;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.protocol.Command;
+import com.hazelcast.deprecated.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.nio.serialization.SerializationServiceImpl;
+import com.hazelcast.partition.IPartitionService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.PartitionInfo;
-import com.hazelcast.partition.PartitionService;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryResultEntryImpl;
@@ -61,7 +57,6 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.wan.WanReplicationEvent;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -70,7 +65,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 
 
-public class MapService implements ManagedService, MigrationAwareService, MembershipAwareService,
+public class MapService implements ManagedService, MigrationAwareService,
         TransactionalService, RemoteService, EventPublishingService<EventData, EntryListener>,
         ClientProtocolService, PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService {
 
@@ -81,7 +76,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
     private final PartitionContainer[] partitionContainers;
     private final ConcurrentMap<String, MapContainer> mapContainers = new ConcurrentHashMap<String, MapContainer>();
     private final ConcurrentMap<String, NearCache> nearCacheMap = new ConcurrentHashMap<String, NearCache>();
-    private final ConcurrentMap<ListenerKey, String> eventRegistrations = new ConcurrentHashMap<ListenerKey, String>();
     private final AtomicReference<List<Integer>> ownedPartitions;
     private final Map<String, MapMergePolicy> mergePolicyMap;
 
@@ -170,7 +164,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         }
         nearCacheMap.clear();
         mapContainers.clear();
-        eventRegistrations.clear();
     }
 
     private void destroyMapStores() {
@@ -305,114 +298,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             }
         }
 
-    }
-
-    public static class PostJoinMapOperation extends AbstractOperation {
-        private List<MapIndexInfo> lsMapIndexes = new LinkedList<MapIndexInfo>();
-
-        public String getServiceName() {
-            return SERVICE_NAME;
-        }
-
-        void addMapIndex(MapContainer mapContainer) {
-            final IndexService indexService = mapContainer.getIndexService();
-            if (indexService.hasIndex()) {
-                MapIndexInfo mapIndexInfo = new MapIndexInfo(mapContainer.getName());
-                for (Index index : indexService.getIndexes()) {
-                    mapIndexInfo.addIndexInfo(index.getAttributeName(), index.isOrdered());
-                }
-                lsMapIndexes.add(mapIndexInfo);
-            }
-        }
-
-        class MapIndexInfo implements DataSerializable {
-            String mapName;
-            private List<IndexInfo> lsIndexes = new LinkedList<IndexInfo>();
-
-            public MapIndexInfo(String mapName) {
-                this.mapName = mapName;
-            }
-
-            public MapIndexInfo() {
-            }
-
-            class IndexInfo implements DataSerializable {
-                String attributeName;
-                boolean ordered;
-
-                IndexInfo() {
-                }
-
-                IndexInfo(String attributeName, boolean ordered) {
-                    this.attributeName = attributeName;
-                    this.ordered = ordered;
-                }
-
-                public void writeData(ObjectDataOutput out) throws IOException {
-                    out.writeUTF(attributeName);
-                    out.writeBoolean(ordered);
-                }
-
-                public void readData(ObjectDataInput in) throws IOException {
-                    attributeName = in.readUTF();
-                    ordered = in.readBoolean();
-                }
-            }
-
-            public void addIndexInfo(String attributeName, boolean ordered) {
-                lsIndexes.add(new IndexInfo(attributeName, ordered));
-            }
-
-            public void writeData(ObjectDataOutput out) throws IOException {
-                out.writeUTF(mapName);
-                out.writeInt(lsIndexes.size());
-                for (IndexInfo indexInfo : lsIndexes) {
-                    indexInfo.writeData(out);
-                }
-            }
-
-            public void readData(ObjectDataInput in) throws IOException {
-                mapName = in.readUTF();
-                int size = in.readInt();
-                for (int i = 0; i < size; i++) {
-                    IndexInfo indexInfo = new IndexInfo();
-                    indexInfo.readData(in);
-                    lsIndexes.add(indexInfo);
-                }
-            }
-        }
-
-        @Override
-        public void run() throws Exception {
-            MapService mapService = getService();
-            for (MapIndexInfo mapIndex : lsMapIndexes) {
-                final MapContainer mapContainer = mapService.getMapContainer(mapIndex.mapName);
-                final IndexService indexService = mapContainer.getIndexService();
-                for (MapIndexInfo.IndexInfo indexInfo : mapIndex.lsIndexes) {
-                    indexService.addOrGetIndex(indexInfo.attributeName, indexInfo.ordered);
-                }
-            }
-        }
-
-        @Override
-        protected void writeInternal(ObjectDataOutput out) throws IOException {
-            super.writeInternal(out);
-            out.writeInt(lsMapIndexes.size());
-            for (MapIndexInfo mapIndex : lsMapIndexes) {
-                mapIndex.writeData(out);
-            }
-        }
-
-        @Override
-        protected void readInternal(ObjectDataInput in) throws IOException {
-            super.readInternal(in);
-            int size = in.readInt();
-            for (int i = 0; i < size; i++) {
-                MapIndexInfo mapIndexInfo = new MapIndexInfo();
-                mapIndexInfo.readData(in);
-                lsMapIndexes.add(mapIndexInfo);
-            }
-        }
     }
 
     public MapContainer getMapContainer(String mapName) {
@@ -606,16 +491,6 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, name);
     }
 
-    public void memberAdded(final MembershipServiceEvent membershipEvent) {
-    }
-
-    public void memberRemoved(final MembershipServiceEvent membershipEvent) {
-        MemberImpl member = membershipEvent.getMember();
-        // TODO: @mm - when a member dies;
-        // * rollback transaction
-        // * do not know ?
-    }
-
     public Map<Command, ClientCommandHandler> getCommandsAsMap() {
         Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
         commandHandlers.put(Command.MGET, new MapGetHandler(this));
@@ -658,8 +533,8 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         return getMapContainer(mapName).addInterceptor(interceptor);
     }
 
-    public String removeInterceptor(String mapName, MapInterceptor interceptor) {
-        return getMapContainer(mapName).removeInterceptor(interceptor);
+    public void removeInterceptor(String mapName, String id) {
+        getMapContainer(mapName).removeInterceptor(id);
     }
 
     // todo interceptors should get a wrapped object which includes the serialized version
@@ -800,19 +675,18 @@ public class MapService implements ManagedService, MigrationAwareService, Member
         nodeEngine.getEventService().publishEvent(SERVICE_NAME, registrationsWithoutValue, event.cloneWithoutValues());
     }
 
-    public void addLocalEventListener(EntryListener entryListener, String mapName) {
+    public String addLocalEventListener(EntryListener entryListener, String mapName) {
         EventRegistration registration = nodeEngine.getEventService().registerLocalListener(SERVICE_NAME, mapName, entryListener);
-        eventRegistrations.put(new ListenerKey(entryListener, null), registration.getId());
+        return registration.getId();
     }
 
-    public void addEventListener(EntryListener entryListener, EventFilter eventFilter, String mapName) {
+    public String addEventListener(EntryListener entryListener, EventFilter eventFilter, String mapName) {
         EventRegistration registration = nodeEngine.getEventService().registerListener(SERVICE_NAME, mapName, eventFilter, entryListener);
-        eventRegistrations.put(new ListenerKey(entryListener, ((EntryEventFilter) eventFilter).getKey()), registration.getId());
+        return registration.getId();
     }
 
-    public void removeEventListener(EntryListener entryListener, String mapName, Object key) {
-        String registrationId = eventRegistrations.get(new ListenerKey(entryListener, key));
-        nodeEngine.getEventService().deregisterListener(SERVICE_NAME, mapName, registrationId);
+    public boolean removeEventListener(String mapName, String registrationId) {
+        return nodeEngine.getEventService().deregisterListener(SERVICE_NAME, mapName, registrationId);
     }
 
     public Object toObject(Object data) {
@@ -1065,14 +939,14 @@ public class MapService implements ManagedService, MigrationAwareService, Member
             RecordStore recordStore = container.getRecordStore(mapName);
             mlist.add(recordStore.getRecords());
         }
-        return new QueryableEntrySet((SerializationServiceImpl) nodeEngine.getSerializationService(), mlist);
+        return new QueryableEntrySet(nodeEngine.getSerializationService(), mlist);
     }
 
     public void queryOnPartition(String mapName, Predicate predicate, int partitionId, QueryResult result) {
         PartitionContainer container = getPartitionContainer(partitionId);
         RecordStore recordStore = container.getRecordStore(mapName);
         Map<Data, Record> records = recordStore.getRecords();
-        SerializationServiceImpl serializationService = (SerializationServiceImpl) nodeEngine.getSerializationService();
+        SerializationService serializationService = nodeEngine.getSerializationService();
         for (Record record : records.values()) {
             Data key = record.getKey();
             QueryEntry queryEntry = new QueryEntry(serializationService, key, key, record.getValue());
@@ -1099,7 +973,7 @@ public class MapService implements ManagedService, MigrationAwareService, Member
 
         int backupCount = mapContainer.getTotalBackupCount();
         ClusterService clusterService = nodeEngine.getClusterService();
-        final PartitionService partitionService = nodeEngine.getPartitionService();
+        final IPartitionService partitionService = nodeEngine.getPartitionService();
 
         Address thisAddress = clusterService.getThisAddress();
         for (int partition = 0; partition < partitionService.getPartitionCount(); partition++) {
