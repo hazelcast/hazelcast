@@ -19,12 +19,11 @@ package com.hazelcast.nio;
 /**
  * @mdogan 3/11/13
  */
-final class Protocols {
+public final class Protocols {
 
-    static final String CLUSTER = "HZC";
-    static final String CLIENT_TEXT = "P01";
-    static final String CLIENT_BINARY = "CB1";
-    static final String TEXT = "TXT";
+    public static final String CLUSTER = "HZC";
+    public static final String CLIENT_BINARY = "CB1";
+    public static final String TEXT = "TXT";
 
     private Protocols() {}
 }

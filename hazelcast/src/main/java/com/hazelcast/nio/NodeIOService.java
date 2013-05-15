@@ -17,8 +17,10 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.ascii.TextCommandService;
-import com.hazelcast.config.*;
-import com.hazelcast.deprecated.nio.Protocol;
+import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.config.SSLConfig;
+import com.hazelcast.config.SocketInterceptorConfig;
+import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
@@ -91,11 +93,6 @@ public class NodeIOService implements IOService {
 
     public void handleClientPacket(ClientPacket p) {
         node.clientEngine.handlePacket(p);
-    }
-
-    public void handleClientCommand(Protocol p) {
-        //TODO command name is not serviceName. A mapper should be introduced.
-        node.clientCommandService.handle(p);
     }
 
     public TextCommandService getTextCommandService() {

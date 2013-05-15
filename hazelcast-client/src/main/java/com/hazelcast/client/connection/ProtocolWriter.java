@@ -16,36 +16,32 @@
 
 package com.hazelcast.client.connection;
 
-import com.hazelcast.deprecated.nio.Protocol;
-import com.hazelcast.nio.serialization.ObjectDataOutputStream;
+import com.hazelcast.nio.Protocols;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 
 import java.io.IOException;
 
 public class ProtocolWriter {
-    protected static final byte[] HEADER = new byte[]{'P', '0', '1'};
+
+    protected static final byte[] HEADER = Protocols.CLIENT_BINARY.getBytes();
+
+    private final SerializationService serializationService;
 
     public ProtocolWriter(SerializationService serializationService) {
+        this.serializationService = serializationService;
     }
 
-    public void write(Connection connection, Protocol command) throws IOException {
+    public void write(Connection connection, Object command) throws IOException {
         if (connection != null) {
-            final ObjectDataOutputStream dos = connection.getOutputStream();
-            if (!connection.headersWritten) {
-                dos.write(HEADER);
-                dos.write('\r');
-                dos.write('\n');
-                dos.flush();
-                connection.headersWritten = true;
-            }
-            command.writeTo(dos);
-        }
-    }
-
-    public void flush(Connection connection) throws IOException {
-        if (connection != null) {
-            ObjectDataOutputStream dos = connection.getOutputStream();
-            dos.flush();
+//            final ObjectDataOutputStream dos = connection.getOutputStream();
+//            if (!connection.headersWritten) {
+//                dos.write(HEADER);
+//                dos.flush();
+//                connection.headersWritten = true;
+//            }
+            Data data = serializationService.toData(command);
+            connection.write(data);
         }
     }
 }

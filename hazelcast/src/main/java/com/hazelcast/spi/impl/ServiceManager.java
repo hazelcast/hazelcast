@@ -33,7 +33,6 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.partition.PartitionServiceImpl;
 import com.hazelcast.queue.QueueService;
-import com.hazelcast.deprecated.spi.ClientProtocolService;
 import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
@@ -114,9 +113,6 @@ class ServiceManager {
                 } catch (Throwable t) {
                     logger.log(Level.SEVERE, "Error while initializing service: " + t.getMessage(), t);
                 }
-            }
-            if (service instanceof ClientProtocolService) {
-                nodeEngine.getNode().clientCommandService.register((ClientProtocolService) service);
             }
         }
     }

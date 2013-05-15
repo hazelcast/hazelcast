@@ -16,13 +16,6 @@
 
 package com.hazelcast.concurrent.countdownlatch;
 
-import com.hazelcast.deprecated.client.ClientCommandHandler;
-import com.hazelcast.deprecated.concurrent.countdownlatch.client.CDLAwaitHandler;
-import com.hazelcast.deprecated.concurrent.countdownlatch.client.CDLCountdownHandler;
-import com.hazelcast.deprecated.concurrent.countdownlatch.client.CDLGetCountHandler;
-import com.hazelcast.deprecated.concurrent.countdownlatch.client.CDLSetCountHandler;
-import com.hazelcast.deprecated.spi.ClientProtocolService;
-import com.hazelcast.deprecated.nio.protocol.Command;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.spi.*;
 
@@ -33,7 +26,7 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * @mdogan 1/10/13
  */
-public class CountDownLatchService implements ManagedService, RemoteService, MigrationAwareService, ClientProtocolService {
+public class CountDownLatchService implements ManagedService, RemoteService, MigrationAwareService {
 
     public final static String SERVICE_NAME = "hz:impl:countDownLatchService";
 
@@ -161,14 +154,5 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
 
     public void add(CountDownLatchInfo latch) {
         latches.put(latch.getName(), latch);
-    }
-
-    public Map<Command, ClientCommandHandler> getCommandsAsMap() {
-        Map<Command, ClientCommandHandler> map = new HashMap<Command, ClientCommandHandler>();
-        map.put(Command.CDLAWAIT, new CDLAwaitHandler(this));
-        map.put(Command.CDLCOUNTDOWN, new CDLCountdownHandler(this));
-        map.put(Command.CDLGETCOUNT, new CDLGetCountHandler(this));
-        map.put(Command.CDLSETCOUNT, new CDLSetCountHandler(this));
-        return map;
     }
 }

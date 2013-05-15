@@ -16,21 +16,15 @@
 
 package com.hazelcast.executor;
 
-import com.hazelcast.deprecated.client.ClientCommandHandler;
-
-import com.hazelcast.deprecated.spi.ClientProtocolService;
-import com.hazelcast.deprecated.executor.client.ExecuteIsShutdownHandler;
-import com.hazelcast.deprecated.executor.client.ExecuteShutdownHandler;
 import com.hazelcast.monitor.impl.LocalExecutorStatsImpl;
-
-import com.hazelcast.deprecated.executor.client.ExecuteHandler;
-import com.hazelcast.deprecated.nio.protocol.Command;
 import com.hazelcast.spi.*;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
@@ -38,7 +32,7 @@ import java.util.logging.Level;
 /**
  * @mdogan 1/18/13
  */
-public class DistributedExecutorService implements ManagedService, RemoteService, ClientProtocolService {
+public class DistributedExecutorService implements ManagedService, RemoteService {
 
     public static final String SERVICE_NAME = "hz:impl:executorService";
 
@@ -112,15 +106,6 @@ public class DistributedExecutorService implements ManagedService, RemoteService
 
     private void startPending(String name) {
         getLocalExecutorStats(name).startPending();
-    }
-
-    @Override
-    public Map<Command, ClientCommandHandler> getCommandsAsMap() {
-        Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
-        commandHandlers.put(Command.EXECUTE, new ExecuteHandler(this));
-        commandHandlers.put(Command.EXSHUTDOWN, new ExecuteShutdownHandler(this));
-        commandHandlers.put(Command.EXISSHUTDOWN, new ExecuteIsShutdownHandler(this));
-        return commandHandlers;
     }
 
     private class CallableProcessor implements Runnable {

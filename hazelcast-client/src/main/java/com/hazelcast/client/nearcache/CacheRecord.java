@@ -15,7 +15,7 @@
  *
  */
 
-package com.hazelcast.client.proxy.nearcache;
+package com.hazelcast.client.nearcache;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.util.Clock;

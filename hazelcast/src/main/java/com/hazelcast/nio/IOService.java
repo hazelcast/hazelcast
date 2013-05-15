@@ -20,7 +20,6 @@ import com.hazelcast.ascii.TextCommandService;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.SymmetricEncryptionConfig;
-import com.hazelcast.deprecated.nio.Protocol;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.nio.serialization.Data;
@@ -50,8 +49,6 @@ public interface IOService {
     SymmetricEncryptionConfig getSymmetricEncryptionConfig();
 
     SSLConfig getSSLConfig();
-
-    void handleClientCommand(Protocol protocol);
 
     void handleMemberPacket(Packet p);
 

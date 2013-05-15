@@ -17,7 +17,6 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.nio.ascii.SocketTextWriter;
-import com.hazelcast.deprecated.nio.protocol.SocketProtocolWriter;
 import com.hazelcast.util.Clock;
 
 import java.nio.ByteBuffer;
@@ -66,8 +65,6 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
                 socketWriter = new SocketPacketWriter(connection);
                 buffer.put(Protocols.CLUSTER.getBytes());
                 registerWrite();
-            } else if (Protocols.CLIENT_TEXT.equals(protocol)) {
-                socketWriter = new SocketProtocolWriter(connection);
             } else if (Protocols.CLIENT_BINARY.equals(protocol)) {
                 socketWriter = new SocketClientDataWriter(connection);
             } else {

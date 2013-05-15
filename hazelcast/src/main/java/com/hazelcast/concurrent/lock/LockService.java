@@ -16,11 +16,8 @@
 
 package com.hazelcast.concurrent.lock;
 
-import com.hazelcast.deprecated.client.ClientCommandHandler;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.deprecated.spi.ClientProtocolService;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.deprecated.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.spi.*;
@@ -39,7 +36,7 @@ import java.util.concurrent.ConcurrentMap;
  * @mdogan 2/12/13
  */
 public class LockService implements ManagedService, RemoteService, MembershipAwareService,
-        MigrationAwareService, ClientProtocolService, SharedLockService, ClientAwareService{
+        MigrationAwareService, SharedLockService, ClientAwareService{
 
     private final NodeEngine nodeEngine;
     private final LockStoreContainer[] containers;
@@ -215,10 +212,6 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
             final LockStoreImpl lockStore = container.getOrCreateLockStore(new InternalLockNamespace());
             lockStore.forceUnlock(key);
         }
-    }
-
-    public Map<Command, ClientCommandHandler> getCommandsAsMap() {
-        return null;
     }
 
     public void clientDisconnected(String clientUuid) {

@@ -16,10 +16,7 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.deprecated.client.ClientCommandHandler;
-import com.hazelcast.deprecated.cluster.client.*;
 import com.hazelcast.core.*;
-import com.hazelcast.deprecated.spi.ClientProtocolService;
 import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -28,7 +25,6 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
 import com.hazelcast.nio.Packet;
-import com.hazelcast.deprecated.nio.protocol.Command;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -49,7 +45,7 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGING;
 
 public final class ClusterServiceImpl implements ClusterService, ConnectionListener, ManagedService,
-        EventPublishingService<MembershipEvent, MembershipListener>, ClientProtocolService {
+        EventPublishingService<MembershipEvent, MembershipListener> {
 
     public static final String SERVICE_NAME = "hz:core:clusterService";
 
@@ -101,6 +97,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         logger = node.getLogger(ClusterService.class.getName());
         thisAddress = node.getThisAddress();
         thisMember = node.getLocalMember();
+        setMembers(thisMember);
         waitMillisBeforeJoin = node.groupProperties.WAIT_SECONDS_BEFORE_JOIN.getInteger() * 1000L;
         maxWaitSecondsBeforeJoin = node.groupProperties.MAX_WAIT_SECONDS_BEFORE_JOIN.getInteger();
         maxNoHeartbeatMillis = node.groupProperties.MAX_NO_HEARTBEAT_SECONDS.getInteger() * 1000L;
@@ -666,14 +663,14 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     void updateMembers(Collection<MemberInfo> members) {
         lock.lock();
         try {
-            Map<Address, MemberImpl> mapOldMembers = new HashMap<Address, MemberImpl>();
-            for (MemberImpl member : getMemberList()) {
-                mapOldMembers.put(member.getAddress(), member);
+            Map<Address, MemberImpl> oldMemberMap = membersRef.get();
+            if (oldMemberMap == null) {
+                oldMemberMap = Collections.emptyMap();
             }
-            if (mapOldMembers.size() == members.size()) {
+            if (oldMemberMap.size() == members.size()) {
                 boolean same = true;
                 for (MemberInfo memberInfo : members) {
-                    MemberImpl member = mapOldMembers.get(memberInfo.getAddress());
+                    MemberImpl member = oldMemberMap.get(memberInfo.getAddress());
                     if (member == null || !member.getUuid().equals(memberInfo.uuid)) {
                         same = false;
                         break;
@@ -684,18 +681,17 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                     return;
                 }
             }
-            logger.log(Level.FINEST, "Updating Members");
             MemberImpl[] newMembers = new MemberImpl[members.size()];
             int k = 0;
             for (MemberInfo memberInfo : members) {
-                MemberImpl member = mapOldMembers.get(memberInfo.address);
+                MemberImpl member = oldMemberMap.get(memberInfo.address);
                 if (member == null) {
                     member = createMember(memberInfo.address, memberInfo.uuid, thisAddress.getScopeId());
                 }
                 newMembers[k++] = member;
                 member.didRead();
             }
-            addMembers(newMembers);
+            setMembers(newMembers);
             if (!getMemberList().contains(thisMember)) {
                 throw new HazelcastException("Member list doesn't contain local member!");
             }
@@ -743,31 +739,26 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         return nodeEngine;
     }
 
-    public void addMember(MemberImpl member) {
-        addMembers(member);
-    }
-
-    private void addMembers(MemberImpl... members) {
+    private void setMembers(MemberImpl... members) {
         if (members == null || members.length == 0) return;
-        logger.log(Level.FINEST, "Adding members -> " + Arrays.toString(members));
+        logger.log(Level.FINEST, "Updating members -> " + Arrays.toString(members));
         lock.lock();
         try {
             Collection<MemberImpl> newMembers = new LinkedList<MemberImpl>();
-            Map<Address, MemberImpl> memberMap = membersRef.get();
-            if (memberMap == null) {
-                memberMap = new LinkedHashMap<Address, MemberImpl>();  // ! ORDERED !
-            } else {
-                memberMap = new LinkedHashMap<Address, MemberImpl>(memberMap);  // ! ORDERED !
+            Map<Address, MemberImpl> oldMemberMap = membersRef.get();
+            if (oldMemberMap == null) {
+                oldMemberMap = Collections.emptyMap();
             }
+            final Map<Address, MemberImpl> memberMap = new LinkedHashMap<Address, MemberImpl>();  // ! ORDERED !
             for (MemberImpl member : members) {
-                MemberImpl oldMember = memberMap.remove(member.getAddress());
-                if (oldMember == null) {
+                MemberImpl currentMember = oldMemberMap.get(member.getAddress());
+                if (currentMember == null) {
                     newMembers.add(member);
                     masterConfirmationTimes.put(member, Clock.currentTimeMillis());
                 }
                 memberMap.put(member.getAddress(), member);
             }
-            setMembers(memberMap);
+            setMembersRef(memberMap);
             for (MemberImpl member : newMembers) {
                 node.getPartitionService().memberAdded(member); // sync call
                 sendMembershipEventNotifications(member, true); // async events
@@ -786,7 +777,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 Map<Address, MemberImpl> newMembers = new LinkedHashMap<Address, MemberImpl>(members);  // ! ORDERED !
                 newMembers.remove(deadMember.getAddress());
                 masterConfirmationTimes.remove(deadMember);
-                setMembers(newMembers);
+                setMembersRef(newMembers);
                 node.getPartitionService().memberRemoved(deadMember); // sync call
                 nodeEngine.onMemberLeft(deadMember);                  // sync call
                 sendMembershipEventNotifications(deadMember, false); // async events
@@ -866,7 +857,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         return null;
     }
 
-    private void setMembers(final Map<Address, MemberImpl> memberMap) {
+    private void setMembersRef(final Map<Address, MemberImpl> memberMap) {
         final Map<Address, MemberImpl> members = Collections.unmodifiableMap(memberMap);
         // make values(), keySet() and entrySet() to be cached
         members.values();
@@ -958,21 +949,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
         sb.append("\n}\n");
         return sb.toString();
-    }
-
-    public Map<Command, ClientCommandHandler> getCommandsAsMap() {
-        Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
-        commandHandlers.put(Command.AUTH, new ClientAuthenticateHandler());
-        commandHandlers.put(Command.MEMBERS, new GetMembersHandler());
-        commandHandlers.put(Command.DESTROY, new DestroyHandler());
-        commandHandlers.put(Command.MEMBERLISTEN, new MembershipListenHandler(this));
-        commandHandlers.put(Command.CLUSTERTIME, new ClusterTimeHandler(this));
-        commandHandlers.put(Command.TRXBEGIN, new TransactionBeginHandler(this));
-        commandHandlers.put(Command.TRXCOMMIT, new TransactionCommitHandler(this));
-        commandHandlers.put(Command.TRXROLLBACK, new TransactionRollbackHandler(this));
-        commandHandlers.put(Command.TRXSTATUS, new TransactionStatusHandler(this));
-        commandHandlers.put(Command.PING, new PingHandler());
-        return commandHandlers;
     }
 
     @Override

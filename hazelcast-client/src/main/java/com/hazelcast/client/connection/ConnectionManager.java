@@ -16,17 +16,23 @@
 
 package com.hazelcast.client.connection;
 
+import com.hazelcast.client.AuthenticationRequest;
+import com.hazelcast.client.GenericError;
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.exception.AuthenticationException;
 import com.hazelcast.client.exception.ClusterClientException;
 import com.hazelcast.client.util.pool.ObjectPool;
 import com.hazelcast.client.util.pool.QueueBasedObjectPool;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.SocketInterceptor;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.security.Credentials;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
@@ -43,7 +49,6 @@ public class ConnectionManager {
     private final int poolSize;
     private final int connectionTimeout;
     private final SerializationService serializationService;
-    private final DefaultClientBinder binder;
     private final LoadBalancer router;
     private final ConcurrentMap<Address, ObjectPool<Connection>> mPool = new ConcurrentHashMap<Address, ObjectPool<Connection>>();
     private final AtomicBoolean initialized = new AtomicBoolean(false);
@@ -51,10 +56,11 @@ public class ConnectionManager {
     private final SocketInterceptor socketInterceptor;
     private final Lock lock = new ReentrantLock();
     private final HeartBeatChecker heartbeat;
+    private final Credentials credentials;
 
     public ConnectionManager(ClientConfig config, final SerializationService serializationService) {
         this.serializationService = serializationService;
-        binder = new DefaultClientBinder(serializationService, config.getCredentials());
+        credentials = config.getCredentials();
         initialConnection = initialConnection(config);
         router = config.getLoadBalancer();
         socketInterceptor = config.getSocketInterceptor();
@@ -63,26 +69,20 @@ public class ConnectionManager {
         heartbeat = new HeartBeatChecker(config, serializationService);
     }
 
-    public void init(HazelcastInstance hazelcast, ClientConfig config) {
-        router.init(hazelcast, config);
-        initialized.set(true);
+    public void init(HazelcastClient client) {
+//        router.init(client, client.getClientConfig());
     }
 
     private Connection initialConnection(ClientConfig config) {
-
         int attempt = 0;
-        Connection initialConnection = null;
-        while (initialConnection == null) {
+        while (true) {
             final long nextTry = Clock.currentTimeMillis() + config.getAttemptPeriod();
             for (InetSocketAddress isa : config.getAddressList()) {
                 try {
                     Address address = new Address(isa);
-                    initialConnection = newConnection(address);
-                    return initialConnection;
-                } catch (IOException e) {
-                    continue;
-                } catch (ClusterClientException e) {
-                    continue;
+                    return newConnection(address);
+                } catch (IOException ignored) {
+                } catch (ClusterClientException ignored) {
                 }
             }
             if (attempt >= config.getInitialConnectionAttemptLimit()) {
@@ -90,7 +90,7 @@ public class ConnectionManager {
             }
             attempt++;
             final long remainingTime = nextTry - Clock.currentTimeMillis();
-            System.out.println(
+            System.err.println(
                     format("Unable to get alive cluster connection," +
                             " try in %d ms later, attempt %d of %d.",
                             Math.max(0, remainingTime), attempt, config.getInitialConnectionAttemptLimit()));
@@ -99,17 +99,28 @@ public class ConnectionManager {
                 try {
                     Thread.sleep(remainingTime);
                 } catch (InterruptedException e) {
+                    break;
                 }
             }
         }
-        throw new IllegalStateException("Unable to connect to any address in the config");
+        throw new IllegalStateException("Unable to connect to any address in the config!");
     }
 
     public Connection newConnection(Address address) throws IOException {
-        Connection connection = new Connection(address, 0, serializationService);
-        if (socketInterceptor != null)
+        Connection connection = new Connection(address, serializationService);
+        connection.write(Protocols.CLIENT_BINARY.getBytes());
+
+        if (socketInterceptor != null) {
             socketInterceptor.onConnect(connection.getSocket());
-        binder.bind(connection);
+        }
+        AuthenticationRequest auth = new AuthenticationRequest(credentials);
+        connection.write(serializationService.toData(auth));
+        final Data data = connection.read();
+        Object response = serializationService.toObject(data);
+        if (response instanceof GenericError) {
+            throw new AuthenticationException(((GenericError) response).getMessage());
+        }
+        System.err.println("response = " + response);
         return connection;
     }
 

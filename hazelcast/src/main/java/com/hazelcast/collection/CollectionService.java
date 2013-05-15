@@ -27,14 +27,6 @@ import com.hazelcast.concurrent.lock.LockStoreInfo;
 import com.hazelcast.concurrent.lock.SharedLockService;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.*;
-import com.hazelcast.deprecated.client.ClientCommandHandler;
-import com.hazelcast.deprecated.collection.client.CollectionItemListenHandler;
-import com.hazelcast.deprecated.collection.list.client.*;
-import com.hazelcast.deprecated.collection.multimap.client.*;
-import com.hazelcast.deprecated.collection.set.client.*;
-import com.hazelcast.deprecated.nio.Protocol;
-import com.hazelcast.deprecated.nio.protocol.Command;
-import com.hazelcast.deprecated.spi.ClientProtocolService;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMultiMapStatsImpl;
 import com.hazelcast.nio.Address;
@@ -56,8 +48,8 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * @ali 1/1/13
  */
-public class CollectionService implements ManagedService, RemoteService, MembershipAwareService,
-        MigrationAwareService, EventPublishingService<CollectionEvent, EventListener>, ClientProtocolService, TransactionalService {
+public class CollectionService implements ManagedService, RemoteService,
+        MigrationAwareService, EventPublishingService<CollectionEvent, EventListener>, TransactionalService {
 
     public static final String SERVICE_NAME = "hz:impl:collectionService";
     private final NodeEngine nodeEngine;
@@ -279,62 +271,6 @@ public class CollectionService implements ManagedService, RemoteService, Members
 
     public void clearPartitionReplica(int partitionId) {
         clearMigrationData(partitionId);
-    }
-
-    public void memberAdded(MembershipServiceEvent event) {
-    }
-
-    public void memberRemoved(MembershipServiceEvent event) {
-        // TODO: when a member dies;
-        // * rollback transaction
-        // * do not know ?
-    }
-
-    public Map<Command, ClientCommandHandler> getCommandsAsMap() {
-        Map<Command, ClientCommandHandler> map = new HashMap<Command, ClientCommandHandler>();
-        //Set commands
-        map.put(Command.SADD, new SetAddHandler(this));
-        map.put(Command.SSIZE, new SetSizeHandler(this));
-        map.put(Command.SREMOVE, new SetRemoveHandler(this));
-        map.put(Command.SCONTAINS, new SetContainsHandler(this));
-        map.put(Command.SGETALL, new SetGetAllHandler(this));
-        map.put(Command.SLISTEN, new CollectionItemListenHandler(this) {
-            @Override
-            protected CollectionProxyId getCollectionProxyId(Protocol protocol) {
-                return new CollectionProxyId(ObjectListProxy.COLLECTION_LIST_NAME, protocol.args[0], CollectionProxyType.SET);
-            }
-        });
-        //List commands
-        map.put(Command.LADD, new AddHandler(this));
-        map.put(Command.LSIZE, new SizeHandler(this));
-        map.put(Command.LREMOVE, new RemoveHandler(this));
-        map.put(Command.LCONTAINS, new ContainsHandler(this));
-        map.put(Command.LGETALL, new GetAllHandler(this));
-        map.put(Command.LGET, new GetHandler(this));
-        map.put(Command.LINDEXOF, new IndexOfHandler(this));
-        map.put(Command.LLASTINDEXOF, new LastIndexOfHandler(this));
-        map.put(Command.LSET, new ListSetHandler(this));
-        map.put(Command.LLISTEN, new CollectionItemListenHandler(this) {
-            @Override
-            protected CollectionProxyId getCollectionProxyId(Protocol protocol) {
-                return new CollectionProxyId(ObjectSetProxy.COLLECTION_SET_NAME, protocol.args[0], CollectionProxyType.LIST);
-            }
-        });
-        //MultiMap commands
-        map.put(Command.MMPUT, new PutHandler(this));
-        map.put(Command.MMGET, new MMGetHandler(this));
-        map.put(Command.MMSIZE, new MMSizeHandler(this));
-        map.put(Command.MMREMOVE, new MMRemoveHandler(this));
-        map.put(Command.MMVALUECOUNT, new ValueCountHandler(this));
-        map.put(Command.MMCONTAINSKEY, new ContainsKeyHandler(this));
-        map.put(Command.MMCONTAINSVALUE, new ContainsValueHandler(this));
-        map.put(Command.MMCONTAINSENTRY, new ContainsEntryHandler(this));
-        map.put(Command.MMKEYS, new MMKeysHandler(this));
-        map.put(Command.MMLOCK, new LockHandler(this));
-        map.put(Command.MMUNLOCK, new UnlockHandler(this));
-        map.put(Command.MMTRYLOCK, new TryLockHandler(this));
-        map.put(Command.MMLISTEN, new ListenHandler(this));
-        return map;
     }
 
     public LocalMapStats createStats(CollectionProxyId proxyId) {

@@ -202,7 +202,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
     }
 
     public boolean bind(TcpIpConnection connection, Address remoteEndPoint, Address localEndpoint, final boolean replyBack) {
-        log(Level.WARNING, "Binding " + connection + " to " + remoteEndPoint + ", replyBack is " + replyBack);
+        log(Level.FINEST, "Binding " + connection + " to " + remoteEndPoint + ", replyBack is " + replyBack);
         final Address thisAddress = ioService.getThisAddress();
         if (!connection.isClient() && !thisAddress.equals(localEndpoint)) {
             log(Level.WARNING, "Wrong bind request from " + remoteEndPoint

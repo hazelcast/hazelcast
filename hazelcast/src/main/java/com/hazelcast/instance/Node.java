@@ -18,8 +18,6 @@ package com.hazelcast.instance;
 
 import com.hazelcast.ascii.TextCommandService;
 import com.hazelcast.ascii.TextCommandServiceImpl;
-import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.deprecated.client.ClientCommandService;
 import com.hazelcast.client.ClientEngineImpl;
 import com.hazelcast.cluster.*;
 import com.hazelcast.config.Config;
@@ -27,6 +25,7 @@ import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.logging.ILogger;
@@ -107,8 +106,6 @@ public class Node {
 
     public final LoggingServiceImpl loggingService;
 
-    public final ClientCommandService clientCommandService;
-
     private final SystemLogService systemLogService;
 
     private final Joiner joiner;
@@ -160,11 +157,9 @@ public class Node {
         nodeEngine = new NodeEngineImpl(this);
         clientEngine = new ClientEngineImpl(this);
         connectionManager = nodeContext.createConnectionManager(this, serverSocketChannel);
-        clusterService = new ClusterServiceImpl(this);
         partitionService = new PartitionServiceImpl(this);
-        clientCommandService = new ClientCommandService(this);
+        clusterService = new ClusterServiceImpl(this);
         textCommandService = new TextCommandServiceImpl(this);
-        clusterService.addMember(localMember);
         initializer.printNodeInfo(this);
         buildNumber = initializer.getBuildNumber();
         VersionCheck.check(this, initializer.getBuild(), initializer.getVersion());
@@ -390,7 +385,6 @@ public class Node {
             }
             logger.log(Level.FINEST, "Shutting down client command service");
             clientEngine.shutdown();
-            clientCommandService.shutdown();
             logger.log(Level.FINEST, "Shutting down node engine");
             nodeEngine.shutdown();
             if (multicastService != null) {

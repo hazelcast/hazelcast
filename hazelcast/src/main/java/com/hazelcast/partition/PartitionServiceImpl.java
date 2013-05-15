@@ -16,17 +16,13 @@
 
 package com.hazelcast.partition;
 
-import com.hazelcast.deprecated.client.ClientCommandHandler;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.deprecated.spi.ClientProtocolService;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.nio.Address;
-import com.hazelcast.deprecated.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.deprecated.partition.client.PartitionsHandler;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -42,7 +38,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 
 public class PartitionServiceImpl implements IPartitionService, ManagedService,
-        EventPublishingService<MigrationEvent, MigrationListener>, ClientProtocolService {
+        EventPublishingService<MigrationEvent, MigrationListener> {
 
     public static final String SERVICE_NAME = "hz:core:partitionService";
 
@@ -710,12 +706,6 @@ public class PartitionServiceImpl implements IPartitionService, ManagedService,
             sb.append('}');
             return sb.toString();
         }
-    }
-
-    public Map<Command, ClientCommandHandler> getCommandsAsMap() {
-        Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
-        commandHandlers.put(Command.PARTITIONS, new PartitionsHandler(this));
-        return commandHandlers;
     }
 
     public Map<Address, List<Integer>> getMemberPartitionsMap() {

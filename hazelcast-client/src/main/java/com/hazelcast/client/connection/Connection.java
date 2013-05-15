@@ -20,6 +20,7 @@ import com.hazelcast.client.exception.ClusterClientException;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.ObjectDataInputStream;
 import com.hazelcast.nio.serialization.ObjectDataOutputStream;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -41,15 +42,11 @@ public class Connection {
 
     private final Socket socket;
     private final Address address;
-    private final int id;
-    private final ObjectDataOutputStream dos;
-    private final ObjectDataInputStream dis;
-    boolean headersWritten = false;
-    boolean headerRead = false;
-    private long lastRead = System.currentTimeMillis();
+    private final ObjectDataOutputStream out;
+    private final ObjectDataInputStream in;
+//    private long lastRead = System.currentTimeMillis();
 
-    public Connection(Address address, int id, SerializationService serializationService) {
-        this.id = id;
+    public Connection(Address address, SerializationService serializationService) {
         this.address = address;
         try {
             final InetSocketAddress isa = address.getInetSocketAddress();
@@ -58,24 +55,24 @@ public class Connection {
                 socket.setKeepAlive(true);
 //                socket.setTcpNoDelay(true);
                 socket.setSoLinger(true, 5);
-//                socket.setSendBufferSize(BUFFER_SIZE);
-//                socket.setReceiveBufferSize(BUFFER_SIZE);
+                socket.setSendBufferSize(BUFFER_SIZE);
+                socket.setReceiveBufferSize(BUFFER_SIZE);
                 socket.connect(isa, 3000);
             } catch (IOException e) {
                 socket.close();
                 throw e;
             }
             this.socket = socket;
-            this.dos = serializationService.createObjectDataOutputStream(
+            this.out = serializationService.createObjectDataOutputStream(
                     new BufferedOutputStream(socket.getOutputStream(), BUFFER_SIZE));
-            this.dis = serializationService.createObjectDataInputStream(
+            this.in = serializationService.createObjectDataInputStream(
                     new BufferedInputStream(socket.getInputStream(), BUFFER_SIZE));
         } catch (Exception e) {
             throw new ClusterClientException(e);
         }
     }
 
-    public Socket getSocket() {
+    Socket getSocket() {
         return socket;
     }
 
@@ -83,39 +80,40 @@ public class Connection {
         return address;
     }
 
-    public int getVersion() {
-        return id;
+    void write(byte[] bytes) throws IOException {
+        out.write(bytes);
+        out.flush();
+    }
+
+    public boolean write(Data data) throws IOException {
+        data.writeData(out);
+        out.flush();
+        return true;
+    }
+
+    public Data read() throws IOException {
+        Data data = new Data();
+        data.readData(in);
+        return data;
     }
 
     public void close() throws IOException {
+        out.close();
+        in.close();
         socket.close();
-        dos.close();
-        dis.close();
-    }
-
-    @Override
-    public String toString() {
-        return "Connection [" + id + "]" + " [" + address + " -> " +
-                socket.getInetAddress().getHostAddress() + ":" + socket.getPort() + "]";
-    }
-
-    public ObjectDataOutputStream getOutputStream() {
-        return dos;
-    }
-
-    public ObjectDataInputStream getInputStream() {
-        return dis;
     }
 
     public Member getMember() {
         return new MemberImpl(new Address(address), false);
     }
 
-    public void setLastRead(long l) {
-        this.lastRead = l;
-    }
+//    public long getLastRead() {
+//        return lastRead;
+//    }
 
-    public long getLastRead() {
-        return lastRead;
+    @Override
+    public String toString() {
+        return "Connection [" + address + " -> " +
+                socket.getInetAddress().getHostAddress() + ":" + socket.getPort() + "]";
     }
 }

@@ -45,7 +45,6 @@ public class QueueBasedObjectPool<E> extends ObjectPool<E> {
             try {
                 e = factory.create();
             } catch (Exception ex) {
-//                ex.printStackTrace();
                 return null;
             }
         }

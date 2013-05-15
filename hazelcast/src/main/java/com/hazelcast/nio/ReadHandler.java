@@ -17,7 +17,6 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.nio.ascii.SocketTextReader;
-import com.hazelcast.deprecated.nio.protocol.SocketProtocolReader;
 import com.hazelcast.util.Clock;
 
 import java.io.EOFException;
@@ -89,9 +88,6 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
                 if (Protocols.CLUSTER.equals(protocol)) {
                     writeHandler.setProtocol(Protocols.CLUSTER);
                     socketReader = new SocketPacketReader(connection);
-                } else if (Protocols.CLIENT_TEXT.equals(protocol)) {
-                    writeHandler.setProtocol(Protocols.CLIENT_TEXT);
-                    socketReader = new SocketProtocolReader(connection);
                 } else if (Protocols.CLIENT_BINARY.equals(protocol)) {
                     writeHandler.setProtocol(Protocols.CLIENT_BINARY);
                     socketReader = new SocketClientDataReader(connection);
