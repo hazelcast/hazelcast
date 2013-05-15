@@ -22,6 +22,7 @@ import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
+import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
@@ -54,7 +55,7 @@ public class QueueBinaryClientTest extends ClientTestSupport {
         Config config = new Config();
         QueueConfig queueConfig = config.getQueueConfig(queueName);
         queueConfig.setMaxSize(6);
-        hz = Hazelcast.newHazelcastInstance(config);
+        hz = new StaticNodeFactory(1).newHazelcastInstance(config);
     }
 
     @AfterClass

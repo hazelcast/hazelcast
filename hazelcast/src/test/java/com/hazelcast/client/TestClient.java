@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.client;
+
+import com.hazelcast.nio.serialization.SerializationService;
+
+import java.io.IOException;
 
 /**
- * @mdogan 3/11/13
+ * @ali 5/14/13
  */
-public final class Protocols {
+public interface TestClient {
 
-    public static final String CLUSTER = "HZC";
-    public static final String CLIENT_TEXT = "P01";
-    public static final String CLIENT_BINARY = "CB1";
-    public static final String TEXT = "TXT";
+    void auth() throws IOException;
 
-    private Protocols() {}
+    void send(Object o) throws IOException;
+
+    Object receive() throws IOException;
+
+    void close() throws IOException;
+
+    SerializationService getSerializationService();
 }

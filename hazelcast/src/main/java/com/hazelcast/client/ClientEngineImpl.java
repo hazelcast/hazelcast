@@ -167,7 +167,7 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
         return null;
     }
 
-    private ClientEndpoint getEndpoint(Connection conn) {
+    ClientEndpoint getEndpoint(Connection conn) {
         return ConcurrencyUtil.getOrPutIfAbsent(endpoints, conn, endpointConstructor);
     }
 
