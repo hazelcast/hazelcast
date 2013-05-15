@@ -22,6 +22,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ISemaphore;
+import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
@@ -45,7 +46,7 @@ public class SemaphoreBinaryClientTest extends ClientTestSupport {
     @BeforeClass
     public static void init() {
         Config config = new Config();
-        hz = Hazelcast.newHazelcastInstance(config);
+        hz = new StaticNodeFactory(1).newHazelcastInstance(config);
     }
 
     @AfterClass

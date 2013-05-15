@@ -16,19 +16,26 @@
 
 package com.hazelcast.instance;
 
+import com.hazelcast.client.ClientEngineImpl;
+import com.hazelcast.client.MockTestClient;
+import com.hazelcast.client.SocketTestClient;
+import com.hazelcast.client.TestClient;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.impl.StaticNodeRegistry;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.UnknownHostException;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class StaticNodeFactory {
 
-    private final static boolean MOCK_NETWORK = !Boolean.getBoolean("hazelcast.test.use.network");
+    public final static boolean MOCK_NETWORK = !Boolean.getBoolean("hazelcast.test.use.network");
     private final static boolean TEST_CLIENT = Boolean.getBoolean("hazelcast.test.client");
     private final static String HAZELCAST_CLIENT = "com.hazelcast.client.HazelcastClient";
     private final static String HAZELCAST_CLIENT_CONFIG = "com.hazelcast.client.config.ClientConfig";
@@ -58,6 +65,24 @@ public class StaticNodeFactory {
             return HazelcastInstanceFactory.newHazelcastInstance(config, null, nodeContext);
         }
         return TEST_CLIENT ? newHazelcastClient() : HazelcastInstanceFactory.newHazelcastInstance(config);
+    }
+
+    public static TestClient newClient(Address nodeAddress) throws IOException {
+
+        Set<HazelcastInstance> instances = Hazelcast.getAllHazelcastInstances();
+        for (HazelcastInstance p : instances) {
+            HazelcastInstanceImpl hz = ((HazelcastInstanceProxy) p).original;
+            MemberImpl m = (MemberImpl) hz.getCluster().getLocalMember();
+            if (m.getAddress().equals(nodeAddress)) {
+                if (MOCK_NETWORK) {
+                    ClientEngineImpl engine = hz.node.clientEngine;
+                    return new MockTestClient(engine);
+                } else {
+                    return new SocketTestClient(hz);
+                }
+            }
+        }
+        return null;
     }
 
     private static HazelcastInstance newHazelcastClient() {

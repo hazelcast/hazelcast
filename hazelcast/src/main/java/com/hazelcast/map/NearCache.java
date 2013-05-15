@@ -70,7 +70,7 @@ public class NearCache {
     }
 
     public void put(Data key, Data data) {
-        fireCleanup();
+        fireTtlCleanup();
         if (evictionPolicy == EvictionPolicy.NONE && cache.size() >= maxSize) {
             return;
         }
@@ -91,13 +91,14 @@ public class NearCache {
                     for (int i = 0; i < evictSize; i++) {
                         cache.remove(values.get(i).key);
                     }
+                    // todo can evict can be false think about this
                     canEvict.set(true);
                 }
             });
         }
     }
 
-    private void fireCleanup() {
+    private void fireTtlCleanup() {
         if (Clock.currentTimeMillis() < (lastCleanup + cleanupInterval))
             return;
 
@@ -119,7 +120,7 @@ public class NearCache {
     }
 
     public Object get(Data key) {
-        fireCleanup();
+        fireTtlCleanup();
         CacheRecord record = cache.get(key);
         if (record != null) {
             record.access();

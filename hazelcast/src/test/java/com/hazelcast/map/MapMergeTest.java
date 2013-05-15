@@ -19,6 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.map.merge.HigherHitsMapMergePolicy;
 
 import java.util.Map;
@@ -27,19 +28,20 @@ import java.util.Set;
 public class MapMergeTest {
 
     public static void main(String[] args) throws InterruptedException {
+        StaticNodeFactory factory = new StaticNodeFactory(2);
         Config cfg1 = new Config();
         cfg1.setProperty("hazelcast.merge.first.run.delay.seconds","0");
         cfg1.setProperty("hazelcast.merge.next.run.delay.seconds","1");
         cfg1.getGroupConfig().setName("group1");
         cfg1.getMapConfig("default").setMergePolicy(HigherHitsMapMergePolicy.class.getName());
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg1);
+        HazelcastInstance instance1 = factory.newHazelcastInstance(cfg1);
 
         Config cfg2 = new Config();
         cfg2.setProperty("hazelcast.merge.first.run.delay.seconds","0");
         cfg2.setProperty("hazelcast.merge.next.run.delay.seconds","1");
         cfg2.getGroupConfig().setName("group2");
         cfg2.getMapConfig("default").setMergePolicy(HigherHitsMapMergePolicy.class.getName());
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(cfg2);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(cfg2);
 
         Map map1 = instance1.getMap("map");
         Map map2 = instance2.getMap("map");

@@ -20,6 +20,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
+import com.hazelcast.instance.StaticNodeFactory;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -30,7 +31,8 @@ public class MapDeathTest  {
 
     @Test
     public void testMapReleaseLocks() throws InterruptedException {
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance();
+        StaticNodeFactory factory = new StaticNodeFactory(2);
+        HazelcastInstance instance1 = factory.newHazelcastInstance(null);
         IMap map = instance1.getMap("testMapReleaseLocks");
         int size = 1000;
         for (int i = 0; i < size; i++) {
@@ -38,7 +40,7 @@ public class MapDeathTest  {
             map.lock(i);
         }
 
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        HazelcastInstance instance2 = factory.newHazelcastInstance(null);
 
         for (int i = 0; i < size; i++) {
             assertEquals(true, map.isLocked(i));

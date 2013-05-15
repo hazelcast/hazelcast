@@ -416,7 +416,8 @@ public class EvictionTest {
         MapConfig mc = cfg.getMapConfig("testZeroResetsTTL");
         int ttl = 3;
         mc.setTimeToLiveSeconds(ttl);
-        HazelcastInstance instance = Hazelcast.newHazelcastInstance(cfg);
+        StaticNodeFactory factory = new StaticNodeFactory(1);
+        HazelcastInstance instance = factory.newHazelcastInstance(cfg);
         IMap<Object, Object> map = instance.getMap("testZeroResetsTTL");
         map.put(1,1);
         map.put(2,2);
@@ -433,15 +434,18 @@ public class EvictionTest {
         int maxIdleSeconds = 5;
         int size = 1000;
         mc.setMaxIdleSeconds(maxIdleSeconds);
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
+
+        StaticNodeFactory factory = new StaticNodeFactory(3);
+
+        HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
         final IMap map = instance1.getMap("testMapRecordIdleEvictionOnMigration");
 
         for (int i = 0; i < size; i++) {
             map.put(i, i);
         }
 
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(cfg);
-        HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(cfg);
+        HazelcastInstance instance3 = factory.newHazelcastInstance(cfg);
 
         Thread.sleep(maxIdleSeconds * 1000 + 3000);
 
@@ -456,7 +460,9 @@ public class EvictionTest {
         int size = 1000;
         final int nsize = size / 5;
         mc.setMaxIdleSeconds(maxIdleSeconds);
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
+        StaticNodeFactory factory = new StaticNodeFactory(3);
+
+        HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
         final IMap map = instance1.getMap("testMapRecordIdleEvictionOnMigration2");
 
         for (int i = 0; i < size; i++) {
@@ -476,8 +482,8 @@ public class EvictionTest {
                 }
             }
         }).start();
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(cfg);
-        HazelcastInstance instance3 = Hazelcast.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(cfg);
+        HazelcastInstance instance3 = factory.newHazelcastInstance(cfg);
 
         Thread.sleep(1000);
 

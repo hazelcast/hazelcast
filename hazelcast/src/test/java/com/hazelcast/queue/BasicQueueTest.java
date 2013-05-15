@@ -56,14 +56,16 @@ public class BasicQueueTest {
 
     @Test
     public void testQueueStats(){
+        StaticNodeFactory factory = new StaticNodeFactory(2);
+
         Config config = new Config();
         final String name = "t_queue";
-        HazelcastInstance ins1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance ins1 = factory.newHazelcastInstance(config);
         IQueue q = ins1.getQueue(name);
         for (int i=0; i<2; i++){
             q.offer("item"+i);
         }
-        HazelcastInstance ins2 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance ins2 = factory.newHazelcastInstance(config);
         for (int i=0; i<2; i++){
             q.offer("item"+i);
         }
