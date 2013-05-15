@@ -9,6 +9,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.MultiMap;
+import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
@@ -40,7 +41,7 @@ public class CollectionBinaryClientTest extends ClientTestSupport {
     @BeforeClass
     public static void init() {
         Config config = new Config();
-        hz = Hazelcast.newHazelcastInstance(config);
+        hz = new StaticNodeFactory(1).newHazelcastInstance(config);
         dataKey = ss.toData(name);
     }
 
