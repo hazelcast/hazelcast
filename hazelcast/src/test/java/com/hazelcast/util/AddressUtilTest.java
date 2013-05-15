@@ -16,6 +16,7 @@
 
 package com.hazelcast.util;
 
+import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import com.hazelcast.util.AddressUtil.AddressMatcher;
 import com.hazelcast.util.AddressUtil.InvalidAddressException;
 import com.hazelcast.util.AddressUtil.Ip4AddressMatcher;
@@ -32,7 +33,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Unit tests for AddressUtil class.
  */
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+@RunWith(RandomBlockJUnit4ClassRunner.class)
 public class AddressUtilTest {
 
     @Test

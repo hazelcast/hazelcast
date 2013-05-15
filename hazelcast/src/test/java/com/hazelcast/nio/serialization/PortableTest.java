@@ -19,8 +19,10 @@ package com.hazelcast.nio.serialization;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -29,6 +31,7 @@ import java.util.Collections;
 /**
  * @mdogan 1/4/13
  */
+@RunWith(RandomBlockJUnit4ClassRunner.class)
 public class PortableTest {
 
     static final int FACTORY_ID = 1;

@@ -17,6 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.*;
+import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import org.junit.*;
 import org.junit.runner.RunWith;
 
@@ -31,7 +32,7 @@ import static org.junit.Assert.*;
  * <p/>
  * Unit test is whiteboard'n'fast.
  */
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+@RunWith(RandomBlockJUnit4ClassRunner.class)
 public class HazelcastTest extends BaseTest {
 
 //    @Test(timeout = 120000)

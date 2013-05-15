@@ -25,6 +25,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
+import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -37,7 +38,7 @@ import java.util.*;
 /**
  * @mdogan 4/17/13
  */
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+@RunWith(RandomBlockJUnit4ClassRunner.class)
 public class PartitionStateGeneratorTest {
 
     private static final boolean printState = false;

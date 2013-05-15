@@ -22,6 +22,7 @@ import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import net.spy.memcached.ConnectionFactory;
 import net.spy.memcached.ConnectionFactoryBuilder;
 import net.spy.memcached.FailureMode;
@@ -44,7 +45,7 @@ import java.util.concurrent.ExecutionException;
  * Date: 3/7/13
  * Time: 2:48 PM
  */
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+@RunWith(RandomBlockJUnit4ClassRunner.class)
 public class MemcacheTest {
 
     final static Config config = new XmlConfigBuilder().build();

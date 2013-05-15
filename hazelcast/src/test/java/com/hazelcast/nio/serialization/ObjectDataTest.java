@@ -20,8 +20,10 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.SerializationConcurrencyTest.Address;
 import com.hazelcast.nio.serialization.SerializationConcurrencyTest.Person;
+import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -32,6 +34,7 @@ import java.util.Arrays;
 /**
  * @mdogan 1/23/13
  */
+@RunWith(RandomBlockJUnit4ClassRunner.class)
 public class ObjectDataTest {
 
     @Test

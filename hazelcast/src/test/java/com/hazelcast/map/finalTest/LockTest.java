@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.StaticNodeFactory;
+import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.util.Clock;
 import org.junit.Assert;
@@ -34,7 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static junit.framework.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+@RunWith(RandomBlockJUnit4ClassRunner.class)
 public class LockTest {
 
     @Test

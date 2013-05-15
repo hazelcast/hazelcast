@@ -21,6 +21,7 @@ import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryException;
 import com.hazelcast.query.impl.ReflectionHelper;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -33,7 +34,7 @@ import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static org.junit.Assert.*;
 
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+@RunWith(RandomBlockJUnit4ClassRunner.class)
 public class PredicatesTest extends TestUtil {
     public PredicatesTest() {
         super();

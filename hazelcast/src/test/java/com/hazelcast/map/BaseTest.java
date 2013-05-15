@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import com.hazelcast.util.Clock;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -30,7 +31,7 @@ import java.util.List;
 import java.util.Random;
 
 
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+@RunWith(RandomBlockJUnit4ClassRunner.class)
 public abstract class BaseTest {
 
     protected static final List<HazelcastInstance> instances = new ArrayList<HazelcastInstance>();

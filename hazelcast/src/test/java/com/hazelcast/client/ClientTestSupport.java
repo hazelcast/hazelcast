@@ -2,6 +2,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.nio.serialization.*;
 import com.hazelcast.security.UsernamePasswordCredentials;
+import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
@@ -17,7 +18,7 @@ import java.net.Socket;
 /**
  * @mdogan 5/14/13
  */
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+@RunWith(RandomBlockJUnit4ClassRunner.class)
 public abstract class ClientTestSupport {
 
     private Client client;

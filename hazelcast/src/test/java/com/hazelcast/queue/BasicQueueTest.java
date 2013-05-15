@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.monitor.LocalQueueStats;
+import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -39,7 +40,7 @@ import static org.junit.Assert.*;
 /**
  * @ali 2/12/13
  */
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+@RunWith(RandomBlockJUnit4ClassRunner.class)
 public class BasicQueueTest {
 
     @BeforeClass

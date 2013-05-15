@@ -22,6 +22,7 @@ import com.hazelcast.nio.serialization.*;
 import com.hazelcast.query.Predicates.AndPredicate;
 import com.hazelcast.query.Predicates.EqualPredicate;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -31,7 +32,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static junit.framework.Assert.*;
 
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+@RunWith(RandomBlockJUnit4ClassRunner.class)
 public class IndexTest extends TestUtil {
 
     static final int FACTORY_ID = 1;

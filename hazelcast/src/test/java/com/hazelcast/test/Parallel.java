@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util;
+package com.hazelcast.test;
 
 import java.io.BufferedReader;
 import java.io.InputStream;

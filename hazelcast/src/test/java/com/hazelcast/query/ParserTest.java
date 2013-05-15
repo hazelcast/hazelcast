@@ -16,6 +16,7 @@
 
 package com.hazelcast.query;
 
+import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -26,7 +27,7 @@ import java.util.Random;
 
 import static junit.framework.Assert.*;
 
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+@RunWith(RandomBlockJUnit4ClassRunner.class)
 public class ParserTest {
     Parser parser = new Parser();
 

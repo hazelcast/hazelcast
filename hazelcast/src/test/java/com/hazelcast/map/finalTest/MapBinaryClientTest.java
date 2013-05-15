@@ -30,6 +30,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryDataResultStream;
 import org.junit.After;
@@ -46,7 +47,7 @@ import java.util.Set;
 import static org.junit.Assert.*;
 
 
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+@RunWith(RandomBlockJUnit4ClassRunner.class)
 public class MapBinaryClientTest extends ClientTestSupport {
 
     static final String mapName = "test";
