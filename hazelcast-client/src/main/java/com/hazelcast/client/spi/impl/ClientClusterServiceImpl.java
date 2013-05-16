@@ -47,7 +47,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
 
     public ClientClusterServiceImpl(HazelcastClient client) {
         this.client = client;
-        clusterThread = new ClusterListenerThread();
+        clusterThread = new ClusterListenerThread(client.getThreadGroup(), client.getName() + ".cluster-listener");
         credentials = getClientConfig().getCredentials();
     }
 
@@ -175,6 +175,10 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     private class ClusterListenerThread extends Thread {
+
+        private ClusterListenerThread(ThreadGroup group, String name) {
+            super(group, name);
+        }
 
         private Connection conn;
         private final List<MemberImpl> members = new LinkedList<MemberImpl>();

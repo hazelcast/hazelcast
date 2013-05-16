@@ -62,7 +62,7 @@ public final class LifecycleServiceImpl implements LifecycleService {
         }
     }
 
-    void started() {
+    void setStarted() {
         active.set(true);
         fireLifecycleEvent(STARTED);
     }

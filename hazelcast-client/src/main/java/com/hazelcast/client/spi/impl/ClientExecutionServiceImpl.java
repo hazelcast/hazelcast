@@ -1,6 +1,8 @@
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.spi.ClientExecutionService;
+import com.hazelcast.util.executor.PoolExecutorThreadFactory;
+import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 
 import java.util.concurrent.*;
 
@@ -9,8 +11,13 @@ import java.util.concurrent.*;
  */
 public final class ClientExecutionServiceImpl implements ClientExecutionService {
 
-    private final ExecutorService executor = Executors.newCachedThreadPool();
-    private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
+    private final ExecutorService executor;
+    private final ScheduledExecutorService scheduledExecutor;
+
+    public ClientExecutionServiceImpl(String name, ThreadGroup threadGroup, ClassLoader classLoader) {
+        executor = Executors.newCachedThreadPool(new PoolExecutorThreadFactory(threadGroup, name + ".cached-", classLoader));
+        scheduledExecutor = Executors.newSingleThreadScheduledExecutor(new SingleExecutorThreadFactory(threadGroup, classLoader, name + ".scheduled"));
+    }
 
     @Override
     public void execute(Runnable command) {

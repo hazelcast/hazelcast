@@ -1,13 +1,15 @@
 package com.hazelcast.client.spi;
 
-import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.core.DistributedObject;
 
 /**
  * @mdogan 5/16/13
  */
-public abstract class ClientProxy {
+public abstract class ClientProxy implements DistributedObject {
 
-    private final ObjectNamespace namespace;
+    private final String serviceName;
+
+    private final Object objectId;
 
     private volatile ClientClusterService clusterService;
 
@@ -15,8 +17,9 @@ public abstract class ClientProxy {
 
     private volatile ClientInvocationService invocationService;
 
-    protected ClientProxy(ObjectNamespace namespace) {
-        this.namespace = namespace;
+    protected ClientProxy(String serviceName, Object objectId) {
+        this.serviceName = serviceName;
+        this.objectId = objectId;
     }
 
     final void setClusterService(ClientClusterService clusterService) {
@@ -31,10 +34,6 @@ public abstract class ClientProxy {
         this.invocationService = invocationService;
     }
 
-    public ObjectNamespace getNamespace() {
-        return namespace;
-    }
-
     public final ClientClusterService getClusterService() {
         return clusterService;
     }
@@ -46,4 +45,21 @@ public abstract class ClientProxy {
     public final ClientInvocationService getInvocationService() {
         return invocationService;
     }
+
+    public final Object getId() {
+        return objectId;
+    }
+
+    public final String getServiceName() {
+        return serviceName;
+    }
+
+    public final void destroy() {
+        onDestroy();
+        clusterService = null;
+        partitionService = null;
+        invocationService = null;
+    }
+
+    protected abstract void onDestroy();
 }

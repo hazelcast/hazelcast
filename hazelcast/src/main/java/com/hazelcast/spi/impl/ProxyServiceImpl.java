@@ -78,16 +78,6 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
         return registry.getProxy(objectId);
     }
 
-    public DistributedObject getDistributedObject(Class<? extends RemoteService> serviceClass, Object objectId) {
-        Collection services = nodeEngine.serviceManager.getServices(serviceClass);
-        for (Object service : services) {
-            if (serviceClass.isAssignableFrom(service.getClass())) {
-                return getDistributedObject(((RemoteService) service).getServiceName(), objectId);
-            }
-        }
-        throw new IllegalArgumentException();
-    }
-
     public void destroyDistributedObject(String serviceName, Object objectId) {
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         Collection<Future> calls = new ArrayList<Future>(members.size());

@@ -4,7 +4,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.serialization.TypeSerializer;
-import com.hazelcast.spi.RemoteService;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
@@ -126,10 +125,6 @@ public final class HazelcastClientProxy implements HazelcastInstance {
 
     public LifecycleService getLifecycleService() {
         return getClient().getLifecycleService();
-    }
-
-    public <T extends DistributedObject> T getDistributedObject(Class<? extends RemoteService> serviceClass, Object id) {
-        return getClient().getDistributedObject(serviceClass, id);
     }
 
     public <T extends DistributedObject> T getDistributedObject(String serviceName, Object id) {

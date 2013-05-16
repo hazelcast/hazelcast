@@ -20,27 +20,33 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.proxy.ClusterProxy;
 import com.hazelcast.client.proxy.PartitionServiceProxy;
-import com.hazelcast.client.spi.ClientClusterService;
-import com.hazelcast.client.spi.ClientExecutionService;
-import com.hazelcast.client.spi.ClientPartitionService;
+import com.hazelcast.client.spi.*;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientPartitionServiceImpl;
+import com.hazelcast.concurrent.atomiclong.AtomicLongService;
+import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
+import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.*;
+import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.map.MapService;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.nio.serialization.TypeSerializer;
-import com.hazelcast.spi.RemoteService;
+import com.hazelcast.queue.QueueService;
+import com.hazelcast.topic.TopicService;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -60,27 +66,34 @@ public class HazelcastClient implements HazelcastInstance {
     private final static ConcurrentMap<Integer, HazelcastClientProxy> CLIENTS = new ConcurrentHashMap<Integer, HazelcastClientProxy>(5);
 
     private final int id = CLIENT_ID.getAndIncrement();
+    private final String name;
     private final ClientConfig config;
+    private final ThreadGroup threadGroup;
     private final LifecycleServiceImpl lifecycleService;
     private final SerializationServiceImpl serializationService = new SerializationServiceImpl(0, null);
     private final ClientClusterServiceImpl clusterService;
     private final ClientPartitionServiceImpl partitionService;
     private final ClientConnectionManager connectionManager;
-    private final ClientExecutionServiceImpl executionService = new ClientExecutionServiceImpl();
+    private final ClientExecutionServiceImpl executionService;
+    private final ProxyManager proxyManager;
     private final ConcurrentMap<String, Object> userContext;
     private final Map<String, Map<Object, DistributedObject>> mapProxies = new ConcurrentHashMap<String, Map<Object, DistributedObject>>(10);
 
     private HazelcastClient(ClientConfig config) {
         this.config = config;
+        final GroupConfig groupConfig = config.getGroupConfig();
+        name = "hz.client_" + id + (groupConfig != null ? "_" + groupConfig.getName() : "");
+        threadGroup = new ThreadGroup(name);
         lifecycleService = new LifecycleServiceImpl(this);
-
+        proxyManager = new ProxyManager();
+        executionService = new ClientExecutionServiceImpl(name, threadGroup, Thread.currentThread().getContextClassLoader());
         clusterService = new ClientClusterServiceImpl(this);
         partitionService = new ClientPartitionServiceImpl(this);
         connectionManager = new ClientConnectionManager(config, clusterService.getAuthenticator(), serializationService);
         userContext = new ConcurrentHashMap<String, Object>();
         clusterService.start();
         partitionService.start();
-        lifecycleService.started();
+        lifecycleService.setStarted();
     }
 
     public static HazelcastInstance newHazelcastClient(ClientConfig config) {
@@ -99,17 +112,17 @@ public class HazelcastClient implements HazelcastInstance {
 
     @Override
     public String getName() {
-        return "HazelcastClient[" + id + "]";
+        return name;
     }
 
     @Override
     public <E> IQueue<E> getQueue(String name) {
-        return null;
+        return getDistributedObject(QueueService.SERVICE_NAME, name);
     }
 
     @Override
     public <E> ITopic<E> getTopic(String name) {
-        return null;
+        return getDistributedObject(TopicService.SERVICE_NAME, name);
     }
 
     @Override
@@ -124,7 +137,7 @@ public class HazelcastClient implements HazelcastInstance {
 
     @Override
     public <K, V> IMap<K, V> getMap(String name) {
-        return null;
+        return getDistributedObject(MapService.SERVICE_NAME, name);
     }
 
     @Override
@@ -144,7 +157,7 @@ public class HazelcastClient implements HazelcastInstance {
 
     @Override
     public IExecutorService getExecutorService(String name) {
-        return null;
+        return getDistributedObject(DistributedExecutorService.SERVICE_NAME, name);
     }
 
     @Override
@@ -174,22 +187,26 @@ public class HazelcastClient implements HazelcastInstance {
 
     @Override
     public IAtomicLong getAtomicLong(String name) {
-        return null;
+        return getDistributedObject(AtomicLongService.SERVICE_NAME, name);
     }
 
     @Override
     public ICountDownLatch getCountDownLatch(String name) {
-        return null;
+        return getDistributedObject(CountDownLatchService.SERVICE_NAME, name);
     }
 
     @Override
     public ISemaphore getSemaphore(String name) {
-        return null;
+        return getDistributedObject(SemaphoreService.SERVICE_NAME, name);
     }
 
     @Override
     public Collection<DistributedObject> getDistributedObjects() {
-        return null;
+        Collection<DistributedObject> objects = new LinkedList<DistributedObject>();
+        for (ClientProxy clientProxy : proxyManager.getProxies()) {
+            objects.add(clientProxy);
+        }
+        return objects;
     }
 
     @Override
@@ -223,23 +240,18 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     @Override
-    public <T extends DistributedObject> T getDistributedObject(Class<? extends RemoteService> serviceClass, Object id) {
-        return null;
-    }
-
-    @Override
     public <T extends DistributedObject> T getDistributedObject(String serviceName, Object id) {
-        return null;
+        return (T) proxyManager.getProxy(serviceName, id);
     }
 
     @Override
     public void registerSerializer(TypeSerializer serializer, Class type) {
-
+        serializationService.register(serializer, type);
     }
 
     @Override
     public void registerGlobalSerializer(TypeSerializer serializer) {
-
+        serializationService.registerFallback(serializer);
     }
 
     @Override
@@ -269,6 +281,10 @@ public class HazelcastClient implements HazelcastInstance {
 
     public ClientPartitionService getClientPartitionService() {
         return partitionService;
+    }
+
+    public ThreadGroup getThreadGroup() {
+        return threadGroup;
     }
 
     void shutdown() {

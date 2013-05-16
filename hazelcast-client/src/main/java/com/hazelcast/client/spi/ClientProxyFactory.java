@@ -5,4 +5,6 @@ package com.hazelcast.client.spi;
  */
 public interface ClientProxyFactory {
 
+    ClientProxy create(Object id);
+
 }
