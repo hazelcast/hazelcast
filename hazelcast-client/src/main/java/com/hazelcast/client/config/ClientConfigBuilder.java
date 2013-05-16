@@ -40,7 +40,6 @@ public class ClientConfigBuilder {
     public final static String CONNECTION_TIMEOUT = "hazelcast.client.connection.timeout";
     public final static String CONNECTION_ATTEMPT_LIMIT = "hazelcast.client.connection.attempts.limit";
     public final static String RECONNECTION_TIMEOUT = "hazelcast.client.reconnection.timeout";
-    public final static String RECONNECTION_ATTEMPT_LIMIT = "hazelcast.client.reconnection.attempts.limit";
     public final static String ADDRESSES = "hazelcast.client.addresses";
 
     private final Properties props = new Properties();
@@ -97,13 +96,10 @@ public class ClientConfigBuilder {
             config.setConnectionTimeout(Integer.parseInt(props.getProperty(CONNECTION_TIMEOUT)));
         }
         if (props.containsKey(CONNECTION_ATTEMPT_LIMIT)) {
-            config.setInitialConnectionAttemptLimit(Integer.parseInt(props.getProperty(CONNECTION_ATTEMPT_LIMIT)));
+            config.setConnectionAttemptLimit(Integer.parseInt(props.getProperty(CONNECTION_ATTEMPT_LIMIT)));
         }
         if (props.containsKey(RECONNECTION_TIMEOUT)) {
             config.setAttemptPeriod(Integer.parseInt(props.getProperty(RECONNECTION_TIMEOUT)));
-        }
-        if (props.containsKey(RECONNECTION_ATTEMPT_LIMIT)) {
-            config.setReconnectionAttemptLimit(Integer.parseInt(props.getProperty(RECONNECTION_ATTEMPT_LIMIT)));
         }
         if (props.containsKey(ADDRESSES)) {
             final String addressesProp = props.getProperty(ADDRESSES);

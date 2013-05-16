@@ -16,176 +16,146 @@
 
 package com.hazelcast.client.connection;
 
-import com.hazelcast.client.AuthenticationRequest;
-import com.hazelcast.client.GenericError;
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.exception.AuthenticationException;
-import com.hazelcast.client.exception.ClusterClientException;
+import com.hazelcast.client.util.pool.Factory;
 import com.hazelcast.client.util.pool.ObjectPool;
 import com.hazelcast.client.util.pool.QueueBasedObjectPool;
-import com.hazelcast.core.Member;
-import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.security.Credentials;
-import com.hazelcast.util.Clock;
+import com.hazelcast.util.ConcurrencyUtil;
+import com.hazelcast.util.ConstructorFunction;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
-import static java.lang.String.format;
 
 public class ConnectionManager {
     private final int poolSize;
     private final int connectionTimeout;
+    private final Authenticator authenticator;
     private final SerializationService serializationService;
-    private final LoadBalancer router;
-    private final ConcurrentMap<Address, ObjectPool<Connection>> mPool = new ConcurrentHashMap<Address, ObjectPool<Connection>>();
-    private final AtomicBoolean initialized = new AtomicBoolean(false);
-    private final Connection initialConnection;
+    private final Router router;
+    private final ConcurrentMap<Address, ObjectPool<Connection>> poolMap = new ConcurrentHashMap<Address, ObjectPool<Connection>>();
     private final SocketInterceptor socketInterceptor;
-    private final Lock lock = new ReentrantLock();
     private final HeartBeatChecker heartbeat;
-    private final Credentials credentials;
 
-    public ConnectionManager(ClientConfig config, final SerializationService serializationService) {
+    private volatile boolean live = true;
+
+    public ConnectionManager(ClientConfig config, Authenticator authenticator, SerializationService serializationService) {
+        this.authenticator = authenticator;
         this.serializationService = serializationService;
-        credentials = config.getCredentials();
-        initialConnection = initialConnection(config);
-        router = config.getLoadBalancer();
+        router = new Router(config.getLoadBalancer());
         socketInterceptor = config.getSocketInterceptor();
         poolSize = config.getPoolSize();
         connectionTimeout = config.getConnectionTimeout();
         heartbeat = new HeartBeatChecker(config, serializationService);
     }
 
-    public void init(HazelcastClient client) {
-//        router.init(client, client.getClientConfig());
-    }
-
-    private Connection initialConnection(ClientConfig config) {
-        int attempt = 0;
-        while (true) {
-            final long nextTry = Clock.currentTimeMillis() + config.getAttemptPeriod();
-            for (InetSocketAddress isa : config.getAddressList()) {
-                try {
-                    Address address = new Address(isa);
-                    return newConnection(address);
-                } catch (IOException ignored) {
-                } catch (ClusterClientException ignored) {
-                }
-            }
-            if (attempt >= config.getInitialConnectionAttemptLimit()) {
-                break;
-            }
-            attempt++;
-            final long remainingTime = nextTry - Clock.currentTimeMillis();
-            System.err.println(
-                    format("Unable to get alive cluster connection," +
-                            " try in %d ms later, attempt %d of %d.",
-                            Math.max(0, remainingTime), attempt, config.getInitialConnectionAttemptLimit()));
-            
-            if( remainingTime > 0){
-                try {
-                    Thread.sleep(remainingTime);
-                } catch (InterruptedException e) {
-                    break;
-                }
-            }
-        }
-        throw new IllegalStateException("Unable to connect to any address in the config!");
-    }
-
     public Connection newConnection(Address address) throws IOException {
-        Connection connection = new Connection(address, serializationService);
+        checkLive();
+        final ConnectionImpl connection = new ConnectionImpl(address, serializationService);
         connection.write(Protocols.CLIENT_BINARY.getBytes());
-
         if (socketInterceptor != null) {
             socketInterceptor.onConnect(connection.getSocket());
         }
-        AuthenticationRequest auth = new AuthenticationRequest(credentials);
-        connection.write(serializationService.toData(auth));
-        final Data data = connection.read();
-        Object response = serializationService.toObject(data);
-        if (response instanceof GenericError) {
-            throw new AuthenticationException(((GenericError) response).getMessage());
-        }
-        System.err.println("response = " + response);
+        authenticator.auth(connection);
         return connection;
     }
 
-    public Connection takeConnection(Member member) throws InterruptedException {
-        if (!initialized.get()) {
-            lock.lock();
-            return initialConnection;
-        }
-        if (member == null) {
-            member = router.next();
-            if (member == null) {
-                throw new RuntimeException("LoadBalancer '" + router + "' could not find a member to route to");
+    public Connection getConnection(Address address) throws IOException {
+        checkLive();
+        if (address == null) {
+            address = router.next();
+            if (address == null) {
+                throw new IOException("LoadBalancer '" + router + "' could not find a address to route to");
             }
         }
-        ObjectPool<Connection> pool = mPool.get(member.getInetSocketAddress());
-        if (pool == null) {
-            synchronized (mPool) {
-                pool = mPool.get(member.getInetSocketAddress());
-                if (pool == null)
-                    pool = createPoolForTheMember((MemberImpl) member);
-            }
-        }
-        Connection connection = pool.take();
-        //Could be that this member is dead and that's why pool is not able to create and give a connection.
-        //We will call it again, and hopefully at some time LoadBalancer will give us the right target for the connection.
+        final ObjectPool<Connection> pool = getConnectionPool(address);
+        final Connection connection = pool.take();
+        // Could be that this address is dead and that's why pool is not able to create and give a connection.
+        // We will call it again, and hopefully at some time LoadBalancer will give us the right target for the connection.
         if (connection == null) {
-            Thread.sleep(1000);
-            return takeConnection(null);
+            checkLive();
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException ignored) {
+            }
+            return getConnection(null);
         }
         if (!heartbeat.checkHeartBeat(connection)) {
             try {
                 connection.close();
-            } catch (IOException e) {
+            } catch (IOException ignored) {
             }
-            return takeConnection(null);
+            return getConnection(null);
         }
         return connection;
     }
 
-    private ObjectPool<Connection> createPoolForTheMember(MemberImpl member) {
-        final Address address = member.getAddress();
-        ObjectPool<Connection> pool = new QueueBasedObjectPool<Connection>(poolSize, new com.hazelcast.client.util.pool.Factory<Connection>() {
-            @Override
-            public Connection create() throws IOException {
-                return newConnection(address);
-            }
-        });
-        if (mPool.putIfAbsent(address, pool) != null) {
-            return mPool.get(address);
+    private void checkLive() {
+        if (!live) {
+            throw new HazelcastInstanceNotActiveException();
         }
-        if (address.equals(initialConnection.getAddress()))
-            pool.add(initialConnection);
-        return pool;
     }
 
-    public void releaseConnection(Connection connection) {
-        if (!initialized.get() && connection == initialConnection) {
-            lock.unlock();
+    private final ConstructorFunction<Address, ObjectPool<Connection>> ctor = new ConstructorFunction<Address, ObjectPool<Connection>>() {
+        public ObjectPool<Connection> createNew(final Address address) {
+            return new QueueBasedObjectPool<Connection>(poolSize, new Factory<Connection>() {
+                public Connection create() throws IOException {
+                    return new ConnectionWrapper(newConnection(address));
+                }
+            });
         }
-        ObjectPool<Connection> pool = mPool.get(connection.getAddress());
+    };
+
+    private ObjectPool<Connection> getConnectionPool(final Address address) {
+        checkLive();
+        return ConcurrencyUtil.getOrPutIfAbsent(poolMap, address, ctor);
+    }
+
+    private class ConnectionWrapper implements Connection {
+        final Connection connection;
+
+        private ConnectionWrapper(Connection connection) {
+            this.connection = connection;
+        }
+
+        public Address getEndpoint() {
+            return connection.getEndpoint();
+        }
+
+        public boolean write(Data data) throws IOException {
+            return connection.write(data);
+        }
+
+        public Data read() throws IOException {
+            return connection.read();
+        }
+
+        public void close() throws IOException {
+            releaseConnection(this);
+        }
+
+        public int getId() {
+            return connection.getId();
+        }
+    }
+
+    private void releaseConnection(Connection connection) {
+        ObjectPool<Connection> pool = poolMap.get(connection.getEndpoint());
         if (pool != null)
             pool.release(connection);
     }
 
-    public LoadBalancer getRouter() {
-        return router;
+    public void shutdown() {
+        live = false;
+        for (ObjectPool<Connection> pool : poolMap.values()) {
+            pool.destroy();
+        }
+        poolMap.clear();
     }
 }

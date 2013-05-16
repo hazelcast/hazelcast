@@ -26,7 +26,6 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
 
 public final class Address implements IdentifiedDataSerializable, Endpoint {
 
@@ -98,29 +97,6 @@ public final class Address implements IdentifiedDataSerializable, Endpoint {
         if (len > 0) {
             byte[] address = new byte[len];
             in.readFully(address);
-            host = new String(address);
-        }
-    }
-
-    public void writeObject(ByteBuffer buffer) {
-        buffer.putInt(port);
-        buffer.put(type);
-        if (host != null) {
-            byte[] address = host.getBytes();
-            buffer.putInt(address.length);
-            buffer.put(address);
-        } else {
-            buffer.putInt(0);
-        }
-    }
-
-    public void readObject(ByteBuffer buffer) {
-        port = buffer.getInt();
-        type = buffer.get();
-        int len = buffer.getInt();
-        if (len > 0) {
-            byte[] address = new byte[len];
-            buffer.get(address);
             host = new String(address);
         }
     }

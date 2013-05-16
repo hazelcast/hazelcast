@@ -18,6 +18,8 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.connection.ConnectionManager;
+import com.hazelcast.client.proxy.ClusterProxy;
+import com.hazelcast.client.spi.ClusterService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.logging.ILogger;
@@ -32,12 +34,9 @@ import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -51,23 +50,27 @@ public class HazelcastClient implements HazelcastInstance {
 
     private final static ILogger logger = Logger.getLogger(HazelcastClient.class.getName());
     private final static AtomicInteger CLIENT_ID = new AtomicInteger();
-    private final static List<HazelcastClient> CLIENTS = new CopyOnWriteArrayList<HazelcastClient>();
+    private final static ConcurrentMap<Integer, HazelcastClient> CLIENTS = new ConcurrentHashMap<Integer, HazelcastClient>(5);
 
     private final int id = CLIENT_ID.getAndIncrement();
     private final ClientConfig config;
-    private final AtomicBoolean active = new AtomicBoolean(true);
-    private final Map<String, Map<Object, DistributedObject>> mapProxies = new ConcurrentHashMap<String, Map<Object, DistributedObject>>(10);
+    private final LifecycleServiceImpl lifecycleService;
     private final SerializationServiceImpl serializationService = new SerializationServiceImpl(1, null);
-    private final ConnectionManager connectionPool;
+    private final ClusterService clusterService;
+    private final ConnectionManager connectionManager;
+    private final ConcurrentMap<String, Object> userContext;
+    private final Map<String, Map<Object, DistributedObject>> mapProxies = new ConcurrentHashMap<String, Map<Object, DistributedObject>>(10);
 
     private HazelcastClient(ClientConfig config) {
         this.config = config;
-        connectionPool = new ConnectionManager(config, serializationService);
+        lifecycleService = new LifecycleServiceImpl(this);
 
-        //
-
-        connectionPool.init(this);
-        CLIENTS.add(this);
+        clusterService = new ClusterService(this);
+        connectionManager = new ConnectionManager(config, clusterService.getAuthenticator(), serializationService);
+        userContext = new ConcurrentHashMap<String, Object>();
+        clusterService.start();
+        CLIENTS.put(id, this);
+        lifecycleService.started();
     }
 
     public static HazelcastClient newHazelcastClient(ClientConfig config) {
@@ -78,12 +81,12 @@ public class HazelcastClient implements HazelcastInstance {
     }
 
     public Config getConfig() {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("Client cannot access cluster config!");
     }
 
     @Override
     public String getName() {
-        return null;
+        return "HazelcastClient[" + id + "]";
     }
 
     @Override
@@ -123,7 +126,7 @@ public class HazelcastClient implements HazelcastInstance {
 
     @Override
     public Cluster getCluster() {
-        return null;
+        return new ClusterProxy(clusterService);
     }
 
     @Override
@@ -193,17 +196,17 @@ public class HazelcastClient implements HazelcastInstance {
 
     @Override
     public ClientService getClientService() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public LoggingService getLoggingService() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public LifecycleService getLifecycleService() {
-        return null;
+        return lifecycleService;
     }
 
     @Override
@@ -228,20 +231,34 @@ public class HazelcastClient implements HazelcastInstance {
 
     @Override
     public ConcurrentMap<String, Object> getUserContext() {
-        return null;
+        return userContext;
+    }
+
+    public ClientConfig getClientConfig() {
+        return config;
+    }
+
+    public SerializationServiceImpl getSerializationService() {
+        return serializationService;
+    }
+
+    public ConnectionManager getConnectionManager() {
+        return connectionManager;
+    }
+
+    void shutdown() {
+        CLIENTS.remove(id);
+        clusterService.stop();
+        connectionManager.shutdown();
     }
 
     public static void shutdownAll() {
-        for (HazelcastClient hazelcastClient : CLIENTS) {
+        for (HazelcastClient hazelcastClient : CLIENTS.values()) {
             try {
                 hazelcastClient.getLifecycleService().shutdown();
             } catch (Exception ignored) {
             }
         }
         CLIENTS.clear();
-    }
-
-    public ClientConfig getClientConfig() {
-        return config;
     }
 }

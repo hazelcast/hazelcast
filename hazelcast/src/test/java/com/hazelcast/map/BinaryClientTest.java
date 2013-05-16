@@ -22,7 +22,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.ThreadContext;
+import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.map.client.*;
 import com.hazelcast.nio.serialization.*;
 import com.hazelcast.security.UsernamePasswordCredentials;
@@ -64,7 +64,7 @@ public class BinaryClientTest {
         AuthenticationRequest auth = new AuthenticationRequest(new UsernamePasswordCredentials("dev", "dev-pass"));
         invoke(service, in, out, auth);
 
-        int threadId = ThreadContext.getThreadId();
+        int threadId = ThreadUtil.getThreadId();
         MapPutRequest put = new MapPutRequest(mapName, service.toData(1), service.toData(1), threadId, -1);
         assertNull(invoke(service, in, out, put));
         map.put(1,2);

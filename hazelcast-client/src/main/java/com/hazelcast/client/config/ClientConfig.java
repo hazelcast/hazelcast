@@ -17,17 +17,13 @@
 package com.hazelcast.client.config;
 
 import com.hazelcast.client.LoadBalancer;
-import com.hazelcast.client.impl.RoundRobinLB;
-import com.hazelcast.client.util.AddressHelper;
+import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.GroupConfig;
-import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
 
-import java.net.InetSocketAddress;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 // todo check the new attributes added on 3.0 working in spring configuration
 public class ClientConfig {
@@ -46,7 +42,7 @@ public class ClientConfig {
      * List of the initial set of addresses.
      * Client will use this list to find a running Member, connect to it.
      */
-    private final List<InetSocketAddress> addressList = new ArrayList<InetSocketAddress>(10);
+    private final List<String> addressList = new ArrayList<String>(10);
 
     /**
      * Used to distribute the operations to multiple Endpoints.
@@ -98,18 +94,15 @@ public class ClientConfig {
      *
      * While client is trying to connect initially to one of the members in the {@link ClientConfig#addressList}, 
      * all might be not available. Instead of giving up, throwing Exception and stopping client, it will
-     * attempt to retry as much as {@link ClientConfig#initialConnectionAttemptLimit} times.
+     * attempt to retry as much as {@link ClientConfig#connectionAttemptLimit} times.
      * 
      */
-    private int initialConnectionAttemptLimit = 1;
+    private int connectionAttemptLimit = 1;
 
     /**
-     * Period for the next attempt to find a member to connect. (see {@link ClientConfig#initialConnectionAttemptLimit}).
+     * Period for the next attempt to find a member to connect. (see {@link ClientConfig#connectionAttemptLimit}).
      */
     private int attemptPeriod = 5000;
-
-    //Not used currently.
-    private int reconnectionAttemptLimit = 1;
 
     /**
      * Will be called with the Socket, each time client creates a connection to any Member. 
@@ -122,12 +115,12 @@ public class ClientConfig {
      */
     private Credentials credentials;
 
-    /**
-     * Contains Near Cache configuration for the {@link com.hazelcast.core.IMap} Proxies on client. Each Map should be
-     * explicitly configured for the client to Cache the values. No configuration for a certain Map, means no
-     * Near Cache on client side.
-     */
-    private Map<String, NearCacheConfig> mapNearCacheConfigs = new ConcurrentHashMap<String, NearCacheConfig>();
+//    /**
+//     * Contains Near Cache configuration for the {@link com.hazelcast.core.IMap} Proxies on client. Each Map should be
+//     * explicitly configured for the client to Cache the values. No configuration for a certain Map, means no
+//     * Near Cache on client side.
+//     */
+//    private Map<String, NearCacheConfig> mapNearCacheConfigs = new ConcurrentHashMap<String, NearCacheConfig>();
 
     public boolean isSmart() {
         return smart;
@@ -162,21 +155,12 @@ public class ClientConfig {
         return this;
     }
 
-    public int getReconnectionAttemptLimit() {
-        return reconnectionAttemptLimit;
+    public int getConnectionAttemptLimit() {
+        return connectionAttemptLimit;
     }
 
-    public ClientConfig setReconnectionAttemptLimit(int reconnectionAttemptLimit) {
-        this.reconnectionAttemptLimit = reconnectionAttemptLimit;
-        return this;
-    }
-
-    public int getInitialConnectionAttemptLimit() {
-        return initialConnectionAttemptLimit;
-    }
-
-    public ClientConfig setInitialConnectionAttemptLimit(int initialConnectionAttemptLimit) {
-        this.initialConnectionAttemptLimit = initialConnectionAttemptLimit;
+    public ClientConfig setConnectionAttemptLimit(int connectionAttemptLimit) {
+        this.connectionAttemptLimit = connectionAttemptLimit;
         return this;
     }
 
@@ -202,20 +186,8 @@ public class ClientConfig {
         return this;
     }
 
-    public ClientConfig addInetSocketAddress(List<InetSocketAddress> inetSocketAddresses) {
-        this.addressList.addAll(inetSocketAddresses);
-        return this;
-    }
-
-    public ClientConfig addInetSocketAddress(InetSocketAddress... inetSocketAddresses) {
-        Collections.addAll(this.addressList, inetSocketAddresses);
-        return this;
-    }
-
     public ClientConfig addAddress(String... addresses) {
-        for (String address : addresses) {
-            this.addressList.addAll(AddressHelper.getSocketAddresses(address));
-        }
+        Collections.addAll(addressList, addresses);
         return this;
     }
 
@@ -223,11 +195,11 @@ public class ClientConfig {
     public void setAddresses(List<String> addresses) {
         addressList.clear();
         for (String address : addresses) {
-            addressList.addAll(AddressHelper.getSocketAddresses(address));
+            addressList.addAll(addresses);
         }
     }
 
-    public Collection<InetSocketAddress> getAddressList() {
+    public Collection<String> getAddressList() {
         if (addressList.size() == 0) {
             addAddress("localhost");
         }
@@ -275,12 +247,12 @@ public class ClientConfig {
         this.redoOperation = redoOperation;
     }
 
-    public NearCacheConfig getNearCacheConfig(final String name) {
-        return mapNearCacheConfigs.get(name);
-    }
-
-    public ClientConfig addMapNearCacheConfig(String name, NearCacheConfig config) {
-        mapNearCacheConfigs.put(name, config);
-        return this;
-    }
+//    public NearCacheConfig getNearCacheConfig(final String name) {
+//        return mapNearCacheConfigs.get(name);
+//    }
+//
+//    public ClientConfig addMapNearCacheConfig(String name, NearCacheConfig config) {
+//        mapNearCacheConfigs.put(name, config);
+//        return this;
+//    }
 }

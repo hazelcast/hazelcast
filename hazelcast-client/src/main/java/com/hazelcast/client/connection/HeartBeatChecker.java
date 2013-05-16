@@ -50,7 +50,7 @@ public class HeartBeatChecker {
                         e.printStackTrace();
                     }
                 }
-            }, "heartbeat" + connection.getAddress());
+            }, "heartbeat" + connection.getEndpoint());
             thread.start();
             try {
                 latch.await(connectionTimeout, TimeUnit.MILLISECONDS);

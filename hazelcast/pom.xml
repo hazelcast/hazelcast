@@ -190,6 +190,7 @@
                         -Dhazelcast.mancenter.enabled=false
                     </argLine>
                     <excludes>
+                        <exclude>com/hazelcast/ascii/*.java</exclude>
                         <exclude>com/hazelcast/cluster/*.java</exclude>
                     </excludes>
                 </configuration>

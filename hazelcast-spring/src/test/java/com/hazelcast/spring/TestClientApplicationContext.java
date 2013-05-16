@@ -97,8 +97,7 @@ public class TestClientApplicationContext {
         assertNotNull(client2);
 
         ClientConfig config = client.getClientConfig();
-        assertEquals(3, config.getInitialConnectionAttemptLimit());
-        assertEquals(2, config.getReconnectionAttemptLimit());
+        assertEquals(3, config.getConnectionAttemptLimit());
         assertEquals(1000, config.getConnectionTimeout());
         assertEquals(3000, config.getAttemptPeriod());
 

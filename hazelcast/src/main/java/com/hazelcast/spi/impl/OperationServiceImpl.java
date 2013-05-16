@@ -21,7 +21,6 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
-import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
@@ -31,7 +30,10 @@ import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.partition.PartitionServiceImpl;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
-import com.hazelcast.spi.exception.*;
+import com.hazelcast.spi.exception.CallTimeoutException;
+import com.hazelcast.spi.exception.CallerNotMemberException;
+import com.hazelcast.spi.exception.PartitionMigratingException;
+import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.executor.AbstractExecutorThreadFactory;
@@ -619,12 +621,6 @@ final class OperationServiceImpl implements OperationService {
                 super.run();
             } catch (OutOfMemoryError e) {
                 OutOfMemoryErrorDispatcher.onOutOfMemory(e);
-            } finally {
-                try {
-                    ThreadContext.shutdown(this);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
             }
         }
     }

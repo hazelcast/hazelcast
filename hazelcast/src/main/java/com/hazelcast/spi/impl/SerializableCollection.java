@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue;
+package com.hazelcast.spi.impl;
 
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -29,14 +29,14 @@ import java.util.Collection;
 /**
  * @ali 1/4/13
  */
-public class SerializableCollectionContainer implements IdentifiedDataSerializable {
+public final class SerializableCollection implements IdentifiedDataSerializable {
 
     private Collection<Data> collection;
 
-    public SerializableCollectionContainer() {
+    public SerializableCollection() {
     }
 
-    public SerializableCollectionContainer(Collection<Data> collection) {
+    public SerializableCollection(Collection<Data> collection) {
         this.collection = collection;
     }
 
@@ -67,10 +67,10 @@ public class SerializableCollectionContainer implements IdentifiedDataSerializab
     }
 
     public int getFactoryId() {
-        return QueueDataSerializerHook.F_ID;
+        return SpiDataSerializerHook.F_ID;
     }
 
     public int getId() {
-        return QueueDataSerializerHook.COLLECTION_CONTAINER;
+        return SpiDataSerializerHook.COLLECTION;
     }
 }

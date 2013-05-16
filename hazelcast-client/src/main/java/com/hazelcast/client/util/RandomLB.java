@@ -15,7 +15,7 @@
  *
  */
 
-package com.hazelcast.client.impl;
+package com.hazelcast.client.util;
 
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;

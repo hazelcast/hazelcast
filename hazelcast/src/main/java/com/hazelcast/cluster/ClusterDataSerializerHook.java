@@ -17,6 +17,7 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.cluster.client.AddMembershipListenerRequest;
+import com.hazelcast.cluster.client.ClientMembershipEvent;
 import com.hazelcast.cluster.client.GetMembersRequest;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
@@ -37,6 +38,7 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
 
     public static final int GET_MEMBERS = 6;
     public static final int ADD_MS_LISTENER = 7;
+    public static final int MEMBERSHIP_EVENT = 8;
 
     public int getFactoryId() {
         return F_ID;
@@ -82,6 +84,11 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
             }
         };
 
+        ctors[MEMBERSHIP_EVENT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ClientMembershipEvent();
+            }
+        };
 
         return new ArrayDataSerializableFactory(ctors);
     }

@@ -23,7 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.instance.TestUtil;
-import com.hazelcast.instance.ThreadContext;
+import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.map.MapKeySet;
 import com.hazelcast.map.MapValueCollection;
 import com.hazelcast.map.client.*;
@@ -77,19 +77,19 @@ public class MapBinaryClientTest extends ClientTestSupport {
 
     @Test
     public void testPutGetSet() throws IOException {
-        client().send(new MapPutRequest(mapName, TestUtil.toData(1), TestUtil.toData(3), ThreadContext.getThreadId()));
+        client().send(new MapPutRequest(mapName, TestUtil.toData(1), TestUtil.toData(3), ThreadUtil.getThreadId()));
         assertNull(client().receive());
-        client().send(new MapPutRequest(mapName, TestUtil.toData(1), TestUtil.toData(5), ThreadContext.getThreadId()));
+        client().send(new MapPutRequest(mapName, TestUtil.toData(1), TestUtil.toData(5), ThreadUtil.getThreadId()));
         assertEquals(3, client().receive());
         client().send(new MapGetRequest(mapName, TestUtil.toData(1)));
         assertEquals(5, client().receive());
         client().send(new MapGetRequest(mapName, TestUtil.toData(7)));
         assertNull(client().receive());
-        client().send(new MapSetRequest(mapName, TestUtil.toData(1), TestUtil.toData(7), ThreadContext.getThreadId()));
+        client().send(new MapSetRequest(mapName, TestUtil.toData(1), TestUtil.toData(7), ThreadUtil.getThreadId()));
         System.out.println("-------" + client().receive());
         client().send(new MapGetRequest(mapName, TestUtil.toData(1)));
         assertEquals(7, client().receive());
-        client().send(new MapPutTransientRequest(mapName, TestUtil.toData(1), TestUtil.toData(9), ThreadContext.getThreadId()));
+        client().send(new MapPutTransientRequest(mapName, TestUtil.toData(1), TestUtil.toData(9), ThreadUtil.getThreadId()));
         client().receive();
         client().send(new MapGetRequest(mapName, TestUtil.toData(1)));
         assertEquals(9, client().receive());
@@ -172,7 +172,7 @@ public class MapBinaryClientTest extends ClientTestSupport {
         }
 
         for (int i = 0; i < 100; i++) {
-            client().send(new MapRemoveRequest(mapName, TestUtil.toData(i), ThreadContext.getThreadId()));
+            client().send(new MapRemoveRequest(mapName, TestUtil.toData(i), ThreadUtil.getThreadId()));
             assertEquals(i, client().receive());
         }
 
@@ -180,7 +180,7 @@ public class MapBinaryClientTest extends ClientTestSupport {
             map.put(i, i);
         }
         for (int i = 0; i < 100; i++) {
-            client().send(new MapDeleteRequest(mapName, TestUtil.toData(i), ThreadContext.getThreadId()));
+            client().send(new MapDeleteRequest(mapName, TestUtil.toData(i), ThreadUtil.getThreadId()));
             client().receive();
             assertNull(map.get(i));
         }
@@ -189,7 +189,7 @@ public class MapBinaryClientTest extends ClientTestSupport {
             map.put(i, i);
         }
         for (int i = 0; i < 100; i++) {
-            client().send(new MapEvictRequest(mapName, TestUtil.toData(i), ThreadContext.getThreadId()));
+            client().send(new MapEvictRequest(mapName, TestUtil.toData(i), ThreadUtil.getThreadId()));
             client().receive();
             assertNull(map.get(i));
         }
@@ -200,9 +200,9 @@ public class MapBinaryClientTest extends ClientTestSupport {
     @Test
     public void testRemoveIfSame() throws IOException {
         map.put(1,5);
-        client().send(new MapRemoveIfSameRequest(mapName, TestUtil.toData(1), TestUtil.toData(3), ThreadContext.getThreadId()));
+        client().send(new MapRemoveIfSameRequest(mapName, TestUtil.toData(1), TestUtil.toData(3), ThreadUtil.getThreadId()));
         assertEquals(false, client().receive());
-        client().send(new MapRemoveIfSameRequest(mapName, TestUtil.toData(1), TestUtil.toData(5), ThreadContext.getThreadId()));
+        client().send(new MapRemoveIfSameRequest(mapName, TestUtil.toData(1), TestUtil.toData(5), ThreadUtil.getThreadId()));
         assertEquals(true, client().receive());
         assertEquals(0, map.size());
     }
@@ -210,9 +210,9 @@ public class MapBinaryClientTest extends ClientTestSupport {
     @Test
     public void testPutIfAbsent() throws IOException {
         map.put(1, 3);
-        client().send(new MapPutIfAbsentRequest(mapName, TestUtil.toData(1), TestUtil.toData(5), ThreadContext.getThreadId()));
+        client().send(new MapPutIfAbsentRequest(mapName, TestUtil.toData(1), TestUtil.toData(5), ThreadUtil.getThreadId()));
         assertEquals(3, client().receive());
-        client().send(new MapPutIfAbsentRequest(mapName, TestUtil.toData(2), TestUtil.toData(5), ThreadContext.getThreadId()));
+        client().send(new MapPutIfAbsentRequest(mapName, TestUtil.toData(2), TestUtil.toData(5), ThreadUtil.getThreadId()));
         assertEquals(null, client().receive());
         assertEquals(5, map.get(2));
     }
@@ -220,37 +220,37 @@ public class MapBinaryClientTest extends ClientTestSupport {
     @Test
     public void testMapReplace() throws IOException {
         map.put(1, 2);
-        client().send(new MapReplaceRequest(mapName, TestUtil.toData(1), TestUtil.toData(3), ThreadContext.getThreadId()));
+        client().send(new MapReplaceRequest(mapName, TestUtil.toData(1), TestUtil.toData(3), ThreadUtil.getThreadId()));
         assertEquals(2, client().receive());
         assertEquals(3, map.get(1));
-        client().send(new MapReplaceRequest(mapName, TestUtil.toData(2), TestUtil.toData(3), ThreadContext.getThreadId()));
+        client().send(new MapReplaceRequest(mapName, TestUtil.toData(2), TestUtil.toData(3), ThreadUtil.getThreadId()));
         client().receive();
         assertEquals(null, map.get(2));
-        client().send(new MapReplaceIfSameRequest(mapName, TestUtil.toData(1), TestUtil.toData(3), TestUtil.toData(5), ThreadContext.getThreadId()));
+        client().send(new MapReplaceIfSameRequest(mapName, TestUtil.toData(1), TestUtil.toData(3), TestUtil.toData(5), ThreadUtil.getThreadId()));
         assertEquals(true, client().receive());
         assertEquals(5, map.get(1));
-        client().send(new MapReplaceIfSameRequest(mapName, TestUtil.toData(1), TestUtil.toData(0), TestUtil.toData(7), ThreadContext.getThreadId()));
+        client().send(new MapReplaceIfSameRequest(mapName, TestUtil.toData(1), TestUtil.toData(0), TestUtil.toData(7), ThreadUtil.getThreadId()));
         assertEquals(false, client().receive());
         assertEquals(5, map.get(1));
     }
 
     @Test
     public void testMapTryPutRemove() throws IOException {
-        client().send(new MapLockRequest(mapName, TestUtil.toData(1), ThreadContext.getThreadId() + 1));
+        client().send(new MapLockRequest(mapName, TestUtil.toData(1), ThreadUtil.getThreadId() + 1));
         client().receive();
         assertEquals(true, map.isLocked(1));
-        client().send(new MapTryPutRequest(mapName, TestUtil.toData(1), TestUtil.toData(1), ThreadContext.getThreadId(), 0));
+        client().send(new MapTryPutRequest(mapName, TestUtil.toData(1), TestUtil.toData(1), ThreadUtil.getThreadId(), 0));
         assertEquals(false, client().receive());
-        client().send(new MapTryRemoveRequest(mapName, TestUtil.toData(1), ThreadContext.getThreadId(), 0));
+        client().send(new MapTryRemoveRequest(mapName, TestUtil.toData(1), ThreadUtil.getThreadId(), 0));
         assertEquals(false, client().receive());
     }
 
     @Test
     public void testMapLockUnlock() throws IOException {
-        client().send(new MapLockRequest(mapName, TestUtil.toData(1), ThreadContext.getThreadId()));
+        client().send(new MapLockRequest(mapName, TestUtil.toData(1), ThreadUtil.getThreadId()));
         client().receive();
         assertEquals(true, map.isLocked(1));
-        client().send(new MapUnlockRequest(mapName, TestUtil.toData(1), ThreadContext.getThreadId()));
+        client().send(new MapUnlockRequest(mapName, TestUtil.toData(1), ThreadUtil.getThreadId()));
         client().receive();
         assertEquals(false, map.isLocked(1));
     }
@@ -286,7 +286,7 @@ public class MapBinaryClientTest extends ClientTestSupport {
 
     @Test
     public void testVoid() throws IOException {
-        client().send(new MapPutRequest(mapName, TestUtil.toData(1), TestUtil.toData(5), ThreadContext.getThreadId()));
+        client().send(new MapPutRequest(mapName, TestUtil.toData(1), TestUtil.toData(5), ThreadUtil.getThreadId()));
         assertEquals(3, client().receive());
     }
 }

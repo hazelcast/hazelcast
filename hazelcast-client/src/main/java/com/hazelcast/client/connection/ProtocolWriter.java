@@ -16,15 +16,12 @@
 
 package com.hazelcast.client.connection;
 
-import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 
 import java.io.IOException;
 
 public class ProtocolWriter {
-
-    protected static final byte[] HEADER = Protocols.CLIENT_BINARY.getBytes();
 
     private final SerializationService serializationService;
 
@@ -34,12 +31,6 @@ public class ProtocolWriter {
 
     public void write(Connection connection, Object command) throws IOException {
         if (connection != null) {
-//            final ObjectDataOutputStream dos = connection.getOutputStream();
-//            if (!connection.headersWritten) {
-//                dos.write(HEADER);
-//                dos.flush();
-//                connection.headersWritten = true;
-//            }
             Data data = serializationService.toData(command);
             connection.write(data);
         }

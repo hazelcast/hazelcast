@@ -22,7 +22,7 @@ import com.hazelcast.collection.operations.*;
 import com.hazelcast.collection.operations.MultiMapOperationFactory.OperationFactoryType;
 import com.hazelcast.concurrent.lock.LockProxySupport;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.instance.ThreadContext;
+import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.*;
 import com.hazelcast.util.ExceptionUtil;
@@ -320,7 +320,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
     }
 
     private int getThreadId() {
-        return ThreadContext.getThreadId();
+        return ThreadUtil.getThreadId();
     }
 
 }

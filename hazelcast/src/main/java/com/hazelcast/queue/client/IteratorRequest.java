@@ -19,7 +19,7 @@ package com.hazelcast.queue.client;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.IteratorOperation;
 import com.hazelcast.queue.QueuePortableHook;
-import com.hazelcast.queue.SerializableCollectionContainer;
+import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.spi.Operation;
 
 import java.util.Collection;
@@ -45,8 +45,8 @@ public class IteratorRequest extends QueueRequest {
     }
 
     protected Object filter(Object response) {
-        if (response instanceof SerializableCollectionContainer){
-             Collection<Data> coll = ((SerializableCollectionContainer) response).getCollection();
+        if (response instanceof SerializableCollection){
+             Collection<Data> coll = ((SerializableCollection) response).getCollection();
             return new PortableCollectionContainer(coll);
         }
         return super.filter(response);

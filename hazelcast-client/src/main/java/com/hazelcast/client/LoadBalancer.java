@@ -29,6 +29,7 @@ import com.hazelcast.core.Member;
  * If it is not {@link ClientConfig#smart}, {@link LoadBalancer} will be used for all operations.
  */
 public interface LoadBalancer {
+
     public void init(HazelcastInstance h, ClientConfig config);
 
     /**

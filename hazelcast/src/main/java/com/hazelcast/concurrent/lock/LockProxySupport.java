@@ -16,7 +16,7 @@
 
 package com.hazelcast.concurrent.lock;
 
-import com.hazelcast.instance.ThreadContext;
+import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Invocation;
@@ -58,7 +58,7 @@ public final class LockProxySupport {
 
     public void lock(NodeEngine nodeEngine, Data key, long ttl) {
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        LockOperation operation = new LockOperation(namespace, key, ThreadContext.getThreadId(), ttl, -1);
+        LockOperation operation = new LockOperation(namespace, key, ThreadUtil.getThreadId(), ttl, -1);
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                     .build();
@@ -82,7 +82,7 @@ public final class LockProxySupport {
 
     public boolean tryLock(NodeEngine nodeEngine, Data key, long timeout, TimeUnit timeunit) throws InterruptedException {
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        LockOperation operation = new LockOperation(namespace, key, ThreadContext.getThreadId(),
+        LockOperation operation = new LockOperation(namespace, key, ThreadUtil.getThreadId(),
                 getTimeInMillis(timeout, timeunit));
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
@@ -100,7 +100,7 @@ public final class LockProxySupport {
 
     public void unlock(NodeEngine nodeEngine, Data key) {
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        UnlockOperation operation = new UnlockOperation(namespace, key, ThreadContext.getThreadId());
+        UnlockOperation operation = new UnlockOperation(namespace, key, ThreadUtil.getThreadId());
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                     .build();

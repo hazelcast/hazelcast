@@ -23,7 +23,7 @@ import com.hazelcast.collection.operations.CollectionResponse;
 import com.hazelcast.collection.operations.CountOperation;
 import com.hazelcast.collection.operations.GetAllOperation;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.instance.ThreadContext;
+import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
@@ -217,7 +217,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
     }
 
     private int getThreadId() {
-        return ThreadContext.getThreadId();
+        return ThreadUtil.getThreadId();
     }
 
     private CollectionResponse lockAndGet(Data key, long timeout, long ttl) {

@@ -50,7 +50,7 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
     static final int QUEUE_REPLICATION = 18;
     static final int REMOVE_BACKUP = 19;
     static final int REMOVE = 20;
-    static final int COLLECTION_CONTAINER = 21;
+//    static final int EMPTY_ID = 21;
     static final int SIZE = 22;
 
     public static final int TXN_OFFER_BACKUP= 23;
@@ -176,11 +176,6 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
         constructors[REMOVE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new RemoveOperation();
-            }
-        };
-        constructors[COLLECTION_CONTAINER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new SerializableCollectionContainer();
             }
         };
         constructors[SIZE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
