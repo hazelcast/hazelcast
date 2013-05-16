@@ -19,7 +19,10 @@ package com.hazelcast.client;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.connection.ConnectionManager;
 import com.hazelcast.client.proxy.ClusterProxy;
-import com.hazelcast.client.spi.ClusterService;
+import com.hazelcast.client.proxy.PartitionServiceProxy;
+import com.hazelcast.client.spi.ClientClusterService;
+import com.hazelcast.client.spi.ClientExecutionService;
+import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.logging.ILogger;
@@ -55,9 +58,11 @@ public class HazelcastClient implements HazelcastInstance {
     private final int id = CLIENT_ID.getAndIncrement();
     private final ClientConfig config;
     private final LifecycleServiceImpl lifecycleService;
-    private final SerializationServiceImpl serializationService = new SerializationServiceImpl(1, null);
-    private final ClusterService clusterService;
+    private final SerializationServiceImpl serializationService = new SerializationServiceImpl(0, null);
+    private final ClientClusterService clusterService;
+    private final ClientPartitionService partitionService;
     private final ConnectionManager connectionManager;
+    private final ClientExecutionService executionService = new ClientExecutionService();
     private final ConcurrentMap<String, Object> userContext;
     private final Map<String, Map<Object, DistributedObject>> mapProxies = new ConcurrentHashMap<String, Map<Object, DistributedObject>>(10);
 
@@ -65,10 +70,12 @@ public class HazelcastClient implements HazelcastInstance {
         this.config = config;
         lifecycleService = new LifecycleServiceImpl(this);
 
-        clusterService = new ClusterService(this);
+        clusterService = new ClientClusterService(this);
+        partitionService = new ClientPartitionService(this);
         connectionManager = new ConnectionManager(config, clusterService.getAuthenticator(), serializationService);
         userContext = new ConcurrentHashMap<String, Object>();
         clusterService.start();
+        partitionService.start();
         CLIENTS.put(id, this);
         lifecycleService.started();
     }
@@ -191,7 +198,7 @@ public class HazelcastClient implements HazelcastInstance {
 
     @Override
     public PartitionService getPartitionService() {
-        return null;
+        return new PartitionServiceProxy(partitionService);
     }
 
     @Override
@@ -246,8 +253,18 @@ public class HazelcastClient implements HazelcastInstance {
         return connectionManager;
     }
 
+    public ClientClusterService getClusterService() {
+        return clusterService;
+    }
+
+    public ClientExecutionService getExecutionService() {
+        return executionService;
+    }
+
     void shutdown() {
         CLIENTS.remove(id);
+        executionService.shutdown();
+        partitionService.stop();
         clusterService.stop();
         connectionManager.shutdown();
     }

@@ -56,6 +56,10 @@ public class ConnectionManager {
     }
 
     public Connection newConnection(Address address) throws IOException {
+        return newConnection(address, authenticator);
+    }
+
+    public Connection newConnection(Address address, Authenticator authenticator) throws IOException {
         checkLive();
         final ConnectionImpl connection = new ConnectionImpl(address, serializationService);
         connection.write(Protocols.CLIENT_BINARY.getBytes());
