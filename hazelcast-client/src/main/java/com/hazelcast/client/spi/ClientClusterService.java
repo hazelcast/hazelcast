@@ -183,6 +183,7 @@ public final class ClientClusterService implements ClusterService {
                 try {
                     if (conn == null) {
                         conn = pickConnection();
+                        System.err.println("Connected: " + conn);
                     }
                     loadInitialMemberList();
                     listenMembershipEvents();
@@ -190,6 +191,7 @@ public final class ClientClusterService implements ClusterService {
                     if (client.getLifecycleService().isRunning()) {
                         e.printStackTrace();
                     }
+                    System.err.println(conn + " FAILED...");
                     IOUtil.closeResource(conn);
                     conn = null;
                 }
@@ -202,10 +204,13 @@ public final class ClientClusterService implements ClusterService {
         }
 
         private Connection pickConnection() throws Exception {
-            final Collection<InetSocketAddress> addresses = getConfigAddresses();
+            final List<InetSocketAddress> addresses = new LinkedList<InetSocketAddress>();
             if (!members.isEmpty()) {
                 addresses.addAll(getClusterAddresses());
             }
+            addresses.addAll(getConfigAddresses());
+            System.err.println("Possible addresses: " + addresses);
+            Collections.shuffle(addresses);
             return connectToOne(addresses);
         }
 
@@ -279,6 +284,7 @@ public final class ClientClusterService implements ClusterService {
             for (InetSocketAddress isa : socketAddresses) {
                 try {
                     Address address = new Address(isa);
+                    System.err.println("Trying to connect: " + address);
                     return getConnectionManager().newConnection(address, authenticator);
                 } catch (IOException ignored) {
                 }

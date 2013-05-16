@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.connection;
 
-import com.hazelcast.client.exception.ClusterClientException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.ObjectDataInputStream;
@@ -50,30 +49,26 @@ final class ConnectionImpl implements Connection {
     private final int id = newConnId();
 //    private long lastRead = System.currentTimeMillis();
 
-    public ConnectionImpl(Address address, SerializationService serializationService) {
+    public ConnectionImpl(Address address, SerializationService serializationService) throws IOException {
         this.endpoint = address;
+        final InetSocketAddress isa = address.getInetSocketAddress();
+        final Socket socket = new Socket();
         try {
-            final InetSocketAddress isa = address.getInetSocketAddress();
-            final Socket socket = new Socket();
-            try {
-                socket.setKeepAlive(true);
+            socket.setKeepAlive(true);
 //                socket.setTcpNoDelay(true);
-                socket.setSoLinger(true, 5);
-                socket.setSendBufferSize(BUFFER_SIZE);
-                socket.setReceiveBufferSize(BUFFER_SIZE);
-                socket.connect(isa, 3000);
-            } catch (IOException e) {
-                socket.close();
-                throw e;
-            }
-            this.socket = socket;
-            this.out = serializationService.createObjectDataOutputStream(
-                    new BufferedOutputStream(socket.getOutputStream(), BUFFER_SIZE));
-            this.in = serializationService.createObjectDataInputStream(
-                    new BufferedInputStream(socket.getInputStream(), BUFFER_SIZE));
-        } catch (Exception e) {
-            throw new ClusterClientException(e);
+            socket.setSoLinger(true, 5);
+            socket.setSendBufferSize(BUFFER_SIZE);
+            socket.setReceiveBufferSize(BUFFER_SIZE);
+            socket.connect(isa, 3000);
+        } catch (IOException e) {
+            socket.close();
+            throw e;
         }
+        this.socket = socket;
+        this.out = serializationService.createObjectDataOutputStream(
+                new BufferedOutputStream(socket.getOutputStream(), BUFFER_SIZE));
+        this.in = serializationService.createObjectDataInputStream(
+                new BufferedInputStream(socket.getInputStream(), BUFFER_SIZE));
     }
 
     Socket getSocket() {
