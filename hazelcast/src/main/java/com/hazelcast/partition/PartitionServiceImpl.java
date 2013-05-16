@@ -37,7 +37,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 
-public class PartitionServiceImpl implements IPartitionService, ManagedService,
+public class PartitionServiceImpl implements PartitionService, ManagedService,
         EventPublishingService<MigrationEvent, MigrationListener> {
 
     public static final String SERVICE_NAME = "hz:core:partitionService";
@@ -75,7 +75,7 @@ public class PartitionServiceImpl implements IPartitionService, ManagedService,
         this.partitionCount = node.groupProperties.PARTITION_COUNT.getInteger();
         this.node = node;
         this.nodeEngine = node.nodeEngine;
-        this.logger = node.getLogger(IPartitionService.class);
+        this.logger = node.getLogger(PartitionService.class);
         this.systemLogService = node.getSystemLogService();
         this.partitions = new PartitionInfo[partitionCount];
         final PartitionListener partitionListener = new LocalPartitionListener(node.getThisAddress());

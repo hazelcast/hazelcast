@@ -150,7 +150,7 @@ public final class SerializationServiceImpl implements SerializationService {
                 int classId = fd.getClassId();
                 ClassDefinition nestedCd = classDefMap.get(classId);
                 if (nestedCd != null) {
-                    ((ClassDefinitionImpl) cd).add((ClassDefinitionImpl) nestedCd);
+                    ((ClassDefinitionImpl) cd).addClassDef(nestedCd);
                     registerClassDefinition(nestedCd, classDefMap, checkClassDefErrors);
                     serializationContext.registerClassDefinition(nestedCd);
                 } else if (checkClassDefErrors) {

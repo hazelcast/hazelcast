@@ -25,7 +25,7 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.*;
 import com.hazelcast.nio.serialization.*;
-import com.hazelcast.partition.IPartitionService;
+import com.hazelcast.partition.PartitionService;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -79,7 +79,7 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
         return serializationService.toData(obj);
     }
 
-    public IPartitionService getPartitionService() {
+    public PartitionService getPartitionService() {
         return nodeEngine.getPartitionService();
     }
 

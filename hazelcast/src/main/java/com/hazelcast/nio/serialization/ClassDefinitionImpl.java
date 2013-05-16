@@ -40,12 +40,12 @@ public class ClassDefinitionImpl extends BinaryClassDefinition implements ClassD
         this.classId = classId;
     }
 
-    public void add(FieldDefinitionImpl fd) {
+    public void addFieldDef(FieldDefinition fd) {
         fieldDefinitions.add(fd);
-        fieldDefinitionsMap.put(fd.fieldName, fd);
+        fieldDefinitionsMap.put(fd.getName(), fd);
     }
 
-    public void add(ClassDefinitionImpl cd) {
+    public void addClassDef(ClassDefinition cd) {
         nestedClassDefinitions.add(cd);
     }
 
@@ -107,13 +107,13 @@ public class ClassDefinitionImpl extends BinaryClassDefinition implements ClassD
         for (int i = 0; i < size; i++) {
             FieldDefinitionImpl fieldDefinition = new FieldDefinitionImpl();
             fieldDefinition.readData(in);
-            add(fieldDefinition);
+            addFieldDef(fieldDefinition);
         }
         size = in.readInt();
         for (int i = 0; i < size; i++) {
             ClassDefinitionImpl classDefinition = new ClassDefinitionImpl();
             classDefinition.readData(in);
-            add(classDefinition);
+            addClassDef(classDefinition);
         }
     }
 

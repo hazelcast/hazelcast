@@ -137,6 +137,10 @@ public final class AuthenticationRequest extends CallableClientRequest implement
         return 2;
     }
 
+    public void setReAuth(boolean reAuth) {
+        this.reAuth = reAuth;
+    }
+
     @Override
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writePortable("credentials", (Portable) credentials);
