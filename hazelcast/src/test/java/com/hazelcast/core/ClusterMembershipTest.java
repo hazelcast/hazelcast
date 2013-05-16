@@ -1,5 +1,6 @@
 package com.hazelcast.core;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -12,6 +13,11 @@ public class ClusterMembershipTest {
 
     @Before
     public void before() {
+        Hazelcast.shutdownAll();
+    }
+
+    @After
+    public void after() {
         Hazelcast.shutdownAll();
     }
 
