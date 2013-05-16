@@ -33,7 +33,7 @@ import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-public class ConnectionManager {
+public class ClientConnectionManager {
     private final int poolSize;
     private final int connectionTimeout;
     private final Authenticator authenticator;
@@ -45,7 +45,7 @@ public class ConnectionManager {
 
     private volatile boolean live = true;
 
-    public ConnectionManager(ClientConfig config, Authenticator authenticator, SerializationService serializationService) {
+    public ClientConnectionManager(ClientConfig config, Authenticator authenticator, SerializationService serializationService) {
         this.authenticator = authenticator;
         this.serializationService = serializationService;
         router = new Router(config.getLoadBalancer());

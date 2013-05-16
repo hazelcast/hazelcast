@@ -1,53 +1,24 @@
 package com.hazelcast.client.spi;
 
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @mdogan 5/16/13
  */
-public final class ClientExecutionService {
+public interface ClientExecutionService {
 
-    private final ExecutorService executor = Executors.newCachedThreadPool();
-    private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
+    void execute(Runnable command);
 
-    public void execute(Runnable command) {
-        executor.execute(command);
-    }
+    Future<?> submit(Runnable task);
 
-    public Future<?> submit(Runnable task) {
-        return executor.submit(task);
-    }
+    <T> Future<T> submit(Callable<T> task);
 
-    public <T> Future<T> submit(Callable<T> task) {
-        return executor.submit(task);
-    }
+    ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit);
 
-    public ScheduledFuture<?> schedule(final Runnable command, long delay, TimeUnit unit) {
-        return scheduledExecutor.schedule(new Runnable() {
-            public void run() {
-                execute(command);
-            }
-        }, delay, unit);
-    }
+    ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit);
 
-    public ScheduledFuture<?> scheduleAtFixedRate(final Runnable command, long initialDelay, long period, TimeUnit unit) {
-        return scheduledExecutor.scheduleAtFixedRate(new Runnable() {
-            public void run() {
-                execute(command);
-            }
-        }, initialDelay, period, unit);
-    }
-
-    public ScheduledFuture<?> scheduleWithFixedDelay(final Runnable command, long initialDelay, long period, TimeUnit unit) {
-        return scheduledExecutor.scheduleWithFixedDelay(new Runnable() {
-            public void run() {
-                execute(command);
-            }
-        }, initialDelay, period, unit);
-    }
-
-    public void shutdown() {
-        scheduledExecutor.shutdownNow();
-        executor.shutdownNow();
-    }
+    ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long period, TimeUnit unit);
 }

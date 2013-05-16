@@ -35,7 +35,7 @@ class HazelcastClientLoader implements IHazelcastInstanceLoader {
     private final static ILogger logger = Logger.getLogger(HazelcastInstanceFactory.class.getName());
 
     private final Properties props = new Properties();
-    private HazelcastClient client;
+    private HazelcastInstance client;
 
     public void configure(Properties props) {
         this.props.putAll(props);
