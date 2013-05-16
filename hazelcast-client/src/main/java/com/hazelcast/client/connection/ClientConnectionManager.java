@@ -70,13 +70,19 @@ public class ClientConnectionManager {
         return connection;
     }
 
+    public Connection getRandomConnection() throws IOException {
+        checkLive();
+        final Address address = router.next();
+        if (address == null) {
+            throw new IOException("LoadBalancer '" + router + "' could not find a address to route to");
+        }
+        return getConnection(address);
+    }
+
     public Connection getConnection(Address address) throws IOException {
         checkLive();
         if (address == null) {
-            address = router.next();
-            if (address == null) {
-                throw new IOException("LoadBalancer '" + router + "' could not find a address to route to");
-            }
+            throw new IllegalArgumentException("Target address is required!");
         }
         final ObjectPool<Connection> pool = getConnectionPool(address);
         final Connection connection = pool.take();
@@ -88,14 +94,14 @@ public class ClientConnectionManager {
                 Thread.sleep(1000);
             } catch (InterruptedException ignored) {
             }
-            return getConnection(null);
+            return getRandomConnection();
         }
         if (!heartbeat.checkHeartBeat(connection)) {
             try {
                 connection.close();
             } catch (IOException ignored) {
             }
-            return getConnection(null);
+            return getRandomConnection();
         }
         return connection;
     }

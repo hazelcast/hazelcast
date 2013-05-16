@@ -23,6 +23,7 @@ import com.hazelcast.client.proxy.PartitionServiceProxy;
 import com.hazelcast.client.spi.*;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
+import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
@@ -71,9 +72,10 @@ public class HazelcastClient implements HazelcastInstance {
     private final ThreadGroup threadGroup;
     private final LifecycleServiceImpl lifecycleService;
     private final SerializationServiceImpl serializationService = new SerializationServiceImpl(0, null);
+    private final ClientConnectionManager connectionManager;
     private final ClientClusterServiceImpl clusterService;
     private final ClientPartitionServiceImpl partitionService;
-    private final ClientConnectionManager connectionManager;
+    private final ClientInvocationServiceImpl invocationService;
     private final ClientExecutionServiceImpl executionService;
     private final ProxyManager proxyManager;
     private final ConcurrentMap<String, Object> userContext;
@@ -88,8 +90,9 @@ public class HazelcastClient implements HazelcastInstance {
         proxyManager = new ProxyManager();
         executionService = new ClientExecutionServiceImpl(name, threadGroup, Thread.currentThread().getContextClassLoader());
         clusterService = new ClientClusterServiceImpl(this);
-        partitionService = new ClientPartitionServiceImpl(this);
         connectionManager = new ClientConnectionManager(config, clusterService.getAuthenticator(), serializationService);
+        partitionService = new ClientPartitionServiceImpl(this);
+        invocationService = new ClientInvocationServiceImpl(this);
         userContext = new ConcurrentHashMap<String, Object>();
         clusterService.start();
         partitionService.start();
@@ -281,6 +284,10 @@ public class HazelcastClient implements HazelcastInstance {
 
     public ClientPartitionService getClientPartitionService() {
         return partitionService;
+    }
+
+    public ClientInvocationService getInvocationService() {
+        return invocationService;
     }
 
     public ThreadGroup getThreadGroup() {

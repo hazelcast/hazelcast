@@ -97,6 +97,15 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         return Clock.currentTimeMillis();
     }
 
+    public <T> T sendAndReceive(Object obj) throws IOException {
+        final Connection conn = getConnectionManager().getRandomConnection();
+        try {
+            return sendAndReceive(conn, obj);
+        } finally {
+            conn.close();
+        }
+    }
+
     public <T> T sendAndReceive(Address address, Object obj) throws IOException {
         final Connection conn = getConnectionManager().getConnection(address);
         try {
@@ -106,7 +115,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         }
     }
 
-    public <T> T sendAndReceive(Connection conn, Object obj) throws IOException {
+    private <T> T sendAndReceive(Connection conn, Object obj) throws IOException {
         final SerializationService serializationService = getSerializationService();
         final Data request = serializationService.toData(obj);
         conn.write(request);
