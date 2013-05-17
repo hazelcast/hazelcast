@@ -18,64 +18,20 @@
 package com.hazelcast.client.util;
 
 import com.hazelcast.client.LoadBalancer;
-import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MembershipListener;
 
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 
-public class RoundRobinLB implements LoadBalancer, MembershipListener {
-    final AtomicLong index = new AtomicLong(0);
-    final AtomicReference<Member[]> memberRef = new AtomicReference(new Member[]{});
+public class RoundRobinLB extends AbstractLoadBalancer implements LoadBalancer, MembershipListener {
 
-    @Override
-    public void init(HazelcastInstance h, ClientConfig config) {
-        Cluster cluster = h.getCluster();
-        for (Member member : cluster.getMembers()) {
-            addMember(member);
-        }
-        cluster.addMembershipListener(this);
-    }
+    private final AtomicLong index = new AtomicLong(0);
 
-    @Override
     public Member next() {
-        Member[] members = memberRef.get();
-        if (members.length == 0) {
+        final Member[] members = getMembers();
+        if (members == null || members.length == 0) {
             return null;
         }
-        Member member = members[(int) (index.getAndAdd(1) % members.length)];
-        return member;
-    }
-
-    @Override
-    public void memberAdded(MembershipEvent membershipEvent) {
-        Member member = membershipEvent.getMember();
-        addMember(member);
-    }
-
-    private void addMember(Member member) {
-        Member[] oldList = memberRef.get();
-        Member[] newList = new Member[oldList.length + 1];
-        System.arraycopy(oldList, 0, newList, 0, oldList.length);
-        newList[oldList.length] = member;
-        memberRef.compareAndSet(oldList, newList);
-    }
-
-    @Override
-    public void memberRemoved(MembershipEvent membershipEvent) {
-        Member member = membershipEvent.getMember();
-        Member[] oldList = memberRef.get();
-        int i = Arrays.binarySearch(oldList, member, new Comparator<Member>() {
-            @Override
-            public int compare(Member o1, Member o2) {
-                return o1.getInetSocketAddress().equals(o2.getInetSocketAddress()) ? 0 : -1;
-            }
-        });
-        Member[] newList = new Member[oldList.length - 1];
-        System.arraycopy(oldList, 0, newList, 0, i);
-        System.arraycopy(oldList, i + 1, newList, i, oldList.length - i - 1);
-        memberRef.compareAndSet(oldList, newList);
+        return members[(int) (index.getAndAdd(1) % members.length)];
     }
 }

@@ -16,7 +16,10 @@
 
 package com.hazelcast.client.connection;
 
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.util.pool.Factory;
 import com.hazelcast.client.util.pool.ObjectPool;
 import com.hazelcast.client.util.pool.QueueBasedObjectPool;
@@ -35,24 +38,26 @@ import java.util.concurrent.ConcurrentMap;
 
 public class ClientConnectionManager {
     private final int poolSize;
-    private final int connectionTimeout;
     private final Authenticator authenticator;
     private final SerializationService serializationService;
     private final Router router;
     private final ConcurrentMap<Address, ObjectPool<Connection>> poolMap = new ConcurrentHashMap<Address, ObjectPool<Connection>>();
+    private final SocketOptions socketOptions;
     private final SocketInterceptor socketInterceptor;
     private final HeartBeatChecker heartbeat;
 
     private volatile boolean live = true;
 
-    public ClientConnectionManager(ClientConfig config, Authenticator authenticator, SerializationService serializationService) {
+    public ClientConnectionManager(HazelcastClient client, Authenticator authenticator, LoadBalancer loadBalancer) {
         this.authenticator = authenticator;
-        this.serializationService = serializationService;
-        router = new Router(config.getLoadBalancer());
+        this.serializationService = client.getSerializationService();
+        ClientConfig config = client.getClientConfig();
+        router = new Router(loadBalancer);
         socketInterceptor = config.getSocketInterceptor();
         poolSize = config.getPoolSize();
-        connectionTimeout = config.getConnectionTimeout();
-        heartbeat = new HeartBeatChecker(config, serializationService);
+        int connectionTimeout = config.getConnectionTimeout();
+        heartbeat = new HeartBeatChecker(connectionTimeout, serializationService, client.getClientExecutionService());
+        socketOptions = config.getSocketOptions();
     }
 
     public Connection newConnection(Address address) throws IOException {
@@ -61,7 +66,7 @@ public class ClientConnectionManager {
 
     public Connection newConnection(Address address, Authenticator authenticator) throws IOException {
         checkLive();
-        final ConnectionImpl connection = new ConnectionImpl(address, serializationService);
+        final ConnectionImpl connection = new ConnectionImpl(address, socketOptions, serializationService);
         connection.write(Protocols.CLIENT_BINARY.getBytes());
         if (socketInterceptor != null) {
             socketInterceptor.onConnect(connection.getSocket());
@@ -85,7 +90,12 @@ public class ClientConnectionManager {
             throw new IllegalArgumentException("Target address is required!");
         }
         final ObjectPool<Connection> pool = getConnectionPool(address);
-        final Connection connection = pool.take();
+        Connection connection = null;
+        try {
+            connection = pool.take();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         // Could be that this address is dead and that's why pool is not able to create and give a connection.
         // We will call it again, and hopefully at some time LoadBalancer will give us the right target for the connection.
         if (connection == null) {
@@ -152,6 +162,10 @@ public class ClientConnectionManager {
 
         public int getId() {
             return connection.getId();
+        }
+
+        public long getLastReadTime() {
+            return connection.getLastReadTime();
         }
     }
 

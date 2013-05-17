@@ -16,6 +16,7 @@ import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.cluster.client.AddMembershipListenerRequest;
 import com.hazelcast.cluster.client.ClientMembershipEvent;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
@@ -218,25 +219,44 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         }
 
         private Connection pickConnection() throws Exception {
-            final List<InetSocketAddress> addresses = new LinkedList<InetSocketAddress>();
+            final Collection<InetSocketAddress> addresses = new HashSet<InetSocketAddress>();
             if (!members.isEmpty()) {
                 addresses.addAll(getClusterAddresses());
             }
             addresses.addAll(getConfigAddresses());
             System.err.println("Possible addresses: " + addresses);
-            Collections.shuffle(addresses);
             return connectToOne(addresses);
         }
 
         private void loadInitialMemberList() throws IOException {
             SerializableCollection coll = sendAndReceive(conn, new AddMembershipListenerRequest());
             final SerializationService serializationService = getSerializationService();
-            members.clear();
+            Map<String, MemberImpl> prevMembers = Collections.emptyMap();
+            if (!members.isEmpty()) {
+                prevMembers = new HashMap<String, MemberImpl>(members.size());
+                for (MemberImpl member : members) {
+                    prevMembers.put(member.getUuid(), member);
+                }
+                members.clear();
+            }
             for (Data d : coll.getCollection()) {
                 members.add((MemberImpl) serializationService.toObject(d));
             }
             System.err.println("members = " + members);
             updateMembersRef();
+            final List<MembershipEvent> events = new LinkedList<MembershipEvent>();
+            for (MemberImpl member : members) {
+                final MemberImpl former = prevMembers.remove(member.getUuid());
+                if (former == null) {
+                    events.add(new MembershipEvent(member, MembershipEvent.MEMBER_ADDED));
+                }
+            }
+            for (MemberImpl member : prevMembers.values()) {
+                events.add(new MembershipEvent(member, MembershipEvent.MEMBER_REMOVED));
+            }
+            for (MembershipEvent event : events) {
+                fireMembershipEvent(event);
+            }
         }
 
         private void listenMembershipEvents() throws IOException {
@@ -245,14 +265,29 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 final Data eventData = conn.read();
                 final ClientMembershipEvent event = (ClientMembershipEvent) serializationService.toObject(eventData);
                 System.err.println(event);
-                if (event.isAdded()) {
-                    members.add(event.getMember());
+                final MemberImpl member = (MemberImpl) event.getMember();
+                if (event.getEventType() == MembershipEvent.MEMBER_ADDED) {
+                    members.add(member);
                 } else {
-                    members.remove(event.getMember());
+                    members.remove(member);
                 }
-                // call membership listeners...
                 updateMembersRef();
+                fireMembershipEvent(event);
             }
+        }
+
+        private void fireMembershipEvent(final MembershipEvent event) {
+            client.getClientExecutionService().execute(new Runnable() {
+                public void run() {
+                    for (MembershipListener listener : listeners.values()) {
+                        if (event.getEventType() == MembershipEvent.MEMBER_ADDED) {
+                            listener.memberAdded(event);
+                        } else {
+                            listener.memberRemoved(event);
+                        }
+                    }
+                }
+            });
         }
 
         private void updateMembersRef() {

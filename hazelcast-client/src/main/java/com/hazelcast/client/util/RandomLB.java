@@ -18,51 +18,24 @@
 package com.hazelcast.client.util;
 
 import com.hazelcast.client.LoadBalancer;
-import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MembershipListener;
 
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * The RandomLB randomly selects a member to route to.
  */
-public class RandomLB implements LoadBalancer, MembershipListener {
-    final AtomicReference<List<Member>> membersRef = new AtomicReference<List<Member>>();
-    final Random random = new Random(System.currentTimeMillis());
+public class RandomLB extends AbstractLoadBalancer implements LoadBalancer, MembershipListener {
 
-    @Override
-    public void init(HazelcastInstance h, ClientConfig config) {
-        Cluster cluster = h.getCluster();
-        cluster.addMembershipListener(this);
-        List<Member> members = new LinkedList<Member>();
-        members.addAll(cluster.getMembers());
-        membersRef.set(members);
-    }
+    private final Random random = new Random(System.currentTimeMillis());
 
     @Override
     public Member next() {
-        List<Member> members = membersRef.get();
-        if(members.isEmpty()){
+        final Member[] members = getMembers();
+        if (members == null || members.length == 0) {
             return null;
         }
-        int index = random.nextInt(members.size());
-        return members.get(index);
-    }
-
-    @Override
-    public void memberAdded(MembershipEvent membershipEvent) {
-        List<Member> newMembers = new LinkedList<Member>(membersRef.get());
-        newMembers.add(membershipEvent.getMember());
-        membersRef.set(newMembers);
-    }
-
-    @Override
-    public void memberRemoved(MembershipEvent membershipEvent) {
-        List<Member> newMembers = new LinkedList<Member>(membersRef.get());
-        newMembers.remove(membershipEvent.getMember());
-        membersRef.set(newMembers);
+        return members[random.nextInt(members.length)];
     }
 }

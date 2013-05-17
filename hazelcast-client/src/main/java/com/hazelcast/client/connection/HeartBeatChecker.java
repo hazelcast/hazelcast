@@ -17,47 +17,48 @@
 
 package com.hazelcast.client.connection;
 
-import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.spi.ClientExecutionService;
+import com.hazelcast.cluster.client.ClientPingRequest;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.util.Clock;
 
+import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class HeartBeatChecker {
 
-    private final ProtocolWriter writer;
-    private final ProtocolReader reader;
     private final int connectionTimeout;
+    private final ClientExecutionService executionService;
+    private final Data ping;
 
-    public HeartBeatChecker(ClientConfig config, SerializationService serializationService) {
-        connectionTimeout = config.getConnectionTimeout();
-        writer = new ProtocolWriter(serializationService);
-        reader = new ProtocolReader(serializationService);
+    public HeartBeatChecker(int timeout, SerializationService serializationService, ClientExecutionService executionService) {
+        connectionTimeout = timeout;
+        this.executionService = executionService;
+        ping = serializationService.toData(new ClientPingRequest());
     }
 
     public boolean checkHeartBeat(final Connection connection) {
-        final CountDownLatch latch = new CountDownLatch(1);
-        /*if ((System.currentTimeMillis() - connection.getLastRead()) > connectionTimeout / 2) {
-            Thread thread = new Thread(new Runnable() {
-                @Override
+        if ((Clock.currentTimeMillis() - connection.getLastReadTime()) > connectionTimeout / 2) {
+            final CountDownLatch latch = new CountDownLatch(1);
+            executionService.execute(new Runnable() {
                 public void run() {
                     try {
-                        writer.write(connection, ping);
-                        writer.flush(connection);
-                        Protocol pong = reader.read(connection);
-                        result.set(pong);
+                        connection.write(ping);
                         latch.countDown();
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                 }
-            }, "heartbeat" + connection.getEndpoint());
-            thread.start();
+            });
             try {
-                latch.await(connectionTimeout, TimeUnit.MILLISECONDS);
-                return Command.OK.equals(result.get().command);
+                return latch.await(5, TimeUnit.SECONDS);
             } catch (InterruptedException e) {
                 return false;
             }
-        } else */return true;
+        } else {
+            return true;
+        }
     }
 }

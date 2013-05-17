@@ -25,6 +25,7 @@ import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.ClientPartitionServiceImpl;
+import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
@@ -48,7 +49,6 @@ import com.hazelcast.transaction.TransactionalTask;
 
 import java.util.Collection;
 import java.util.LinkedList;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -79,7 +79,6 @@ public class HazelcastClient implements HazelcastInstance {
     private final ClientExecutionServiceImpl executionService;
     private final ProxyManager proxyManager;
     private final ConcurrentMap<String, Object> userContext;
-    private final Map<String, Map<Object, DistributedObject>> mapProxies = new ConcurrentHashMap<String, Map<Object, DistributedObject>>(10);
 
     private HazelcastClient(ClientConfig config) {
         this.config = config;
@@ -90,12 +89,17 @@ public class HazelcastClient implements HazelcastInstance {
         proxyManager = new ProxyManager();
         executionService = new ClientExecutionServiceImpl(name, threadGroup, Thread.currentThread().getContextClassLoader());
         clusterService = new ClientClusterServiceImpl(this);
-        connectionManager = new ClientConnectionManager(config, clusterService.getAuthenticator(), serializationService);
+        LoadBalancer loadBalancer = config.getLoadBalancer();
+        if (loadBalancer == null) {
+            loadBalancer = new RoundRobinLB();
+        }
+        connectionManager = new ClientConnectionManager(this, clusterService.getAuthenticator(), loadBalancer);
         partitionService = new ClientPartitionServiceImpl(this);
         invocationService = new ClientInvocationServiceImpl(this);
         userContext = new ConcurrentHashMap<String, Object>();
         clusterService.start();
         partitionService.start();
+        loadBalancer.init(getCluster(), config);
         lifecycleService.setStarted();
     }
 

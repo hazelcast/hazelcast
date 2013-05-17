@@ -1,0 +1,69 @@
+/*
+ * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+package com.hazelcast.client.util;
+
+import com.hazelcast.client.LoadBalancer;
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.core.Cluster;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.core.MembershipListener;
+
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+
+public abstract class AbstractLoadBalancer implements LoadBalancer, MembershipListener {
+
+    private final AtomicReference<Member[]> membersRef = new AtomicReference(new Member[]{});
+    private volatile Cluster clusterRef;
+
+    @Override
+    public final void init(Cluster cluster, ClientConfig config) {
+        this.clusterRef = cluster;
+        setMembersRef();
+        cluster.addMembershipListener(this);
+    }
+
+    private void setMembersRef() {
+        final Cluster cluster = clusterRef;
+        if (cluster != null) {
+            final Set<Member> memberSet = cluster.getMembers();
+            System.err.println("Updating LoadBalancer member list -> " + memberSet);
+            Member[] members = new Member[memberSet.size()];
+            int k = 0;
+            for (Member member : memberSet) {
+                members[k++] = member;
+            }
+            membersRef.set(members);
+        }
+    }
+
+    protected Member[] getMembers() {
+        return membersRef.get();
+    }
+
+    @Override
+    public final void memberAdded(MembershipEvent membershipEvent) {
+        setMembersRef();
+    }
+
+    @Override
+    public final void memberRemoved(MembershipEvent membershipEvent) {
+        setMembersRef();
+    }
+}

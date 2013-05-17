@@ -18,7 +18,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.Cluster;
 import com.hazelcast.core.Member;
 
 /**
@@ -30,7 +30,7 @@ import com.hazelcast.core.Member;
  */
 public interface LoadBalancer {
 
-    public void init(HazelcastInstance h, ClientConfig config);
+    public void init(Cluster cluster, ClientConfig config);
 
     /**
      * Returns the next member to route to

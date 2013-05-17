@@ -17,7 +17,10 @@ public interface Connection extends Closeable {
 
     Data read() throws IOException;
 
+    int getId();
+
+    long getLastReadTime();
+
     void close() throws IOException;
 
-    int getId();
 }

@@ -12,6 +12,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.impl.SerializableCollection;
+import com.hazelcast.util.MutableString;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,18 +25,35 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
 
     @Override
     public Object call() throws Exception {
-        ClusterServiceImpl service = getService();
-        service.addMembershipListener(new MembershipListener() {
+        final ClusterServiceImpl service = getService();
+        final MutableString id = new MutableString();
+        final String registration = service.addMembershipListener(new MembershipListener() {
             public void memberAdded(MembershipEvent membershipEvent) {
-                final MemberImpl member = (MemberImpl) membershipEvent.getMember();
-                getClientEngine().sendResponse(getEndpoint(), new ClientMembershipEvent(member, true));
+                if (getEndpoint().live()) {
+                    final MemberImpl member = (MemberImpl) membershipEvent.getMember();
+                    getClientEngine().sendResponse(getEndpoint(), new ClientMembershipEvent(member, MembershipEvent.MEMBER_ADDED));
+                } else {
+                    deregister();
+                }
             }
 
             public void memberRemoved(MembershipEvent membershipEvent) {
-                final MemberImpl member = (MemberImpl) membershipEvent.getMember();
-                getClientEngine().sendResponse(getEndpoint(), new ClientMembershipEvent(member, false));
+                if (getEndpoint().live()) {
+                    final MemberImpl member = (MemberImpl) membershipEvent.getMember();
+                    getClientEngine().sendResponse(getEndpoint(), new ClientMembershipEvent(member, MembershipEvent.MEMBER_REMOVED));
+                } else {
+                    deregister();
+                }
+            }
+
+            private void deregister() {
+                final String registrationId = id.getString();
+                if (registrationId != null) {
+                    service.removeMembershipListener(registrationId);
+                }
             }
         });
+        id.setString(registration);
 
         final Collection<MemberImpl> memberList = service.getMemberList();
         final Collection<Data> response = new ArrayList<Data>(memberList.size());

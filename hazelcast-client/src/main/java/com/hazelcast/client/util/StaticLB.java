@@ -19,18 +19,19 @@ package com.hazelcast.client.util;
 
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.Cluster;
 import com.hazelcast.core.Member;
 
 public class StaticLB implements LoadBalancer {
-    final Member member;
 
-    StaticLB(Member member) {
+    private final Member member;
+
+    public StaticLB(Member member) {
         this.member = member;
     }
 
     @Override
-    public void init(HazelcastInstance h, ClientConfig config) {
+    public void init(Cluster cluster, ClientConfig config) {
     }
 
     @Override

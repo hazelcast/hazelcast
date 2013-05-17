@@ -16,11 +16,13 @@
 
 package com.hazelcast.client.connection;
 
+import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.ObjectDataInputStream;
 import com.hazelcast.nio.serialization.ObjectDataOutputStream;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.util.Clock;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -47,18 +49,28 @@ final class ConnectionImpl implements Connection {
     private final ObjectDataOutputStream out;
     private final ObjectDataInputStream in;
     private final int id = newConnId();
-//    private long lastRead = System.currentTimeMillis();
+    private volatile long lastRead = Clock.currentTimeMillis();
 
-    public ConnectionImpl(Address address, SerializationService serializationService) throws IOException {
+    public ConnectionImpl(Address address, SocketOptions options, SerializationService serializationService) throws IOException {
         this.endpoint = address;
         final InetSocketAddress isa = address.getInetSocketAddress();
         final Socket socket = new Socket();
         try {
-            socket.setKeepAlive(true);
-//                socket.setTcpNoDelay(true);
-            socket.setSoLinger(true, 5);
-            socket.setSendBufferSize(BUFFER_SIZE);
-            socket.setReceiveBufferSize(BUFFER_SIZE);
+            socket.setKeepAlive(options.isSocketKeepAlive());
+            socket.setTcpNoDelay(options.isSocketTcpNoDelay());
+            socket.setReuseAddress(options.isSocketReuseAddress());
+            if (options.getSocketLingerSeconds() > 0) {
+                socket.setSoLinger(true, options.getSocketLingerSeconds());
+            }
+            if (options.getSocketTimeout() > 0) {
+                socket.setSoTimeout(options.getSocketTimeout());
+            }
+            int bufferSize = options.getSocketBufferSize() * 1024;
+            if (bufferSize < 0) {
+                bufferSize = BUFFER_SIZE;
+            }
+            socket.setSendBufferSize(bufferSize);
+            socket.setReceiveBufferSize(bufferSize);
             socket.connect(isa, 3000);
         } catch (IOException e) {
             socket.close();
@@ -96,6 +108,7 @@ final class ConnectionImpl implements Connection {
     public Data read() throws IOException {
         Data data = new Data();
         data.readData(in);
+        lastRead = Clock.currentTimeMillis();
         return data;
     }
 
@@ -111,9 +124,9 @@ final class ConnectionImpl implements Connection {
         return id;
     }
 
-    //    public long getLastRead() {
-//        return lastRead;
-//    }
+    public long getLastReadTime() {
+        return lastRead;
+    }
 
     @Override
     public String toString() {
