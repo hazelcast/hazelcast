@@ -20,11 +20,13 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.SocketOptions;
+import com.hazelcast.client.util.pool.Destructor;
 import com.hazelcast.client.util.pool.Factory;
 import com.hazelcast.client.util.pool.ObjectPool;
 import com.hazelcast.client.util.pool.QueueBasedObjectPool;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.Data;
@@ -41,7 +43,8 @@ public class ClientConnectionManager {
     private final Authenticator authenticator;
     private final SerializationService serializationService;
     private final Router router;
-    private final ConcurrentMap<Address, ObjectPool<Connection>> poolMap = new ConcurrentHashMap<Address, ObjectPool<Connection>>();
+    private final ConcurrentMap<Address, ObjectPool<ConnectionWrapper>> poolMap
+            = new ConcurrentHashMap<Address, ObjectPool<ConnectionWrapper>>(16, 0.75f, 1);
     private final SocketOptions socketOptions;
     private final SocketInterceptor socketInterceptor;
     private final HeartBeatChecker heartbeat;
@@ -89,8 +92,8 @@ public class ClientConnectionManager {
         if (address == null) {
             throw new IllegalArgumentException("Target address is required!");
         }
-        final ObjectPool<Connection> pool = getConnectionPool(address);
-        Connection connection = null;
+        final ObjectPool<ConnectionWrapper> pool = getConnectionPool(address);
+        ConnectionWrapper connection = null;
         try {
             connection = pool.take();
         } catch (Exception e) {
@@ -107,10 +110,7 @@ public class ClientConnectionManager {
             return getRandomConnection();
         }
         if (!heartbeat.checkHeartBeat(connection)) {
-            try {
-                connection.close();
-            } catch (IOException ignored) {
-            }
+            connection.destroy();
             return getRandomConnection();
         }
         return connection;
@@ -122,17 +122,22 @@ public class ClientConnectionManager {
         }
     }
 
-    private final ConstructorFunction<Address, ObjectPool<Connection>> ctor = new ConstructorFunction<Address, ObjectPool<Connection>>() {
-        public ObjectPool<Connection> createNew(final Address address) {
-            return new QueueBasedObjectPool<Connection>(poolSize, new Factory<Connection>() {
-                public Connection create() throws IOException {
+    private final ConstructorFunction<Address, ObjectPool<ConnectionWrapper>> ctor = new ConstructorFunction<Address, ObjectPool<ConnectionWrapper>>() {
+        public ObjectPool<ConnectionWrapper> createNew(final Address address) {
+            return new QueueBasedObjectPool<ConnectionWrapper>(poolSize, new Factory<ConnectionWrapper>() {
+                public ConnectionWrapper create() throws IOException {
                     return new ConnectionWrapper(newConnection(address));
                 }
-            });
+            }, new Destructor<ConnectionWrapper>() {
+                public void destroy(ConnectionWrapper connection) {
+                    connection.destroy();
+                }
+            }
+            );
         }
     };
 
-    private ObjectPool<Connection> getConnectionPool(final Address address) {
+    private ObjectPool<ConnectionWrapper> getConnectionPool(final Address address) {
         checkLive();
         return ConcurrencyUtil.getOrPutIfAbsent(poolMap, address, ctor);
     }
@@ -160,6 +165,10 @@ public class ClientConnectionManager {
             releaseConnection(this);
         }
 
+        private void destroy() {
+            IOUtil.closeResource(connection);
+        }
+
         public int getId() {
             return connection.getId();
         }
@@ -169,15 +178,22 @@ public class ClientConnectionManager {
         }
     }
 
-    private void releaseConnection(Connection connection) {
-        ObjectPool<Connection> pool = poolMap.get(connection.getEndpoint());
-        if (pool != null)
-            pool.release(connection);
+    private void releaseConnection(ConnectionWrapper connection) {
+        if (live) {
+            final ObjectPool<ConnectionWrapper> pool = poolMap.get(connection.getEndpoint());
+            if (pool != null) {
+                pool.release(connection);
+            } else {
+                connection.destroy();
+            }
+        } else {
+            connection.destroy();
+        }
     }
 
     public void shutdown() {
         live = false;
-        for (ObjectPool<Connection> pool : poolMap.values()) {
+        for (ObjectPool<ConnectionWrapper> pool : poolMap.values()) {
             pool.destroy();
         }
         poolMap.clear();

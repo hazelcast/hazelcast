@@ -17,26 +17,29 @@
 package com.hazelcast.client.util.pool;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.nio.IOUtil;
 
-import java.io.Closeable;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-public class QueueBasedObjectPool<E extends Closeable> implements ObjectPool<E> {
+public class QueueBasedObjectPool<E> implements ObjectPool<E> {
 
     private final BlockingQueue<E> queue;
     private final Factory<E> factory;
+    private final Destructor<E> destructor;
+    private volatile boolean active = true;
 
-    public QueueBasedObjectPool(int capacity, Factory<E> factory) {
+    public QueueBasedObjectPool(int capacity, Factory<E> factory, Destructor<E> destructor) {
         this.queue = new LinkedBlockingQueue<E>(capacity);
         this.factory = factory;
+        this.destructor = destructor;
     }
 
     public E take() {
-        // TODO: sync with destroy
+        if (!active) {
+            return null;
+        }
         E e = queue.poll();
         if (e == null) {
             try {
@@ -49,8 +52,9 @@ public class QueueBasedObjectPool<E extends Closeable> implements ObjectPool<E> 
     }
 
     public void release(E e) {
-        // TODO: sync with destroy
-        queue.offer(e);
+        if (!active || !queue.offer(e)) {
+            destructor.destroy(e);
+        }
     }
 
     public int size() {
@@ -58,10 +62,11 @@ public class QueueBasedObjectPool<E extends Closeable> implements ObjectPool<E> 
     }
 
     public void destroy() {
+        active = true;
         final Collection<E> c = new LinkedList<E>();
         queue.drainTo(c);
         for (E e : c) {
-            IOUtil.closeResource(e);
+            destructor.destroy(e);
         }
     }
 }

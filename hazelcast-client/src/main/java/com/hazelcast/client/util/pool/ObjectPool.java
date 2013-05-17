@@ -16,9 +16,7 @@
 
 package com.hazelcast.client.util.pool;
 
-import java.io.Closeable;
-
-public interface ObjectPool<E extends Closeable> {
+public interface ObjectPool<E> {
 
     E take();
 
