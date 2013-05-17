@@ -229,7 +229,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         final NodeEngine nodeEngine = getNodeEngine();
         try {
             Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(SERVICE_NAME, new BinaryOperationFactory(new MapSizeOperation(name), nodeEngine));
+                    .invokeOnAllPartitions(SERVICE_NAME, new SizeOperationFactory(name));
             int total = 0;
             for (Object result : results.values()) {
                 Integer size = (Integer) getService().toObject(result);
@@ -245,7 +245,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         final NodeEngine nodeEngine = getNodeEngine();
         try {
             Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(SERVICE_NAME, new BinaryOperationFactory(new ContainsValueOperation(name, dataValue), nodeEngine));
+                    .invokeOnAllPartitions(SERVICE_NAME, new ContainsValueOperationFactory(name, dataValue));
             for (Object result : results.values()) {
                 Boolean contains = (Boolean) getService().toObject(result);
                 if (contains)
@@ -281,14 +281,25 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         return res;
     }
 
-    // todo optimize this
     protected Map<Object, Object> getAllObjectInternal(final Set<Data> keys) {
         final NodeEngine nodeEngine = getNodeEngine();
-        Map<Object, Object> res = new HashMap(keys.size());
-        for (Data key : keys) {
-            res.put(getService().toObject(key), getService().toObject(getInternal(key)));
+        Map<Object, Object> result = new HashMap<Object, Object>();
+
+        Map<Integer, Object> responses = null;
+        try {
+            responses = nodeEngine.getOperationService()
+                    .invokeOnAllPartitions(SERVICE_NAME, new MapGetAllOperationFactory(name, keys));
+            for (Object response : responses.values()) {
+                Set<Map.Entry<Data,Data>> entries = ((MapEntrySet) getService().toObject(response)).getEntrySet();
+                for (Entry<Data, Data> entry : entries) {
+                    result.put(getService().toObject(entry.getKey()), getService().toObject(entry.getValue()));
+                }
+            }
+        } catch (Exception e) {
+            ExceptionUtil.rethrow(e);
         }
-        return res;
+
+        return result;
     }
 
     // todo optimize these: send keys in groups to partitions and wirte mapstore in bulk

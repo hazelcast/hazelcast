@@ -505,14 +505,15 @@ public class BasicTest {
     public void testGetAllPutAll() {
         final IMap<Object, Object> map = getInstance().getMap("testGetAllPutAll");
         Map mm = new HashMap();
-        mm.put(1, 1);
-        mm.put(2, 2);
-        mm.put(3, 3);
+        for (int i = 0; i < 100; i++) {
+            mm.put(i, i);
+        }
         map.putAll(mm);
-        assertEquals(map.size(), 3);
-        assertEquals(map.get(1), 1);
-        assertEquals(map.get(2), 2);
-        assertEquals(map.get(3), 3);
+        assertEquals(map.size(), 100);
+        for (int i = 0; i < 100; i++) {
+            assertEquals(map.get(i), i);
+        }
+
         Set ss = new HashSet();
         ss.add(1);
         ss.add(3);

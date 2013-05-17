@@ -31,7 +31,7 @@ import java.util.Set;
 
 public class MapEntrySet implements IdentifiedDataSerializable {
 
-    Set<Map.Entry<Data,Data>> entrySet;
+    Set<Map.Entry<Data,Data>> entrySet = new HashSet<Map.Entry<Data, Data>>();
 
     public MapEntrySet(Set<Map.Entry<Data,Data>> entrySet) {
         this.entrySet = entrySet;
@@ -42,6 +42,11 @@ public class MapEntrySet implements IdentifiedDataSerializable {
 
     public Set<Map.Entry<Data,Data>> getEntrySet() {
         return entrySet;
+    }
+
+    public void add(Map.Entry<Data,Data> entry) {
+        entrySet.add(entry);
+
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
@@ -55,8 +60,6 @@ public class MapEntrySet implements IdentifiedDataSerializable {
 
     public void readData(ObjectDataInput in) throws IOException {
         int size = in.readInt();
-        if(size > 0)
-            entrySet = new HashSet<Map.Entry<Data, Data>>();
         for (int i = 0; i < size; i++) {
             Map.Entry entry = new AbstractMap.SimpleImmutableEntry<Data, Data>(IOUtil.readData(in), IOUtil.readData(in));
             entrySet.add(entry);

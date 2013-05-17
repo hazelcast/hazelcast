@@ -881,8 +881,6 @@ public class MapService implements ManagedService, MigrationAwareService,
                             Record rec = (Record) iterator.next();
                             keySet.add(rec.getKey());
                         }
-                        if (keySet.isEmpty())
-                            keySet.add(nodeEngine.toData(1));
                         ClearOperation clearOperation = new ClearOperation(mapName, keySet);
                         clearOperation.setNodeEngine(nodeEngine);
                         clearOperation.setServiceName(SERVICE_NAME);

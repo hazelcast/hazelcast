@@ -49,7 +49,6 @@ public class QueryOperation extends AbstractMapOperation {
         List<Integer> initialPartitions = mapService.getOwnedPartitions().get();
         IndexService indexService = mapService.getMapContainer(name).getIndexService();
         Set<QueryableEntry> entries = indexService.query(predicate);
-        SerializationService ss = getNodeEngine().getSerializationService();
         result = new QueryResult();
         if (entries != null) {
             for (QueryableEntry entry : entries) {

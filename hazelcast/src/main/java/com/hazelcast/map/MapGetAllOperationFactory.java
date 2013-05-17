@@ -18,32 +18,50 @@ package com.hazelcast.map;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 public class MapGetAllOperationFactory implements OperationFactory {
 
     String name;
+    Set<Data> keys = new HashSet<Data>();
 
-    public MapGetAllOperationFactory(String name) {
+
+    public MapGetAllOperationFactory() {
+    }
+
+    public MapGetAllOperationFactory(String name, Set<Data> keys) {
         this.name = name;
+        this.keys = keys;
     }
 
     @Override
     public Operation createOperation() {
-        // todo implement
-        return null;
+        return new GetAllOperation(name, keys);
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
+        out.writeInt(keys.size());
+        for (Data key : keys) {
+            key.writeData(out);
+        }
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
+        int size = in.readInt();
+        for (int i = 0; i < size; i++) {
+            Data data = new Data();
+            data.readData(in);
+            keys.add(data);
+        }
     }
 }

@@ -27,6 +27,9 @@ public class SizeOperationFactory implements OperationFactory {
 
     String name;
 
+    public SizeOperationFactory() {
+    }
+
     public SizeOperationFactory(String name) {
         this.name = name;
     }
