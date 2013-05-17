@@ -23,7 +23,8 @@ import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
-import com.hazelcast.util.ClientCompatibleTest;
+import com.hazelcast.test.annotation.ClientCompatibleTest;
+import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -35,7 +36,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @mdogan 1/16/13
  */
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+@RunWith(RandomBlockJUnit4ClassRunner.class)
 public class CountDownLatchTest {
 
     @Before

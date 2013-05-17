@@ -23,6 +23,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import com.hazelcast.util.Clock;
 import org.junit.After;
 import org.junit.BeforeClass;
@@ -37,7 +38,7 @@ import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.fail;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+@RunWith(RandomBlockJUnit4ClassRunner.class)
 public class QueryTest extends TestUtil {
     @BeforeClass
     public static void init() throws Exception {

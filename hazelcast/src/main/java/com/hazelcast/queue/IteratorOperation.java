@@ -16,6 +16,8 @@
 
 package com.hazelcast.queue;
 
+import com.hazelcast.spi.impl.SerializableCollection;
+
 /**
  * @ali 12/18/12
  */
@@ -29,7 +31,7 @@ public class IteratorOperation extends QueueOperation {
     }
 
     public void run() {
-        response = new SerializableCollectionContainer(getOrCreateContainer().getAsDataList());
+        response = new SerializableCollection(getOrCreateContainer().getAsDataList());
     }
 
     public void afterRun() throws Exception {

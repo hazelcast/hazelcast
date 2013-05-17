@@ -16,23 +16,19 @@
 
 package com.hazelcast.topic;
 
-import com.hazelcast.deprecated.client.ClientCommandHandler;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
-import com.hazelcast.deprecated.spi.ClientProtocolService;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
-import com.hazelcast.deprecated.nio.protocol.Command;
-import com.hazelcast.spi.*;
-import com.hazelcast.deprecated.topic.client.TopicListenHandler;
-import com.hazelcast.deprecated.topic.client.TopicPublishHandler;
+import com.hazelcast.spi.EventPublishingService;
+import com.hazelcast.spi.ManagedService;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.RemoteService;
 import com.hazelcast.topic.proxy.TopicProxy;
 import com.hazelcast.topic.proxy.TotalOrderedTopicProxy;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -44,7 +40,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * Date: 12/26/12
  * Time: 1:50 PM
  */
-public class TopicService implements ManagedService, RemoteService, EventPublishingService, ClientProtocolService {
+public class TopicService implements ManagedService, RemoteService, EventPublishingService {
 
     public static final String SERVICE_NAME = "hz:impl:topicService";
     private final Lock[] orderingLocks = new Lock[1000];
@@ -118,13 +114,6 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
 
     public void incrementReceivedMessages(String topicName) {
         getLocalTopicStats(topicName).incrementReceives();
-    }
-
-    public Map<Command, ClientCommandHandler> getCommandsAsMap() {
-        Map<Command, ClientCommandHandler> map = new HashMap<Command, ClientCommandHandler>();
-        map.put(Command.TPUBLISH, new TopicPublishHandler(this));
-        map.put(Command.TLISTEN, new TopicListenHandler(this));
-        return map;
     }
 
 }

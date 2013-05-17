@@ -17,7 +17,7 @@
 package com.hazelcast.concurrent.lock;
 
 import com.hazelcast.core.ICondition;
-import com.hazelcast.instance.ThreadContext;
+import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.Clock;
@@ -64,7 +64,7 @@ public class ConditionImpl implements ICondition {
 
     public boolean await(long time, TimeUnit unit) throws InterruptedException {
         final NodeEngine nodeEngine = lockProxy.getNodeEngine();
-        final int threadId = ThreadContext.getThreadId();
+        final int threadId = ThreadUtil.getThreadId();
 
         final Invocation inv1 = nodeEngine.getOperationService().createInvocationBuilder(LockService.SERVICE_NAME,
                 new BeforeAwaitOperation(lockProxy.namespace, lockProxy.key,
@@ -99,7 +99,7 @@ public class ConditionImpl implements ICondition {
         final NodeEngine nodeEngine = lockProxy.getNodeEngine();
         final Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(LockService.SERVICE_NAME,
                 new SignalOperation(lockProxy.namespace, lockProxy.key,
-                        ThreadContext.getThreadId(), conditionId, all), partitionId).build();
+                        ThreadUtil.getThreadId(), conditionId, all), partitionId).build();
         Future f = inv.invoke();
         try {
             f.get();

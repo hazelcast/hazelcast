@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import org.junit.*;
 import org.junit.runner.RunWith;
 
@@ -32,7 +33,7 @@ import java.net.URL;
  * Date: 3/11/13
  * Time: 3:33 PM
  */
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+@RunWith(RandomBlockJUnit4ClassRunner.class)
 public class RestTest {
 
     final static Config config = new XmlConfigBuilder().build();

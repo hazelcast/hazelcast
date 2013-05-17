@@ -22,6 +22,7 @@ import com.hazelcast.core.*;
 import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import org.junit.*;
 import org.junit.runner.RunWith;
 
@@ -30,7 +31,7 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+@RunWith(RandomBlockJUnit4ClassRunner.class)
 public class EntryProcessorTest {
 
     final String mapName = "map";

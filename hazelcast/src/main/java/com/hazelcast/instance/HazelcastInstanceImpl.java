@@ -37,7 +37,6 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.ProxyService;
-import com.hazelcast.spi.RemoteService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.topic.TopicService;
 import com.hazelcast.transaction.TransactionContext;
@@ -205,10 +204,6 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
 
     public LifecycleServiceImpl getLifecycleService() {
         return lifecycleService;
-    }
-
-    public <S extends DistributedObject> S getDistributedObject(final Class<? extends RemoteService> serviceClass, Object id) {
-        return (S) node.nodeEngine.getProxyService().getDistributedObject(serviceClass, id);
     }
 
     public <S extends DistributedObject> S getDistributedObject(final String serviceName, Object id) {

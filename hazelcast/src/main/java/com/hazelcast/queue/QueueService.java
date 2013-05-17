@@ -16,19 +16,15 @@
 
 package com.hazelcast.queue;
 
-import com.hazelcast.deprecated.client.ClientCommandHandler;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
-import com.hazelcast.deprecated.spi.ClientProtocolService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.Address;
-import com.hazelcast.deprecated.nio.protocol.Command;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.PartitionInfo;
-import com.hazelcast.deprecated.queue.client.*;
 import com.hazelcast.queue.proxy.DataQueueProxy;
 import com.hazelcast.queue.proxy.ObjectQueueProxy;
 import com.hazelcast.queue.tx.TransactionalQueueProxy;
@@ -51,7 +47,7 @@ import java.util.concurrent.ConcurrentMap;
  * Time: 12:21 AM
  */
 public class QueueService implements ManagedService, MigrationAwareService, TransactionalService,
-        RemoteService, EventPublishingService<QueueEvent, ItemListener>, ClientProtocolService {
+        RemoteService, EventPublishingService<QueueEvent, ItemListener> {
 
     public static final String SERVICE_NAME = "hz:impl:queueService";
     private final NodeEngine nodeEngine;
@@ -177,21 +173,6 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     public boolean removeItemListener(String name, String registrationId) {
         EventService eventService = nodeEngine.getEventService();
         return eventService.deregisterListener(SERVICE_NAME, name, registrationId);
-    }
-
-    public Map<Command, ClientCommandHandler> getCommandsAsMap() {
-        final Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
-        commandHandlers.put(Command.QOFFER, new QueueOfferHandler(this));
-        commandHandlers.put(Command.QPUT, new QueueOfferHandler(this));
-        commandHandlers.put(Command.QPOLL, new QueuePollHandler(this));
-        commandHandlers.put(Command.QTAKE, new QueueOfferHandler(this));
-        commandHandlers.put(Command.QSIZE, new QueueSizeHandler(this));
-        commandHandlers.put(Command.QPEEK, new QueuePollHandler(this));
-        commandHandlers.put(Command.QREMOVE, new QueueRemoveHandler(this));
-        commandHandlers.put(Command.QREMCAPACITY, new QueueCapacityHandler(this));
-        commandHandlers.put(Command.QENTRIES, new QueueEntriesHandler(this));
-        commandHandlers.put(Command.QLISTEN, new QListenHandler(this));
-        return commandHandlers;
     }
 
     public NodeEngine getNodeEngine() {

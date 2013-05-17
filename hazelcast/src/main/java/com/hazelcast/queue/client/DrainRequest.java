@@ -21,7 +21,7 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.queue.DrainOperation;
 import com.hazelcast.queue.QueuePortableHook;
-import com.hazelcast.queue.SerializableCollectionContainer;
+import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
@@ -51,8 +51,8 @@ public class DrainRequest extends QueueRequest {
     }
 
     protected Object filter(Object response) {
-        if (response instanceof SerializableCollectionContainer){
-            Collection<Data> coll = ((SerializableCollectionContainer) response).getCollection();
+        if (response instanceof SerializableCollection){
+            Collection<Data> coll = ((SerializableCollection) response).getCollection();
             return new PortableCollectionContainer(coll);
         }
         return super.filter(response);

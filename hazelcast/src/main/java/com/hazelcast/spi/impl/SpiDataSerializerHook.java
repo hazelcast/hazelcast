@@ -35,8 +35,9 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
     static final int PARTITION_RESPONSE = 4;
     static final int PARALLEL_OPERATION_FACTORY = 5;
     static final int EVENT_PACKET = 6;
+    static final int COLLECTION = 7;
 
-    private static final int LEN = EVENT_PACKET + 1;
+    private static final int LEN = 10;
 
     public DataSerializableFactory createFactory() {
         ConstructorFunction<Integer, IdentifiedDataSerializable>[] constructors = new ConstructorFunction[LEN];
@@ -80,6 +81,12 @@ public final class SpiDataSerializerHook implements DataSerializerHook {
         constructors[PARALLEL_OPERATION_FACTORY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new BinaryOperationFactory();
+            }
+        };
+
+        constructors[COLLECTION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new SerializableCollection();
             }
         };
 

@@ -23,6 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.TransactionalList;
 import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.instance.StaticNodeFactory;
+import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import com.hazelcast.transaction.TransactionContext;
 import org.junit.After;
 import org.junit.Before;
@@ -35,7 +36,7 @@ import static org.junit.Assert.*;
 /**
  * @ali 4/5/13
  */
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+@RunWith(RandomBlockJUnit4ClassRunner.class)
 public class TxnMultiMapTest {
     @BeforeClass
     public static void init() {

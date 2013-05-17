@@ -19,7 +19,6 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.instance.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
@@ -102,12 +101,6 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             OperationAccessor.setCallerAddress(op, nodeEngine.getThisAddress());
             op.setNodeEngine(nodeEngine).setServiceName(serviceName)
                     .setPartitionId(partitionId).setReplicaIndex(replicaIndex);
-            if (op.getCallerUuid() == null) {
-                final ThreadContext threadContext = ThreadContext.get();
-                if (threadContext != null) {
-                    op.setCallerUuid(threadContext.getCallerUuid());
-                }
-            }
             if (op.getCallerUuid() == null) {
                 op.setCallerUuid(nodeEngine.getLocalMember().getUuid());
             }

@@ -207,7 +207,7 @@ public final class IOUtil {
         return bos.toByteArray();
     }
 
-    public static void closeResource(Closeable closeable) {
+    public static void closeResource(final Closeable closeable) {
         if (closeable != null) {
             try {
                 closeable.close();

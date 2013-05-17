@@ -17,32 +17,41 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.connection.ConnectionManager;
-import com.hazelcast.client.proxy.*;
-import com.hazelcast.client.proxy.listener.LockClientProxy;
-import com.hazelcast.concurrent.idgen.IdGeneratorProxy;
+import com.hazelcast.client.connection.ClientConnectionManager;
+import com.hazelcast.client.proxy.ClusterProxy;
+import com.hazelcast.client.proxy.PartitionServiceProxy;
+import com.hazelcast.client.spi.*;
+import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
+import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
+import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
+import com.hazelcast.client.spi.impl.ClientPartitionServiceImpl;
+import com.hazelcast.client.util.RoundRobinLB;
+import com.hazelcast.concurrent.atomiclong.AtomicLongService;
+import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
+import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.*;
+import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.map.MapService;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.nio.serialization.TypeSerializer;
-import com.hazelcast.spi.RemoteService;
-import com.hazelcast.transaction.*;
+import com.hazelcast.queue.QueueService;
+import com.hazelcast.topic.TopicService;
+import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionOptions;
+import com.hazelcast.transaction.TransactionalTask;
 
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.LinkedList;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
-
-import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
-import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
 
 /**
  * Hazelcast Client enables you to do all Hazelcast operations without
@@ -54,311 +63,257 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
 public class HazelcastClient implements HazelcastInstance {
 
     private final static ILogger logger = Logger.getLogger(HazelcastClient.class.getName());
-    private final static AtomicInteger clientIdCounter = new AtomicInteger();
-    private final static List<HazelcastClient> lsClients = new CopyOnWriteArrayList<HazelcastClient>();
-    private final int id;
+    private final static AtomicInteger CLIENT_ID = new AtomicInteger();
+    private final static ConcurrentMap<Integer, HazelcastClientProxy> CLIENTS = new ConcurrentHashMap<Integer, HazelcastClientProxy>(5);
+
+    private final int id = CLIENT_ID.getAndIncrement();
+    private final String name;
     private final ClientConfig config;
-    private final AtomicBoolean active = new AtomicBoolean(true);
-    private final Map<String, Map<Object, DistributedObject>> mapProxies = new ConcurrentHashMap<String, Map<Object, DistributedObject>>(10);
-    private final ClusterClientProxy clusterClientProxy;
-    private final PartitionClientProxy partitionClientProxy;
-    private final LifecycleServiceClientImpl lifecycleService;
-    private final SerializationServiceImpl serializationService = new SerializationServiceImpl(1, null);
-    private final ConnectionManager connectionPool;
+    private final ThreadGroup threadGroup;
+    private final LifecycleServiceImpl lifecycleService;
+    private final SerializationServiceImpl serializationService = new SerializationServiceImpl(0, null);
+    private final ClientConnectionManager connectionManager;
+    private final ClientClusterServiceImpl clusterService;
+    private final ClientPartitionServiceImpl partitionService;
+    private final ClientInvocationServiceImpl invocationService;
+    private final ClientExecutionServiceImpl executionService;
+    private final ProxyManager proxyManager;
+    private final ConcurrentMap<String, Object> userContext;
 
     private HazelcastClient(ClientConfig config) {
         this.config = config;
-        this.id = clientIdCounter.incrementAndGet();
-        lifecycleService = new LifecycleServiceClientImpl(this);
-        lifecycleService.fireLifecycleEvent(STARTING);
-        connectionPool = new ConnectionManager(config, serializationService);
-        clusterClientProxy = new ClusterClientProxy(this);
-        partitionClientProxy = new PartitionClientProxy(this);
-        connectionPool.init(this, config);
-        partitionClientProxy.initInternalPartitionTable();
-        lifecycleService.fireLifecycleEvent(STARTED);
-        lsClients.add(HazelcastClient.this);
+        final GroupConfig groupConfig = config.getGroupConfig();
+        name = "hz.client_" + id + (groupConfig != null ? "_" + groupConfig.getName() : "");
+        threadGroup = new ThreadGroup(name);
+        lifecycleService = new LifecycleServiceImpl(this);
+        proxyManager = new ProxyManager();
+        executionService = new ClientExecutionServiceImpl(name, threadGroup, Thread.currentThread().getContextClassLoader());
+        clusterService = new ClientClusterServiceImpl(this);
+        LoadBalancer loadBalancer = config.getLoadBalancer();
+        if (loadBalancer == null) {
+            loadBalancer = new RoundRobinLB();
+        }
+        connectionManager = new ClientConnectionManager(this, clusterService.getAuthenticator(), loadBalancer);
+        partitionService = new ClientPartitionServiceImpl(this);
+        invocationService = new ClientInvocationServiceImpl(this);
+        userContext = new ConcurrentHashMap<String, Object>();
+        clusterService.start();
+        partitionService.start();
+        loadBalancer.init(getCluster(), config);
+        lifecycleService.setStarted();
     }
 
-    public ConnectionManager getConnectionPool() {
-        return connectionPool;
-    }
-
-    /**
-     * @param config
-     * @return
-     */
-
-    public static HazelcastClient newHazelcastClient(ClientConfig config) {
-        if (config == null)
+    public static HazelcastInstance newHazelcastClient(ClientConfig config) {
+        if (config == null) {
             config = new ClientConfig();
-        return new HazelcastClient(config);
-    }
-
-    public Config getConfig() {
-        throw new UnsupportedOperationException();
-    }
-
-    public static void shutdownAll() {
-        for (HazelcastClient hazelcastClient : lsClients) {
-            try {
-                hazelcastClient.getLifecycleService().shutdown();
-            } catch (Exception ignored) {
-            }
         }
-        lsClients.clear();
-    }
-
-    public static Collection<HazelcastClient> getAllHazelcastClients() {
-        return Collections.unmodifiableCollection(lsClients);
-    }
-
-    public void doShutdown() {
-        if (active.compareAndSet(true, false)) {
-            logger.log(Level.INFO, "HazelcastClient[" + this.id + "] is shutting down.");
-            lsClients.remove(this);
-            serializationService.destroy();
-        }
-    }
-
-    private <V> DistributedObject putAndReturnProxy(Object key, Map<Object, DistributedObject> innerProxyMap, DistributedObject newProxy) {
-        DistributedObject proxy;
-        synchronized (innerProxyMap) {
-            proxy = innerProxyMap.get(key);
-            if (proxy == null) {
-                proxy = newProxy;
-                innerProxyMap.put(key, proxy);
-            }
-        }
+        final HazelcastClient client = new HazelcastClient(config);
+        final HazelcastClientProxy proxy = new HazelcastClientProxy(client);
+        CLIENTS.put(client.id, proxy);
         return proxy;
     }
 
-    private Map<Object, DistributedObject> getProxiesMap(String type) {
-        Map<Object, DistributedObject> innerProxyMap = mapProxies.get(type);
-        if (innerProxyMap == null) {
-            synchronized (mapProxies) {
-                innerProxyMap = mapProxies.get(type);
-                if (innerProxyMap == null) {
-                    innerProxyMap = new ConcurrentHashMap<Object, DistributedObject>(10);
-                    mapProxies.put(type, innerProxyMap);
-                }
-            }
-        }
-        return innerProxyMap;
+    public Config getConfig() {
+        throw new UnsupportedOperationException("Client cannot access cluster config!");
     }
 
-
-    public SerializationService getSerializationService() {
-        return serializationService;
-    }
-    public Transaction getTransaction() {
-        Context context = Context.getOrCreate();
-        return context.getTransaction(this);
+    @Override
+    public String getName() {
+        return name;
     }
 
-    public ConcurrentMap<String, Object> getUserContext() {
-        throw new UnsupportedOperationException();
+    @Override
+    public <E> IQueue<E> getQueue(String name) {
+        return getDistributedObject(QueueService.SERVICE_NAME, name);
     }
 
-    public PartitionService getPartitionService() {
-        return partitionClientProxy;
+    @Override
+    public <E> ITopic<E> getTopic(String name) {
+        return getDistributedObject(TopicService.SERVICE_NAME, name);
     }
 
-    public ClientService getClientService() {
-        throw new UnsupportedOperationException();
+    @Override
+    public <E> ISet<E> getSet(String name) {
+        return null;
     }
 
-    public LoggingService getLoggingService() {
-        throw new UnsupportedOperationException();
+    @Override
+    public <E> IList<E> getList(String name) {
+        return null;
     }
 
+    @Override
     public <K, V> IMap<K, V> getMap(String name) {
-        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("Map");
-        DistributedObject proxy = innerProxyMap.get(name);
-        if (proxy == null) {
-            proxy = putAndReturnProxy(name, innerProxyMap, new MapClientProxy<Object, V>(this, name));
-        }
-        return (IMap<K, V>) proxy;
+        return getDistributedObject(MapService.SERVICE_NAME, name);
     }
 
-    public String addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
-        throw new UnsupportedOperationException();
+    @Override
+    public <K, V> MultiMap<K, V> getMultiMap(String name) {
+        return null;
     }
 
-    public boolean removeDistributedObjectListener(String registrationId) {
-        return false;
+    @Override
+    public ILock getLock(Object key) {
+        return null;
     }
 
+    @Override
     public Cluster getCluster() {
-        return clusterClientProxy;
+        return new ClusterProxy(clusterService);
     }
 
+    @Override
+    public IExecutorService getExecutorService(String name) {
+        return getDistributedObject(DistributedExecutorService.SERVICE_NAME, name);
+    }
+
+    @Override
     public <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException {
         return null;
     }
 
+    @Override
     public <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException {
         return null;
     }
 
+    @Override
     public TransactionContext newTransactionContext() {
         return null;
     }
 
+    @Override
     public TransactionContext newTransactionContext(TransactionOptions options) {
         return null;
     }
 
-    public IExecutorService getExecutorService(String name) {
-        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("ExecutorService");
-        DistributedObject proxy = innerProxyMap.get(name);
-        if (proxy == null) {
-            proxy = putAndReturnProxy(name, innerProxyMap, new ExecutorServiceClientProxy(this, name));
-        }
-        return (IExecutorService) proxy;
-    }
-
+    @Override
     public IdGenerator getIdGenerator(String name) {
-        return new IdGeneratorProxy(this, name);
+        return null;
     }
 
+    @Override
     public IAtomicLong getAtomicLong(String name) {
-        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("IAtomicLong");
-        DistributedObject proxy = innerProxyMap.get(name);
-        if (proxy == null) {
-            proxy = putAndReturnProxy(name, innerProxyMap, new AtomicLongClientProxy(this, name));
-        }
-        return (IAtomicLong) proxy;
+        return getDistributedObject(AtomicLongService.SERVICE_NAME, name);
     }
 
+    @Override
     public ICountDownLatch getCountDownLatch(String name) {
-        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("CountDownLatch");
-        DistributedObject proxy = innerProxyMap.get(name);
-        if (proxy == null) {
-            proxy = putAndReturnProxy(name, innerProxyMap, new CountDownLatchClientProxy(this, name));
-        }
-        return (ICountDownLatch) proxy;
+        return getDistributedObject(CountDownLatchService.SERVICE_NAME, name);
     }
 
+    @Override
     public ISemaphore getSemaphore(String name) {
-        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("Semaphore");
-        DistributedObject proxy = innerProxyMap.get(name);
-        if (proxy == null) {
-            proxy = putAndReturnProxy(name, innerProxyMap, new SemaphoreClientProxy(this, name));
-        }
-        return (ISemaphore) proxy;
+        return getDistributedObject(SemaphoreService.SERVICE_NAME, name);
     }
 
+    @Override
     public Collection<DistributedObject> getDistributedObjects() {
+        Collection<DistributedObject> objects = new LinkedList<DistributedObject>();
+        for (ClientProxy clientProxy : proxyManager.getProxies()) {
+            objects.add(clientProxy);
+        }
+        return objects;
+    }
+
+    @Override
+    public String addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
+        return null;
+    }
+
+    @Override
+    public boolean removeDistributedObjectListener(String registrationId) {
+        return false;
+    }
+
+    @Override
+    public PartitionService getPartitionService() {
+        return new PartitionServiceProxy(partitionService);
+    }
+
+    @Override
+    public ClientService getClientService() {
         throw new UnsupportedOperationException();
     }
 
-    public <E> IList<E> getList(String name) {
-        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("List");
-        DistributedObject proxy = innerProxyMap.get(name);
-        if (proxy == null) {
-            proxy = putAndReturnProxy(name, innerProxyMap, new ListClientProxy(this, name));
-        }
-        return (IList<E>) proxy;
-    }
-
-    public ILock getLock(Object obj) {
-        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("List");
-        DistributedObject proxy = innerProxyMap.get(obj);
-        if (proxy == null) {
-            proxy = putAndReturnProxy(obj, innerProxyMap, new LockClientProxy(this, obj));
-        }
-        return (ILock) proxy;
-    }
-
-    public <K, V> MultiMap<K, V> getMultiMap(String name) {
-        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("MultiMap");
-        DistributedObject proxy = innerProxyMap.get(name);
-        if (proxy == null) {
-            proxy = putAndReturnProxy(name, innerProxyMap, new MultiMapClientProxy(this, name));
-        }
-        return (MultiMap<K, V>) proxy;
-    }
-
-    public String getName() {
-        return config.getGroupConfig().getName();
-    }
-
-    public <E> IQueue<E> getQueue(String name) {
-        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("Queue");
-        DistributedObject proxy = innerProxyMap.get(name);
-        if (proxy == null) {
-            proxy = putAndReturnProxy(name, innerProxyMap, new QueueClientProxy(this, name));
-        }
-        return (IQueue<E>) proxy;
-    }
-
-    public <E> ISet<E> getSet(String name) {
-        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("Set");
-        DistributedObject proxy = innerProxyMap.get(name);
-        if (proxy == null) {
-            proxy = putAndReturnProxy(name, innerProxyMap, new SetClientProxy(this, name));
-        }
-        return (ISet<E>) proxy;
-    }
-
-    public <E> ITopic<E> getTopic(String name) {
-        Map<Object, DistributedObject> innerProxyMap = getProxiesMap("Topic");
-        DistributedObject proxy = innerProxyMap.get(name);
-        if (proxy == null) {
-            proxy = putAndReturnProxy(name, innerProxyMap, new TopicClientProxy(this, name));
-        }
-        return (ITopic<E>) proxy;
-    }
-
-    public boolean removeDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
+    @Override
+    public LoggingService getLoggingService() {
         throw new UnsupportedOperationException();
     }
 
-    protected void destroy(String proxyName) {
-        mapProxies.remove(proxyName);
-    }
-
+    @Override
     public LifecycleService getLifecycleService() {
         return lifecycleService;
     }
 
-    public <S extends DistributedObject> S getDistributedObject(Class<? extends RemoteService> serviceClass, Object id) {
-        return null;
+    @Override
+    public <T extends DistributedObject> T getDistributedObject(String serviceName, Object id) {
+        return (T) proxyManager.getProxy(serviceName, id);
     }
 
-    public <S extends DistributedObject> S getDistributedObject(String serviceName, Object id) {
-        return null;
+    @Override
+    public void registerSerializer(TypeSerializer serializer, Class type) {
+        serializationService.register(serializer, type);
     }
 
-    public static <V> V callAsyncAndWait(final Callable<V> callable) {
-        final ExecutorService es = Executors.newSingleThreadExecutor();
-        try {
-            Future<V> future = es.submit(callable);
-            try {
-                return future.get();
-            } catch (Throwable e) {
-                logger.log(Level.WARNING, e.getMessage(), e);
-                return null;
-            }
-        } finally {
-            es.shutdown();
-        }
+    @Override
+    public void registerGlobalSerializer(TypeSerializer serializer) {
+        serializationService.registerFallback(serializer);
+    }
+
+    @Override
+    public ConcurrentMap<String, Object> getUserContext() {
+        return userContext;
     }
 
     public ClientConfig getClientConfig() {
         return config;
     }
 
-    public void registerGlobalSerializer(final TypeSerializer serializer) {
-        serializationService.registerFallback(serializer);
+    public SerializationService getSerializationService() {
+        return serializationService;
     }
 
-    public void registerSerializer(final TypeSerializer serializer, final Class type) {
-        serializationService.register(serializer, type);
+    public ClientConnectionManager getConnectionManager() {
+        return connectionManager;
     }
 
-    public void shutdown() {
-        getLifecycleService().shutdown();
+    public ClientClusterService getClientClusterService() {
+        return clusterService;
+    }
+
+    public ClientExecutionService getClientExecutionService() {
+        return executionService;
+    }
+
+    public ClientPartitionService getClientPartitionService() {
+        return partitionService;
+    }
+
+    public ClientInvocationService getInvocationService() {
+        return invocationService;
+    }
+
+    public ThreadGroup getThreadGroup() {
+        return threadGroup;
+    }
+
+    void shutdown() {
+        CLIENTS.remove(id);
+        executionService.shutdown();
+        partitionService.stop();
+        clusterService.stop();
+        connectionManager.shutdown();
+    }
+
+    public static void shutdownAll() {
+        for (HazelcastClientProxy proxy : CLIENTS.values()) {
+            try {
+                proxy.client.getLifecycleService().shutdown();
+            } catch (Exception ignored) {
+            }
+            proxy.client = null;
+        }
+        CLIENTS.clear();
     }
 }

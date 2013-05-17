@@ -190,13 +190,17 @@ public class PortableSerializer implements TypeSerializer<Portable> {
         }
 
         private void writePortable(String fieldName, int factoryId, int classId, Portable portable) throws IOException {
-            builder.addPortableField(fieldName, factoryId, classId);
+            final ClassDefinition nestedClassDef;
             if (portable != null) {
-                addNestedField(portable, new ClassDefinitionBuilder(portable.getFactoryId(), classId));
-            } else if (context.lookup(factoryId, classId) == null) {
-                throw new HazelcastSerializationException("Cannot write null portable without explicitly " +
-                        "registering class definition!");
+                nestedClassDef = createNestedClassDef(portable, new ClassDefinitionBuilder(factoryId, classId));
+            } else {
+                nestedClassDef = context.lookup(factoryId, classId);
+                if (nestedClassDef == null) {
+                    throw new HazelcastSerializationException("Cannot write null portable without explicitly " +
+                            "registering class definition!");
+                }
             }
+            builder.addPortableField(fieldName, nestedClassDef);
         }
 
         public void writeNullPortable(String fieldName, int factoryId, int classId) throws IOException {
@@ -215,20 +219,18 @@ public class PortableSerializer implements TypeSerializer<Portable> {
                     throw new IllegalArgumentException("Detected different class-ids in portable array!");
                 }
             }
-            builder.addPortableArrayField(fieldName, p.getFactoryId(), classId);
-            addNestedField(p, new ClassDefinitionBuilder(p.getFactoryId(), classId));
+            final ClassDefinition nestedClassDef = createNestedClassDef(p, new ClassDefinitionBuilder(p.getFactoryId(), classId));
+            builder.addPortableArrayField(fieldName, nestedClassDef);
         }
 
         public ObjectDataOutput getRawDataOutput() {
             return new EmptyObjectDataOutput();
         }
 
-        private void addNestedField(Portable portable, ClassDefinitionBuilder nestedBuilder) throws IOException {
+        private ClassDefinition createNestedClassDef(Portable portable, ClassDefinitionBuilder nestedBuilder) throws IOException {
             ClassDefinitionWriter nestedWriter = new ClassDefinitionWriter(nestedBuilder);
             portable.writePortable(nestedWriter);
-            ClassDefinition cd = nestedBuilder.build();
-            cd = context.registerClassDefinition(cd);
-            builder.getCd().add((ClassDefinitionImpl) cd);
+            return context.registerClassDefinition(nestedBuilder.build());
         }
 
         ClassDefinition registerAndGet() {

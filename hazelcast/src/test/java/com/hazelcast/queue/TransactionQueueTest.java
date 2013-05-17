@@ -22,6 +22,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.instance.StaticNodeFactory;
+import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import com.hazelcast.transaction.*;
 import org.junit.After;
 import org.junit.Before;
@@ -38,7 +39,7 @@ import static org.junit.Assert.*;
 /**
  * @ali 3/11/13
  */
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+@RunWith(RandomBlockJUnit4ClassRunner.class)
 public class TransactionQueueTest {
 
     @BeforeClass

@@ -136,7 +136,6 @@ public class HazelcastInstanceFactory {
         }
         INSTANCE_MAP.clear();
         ManagementService.shutdownAll();
-        ThreadContext.shutdownAll();
     }
 
     static void remove(HazelcastInstance instance) {

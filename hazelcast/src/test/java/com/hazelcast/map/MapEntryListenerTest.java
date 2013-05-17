@@ -17,13 +17,14 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.*;
+import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import com.hazelcast.instance.StaticNodeFactory;
 import org.junit.*;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+@RunWith(RandomBlockJUnit4ClassRunner.class)
 public class MapEntryListenerTest {
 
     final String n = "foo";

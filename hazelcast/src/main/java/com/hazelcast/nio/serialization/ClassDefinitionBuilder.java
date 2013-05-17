@@ -16,145 +16,157 @@
 
 package com.hazelcast.nio.serialization;
 
+import java.util.*;
+
 /**
  * @mdogan 2/6/13
  */
 public final class ClassDefinitionBuilder {
 
-    private final ClassDefinitionImpl cd;
+    private final int factoryId;
+    private final int classId;
+    private final List<FieldDefinition> fieldDefinitions = new ArrayList<FieldDefinition>();
+    private final Set<ClassDefinition> nestedClassDefinitions = new HashSet<ClassDefinition>();
+
     private int index = 0;
     private boolean done = false;
 
     public ClassDefinitionBuilder(int factoryId, int classId) {
-        cd = new ClassDefinitionImpl(factoryId, classId);
+        this.factoryId = factoryId;
+        this.classId = classId;
     }
 
     public ClassDefinitionBuilder addIntField(String fieldName) {
         check();
-        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.INT));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.INT));
         return this;
     }
 
     public ClassDefinitionBuilder addLongField(String fieldName) {
         check();
-        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.LONG));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.LONG));
         return this;
     }
 
     public ClassDefinitionBuilder addUTFField(String fieldName) {
         check();
-        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.UTF));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.UTF));
         return this;
     }
 
     public ClassDefinitionBuilder addBooleanField(String fieldName) {
         check();
-        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.BOOLEAN));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.BOOLEAN));
         return this;
     }
 
     public ClassDefinitionBuilder addByteField(String fieldName) {
         check();
-        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.BYTE));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.BYTE));
         return this;
     }
 
     public ClassDefinitionBuilder addCharField(String fieldName) {
         check();
-        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.CHAR));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.CHAR));
         return this;
     }
 
     public ClassDefinitionBuilder addDoubleField(String fieldName) {
         check();
-        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.DOUBLE));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.DOUBLE));
         return this;
     }
 
     public ClassDefinitionBuilder addFloatField(String fieldName) {
         check();
-        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.FLOAT));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.FLOAT));
         return this;
     }
 
     public ClassDefinitionBuilder addShortField(String fieldName) {
         check();
-        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.SHORT));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.SHORT));
         return this;
     }
 
     public ClassDefinitionBuilder addByteArrayField(String fieldName) {
         check();
-        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.BYTE_ARRAY));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.BYTE_ARRAY));
         return this;
     }
 
     public ClassDefinitionBuilder addCharArrayField(String fieldName) {
         check();
-        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.CHAR_ARRAY));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.CHAR_ARRAY));
         return this;
     }
 
     public ClassDefinitionBuilder addIntArrayField(String fieldName) {
         check();
-        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.INT_ARRAY));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.INT_ARRAY));
         return this;
     }
 
     public ClassDefinitionBuilder addLongArrayField(String fieldName) {
         check();
-        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.LONG_ARRAY));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.LONG_ARRAY));
         return this;
     }
 
     public ClassDefinitionBuilder addDoubleArrayField(String fieldName) {
         check();
-        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.DOUBLE_ARRAY));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.DOUBLE_ARRAY));
         return this;
     }
 
     public ClassDefinitionBuilder addFloatArrayField(String fieldName) {
         check();
-        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.FLOAT_ARRAY));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.FLOAT_ARRAY));
         return this;
     }
 
     public ClassDefinitionBuilder addShortArrayField(String fieldName) {
         check();
-        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.SHORT_ARRAY));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.SHORT_ARRAY));
         return this;
     }
 
-    public ClassDefinitionBuilder addPortableField(String fieldName, int factoryId, int classId) {
+    public ClassDefinitionBuilder addPortableField(String fieldName, ClassDefinition def) {
         check();
-        if (classId == Data.NO_CLASS_ID) {
+        if (def.getClassId() == Data.NO_CLASS_ID) {
             throw new IllegalArgumentException("Portable class id cannot be zero!");
         }
-        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.PORTABLE, factoryId, classId));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.PORTABLE, def.getFactoryId(), def.getClassId()));
+        nestedClassDefinitions.add(def);
         return this;
     }
 
-    public ClassDefinitionBuilder addPortableArrayField(String fieldName, int factoryId, int classId) {
+    public ClassDefinitionBuilder addPortableArrayField(String fieldName, ClassDefinition def) {
         check();
-        if (classId == Data.NO_CLASS_ID) {
+        if (def.getClassId() == Data.NO_CLASS_ID) {
             throw new IllegalArgumentException("Portable class id cannot be zero!");
         }
-        cd.add(new FieldDefinitionImpl(index++, fieldName, FieldType.PORTABLE_ARRAY, factoryId, classId));
+        fieldDefinitions.add(new FieldDefinitionImpl(index++, fieldName, FieldType.PORTABLE_ARRAY, def.getFactoryId(), def.getClassId()));
+        nestedClassDefinitions.add(def);
         return this;
     }
 
     public ClassDefinition build() {
         done = true;
+        final ClassDefinitionImpl cd = new ClassDefinitionImpl(factoryId, classId);
+        for (FieldDefinition fd : fieldDefinitions) {
+            cd.addFieldDef(fd);
+        }
+        for (ClassDefinition nestedCd : nestedClassDefinitions) {
+            cd.addClassDef(nestedCd);
+        }
         return cd;
     }
 
     private void check() {
         if (done) {
-            throw new HazelcastSerializationException("ClassDefinition is already built for " + cd.getClassId());
+            throw new HazelcastSerializationException("ClassDefinition is already built for " + classId);
         }
-    }
-
-    ClassDefinitionImpl getCd() {
-        return cd;
     }
 }

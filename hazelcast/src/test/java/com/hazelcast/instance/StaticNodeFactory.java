@@ -37,9 +37,9 @@ public class StaticNodeFactory {
 
     public final static boolean MOCK_NETWORK = !Boolean.getBoolean("hazelcast.test.use.network");
     private final static boolean TEST_CLIENT = Boolean.getBoolean("hazelcast.test.client");
-    private final static AtomicInteger ports = new AtomicInteger(5000);
     private final static String HAZELCAST_CLIENT = "com.hazelcast.client.HazelcastClient";
     private final static String HAZELCAST_CLIENT_CONFIG = "com.hazelcast.client.config.ClientConfig";
+    private final static AtomicInteger ports = new AtomicInteger(5000);
 
     private final Address[] addresses;
     private final StaticNodeRegistry registry;

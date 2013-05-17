@@ -22,6 +22,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.MapStore;
+import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import com.hazelcast.instance.StaticNodeFactory;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -30,7 +31,7 @@ import java.util.*;
 
 import static org.junit.Assert.assertEquals;
 
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+@RunWith(RandomBlockJUnit4ClassRunner.class)
 public class MapLoaderTest {
 
     int size = 10000;

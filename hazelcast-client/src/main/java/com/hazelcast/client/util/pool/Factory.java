@@ -17,8 +17,7 @@
 
 package com.hazelcast.client.util.pool;
 
-import java.io.IOException;
-
 public interface Factory<E> {
-    E create() throws IOException;
+
+    E create() throws Exception;
 }

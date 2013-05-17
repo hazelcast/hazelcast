@@ -16,11 +16,7 @@
 
 package com.hazelcast.concurrent.semaphore;
 
-import com.hazelcast.deprecated.client.ClientCommandHandler;
-import com.hazelcast.deprecated.concurrent.semaphore.client.*;
 import com.hazelcast.config.SemaphoreConfig;
-import com.hazelcast.deprecated.spi.ClientProtocolService;
-import com.hazelcast.deprecated.nio.protocol.Command;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.spi.*;
@@ -39,7 +35,7 @@ import java.util.concurrent.ConcurrentMap;
  * @ali 1/21/13
  */
 public class SemaphoreService implements ManagedService, MigrationAwareService, MembershipAwareService,
-        RemoteService, ClientProtocolService, ClientAwareService {
+        RemoteService, ClientAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:semaphoreService";
 
@@ -157,17 +153,6 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
 
     public void clearPartitionReplica(int partitionId) {
         clearMigrationData(partitionId);
-    }
-
-    public Map<Command, ClientCommandHandler> getCommandsAsMap() {
-        Map<Command, ClientCommandHandler> map = new HashMap<Command, ClientCommandHandler>();
-        map.put(Command.SEMACQUIRE, new AcquireHandler(this));
-        map.put(Command.SEMAVAILABLEPERMITS, new AvailablePermitsHandler(this));
-        map.put(Command.SEMDRAINPERMITS, new DrainPermitsHandler(this));
-        map.put(Command.SEMINIT, new InitHandler(this));
-        map.put(Command.SEMRELEASE, new ReleaseHandler(this));
-        map.put(Command.SEMTRYACQUIRE, new TryAcquireHandler(this));
-        return null;
     }
 
     public void clientDisconnected(String clientUuid) {

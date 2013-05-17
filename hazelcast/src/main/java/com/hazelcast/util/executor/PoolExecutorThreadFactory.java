@@ -17,7 +17,6 @@
 package com.hazelcast.util.executor;
 
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
-import com.hazelcast.instance.ThreadContext;
 
 import java.util.Queue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -60,13 +59,6 @@ public final class PoolExecutorThreadFactory extends AbstractExecutorThreadFacto
                 super.run();
             } catch (OutOfMemoryError e) {
                 OutOfMemoryErrorDispatcher.onOutOfMemory(e);
-            } finally {
-                try {
-                    ThreadContext.shutdown(this);
-                    idQ.offer(id);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
             }
         }
     }

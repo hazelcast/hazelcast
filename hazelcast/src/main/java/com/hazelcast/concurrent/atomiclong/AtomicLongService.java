@@ -18,13 +18,6 @@ package com.hazelcast.concurrent.atomiclong;
 
 import com.hazelcast.concurrent.atomiclong.proxy.AtomicLongProxy;
 import com.hazelcast.config.Config;
-import com.hazelcast.deprecated.client.ClientCommandHandler;
-import com.hazelcast.deprecated.concurrent.atomiclong.client.AddAndGetHandler;
-import com.hazelcast.deprecated.concurrent.atomiclong.client.CompareAndSetHandler;
-import com.hazelcast.deprecated.concurrent.atomiclong.client.GetAndAddHandler;
-import com.hazelcast.deprecated.concurrent.atomiclong.client.GetAndSetHandler;
-import com.hazelcast.deprecated.nio.protocol.Command;
-import com.hazelcast.deprecated.spi.ClientProtocolService;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.spi.*;
 import com.hazelcast.util.ConcurrencyUtil;
@@ -38,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 // author: sancar - 21.12.2012
-public class AtomicLongService implements ManagedService, RemoteService, MigrationAwareService, ClientProtocolService {
+public class AtomicLongService implements ManagedService, RemoteService, MigrationAwareService {
 
     public static final String SERVICE_NAME = "hz:impl:atomicLongService";
     private NodeEngine nodeEngine;
@@ -132,16 +125,4 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
             }
         }
     }
-
-    @Override
-    public Map<Command, ClientCommandHandler> getCommandsAsMap() {
-        Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
-        commandHandlers.put(Command.ALADDANDGET, new AddAndGetHandler(this));
-        commandHandlers.put(Command.ALGETANDADD, new GetAndAddHandler(this));
-        commandHandlers.put(Command.ALGETANDSET, new GetAndSetHandler(this));
-        commandHandlers.put(Command.ALCOMPAREANDSET, new CompareAndSetHandler(this));
-        return commandHandlers ;
-    }
-
-
 }

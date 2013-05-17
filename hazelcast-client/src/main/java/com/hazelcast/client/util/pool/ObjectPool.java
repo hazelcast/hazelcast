@@ -16,19 +16,17 @@
 
 package com.hazelcast.client.util.pool;
 
-import java.util.Collection;
+import java.io.Closeable;
 
-public abstract class ObjectPool<E> {
+public interface ObjectPool<E extends Closeable> {
 
-    abstract public E take();
+    E take();
 
-    abstract public void release(E e);
+    void release(E e);
 
-    abstract public void add(E e);
+    int size();
 
-    abstract public void addAll(Collection<E> c);
-
-    public abstract int size();
+    void destroy();
 }
 
 

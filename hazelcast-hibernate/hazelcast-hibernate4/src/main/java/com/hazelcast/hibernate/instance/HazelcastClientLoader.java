@@ -35,7 +35,7 @@ class HazelcastClientLoader implements IHazelcastInstanceLoader {
     private final static ILogger logger = Logger.getLogger(HazelcastInstanceFactory.class.getName());
 
     private final Properties props = new Properties();
-    private HazelcastClient client;
+    private HazelcastInstance client;
 
     public void configure(Properties props) {
         this.props.putAll(props);
@@ -62,8 +62,7 @@ class HazelcastClientLoader implements IHazelcastInstanceLoader {
         if (clientConfig == null) {
             clientConfig = new ClientConfig();
             clientConfig.setSmart(true);
-            clientConfig.setInitialConnectionAttemptLimit(3);
-            clientConfig.setReconnectionAttemptLimit(5);
+            clientConfig.setConnectionAttemptLimit(3);
         }
         if (group != null) {
             clientConfig.getGroupConfig().setName(group);

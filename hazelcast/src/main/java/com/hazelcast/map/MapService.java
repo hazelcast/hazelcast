@@ -16,7 +16,6 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.deprecated.client.ClientCommandHandler;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.concurrent.lock.LockStoreInfo;
 import com.hazelcast.concurrent.lock.SharedLockService;
@@ -24,10 +23,8 @@ import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.*;
-import com.hazelcast.deprecated.spi.ClientProtocolService;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.deprecated.map.client.*;
 import com.hazelcast.map.merge.*;
 import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.map.proxy.ObjectMapProxy;
@@ -37,12 +34,9 @@ import com.hazelcast.map.wan.MapReplicationUpdate;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.deprecated.nio.protocol.Command;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.partition.IPartitionService;
-import com.hazelcast.partition.MigrationEndpoint;
-import com.hazelcast.partition.PartitionInfo;
+import com.hazelcast.partition.*;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
@@ -67,7 +61,7 @@ import java.util.logging.Level;
 
 public class MapService implements ManagedService, MigrationAwareService,
         TransactionalService, RemoteService, EventPublishingService<EventData, EntryListener>,
-        ClientProtocolService, PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService {
+        PostJoinAwareService, SplitBrainHandlerService, ReplicationSupportingService {
 
     public final static String SERVICE_NAME = "hz:impl:mapService";
 
@@ -489,44 +483,6 @@ public class MapService implements ManagedService, MigrationAwareService,
             }
         }
         nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, name);
-    }
-
-    public Map<Command, ClientCommandHandler> getCommandsAsMap() {
-        Map<Command, ClientCommandHandler> commandHandlers = new HashMap<Command, ClientCommandHandler>();
-        commandHandlers.put(Command.MGET, new MapGetHandler(this));
-        commandHandlers.put(Command.MSIZE, new MapSizeHandler(this));
-        commandHandlers.put(Command.MGETALL, new MapGetAllHandler(this));
-        commandHandlers.put(Command.MPUT, new MapPutHandler(this));
-        commandHandlers.put(Command.MTRYPUT, new MapTryPutHandler(this));
-        commandHandlers.put(Command.MSET, new MapSetHandler(this));
-        commandHandlers.put(Command.MPUTTRANSIENT, new MapPutTransientHandler(this));
-        commandHandlers.put(Command.MLOCK, new MapLockHandler(this));
-        commandHandlers.put(Command.MTRYLOCK, new MapTryLockHandler(this));
-        commandHandlers.put(Command.MTRYREMOVE, new MapTryRemoveHandler(this));
-        commandHandlers.put(Command.MISLOCKED, new MapIsLockedHandler(this));
-        commandHandlers.put(Command.MUNLOCK, new MapUnlockHandler(this));
-        commandHandlers.put(Command.MPUTALL, new MapPutAllHandler(this));
-        commandHandlers.put(Command.MREMOVE, new MapRemoveHandler(this));
-        commandHandlers.put(Command.MDELETE, new MapDeleteHandler(this));
-        commandHandlers.put(Command.MCONTAINSKEY, new MapContainsKeyHandler(this));
-        commandHandlers.put(Command.MCONTAINSVALUE, new MapContainsValueHandler(this));
-        commandHandlers.put(Command.MPUTIFABSENT, new MapPutIfAbsentHandler(this));
-        commandHandlers.put(Command.MREMOVEIFSAME, new MapRemoveIfSameHandler(this));
-        commandHandlers.put(Command.MREPLACEIFNOTNULL, new MapReplaceIfNotNullHandler(this));
-        commandHandlers.put(Command.MREPLACEIFSAME, new MapReplaceIfSameHandler(this));
-        commandHandlers.put(Command.MFLUSH, new MapFlushHandler(this));
-        commandHandlers.put(Command.MEVICT, new MapEvictHandler(this));
-        commandHandlers.put(Command.MENTRYSET, new MapEntrySetHandler(this));
-        commandHandlers.put(Command.KEYSET, new KeySetHandler(this));
-        commandHandlers.put(Command.MGETENTRYVIEW, new MapGetEntryHandler(this));
-        commandHandlers.put(Command.MFORCEUNLOCK, new MapForceUnlockHandler(this));
-        commandHandlers.put(Command.MLISTEN, new MapListenHandler(this));
-        commandHandlers.put(Command.MADDINTERCEPTOR, new MapAddIndexHandler(this));
-        commandHandlers.put(Command.MREMOVEINTERCEPTOR, new MapExecuteOnKeyHandler(this));
-        commandHandlers.put(Command.MEXECUTEONKEY, new MapExecuteOnKeyHandler(this));
-        commandHandlers.put(Command.MEXECUTEONALLKEYS, new MapExecuteOnAllKeysHandler(this));
-        commandHandlers.put(Command.MADDINDEX, new MapAddIndexHandler(this));
-        return commandHandlers;
     }
 
     public String addInterceptor(String mapName, MapInterceptor interceptor) {
@@ -971,7 +927,7 @@ public class MapService implements ManagedService, MigrationAwareService,
 
         int backupCount = mapContainer.getTotalBackupCount();
         ClusterService clusterService = nodeEngine.getClusterService();
-        final IPartitionService partitionService = nodeEngine.getPartitionService();
+        final com.hazelcast.partition.PartitionService partitionService = nodeEngine.getPartitionService();
 
         Address thisAddress = clusterService.getThisAddress();
         for (int partition = 0; partition < partitionService.getPartitionCount(); partition++) {

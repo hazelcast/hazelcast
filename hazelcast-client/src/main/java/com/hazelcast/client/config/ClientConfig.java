@@ -17,17 +17,13 @@
 package com.hazelcast.client.config;
 
 import com.hazelcast.client.LoadBalancer;
-import com.hazelcast.client.impl.RoundRobinLB;
-import com.hazelcast.client.util.AddressHelper;
+import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.GroupConfig;
-import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
 
-import java.net.InetSocketAddress;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 // todo check the new attributes added on 3.0 working in spring configuration
 public class ClientConfig {
@@ -35,18 +31,16 @@ public class ClientConfig {
     /**
      * The Group Configuration properties like:
      * Name and Password that is used to connect to the cluster.
-     *
      */
 
     private GroupConfig groupConfig = new GroupConfig();
-
 
 
     /**
      * List of the initial set of addresses.
      * Client will use this list to find a running Member, connect to it.
      */
-    private final List<InetSocketAddress> addressList = new ArrayList<InetSocketAddress>(10);
+    private final List<String> addressList = new ArrayList<String>(10);
 
     /**
      * Used to distribute the operations to multiple Endpoints.
@@ -54,10 +48,8 @@ public class ClientConfig {
     private LoadBalancer loadBalancer = new RoundRobinLB();
 
     /**
-     * 
-     * List of listeners that Hazelcast will automatically add as a part of initialization process. 
-     * Currently only supports {@link com.hazelcast.core.LifecycleListener}. 
-     * 
+     * List of listeners that Hazelcast will automatically add as a part of initialization process.
+     * Currently only supports {@link com.hazelcast.core.LifecycleListener}.
      */
     private final Collection<EventListener> listeners = new HashSet<EventListener>();
 
@@ -65,7 +57,6 @@ public class ClientConfig {
      * If true, client will route the key based operations to owner of the key at the best effort.
      * Note that it uses a cached version of {@link com.hazelcast.core.PartitionService#getPartitions()} and doesn't
      * guarantee that the operation will always be executed on the owner. The cached table is updated every second.
-     * 
      */
     private boolean smart = true;
 
@@ -74,60 +65,48 @@ public class ClientConfig {
      * This can be because of network, or simply because the member died. However it is not clear whether the
      * application is performed or not. For idempotent operations this is harmless, but for non idempotent ones
      * retrying can cause to undesirable effects. Note that the redo can perform on any member.
-     * 
+     * <p/>
      * If false, the operation will throw {@link RuntimeException} that is wrapping {@link java.io.IOException}.
-     *
      */
     private boolean redoOperation = true;
 
     /**
      * limit for the Pool size that is used to pool the connections to the members.
-     *
      */
-    private int poolSize = 500;
+    private int poolSize = 100;
 
     /**
-     *
-     * Client will be sending heartbeat messages to members and this is the timeout. If there is no any message 
+     * Client will be sending heartbeat messages to members and this is the timeout. If there is no any message
      * passing between client and member within the {@link ClientConfig#connectionTimeout} milliseconds the connection
      * will be closed.
      */
-    private int connectionTimeout = 300000;
+    private int connectionTimeout = 60000;
 
     /**
-     *
-     * While client is trying to connect initially to one of the members in the {@link ClientConfig#addressList}, 
+     * While client is trying to connect initially to one of the members in the {@link ClientConfig#addressList},
      * all might be not available. Instead of giving up, throwing Exception and stopping client, it will
-     * attempt to retry as much as {@link ClientConfig#initialConnectionAttemptLimit} times.
-     * 
+     * attempt to retry as much as {@link ClientConfig#connectionAttemptLimit} times.
      */
-    private int initialConnectionAttemptLimit = 1;
+    private int connectionAttemptLimit = 2;
 
     /**
-     * Period for the next attempt to find a member to connect. (see {@link ClientConfig#initialConnectionAttemptLimit}).
+     * Period for the next attempt to find a member to connect. (see {@link ClientConfig#connectionAttemptLimit}).
      */
-    private int attemptPeriod = 5000;
+    private int attemptPeriod = 3000;
 
-    //Not used currently.
-    private int reconnectionAttemptLimit = 1;
+
+    private final SocketOptions socketOptions = new SocketOptions();
 
     /**
-     * Will be called with the Socket, each time client creates a connection to any Member. 
+     * Will be called with the Socket, each time client creates a connection to any Member.
      */
     private SocketInterceptor socketInterceptor = null;
 
     /**
-     * Can be used instead of {@link GroupConfig} in Hazelcast EE. 
-     * 
+     * Can be used instead of {@link GroupConfig} in Hazelcast EE.
      */
     private Credentials credentials;
 
-    /**
-     * Contains Near Cache configuration for the {@link com.hazelcast.core.IMap} Proxies on client. Each Map should be
-     * explicitly configured for the client to Cache the values. No configuration for a certain Map, means no
-     * Near Cache on client side.
-     */
-    private Map<String, NearCacheConfig> mapNearCacheConfigs = new ConcurrentHashMap<String, NearCacheConfig>();
 
     public boolean isSmart() {
         return smart;
@@ -162,21 +141,12 @@ public class ClientConfig {
         return this;
     }
 
-    public int getReconnectionAttemptLimit() {
-        return reconnectionAttemptLimit;
+    public int getConnectionAttemptLimit() {
+        return connectionAttemptLimit;
     }
 
-    public ClientConfig setReconnectionAttemptLimit(int reconnectionAttemptLimit) {
-        this.reconnectionAttemptLimit = reconnectionAttemptLimit;
-        return this;
-    }
-
-    public int getInitialConnectionAttemptLimit() {
-        return initialConnectionAttemptLimit;
-    }
-
-    public ClientConfig setInitialConnectionAttemptLimit(int initialConnectionAttemptLimit) {
-        this.initialConnectionAttemptLimit = initialConnectionAttemptLimit;
+    public ClientConfig setConnectionAttemptLimit(int connectionAttemptLimit) {
+        this.connectionAttemptLimit = connectionAttemptLimit;
         return this;
     }
 
@@ -202,20 +172,8 @@ public class ClientConfig {
         return this;
     }
 
-    public ClientConfig addInetSocketAddress(List<InetSocketAddress> inetSocketAddresses) {
-        this.addressList.addAll(inetSocketAddresses);
-        return this;
-    }
-
-    public ClientConfig addInetSocketAddress(InetSocketAddress... inetSocketAddresses) {
-        Collections.addAll(this.addressList, inetSocketAddresses);
-        return this;
-    }
-
     public ClientConfig addAddress(String... addresses) {
-        for (String address : addresses) {
-            this.addressList.addAll(AddressHelper.getSocketAddresses(address));
-        }
+        Collections.addAll(addressList, addresses);
         return this;
     }
 
@@ -223,11 +181,11 @@ public class ClientConfig {
     public void setAddresses(List<String> addresses) {
         addressList.clear();
         for (String address : addresses) {
-            addressList.addAll(AddressHelper.getSocketAddresses(address));
+            addressList.addAll(addresses);
         }
     }
 
-    public Collection<InetSocketAddress> getAddressList() {
+    public Collection<String> getAddressList() {
         if (addressList.size() == 0) {
             addAddress("localhost");
         }
@@ -275,12 +233,7 @@ public class ClientConfig {
         this.redoOperation = redoOperation;
     }
 
-    public NearCacheConfig getNearCacheConfig(final String name) {
-        return mapNearCacheConfigs.get(name);
-    }
-
-    public ClientConfig addMapNearCacheConfig(String name, NearCacheConfig config) {
-        mapNearCacheConfigs.put(name, config);
-        return this;
+    public SocketOptions getSocketOptions() {
+        return socketOptions;
     }
 }

@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.tx;
 
-import com.hazelcast.instance.ThreadContext;
+import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -29,10 +29,7 @@ import com.hazelcast.transaction.TransactionLog;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 public class MapTransactionLog implements TransactionLog {
 
@@ -40,7 +37,7 @@ public class MapTransactionLog implements TransactionLog {
     long version;
     String name;
     Data key;
-    int threadId = ThreadContext.getThreadId();
+    int threadId = ThreadUtil.getThreadId();
     Operation op;
 
     public MapTransactionLog() {

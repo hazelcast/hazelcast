@@ -66,8 +66,7 @@ class HazelcastInstanceLoader {
             ClientConfig clientConfig ;
             if (configUrl == null) {
                 clientConfig = new ClientConfig();
-                clientConfig.setInitialConnectionAttemptLimit(3);
-                clientConfig.setReconnectionAttemptLimit(5);
+                clientConfig.setConnectionAttemptLimit(3);
             } else {
                 try {
                     clientConfig = new ClientConfigBuilder(configUrl).build();

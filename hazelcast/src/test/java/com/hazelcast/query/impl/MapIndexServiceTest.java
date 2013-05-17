@@ -19,6 +19,7 @@ package com.hazelcast.query.impl;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import com.hazelcast.util.Clock;
 import com.hazelcast.instance.TestUtil;
 import org.junit.Test;
@@ -29,7 +30,7 @@ import java.util.Set;
 
 import static junit.framework.Assert.assertEquals;
 
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+@RunWith(RandomBlockJUnit4ClassRunner.class)
 public class MapIndexServiceTest extends TestUtil {
 
     @Test

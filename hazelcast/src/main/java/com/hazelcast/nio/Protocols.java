@@ -22,7 +22,6 @@ package com.hazelcast.nio;
 public final class Protocols {
 
     public static final String CLUSTER = "HZC";
-    public static final String CLIENT_TEXT = "P01";
     public static final String CLIENT_BINARY = "CB1";
     public static final String TEXT = "TXT";
 

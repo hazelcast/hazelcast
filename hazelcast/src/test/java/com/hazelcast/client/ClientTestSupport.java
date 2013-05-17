@@ -1,5 +1,6 @@
 package com.hazelcast.client;
 
+import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.nio.Address;
 import org.junit.After;
@@ -11,7 +12,7 @@ import java.io.IOException;
 /**
  * @mdogan 5/14/13
  */
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+@RunWith(RandomBlockJUnit4ClassRunner.class)
 public abstract class ClientTestSupport {
 
     private TestClient client;

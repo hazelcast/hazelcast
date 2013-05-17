@@ -21,6 +21,7 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
+import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import com.hazelcast.util.Clock;
 import junit.framework.Assert;
 import org.junit.After;
@@ -40,7 +41,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.*;
 
 
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+@RunWith(RandomBlockJUnit4ClassRunner.class)
 public class TopicTest {
 
     @BeforeClass

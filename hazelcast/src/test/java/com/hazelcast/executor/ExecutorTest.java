@@ -19,6 +19,7 @@ package com.hazelcast.executor;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.StaticNodeFactory;
+import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import org.junit.*;
 import org.junit.runner.RunWith;
 
@@ -32,7 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+@RunWith(RandomBlockJUnit4ClassRunner.class)
 public class ExecutorTest {
 
     public static final int simpleTestNodeCount = 3;

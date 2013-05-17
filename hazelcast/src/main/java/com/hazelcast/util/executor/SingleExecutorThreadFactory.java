@@ -17,7 +17,6 @@
 package com.hazelcast.util.executor;
 
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
-import com.hazelcast.instance.ThreadContext;
 
 /**
  * @mdogan 1/10/13
@@ -46,12 +45,6 @@ public final class SingleExecutorThreadFactory extends AbstractExecutorThreadFac
                 super.run();
             } catch (OutOfMemoryError e) {
                 OutOfMemoryErrorDispatcher.onOutOfMemory(e);
-            } finally {
-                try {
-                    ThreadContext.shutdown(this);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
             }
         }
     }

@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
+import com.hazelcast.spi.impl.SerializableCollection;
 
 import java.io.IOException;
 import java.util.Map;
@@ -47,7 +48,7 @@ public class DrainOperation extends QueueBackupAwareOperation implements Notifie
     public void run() throws Exception {
         QueueContainer container = getOrCreateContainer();
         dataMap = container.drain(maxSize);
-        response = new SerializableCollectionContainer(dataMap.values());
+        response = new SerializableCollection(dataMap.values());
     }
 
     public void afterRun() throws Exception {

@@ -9,9 +9,11 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.MultiMap;
+import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
+import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -26,7 +28,7 @@ import static org.junit.Assert.*;
 /**
  * @ali 5/10/13
  */
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
+@RunWith(RandomBlockJUnit4ClassRunner.class)
 public class CollectionBinaryClientTest extends ClientTestSupport {
 
 
@@ -40,7 +42,7 @@ public class CollectionBinaryClientTest extends ClientTestSupport {
     @BeforeClass
     public static void init() {
         Config config = new Config();
-        hz = Hazelcast.newHazelcastInstance(config);
+        hz = new StaticNodeFactory(1).newHazelcastInstance(config);
         dataKey = ss.toData(name);
     }
 
