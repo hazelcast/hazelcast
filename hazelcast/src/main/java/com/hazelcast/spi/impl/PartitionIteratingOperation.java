@@ -44,7 +44,7 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
 
     public final void run() throws Exception {
         final NodeEngine nodeEngine = getNodeEngine();
-        results = new HashMap<Integer, Object>(partitions != null? partitions.size() : 0);
+        results = new HashMap<Integer, Object>(partitions != null ? partitions.size() : 0);
         try {
             Map<Integer, ResponseQueue> responses = new HashMap<Integer, ResponseQueue>(partitions.size());
             for (final int partitionId : partitions) {

@@ -35,8 +35,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class StaticNodeFactory {
 
-    public final static boolean MOCK_NETWORK = !Boolean.getBoolean("hazelcast.test.use.network");
-    private final static boolean TEST_CLIENT = Boolean.getBoolean("hazelcast.test.client");
+    public static final String HAZELCAST_TEST_USE_NETWORK = "hazelcast.test.use.network";
+    public static final String HAZELCAST_TEST_USE_CLIENT = "hazelcast.test.use.client";
+
+    public final static boolean MOCK_NETWORK = !Boolean.getBoolean(HAZELCAST_TEST_USE_NETWORK);
+    public final static boolean USE_CLIENT = Boolean.getBoolean(HAZELCAST_TEST_USE_CLIENT);
+
     private final static String HAZELCAST_CLIENT = "com.hazelcast.client.HazelcastClient";
     private final static String HAZELCAST_CLIENT_CONFIG = "com.hazelcast.client.config.ClientConfig";
     private final static AtomicInteger ports = new AtomicInteger(5000);
@@ -64,7 +68,7 @@ public class StaticNodeFactory {
             NodeContext nodeContext = registry.createNodeContext(addresses[nodeIndex++]);
             return HazelcastInstanceFactory.newHazelcastInstance(config, null, nodeContext);
         }
-        return TEST_CLIENT ? newHazelcastClient() : HazelcastInstanceFactory.newHazelcastInstance(config);
+        return USE_CLIENT ? newHazelcastClient() : HazelcastInstanceFactory.newHazelcastInstance(config);
     }
 
     public static TestClient newClient(Address nodeAddress) throws IOException {
@@ -122,7 +126,7 @@ public class StaticNodeFactory {
             }
         } else {
             for (int i = 0; i < count; i++) {
-                instances[i] = TEST_CLIENT ? newHazelcastClient() : HazelcastInstanceFactory.newHazelcastInstance(config);
+                instances[i] = USE_CLIENT ? newHazelcastClient() : HazelcastInstanceFactory.newHazelcastInstance(config);
             }
         }
         return instances;
