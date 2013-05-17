@@ -18,7 +18,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.connection.ClientConnectionManager;
-import com.hazelcast.client.proxy.ClusterProxy;
+import com.hazelcast.client.proxy.ClientClusterProxy;
 import com.hazelcast.client.proxy.PartitionServiceProxy;
 import com.hazelcast.client.spi.*;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
@@ -86,7 +86,7 @@ public class HazelcastClient implements HazelcastInstance {
         name = "hz.client_" + id + (groupConfig != null ? "_" + groupConfig.getName() : "");
         threadGroup = new ThreadGroup(name);
         lifecycleService = new LifecycleServiceImpl(this);
-        proxyManager = new ProxyManager();
+        proxyManager = new ProxyManager(this);
         executionService = new ClientExecutionServiceImpl(name, threadGroup, Thread.currentThread().getContextClassLoader());
         clusterService = new ClientClusterServiceImpl(this);
         LoadBalancer loadBalancer = config.getLoadBalancer();
@@ -100,6 +100,7 @@ public class HazelcastClient implements HazelcastInstance {
         clusterService.start();
         partitionService.start();
         loadBalancer.init(getCluster(), config);
+        proxyManager.init(config.getProxyFactoryConfig());
         lifecycleService.setStarted();
     }
 
@@ -159,7 +160,7 @@ public class HazelcastClient implements HazelcastInstance {
 
     @Override
     public Cluster getCluster() {
-        return new ClusterProxy(clusterService);
+        return new ClientClusterProxy(clusterService);
     }
 
     @Override
