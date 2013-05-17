@@ -46,7 +46,10 @@ public class MapEntrySet implements IdentifiedDataSerializable {
 
     public void add(Map.Entry<Data,Data> entry) {
         entrySet.add(entry);
+    }
 
+    public void add(Data key, Data value) {
+        entrySet.add(new AbstractMap.SimpleImmutableEntry<Data,Data>(key, value));
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {

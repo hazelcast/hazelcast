@@ -16,38 +16,37 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.core.EntryEvent;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.BackupOperation;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
-import java.util.AbstractMap;
-import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
-public class GetAllOperation extends AbstractMapOperation implements PartitionAwareOperation {
+public class PutAllBackupOperation extends AbstractMapOperation implements PartitionAwareOperation, BackupOperation {
 
-    Set<Data> keys;
     MapEntrySet entrySet;
 
-    public GetAllOperation(String name, Set<Data> keys) {
+    public PutAllBackupOperation(String name, MapEntrySet entrySet) {
         super(name);
-        this.keys = keys;
+        this.entrySet = entrySet;
     }
 
-    public GetAllOperation() {
+    public PutAllBackupOperation() {
     }
 
     public void run() {
         int partitionId = getPartitionId();
         RecordStore recordStore = mapService.getRecordStore(partitionId, name);
-        entrySet = new MapEntrySet();
-        for (Data key : keys) {
-            if (partitionId == getNodeEngine().getPartitionService().getPartitionId(key)) {
-                Object value = recordStore.get(key);
-                entrySet.add(new AbstractMap.SimpleImmutableEntry(key, mapService.toData(value)));
-            }
+        Set<Map.Entry<Data, Data>> entries = entrySet.getEntrySet();
+        for (Map.Entry<Data, Data> entry : entries) {
+            recordStore.set(entry.getKey(), entry.getValue(), -1);
         }
     }
 
@@ -58,34 +57,20 @@ public class GetAllOperation extends AbstractMapOperation implements PartitionAw
 
     @Override
     public String toString() {
-        return "GetAllOperation{" +
+        return "PutAllBackupOperation{" +
                 '}';
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        if (keys == null) {
-            out.writeInt(-1);
-        } else {
-            out.writeInt(keys.size());
-            for (Data key : keys) {
-                key.writeData(out);
-            }
-        }
+        out.writeObject(entrySet);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        int size = in.readInt();
-        if (size > -1) {
-            keys = new HashSet<Data>(size);
-            for (int i = 0; i < size; i++) {
-                Data data = new Data();
-                data.readData(in);
-                keys.add(data);
-            }
-        }
+        entrySet = in.readObject();
     }
+
 }

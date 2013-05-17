@@ -41,7 +41,7 @@ import static org.junit.Assert.assertNull;
 public class BasicTest {
 
     static final Config cfg = new Config();
-    static final int instanceCount = 2;
+    static final int instanceCount = 3;
     static final HazelcastInstance[] instances = StaticNodeFactory.newInstances(cfg, instanceCount);
     static final Random rand = new Random(Clock.currentTimeMillis());
 
@@ -521,6 +521,30 @@ public class BasicTest {
         assertEquals(m2.size(), 2);
         assertEquals(m2.get(1), 1);
         assertEquals(m2.get(3), 3);
+    }
+
+    @Test
+    public void testPutAllBackup() {
+        StaticNodeFactory nodeFactory = new StaticNodeFactory(2);
+        Config config = new Config();
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+        final IMap<Object, Object> map = instance1.getMap("testGetAllPutAll");
+        Map mm = new HashMap();
+        for (int i = 0; i < 100; i++) {
+            mm.put(i, i);
+        }
+        map.putAll(mm);
+        assertEquals(map.size(), 100);
+        for (int i = 0; i < 100; i++) {
+            assertEquals(map.get(i), i);
+        }
+        instance2.getLifecycleService().shutdown();
+        for (int i = 0; i < 100; i++) {
+            assertEquals(map.get(i), i);
+        }
+
+        instance1.getLifecycleService().shutdown();
     }
 
     @Test

@@ -272,13 +272,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         }
     }
 
-    // todo optimize this
     protected Map<Data, Data> getAllDataInternal(final Set<Data> keys) {
-        Map<Data, Data> res = new HashMap(keys.size());
-        for (Data key : keys) {
-            res.put(key, getService().toData(getInternal(key)));
-        }
-        return res;
+        return null;
     }
 
     protected Map<Object, Object> getAllObjectInternal(final Set<Data> keys) {
@@ -290,7 +285,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
             responses = nodeEngine.getOperationService()
                     .invokeOnAllPartitions(SERVICE_NAME, new MapGetAllOperationFactory(name, keys));
             for (Object response : responses.values()) {
-                Set<Map.Entry<Data,Data>> entries = ((MapEntrySet) getService().toObject(response)).getEntrySet();
+                Set<Map.Entry<Data, Data>> entries = ((MapEntrySet) getService().toObject(response)).getEntrySet();
                 for (Entry<Data, Data> entry : entries) {
                     result.put(getService().toObject(entry.getKey()), getService().toObject(entry.getValue()));
                 }
@@ -302,18 +297,20 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         return result;
     }
 
-    // todo optimize these: send keys in groups to partitions and wirte mapstore in bulk
     protected void putAllDataInternal(final Map<? extends Data, ? extends Data> m) {
-        for (Entry<? extends Data, ? extends Data> entry : m.entrySet()) {
-            putInternal(entry.getKey(), entry.getValue(), -1, null);
-        }
     }
 
-    // todo optimize these
-    protected void putAllObjectInternal(final Map<? extends Object, ? extends Object> m) {
+    protected void putAllObjectInternal(final Map<? extends Object,? extends Object> entries) {
         final NodeEngine nodeEngine = getNodeEngine();
-        for (Entry<? extends Object, ? extends Object> entry : m.entrySet()) {
-            putInternal(getService().toData(entry.getKey()), getService().toData(entry.getValue()), -1, null);
+        try {
+            MapEntrySet mapEntrySet = new MapEntrySet();
+            for (Entry entry : entries.entrySet()) {
+                mapEntrySet.add(getService().toData(entry.getKey()), getService().toData(entry.getValue()));
+            }
+            nodeEngine.getOperationService()
+                    .invokeOnAllPartitions(SERVICE_NAME, new MapPutAllOperationFactory(name, mapEntrySet));
+        } catch (Exception e) {
+            ExceptionUtil.rethrow(e);
         }
     }
 
@@ -506,7 +503,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
                     .invokeOnAllPartitions(SERVICE_NAME, new BinaryOperationFactory(operation, nodeEngine));
             for (Object o : results.values()) {
                 if (o != null) {
-                    Map tempMap = (Map)o;
+                    Map tempMap = (Map) o;
                     for (Object key : tempMap.keySet()) {
                         result.put(getService().toObject(key), getService().toObject(tempMap.get(key)));
                     }
