@@ -97,6 +97,9 @@ public class ClientConfig {
 
     private final SocketOptions socketOptions = new SocketOptions();
 
+
+    private final ProxyFactoryConfig proxyFactoryConfig = new ProxyFactoryConfig();
+
     /**
      * Will be called with the Socket, each time client creates a connection to any Member.
      */
@@ -235,5 +238,9 @@ public class ClientConfig {
 
     public SocketOptions getSocketOptions() {
         return socketOptions;
+    }
+
+    public ProxyFactoryConfig getProxyFactoryConfig() {
+        return proxyFactoryConfig;
     }
 }

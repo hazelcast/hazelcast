@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.AuthenticationRequest;
@@ -15,7 +31,6 @@ import com.hazelcast.client.spi.ResponseStream;
 import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.cluster.client.AddMembershipListenerRequest;
 import com.hazelcast.cluster.client.ClientMembershipEvent;
-import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.MemberImpl;
@@ -72,22 +87,9 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         return members != null ? members.values() : Collections.<MemberImpl>emptySet();
     }
 
-    public Set<Member> getMembers() {
-        final Map<Address, MemberImpl> members = membersRef.get();
-        return members != null ? new LinkedHashSet<Member>(members.values()) : Collections.<Member>emptySet();
-    }
-
     public Address getMasterAddress() {
         final Collection<MemberImpl> memberList = getMemberList();
         return !memberList.isEmpty() ? memberList.iterator().next().getAddress() : null;
-    }
-
-    public boolean isMaster() {
-        return false;
-    }
-
-    public Address getThisAddress() {
-        throw new UnsupportedOperationException();
     }
 
     public int getSize() {
@@ -98,7 +100,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         return Clock.currentTimeMillis();
     }
 
-    public <T> T sendAndReceive(Object obj) throws IOException {
+    <T> T sendAndReceive(Object obj) throws IOException {
         final Connection conn = getConnectionManager().getRandomConnection();
         try {
             return sendAndReceive(conn, obj);
@@ -107,7 +109,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         }
     }
 
-    public <T> T sendAndReceive(Address address, Object obj) throws IOException {
+    <T> T sendAndReceive(Address address, Object obj) throws IOException {
         final Connection conn = getConnectionManager().getConnection(address);
         try {
             return sendAndReceive(conn, obj);
@@ -132,9 +134,20 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         return client.getConnectionManager();
     }
 
-    public ResponseStream sendAndStream(Address address, Object obj) {
+    ResponseStream sendAndStream(Address address, Object obj) throws IOException {
+        final Connection conn = getConnectionManager().getConnection(address);
+        final SerializationService serializationService = getSerializationService();
+        final Data request = serializationService.toData(obj);
+        conn.write(request);
+        return new ResponseStreamImpl(serializationService, conn);
+    }
 
-        return null;
+    ResponseStream sendAndStream(Object obj) throws IOException {
+        final Connection conn = getConnectionManager().getRandomConnection();
+        final SerializationService serializationService = getSerializationService();
+        final Data request = serializationService.toData(obj);
+        conn.write(request);
+        return new ResponseStreamImpl(serializationService, conn);
     }
 
     public Authenticator getAuthenticator() {
