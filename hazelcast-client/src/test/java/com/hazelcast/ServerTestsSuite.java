@@ -20,7 +20,7 @@ package com.hazelcast;
 import com.hazelcast.concurrent.atomiclong.AtomicLongTest;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchTest;
 import com.hazelcast.instance.StaticNodeFactory;
-import com.hazelcast.util.ClientCompatibleTest;
+import com.hazelcast.test.annotation.ClientCompatibleTest;
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Request;
 import org.junit.runner.Result;

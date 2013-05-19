@@ -19,7 +19,9 @@ package com.hazelcast.client.spi;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.proxy.ClientMapProxy;
+import com.hazelcast.client.proxy.ClientQueueProxy;
 import com.hazelcast.map.MapService;
+import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
 
@@ -46,6 +48,11 @@ public final class ProxyManager {
         register(MapService.SERVICE_NAME, new ClientProxyFactory() {
             public ClientProxy create(Object id) {
                 return new ClientMapProxy(MapService.SERVICE_NAME, String.valueOf(id));
+            }
+        });
+        register(QueueService.SERVICE_NAME, new ClientProxyFactory() {
+            public ClientProxy create(Object id) {
+                return new ClientQueueProxy(QueueService.SERVICE_NAME, String.valueOf(id));
             }
         });
 
