@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue.client;
+package com.hazelcast.spi.impl;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -22,23 +22,22 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.queue.QueuePortableHook;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- * @ali 5/14/13
+ * @ali 5/19/13
  */
-public class PortableCollectionContainer implements Portable {
+public final class PortableCollection implements Portable {
 
     private Collection<Data> collection;
 
-    public PortableCollectionContainer() {
+    public PortableCollection() {
     }
 
-    public PortableCollectionContainer(Collection<Data> collection) {
+    public PortableCollection(Collection<Data> collection) {
         this.collection = collection;
     }
 
@@ -47,25 +46,32 @@ public class PortableCollectionContainer implements Portable {
     }
 
     public int getFactoryId() {
-        return QueuePortableHook.F_ID;
+        return SpiPortableHook.ID;
     }
 
     public int getClassId() {
-        return QueuePortableHook.COLLECTION_CONTAINER;
+        return SpiPortableHook.COLLECTION;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
-        writer.writeInt("s",collection.size());
+        if (collection == null) {
+            writer.writeInt("s", -1);
+            return;
+        }
+        writer.writeInt("s", collection.size());
         final ObjectDataOutput out = writer.getRawDataOutput();
-        for (Data data: collection){
+        for (Data data : collection) {
             data.writeData(out);
         }
     }
 
     public void readPortable(PortableReader reader) throws IOException {
         int size = reader.readInt("s");
-        final ObjectDataInput in = reader.getRawDataInput();
+        if (size == -1){
+            return;
+        }
         collection = new ArrayList<Data>(size);
+        final ObjectDataInput in = reader.getRawDataInput();
         for (int i=0; i<size; i++){
             Data data = new Data();
             data.readData(in);

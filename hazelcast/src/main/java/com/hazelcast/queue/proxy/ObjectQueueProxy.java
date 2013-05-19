@@ -41,11 +41,10 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     }
 
     public boolean add(E e) {
-        final boolean res = offer(e);
-        if (!res) {
-            throw new IllegalStateException("Queue is full!");
+        if (offer(e)) {
+            return true;
         }
-        return res;
+        throw new IllegalStateException("Queue is full!");
     }
 
     public boolean offer(E e) {
@@ -139,7 +138,7 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
     public E peek() {
         final NodeEngine nodeEngine = getNodeEngine();
         final Object data = peekInternal();
-        return (E) nodeEngine.toObject(data);
+        return nodeEngine.toObject(data);
     }
 
     public boolean isEmpty() {

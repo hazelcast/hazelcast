@@ -74,7 +74,6 @@ public class AddListenerRequest extends CallableClientRequest implements Portabl
                 }
             }
         };
-        service.addItemListener(name, listener, includeValue);
-        return null;
+        return service.addItemListener(name, listener, includeValue);
     }
 }

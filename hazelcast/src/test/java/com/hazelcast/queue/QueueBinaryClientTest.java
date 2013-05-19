@@ -27,6 +27,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.queue.client.*;
+import com.hazelcast.spi.impl.PortableCollection;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -184,7 +185,7 @@ public class QueueBinaryClientTest extends ClientTestSupport {
         q.offer("item5");
 
         client().send(new DrainRequest(queueName, 1));
-        PortableCollectionContainer result = (PortableCollectionContainer)client().receive();
+        PortableCollection result = (PortableCollection)client().receive();
         Collection<Data> coll = result.getCollection();
         assertEquals(1, coll.size());
         assertEquals("item1", ss.toObject(coll.iterator().next()));
@@ -203,7 +204,7 @@ public class QueueBinaryClientTest extends ClientTestSupport {
         q.offer("item5");
 
         client().send(new IteratorRequest(queueName));
-        PortableCollectionContainer result = (PortableCollectionContainer)client().receive();
+        PortableCollection result = (PortableCollection)client().receive();
         Collection<Data> coll = result.getCollection();
         int i = 1;
         for (Data data : coll) {
