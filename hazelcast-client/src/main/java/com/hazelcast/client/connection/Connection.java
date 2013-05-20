@@ -37,6 +37,18 @@ public interface Connection extends Closeable {
 
     long getLastReadTime();
 
+    /**
+     * May close socket or return connection to a pool depending on connection's type.
+     *
+     * @throws IOException
+     */
+    void release() throws IOException;
+
+    /**
+     * Closes connection's socket, regardless of connection's type.
+     *
+     * @throws IOException
+     */
     void close() throws IOException;
 
 }

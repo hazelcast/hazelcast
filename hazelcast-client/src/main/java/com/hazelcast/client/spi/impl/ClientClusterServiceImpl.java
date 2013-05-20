@@ -106,7 +106,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         try {
             return sendAndReceive(conn, obj);
         } finally {
-            conn.close();
+            conn.release();
         }
     }
 
@@ -115,7 +115,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         try {
             return sendAndReceive(conn, obj);
         } finally {
-            conn.close();
+            conn.release();
         }
     }
 
@@ -338,7 +338,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             final Connection c = conn;
             if (c != null) {
                 try {
-                    c.close();
+                    c.release();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

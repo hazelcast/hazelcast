@@ -84,10 +84,8 @@ public final class ProxyManager {
     }
 
     private void initialize(ClientProxy clientProxy) {
-        clientProxy.setClusterService(client.getClientClusterService());
-        clientProxy.setInvocationService(client.getInvocationService());
-        clientProxy.setPartitionService(client.getClientPartitionService());
-        clientProxy.setSerializationService(client.getSerializationService());
+        clientProxy.setContext(new ClientContext(client.getSerializationService(), client.getClientClusterService(),
+                client.getClientPartitionService(), client.getInvocationService(), client.getClientExecutionService()));
     }
 
     public Collection<ClientProxy> getProxies() {

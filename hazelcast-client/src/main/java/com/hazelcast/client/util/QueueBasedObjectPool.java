@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.util.pool;
+package com.hazelcast.client.util;
 
 import com.hazelcast.core.HazelcastException;
 

@@ -78,7 +78,7 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
     }
 
     public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
-        Data data = getSerializationService().toData(e);
+        Data data = getContext().getSerializationService().toData(e);
         OfferRequest request = new OfferRequest(name, unit.toMillis(timeout), data);
         final Boolean result = invoke(request);
         return result;
@@ -99,7 +99,7 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
     }
 
     public boolean remove(Object o) {
-        Data data = getSerializationService().toData(o);
+        Data data = getContext().getSerializationService().toData(o);
         RemoveRequest request = new RemoveRequest(name, data);
         Boolean result = invoke(request);
         return result;
@@ -107,7 +107,7 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
 
     public boolean contains(Object o) {
         final Collection<Data> list = new ArrayList<Data>(1);
-        list.add(getSerializationService().toData(o));
+        list.add(getContext().getSerializationService().toData(o));
         ContainsRequest request = new ContainsRequest(name, list);
         Boolean result = invoke(request);
         return result;
@@ -122,7 +122,7 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
         PortableCollection result = invoke(request);
         Collection<Data> coll = result.getCollection();
         for (Data data : coll) {
-            E e = (E)getSerializationService().toObject(data);
+            E e = (E)getContext().getSerializationService().toObject(data);
             c.add(e);
         }
         return coll.size();
@@ -171,7 +171,7 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
         IteratorRequest request = new IteratorRequest(name);
         PortableCollection result = invoke(request);
         Collection<Data> coll = result.getCollection();
-        return new QueueIterator<E>(coll.iterator(), getSerializationService(), false);
+        return new QueueIterator<E>(coll.iterator(), getContext().getSerializationService(), false);
     }
 
     public Object[] toArray() {
@@ -181,7 +181,7 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
         int i = 0;
         Object[] array = new Object[coll.size()];
         for (Data data : coll) {
-            array[i++] = getSerializationService().toObject(data);
+            array[i++] = getContext().getSerializationService().toObject(data);
         }
         return array;
     }
@@ -196,7 +196,7 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
         }
         int i = 0;
         for (Data data : coll) {
-            ts[i++] = (T)getSerializationService().toObject(data);
+            ts[i++] = (T)getContext().getSerializationService().toObject(data);
         }
         return ts;
     }
@@ -241,7 +241,7 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
 
     private <T> T invoke(Object req){
         try {
-            return getInvocationService().invokeOnKeyOwner(req, getKey());
+            return getContext().getInvocationService().invokeOnKeyOwner(req, getKey());
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
@@ -249,7 +249,7 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
 
     private Data getKey(){
         if (key == null){
-            key = getSerializationService().toData(name);
+            key = getContext().getSerializationService().toData(name);
         }
         return key;
     }
@@ -257,7 +257,7 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
     private List<Data> getDataList(Collection<?> objects) {
         List<Data> dataList = new ArrayList<Data>(objects.size());
         for (Object o : objects) {
-            dataList.add(getSerializationService().toData(o));
+            dataList.add(getContext().getSerializationService().toData(o));
         }
         return dataList;
     }

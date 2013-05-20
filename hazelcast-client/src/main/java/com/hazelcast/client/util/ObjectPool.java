@@ -14,9 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.util.pool;
+package com.hazelcast.client.util;
 
-public interface Factory<E> {
+public interface ObjectPool<E> {
 
-    E create() throws Exception;
+    E take();
+
+    void release(E e);
+
+    int size();
+
+    void destroy();
 }
+
+
