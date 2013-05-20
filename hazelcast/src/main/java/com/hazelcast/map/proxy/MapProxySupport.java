@@ -300,7 +300,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
     protected void putAllDataInternal(final Map<? extends Data, ? extends Data> m) {
     }
 
-    protected void putAllObjectInternal(final Map<? extends Object,? extends Object> entries) {
+    protected void putAllObjectInternal(final Map<? extends Object, ? extends Object> entries) {
         final NodeEngine nodeEngine = getNodeEngine();
         try {
             MapEntrySet mapEntrySet = new MapEntrySet();
@@ -515,6 +515,54 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         return result;
     }
 
+    protected Set queryLocal(final Predicate predicate, final IterationType iterationType, final boolean dataResult) {
+        final NodeEngine nodeEngine = getNodeEngine();
+        OperationService operationService = nodeEngine.getOperationService();
+        List<Integer> partitionIds = nodeEngine.getPartitionService().getMemberPartitions(nodeEngine.getThisAddress());
+        QueryResultStream result = new QueryResultStream(nodeEngine.getSerializationService(), iterationType, dataResult, true);
+        List<Integer> returnedPartitionIds = new ArrayList<Integer>();
+        try {
+            Invocation invocation = operationService
+                    .createInvocationBuilder(SERVICE_NAME, new QueryOperation(name, predicate), nodeEngine.getThisAddress()).build();
+            Future future = invocation.invoke();
+            QueryResult queryResult = (QueryResult) future.get();
+            if (queryResult != null) {
+                returnedPartitionIds = queryResult.getPartitionIds();
+                result.addAll(queryResult.getResult());
+            }
+
+            if (returnedPartitionIds.size() == partitionIds.size()) {
+                return result;
+            }
+            List<Integer> missingList = new ArrayList<Integer>();
+            for (Integer partitionId : partitionIds) {
+                if(!returnedPartitionIds.contains(partitionId))
+                    missingList.add(partitionId);
+            }
+            List<Future> futures = new ArrayList<Future>(missingList.size());
+            for (Integer pid : missingList) {
+                QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(name, predicate);
+                queryPartitionOperation.setPartitionId(pid);
+                try {
+                    Future f = operationService.createInvocationBuilder(SERVICE_NAME, queryPartitionOperation, pid).build().invoke();
+                    futures.add(f);
+                } catch (Throwable t) {
+                    throw ExceptionUtil.rethrow(t);
+                }
+            }
+            for (Future f : futures) {
+                QueryResult qResult = (QueryResult) f.get();
+                result.addAll(qResult.getResult());
+            }
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        } finally {
+            result.end();
+        }
+        return result;
+    }
+
+
     protected Set query(final Predicate predicate, final IterationType iterationType, final boolean dataResult) {
         final NodeEngine nodeEngine = getNodeEngine();
         OperationService operationService = nodeEngine.getOperationService();
@@ -570,10 +618,6 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
             result.end();
         }
         return result;
-    }
-
-    protected Set<Data> localKeySetInternal(final Predicate predicate) {
-        return null;
     }
 
     public void addIndex(final String attribute, final boolean ordered) {

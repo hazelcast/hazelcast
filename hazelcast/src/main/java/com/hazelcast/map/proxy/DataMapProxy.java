@@ -230,7 +230,7 @@ public class DataMapProxy extends MapProxySupport implements MapProxy<Data, Data
     }
 
     public Set<Data> localKeySet(final Predicate predicate) {
-        return localKeySetInternal(predicate);
+        return query(predicate, IterationType.KEY, true);
     }
 
     public Data executeOnKey(Data key, EntryProcessor entryProcessor) {

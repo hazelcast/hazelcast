@@ -298,8 +298,7 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public Set<K> localKeySet(final Predicate predicate) {
-        // todo implement
-        return null;
+        return queryLocal(predicate, IterationType.KEY, false);
     }
 
     public Object executeOnKey(K key, EntryProcessor entryProcessor) {
