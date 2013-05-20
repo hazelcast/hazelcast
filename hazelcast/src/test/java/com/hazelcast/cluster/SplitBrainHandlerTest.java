@@ -63,7 +63,7 @@ public class SplitBrainHandlerTest {
         splitBrain(false);
     }
 
-    public void splitBrain(boolean multicast) throws Exception {
+    private void splitBrain(boolean multicast) throws Exception {
         Config c1 = new Config();
         c1.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(multicast);
         c1.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(!multicast);
@@ -88,40 +88,37 @@ public class SplitBrainHandlerTest {
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c2);
         LifecycleCountingListener l = new LifecycleCountingListener();
         h2.getLifecycleService().addLifecycleListener(l);
+
         int size = 500;
         for (int i = 0; i < size; i++) {
             h2.getMap("default").put(i, "value" + i);
-            h2.getMultiMap("default").put(i, "value" + i);
-            h2.getMultiMap("default").put(i, "value0" + i);
         }
-        for (int i = 100; i < size + 100; i++) {
+        final int extra = 100;
+        for (int i = extra; i < size + extra; i++) {
             h1.getMap("default").put(i, "value" + i);
-            h1.getMultiMap("default").put(i, "value" + i);
-            h1.getMultiMap("default").put(i, "value0" + i);
         }
+
         assertEquals(size, h2.getMap("default").size());
-        assertEquals(2 * size, h2.getMultiMap("default").size());
         assertEquals(size, h1.getMap("default").size());
-        assertEquals(2 * size, h1.getMultiMap("default").size());
         assertEquals(1, h1.getCluster().getMembers().size());
         assertEquals(1, h2.getCluster().getMembers().size());
-        Thread.sleep(2000);
+
         c1.getGroupConfig().setName("sameGroup");
-        assertTrue(l.waitFor(LifecycleState.MERGED, 40));
+        assertTrue(l.waitFor(LifecycleState.MERGED, 30));
+
         assertEquals(1, l.getCount(LifecycleState.MERGING));
         assertEquals(1, l.getCount(LifecycleState.MERGED));
         assertEquals(2, h1.getCluster().getMembers().size());
         assertEquals(2, h2.getCluster().getMembers().size());
-        Thread.sleep(2000);
-        int newMapSize = size + 100;
-        int newMultiMapSize = 2 * newMapSize;
+
+        Thread.sleep(5000);
+
+        int newMapSize = size + extra;
         assertEquals(newMapSize, h1.getMap("default").size());
         assertEquals(newMapSize, h2.getMap("default").size());
-        assertEquals(newMultiMapSize, h2.getMultiMap("default").size());
-        assertEquals(newMultiMapSize, h1.getMultiMap("default").size());
     }
 
-    class LifecycleCountingListener implements LifecycleListener {
+    private class LifecycleCountingListener implements LifecycleListener {
         Map<LifecycleState, AtomicInteger> counter = new ConcurrentHashMap<LifecycleState, AtomicInteger>();
         BlockingQueue<LifecycleState> eventQueue = new LinkedBlockingQueue<LifecycleState>();
 
@@ -168,13 +165,21 @@ public class SplitBrainHandlerTest {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
+        final CountDownLatch latch = new CountDownLatch(1);
+        h3.getLifecycleService().addLifecycleListener(new LifecycleListener() {
+            public void stateChanged(LifecycleEvent event) {
+                if (event.getState() == LifecycleState.MERGED) {
+                    latch.countDown();
+                }
+            }
+        });
         closeConnectionBetween(h1, h3);
         closeConnectionBetween(h2, h3);
         Thread.sleep(1000);
         assertEquals(2, h1.getCluster().getMembers().size());
         assertEquals(2, h2.getCluster().getMembers().size());
         assertEquals(1, h3.getCluster().getMembers().size());
-        Thread.sleep(10000);
+        latch.await(10, TimeUnit.SECONDS);
         assertEquals(3, h1.getCluster().getMembers().size());
         assertEquals(3, h2.getCluster().getMembers().size());
         assertEquals(3, h3.getCluster().getMembers().size());
@@ -192,16 +197,10 @@ public class SplitBrainHandlerTest {
     public void testTcpIpSplitBrainJoinsCorrectCluster() throws Exception {
 
         // This port selection ensures that when h3 restarts it will try to join h4 instead of joining the nodes in cluster one
-        Config c1 = buildConfig(false);
-        c1.getNetworkConfig().setPort(15702);
-        Config c2 = buildConfig(false);
-        c2.getNetworkConfig().setPort(15704);
-        Config c3 = buildConfig(false);
-        c3.getNetworkConfig().setPort(15703);
-        Config c4 = buildConfig(false);
-        c4.getNetworkConfig().setPort(15701);
-
-
+        Config c1 = buildConfig(false, 15702);
+        Config c2 = buildConfig(false, 15704);
+        Config c3 = buildConfig(false, 15703);
+        Config c4 = buildConfig(false, 15701);
 
         List<String> clusterOneMembers = Arrays.asList("127.0.0.1:15702", "127.0.0.1:15704");
         List<String> clusterTwoMembers = Arrays.asList("127.0.0.1:15703", "127.0.0.1:15701");
@@ -211,13 +210,11 @@ public class SplitBrainHandlerTest {
         c3.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(clusterTwoMembers);
         c4.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(clusterTwoMembers);
 
-        c4.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
 
         final CountDownLatch latch = new CountDownLatch(2);
         c3.addListenerConfig(new ListenerConfig(new LifecycleListener() {
             public void stateChanged(final LifecycleEvent event) {
                 if (event.getState() == LifecycleState.MERGED) {
-                    System.out.println("h3 restarted");
                     latch.countDown();
                 }
             }
@@ -226,7 +223,6 @@ public class SplitBrainHandlerTest {
         c4.addListenerConfig(new ListenerConfig(new LifecycleListener() {
             public void stateChanged(final LifecycleEvent event) {
                 if (event.getState() == LifecycleState.MERGED) {
-                    System.out.println("h4 restarted");
                     latch.countDown();
                 }
             }
@@ -265,14 +261,10 @@ public class SplitBrainHandlerTest {
 
     @Test(timeout = 180000)
     public void testTcpIpSplitBrainStillWorksWhenTargetDisappears() throws Exception {
-
         // The ports are ordered like this so h3 will always attempt to merge with h1
-        Config c1 = buildConfig(false);
-        c1.getNetworkConfig().setPort(25701);
-        Config c2 = buildConfig(false);
-        c1.getNetworkConfig().setPort(25704);
-        Config c3 = buildConfig(false);
-        c1.getNetworkConfig().setPort(25703);
+        Config c1 = buildConfig(false, 25701);
+        Config c2 = buildConfig(false, 25704);
+        Config c3 = buildConfig(false, 25703);
 
         List<String> clusterOneMembers = Arrays.asList("127.0.0.1:25701");
         List<String> clusterTwoMembers = Arrays.asList("127.0.0.1:25704");
@@ -291,7 +283,6 @@ public class SplitBrainHandlerTest {
                 if (event.getState() == LifecycleState.MERGING) {
                     h1.getLifecycleService().shutdown();
                 } else if (event.getState() == LifecycleState.MERGED) {
-                    System.out.println("h3 restarted");
                     latch.countDown();
                 }
             }
@@ -321,15 +312,10 @@ public class SplitBrainHandlerTest {
      * Test for issue #247
      */
     public void testMultiJoinsIssue247() throws Exception {
-        Config c1 = buildConfig(false).setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
-        Config c2 = buildConfig(false).setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
-        Config c3 = buildConfig(false).setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
-        Config c4 = buildConfig(false).setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
-
-        c1.getNetworkConfig().setPort(15701);
-        c2.getNetworkConfig().setPort(15702);
-        c3.getNetworkConfig().setPort(15703);
-        c4.getNetworkConfig().setPort(15704);
+        Config c1 = buildConfig(false, 15701).setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
+        Config c2 = buildConfig(false, 15702).setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
+        Config c3 = buildConfig(false, 15703).setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
+        Config c4 = buildConfig(false, 15704).setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
 
         c1.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(Arrays.asList("127.0.0.1:15701"));
         c2.getNetworkConfig().getJoin().getTcpIpConfig().setMembers(Arrays.asList("127.0.0.1:15702"));
@@ -389,15 +375,15 @@ public class SplitBrainHandlerTest {
         assertEquals(2, numNodesThatKnowAboutH4);
     }
 
-    private static Config buildConfig(boolean multicastEnabled) {
+    private static Config buildConfig(boolean multicastEnabled, int port) {
         Config c = new Config();
         c.getGroupConfig().setName("group").setPassword("pass");
         c.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "10");
         c.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "5");
         final NetworkConfig networkConfig = c.getNetworkConfig();
+        networkConfig.setPort(port).setPortAutoIncrement(false);
         networkConfig.getJoin().getMulticastConfig().setEnabled(multicastEnabled);
         networkConfig.getJoin().getTcpIpConfig().setEnabled(!multicastEnabled);
-        networkConfig.setPortAutoIncrement(false);
         return c;
     }
 }

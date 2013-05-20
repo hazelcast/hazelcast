@@ -41,9 +41,9 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
     public FinalizeJoinOperation() {
     }
 
-    public FinalizeJoinOperation(Collection<MemberInfo> members, long masterTime, boolean sendResponse) {
-        super(members, masterTime, sendResponse);
-    }
+//    public FinalizeJoinOperation(Collection<MemberInfo> members, long masterTime, boolean sendResponse) {
+//        super(members, masterTime, sendResponse);
+//    }
 
     public FinalizeJoinOperation(Collection<MemberInfo> members, PostJoinOperation postJoinOp, long masterTime) {
         super(members, masterTime, true);

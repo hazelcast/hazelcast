@@ -39,21 +39,10 @@ public class EncryptionTest {
     public void testSymmetricEncryption() throws Exception {
         Config config = new Config();
         SymmetricEncryptionConfig encryptionConfig = new SymmetricEncryptionConfig();
-//        encryptionConfig.setEnabled(true);
+        encryptionConfig.setEnabled(true);
         config.getNetworkConfig().setSymmetricEncryptionConfig(encryptionConfig);
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-//        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
-//        IMap map1 = h1.getMap("default");
-//        IMap map2 = h2.getMap("default");
-//        map1.put(1, "value");
-//        map1.put(2, new byte[3000]);
-//        map1.put(3, new byte[1200000]);
-//        assertEquals(3, map1.size());
-//        assertEquals(3, map2.size());
-//        for (int i = 1; i < 4; i++) {
-//            map2.put(i, i);
-//        }
-//        assertEquals(3, map1.size());
-//        assertEquals(3, map2.size());
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
+
     }
 }

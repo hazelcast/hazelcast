@@ -79,6 +79,9 @@ public class TcpIpConfig implements DataSerializable {
      * @return the lsMembers
      */
     public List<String> getMembers() {
+        if (members == null) {
+            members = new ArrayList<String>();
+        }
         return members;
     }
 
@@ -86,6 +89,7 @@ public class TcpIpConfig implements DataSerializable {
      * @param members the members to set
      */
     public TcpIpConfig setMembers(final List<String> members) {
+        this.members.clear();
         for (String member : members) {
             StringTokenizer tokenizer = new StringTokenizer(member, ",");
             while (tokenizer.hasMoreTokens()) {

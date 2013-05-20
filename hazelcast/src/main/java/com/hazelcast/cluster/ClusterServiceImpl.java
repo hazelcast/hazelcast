@@ -347,7 +347,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             return;
         }
         final Collection<MemberImpl> members = getMemberList();
-        MemberInfoUpdateOperation op = new MemberInfoUpdateOperation(createMemberInfos(members), getClusterTime());
+        MemberInfoUpdateOperation op = new MemberInfoUpdateOperation(createMemberInfos(members), getClusterTime(), false);
         for (MemberImpl member : members) {
             if (member.equals(thisMember)) {
                 continue;
@@ -450,7 +450,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                         String message = "Ignoring join request, member already exists.. => " + joinMessage;
                         logger.log(Level.FINEST, message);
                         // send members update back to node trying to join again...
-                        nodeEngine.getOperationService().send(new FinalizeJoinOperation(createMemberInfos(getMemberList()), getClusterTime(), false),
+                        nodeEngine.getOperationService().send(new MemberInfoUpdateOperation(createMemberInfos(getMemberList()), getClusterTime(), false),
                                 member.getAddress());
                         return;
                     }
@@ -525,6 +525,31 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private void sendMasterAnswer(final JoinRequest joinRequest) {
         nodeEngine.getOperationService().send(new SetMasterOperation(node.getMasterAddress()), joinRequest.getAddress());
+    }
+
+    void handleMaster(Address masterAddress) {
+        lock.lock();
+        try {
+            if (!node.joined() && !node.getThisAddress().equals(masterAddress)) {
+                logger.log(Level.FINEST, "Handling master response: " + this);
+                final Address currentMaster = node.getMasterAddress();
+                if (currentMaster != null && !currentMaster.equals(masterAddress)) {
+                    final Connection conn = node.connectionManager.getConnection(currentMaster);
+                    if (conn != null && conn.live()) {
+                        logger.log(Level.WARNING, "Ignoring master response " + this +
+                                " since node has an active master: " + currentMaster);
+                        return;
+                    }
+                }
+                node.setMasterAddress(masterAddress);
+                node.connectionManager.getOrConnect(masterAddress);
+                if (!sendJoinRequest(masterAddress, true)) {
+                    logger.log(Level.WARNING, "Could not create connection to possible master " + masterAddress);
+                }
+            }
+        } finally {
+            lock.unlock();
+        }
     }
 
     void acceptMasterConfirmation(MemberImpl member) {

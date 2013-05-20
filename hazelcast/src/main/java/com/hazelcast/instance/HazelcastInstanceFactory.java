@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.Member;
 import com.hazelcast.jmx.ManagementService;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.ExceptionUtil;
@@ -78,13 +79,14 @@ public class HazelcastInstanceFactory {
         if (instanceName == null || instanceName.trim().length() == 0) {
             instanceName = createInstanceName(config);
         }
-        HazelcastInstanceProxy proxy = null;
+        HazelcastInstanceProxy proxy;
         try {
             final HazelcastInstanceImpl hazelcastInstance = new HazelcastInstanceImpl(instanceName, config, nodeContext);
             proxy = new HazelcastInstanceProxy(hazelcastInstance);
             INSTANCE_MAP.put(instanceName, proxy);
             final Node node = hazelcastInstance.node;
-            final boolean firstMember = (node.getClusterService().getMembers().iterator().next().localMember());
+            final Iterator<Member> iter = node.getClusterService().getMembers().iterator();
+            final boolean firstMember = (iter.hasNext() && iter.next().localMember());
             final int initialWaitSeconds = node.groupProperties.INITIAL_WAIT_SECONDS.getInteger();
             if (initialWaitSeconds > 0) {
                 try {

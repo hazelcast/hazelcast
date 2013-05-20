@@ -40,11 +40,6 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
         memberInfos = new ArrayList<MemberInfo>();
     }
 
-    public MemberInfoUpdateOperation(Collection<MemberInfo> members, long masterTime) {
-        this.masterTime = masterTime;
-        this.memberInfos = members;
-    }
-
     public MemberInfoUpdateOperation(Collection<MemberInfo> memberInfos, long masterTime, boolean sendResponse) {
         this.masterTime = masterTime;
         this.memberInfos = memberInfos;

@@ -132,7 +132,8 @@ public final class HazelcastInstanceProxy implements HazelcastInstance {
     }
 
     public LifecycleService getLifecycleService() {
-        return getOriginal().getLifecycleService();
+        final HazelcastInstanceImpl hz = original;
+        return hz != null ? hz.getLifecycleService() : new TerminatedLifecycleService();
     }
 
     public <S extends DistributedObject> S getDistributedObject(String serviceName, Object id) {
@@ -159,10 +160,6 @@ public final class HazelcastInstanceProxy implements HazelcastInstance {
         return getOriginal().getUserContext();
     }
 
-    public void shutdown() {
-        getLifecycleService().shutdown();
-    }
-
     private HazelcastInstanceImpl getOriginal() {
         final HazelcastInstanceImpl hazelcastInstance = original;
         if (hazelcastInstance == null) {
@@ -178,6 +175,29 @@ public final class HazelcastInstanceProxy implements HazelcastInstance {
             return hazelcastInstance.toString();
         }
         return "HazelcastInstance {NOT ACTIVE}";
+    }
+
+    private class TerminatedLifecycleService implements LifecycleService {
+
+        public boolean isRunning() {
+            return false;
+        }
+
+        public void shutdown() {
+            throw new UnsupportedOperationException();
+        }
+
+        public void kill() {
+            throw new UnsupportedOperationException();
+        }
+
+        public String addLifecycleListener(LifecycleListener lifecycleListener) {
+            throw new UnsupportedOperationException();
+        }
+
+        public boolean removeLifecycleListener(String registrationId) {
+            throw new UnsupportedOperationException();
+        }
     }
 }
 

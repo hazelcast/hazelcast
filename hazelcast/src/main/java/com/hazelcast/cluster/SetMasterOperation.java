@@ -16,16 +16,11 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.instance.Node;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
-import java.util.logging.Level;
 
 public class SetMasterOperation extends AbstractClusterOperation implements JoinOperation {
 
@@ -41,26 +36,7 @@ public class SetMasterOperation extends AbstractClusterOperation implements Join
 
     public void run() {
         ClusterServiceImpl clusterService = getService();
-        NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        Node node = nodeEngine.getNode();
-        ILogger logger = nodeEngine.getLogger(SetMasterOperation.class.getName());
-        if (!node.joined() && !node.getThisAddress().equals(masterAddress)) {
-            logger.log(Level.FINEST, "Handling master response: " + this);
-            final Address currentMaster = node.getMasterAddress();
-            if (currentMaster != null && !currentMaster.equals(masterAddress)) {
-                final Connection conn = node.connectionManager.getConnection(currentMaster);
-                if (conn != null && conn.live()) {
-                    logger.log(Level.FINEST, "Ignoring master response " + this +
-                                             " since node has an active master: " + currentMaster);
-                    return;
-                }
-            }
-            node.setMasterAddress(masterAddress);
-            node.connectionManager.getOrConnect(masterAddress);
-            if (!clusterService.sendJoinRequest(masterAddress, true)) {
-                logger.log(Level.WARNING, "Could not create connection to possible master " + masterAddress);
-            }
-        }
+        clusterService.handleMaster(masterAddress);
     }
 
     public Address getMasterAddress() {

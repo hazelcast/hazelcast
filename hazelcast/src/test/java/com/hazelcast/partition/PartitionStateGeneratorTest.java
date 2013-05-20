@@ -22,7 +22,6 @@ import com.hazelcast.config.MemberGroupConfig;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
@@ -45,7 +44,6 @@ public class PartitionStateGeneratorTest {
 
     @BeforeClass
     public static void init() throws Exception {
-        System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
         Hazelcast.shutdownAll();
     }
 
