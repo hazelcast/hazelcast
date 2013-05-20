@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Main-Class: com.hazelcast.examples.SimpleMapTest
-Implementation-Vendor: Hazel Bilisim Ltd.
+Implementation-Vendor: Hazelcast Inc.
 Implementation-Title: Hazelcast In-Memory DataGrid
 Implementation-Version: 3.0.ALPHA
 Bundle-ManifestVersion: 2
