@@ -22,6 +22,7 @@ import com.hazelcast.collection.operations.client.*;
 import com.hazelcast.core.ISet;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.impl.PortableCollection;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
@@ -151,7 +152,7 @@ public class ClientSetProxy<E> extends ClientProxy implements ISet<E> {
 
     private <T> T invoke(Object req) {
         try {
-            return getInvocationService().invokeOnKeyOwner(req, getKey());
+            return getContext().getInvocationService().invokeOnKeyOwner(req, getKey());
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
@@ -173,5 +174,9 @@ public class ClientSetProxy<E> extends ClientProxy implements ISet<E> {
             set.add((E)getSerializationService().toObject(data));
         }
         return set;
+    }
+
+    private SerializationService getSerializationService(){
+        return getContext().getSerializationService();
     }
 }

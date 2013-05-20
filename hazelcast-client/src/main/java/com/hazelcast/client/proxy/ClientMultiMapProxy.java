@@ -23,6 +23,7 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.impl.PortableCollection;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
@@ -186,7 +187,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
     private <T> T invoke(Object req, Data key) {
         try {
-            return getInvocationService().invokeOnKeyOwner(req, key);
+            return getContext().getInvocationService().invokeOnKeyOwner(req, key);
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
@@ -194,7 +195,7 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
     private <T> T invoke(Object req) {
         try {
-            return getInvocationService().invokeOnRandomTarget(req);
+            return getContext().getInvocationService().invokeOnRandomTarget(req);
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
@@ -215,5 +216,9 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
             collection.add(getSerializationService().toObject(data));
         }
         return collection;
+    }
+
+    private SerializationService getSerializationService(){
+        return getContext().getSerializationService();
     }
 }
