@@ -18,7 +18,7 @@ package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.spi.ClientInvocationService;
-import com.hazelcast.client.spi.ResponseStream;
+import com.hazelcast.client.spi.ResponseHandler;
 import com.hazelcast.nio.Address;
 
 /**
@@ -55,13 +55,23 @@ public final class ClientInvocationServiceImpl implements ClientInvocationServic
         return invokeOnRandomTarget(request);
     }
 
-    public ResponseStream streamFromRandomTarget(Object request) throws Exception {
-        final ClientClusterServiceImpl clusterService = getClusterService();
-        return clusterService.sendAndStream(request);
+    public void invokeOnRandomTarget(Object request, ResponseHandler handler) throws Exception {
+        ClientClusterServiceImpl clusterService = getClusterService();
+        clusterService.sendAndHandle(request, handler);
     }
 
-    public ResponseStream streamFromTarget(Object request, Address target) throws Exception {
-        final ClientClusterServiceImpl clusterService = getClusterService();
-        return clusterService.sendAndStream(request);
+    public void invokeOnTarget(Object request, Address target, ResponseHandler handler) throws Exception {
+        ClientClusterServiceImpl clusterService = getClusterService();
+        clusterService.sendAndHandle(target, request, handler);
     }
+
+    public void invokeOnKeyOwner(Object request, Object key, ResponseHandler handler) throws Exception {
+        ClientPartitionServiceImpl partitionService = (ClientPartitionServiceImpl) client.getClientPartitionService();
+        final Address owner = partitionService.getPartitionOwner(partitionService.getPartitionId(key));
+        if (owner != null) {
+            invokeOnTarget(request, owner, handler);
+        }
+        invokeOnRandomTarget(request, handler);
+    }
+
 }

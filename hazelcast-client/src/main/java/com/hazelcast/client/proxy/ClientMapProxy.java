@@ -46,10 +46,10 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public V get(Object key) {
-        final Data dataKey = getSerializationService().toData(key);
+        final Data dataKey = getContext().getSerializationService().toData(key);
         MapGetRequest req = new MapGetRequest(name, dataKey);
         try {
-            return getInvocationService().invokeOnKeyOwner(req, dataKey);
+            return getContext().getInvocationService().invokeOnKeyOwner(req, dataKey);
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
@@ -57,11 +57,11 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public V put(K key, V value) {
-        final SerializationService ss = getSerializationService();
+        final SerializationService ss = getContext().getSerializationService();
         final Data dataKey = ss.toData(key);
         MapPutRequest req = new MapPutRequest(name, dataKey, ss.toData(value), ThreadUtil.getThreadId());
         try {
-            return getInvocationService().invokeOnKeyOwner(req, dataKey);
+            return getContext().getInvocationService().invokeOnKeyOwner(req, dataKey);
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
@@ -69,10 +69,10 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     @Override
     public V remove(Object key) {
-        final Data dataKey = getSerializationService().toData(key);
+        final Data dataKey = getContext().getSerializationService().toData(key);
         MapRemoveRequest req = new MapRemoveRequest(name, dataKey, ThreadUtil.getThreadId());
         try {
-            return getInvocationService().invokeOnKeyOwner(req, dataKey);
+            return getContext().getInvocationService().invokeOnKeyOwner(req, dataKey);
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }

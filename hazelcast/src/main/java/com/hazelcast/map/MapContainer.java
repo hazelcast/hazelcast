@@ -239,13 +239,17 @@ public class MapContainer {
         return id;
     }
 
-    public void addInterceptor(MapInterceptor interceptor, String id) {
+    public void addInterceptor(String id, MapInterceptor interceptor) {
         interceptorMap.put(id, interceptor);
         interceptors.add(interceptor);
     }
 
     public List<MapInterceptor> getInterceptors() {
         return interceptors;
+    }
+
+    public Map<String,MapInterceptor> getInterceptorMap() {
+        return interceptorMap;
     }
 
     public void removeInterceptor(String id) {

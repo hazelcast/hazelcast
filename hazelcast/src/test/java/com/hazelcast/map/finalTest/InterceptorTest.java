@@ -104,9 +104,9 @@ public class InterceptorTest {
 
         @Override
         public Object interceptGet(Object value) {
-            if(value == null)
+            if (value == null)
                 return null;
-            return value + ":";  //To change body of implemented methods use File | Settings | File Templates.
+            return value + ":";
         }
 
         @Override
@@ -124,18 +124,63 @@ public class InterceptorTest {
 
         @Override
         public Object interceptRemove(Object removedValue) {
-            if(removedValue.equals("ISTANBUL"))
+            if (removedValue.equals("ISTANBUL"))
                 throw new RuntimeException("you can not remove this");
             return removedValue;
         }
 
         @Override
         public void afterRemove(Object value) {
-            //To change body of implemented methods use File | Settings | File Templates.
         }
     }
 
 
+    @Test
+    public void testMapInterceptorOnNewMember() throws InterruptedException {
+        StaticNodeFactory nodeFactory = new StaticNodeFactory(2);
+        Config cfg = new Config();
+        cfg.getMapConfig("default").setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        IMap map = instance1.getMap("map");
+        for (int i = 0; i < 100; i++) {
+            map.put(i,i);
+        }
+        map.addInterceptor(new NegativeInterceptor());
+        for (int i = 0; i < 100; i++) {
+            assertEquals(i*-1, map.get(i));
+        }
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+        for (int i = 0; i < 100; i++) {
+            assertEquals(i*-1, map.get(i));
+        }
+    }
 
+    static class NegativeInterceptor implements MapInterceptor, Serializable {
+        @Override
+        public Object interceptGet(Object value) {
+            return ((Integer)value)*-1;
+        }
 
+        @Override
+        public void afterGet(Object value) {
+        }
+
+        @Override
+        public Object interceptPut(Object oldValue, Object newValue) {
+            return newValue;
+        }
+
+        @Override
+        public void afterPut(Object value) {
+        }
+
+        @Override
+        public Object interceptRemove(Object removedValue) {
+            return removedValue;
+        }
+
+        @Override
+        public void afterRemove(Object value) {
+        }
+    }
 }

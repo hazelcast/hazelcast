@@ -18,7 +18,6 @@ package com.hazelcast.client.spi;
 
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.nio.serialization.SerializationService;
 
 /**
  * @mdogan 5/16/13
@@ -29,65 +28,23 @@ public abstract class ClientProxy implements DistributedObject {
 
     private final Object objectId;
 
-    private volatile SerializationService serializationService;
-
-    private volatile ClientClusterService clusterService;
-
-    private volatile ClientPartitionService partitionService;
-
-    private volatile ClientInvocationService invocationService;
+    private volatile ClientContext context;
 
     protected ClientProxy(String serviceName, Object objectId) {
         this.serviceName = serviceName;
         this.objectId = objectId;
     }
 
-    final void setClusterService(ClientClusterService clusterService) {
-        this.clusterService = clusterService;
-    }
-
-    final void setPartitionService(ClientPartitionService partitionService) {
-        this.partitionService = partitionService;
-    }
-
-    final void setInvocationService(ClientInvocationService invocationService) {
-        this.invocationService = invocationService;
-    }
-
-    final void setSerializationService(SerializationService serializationService) {
-        this.serializationService = serializationService;
-    }
-
-    public final SerializationService getSerializationService() {
-        final SerializationService ss = serializationService;
-        if (ss == null) {
+    public final ClientContext getContext() {
+        final ClientContext ctx = context;
+        if (ctx == null) {
             throw new HazelcastInstanceNotActiveException();
         }
-        return ss;
+        return context;
     }
 
-    public final ClientClusterService getClusterService() {
-        final ClientClusterService cs = clusterService;
-        if (cs == null) {
-            throw new HazelcastInstanceNotActiveException();
-        }
-        return cs;
-    }
-
-    public final ClientPartitionService getPartitionService() {
-        final ClientPartitionService ps = partitionService;
-        if (ps == null) {
-            throw new HazelcastInstanceNotActiveException();
-        }
-        return ps;
-    }
-
-    public final ClientInvocationService getInvocationService() {
-        final ClientInvocationService is = invocationService;
-        if (is == null) {
-            throw new HazelcastInstanceNotActiveException();
-        }
-        return is;
+    final void setContext(ClientContext context) {
+        this.context = context;
     }
 
     public final Object getId() {
@@ -100,10 +57,7 @@ public abstract class ClientProxy implements DistributedObject {
 
     public final void destroy() {
         onDestroy();
-        serializationService = null;
-        clusterService = null;
-        partitionService = null;
-        invocationService = null;
+        context = null;
     }
 
     protected abstract void onDestroy();

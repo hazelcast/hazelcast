@@ -41,7 +41,7 @@ public class AddInterceptorOperation extends AbstractOperation {
 
     public void run() {
         mapService = getService();
-        mapService.getMapContainer(mapName).addInterceptor(mapInterceptor, id);
+        mapService.getMapContainer(mapName).addInterceptor(id, mapInterceptor);
     }
 
     @Override

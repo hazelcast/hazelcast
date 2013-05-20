@@ -113,10 +113,15 @@ final class ConnectionImpl implements Connection {
     }
 
     @Override
-    public void close() throws IOException {
+    public void release() throws IOException {
         out.close();
         in.close();
         socket.close();
+    }
+
+    @Override
+    public void close() throws IOException {
+        release();
     }
 
     @Override

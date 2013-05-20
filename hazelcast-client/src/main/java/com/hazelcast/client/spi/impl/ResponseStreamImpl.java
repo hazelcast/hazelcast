@@ -30,6 +30,7 @@ final class ResponseStreamImpl implements ResponseStream {
 
     private final SerializationService serializationService;
     private final Connection connection;
+    private boolean ended = false;
 
     ResponseStreamImpl(SerializationService serializationService, Connection connection) {
         this.serializationService = serializationService;
@@ -42,6 +43,11 @@ final class ResponseStreamImpl implements ResponseStream {
     }
 
     public void end() throws IOException {
-        connection.close();
+        synchronized (this) {
+            if (!ended) {
+                connection.close();
+                ended = true;
+            }
+        }
     }
 }

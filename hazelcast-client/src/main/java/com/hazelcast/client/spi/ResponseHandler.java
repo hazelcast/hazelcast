@@ -14,9 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.util.pool;
+package com.hazelcast.client.spi;
 
-public interface Factory<E> {
+/**
+ * @mdogan 5/20/13
+ */
+public interface ResponseHandler {
 
-    E create() throws Exception;
+    void handle(ResponseStream stream) throws Exception;
+
 }

@@ -14,14 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.exception;
+package com.hazelcast.client.util;
 
-public class NoMemberAvailableException extends ClientException {
-    public NoMemberAvailableException() {
-        this("No cluster member available to connect");
-    }
+public interface Factory<E> {
 
-    public NoMemberAvailableException(String message) {
-        super(message);
-    }
+    E create() throws Exception;
 }

@@ -20,10 +20,10 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.SocketOptions;
-import com.hazelcast.client.util.pool.Destructor;
-import com.hazelcast.client.util.pool.Factory;
-import com.hazelcast.client.util.pool.ObjectPool;
-import com.hazelcast.client.util.pool.QueueBasedObjectPool;
+import com.hazelcast.client.util.Destructor;
+import com.hazelcast.client.util.Factory;
+import com.hazelcast.client.util.ObjectPool;
+import com.hazelcast.client.util.QueueBasedObjectPool;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
@@ -110,7 +110,7 @@ public class ClientConnectionManager {
             return getRandomConnection();
         }
         if (!heartbeat.checkHeartBeat(connection)) {
-            connection.destroy();
+            connection.close();
             return getRandomConnection();
         }
         return connection;
@@ -130,7 +130,7 @@ public class ClientConnectionManager {
                 }
             }, new Destructor<ConnectionWrapper>() {
                 public void destroy(ConnectionWrapper connection) {
-                    connection.destroy();
+                    connection.close();
                 }
             }
             );
@@ -161,11 +161,11 @@ public class ClientConnectionManager {
             return connection.read();
         }
 
-        public void close() throws IOException {
+        public void release() throws IOException {
             releaseConnection(this);
         }
 
-        private void destroy() {
+        public void close() {
             IOUtil.closeResource(connection);
         }
 
@@ -184,10 +184,10 @@ public class ClientConnectionManager {
             if (pool != null) {
                 pool.release(connection);
             } else {
-                connection.destroy();
+                connection.close();
             }
         } else {
-            connection.destroy();
+            connection.close();
         }
     }
 

@@ -1,4 +1,4 @@
-package com.hazelcast.client.util.pool;
+package com.hazelcast.client.util;
 
 /**
  * @mdogan 5/17/13

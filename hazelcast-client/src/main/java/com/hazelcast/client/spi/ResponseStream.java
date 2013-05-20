@@ -23,7 +23,7 @@ import java.io.IOException;
  */
 public interface ResponseStream {
 
-    <T> T read() throws Exception;
+    Object read() throws Exception;
 
     void end() throws IOException;
 

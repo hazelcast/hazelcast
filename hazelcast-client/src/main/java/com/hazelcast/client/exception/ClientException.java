@@ -14,17 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.util.pool;
+package com.hazelcast.client.exception;
 
-public interface ObjectPool<E> {
+import com.hazelcast.core.HazelcastException;
 
-    E take();
+public class ClientException extends HazelcastException {
+    private static final long serialVersionUID = 1L;
 
-    void release(E e);
+    public ClientException() {
+        super();
+    }
 
-    int size();
+    public ClientException(String message) {
+        super(message);
+    }
 
-    void destroy();
+    public ClientException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public ClientException(Throwable cause) {
+        super(cause);
+    }
 }
-
-

@@ -14,14 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.exception;
+package com.hazelcast.client.util;
 
-public class NoMemberAvailableException extends ClientException {
-    public NoMemberAvailableException() {
-        this("No cluster member available to connect");
-    }
+public interface ObjectPool<E> {
 
-    public NoMemberAvailableException(String message) {
-        super(message);
-    }
+    E take();
+
+    void release(E e);
+
+    int size();
+
+    void destroy();
 }
+
+
