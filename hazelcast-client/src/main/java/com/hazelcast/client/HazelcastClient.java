@@ -26,6 +26,11 @@ import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.client.util.RoundRobinLB;
+import com.hazelcast.collection.CollectionProxyId;
+import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionService;
+import com.hazelcast.collection.list.ObjectListProxy;
+import com.hazelcast.collection.set.ObjectSetProxy;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
@@ -135,12 +140,14 @@ public class HazelcastClient implements HazelcastInstance {
 
     @Override
     public <E> ISet<E> getSet(String name) {
-        return null;
+        return getDistributedObject(CollectionService.SERVICE_NAME,
+                new CollectionProxyId(ObjectSetProxy.COLLECTION_SET_NAME, name, CollectionProxyType.SET));
     }
 
     @Override
     public <E> IList<E> getList(String name) {
-        return null;
+        return getDistributedObject(CollectionService.SERVICE_NAME,
+                new CollectionProxyId(ObjectListProxy.COLLECTION_LIST_NAME, name, CollectionProxyType.LIST));
     }
 
     @Override
@@ -150,7 +157,8 @@ public class HazelcastClient implements HazelcastInstance {
 
     @Override
     public <K, V> MultiMap<K, V> getMultiMap(String name) {
-        return null;
+        return getDistributedObject(CollectionService.SERVICE_NAME,
+                new CollectionProxyId(name, null, CollectionProxyType.MULTI_MAP));
     }
 
     @Override

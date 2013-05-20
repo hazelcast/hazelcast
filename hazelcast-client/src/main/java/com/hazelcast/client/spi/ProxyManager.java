@@ -18,8 +18,10 @@ package com.hazelcast.client.spi;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ProxyFactoryConfig;
-import com.hazelcast.client.proxy.ClientMapProxy;
-import com.hazelcast.client.proxy.ClientQueueProxy;
+import com.hazelcast.client.proxy.*;
+import com.hazelcast.collection.CollectionProxyId;
+import com.hazelcast.collection.CollectionProxyType;
+import com.hazelcast.collection.CollectionService;
 import com.hazelcast.map.MapService;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.DefaultObjectNamespace;
@@ -55,6 +57,25 @@ public final class ProxyManager {
                 return new ClientQueueProxy(QueueService.SERVICE_NAME, String.valueOf(id));
             }
         });
+        register(CollectionService.SERVICE_NAME, new ClientProxyFactory() {
+            public ClientProxy create(Object id) {
+                CollectionProxyId proxyId = (CollectionProxyId)id;
+                final CollectionProxyType type = proxyId.getType();
+                switch (type) {
+                    case MULTI_MAP:
+                        return new ClientMultiMapProxy(CollectionService.SERVICE_NAME, proxyId);
+                    case LIST:
+                        return new ClientListProxy(CollectionService.SERVICE_NAME, proxyId);
+                    case SET:
+                        return new ClientSetProxy(CollectionService.SERVICE_NAME, proxyId);
+                    case QUEUE:
+                        return null;
+                }
+                return null;
+            }
+        });
+
+
 
         for (Map.Entry<String, ClientProxyFactory> entry : config.getFactories().entrySet()) {
             register(entry.getKey(), entry.getValue());

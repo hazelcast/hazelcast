@@ -23,6 +23,7 @@ import com.hazelcast.collection.operations.CollectionResponse;
 import com.hazelcast.collection.operations.MultiMapOperationFactory;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.impl.PortableCollection;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -52,11 +53,14 @@ public class ValuesRequest extends CollectionAllPartitionRequest {
             }
             CollectionResponse response = (CollectionResponse)obj;
             Collection<CollectionRecord> coll = response.getCollection();
+            if (coll == null){
+                continue;
+            }
             for (CollectionRecord record: coll){
                 list.add(getClientEngine().toData(record.getObject()));
             }
         }
-        return new PortableCollectionResponse(list);
+        return new PortableCollection(list);
     }
 
     public int getClassId() {

@@ -22,6 +22,7 @@ import com.hazelcast.collection.operations.CollectionResponse;
 import com.hazelcast.collection.operations.MultiMapOperationFactory;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.spi.impl.PortableCollection;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -52,9 +53,11 @@ public class KeySetRequest extends CollectionAllPartitionRequest {
             }
             CollectionResponse response = (CollectionResponse)obj;
             Collection<Data> coll = response.getCollection();
-            keySet.addAll(coll);
+            if (coll != null){
+                keySet.addAll(coll);
+            }
         }
-        return new PortableCollectionResponse(keySet);
+        return new PortableCollection(keySet);
     }
 
     public int getClassId() {

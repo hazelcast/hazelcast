@@ -25,6 +25,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.PortableCollection;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -66,11 +67,14 @@ public class RemoveAllRequest extends CollectionKeyBasedRequest{
     protected Object filter(Object response) {
         if (response instanceof CollectionResponse){
             Collection<CollectionRecord> coll = ((CollectionResponse) response).getCollection();
+            if (coll == null){
+                return new PortableCollection();
+            }
             Collection<Data> collection = new ArrayList<Data>(coll.size());
             for (CollectionRecord record: coll){
                 collection.add(getClientEngine().toData(record.getObject()));
             }
-            return new PortableCollectionResponse(collection);
+            return new PortableCollection(collection);
         }
         return super.filter(response);
     }

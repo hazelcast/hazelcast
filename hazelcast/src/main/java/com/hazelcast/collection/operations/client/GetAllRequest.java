@@ -23,6 +23,7 @@ import com.hazelcast.collection.operations.CollectionResponse;
 import com.hazelcast.collection.operations.GetAllOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.impl.PortableCollection;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -50,11 +51,14 @@ public class GetAllRequest extends CollectionKeyBasedRequest {
     protected Object filter(Object response) {
         if (response instanceof CollectionResponse){
             Collection<CollectionRecord> coll = ((CollectionResponse) response).getCollection();
+            if (coll == null){
+                return new PortableCollection();
+            }
             Collection<Data> collection = new ArrayList<Data>(coll.size());
             for (CollectionRecord record: coll){
                 collection.add(getClientEngine().toData(record.getObject()));
             }
-            return new PortableCollectionResponse(collection);
+            return new PortableCollection(collection);
         }
         return super.filter(response);
     }

@@ -13,6 +13,7 @@ import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
+import com.hazelcast.spi.impl.PortableCollection;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -250,13 +251,13 @@ public class CollectionBinaryClientTest extends ClientTestSupport {
 
 
         client().send(new GetAllRequest(mmProxyId, ss.toData("key1")));
-        PortableCollectionResponse result = (PortableCollectionResponse) client().receive();
+        PortableCollection result = (PortableCollection) client().receive();
         Collection<Data> coll = result.getCollection();
         assertEquals(1, coll.size());
         assertEquals("value1", ss.toObject(coll.iterator().next()));
 
         client().send(new GetAllRequest(mmProxyId, ss.toData("key2")));
-        result = (PortableCollectionResponse) client().receive();
+        result = (PortableCollection) client().receive();
         coll = result.getCollection();
         assertEquals(2, coll.size());
     }
@@ -309,7 +310,7 @@ public class CollectionBinaryClientTest extends ClientTestSupport {
         mm.put("key2", "value2");
 
         client().send(new KeySetRequest(mmProxyId));
-        PortableCollectionResponse result = (PortableCollectionResponse) client().receive();
+        PortableCollection result = (PortableCollection) client().receive();
         Collection<Data> keySet = result.getCollection();
         assertEquals(2, keySet.size());
 
@@ -362,13 +363,13 @@ public class CollectionBinaryClientTest extends ClientTestSupport {
 
 
         client().send(new RemoveAllRequest(mmProxyId, ss.toData("key1"), getThreadId()));
-        PortableCollectionResponse result = (PortableCollectionResponse) client().receive();
+        PortableCollection result = (PortableCollection) client().receive();
         Collection<Data> coll = result.getCollection();
         assertEquals(1, coll.size());
         assertEquals("value1", ss.toObject(coll.iterator().next()));
 
         client().send(new RemoveAllRequest(mmProxyId, ss.toData("key2"), getThreadId()));
-        result = (PortableCollectionResponse) client().receive();
+        result = (PortableCollection) client().receive();
         coll = result.getCollection();
         assertEquals(2, coll.size());
 
@@ -458,7 +459,7 @@ public class CollectionBinaryClientTest extends ClientTestSupport {
         mm.put("key3", "value2");
 
         client().send(new ValuesRequest(mmProxyId));
-        PortableCollectionResponse result = (PortableCollectionResponse) client().receive();
+        PortableCollection result = (PortableCollection) client().receive();
         Collection<Data> coll = result.getCollection();
         assertEquals(4, coll.size());
 

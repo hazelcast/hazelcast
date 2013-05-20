@@ -50,8 +50,7 @@ public class CollectionPortableHook implements PortableHook {
     public static final int SIZE = 18;
     public static final int VALUES = 19;
     public static final int ADD_LISTENER = 20;
-    public static final int COLLECTION_RESPONSE = 21;
-    public static final int ENTRY_SET_RESPONSE = 22;
+    public static final int ENTRY_SET_RESPONSE = 21;
 
 
 
@@ -60,12 +59,7 @@ public class CollectionPortableHook implements PortableHook {
     }
 
     public PortableFactory createFactory() {
-        ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[23];
-        constructors[ENTRY_SET_RESPONSE] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new PortableEntrySetResponse();
-            }
-        };
+        ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[22];
         constructors[ADD_ALL] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
                 return new AddAllRequest();
@@ -166,9 +160,9 @@ public class CollectionPortableHook implements PortableHook {
                 return new AddListenerRequest();
             }
         };
-        constructors[COLLECTION_RESPONSE] = new ConstructorFunction<Integer, Portable>() {
+        constructors[ENTRY_SET_RESPONSE] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
-                return new PortableCollectionResponse();
+                return new PortableEntrySetResponse();
             }
         };
 
