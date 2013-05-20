@@ -43,8 +43,8 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
     }
 
     public String addItemListener(ItemListener<E> listener, boolean includeValue) {
-        //TODO assign a thread for receiving
         final AddListenerRequest request = new AddListenerRequest(name, includeValue);
+
         return invoke(request);
     }
 

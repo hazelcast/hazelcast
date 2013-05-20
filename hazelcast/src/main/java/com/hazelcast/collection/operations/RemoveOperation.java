@@ -72,7 +72,6 @@ public class RemoveOperation extends CollectionBackupAwareOperation {
     }
 
     public void afterRun() throws Exception {
-        long elapsed = Math.max(0, Clock.currentTimeMillis() - begin);
         if (Boolean.TRUE.equals(response)) {
             getOrCreateContainer().update();
             publishEvent(EntryEventType.REMOVED, dataKey, value);

@@ -120,11 +120,11 @@ public class ObjectListProxy<E> extends MultiMapProxySupport implements Collecti
     }
 
     public boolean removeAll(Collection<?> c) {
-        return false;
+        return compareAndRemoveInternal(key, toDataList(c), false);
     }
 
     public boolean retainAll(Collection<?> c) {
-        return false;
+        return compareAndRemoveInternal(key, toDataList(c), true);
     }
 
     public void clear() {
