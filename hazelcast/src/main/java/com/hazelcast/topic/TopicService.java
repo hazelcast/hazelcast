@@ -88,10 +88,6 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         return proxy;
     }
 
-    public TopicProxy createDistributedObjectForClient(Object objectId) {
-        return createDistributedObject(objectId);
-    }
-
     public void destroyDistributedObject(Object objectId) {
         statsMap.remove(String.valueOf(objectId));
 

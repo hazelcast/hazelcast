@@ -75,10 +75,6 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
         return new AtomicLongProxy(String.valueOf(objectId), nodeEngine, this);
     }
 
-    public AtomicLongProxy createDistributedObjectForClient(Object objectId) {
-        return createDistributedObject(objectId);
-    }
-
     public void destroyDistributedObject(Object objectId) {
         numbers.remove(String.valueOf(objectId));
     }

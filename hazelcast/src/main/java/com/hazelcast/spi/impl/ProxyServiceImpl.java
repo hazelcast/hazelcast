@@ -201,12 +201,6 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
             return proxy;
         }
 
-        final ConstructorFunction<Object, DistributedObject> clientProxyConstructor = new ConstructorFunction<Object, DistributedObject>() {
-            public DistributedObject createNew(Object key) {
-                return service.createDistributedObjectForClient(key);
-            }
-        };
-
         void destroyProxy(Object objectId) {
             if (proxies.remove(objectId) != null) {
                 final DistributedObjectEvent event = createEvent(objectId, DESTROYED);

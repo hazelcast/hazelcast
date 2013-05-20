@@ -154,10 +154,6 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         return new ObjectQueueProxy(String.valueOf(objectId), this, nodeEngine);
     }
 
-    public DataQueueProxy createDistributedObjectForClient(Object objectId) {
-        return new DataQueueProxy(String.valueOf(objectId), this, nodeEngine);
-    }
-
     public void destroyDistributedObject(Object objectId) {
         final String name = String.valueOf(objectId);
         containerMap.remove(name);

@@ -202,10 +202,6 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
         return new LockProxy(nodeEngine, this, nodeEngine.getSerializationService().toData(objectId));
     }
 
-    public DistributedObject createDistributedObjectForClient(Object objectId) {
-        return new LockProxy(nodeEngine, this, nodeEngine.getSerializationService().toData(objectId));
-    }
-
     public void destroyDistributedObject(Object objectId) {
         final Data key = nodeEngine.getSerializationService().toData(objectId);
         for (LockStoreContainer container : containers) {

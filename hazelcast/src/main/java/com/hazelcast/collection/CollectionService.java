@@ -145,10 +145,6 @@ public class CollectionService implements ManagedService, RemoteService,
         throw new IllegalArgumentException();
     }
 
-    public DistributedObject createDistributedObjectForClient(Object objectId) {
-        return createDistributedObject(objectId);
-    }
-
     public void destroyDistributedObject(Object objectId) {
         CollectionProxyId collectionProxyId = (CollectionProxyId) objectId;
         for (CollectionPartitionContainer container : partitionContainers) {

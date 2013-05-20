@@ -467,12 +467,6 @@ public class MapService implements ManagedService, MigrationAwareService,
         return new ObjectMapProxy(name, this, nodeEngine);
     }
 
-    public DataMapProxy createDistributedObjectForClient(Object objectId) {
-        final String name = String.valueOf(objectId);
-        initMap(name);
-        return new DataMapProxy(name, this, nodeEngine);
-    }
-
     public void destroyDistributedObject(Object objectId) {
         logger.log(Level.WARNING, "Destroying object: " + objectId);
         final String name = String.valueOf(objectId);

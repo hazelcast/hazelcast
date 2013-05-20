@@ -99,10 +99,6 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
         return new CountDownLatchProxy(String.valueOf(objectId), nodeEngine);
     }
 
-    public CountDownLatchProxy createDistributedObjectForClient(Object objectId) {
-        return new CountDownLatchProxy(String.valueOf(objectId), nodeEngine);
-    }
-
     public void destroyDistributedObject(Object objectId) {
         latches.remove(String.valueOf(objectId));
     }

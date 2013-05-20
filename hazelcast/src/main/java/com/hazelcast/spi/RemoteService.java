@@ -27,7 +27,5 @@ public interface RemoteService {
 
     DistributedObject createDistributedObject(Object objectId);
 
-    DistributedObject createDistributedObjectForClient(Object objectId);
-
     void destroyDistributedObject(Object objectId);
 }
