@@ -187,6 +187,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         PostJoinMapOperation o = new PostJoinMapOperation();
         for (MapContainer mapContainer : mapContainers.values()) {
             o.addMapIndex(mapContainer);
+            o.addMapInterceptors(mapContainer);
         }
         return o;
     }

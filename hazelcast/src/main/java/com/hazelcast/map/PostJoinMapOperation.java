@@ -25,13 +25,12 @@ import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.spi.AbstractOperation;
 
 import java.io.IOException;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 public class PostJoinMapOperation extends AbstractOperation implements JoinOperation {
 
-    // todo add interceptors
-    private List<MapIndexInfo> lsMapIndexes = new LinkedList<MapIndexInfo>();
+    private List<MapIndexInfo> indexInfoList = new LinkedList<MapIndexInfo>();
+    private List<InterceptorInfo> interceptorInfoList = new LinkedList<InterceptorInfo>();
 
     @Override
     public String getServiceName() {
@@ -45,7 +44,60 @@ public class PostJoinMapOperation extends AbstractOperation implements JoinOpera
             for (Index index : indexService.getIndexes()) {
                 mapIndexInfo.addIndexInfo(index.getAttributeName(), index.isOrdered());
             }
-            lsMapIndexes.add(mapIndexInfo);
+            indexInfoList.add(mapIndexInfo);
+        }
+    }
+
+    void addMapInterceptors(MapContainer mapContainer) {
+        List<MapInterceptor> interceptorList = mapContainer.getInterceptors();
+        Map<String, MapInterceptor> interceptorMap = mapContainer.getInterceptorMap();
+        Map<MapInterceptor, String> revMap = new HashMap<MapInterceptor, String>();
+        for (Map.Entry<String, MapInterceptor> entry : interceptorMap.entrySet()) {
+            revMap.put(entry.getValue(), entry.getKey());
+        }
+        InterceptorInfo interceptorInfo = new InterceptorInfo(mapContainer.getName());
+        for (MapInterceptor interceptor : interceptorList) {
+            interceptorInfo.addInterceptor(revMap.get(interceptor), interceptor);
+        }
+        interceptorInfoList.add(interceptorInfo);
+    }
+
+    class InterceptorInfo implements DataSerializable {
+
+        String mapName;
+        List<Map.Entry<String, MapInterceptor>> interceptors = new LinkedList<Map.Entry<String, MapInterceptor>>();
+
+        InterceptorInfo(String mapName) {
+            this.mapName = mapName;
+        }
+
+        InterceptorInfo() {
+        }
+
+        void addInterceptor(String id, MapInterceptor interceptor) {
+            interceptors.add(new AbstractMap.SimpleImmutableEntry<String, MapInterceptor>(id, interceptor));
+
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeUTF(mapName);
+            out.writeInt(interceptors.size());
+            for (Map.Entry<String, MapInterceptor> entry : interceptors) {
+                out.writeUTF(entry.getKey());
+                out.writeObject(entry.getValue());
+            }
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            mapName = in.readUTF();
+            int size = in.readInt();
+            for (int i = 0; i < size; i++) {
+                String id = in.readUTF();
+                MapInterceptor interceptor = in.readObject();
+                interceptors.add(new AbstractMap.SimpleImmutableEntry<String, MapInterceptor>(id, interceptor));
+            }
         }
     }
 
@@ -109,11 +161,21 @@ public class PostJoinMapOperation extends AbstractOperation implements JoinOpera
     @Override
     public void run() throws Exception {
         MapService mapService = getService();
-        for (MapIndexInfo mapIndex : lsMapIndexes) {
+        for (MapIndexInfo mapIndex : indexInfoList) {
             final MapContainer mapContainer = mapService.getMapContainer(mapIndex.mapName);
             final IndexService indexService = mapContainer.getIndexService();
             for (MapIndexInfo.IndexInfo indexInfo : mapIndex.lsIndexes) {
                 indexService.addOrGetIndex(indexInfo.attributeName, indexInfo.ordered);
+            }
+        }
+        for (InterceptorInfo interceptorInfo : interceptorInfoList) {
+            final MapContainer mapContainer = mapService.getMapContainer(interceptorInfo.mapName);
+            Map<String, MapInterceptor> interceptorMap = mapContainer.getInterceptorMap();
+            List<Map.Entry<String, MapInterceptor>> entryList = interceptorInfo.interceptors;
+            for (Map.Entry<String, MapInterceptor> entry : entryList) {
+                if (!interceptorMap.containsKey(entry.getKey())) {
+                    mapContainer.addInterceptor(entry.getKey(), entry.getValue());
+                }
             }
         }
     }
@@ -121,9 +183,13 @@ public class PostJoinMapOperation extends AbstractOperation implements JoinOpera
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeInt(lsMapIndexes.size());
-        for (MapIndexInfo mapIndex : lsMapIndexes) {
+        out.writeInt(indexInfoList.size());
+        for (MapIndexInfo mapIndex : indexInfoList) {
             mapIndex.writeData(out);
+        }
+        out.writeInt(interceptorInfoList.size());
+        for (InterceptorInfo interceptorInfo : interceptorInfoList) {
+            interceptorInfo.writeData(out);
         }
     }
 
@@ -134,7 +200,13 @@ public class PostJoinMapOperation extends AbstractOperation implements JoinOpera
         for (int i = 0; i < size; i++) {
             MapIndexInfo mapIndexInfo = new MapIndexInfo();
             mapIndexInfo.readData(in);
-            lsMapIndexes.add(mapIndexInfo);
+            indexInfoList.add(mapIndexInfo);
+        }
+        int size2 = in.readInt();
+        for (int i = 0; i < size2; i++) {
+            InterceptorInfo info = new InterceptorInfo();
+            info.readData(in);
+            interceptorInfoList.add(info);
         }
     }
 }
