@@ -17,12 +17,21 @@
 package com.hazelcast.impl.concurrentmap;
 
 public class QueryException extends RuntimeException {
+
+    public QueryException() {
+    }
+
+    public QueryException(String message) {
+        super(message);
+    }
+
     public QueryException(Throwable cause) {
         super(cause);
     }
 
     @Override
     public String getMessage() {
-        return getCause().getMessage();
+        final Throwable cause = getCause();
+        return cause != null ? cause.getMessage() : super.getMessage();
     }
 }

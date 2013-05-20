@@ -18,6 +18,7 @@ package com.hazelcast.query;
 
 import com.hazelcast.core.MapEntry;
 import com.hazelcast.impl.Record;
+import com.hazelcast.impl.concurrentmap.QueryException;
 import com.hazelcast.nio.Data;
 
 import java.util.*;
@@ -44,8 +45,11 @@ public class MapIndexService {
     public void remove(Record record) {
         Record existingRecord = records.remove(record.getId());
         if (existingRecord != null) {
-            for (Index index : mapIndexes.values()) {
-                index.removeRecordIndex(record.getIndexes()[index.getAttributeIndex()], record.getId());
+            final Long[] indexes = record.getIndexes();
+            if (indexes != null && indexes.length > 0) { // @mm - fails if one member has no index configuration!
+                for (Index index : mapIndexes.values()) {
+                    index.removeRecordIndex(indexes[index.getAttributeIndex()], record.getId());
+                }
             }
             size.decrementAndGet();
         }
@@ -130,9 +134,8 @@ public class MapIndexService {
         if (index == null) {
             if (size() > 0) {
                 StringBuilder sb = new StringBuilder("Index can only be added before adding entries!");
-                sb.append("\n");
-                sb.append("Add indexes first and only once then put entries.");
-                throw new RuntimeException(sb.toString());
+                sb.append(" Add indexes first and only once then put entries.");
+                throw new QueryException(sb.toString());
             }
             if (attributeIndex == -1) {
                 attributeIndex = mapIndexes.size();

@@ -17,6 +17,8 @@
 package com.hazelcast.impl.partition;
 
 import com.hazelcast.config.PartitionGroupConfig;
+import com.hazelcast.impl.Util;
+import com.hazelcast.nio.Serializer;
 
 public class PartitionStateGeneratorFactory {
 
@@ -44,6 +46,15 @@ public class PartitionStateGeneratorFactory {
             case HOST_AWARE:
                 return new HostAwareMemberGroupFactory();
             case CUSTOM:
+                if (partitionGroupConfig.getMemberGroupFactoryClassname() != null) {
+                    try {
+                        final MemberGroupFactory f;
+                        f = (MemberGroupFactory) Serializer.newInstance(partitionGroupConfig.getMemberGroupFactoryClassname());
+                        return f;
+                    } catch (Exception e) {
+                        Util.throwUncheckedException(e);
+                    }
+                }
                 return new ConfigMemberGroupFactory(partitionGroupConfig.getMemberGroupConfigs());
             default:
                 return new SingleMemberGroupFactory();

@@ -1300,7 +1300,7 @@ public class HazelcastTest {
         for (int i = 0; i < blockingOpCount; i++) {
             map.remove(i);
         }
-        assertTrue(latch.await(1, TimeUnit.SECONDS));
+        assertTrue(latch.await(3, TimeUnit.SECONDS));
         ex.shutdown();
 
         assertEquals(capacity, map.size());

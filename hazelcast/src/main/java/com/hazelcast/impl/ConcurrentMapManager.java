@@ -1752,13 +1752,14 @@ public class ConcurrentMapManager extends BaseManager {
             DataRecordEntry dataRecordEntry = new DataRecordEntry(record, valueData, false);
             request.setFromRecord(record);
             request.operation = CONCURRENT_MAP_MERGE;
-            request.value = toData(dataRecordEntry);
+            Data realValue = toData(dataRecordEntry);
+            request.value = realValue;
             request.setBooleanRequest();
             doOp();
             Boolean returnObject = getResultAsBoolean();
             if (returnObject) {
                 request.value = valueData;
-                backup(CONCURRENT_MAP_BACKUP_PUT);
+                backup(CONCURRENT_MAP_BACKUP_PUT, realValue);
             }
         }
 
@@ -1812,11 +1813,12 @@ public class ConcurrentMapManager extends BaseManager {
                 request.longValue = (request.value == null) ? Integer.MIN_VALUE : dataNew.hashCode();
                 setIndexValues(request, newValue);
                 request.setBooleanRequest();
+                final Data realValue = request.value; // will be used if op is retried after backup...
                 doOp();
                 Object returnObject = getResultAsBoolean();
                 if (!Boolean.FALSE.equals(returnObject)) {
                     request.value = dataNew;
-                    backup(CONCURRENT_MAP_BACKUP_PUT);
+                    backup(CONCURRENT_MAP_BACKUP_PUT, realValue);
                 }
                 return returnObject;
             }
@@ -1878,7 +1880,7 @@ public class ConcurrentMapManager extends BaseManager {
                         || operation == CONCURRENT_MAP_PUT_FROM_LOAD
                         || operation == CONCURRENT_MAP_PUT_TRANSIENT) {
                     request.setBooleanRequest();
-                    Data valueData = request.value;
+                    final Data valueData = request.value;
                     doOp();
                     Boolean successful = getResultAsBoolean();
                     if (successful) {
@@ -2139,6 +2141,10 @@ public class ConcurrentMapManager extends BaseManager {
         protected volatile int asyncBackupCount = 0;
 
         protected void backup(ClusterOperation operation) {
+            backup(operation, null);
+        }
+
+        protected void backup(ClusterOperation operation, Data realValue) {
             final int localBackupCount = backupCount;
             final int localAsyncBackupCount = asyncBackupCount;
             final int totalBackupCount = localBackupCount + localAsyncBackupCount;
@@ -2181,13 +2187,15 @@ public class ConcurrentMapManager extends BaseManager {
                     logger.log(Level.FINEST, e.getMessage(), e);
                 }
             }
+
             if (totalBackupCount > 0 && shouldRedoWhenOwnerDies()
                     && target != null && node.getClusterImpl().getMember(target) == null) {
                 // Operation seems successful but since owner target is dead, we may loose data!
                 // We should retry actual operation for the new target
-                logger.log(Level.WARNING, "Target[" + target + "] is dead! " +
-                        "Hazelcast will retry " + request.operation);
-                // TODO: what if another call changes actual value? Do we need version check?
+                logger.log(Level.WARNING, "Target[" + target + "] is dead! Hazelcast will retry " + request.operation);
+                if (realValue != null) { // some operations uses different values for real op and backup op.
+                    request.value = realValue;
+                }
                 doOp(); // means redo...
                 getRedoAwareResult();   // wait for operation to complete...
             }
@@ -2902,7 +2910,7 @@ public class ConcurrentMapManager extends BaseManager {
                 request.value = multiData.getData(1); // new value
                 request.response = expectedValue.equals(record.getValue());
 
-                if (request.response == Boolean.TRUE) {
+                if (Boolean.TRUE.equals(request.response)) {
                     // to prevent possible race condition!
                     // See testMapReplaceIfSame# tests in ClusterTest
                     record.setValueData(request.value);
@@ -4099,6 +4107,12 @@ public class ConcurrentMapManager extends BaseManager {
             @Override
             public void onMigrate() {
                 returnRedoResponse(request, REDO_PARTITION_MIGRATING);
+            }
+
+            @Override
+            public String toString() {
+                return getClass().getSimpleName() + "[" + id + "]{ request= " + request +
+                        ", neverExpires=" + neverExpires() + ", timeout= " + timeout + "}";
             }
         };
         record.addScheduledAction(scheduledAction);

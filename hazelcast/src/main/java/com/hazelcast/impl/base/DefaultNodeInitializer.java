@@ -49,7 +49,7 @@ public class DefaultNodeInitializer implements NodeInitializer {
     public void printNodeInfo(Node node) {
         systemLogger.log(Level.INFO, "Hazelcast Community Edition " + version + " ("
                 + build + ") starting at " + node.getThisAddress());
-        systemLogger.log(Level.INFO, "Copyright (C) 2008-2012 Hazelcast.com");
+        systemLogger.log(Level.INFO, "Copyright (C) 2008-2013 Hazelcast.com");
     }
 
     public void afterInitialize(Node node) {

@@ -30,6 +30,10 @@ public final class Serializer extends AbstractSerializer {
         super(new DataSerializer(), new DefaultSerializer());
     }
 
+    public static Object newInstance(final String className) throws Exception {
+        return AbstractSerializer.newInstance(loadClass(className));
+    }
+
     public static Object newInstance(final Class klass) throws Exception {
         return AbstractSerializer.newInstance(klass);
     }

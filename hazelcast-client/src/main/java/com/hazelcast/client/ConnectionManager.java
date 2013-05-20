@@ -91,7 +91,9 @@ public class ConnectionManager implements MembershipListener {
                     } else if (diff >= TIMEOUT) {
                         logger.log(Level.WARNING, "Server didn't respond to client's requests for " + TIMEOUT / 1000 +
                                 " seconds. Assuming it is dead, closing the connection!");
-                        currentConnection.close();
+                        if (currentConnection != null) {
+                            currentConnection.close();
+                        }
                     }
                 } catch (InterruptedException e) {
                     return;

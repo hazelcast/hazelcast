@@ -22,6 +22,7 @@ import com.hazelcast.impl.Node;
 import com.hazelcast.impl.PartitionManager;
 import com.hazelcast.impl.concurrentmap.CostAwareRecordList;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.DataSerializable;
 
@@ -107,6 +108,9 @@ public class MigrationRequestTask extends MigratingPartition implements Callable
     }
 
     private ILogger getLogger() {
+        if (hazelcast == null) {
+            return Logger.getLogger(MigrationRequestTask.class.getName());
+        }
         return ((FactoryImpl) hazelcast).node.getLogger(MigrationRequestTask.class.getName());
     }
 
