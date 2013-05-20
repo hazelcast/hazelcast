@@ -16,12 +16,24 @@
 
 package com.hazelcast.client.exception;
 
-public class NoMemberAvailableException extends ClientException {
-    public NoMemberAvailableException() {
-        this("No cluster member available to connect");
+import com.hazelcast.core.HazelcastException;
+
+public class ClientException extends HazelcastException {
+    private static final long serialVersionUID = 1L;
+
+    public ClientException() {
+        super();
     }
 
-    public NoMemberAvailableException(String message) {
+    public ClientException(String message) {
         super(message);
+    }
+
+    public ClientException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public ClientException(Throwable cause) {
+        super(cause);
     }
 }

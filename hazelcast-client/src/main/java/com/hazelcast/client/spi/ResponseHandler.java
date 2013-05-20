@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.exception;
+package com.hazelcast.client.spi;
 
-public class NoMemberAvailableException extends ClientException {
-    public NoMemberAvailableException() {
-        this("No cluster member available to connect");
-    }
+/**
+ * @mdogan 5/20/13
+ */
+public interface ResponseHandler {
 
-    public NoMemberAvailableException(String message) {
-        super(message);
-    }
+    void handle(ResponseStream stream) throws Exception;
+
 }

@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.exception;
 
-public class AuthenticationException extends ClusterClientException {
+public class AuthenticationException extends ClientException {
     private static final long serialVersionUID = 1L;
 
     public AuthenticationException() {

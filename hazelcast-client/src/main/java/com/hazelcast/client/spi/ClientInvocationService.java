@@ -29,8 +29,10 @@ public interface ClientInvocationService {
 
     <T> T invokeOnKeyOwner(Object request, Object key) throws Exception;
 
-    ResponseStream streamFromRandomTarget(Object request) throws Exception;
+    void invokeOnRandomTarget(Object request, ResponseHandler handler) throws Exception;
 
-    ResponseStream streamFromTarget(Object request, Address target) throws Exception;
+    void invokeOnTarget(Object request, Address target, ResponseHandler handler) throws Exception;
+
+    void invokeOnKeyOwner(Object request, Object key, ResponseHandler handler) throws Exception;
 
 }

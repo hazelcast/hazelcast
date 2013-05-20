@@ -25,8 +25,9 @@ import com.hazelcast.client.connection.Authenticator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.Connection;
 import com.hazelcast.client.exception.AuthenticationException;
-import com.hazelcast.client.exception.ClusterClientException;
+import com.hazelcast.client.exception.ClientException;
 import com.hazelcast.client.spi.ClientClusterService;
+import com.hazelcast.client.spi.ResponseHandler;
 import com.hazelcast.client.spi.ResponseStream;
 import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.cluster.client.AddMembershipListenerRequest;
@@ -134,20 +135,28 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         return client.getConnectionManager();
     }
 
-    ResponseStream sendAndStream(Address address, Object obj) throws IOException {
+    void sendAndHandle(Address address, Object obj, ResponseHandler handler) throws IOException {
         final Connection conn = getConnectionManager().getConnection(address);
-        final SerializationService serializationService = getSerializationService();
-        final Data request = serializationService.toData(obj);
-        conn.write(request);
-        return new ResponseStreamImpl(serializationService, conn);
+        sendAndHandle(conn, obj, handler);
     }
 
-    ResponseStream sendAndStream(Object obj) throws IOException {
+    void sendAndHandle(Object obj, ResponseHandler handler) throws IOException {
         final Connection conn = getConnectionManager().getRandomConnection();
+        sendAndHandle(conn, obj, handler);
+    }
+
+    private void sendAndHandle(Connection conn, Object obj, ResponseHandler handler) throws IOException {
         final SerializationService serializationService = getSerializationService();
         final Data request = serializationService.toData(obj);
         conn.write(request);
-        return new ResponseStreamImpl(serializationService, conn);
+        final ResponseStream stream = new ResponseStreamImpl(serializationService, conn);
+        try {
+            handler.handle(stream);
+        } catch (Exception e) {
+            throw new ClientException(e);
+        } finally {
+            stream.end();
+        }
     }
 
     public Authenticator getAuthenticator() {
@@ -170,7 +179,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             final Connection connection = f.get(30, TimeUnit.SECONDS);
             clusterThread.setInitialConn(connection);
         } catch (Exception e) {
-            throw new ClusterClientException(e);
+            throw new ClientException(e);
         }
         clusterThread.start();
 
@@ -179,7 +188,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
-                throw new ClusterClientException(e);
+                throw new ClientException(e);
             }
         }
         // started
