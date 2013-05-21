@@ -84,7 +84,6 @@ public class AddListenerRequest extends CallableClientRequest implements Portabl
                     clientEngine.sendResponse(endpoint, event.toString());
                 }
                 else {
-                    System.err.println("De-registering listener for " + proxyId);
 //                    service.removeListener(proxyId.getName(), this, key);
                 }
             }

@@ -18,6 +18,10 @@ package com.hazelcast.client.spi;
 
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.nio.serialization.Data;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @mdogan 5/16/13
@@ -30,9 +34,31 @@ public abstract class ClientProxy implements DistributedObject {
 
     private volatile ClientContext context;
 
+    private final Map<String, ListenerSupport> listenerSupportMap = new ConcurrentHashMap<String, ListenerSupport>();
+
     protected ClientProxy(String serviceName, Object objectId) {
         this.serviceName = serviceName;
         this.objectId = objectId;
+    }
+
+    public String listen(Object registrationRequest, Data key, EventHandler handler){
+        ListenerSupport listenerSupport = new ListenerSupport(context, registrationRequest, handler, key);
+        String registrationId = listenerSupport.listen();
+        listenerSupportMap.put(registrationId, listenerSupport);
+        return registrationId;
+    }
+
+    public String listen(Object registrationRequest, EventHandler handler){
+        return listen(registrationRequest, null, handler);
+    }
+
+    public boolean stopListening(String registrationId){
+        ListenerSupport listenerSupport = listenerSupportMap.get(registrationId);
+        if (listenerSupport != null){
+            listenerSupport.stop();
+            return true;
+        }
+        return false;
     }
 
     public final ClientContext getContext() {

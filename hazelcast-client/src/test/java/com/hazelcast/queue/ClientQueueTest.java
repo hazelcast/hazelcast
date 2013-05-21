@@ -19,14 +19,16 @@ package com.hazelcast.queue;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.QueueConfig;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IQueue;
+import com.hazelcast.core.*;
 import com.hazelcast.instance.GroupProperties;
 import org.junit.*;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
@@ -39,6 +41,7 @@ public class ClientQueueTest {
 
     static final String queueName = "test";
     static HazelcastInstance hz;
+    static HazelcastInstance server;
     static IQueue q;
 
     @BeforeClass
@@ -46,7 +49,7 @@ public class ClientQueueTest {
         Config config = new Config();
         QueueConfig queueConfig = config.getQueueConfig(queueName);
         queueConfig.setMaxSize(6);
-        Hazelcast.newHazelcastInstance(config);
+        server = Hazelcast.newHazelcastInstance(config);
         hz = HazelcastClient.newHazelcastClient(null);
         q = hz.getQueue(queueName);
     }
@@ -64,7 +67,31 @@ public class ClientQueueTest {
     }
 
     @Test
-    public void testListener() throws IOException {
+    public void testListener() throws Exception {
+
+        final CountDownLatch latch = new CountDownLatch(6);
+
+        ItemListener listener = new ItemListener() {
+
+            public void itemAdded(ItemEvent itemEvent) {
+                latch.countDown();
+            }
+
+            public void itemRemoved(ItemEvent item) {
+            }
+        };
+        q.addItemListener(listener, true);
+
+        new Thread(){
+            public void run() {
+                for (int i=0; i<5; i++){
+                    q.offer("item" + i);
+                }
+                q.offer("done");
+            }
+        }.start();
+        assertTrue(latch.await(20, TimeUnit.SECONDS));
+
     }
 
     @Test

@@ -5,11 +5,13 @@ import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngine;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.queue.QueuePortableHook;
 import com.hazelcast.queue.QueueService;
+import com.hazelcast.spi.impl.PortableItemEvent;
 
 import java.io.IOException;
 
@@ -20,6 +22,7 @@ public class AddListenerRequest extends CallableClientRequest implements Portabl
 
     private String name;
     private boolean includeValue;
+    private transient String registrationId;
 
     public AddListenerRequest() {
     }
@@ -55,6 +58,7 @@ public class AddListenerRequest extends CallableClientRequest implements Portabl
         final ClientEndpoint endpoint = getEndpoint();
         final ClientEngine clientEngine = getClientEngine();
         final QueueService service = getService();
+
         ItemListener listener = new ItemListener() {
             public void itemAdded(ItemEvent item) {
                 send(item);
@@ -66,14 +70,20 @@ public class AddListenerRequest extends CallableClientRequest implements Portabl
 
             private void send(ItemEvent event){
                 if (endpoint.live()){
-                    clientEngine.sendResponse(endpoint, event.toString());
-                }
-                else {
-//                    System.err.println("De-registering listener for " + name);
-//                    service.removeItemListener(name, this);
+                    Data item = clientEngine.toData(event.getItem());
+                    PortableItemEvent portableItemEvent = new PortableItemEvent(item, event.getEventType(), event.getMember().getUuid());
+                    clientEngine.sendResponse(endpoint, portableItemEvent);
+                } else {
+                    if (registrationId != null){
+                        service.removeItemListener(name, registrationId);
+                    } else {
+                        System.err.println("registrationId is null!!!");
+                    }
+
                 }
             }
         };
-        return service.addItemListener(name, listener, includeValue);
+        registrationId = service.addItemListener(name, listener, includeValue);
+        return registrationId;
     }
 }

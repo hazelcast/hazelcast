@@ -17,13 +17,14 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.spi.ClientProxy;
-import com.hazelcast.core.IQueue;
-import com.hazelcast.core.ItemListener;
+import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.core.*;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.client.*;
 import com.hazelcast.queue.proxy.QueueIterator;
 import com.hazelcast.spi.impl.PortableCollection;
+import com.hazelcast.spi.impl.PortableItemEvent;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.*;
@@ -42,15 +43,25 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
         this.name = name;
     }
 
-    public String addItemListener(ItemListener<E> listener, boolean includeValue) {
+    public String addItemListener(final ItemListener<E> listener, final boolean includeValue) {
         final AddListenerRequest request = new AddListenerRequest(name, includeValue);
-
-        return invoke(request);
+        EventHandler<PortableItemEvent> eventHandler = new EventHandler<PortableItemEvent>() {
+            public void handle(PortableItemEvent portableItemEvent) {
+                E item = includeValue ? (E)getContext().getSerializationService().toObject(portableItemEvent.getItem()) : null;
+                Member member = getContext().getClusterService().getMember(portableItemEvent.getUuid());
+                ItemEvent<E> itemEvent = new ItemEvent<E>(name, portableItemEvent.getEventType(), item, member);
+                if (portableItemEvent.getEventType() == ItemEventType.ADDED){
+                    listener.itemAdded(itemEvent);
+                } else {
+                    listener.itemRemoved(itemEvent);
+                }
+            }
+        };
+        return listen(request, getKey(), eventHandler);
     }
 
     public boolean removeItemListener(String registrationId) {
-        //TODO how to remove?
-        return false;
+        return stopListening(registrationId);
     }
 
     public LocalQueueStats getLocalQueueStats() {
