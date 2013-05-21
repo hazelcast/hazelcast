@@ -111,6 +111,9 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     <T> T sendAndReceive(Address address, Object obj) throws IOException {
+        if (getMember(address) == null){
+            return sendAndReceive(obj);
+        }
         final Connection conn = getConnectionManager().getConnection(address);
         try {
             return sendAndReceive(conn, obj);
@@ -120,11 +123,15 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     private <T> T sendAndReceive(Connection conn, Object obj) throws IOException {
-        final SerializationService serializationService = getSerializationService();
-        final Data request = serializationService.toData(obj);
-        conn.write(request);
-        final Data response = conn.read();
-        return (T) serializationService.toObject(response);
+        try {
+            final SerializationService serializationService = getSerializationService();
+            final Data request = serializationService.toData(obj);
+            conn.write(request);
+            final Data response = conn.read();
+            return (T) serializationService.toObject(response);
+        } catch (IOException e){
+            return sendAndReceive(obj);
+        }
     }
 
     private SerializationService getSerializationService() {
@@ -294,6 +301,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     members.remove(member);
                 }
                 updateMembersRef();
+                getConnectionManager().removeConnectionPool(member.getAddress());
                 fireMembershipEvent(event);
             }
         }

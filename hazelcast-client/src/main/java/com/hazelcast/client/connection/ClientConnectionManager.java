@@ -191,6 +191,13 @@ public class ClientConnectionManager {
         }
     }
 
+    public void removeConnectionPool(Address address){
+        ObjectPool<ConnectionWrapper> pool = poolMap.remove(address);
+        if (pool != null){
+            pool.destroy();
+        }
+    }
+
     public void shutdown() {
         live = false;
         for (ObjectPool<ConnectionWrapper> pool : poolMap.values()) {
