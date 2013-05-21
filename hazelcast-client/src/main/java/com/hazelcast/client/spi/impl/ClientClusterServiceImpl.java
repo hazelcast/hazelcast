@@ -111,9 +111,6 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     <T> T sendAndReceive(Address address, Object obj) throws IOException {
-        if (getMember(address) == null){
-            return sendAndReceive(obj);
-        }
         final Connection conn = getConnectionManager().getConnection(address);
         try {
             return sendAndReceive(conn, obj);

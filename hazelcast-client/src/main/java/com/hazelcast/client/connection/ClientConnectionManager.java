@@ -30,8 +30,6 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.io.IOException;
@@ -41,7 +39,7 @@ import java.util.concurrent.ConcurrentMap;
 public class ClientConnectionManager {
     private final int poolSize;
     private final Authenticator authenticator;
-    private final SerializationService serializationService;
+    private final HazelcastClient client;
     private final Router router;
     private final ConcurrentMap<Address, ObjectPool<ConnectionWrapper>> poolMap
             = new ConcurrentHashMap<Address, ObjectPool<ConnectionWrapper>>(16, 0.75f, 1);
@@ -53,13 +51,13 @@ public class ClientConnectionManager {
 
     public ClientConnectionManager(HazelcastClient client, Authenticator authenticator, LoadBalancer loadBalancer) {
         this.authenticator = authenticator;
-        this.serializationService = client.getSerializationService();
+        this.client = client;
         ClientConfig config = client.getClientConfig();
         router = new Router(loadBalancer);
         socketInterceptor = config.getSocketInterceptor();
         poolSize = config.getPoolSize();
         int connectionTimeout = config.getConnectionTimeout();
-        heartbeat = new HeartBeatChecker(connectionTimeout, serializationService, client.getClientExecutionService());
+        heartbeat = new HeartBeatChecker(connectionTimeout, client.getSerializationService(), client.getClientExecutionService());
         socketOptions = config.getSocketOptions();
     }
 
@@ -69,7 +67,7 @@ public class ClientConnectionManager {
 
     public Connection newConnection(Address address, Authenticator authenticator) throws IOException {
         checkLive();
-        final ConnectionImpl connection = new ConnectionImpl(address, socketOptions, serializationService);
+        final ConnectionImpl connection = new ConnectionImpl(address, socketOptions, client.getSerializationService());
         connection.write(Protocols.CLIENT_BINARY.getBytes());
         if (socketInterceptor != null) {
             socketInterceptor.onConnect(connection.getSocket());
@@ -93,9 +91,9 @@ public class ClientConnectionManager {
             throw new IllegalArgumentException("Target address is required!");
         }
         final ObjectPool<ConnectionWrapper> pool = getConnectionPool(address);
-        ConnectionWrapper connection = null;
+        Connection connection = null;
         try {
-            connection = pool.take();
+            connection = pool == null ? getRandomConnection() : pool.take();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -139,7 +137,16 @@ public class ClientConnectionManager {
 
     private ObjectPool<ConnectionWrapper> getConnectionPool(final Address address) {
         checkLive();
-        return ConcurrencyUtil.getOrPutIfAbsent(poolMap, address, ctor);
+        ObjectPool<ConnectionWrapper> pool = poolMap.get(address);
+        if (pool == null) {
+            if (client.getClientClusterService().getMember(address) == null){
+                return null;
+            }
+            pool = ctor.createNew(address);
+            ObjectPool<ConnectionWrapper> current = poolMap.putIfAbsent(address, pool);
+            pool = current == null ? pool : current;
+        }
+        return pool;
     }
 
     private class ConnectionWrapper implements Connection {
