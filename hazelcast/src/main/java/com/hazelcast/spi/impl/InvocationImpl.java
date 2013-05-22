@@ -431,6 +431,15 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         public boolean isDone() {
             return done;
         }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder("InvocationFuture{");
+            sb.append("invocation=").append(InvocationImpl.this.toString());
+            sb.append(", done=").append(done);
+            sb.append('}');
+            return sb.toString();
+        }
     }
 
     private Future resetAndReInvoke() {

@@ -16,8 +16,6 @@
 
 package com.hazelcast.test;
 
-import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.util.Clock;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.model.FrameworkMethod;
@@ -29,14 +27,17 @@ import java.util.List;
 /**
  * Run the tests randomly and log the running test.
  */
-public class RandomBlockJUnit4ClassRunner extends BlockJUnit4ClassRunner {
+public final class RandomBlockJUnit4ClassRunner extends BlockJUnit4ClassRunner {
 
     static {
-        System.setProperty("hazelcast.logging.type", "log4j");
+        final String logging = "hazelcast.logging.type";
+        if (System.getProperty(logging) == null) {
+            System.setProperty(logging, "log4j");
+        }
         System.setProperty("java.net.preferIPv4Stack", "true");
-        System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
-        System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
+        System.setProperty("hazelcast.version.check.enabled", "false");
         System.setProperty("hazelcast.mancenter.enabled", "false");
+        System.setProperty("hazelcast.wait.seconds.before.join", "1");
         System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
     }
 
@@ -53,11 +54,11 @@ public class RandomBlockJUnit4ClassRunner extends BlockJUnit4ClassRunner {
 
     @Override
     protected void runChild(FrameworkMethod method, RunNotifier notifier) {
-        long start = Clock.currentTimeMillis();
+        long start = System.currentTimeMillis();
         String testName = method.getMethod().getDeclaringClass().getSimpleName() + "." + method.getName();
-        System.out.println("Started Running Test: " + testName);
+        System.out.println(" Started Running Test: " + testName);
         super.runChild(method, notifier);
-        float took = (float) (Clock.currentTimeMillis() - start) / 1000;
+        float took = (float) (System.currentTimeMillis() - start) / 1000;
         System.out.println(String.format("Finished Running Test: %s in %.3f seconds.", testName, took));
     }
 }

@@ -26,7 +26,6 @@ import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import com.hazelcast.transaction.*;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -41,11 +40,6 @@ import static org.junit.Assert.*;
  */
 @RunWith(RandomBlockJUnit4ClassRunner.class)
 public class TransactionQueueTest {
-
-    @BeforeClass
-    public static void init() {
-//        System.setProperty("hazelcast.test.use.network","true");
-    }
 
     @Before
     @After

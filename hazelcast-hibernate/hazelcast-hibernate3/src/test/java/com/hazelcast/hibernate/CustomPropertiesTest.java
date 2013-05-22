@@ -16,8 +16,8 @@
 
 package com.hazelcast.hibernate;
 
-import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.ClasspathXmlConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
@@ -25,6 +25,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.entity.DummyEntity;
 import com.hazelcast.hibernate.instance.HazelcastAccessor;
+import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import org.hibernate.*;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.CacheKey;
@@ -38,19 +39,8 @@ import java.util.Properties;
 
 import static org.junit.Assert.*;
 
-@RunWith(TestBlockJUnit4ClassRunner.class)
+@RunWith(RandomBlockJUnit4ClassRunner.class)
 public class CustomPropertiesTest extends HibernateTestSupport {
-
-    @BeforeClass
-    public static void init() throws Exception {
-        Hazelcast.shutdownAll();
-    }
-
-    @Before
-    @After
-    public void start() {
-        Hazelcast.shutdownAll();
-    }
 
     @Test
     public void test() {

@@ -18,6 +18,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
+import com.hazelcast.instance.TerminatedLifecycleService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.transaction.TransactionContext;
@@ -140,7 +141,8 @@ public final class HazelcastClientProxy implements HazelcastInstance {
     }
 
     public LifecycleService getLifecycleService() {
-        return getClient().getLifecycleService();
+        final HazelcastClient hz = client;
+        return hz != null ? hz.getLifecycleService() : new TerminatedLifecycleService();
     }
 
     public <T extends DistributedObject> T getDistributedObject(String serviceName, Object id) {
@@ -157,6 +159,11 @@ public final class HazelcastClientProxy implements HazelcastInstance {
 
     public ConcurrentMap<String, Object> getUserContext() {
         return getClient().getUserContext();
+    }
+
+    // to be able destroy instance bean from Spring
+    public final void shutdown() {
+        getLifecycleService().shutdown();
     }
 
     private HazelcastClient getClient() {

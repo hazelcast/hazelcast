@@ -29,13 +29,6 @@
     <artifactId>hazelcast-all</artifactId>
     <packaging>jar</packaging>
 
-    <!--<repositories>-->
-        <!--<repository>-->
-            <!--<id>jboss</id>-->
-            <!--<url>http://repository.jboss.org/maven2/</url>-->
-        <!--</repository>-->
-    <!--</repositories>-->
-
     <build>
         <resources>
             <!-- Include all class files, that should be part of hazelcast-all.jar and should get processed by bnd-tool  -->

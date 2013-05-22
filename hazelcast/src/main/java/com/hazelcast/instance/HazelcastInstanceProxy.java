@@ -160,6 +160,11 @@ public final class HazelcastInstanceProxy implements HazelcastInstance {
         return getOriginal().getUserContext();
     }
 
+    // to be able destroy instance bean from Spring
+    public final void shutdown() {
+        getLifecycleService().shutdown();
+    }
+
     private HazelcastInstanceImpl getOriginal() {
         final HazelcastInstanceImpl hazelcastInstance = original;
         if (hazelcastInstance == null) {
@@ -177,28 +182,6 @@ public final class HazelcastInstanceProxy implements HazelcastInstance {
         return "HazelcastInstance {NOT ACTIVE}";
     }
 
-    private class TerminatedLifecycleService implements LifecycleService {
-
-        public boolean isRunning() {
-            return false;
-        }
-
-        public void shutdown() {
-            throw new UnsupportedOperationException();
-        }
-
-        public void kill() {
-            throw new UnsupportedOperationException();
-        }
-
-        public String addLifecycleListener(LifecycleListener lifecycleListener) {
-            throw new UnsupportedOperationException();
-        }
-
-        public boolean removeLifecycleListener(String registrationId) {
-            throw new UnsupportedOperationException();
-        }
-    }
 }
 
 

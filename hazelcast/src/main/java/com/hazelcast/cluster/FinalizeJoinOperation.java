@@ -41,10 +41,6 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
     public FinalizeJoinOperation() {
     }
 
-//    public FinalizeJoinOperation(Collection<MemberInfo> members, long masterTime, boolean sendResponse) {
-//        super(members, masterTime, sendResponse);
-//    }
-
     public FinalizeJoinOperation(Collection<MemberInfo> members, PostJoinOperation postJoinOp, long masterTime) {
         super(members, masterTime, true);
         this.postJoinOp = postJoinOp;
@@ -53,7 +49,7 @@ public class FinalizeJoinOperation extends MemberInfoUpdateOperation implements 
     @Override
     public void run() throws Exception {
         if (isValid()) {
-            super.run();
+            processMemberUpdate();
 
             // Post join operations must be lock free; means no locks at all;
             // no partition locks, no key-based locks, no service level locks!

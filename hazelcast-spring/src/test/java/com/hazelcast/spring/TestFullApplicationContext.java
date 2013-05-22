@@ -20,10 +20,9 @@ import com.hazelcast.config.*;
 import com.hazelcast.config.MapConfig.StorageType;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.map.merge.MapMergePolicy;
-import com.hazelcast.wan.WanReplicationEndpoint;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.ssl.SSLContextFactory;
+import com.hazelcast.wan.WanReplicationEndpoint;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -95,9 +94,6 @@ public class TestFullApplicationContext {
 
     @Autowired
     private WanReplicationEndpoint wanReplication;
-
-    @Autowired
-    private MapMergePolicy dummyMergePolicy;
 
     @Autowired
     private MembershipListener membershipListener;

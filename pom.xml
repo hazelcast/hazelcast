@@ -39,6 +39,7 @@
         <module>hazelcast-cloud</module>
         <module>hazelcast-documentation</module>
     </modules>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jdk.version>1.6</jdk.version>
@@ -61,6 +62,7 @@
 
         <junit.version>4.11</junit.version>
         <mockito.all.version>1.8.2</mockito.all.version>
+        <log4j.version>1.2.12</log4j.version>
         <slf4j.api.version>1.6.0</slf4j.api.version>
     </properties>
     <licenses>
@@ -222,17 +224,23 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>${junit.version}</version>
-            <scope>provided</scope>
+            <scope>test</scope>
             <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-all</artifactId>
             <version>${mockito.all.version}</version>
-            <scope>provided</scope>
+            <scope>test</scope>
             <optional>true</optional>
         </dependency>
-
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>${log4j.version}</version>
+            <scope>test</scope>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
 
 </project>

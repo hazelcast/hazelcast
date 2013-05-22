@@ -23,6 +23,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
@@ -40,7 +42,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     private SocketWritable lastWritable;
 
-    private volatile SocketWriter socketWriter;
+    private SocketWriter socketWriter;
 
     private volatile long lastHandle = 0;
 
@@ -52,11 +54,18 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
 
     // accessed from ReadHandler
     void setProtocol(final String protocol) {
+        final CountDownLatch latch = new CountDownLatch(1);
         ioSelector.addTask(new Runnable() {
             public void run() {
                 createWriter(protocol);
+                latch.countDown();
             }
         });
+        ioSelector.wakeup();
+        try {
+            latch.await(3, TimeUnit.SECONDS);
+        } catch (InterruptedException ignored) {
+        }
     }
 
     private void createWriter(String protocol) {

@@ -53,6 +53,7 @@ import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -65,7 +66,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * When the connected cluster member dies, client will
  * automatically switch to another live member.
  */
-public class HazelcastClient implements HazelcastInstance {
+public final class HazelcastClient implements HazelcastInstance {
 
     private final static ILogger logger = Logger.getLogger(HazelcastClient.class.getName());
     private final static AtomicInteger CLIENT_ID = new AtomicInteger();
@@ -313,6 +314,10 @@ public class HazelcastClient implements HazelcastInstance {
         partitionService.stop();
         clusterService.stop();
         connectionManager.shutdown();
+    }
+
+    public static Collection<HazelcastInstance> getAllHazelcastClients() {
+        return Collections.<HazelcastInstance>unmodifiableCollection(CLIENTS.values());
     }
 
     public static void shutdownAll() {

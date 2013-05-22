@@ -113,23 +113,32 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     }
 
     public void init(final NodeEngine nodeEngine, Properties properties) {
-        final long mergeFirstRunDelay = node.getGroupProperties().MERGE_FIRST_RUN_DELAY_SECONDS.getLong();
-        final long mergeNextRunDelay = node.getGroupProperties().MERGE_NEXT_RUN_DELAY_SECONDS.getLong();
+        long mergeFirstRunDelay = node.getGroupProperties().MERGE_FIRST_RUN_DELAY_SECONDS.getLong() * 1000;
+        mergeFirstRunDelay = mergeFirstRunDelay <= 0 ? 100 : mergeFirstRunDelay; // milliseconds
+
+        long mergeNextRunDelay = node.getGroupProperties().MERGE_NEXT_RUN_DELAY_SECONDS.getLong() * 1000;
+        mergeNextRunDelay = mergeNextRunDelay <= 0 ? 100 : mergeNextRunDelay; // milliseconds
         nodeEngine.getExecutionService().scheduleWithFixedDelay(new SplitBrainHandler(node),
-                mergeFirstRunDelay, mergeNextRunDelay, TimeUnit.SECONDS);
-        final long heartbeatInterval = node.groupProperties.HEARTBEAT_INTERVAL_SECONDS.getInteger();
+                mergeFirstRunDelay, mergeNextRunDelay, TimeUnit.MILLISECONDS);
+
+        long heartbeatInterval = node.groupProperties.HEARTBEAT_INTERVAL_SECONDS.getInteger();
+        heartbeatInterval = heartbeatInterval <= 0 ? 1 : heartbeatInterval;
         nodeEngine.getExecutionService().scheduleWithFixedDelay(new Runnable() {
             public void run() {
                 heartBeater();
             }
         }, heartbeatInterval, heartbeatInterval, TimeUnit.SECONDS);
-        final long masterConfirmationInterval = node.groupProperties.MASTER_CONFIRMATION_INTERVAL_SECONDS.getInteger();
+
+        long masterConfirmationInterval = node.groupProperties.MASTER_CONFIRMATION_INTERVAL_SECONDS.getInteger();
+        masterConfirmationInterval = masterConfirmationInterval <= 0 ? 1 : masterConfirmationInterval;
         nodeEngine.getExecutionService().scheduleWithFixedDelay(new Runnable() {
             public void run() {
                 sendMasterConfirmation();
             }
         }, masterConfirmationInterval, masterConfirmationInterval, TimeUnit.SECONDS);
-        final long memberListPublishInterval = node.groupProperties.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getInteger();
+
+        long memberListPublishInterval = node.groupProperties.MEMBER_LIST_PUBLISH_INTERVAL_SECONDS.getInteger();
+        memberListPublishInterval = memberListPublishInterval <= 0 ? 1 : memberListPublishInterval;
         nodeEngine.getExecutionService().scheduleWithFixedDelay(new Runnable() {
             public void run() {
                 sendMemberListToOthers();
@@ -654,6 +663,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             final PostJoinOperation postJoinOp = postJoinOps != null && postJoinOps.length > 0
                     ? new PostJoinOperation(postJoinOps) : null;
             final List<Future> calls = new ArrayList<Future>(members.size());
+            final int count = members.size() - 1 + setJoins.size();
             for (MemberInfo member : setJoins) {
                 calls.add(invokeClusterOperation(new FinalizeJoinOperation(memberInfos, postJoinOp, time), member.getAddress()));
             }
@@ -758,6 +768,11 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     private Future invokeClusterOperation(Operation op, Address target) {
        return nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, op, target)
                 .setTryCount(50).build().invoke();
+    }
+
+    private Future invokeClusterOperation(Operation op, Address target, Callback<Object> callback) {
+        return nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, op, target)
+                .setTryCount(50).setCallback(callback).build().invoke();
     }
 
     public NodeEngineImpl getNodeEngine() {
