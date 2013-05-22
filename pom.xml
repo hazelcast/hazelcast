@@ -121,12 +121,11 @@
                     </archive>
                 </configuration>
             </plugin>
+
         </plugins>
     </build>
 
-
     <dependencies>
-
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast</artifactId>
