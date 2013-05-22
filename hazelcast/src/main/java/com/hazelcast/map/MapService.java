@@ -361,7 +361,7 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     private void clearPartitionData(final int partitionId) {
-        logger.log(Level.FINEST, "Clearing partition data -> " + partitionId);   // TODO: to FINEST
+        logger.log(Level.FINEST, "Clearing partition data -> " + partitionId);
         final PartitionContainer container = partitionContainers[partitionId];
         for (PartitionRecordStore mapPartition : container.maps.values()) {
             mapPartition.clear();

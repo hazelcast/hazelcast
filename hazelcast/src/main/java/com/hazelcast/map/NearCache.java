@@ -22,10 +22,12 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -75,7 +77,7 @@ public class NearCache {
             return;
         }
         if (evictionPolicy != EvictionPolicy.NONE && cache.size() >= maxSize) {
-                fireEvictCache();
+            fireEvictCache();
         }
         Object value = inMemoryFormat.equals(MapConfig.InMemoryFormat.BINARY) ? data : mapService.toObject(data);
         cache.put(key, new CacheRecord(key, value));
@@ -83,18 +85,27 @@ public class NearCache {
 
     private void fireEvictCache() {
         if (canEvict.compareAndSet(true, false)) {
-            nodeEngine.getExecutionService().execute("hz:near-cache", new Runnable() {
-                public void run() {
-                    List<CacheRecord> values = new ArrayList(cache.values());
-                    Collections.sort(values);
-                    int evictSize = Math.min(values.size(), cache.size() * evictionPercentage / 100);
-                    for (int i = 0; i < evictSize; i++) {
-                        cache.remove(values.get(i).key);
+            try {
+                nodeEngine.getExecutionService().execute("hz:near-cache", new Runnable() {
+                    public void run() {
+                        try {
+                            // todo test adding a sorted set
+                            List<CacheRecord> values = new ArrayList(cache.values());
+                            Collections.sort(values);
+                            int evictSize = Math.min(values.size(), cache.size() * evictionPercentage / 100);
+                            for (int i = 0; i < evictSize; i++) {
+                                cache.remove(values.get(i).key);
+                            }
+                        } finally {
+                            canEvict.set(true);
+                        }
                     }
-                    // todo can evict can be false think about this
-                    canEvict.set(true);
-                }
-            });
+                });
+            } catch(RejectedExecutionException e) {
+                canEvict.set(true);
+            }catch(Exception e) {
+                ExceptionUtil.rethrow(e);
+            }
         }
     }
 
