@@ -43,6 +43,7 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
 
     public void run() {
         response = new HashMap<Data, Data>();
+        //TODO response is not DataSerializable
         Map.Entry entry;
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
         Map<Data, Record> records = recordStore.getRecords();

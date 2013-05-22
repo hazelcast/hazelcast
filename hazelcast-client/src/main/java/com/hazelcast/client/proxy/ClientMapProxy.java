@@ -4,21 +4,19 @@ import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.IMap;
-import com.hazelcast.map.EntryProcessor;
-import com.hazelcast.map.MapInterceptor;
-import com.hazelcast.map.client.MapGetRequest;
-import com.hazelcast.map.client.MapPutRequest;
-import com.hazelcast.map.client.MapRemoveRequest;
+import com.hazelcast.map.*;
+import com.hazelcast.map.client.*;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.QueryResultEntry;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.IterationType;
+import com.hazelcast.util.QueryDataResultStream;
 import com.hazelcast.util.ThreadUtil;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -34,299 +32,416 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         this.name = name;
     }
 
-    @Override
     public boolean containsKey(Object key) {
-        return false;
+        Data keyData = toData(key);
+        MapContainsKeyRequest request = new MapContainsKeyRequest(name, keyData);
+        Boolean result = invoke(request, keyData);
+        return result;
     }
 
-    @Override
     public boolean containsValue(Object value) {
-        return false;
+        Data valueData = toData(value);
+        MapContainsValueRequest request = new MapContainsValueRequest(name, valueData);
+        Boolean result = invoke(request);
+        return result;
     }
 
-    @Override
     public V get(Object key) {
-        final Data dataKey = getContext().getSerializationService().toData(key);
-        MapGetRequest req = new MapGetRequest(name, dataKey);
-        try {
-            return getContext().getInvocationService().invokeOnKeyOwner(req, dataKey);
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
+        final Data keyData = toData(key);
+        MapGetRequest request = new MapGetRequest(name, keyData);
+        return invoke(request, keyData);
     }
 
-    @Override
     public V put(K key, V value) {
-        final SerializationService ss = getContext().getSerializationService();
-        final Data dataKey = ss.toData(key);
-        MapPutRequest req = new MapPutRequest(name, dataKey, ss.toData(value), ThreadUtil.getThreadId());
-        try {
-            return getContext().getInvocationService().invokeOnKeyOwner(req, dataKey);
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
-        }
+        return put(key, value, -1, null);
     }
 
-    @Override
     public V remove(Object key) {
-        final Data dataKey = getContext().getSerializationService().toData(key);
-        MapRemoveRequest req = new MapRemoveRequest(name, dataKey, ThreadUtil.getThreadId());
+        final Data keyData = toData(key);
+        MapRemoveRequest request = new MapRemoveRequest(name, keyData, ThreadUtil.getThreadId());
+        return invoke(request, keyData);
+    }
+
+    public boolean remove(Object key, Object value) {
+        final Data keyData = toData(key);
+        final Data valueData = toData(value);
+        MapRemoveIfSameRequest request = new MapRemoveIfSameRequest(name, keyData, valueData, ThreadUtil.getThreadId());
+        Boolean result = invoke(request, keyData);
+        return result;
+    }
+
+    public void delete(Object key) {
+        final Data keyData = toData(key);
+        MapDeleteRequest request = new MapDeleteRequest(name, keyData, ThreadUtil.getThreadId());
+        invoke(request, keyData);
+    }
+
+    public void flush() {
+        MapFlushRequest request = new MapFlushRequest(name);
+        invoke(request);
+    }
+
+    public Map<K, V> getAll(Set<K> keys) {
+        MapGetAllRequest request = new MapGetAllRequest(name);
+        invoke(request);
+        //TODO complete
+        return null;
+    }
+
+    public Future<V> getAsync(final K key) {
+        Future<V> f = getContext().getExecutionService().submit(new Callable<V>() {
+            public V call() throws Exception {
+                return get(key);
+            }
+        });
+        return f;
+    }
+
+    public Future<V> putAsync(final K key, final V value) {
+        Future<V> f = getContext().getExecutionService().submit(new Callable<V>() {
+            public V call() throws Exception {
+                return put(key, value);
+            }
+        });
+        return f;
+    }
+
+    public Future<V> removeAsync(final K key) {
+        Future<V> f = getContext().getExecutionService().submit(new Callable<V>() {
+            public V call() throws Exception {
+                return remove(key);
+            }
+        });
+        return f;
+    }
+
+    public boolean tryRemove(K key, long timeout, TimeUnit timeunit) {
+        final Data keyData = toData(key);
+        MapTryRemoveRequest request = new MapTryRemoveRequest(name, keyData, ThreadUtil.getThreadId(), timeunit.toMillis(timeout));
+        Boolean result = invoke(request, keyData);
+        return result;
+    }
+
+    public boolean tryPut(K key, V value, long timeout, TimeUnit timeunit) {
+        final Data keyData = toData(key);
+        final Data valueData = toData(value);
+        MapTryPutRequest request = new MapTryPutRequest(name, keyData, valueData, ThreadUtil.getThreadId(), timeunit.toMillis(timeout));
+        Boolean result = invoke(request, keyData);
+        return result;
+    }
+
+    public V put(K key, V value, long ttl, TimeUnit timeunit) {
+        final Data keyData = toData(key);
+        final Data valueData = toData(value);
+        MapPutRequest request = new MapPutRequest(name, keyData, valueData, ThreadUtil.getThreadId(), getTimeInMillis(ttl, timeunit));
+        return invoke(request, keyData);
+    }
+
+    public void putTransient(K key, V value, long ttl, TimeUnit timeunit) {
+        final Data keyData = toData(key);
+        final Data valueData = toData(value);
+        MapPutTransientRequest request = new MapPutTransientRequest(name, keyData, valueData, ThreadUtil.getThreadId(), getTimeInMillis(ttl, timeunit));
+        invoke(request);
+    }
+
+    public V putIfAbsent(K key, V value) {
+        return putIfAbsent(key, value, -1, null);
+    }
+
+    public V putIfAbsent(K key, V value, long ttl, TimeUnit timeunit) {
+        final Data keyData = toData(key);
+        final Data valueData = toData(value);
+        MapPutIfAbsentRequest request = new MapPutIfAbsentRequest(name, keyData, valueData, ThreadUtil.getThreadId(), getTimeInMillis(ttl, timeunit));
+        return invoke(request, keyData);
+    }
+
+    public boolean replace(K key, V oldValue, V newValue) {
+        final Data keyData = toData(key);
+        final Data oldValueData = toData(oldValue);
+        final Data newValueData = toData(newValue);
+        MapReplaceIfSameRequest request = new MapReplaceIfSameRequest(name, keyData, oldValueData, newValueData, ThreadUtil.getThreadId());
+        Boolean result = invoke(request, keyData);
+        return result;
+    }
+
+    public V replace(K key, V value) {
+        final Data keyData = toData(key);
+        final Data valueData = toData(value);
+        MapReplaceRequest request = new MapReplaceRequest(name, keyData, valueData, ThreadUtil.getThreadId());
+        return invoke(request, keyData);
+    }
+
+    public void set(K key, V value, long ttl, TimeUnit timeunit) {
+        final Data keyData = toData(key);
+        final Data valueData = toData(value);
+        MapSetRequest request = new MapSetRequest(name, keyData, valueData, ThreadUtil.getThreadId(), getTimeInMillis(ttl, timeunit));
+        invoke(request, keyData);
+    }
+
+    public void lock(K key) {
+        final Data keyData = toData(key);
+        MapLockRequest request = new MapLockRequest(name, keyData, ThreadUtil.getThreadId());
+        invoke(request, keyData);
+    }
+
+    public void lock(K key, long leaseTime, TimeUnit timeUnit) {
+        final Data keyData = toData(key);
+        MapLockRequest request = new MapLockRequest(name, keyData, ThreadUtil.getThreadId(), getTimeInMillis(leaseTime, timeUnit), -1);
+        invoke(request, keyData);
+    }
+
+    public boolean isLocked(K key) {
+        final Data keyData = toData(key);
+        MapIsLockedRequest request = new MapIsLockedRequest(name, keyData);
+        Boolean result = invoke(request, keyData);
+        return result;
+    }
+
+    public boolean tryLock(K key) {
         try {
-            return getContext().getInvocationService().invokeOnKeyOwner(req, dataKey);
-        } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            return tryLock(key, 0, null);
+        } catch (InterruptedException e) {
+            return false;
         }
     }
 
-    @Override
-    public boolean remove(Object key, Object value) {
-        return false;
-    }
-
-    @Override
-    public void delete(Object key) {
-
-    }
-
-    @Override
-    public void flush() {
-
-    }
-
-    @Override
-    public Map<K, V> getAll(Set<K> keys) {
-        return null;
-    }
-
-    @Override
-    public Future<V> getAsync(K key) {
-        return null;
-    }
-
-    @Override
-    public Future<V> putAsync(K key, V value) {
-        return null;
-    }
-
-    @Override
-    public Future<V> removeAsync(K key) {
-        return null;
-    }
-
-    @Override
-    public boolean tryRemove(K key, long timeout, TimeUnit timeunit) {
-        return false;
-    }
-
-    @Override
-    public boolean tryPut(K key, V value, long timeout, TimeUnit timeunit) {
-        return false;
-    }
-
-    @Override
-    public V put(K key, V value, long ttl, TimeUnit timeunit) {
-        return null;
-    }
-
-    @Override
-    public void putTransient(K key, V value, long ttl, TimeUnit timeunit) {
-
-    }
-
-    @Override
-    public V putIfAbsent(K key, V value) {
-        return null;
-    }
-
-    @Override
-    public V putIfAbsent(K key, V value, long ttl, TimeUnit timeunit) {
-        return null;
-    }
-
-    @Override
-    public boolean replace(K key, V oldValue, V newValue) {
-        return false;
-    }
-
-    @Override
-    public V replace(K key, V value) {
-        return null;
-    }
-
-    @Override
-    public void set(K key, V value, long ttl, TimeUnit timeunit) {
-
-    }
-
-    @Override
-    public void lock(K key) {
-
-    }
-
-    @Override
-    public void lock(K key, long leaseTime, TimeUnit timeUnit) {
-
-    }
-
-    @Override
-    public boolean isLocked(K key) {
-        return false;
-    }
-
-    @Override
-    public boolean tryLock(K key) {
-        return false;
-    }
-
-    @Override
     public boolean tryLock(K key, long time, TimeUnit timeunit) throws InterruptedException {
-        return false;
+        final Data keyData = toData(key);
+        MapLockRequest request = new MapLockRequest(name, keyData, ThreadUtil.getThreadId(), Long.MAX_VALUE, getTimeInMillis(time, timeunit));
+        Boolean result = invoke(request, keyData);
+        return result;
     }
 
-    @Override
     public void unlock(K key) {
-
+        final Data keyData = toData(key);
+        MapUnlockRequest request = new MapUnlockRequest(name, keyData, ThreadUtil.getThreadId(), false);
+        invoke(request, keyData);
     }
 
-    @Override
     public void forceUnlock(K key) {
-
+        final Data keyData = toData(key);
+        MapUnlockRequest request = new MapUnlockRequest(name, keyData, ThreadUtil.getThreadId(), true);
+        invoke(request, keyData);
     }
 
-    @Override
     public String addLocalEntryListener(EntryListener<K, V> listener) {
-        return null;
+        throw new UnsupportedOperationException("Locality is ambiguous for client!!!");
     }
 
-    @Override
     public String addInterceptor(MapInterceptor interceptor) {
-        return null;
+        MapAddInterceptorRequest request = new MapAddInterceptorRequest(name, interceptor);
+        return invoke(request);
     }
 
-    @Override
     public void removeInterceptor(String id) {
-
+        MapRemoveInterceptorRequest request = new MapRemoveInterceptorRequest(name, id);
+        invoke(request);
     }
 
-    @Override
     public String addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
         return null;
     }
 
-    @Override
     public boolean removeEntryListener(String id) {
         return false;
     }
 
-    @Override
     public String addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
         return null;
     }
 
-    @Override
     public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue) {
         return null;
     }
 
-    @Override
     public EntryView<K, V> getEntryView(K key) {
-        return null;
+        final Data keyData = toData(key);
+        MapGetEntryViewRequest request = new MapGetEntryViewRequest(name, keyData);
+        SimpleEntryView entryView = invoke(request, keyData);
+        if(entryView == null) {
+            return null;
+        }
+        final Data value = (Data)entryView.getValue();
+        entryView.setKey(key);
+        entryView.setValue(toObject(value));
+        return entryView;
     }
 
-    @Override
     public boolean evict(K key) {
-        return false;
+        final Data keyData = toData(key);
+        MapEvictRequest request = new MapEvictRequest(name, keyData, ThreadUtil.getThreadId());
+        Boolean result = invoke(request);
+        return result;
     }
 
-    @Override
     public Set<K> keySet() {
-        return null;
+        MapKeySetRequest request = new MapKeySetRequest(name);
+        MapKeySet mapKeySet = invoke(request);
+        Set<Data> keySetData = mapKeySet.getKeySet();
+        Set<K> keySet = new HashSet<K>(keySetData.size());
+        for (Data data : keySetData) {
+            final K key = toObject(data);
+            keySet.add(key);
+        }
+        return keySet;
     }
 
-    @Override
     public Collection<V> values() {
-        return null;
+        MapValuesRequest request = new MapValuesRequest(name);
+        MapValueCollection mapValueCollection = invoke(request);
+        Collection<Data> collectionData = mapValueCollection.getValues();
+        Collection<V> collection = new ArrayList<V>(collectionData.size());
+        for (Data data : collectionData) {
+            final V value = toObject(data);
+            collection.add(value);
+        }
+        return collection;
     }
 
-    @Override
     public Set<Entry<K, V>> entrySet() {
-        return null;
+        MapEntrySetRequest request = new MapEntrySetRequest(name);
+        Set<Entry<Data, Data>> result = invoke(request); //TODO result may change
+        Set<Entry<K, V>> entrySet = new HashSet<Entry<K, V>>(result.size());
+        for (Entry<Data, Data> dataEntry : result) {
+            Data keyData = dataEntry.getKey();
+            Data valueData = dataEntry.getValue();
+            K key = toObject(keyData);
+            V value = toObject(valueData);
+            entrySet.add(new AbstractMap.SimpleEntry<K, V>(key, value));
+        }
+        return entrySet;
     }
 
-    @Override
     public Set<K> keySet(Predicate predicate) {
-        return null;
+        MapQueryRequest request = new MapQueryRequest(name, predicate, IterationType.KEY);
+        QueryDataResultStream result = invoke(request);
+        Set<K> keySet = new HashSet<K>(result.size());
+        for (QueryResultEntry queryResultEntry : result) {
+            Data keyData = queryResultEntry.getKeyData();
+            K key = toObject(keyData);
+            keySet.add(key);
+        }
+        return keySet;
     }
 
-    @Override
     public Set<Entry<K, V>> entrySet(Predicate predicate) {
-        return null;
+        MapQueryRequest request = new MapQueryRequest(name, predicate, IterationType.ENTRY);
+        QueryDataResultStream result = invoke(request);
+        Set<Entry<K,V>> entrySet = new HashSet<Entry<K, V>>(result.size());
+        for (QueryResultEntry queryResultEntry : result) {
+            Data keyData = queryResultEntry.getKeyData();
+            Data valueData = queryResultEntry.getValueData();
+            K key = toObject(keyData);
+            V value = toObject(valueData);
+            entrySet.add(new AbstractMap.SimpleEntry<K, V>(key, value));
+        }
+        return entrySet;
     }
 
-    @Override
     public Collection<V> values(Predicate predicate) {
-        return null;
+        MapQueryRequest request = new MapQueryRequest(name, predicate, IterationType.VALUE);
+        QueryDataResultStream result = invoke(request);
+        Collection<V> values = new ArrayList<V>(result.size());
+        for (QueryResultEntry queryResultEntry : result) {
+            Data valueData = queryResultEntry.getValueData();
+            V value = toObject(valueData);
+            values.add(value);
+        }
+        return values;
     }
 
-    @Override
     public Set<K> localKeySet() {
-        return null;
+        throw new UnsupportedOperationException("Locality is ambiguous for client!!!");
     }
 
-    @Override
     public Set<K> localKeySet(Predicate predicate) {
-        return null;
+        throw new UnsupportedOperationException("Locality is ambiguous for client!!!");
     }
 
-    @Override
     public void addIndex(String attribute, boolean ordered) {
-
+        MapAddIndexRequest request = new MapAddIndexRequest(name, attribute, ordered);
+        invoke(request);
     }
 
-    @Override
     public LocalMapStats getLocalMapStats() {
-        return null;
+        throw new UnsupportedOperationException("Locality is ambiguous for client!!!");
     }
 
-    @Override
     public Object executeOnKey(K key, EntryProcessor entryProcessor) {
-        return null;
+        final Data keyData = toData(key);
+        MapExecuteOnKeyRequest request = new MapExecuteOnKeyRequest(name, entryProcessor, keyData);
+        return invoke(request, keyData);
     }
 
-    @Override
     public Map<K, Object> executeOnAllKeys(EntryProcessor entryProcessor) {
-        return null;
+        MapExecuteOnAllKeysRequest request = new MapExecuteOnAllKeysRequest(name, entryProcessor);
+        Map<Data, Data> result = invoke(request);//TODO result may change
+        Map<K, Object> map = new HashMap<K, Object>(result.size());
+        for (Entry<Data, Data> dataEntry : result.entrySet()) {
+            final Data keyData = dataEntry.getKey();
+            final Data valueData = dataEntry.getValue();
+            K key = toObject(keyData);
+            map.put(key, toObject(valueData));
+        }
+        return map;
     }
 
-    @Override
     public void set(K key, V value) {
-
+        set(key, value, -1, null);
     }
 
-    @Override
     public int size() {
-        return 0;
+        MapSizeRequest request = new MapSizeRequest(name);
+        Integer result =invoke(request);
+        return result;
     }
 
-    @Override
     public boolean isEmpty() {
-        return false;
+        return size() == 0;
     }
 
-    @Override
     public void putAll(Map<? extends K, ? extends V> m) {
-
+        //TODO no request?
     }
 
-    @Override
     public void clear() {
-
+        //TODO no request?
     }
 
     protected void onDestroy() {
+        //TODO ?
     }
 
     public String getName() {
         return name;
     }
+
+    private Data toData(Object o){
+        return getContext().getSerializationService().toData(o);
+    }
+
+    private <T> T toObject(Data data){
+        return (T) getContext().getSerializationService().toObject(data);
+    }
+
+    private <T> T invoke(Object req, Data keyData){
+        try {
+            return getContext().getInvocationService().invokeOnKeyOwner(req, keyData);
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
+
+    private <T> T invoke(Object req){
+        try {
+            return getContext().getInvocationService().invokeOnRandomTarget(req);
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+    }
+
+    protected long getTimeInMillis(final long time, final TimeUnit timeunit) {
+        return timeunit != null ? timeunit.toMillis(time) : time;
+    }
+
 }

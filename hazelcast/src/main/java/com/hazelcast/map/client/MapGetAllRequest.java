@@ -55,6 +55,7 @@ public class MapGetAllRequest extends AllPartitionsClientRequest implements Port
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
+        //TODO reduce
         return null;
     }
 
