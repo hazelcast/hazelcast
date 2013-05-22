@@ -55,11 +55,11 @@ class SocketPacketReader implements SocketReader {
         ioService.handleMemberPacket(p);
     }
 
-    interface PacketReader {
+    private interface PacketReader {
         void readPacket(ByteBuffer inBuffer) throws Exception;
     }
 
-    class DefaultPacketReader implements PacketReader {
+    private class DefaultPacketReader implements PacketReader {
         public void readPacket(ByteBuffer inBuffer) {
             while (inBuffer.hasRemaining()) {
                 if (packet == null) {
@@ -76,10 +76,10 @@ class SocketPacketReader implements SocketReader {
         }
     }
 
-    class SymmetricCipherPacketReader implements PacketReader {
+    private class SymmetricCipherPacketReader implements PacketReader {
         int size = -1;
         final Cipher cipher;
-        ByteBuffer cipherBuffer = ByteBuffer.allocate(2 * ioService.getSocketReceiveBufferSize() * IOService.KILO_BYTE);
+        final ByteBuffer cipherBuffer = ByteBuffer.allocate(2 * ioService.getSocketReceiveBufferSize() * IOService.KILO_BYTE);
 
         SymmetricCipherPacketReader() {
             cipher = init();

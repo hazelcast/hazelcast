@@ -23,15 +23,14 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
+import com.hazelcast.test.annotation.NetworkRelated;
 import net.spy.memcached.ConnectionFactory;
 import net.spy.memcached.ConnectionFactoryBuilder;
 import net.spy.memcached.FailureMode;
 import net.spy.memcached.MemcachedClient;
 import net.spy.memcached.internal.OperationFuture;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
@@ -46,6 +45,8 @@ import java.util.concurrent.ExecutionException;
  * Time: 2:48 PM
  */
 @RunWith(RandomBlockJUnit4ClassRunner.class)
+@Category(NetworkRelated.class)
+
 public class MemcacheTest {
 
     final static Config config = new XmlConfigBuilder().build();
@@ -67,149 +68,161 @@ public class MemcacheTest {
     public void testMemcacheSimple() throws IOException, ExecutionException, InterruptedException {
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         MemcachedClient client = getMemcacheClient(instance);
-        for (int i = 0; i < 100; i++) {
-            final OperationFuture<Boolean> future = client.set(String.valueOf(i), 0, i);
-            Assert.assertEquals(Boolean.TRUE, future.get());
-        }
-        for (int i = 0; i < 100; i++) {
-            Assert.assertEquals(i, client.get(String.valueOf(i)));
-        }
-        for (int i = 0; i < 100; i++) {
-            final OperationFuture<Boolean> future = client.add(String.valueOf(i), 0, i * 100);
-            Assert.assertEquals(Boolean.FALSE, future.get());
-        }
-        for (int i = 0; i < 100; i++) {
-            Assert.assertEquals(i, client.get(String.valueOf(i)));
-        }
-        for (int i = 100; i < 200; i++) {
-            final OperationFuture<Boolean> future = client.add(String.valueOf(i), 0, i);
-            Assert.assertEquals(Boolean.TRUE, future.get());
-        }
-        for (int i = 0; i < 200; i++) {
-            Assert.assertEquals(i, client.get(String.valueOf(i)));
-        }
-        for (int i = 0; i < 200; i++) {
-            final OperationFuture<Boolean> future = client.replace(String.valueOf(i), 0, i * 10);
-            Assert.assertEquals(Boolean.TRUE, future.get());
-        }
-        for (int i = 0; i < 200; i++) {
-            Assert.assertEquals(i * 10, client.get(String.valueOf(i)));
-        }
-        for (int i = 200; i < 400; i++) {
-            final OperationFuture<Boolean> future = client.replace(String.valueOf(i), 0, i);
-            Assert.assertEquals(Boolean.FALSE, future.get());
-        }
-        for (int i = 200; i < 400; i++) {
-            Assert.assertEquals(null, client.get(String.valueOf(i)));
-        }
-        for (int i = 100; i < 200; i++) {
-            final OperationFuture<Boolean> future = client.delete(String.valueOf(i));
-            Assert.assertEquals(Boolean.TRUE, future.get());
-        }
-        for (int i = 100; i < 200; i++) {
-            Assert.assertEquals(null, client.get(String.valueOf(100)));
-        }
-        for (int i = 100; i < 200; i++) {
-            final OperationFuture<Boolean> future = client.delete(String.valueOf(i));
-            Assert.assertEquals(Boolean.FALSE, future.get());
-        }
+        try {
+            for (int i = 0; i < 100; i++) {
+                final OperationFuture<Boolean> future = client.set(String.valueOf(i), 0, i);
+                Assert.assertEquals(Boolean.TRUE, future.get());
+            }
+            for (int i = 0; i < 100; i++) {
+                Assert.assertEquals(i, client.get(String.valueOf(i)));
+            }
+            for (int i = 0; i < 100; i++) {
+                final OperationFuture<Boolean> future = client.add(String.valueOf(i), 0, i * 100);
+                Assert.assertEquals(Boolean.FALSE, future.get());
+            }
+            for (int i = 0; i < 100; i++) {
+                Assert.assertEquals(i, client.get(String.valueOf(i)));
+            }
+            for (int i = 100; i < 200; i++) {
+                final OperationFuture<Boolean> future = client.add(String.valueOf(i), 0, i);
+                Assert.assertEquals(Boolean.TRUE, future.get());
+            }
+            for (int i = 0; i < 200; i++) {
+                Assert.assertEquals(i, client.get(String.valueOf(i)));
+            }
+            for (int i = 0; i < 200; i++) {
+                final OperationFuture<Boolean> future = client.replace(String.valueOf(i), 0, i * 10);
+                Assert.assertEquals(Boolean.TRUE, future.get());
+            }
+            for (int i = 0; i < 200; i++) {
+                Assert.assertEquals(i * 10, client.get(String.valueOf(i)));
+            }
+            for (int i = 200; i < 400; i++) {
+                final OperationFuture<Boolean> future = client.replace(String.valueOf(i), 0, i);
+                Assert.assertEquals(Boolean.FALSE, future.get());
+            }
+            for (int i = 200; i < 400; i++) {
+                Assert.assertEquals(null, client.get(String.valueOf(i)));
+            }
+            for (int i = 100; i < 200; i++) {
+                final OperationFuture<Boolean> future = client.delete(String.valueOf(i));
+                Assert.assertEquals(Boolean.TRUE, future.get());
+            }
+            for (int i = 100; i < 200; i++) {
+                Assert.assertEquals(null, client.get(String.valueOf(100)));
+            }
+            for (int i = 100; i < 200; i++) {
+                final OperationFuture<Boolean> future = client.delete(String.valueOf(i));
+                Assert.assertEquals(Boolean.FALSE, future.get());
+            }
 
-        final LinkedList<String> keys = new LinkedList<String>();
-        for (int i = 0; i < 100; i++) {
-            keys.add(String.valueOf(i));
+            final LinkedList<String> keys = new LinkedList<String>();
+            for (int i = 0; i < 100; i++) {
+                keys.add(String.valueOf(i));
+            }
+            final Map<String, Object> bulk = client.getBulk(keys);
+            for (int i = 0; i < 100; i++) {
+                Assert.assertEquals(i * 10, bulk.get(String.valueOf(i)));
+            }
+            // STATS
+            final Map<String, String> stats = client.getStats().get(instance.getCluster().getLocalMember().getInetSocketAddress());
+            Assert.assertEquals("700", stats.get("cmd_set"));
+            Assert.assertEquals("1000", stats.get("cmd_get"));
+            Assert.assertEquals("700", stats.get("get_hits"));
+            Assert.assertEquals("300", stats.get("get_misses"));
+            Assert.assertEquals("100", stats.get("delete_hits"));
+            Assert.assertEquals("100", stats.get("delete_misses"));
+        } finally {
+            client.shutdown();
         }
-        final Map<String, Object> bulk = client.getBulk(keys);
-        for (int i = 0; i < 100; i++) {
-            Assert.assertEquals(i * 10, bulk.get(String.valueOf(i)));
-        }
-        // STATS
-        final Map<String, String> stats = client.getStats().get(instance.getCluster().getLocalMember().getInetSocketAddress());
-        Assert.assertEquals("700", stats.get("cmd_set"));
-        Assert.assertEquals("1000", stats.get("cmd_get"));
-        Assert.assertEquals("700", stats.get("get_hits"));
-        Assert.assertEquals("300", stats.get("get_misses"));
-        Assert.assertEquals("100", stats.get("delete_hits"));
-        Assert.assertEquals("100", stats.get("delete_misses"));
-
     }
 
     @Test
     public void testMemcacheWithIMap() throws IOException, InterruptedException, ExecutionException {
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         MemcachedClient client = getMemcacheClient(instance);
-        final IMap<String, Object> map = instance.getMap("hz_memcache_testMemcacheWithIMap");
-        for (int i = 0; i < 100; i++) {
-            map.put(String.valueOf(i), String.valueOf(i));
+        try {
+            final IMap<String, Object> map = instance.getMap("hz_memcache_testMemcacheWithIMap");
+            for (int i = 0; i < 100; i++) {
+                map.put(String.valueOf(i), String.valueOf(i));
+            }
+            for (int i = 0; i < 100; i++) {
+                Assert.assertEquals(String.valueOf(i), client.get("testMemcacheWithIMap:" + String.valueOf(i)));
+                client.set("testMemcacheWithIMap:" + String.valueOf(i), 0, String.valueOf(i * 10));
+            }
+            for (int i = 0; i < 100; i++) {
+                final MemcacheEntry memcacheEntry = (MemcacheEntry) map.get(String.valueOf(i));
+                final MemcacheEntry expected = new MemcacheEntry("testMemcacheWithIMap:" + String.valueOf(i), String.valueOf(i * 10).getBytes(), 0);
+                Assert.assertEquals(expected, memcacheEntry);
+            }
+            final OperationFuture<Boolean> future = client.delete("testMemcacheWithIMap:");
+            future.get();
+            for (int i = 0; i < 100; i++) {
+                Assert.assertEquals(null, client.get("testMemcacheWithIMap:" + String.valueOf(i)));
+            }
+        } finally {
+            client.shutdown();
         }
-        for (int i = 0; i < 100; i++) {
-            Assert.assertEquals(String.valueOf(i), client.get("testMemcacheWithIMap:" + String.valueOf(i)));
-            client.set("testMemcacheWithIMap:" + String.valueOf(i), 0, String.valueOf(i * 10));
-        }
-        for (int i = 0; i < 100; i++) {
-            final MemcacheEntry memcacheEntry = (MemcacheEntry) map.get(String.valueOf(i));
-            final MemcacheEntry expected = new MemcacheEntry("testMemcacheWithIMap:" + String.valueOf(i), String.valueOf(i * 10).getBytes(), 0);
-            Assert.assertEquals(expected, memcacheEntry);
-        }
-        final OperationFuture<Boolean> future = client.delete("testMemcacheWithIMap:");
-        future.get();
-        for (int i = 0; i < 100; i++) {
-            Assert.assertEquals(null, client.get("testMemcacheWithIMap:" + String.valueOf(i)));
-        }
-
     }
 
     @Test
     public void testIncrementAndDecrement() throws IOException, ExecutionException, InterruptedException {
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         MemcachedClient client = getMemcacheClient(instance);
-        for (int i = 0; i < 100; i++) {
-            final OperationFuture<Boolean> future = client.set(String.valueOf(i), 0, i);
-            future.get();
+        try {
+            for (int i = 0; i < 100; i++) {
+                final OperationFuture<Boolean> future = client.set(String.valueOf(i), 0, i);
+                future.get();
+            }
+            for (int i = 0; i < 100; i++) {
+                Assert.assertEquals(i * 2, client.incr(String.valueOf(i), i));
+            }
+            for (int i = 100; i < 120; i++) {
+                Assert.assertEquals(-1, client.incr(String.valueOf(i), i));
+            }
+            for (int i = 0; i < 100; i++) {
+                Assert.assertEquals(i, client.decr(String.valueOf(i), i));
+            }
+            for (int i = 100; i < 130; i++) {
+                Assert.assertEquals(-1, client.decr(String.valueOf(i), i));
+            }
+            for (int i = 0; i < 100; i++) {
+                Assert.assertEquals(i, client.get(String.valueOf(i)));
+            }
+            final Map<String, String> stats = client.getStats().get(instance.getCluster().getLocalMember().getInetSocketAddress());
+            Assert.assertEquals("100", stats.get("cmd_set"));
+            Assert.assertEquals("100", stats.get("cmd_get"));
+            Assert.assertEquals("100", stats.get("incr_hits"));
+            Assert.assertEquals("20", stats.get("incr_misses"));
+            Assert.assertEquals("100", stats.get("decr_hits"));
+            Assert.assertEquals("30", stats.get("decr_misses"));
+        } finally {
+            client.shutdown();
         }
-        for (int i = 0; i < 100; i++) {
-            Assert.assertEquals(i * 2, client.incr(String.valueOf(i), i));
-        }
-        for (int i = 100; i < 120; i++) {
-            Assert.assertEquals(-1, client.incr(String.valueOf(i), i));
-        }
-        for (int i = 0; i < 100; i++) {
-            Assert.assertEquals(i, client.decr(String.valueOf(i), i));
-        }
-        for (int i = 100; i < 130; i++) {
-            Assert.assertEquals(-1, client.decr(String.valueOf(i), i));
-        }
-        for (int i = 0; i < 100; i++) {
-            Assert.assertEquals(i, client.get(String.valueOf(i)));
-        }
-        final Map<String, String> stats = client.getStats().get(instance.getCluster().getLocalMember().getInetSocketAddress());
-        Assert.assertEquals("100", stats.get("cmd_set"));
-        Assert.assertEquals("100", stats.get("cmd_get"));
-        Assert.assertEquals("100", stats.get("incr_hits"));
-        Assert.assertEquals("20", stats.get("incr_misses"));
-        Assert.assertEquals("100", stats.get("decr_hits"));
-        Assert.assertEquals("30", stats.get("decr_misses"));
-
     }
 
     @Test
     public void testMemcacheAppendPrepend() throws IOException, ExecutionException, InterruptedException {
-
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         MemcachedClient client = getMemcacheClient(instance);
-        for (int i = 0; i < 100; i++) {
-            final OperationFuture<Boolean> future = client.set(String.valueOf(i), 0, String.valueOf(i));
-            future.get();
-        }
-        for (int i = 0; i < 100; i++) {
-            final OperationFuture<Boolean> future = client.append(0, String.valueOf(i), "append");
-            Assert.assertEquals(Boolean.TRUE, future.get());
-        }
-        for (int i = 0; i < 100; i++) {
-            final OperationFuture<Boolean> future = client.prepend(0, String.valueOf(i), "prepend");
-            Assert.assertEquals(Boolean.TRUE, future.get());
-        }
-        for (int i = 1; i < 100; i++) {
-            Assert.assertEquals("prepend" + String.valueOf(i) + "append", client.get(String.valueOf(i)));
+        try {
+            for (int i = 0; i < 100; i++) {
+                final OperationFuture<Boolean> future = client.set(String.valueOf(i), 0, String.valueOf(i));
+                future.get();
+            }
+            for (int i = 0; i < 100; i++) {
+                final OperationFuture<Boolean> future = client.append(0, String.valueOf(i), "append");
+                Assert.assertEquals(Boolean.TRUE, future.get());
+            }
+            for (int i = 0; i < 100; i++) {
+                final OperationFuture<Boolean> future = client.prepend(0, String.valueOf(i), "prepend");
+                Assert.assertEquals(Boolean.TRUE, future.get());
+            }
+            for (int i = 1; i < 100; i++) {
+                Assert.assertEquals("prepend" + String.valueOf(i) + "append", client.get(String.valueOf(i)));
+            }
+        } finally {
+            client.shutdown();
         }
     }
 
@@ -224,14 +237,18 @@ public class MemcacheTest {
     public void testMemcacheTTL() throws IOException, ExecutionException, InterruptedException {
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         MemcachedClient client = getMemcacheClient(instance);
-        OperationFuture<Boolean> future = client.set(String.valueOf(0), 3, 10);
-        future.get();
-        Assert.assertEquals(10, client.get(String.valueOf(0)));
-        Thread.sleep(6000);
-        Assert.assertEquals(null, client.get(String.valueOf(0)));
+        try {
+            OperationFuture<Boolean> future = client.set(String.valueOf(0), 3, 10);
+            future.get();
+            Assert.assertEquals(10, client.get(String.valueOf(0)));
+            Thread.sleep(6000);
+            Assert.assertEquals(null, client.get(String.valueOf(0)));
+        } finally {
+            client.shutdown();
+        }
     }
 
-    @Test
+    @Ignore
     public void testMemcacheTouch() throws IOException, ExecutionException, InterruptedException {
         //TODO spymemcache client" does not support touch in ASCII protocol, tested manually from terminal
 //        final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
@@ -248,7 +265,7 @@ public class MemcacheTest {
     }
 
 
-    @Test
+    @Ignore
     public void testCAS() throws IOException {
         //TODO not implemented yet
 //        final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);

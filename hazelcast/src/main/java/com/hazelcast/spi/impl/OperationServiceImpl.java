@@ -55,6 +55,7 @@ final class OperationServiceImpl implements OperationService {
     private final ConcurrentMap<Long, RemoteCall> remoteCalls;
     private final ExecutorService[] opExecutors;
     private final ExecutorService systemExecutor;
+    private final ExecutorService responseExecutor;
     private final long defaultCallTimeout;
     private final Set<RemoteCallKey> executingCalls;
     private final ConcurrentMap<Long, Semaphore> backupCalls;
@@ -76,6 +77,7 @@ final class OperationServiceImpl implements OperationService {
             opExecutors[i] = Executors.newSingleThreadExecutor(new OperationThreadFactory(i));
         }
         systemExecutor = nodeEngine.getExecutionService().getExecutor(ExecutionService.SYSTEM_EXECUTOR);
+        responseExecutor = nodeEngine.getExecutionService().getExecutor(ExecutionService.RESPONSE_EXECUTOR);
         executingCalls = Collections.newSetFromMap(new ConcurrentHashMap<RemoteCallKey, Boolean>(1000, 0.75f, concurrencyLevel));
         backupCalls = new ConcurrentHashMap<Long, Semaphore>(1000, 0.75f, concurrencyLevel);
     }
@@ -93,8 +95,14 @@ final class OperationServiceImpl implements OperationService {
     @PrivateApi
     void handleOperation(final Packet packet) {
         try {
-            final int partitionId = packet.getPartitionId();
-            getExecutor(partitionId).execute(new RemoteOperationProcessor(packet));
+            final Executor executor;
+            if (packet.isHeaderSet(Packet.HEADER_RESPONSE)) {
+                executor = responseExecutor;
+            } else {
+                final int partitionId = packet.getPartitionId();
+                executor = getExecutor(partitionId);
+            }
+            executor.execute(new RemoteOperationProcessor(packet));
         } catch (RejectedExecutionException e) {
             if (nodeEngine.isActive()) {
                 throw e;
@@ -419,6 +427,9 @@ final class OperationServiceImpl implements OperationService {
         final int partitionId = getPartitionIdForExecution(op);
         Packet packet = new Packet(data, partitionId, nodeEngine.getSerializationContext());
         packet.setHeader(Packet.HEADER_OP);
+        if (op instanceof ResponseOperation) {
+            packet.setHeader(Packet.HEADER_RESPONSE);
+        }
         return nodeEngine.send(packet, connection);
     }
 

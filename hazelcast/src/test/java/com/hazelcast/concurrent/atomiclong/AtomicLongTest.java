@@ -22,7 +22,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
-import com.hazelcast.test.annotation.ClientCompatibleTest;
+import com.hazelcast.test.annotation.ClientCompatible;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -45,7 +45,7 @@ public class AtomicLongTest {
     }
 
     @Test
-    @ClientCompatibleTest
+    @ClientCompatible
     public void testSimpleAtomicLong() {
         HazelcastInstance hazelcastInstance = new StaticNodeFactory(1).newHazelcastInstance(new Config());
         IAtomicLong an = hazelcastInstance.getAtomicLong("testAtomicLong");
@@ -66,7 +66,7 @@ public class AtomicLongTest {
     }
 
     @Test
-    @ClientCompatibleTest
+    @ClientCompatible
     public void testMultipleThreadAtomicLong() throws InterruptedException {
         final HazelcastInstance[] instances = StaticNodeFactory.newInstances(new Config(), 1);
         final HazelcastInstance instance = instances[0];
@@ -96,7 +96,7 @@ public class AtomicLongTest {
     }
 
     @Test
-    @ClientCompatibleTest
+    @ClientCompatible
     public void testAtomicLongFailure() {
         int k = 4;
         StaticNodeFactory nodeFactory = new StaticNodeFactory(k + 1);
@@ -116,7 +116,7 @@ public class AtomicLongTest {
     }
 
     @Test
-    @ClientCompatibleTest
+    @ClientCompatible
     public void testAtomicLongSpawnNodeInParallel() {
         int total = 6;
         int parallel = 2;

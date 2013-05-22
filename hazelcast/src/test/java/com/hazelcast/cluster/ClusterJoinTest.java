@@ -20,11 +20,10 @@ import com.hazelcast.config.*;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
+import com.hazelcast.test.annotation.NetworkRelated;
 import com.hazelcast.util.Clock;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.net.UnknownHostException;
@@ -35,6 +34,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.*;
 
 @RunWith(RandomBlockJUnit4ClassRunner.class)
+@Category(NetworkRelated.class)
+
 public class ClusterJoinTest {
 
     @BeforeClass
@@ -264,7 +265,7 @@ public class ClusterJoinTest {
         final CountDownLatch latch = new CountDownLatch(count);
         final ConcurrentHashMap<Integer, HazelcastInstance> mapOfInstances = new ConcurrentHashMap<Integer, HazelcastInstance>();
         final Random random = new Random(Clock.currentTimeMillis());
-        final ExecutorService ex = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 3);
+        final ExecutorService ex = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
         for (int i = 0; i < count; i++) {
             final int seed = i;
             ex.execute(new Runnable() {
@@ -312,7 +313,7 @@ public class ClusterJoinTest {
         for (int i = 0; i < groupCount; i++) {
             groups.put("group" + i, new AtomicInteger(0));
         }
-        final ExecutorService ex = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 3);
+        final ExecutorService ex = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 2);
         for (int i = 0; i < count; i++) {
             final int seed = i;
             ex.execute(new Runnable() {
@@ -400,8 +401,8 @@ public class ClusterJoinTest {
     public void testMulticastJoinDuringSplitBrainHandlerRunning() throws InterruptedException {
         Properties props = new Properties();
         props.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "5");
-        props.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "1");
-        props.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "1");
+        props.setProperty(GroupProperties.PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "0");
+        props.setProperty(GroupProperties.PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "0");
 
         final CountDownLatch latch = new CountDownLatch(1);
         Config config1 = new Config();

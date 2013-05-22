@@ -23,7 +23,7 @@ import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
-import com.hazelcast.test.annotation.ClientCompatibleTest;
+import com.hazelcast.test.annotation.ClientCompatible;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import org.junit.After;
 import org.junit.Assert;
@@ -46,7 +46,7 @@ public class CountDownLatchTest {
     }
 
     @Test
-    @ClientCompatibleTest
+    @ClientCompatible
     public void testSimpleUsage() {
         final int k = 5;
         final Config config = new Config();
@@ -80,7 +80,7 @@ public class CountDownLatchTest {
     }
 
     @Test
-    @ClientCompatibleTest
+    @ClientCompatible
     public void testAwaitFail() {
         final int k = 3;
         final Config config = new Config();
@@ -100,7 +100,7 @@ public class CountDownLatchTest {
     }
 
     @Test(expected = DistributedObjectDestroyedException.class)
-    @ClientCompatibleTest
+    @ClientCompatible
     public void testLatchDestroyed() {
         StaticNodeFactory factory = new StaticNodeFactory(2);
         final Config config = new Config();
@@ -132,7 +132,7 @@ public class CountDownLatchTest {
     }
 
     @Test
-    @ClientCompatibleTest
+    @ClientCompatible
     public void testLatchMigration() throws InterruptedException {
         StaticNodeFactory factory = new StaticNodeFactory(5);
         HazelcastInstance hz1 = factory.newHazelcastInstance(new Config());

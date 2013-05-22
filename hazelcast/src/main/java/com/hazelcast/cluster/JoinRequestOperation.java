@@ -34,7 +34,7 @@ public class JoinRequestOperation extends AbstractClusterOperation implements Jo
     }
 
     public void run() {
-        ClusterServiceImpl cm = (ClusterServiceImpl) getService();
+        ClusterServiceImpl cm = getService();
         cm.handleJoinRequest(this);
     }
 

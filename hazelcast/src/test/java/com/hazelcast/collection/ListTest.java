@@ -19,11 +19,10 @@ package com.hazelcast.collection;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.StaticNodeFactory;
-import com.hazelcast.test.annotation.ClientCompatibleTest;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
+import com.hazelcast.test.annotation.ClientCompatible;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -42,11 +41,6 @@ import static org.junit.Assert.*;
 @RunWith(RandomBlockJUnit4ClassRunner.class)
 public class ListTest {
 
-    @BeforeClass
-    public static void init() {
-//        System.setProperty("hazelcast.test.use.network","true");
-    }
-
     @Before
     @After
     public void cleanup() {
@@ -54,7 +48,7 @@ public class ListTest {
     }
 
     @Test
-    @ClientCompatibleTest
+    @ClientCompatible
     public void testListMethods() throws Exception {
         Config config = new Config();
         final String name = "defList";

@@ -16,26 +16,20 @@
 
 package com.hazelcast.hibernate;
 
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.hibernate.entity.DummyEntity;
+import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.cfg.Environment;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.Date;
 import java.util.Properties;
 
-@RunWith(TestBlockJUnit4ClassRunner.class)
+@RunWith(RandomBlockJUnit4ClassRunner.class)
 public class RegionFactoryDefaultTest extends HibernateStatisticsTestSupport {
-
-    @BeforeClass
-    public static void init() throws Exception {
-        Hazelcast.shutdownAll();
-    }
 
     protected Properties getCacheProperties() {
         Properties props = new Properties();

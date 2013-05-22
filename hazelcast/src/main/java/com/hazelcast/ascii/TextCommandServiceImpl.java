@@ -31,7 +31,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.Clock;
 
 import java.nio.ByteBuffer;
-import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -161,7 +160,7 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
             synchronized (this) {
                 if (responseThreadRunnable == null) {
                     responseThreadRunnable = new ResponseThreadRunnable();
-                    Thread thread = new Thread(node.threadGroup, responseThreadRunnable, "hz.ascii.service.response.thread");
+                    Thread thread = new Thread(node.threadGroup, responseThreadRunnable, node.getThreadNamePrefix("ascii.service.response"));
                     thread.start();
                 }
             }
@@ -256,8 +255,9 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
     }
 
     public void stop() {
-        if (responseThreadRunnable != null) {
-            responseThreadRunnable.stop();
+        final ResponseThreadRunnable rtr = responseThreadRunnable;
+        if (rtr != null) {
+            rtr.stop();
         }
     }
 
@@ -278,7 +278,7 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
         }
     }
 
-    class ResponseThreadRunnable implements Runnable {
+    private class ResponseThreadRunnable implements Runnable {
         private final BlockingQueue<TextCommand> blockingQueue = new ArrayBlockingQueue<TextCommand>(200);
         private final Object stopObject = new Object();
 

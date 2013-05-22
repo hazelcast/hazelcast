@@ -314,7 +314,6 @@ public class PartitionRecordStore implements RecordStore {
         return removed;
     }
 
-    // todo get tries to load from db even if it returned null just second ago. try to put a record with null with eviction
     public Object get(Data dataKey) {
         Record record = records.get(dataKey);
         Object value = null;
@@ -325,7 +324,13 @@ public class PartitionRecordStore implements RecordStore {
                     record = mapService.createRecord(name, dataKey, value, -1);
                     records.put(dataKey, record);
                 }
+                // below is an optimization. if the record does not exist the next get will return null without looking at mapstore
+                if(value == null) {
+                    record = mapService.createRecord(name, dataKey, null, 100);
+                    records.put(dataKey, record);
+                }
             }
+
         } else {
             accessRecord(record);
             value = record.getValue();
@@ -335,7 +340,6 @@ public class PartitionRecordStore implements RecordStore {
         return value;
     }
 
-    // todo containsKey tries to load from db even if it returned null just second ago. try to put a record with null with eviction
     public boolean containsKey(Data dataKey) {
         Record record = records.get(dataKey);
         if (record == null) {
@@ -343,6 +347,11 @@ public class PartitionRecordStore implements RecordStore {
                 Object value = mapContainer.getStore().load(mapService.toObject(dataKey));
                 if (value != null) {
                     record = mapService.createRecord(name, dataKey, value, -1);
+                    records.put(dataKey, record);
+                }
+                // below is an optimization. if the record does not exist the next get will return null without looking at mapstore
+                if(value == null) {
+                    record = mapService.createRecord(name, dataKey, null, 100);
                     records.put(dataKey, record);
                 }
             }

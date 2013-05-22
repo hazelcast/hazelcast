@@ -24,10 +24,13 @@ import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
 
-public class ContainsValueOperationFactory implements OperationFactory {
+public final class ContainsValueOperationFactory implements OperationFactory {
 
-    String name;
-    Data value;
+    private String name;
+    private Data value;
+
+    public ContainsValueOperationFactory() {
+    }
 
     public ContainsValueOperationFactory(String name, Data value) {
         this.name = name;

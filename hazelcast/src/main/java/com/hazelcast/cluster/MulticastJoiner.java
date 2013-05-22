@@ -141,7 +141,7 @@ public class MulticastJoiner extends AbstractJoiner {
         if (conn != null) {
             return node.clusterService.sendJoinRequest(masterAddress, true);
         } else {
-            logger.log(Level.INFO, "Connecting to master node: " + masterAddress);
+            logger.log(Level.FINEST, "Connecting to master node: " + masterAddress);
             return false;
         }
     }

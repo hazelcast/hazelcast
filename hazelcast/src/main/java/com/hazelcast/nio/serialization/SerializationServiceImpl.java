@@ -356,10 +356,6 @@ public final class SerializationServiceImpl implements SerializationService {
         return new ObjectDataInputStream(in, this);
     }
 
-    public PortableSerializer getPortableSerializer() {
-        return portableSerializer;
-    }
-
     public void register(final TypeSerializer serializer, final Class type) {
         if (type == null) {
             throw new IllegalArgumentException("Class type information is required!");
@@ -392,13 +388,13 @@ public final class SerializationServiceImpl implements SerializationService {
         if (serializer == null) {
             // look for super classes
             Class typeSuperclass = type.getSuperclass();
-            List<Class> interfaces = new LinkedList<Class>();
-            Collections.addAll(interfaces, type.getInterfaces());
+            final Set<Class> interfaces = new LinkedHashSet<Class>(5);
+            getInterfaces(type, interfaces);
             while (typeSuperclass != null) {
                 if ((serializer = registerFromSuperType(type, typeSuperclass)) != null) {
                     break;
                 }
-                Collections.addAll(interfaces, typeSuperclass.getInterfaces());
+                getInterfaces(typeSuperclass, interfaces);
                 typeSuperclass = typeSuperclass.getSuperclass();
             }
             if (serializer == null) {
@@ -414,6 +410,16 @@ public final class SerializationServiceImpl implements SerializationService {
             }
         }
         return serializer;
+    }
+
+    private static void getInterfaces(Class clazz, Set<Class> interfaces) {
+        final Class[] classes = clazz.getInterfaces();
+        if (classes.length > 0) {
+            Collections.addAll(interfaces, classes);
+            for (Class cl : classes) {
+                getInterfaces(cl, interfaces);
+            }
+        }
     }
 
     private TypeSerializer registerFromSuperType(final Class type, final Class superType) {

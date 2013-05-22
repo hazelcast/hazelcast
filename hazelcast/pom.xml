@@ -25,25 +25,9 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <repositories>
-        <repository>
-            <id>spy</id>
-            <name>Spy Repository</name>
-            <layout>default</layout>
-            <url>http://files.couchbase.com/maven2/</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
-
     <name>hazelcast</name>
     <artifactId>hazelcast</artifactId>
     <packaging>jar</packaging>
-
-    <properties>
-        <log4j.version>1.2.12</log4j.version>
-    </properties>
 
     <build>
         <plugins>
@@ -181,18 +165,21 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven.surefire.plugin.version}</version>
                 <configuration>
-                    <forkCount>1C</forkCount>
+                    <!-- 1C means 1 process per cpu core -->
+                    <forkCount>4C</forkCount>
                     <reuseForks>true</reuseForks>
-                    <threadCount>2</threadCount>
-                    <perCoreThreadCount>true</perCoreThreadCount>
-                    <parallel>methods</parallel>
-                    <argLine>-Xms512m -Xmx512m -XX:MaxPermSize=128M -Dhazelcast.version.check.enabled=false
+
+                    <!-- not using in-JVM parallelism atm, may lead to concurrency issues! -->
+                    <!--<threadCount>4</threadCount>-->
+                    <!--<perCoreThreadCount>true</perCoreThreadCount>-->
+                    <!--<parallel>methods</parallel>-->
+
+                    <argLine>-Xms64m -Xmx512m -XX:MaxPermSize=128M
+                        -Dhazelcast.version.check.enabled=false
                         -Dhazelcast.mancenter.enabled=false
+                        -Dhazelcast.logging.type=none
                     </argLine>
-                    <excludes>
-                        <exclude>com/hazelcast/ascii/*.java</exclude>
-                        <exclude>com/hazelcast/cluster/*.java</exclude>
-                    </excludes>
+                    <excludedGroups>com.hazelcast.test.annotation.NetworkRelated</excludedGroups>
                 </configuration>
             </plugin>
 
@@ -209,19 +196,18 @@
                         <artifactId>maven-surefire-plugin</artifactId>
                         <version>${maven.surefire.plugin.version}</version>
                         <configuration>
-                            <argLine>-Xms512m -Xmx512m -XX:MaxPermSize=128M -Dhazelcast.version.check.enabled=false
+                            <parallel>none</parallel>
+                            <argLine>-Xms512m -Xmx512m -XX:MaxPermSize=128M
+                                -Dhazelcast.version.check.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
+                                -Dhazelcast.logging.type=none
                             </argLine>
-                            <includes>
-                                <include>com/hazelcast/cluster/**/*.java</include>
-                            </includes>
-                            <reportNameSuffix>${reportNameSuffix}</reportNameSuffix>
+                            <groups>com.hazelcast.test.annotation.NetworkRelated</groups>
                         </configuration>
                     </plugin>
                 </plugins>
             </build>
         </profile>
-
     </profiles>
 
     <dependencies>
@@ -246,4 +232,16 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <repositories>
+        <repository>
+            <id>spy</id>
+            <name>Spy Repository</name>
+            <layout>default</layout>
+            <url>http://files.couchbase.com/maven2/</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
 </project>

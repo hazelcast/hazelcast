@@ -22,7 +22,9 @@ import com.hazelcast.logging.Logger;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 
 import java.net.URL;
 import java.util.Properties;
@@ -32,9 +34,18 @@ public abstract class HibernateTestSupport {
 
     private final ILogger logger = Logger.getLogger(getClass().getName());
 
+    @BeforeClass
+    @AfterClass
+    public static void tearUpAndDown() {
+        Hazelcast.shutdownAll();
+    }
+
     @Before
+    public final void start() {
+    }
+
     @After
-    public void start() {
+    public final void cleanup() {
         Hazelcast.shutdownAll();
     }
 

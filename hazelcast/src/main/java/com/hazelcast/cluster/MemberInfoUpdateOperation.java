@@ -17,9 +17,9 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.Connection;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
@@ -47,6 +47,10 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
     }
 
     public void run() throws Exception {
+        processMemberUpdate();
+    }
+
+    protected final void processMemberUpdate() {
         if (isValid()) {
             final ClusterServiceImpl clusterService = getService();
             clusterService.setMasterTime(masterTime);
@@ -54,7 +58,7 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
         }
     }
 
-    protected boolean isValid() {
+    protected final boolean isValid() {
         final ClusterServiceImpl clusterService = getService();
         final Connection conn = getConnection();
         final Address masterAddress = conn != null ? conn.getEndPoint() : null;
@@ -63,7 +67,7 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
     }
 
     @Override
-    public boolean returnsResponse() {
+    public final boolean returnsResponse() {
         return sendResponse;
     }
 

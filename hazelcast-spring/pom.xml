@@ -133,6 +133,20 @@
                     </archive>
                 </configuration>
             </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven.surefire.plugin.version}</version>
+                <configuration>
+                    <argLine>-Xms64m -Xmx512m -XX:MaxPermSize=128M
+                        -Dhazelcast.version.check.enabled=false
+                        -Dhazelcast.mancenter.enabled=false
+                        -Dhazelcast.logging.type=none
+                    </argLine>
+                </configuration>
+            </plugin>
+
         </plugins>
     </build>
 
@@ -218,18 +232,18 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <scope>test</scope>
+            <version>${project.parent.version}</version>
+            <classifier>tests</classifier>
+        </dependency>
+        <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-core</artifactId>
             <version>${hibernate.core.version}</version>
             <scope>test</scope>
             <optional>true</optional>
         </dependency>
-        <!-- Spring 2.5.x is not compatible with junit versions after 4.4 -->
-        <!--<dependency>-->
-            <!--<groupId>junit</groupId>-->
-            <!--<artifactId>junit</artifactId>-->
-            <!--<version>4.4</version>-->
-            <!--<scope>test</scope>-->
-        <!--</dependency>-->
     </dependencies>
 </project>

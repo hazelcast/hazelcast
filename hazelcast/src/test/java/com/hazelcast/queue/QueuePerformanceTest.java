@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
+import org.junit.Ignore;
 
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
@@ -27,6 +28,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * @ali 2/22/13
  */
+@Ignore
 public class QueuePerformanceTest {
 
     final AtomicLong totalOffer = new AtomicLong();
