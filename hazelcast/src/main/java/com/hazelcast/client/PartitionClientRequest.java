@@ -29,7 +29,7 @@ public abstract class PartitionClientRequest extends ClientRequest {
     final void process() {
         final ClientEndpoint endpoint = getEndpoint();
         final Operation op = prepareOperation();
-        op.setCallerUuid(endpoint.getPrincipal().getUuid());
+        op.setCallerUuid(endpoint.getUuid());
         final InvocationBuilder builder = clientEngine.createInvocationBuilder(getServiceName(), op, getPartition())
                 .setReplicaIndex(getReplicaIndex()).setTryCount(100)
                 .setCallback(new Callback<Object>() {

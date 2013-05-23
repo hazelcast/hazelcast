@@ -29,7 +29,7 @@ import java.net.SocketAddress;
 public class ClientEndpoint implements Client {
 
     private final Connection conn;
-    private final String uuid;
+    private String uuid;
     private LoginContext loginContext = null;
     private ClientPrincipal principal;
     private volatile boolean authenticated = false;
@@ -61,6 +61,7 @@ public class ClientEndpoint implements Client {
 
     void authenticated(ClientPrincipal principal) {
         this.principal = principal;
+        this.uuid = principal.getUuid();
         authenticated = true;
     }
 
