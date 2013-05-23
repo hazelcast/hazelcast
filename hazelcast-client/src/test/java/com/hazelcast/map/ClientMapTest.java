@@ -166,8 +166,38 @@ public class ClientMapTest {
     }
 
     @Test
-    public void testTryPutGetRemove() throws Exception {
-        //TODO test after locks
+    public void testTryPutRemove() throws Exception {
+        assertTrue(map.tryPut("key1", "value1", 1, TimeUnit.SECONDS));
+        assertTrue(map.tryPut("key2", "value2", 1, TimeUnit.SECONDS));
+        map.lock("key1");
+        map.lock("key2");
+
+        final CountDownLatch latch = new CountDownLatch(2);
+
+        new Thread(){
+            public void run() {
+                boolean result = map.tryPut("key1", "value3", 1, TimeUnit.SECONDS);
+                if (!result){
+                    latch.countDown();
+                }
+            }
+        }.start();
+
+        new Thread(){
+            public void run() {
+                boolean result = map.tryRemove("key2", 1, TimeUnit.SECONDS);
+                if (!result){
+                    latch.countDown();
+                }
+            }
+        }.start();
+
+        assertTrue(latch.await(20, TimeUnit.SECONDS));
+        assertEquals("value1", map.get("key1"));
+        assertEquals("value2", map.get("key2"));
+        map.forceUnlock("key1");
+        map.forceUnlock("key2");
+
     }
 
     @Test
