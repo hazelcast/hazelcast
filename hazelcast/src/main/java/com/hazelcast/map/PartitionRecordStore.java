@@ -28,6 +28,7 @@ import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryResultEntryImpl;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.DefaultObjectNamespace;
+import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 
 import java.util.*;
@@ -68,6 +69,26 @@ public class PartitionRecordStore implements RecordStore {
         EntryTaskScheduler deleteScheduler = mapContainer.getMapStoreDeleteScheduler();
         if (deleteScheduler != null) {
             deleteScheduler.flush(toBeRemovedKeys);
+            toBeRemovedKeys.clear();
+        }
+    }
+
+    private void flush(Data key) {
+        EntryTaskScheduler writeScheduler = mapContainer.getMapStoreWriteScheduler();
+        Set<Data> keys = new HashSet<Data>();
+        keys.add(key);
+        if (writeScheduler != null) {
+            Set<Data> processedKeys = writeScheduler.flush(keys);
+            for (Data pkey : processedKeys) {
+                records.get(pkey).onStore();
+            }
+        }
+        EntryTaskScheduler deleteScheduler = mapContainer.getMapStoreDeleteScheduler();
+        if (deleteScheduler != null) {
+            if (toBeRemovedKeys.contains(key)) {
+                deleteScheduler.flush(keys);
+                toBeRemovedKeys.remove(key);
+            }
         }
     }
 
@@ -299,11 +320,16 @@ public class PartitionRecordStore implements RecordStore {
     public Object evict(Data dataKey) {
         Record record = records.get(dataKey);
         Object oldValue = null;
-        if (record != null) {
-            mapService.interceptRemove(name, record.getValue());
-            oldValue = record.getValue();
-            records.remove(dataKey);
-            removeIndex(dataKey);
+        try {
+            if (record != null) {
+                flush(dataKey);
+                mapService.interceptRemove(name, record.getValue());
+                oldValue = record.getValue();
+                records.remove(dataKey);
+                removeIndex(dataKey);
+            }
+        } catch (Exception e) {
+            ExceptionUtil.rethrow(e);
         }
         return oldValue;
     }
@@ -341,7 +367,7 @@ public class PartitionRecordStore implements RecordStore {
                     records.put(dataKey, record);
                 }
                 // below is an optimization. if the record does not exist the next get will return null without looking at mapstore
-                if(value == null) {
+                if (value == null) {
                     record = mapService.createRecord(name, dataKey, null, 100);
                     records.put(dataKey, record);
                 }
@@ -366,7 +392,7 @@ public class PartitionRecordStore implements RecordStore {
                     records.put(dataKey, record);
                 }
                 // below is an optimization. if the record does not exist the next get will return null without looking at mapstore
-                if(value == null) {
+                if (value == null) {
                     record = mapService.createRecord(name, dataKey, null, 100);
                     records.put(dataKey, record);
                 }
