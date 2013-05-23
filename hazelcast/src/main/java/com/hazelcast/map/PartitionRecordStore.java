@@ -22,8 +22,10 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
+import com.hazelcast.query.impl.QueryResultEntryImpl;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
@@ -122,6 +124,20 @@ public class PartitionRecordStore implements RecordStore {
 
     public boolean forceUnlock(Data dataKey) {
         return lockStore != null && lockStore.forceUnlock(dataKey);
+    }
+
+    @Override
+    public QueryResult query(Predicate predicate) {
+        QueryResult result = new QueryResult();
+        SerializationService serializationService = mapService.getNodeEngine().getSerializationService();
+        for (Record record : records.values()) {
+            Data key = record.getKey();
+            QueryEntry queryEntry = new QueryEntry(serializationService, key, key, record.getValue());
+            if (predicate.apply(queryEntry)) {
+                result.add(new QueryResultEntryImpl(key, key, queryEntry.getValueData()));
+            }
+        }
+        return result;
     }
 
     public boolean isLocked(Data dataKey) {

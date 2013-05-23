@@ -17,31 +17,40 @@
 package com.hazelcast.map.client;
 
 import com.hazelcast.client.CallableClientRequest;
+import com.hazelcast.client.ClientEndpoint;
+import com.hazelcast.client.ClientEngine;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.map.EntryEventFilter;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
-import com.hazelcast.monitor.impl.LocalMapStatsImpl;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.spi.EventFilter;
+import com.hazelcast.util.MutableString;
 
 import java.io.IOException;
 
-public class MapGetLocalMapStatsRequest extends CallableClientRequest implements Portable {
+public class MapDestroyRequest extends CallableClientRequest implements Portable {
 
     private String name;
 
-    public MapGetLocalMapStatsRequest() {
+    public MapDestroyRequest() {
     }
 
-    public MapGetLocalMapStatsRequest(String name) {
+    public MapDestroyRequest(String name) {
         this.name = name;
     }
 
     @Override
-    public Object call() throws Exception {
-        MapService mapService = getService();
-        LocalMapStatsImpl mapStats = mapService.createLocalMapStats(name);
-        return mapStats;
+    public Object call() {
+        final MapService mapService = getService();
+        mapService.destroyDistributedObject(name);
+        return true;
     }
 
     public String getServiceName() {
@@ -54,15 +63,14 @@ public class MapGetLocalMapStatsRequest extends CallableClientRequest implements
     }
 
     public int getClassId() {
-        return MapPortableHook.GET_LOCAL_MAP_STATS;
+        return MapPortableHook.DESTROY;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
-        writer.writeUTF("n", name);
+        writer.writeUTF("name", name);
     }
 
     public void readPortable(PortableReader reader) throws IOException {
-        name = reader.readUTF("n");
+        name = reader.readUTF("name");
     }
-
 }
