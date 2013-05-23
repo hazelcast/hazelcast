@@ -745,7 +745,6 @@ public class MapService implements ManagedService, MigrationAwareService,
             }
         }
 
-        // todo call evict map listeners
         private void evictMap(MapContainer mapContainer) {
             MapConfig mapConfig = mapContainer.getMapConfig();
             MapConfig.EvictionPolicy evictionPolicy = mapConfig.getEvictionPolicy();
@@ -826,10 +825,12 @@ public class MapService implements ManagedService, MigrationAwareService,
                         if (evictSize == 0)
                             continue;
 
+                        Set<Record> recordSet = new HashSet();
                         Set<Data> keySet = new HashSet();
                         Iterator iterator = sortedRecords.iterator();
                         while (iterator.hasNext() && evictSize-- > 0) {
                             Record rec = (Record) iterator.next();
+                            recordSet.add(rec);
                             keySet.add(rec.getKey());
                         }
                         ClearOperation clearOperation = new ClearOperation(mapName, keySet);
@@ -839,6 +840,10 @@ public class MapService implements ManagedService, MigrationAwareService,
                         clearOperation.setPartitionId(i);
                         OperationAccessor.setCallerAddress(clearOperation, nodeEngine.getThisAddress());
                         nodeEngine.getOperationService().executeOperation(clearOperation);
+
+                        for (Record record : recordSet) {
+                            publishEvent(nodeEngine.getThisAddress(), mapName, EntryEvent.TYPE_EVICTED, record.getKey(), toData(record.getValue()), null);
+                        }
                     }
                 }
             }

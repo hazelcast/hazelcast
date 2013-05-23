@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.hazelcast.client.proxy;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.core.*;
+import com.hazelcast.map.client.MapDestroyRequest;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.client.*;
@@ -243,7 +244,8 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
     }
 
     protected void onDestroy() {
-        //TODO ??
+        MapDestroyRequest request = new MapDestroyRequest(name);
+        invoke(request);
     }
 
     public String getName() {

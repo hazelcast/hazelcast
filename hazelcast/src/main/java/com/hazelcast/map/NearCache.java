@@ -101,9 +101,9 @@ public class NearCache {
                         }
                     }
                 });
-            } catch(RejectedExecutionException e) {
+            } catch (RejectedExecutionException e) {
                 canEvict.set(true);
-            }catch(Exception e) {
+            } catch (Exception e) {
                 ExceptionUtil.rethrow(e);
             }
         }
@@ -114,19 +114,28 @@ public class NearCache {
             return;
 
         if (canCleanUp.compareAndSet(true, false)) {
-            nodeEngine.getExecutionService().execute("hz:near-cache", new Runnable() {
-                public void run() {
-                    lastCleanup = Clock.currentTimeMillis();
-                    Iterator<Map.Entry<Data, CacheRecord>> iterator = cache.entrySet().iterator();
-                    while (iterator.hasNext()) {
-                        Map.Entry<Data, CacheRecord> entry = iterator.next();
-                        if (entry.getValue().expired()) {
-                            cache.remove(entry.getKey());
+            try {
+                nodeEngine.getExecutionService().execute("hz:near-cache", new Runnable() {
+                    public void run() {
+                        try {
+                            lastCleanup = Clock.currentTimeMillis();
+                            Iterator<Map.Entry<Data, CacheRecord>> iterator = cache.entrySet().iterator();
+                            while (iterator.hasNext()) {
+                                Map.Entry<Data, CacheRecord> entry = iterator.next();
+                                if (entry.getValue().expired()) {
+                                    cache.remove(entry.getKey());
+                                }
+                            }
+                        } finally {
+                            canCleanUp.set(true);
                         }
                     }
-                    canCleanUp.set(true);
-                }
-            });
+                });
+            } catch (RejectedExecutionException e) {
+                canCleanUp.set(true);
+            } catch (Exception e) {
+                ExceptionUtil.rethrow(e);
+            }
         }
     }
 

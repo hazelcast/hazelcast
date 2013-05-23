@@ -81,13 +81,6 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         invoke(request);
     }
 
-    public Map<K, V> getAll(Set<K> keys) {
-        MapGetAllRequest request = new MapGetAllRequest(name);
-        invoke(request);
-        //TODO complete
-        return null;
-    }
-
     public Future<V> getAsync(final K key) {
         Future<V> f = getContext().getExecutionService().submit(new Callable<V>() {
             public V call() throws Exception {
@@ -286,6 +279,23 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         return keySet;
     }
 
+    public Map<K, V> getAll(Set<K> keys) {
+        Set keyset = new HashSet(keys.size());
+        for (Object key : keys) {
+            keyset.add(toData(key));
+        }
+        MapGetAllRequest request = new MapGetAllRequest(name, keyset);
+        MapEntrySet mapEntrySet = invoke(request);
+        Map<K,V> result = new HashMap<K, V>();
+        Set<Entry<Data, Data>> entrySet = mapEntrySet.getEntrySet();
+        for (Entry<Data, Data> dataEntry : entrySet) {
+            result.put((K)toObject(dataEntry.getKey()), (V)toObject(dataEntry.getValue()));
+        }
+        return result;
+    }
+
+
+
     public Collection<V> values() {
         MapValuesRequest request = new MapValuesRequest(name);
         MapValueCollection mapValueCollection = invoke(request);
@@ -300,9 +310,10 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     public Set<Entry<K, V>> entrySet() {
         MapEntrySetRequest request = new MapEntrySetRequest(name);
-        Set<Entry<Data, Data>> result = invoke(request); //TODO result may change
-        Set<Entry<K, V>> entrySet = new HashSet<Entry<K, V>>(result.size());
-        for (Entry<Data, Data> dataEntry : result) {
+        MapEntrySet result = invoke(request);
+        Set<Entry<K, V>> entrySet = new HashSet<Entry<K, V>>();
+        Set<Entry<Data, Data>> entries = result.getEntrySet();
+        for (Entry<Data, Data> dataEntry : entries) {
             Data keyData = dataEntry.getKey();
             Data valueData = dataEntry.getValue();
             K key = toObject(keyData);
@@ -373,17 +384,17 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         return invoke(request, keyData);
     }
 
-    public Map<K, Object> executeOnAllKeys(EntryProcessor entryProcessor) {
+    public Map<K, Object> executeOnEntries(EntryProcessor entryProcessor) {
         MapExecuteOnAllKeysRequest request = new MapExecuteOnAllKeysRequest(name, entryProcessor);
-        Map<Data, Data> result = invoke(request);//TODO result may change
-        Map<K, Object> map = new HashMap<K, Object>(result.size());
-        for (Entry<Data, Data> dataEntry : result.entrySet()) {
+        MapEntrySet entrySet = invoke(request);
+        Map<K, Object> result = new HashMap<K, Object>();
+        for (Entry<Data, Data> dataEntry : entrySet.getEntrySet()) {
             final Data keyData = dataEntry.getKey();
             final Data valueData = dataEntry.getValue();
             K key = toObject(keyData);
-            map.put(key, toObject(valueData));
+            result.put(key, toObject(valueData));
         }
-        return map;
+        return result;
     }
 
     public void set(K key, V value) {
@@ -401,11 +412,17 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     }
 
     public void putAll(Map<? extends K, ? extends V> m) {
-        //TODO no request?
+        MapEntrySet entrySet = new MapEntrySet();
+        for (Entry<? extends K, ? extends V> entry : m.entrySet()) {
+            entrySet.add(new AbstractMap.SimpleImmutableEntry<Data,Data>(toData(entry.getKey()), toData(entry.getValue())));
+        }
+        MapPutAllRequest request = new MapPutAllRequest(name, entrySet);
+        invoke(request);
     }
 
     public void clear() {
-        //TODO no request?
+        MapClearRequest request = new MapClearRequest(name);
+        invoke(request);
     }
 
     protected void onDestroy() {

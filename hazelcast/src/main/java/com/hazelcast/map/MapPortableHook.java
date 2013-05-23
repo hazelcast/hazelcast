@@ -63,8 +63,10 @@ public class MapPortableHook implements PortableHook {
     public static final int GET_LOCAL_MAP_STATS = 37;
     public static final int EXECUTE_ON_KEY = 38;
     public static final int EXECUTE_ON_ALL_KEYS = 39;
+    public static final int PUT_ALL = 40;
+    public static final int DESTROY = 41;
 
-    public static final int PORTABLE_ENTRY_EVENT = 40;
+    public static final int PORTABLE_ENTRY_EVENT = 42;
 
 
     public int getFactoryId() {
@@ -73,7 +75,7 @@ public class MapPortableHook implements PortableHook {
 
     public PortableFactory createFactory() {
         return new PortableFactory() {
-            final ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[41];
+            final ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[PORTABLE_ENTRY_EVENT+1];
 
             {
                 constructors[GET] = new ConstructorFunction<Integer, Portable>() {
@@ -256,18 +258,6 @@ public class MapPortableHook implements PortableHook {
                     }
                 };
 
-                constructors[LOCAL_KEYSET] = new ConstructorFunction<Integer, Portable>() {
-                    public Portable createNew(Integer arg) {
-                        return new MapLocalKeySetRequest();
-                    }
-                };
-
-                constructors[GET_LOCAL_MAP_STATS] = new ConstructorFunction<Integer, Portable>() {
-                    public Portable createNew(Integer arg) {
-                        return new MapGetLocalMapStatsRequest();
-                    }
-                };
-
                 constructors[EXECUTE_ON_KEY] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
                         return new MapExecuteOnKeyRequest();
@@ -277,6 +267,18 @@ public class MapPortableHook implements PortableHook {
                 constructors[EXECUTE_ON_ALL_KEYS] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
                         return new MapExecuteOnAllKeysRequest();
+                    }
+                };
+
+                constructors[PUT_ALL] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapPutAllRequest();
+                    }
+                };
+
+                constructors[DESTROY] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapDestroyRequest();
                     }
                 };
 

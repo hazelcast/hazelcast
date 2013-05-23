@@ -24,70 +24,67 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class MapExecuteOnAllKeysRequest extends AllPartitionsClientRequest implements Portable {
+public class MapPutAllRequest extends AllPartitionsClientRequest implements Portable {
 
-    private String name;
-    private EntryProcessor processor;
+    protected String name;
+    private MapEntrySet entrySet;
 
-    public MapExecuteOnAllKeysRequest() {
+    public MapPutAllRequest() {
     }
 
-    public MapExecuteOnAllKeysRequest(String name, EntryProcessor processor) {
+    public MapPutAllRequest(String name, MapEntrySet entrySet) {
         this.name = name;
-        this.processor = processor;
+        this.entrySet = entrySet;
+    }
+
+    public int getFactoryId() {
+        return MapPortableHook.F_ID;
+    }
+
+    public int getClassId() {
+        return MapPortableHook.PUT_ALL;
     }
 
     @Override
     protected OperationFactory createOperationFactory() {
-        return new PartitionWideEntryOperationFactory(name, processor);
+        return new MapPutAllOperationFactory(name, entrySet);
     }
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        MapEntrySet result = new MapEntrySet();
+        MapEntrySet resultSet = new MapEntrySet();
         MapService mapService = getService();
-        for (Object o : map.values()) {
-            if (o != null) {
-                MapEntrySet entrySet = (MapEntrySet)mapService.toObject(o);
-                Set<Map.Entry<Data,Data>> entries = entrySet.getEntrySet();
-                for (Map.Entry<Data, Data> entry : entries) {
-                    result.add(entry);
-                }
+        for (Map.Entry<Integer, Object> entry : map.entrySet()) {
+            MapEntrySet mapEntrySet = (MapEntrySet) mapService.toObject(entry.getValue());
+            Set<Map.Entry<Data, Data>> entrySet = mapEntrySet.getEntrySet();
+            for (Map.Entry<Data, Data> dataEntry : entrySet) {
+                resultSet.add(dataEntry);
             }
         }
-        return result;
+        return resultSet;
     }
 
     public String getServiceName() {
         return MapService.SERVICE_NAME;
     }
 
-    @Override
-    public int getFactoryId() {
-        return MapPortableHook.F_ID;
-    }
-
-    public int getClassId() {
-        return MapPortableHook.EXECUTE_ON_ALL_KEYS;
-    }
-
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
-        final ObjectDataOutput out = writer.getRawDataOutput();
-        out.writeObject(processor);
+        ObjectDataOutput output = writer.getRawDataOutput();
+        entrySet.writeData(output);
     }
 
     public void readPortable(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
-        final ObjectDataInput in = reader.getRawDataInput();
-        processor = in.readObject();
+        ObjectDataInput input = reader.getRawDataInput();
+        entrySet = new MapEntrySet();
+        entrySet.readData(input);
     }
 }

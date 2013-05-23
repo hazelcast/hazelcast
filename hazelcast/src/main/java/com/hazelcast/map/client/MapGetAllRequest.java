@@ -17,25 +17,31 @@
 package com.hazelcast.map.client;
 
 import com.hazelcast.client.AllPartitionsClientRequest;
-import com.hazelcast.map.MapPortableHook;
-import com.hazelcast.map.MapService;
+import com.hazelcast.map.*;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class MapGetAllRequest extends AllPartitionsClientRequest implements Portable {
 
     protected String name;
+    private Set<Data> keys = new HashSet<Data>();
 
     public MapGetAllRequest() {
     }
 
-    public MapGetAllRequest(String name) {
+    public MapGetAllRequest(String name, Set<Data> keys) {
         this.name = name;
+        this.keys = keys;
     }
 
     public int getFactoryId() {
@@ -48,15 +54,21 @@ public class MapGetAllRequest extends AllPartitionsClientRequest implements Port
 
     @Override
     protected OperationFactory createOperationFactory() {
-        // todo implement
-
-        return null;
+        return new MapGetAllOperationFactory(name, keys);
     }
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        //TODO reduce
-        return null;
+        MapEntrySet resultSet = new MapEntrySet();
+        MapService mapService = getService();
+        for (Map.Entry<Integer, Object> entry : map.entrySet()) {
+            MapEntrySet mapEntrySet = (MapEntrySet) mapService.toObject(entry.getValue());
+            Set<Map.Entry<Data, Data>> entrySet = mapEntrySet.getEntrySet();
+            for (Map.Entry<Data, Data> dataEntry : entrySet) {
+                resultSet.add(dataEntry);
+            }
+        }
+        return resultSet;
     }
 
     public String getServiceName() {
@@ -65,10 +77,26 @@ public class MapGetAllRequest extends AllPartitionsClientRequest implements Port
 
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
+        writer.writeInt("size", keys.size());
+        if( !keys.isEmpty()) {
+            ObjectDataOutput output = writer.getRawDataOutput();
+            for (Data key : keys) {
+                key.writeData(output);
+            }
+        }
     }
 
     public void readPortable(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
-    }
+        int size = reader.readInt("size");
+        if(size > 0) {
+            ObjectDataInput input = reader.getRawDataInput();
+            for (int i = 0; i < size; i++) {
+                Data key = new Data();
+                key.readData(input);
+                keys.add(key);
+            }
+        }
 
+    }
 }

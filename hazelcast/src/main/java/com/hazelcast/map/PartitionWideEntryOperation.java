@@ -31,7 +31,7 @@ import java.util.Map;
 public class PartitionWideEntryOperation extends AbstractMapOperation implements BackupAwareOperation, PartitionAwareOperation {
 
     EntryProcessor entryProcessor;
-    Map<Data, Data> response;
+    MapEntrySet response;
 
     public PartitionWideEntryOperation(String name, EntryProcessor entryProcessor) {
         super(name);
@@ -42,7 +42,7 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
     }
 
     public void run() {
-        response = new HashMap<Data, Data>();
+        response = new MapEntrySet();
         //TODO response is not DataSerializable
         Map.Entry entry;
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
@@ -53,7 +53,7 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
             entry = new AbstractMap.SimpleEntry(mapService.toObject(record.getKey()), mapService.toObject(record.getValue()));
             Object result = entryProcessor.process(entry);
             if (result != null)
-                response.put(dataKey, mapService.toData(result));
+                response.add(new AbstractMap.SimpleImmutableEntry<Data,Data>(dataKey, mapService.toData(result)));
             recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, entry.getValue()));
         }
     }
