@@ -349,14 +349,11 @@ public class PartitionRecordStore implements RecordStore {
                     record = mapService.createRecord(name, dataKey, value, -1);
                     records.put(dataKey, record);
                 }
-                // below is an optimization. if the record does not exist the next get will return null without looking at mapstore
-                if(value == null) {
-                    record = mapService.createRecord(name, dataKey, null, 100);
-                    records.put(dataKey, record);
-                }
             }
         }
-        return record != null;
+        // because of a get optimization (see above), there may be a record with a null value,
+        // which means map-store returned null while loading the key.
+        return record != null && record.getValue() != null;
     }
 
     public void put(Map.Entry<Data, Object> entry) {

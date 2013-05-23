@@ -61,7 +61,8 @@ public class SemaphoreTest {
             semaphore.release();
         }
 
-        Assert.assertTrue(semaphore.init(numberOfPermits));
+        Assert.assertEquals(semaphore.availablePermits(), numberOfPermits);
+        Assert.assertFalse(semaphore.init(numberOfPermits));
         try {
             for (int i = 0; i < numberOfPermits; i += 5) {
                 Assert.assertEquals(numberOfPermits - i, semaphore.availablePermits());
@@ -77,7 +78,8 @@ public class SemaphoreTest {
             semaphore.release(5);
         }
 
-        Assert.assertTrue(semaphore.init(numberOfPermits));
+        Assert.assertEquals(semaphore.availablePermits(), numberOfPermits);
+        Assert.assertFalse(semaphore.init(numberOfPermits));
         try {
             semaphore.acquire(5);
         } catch (InterruptedException e) {

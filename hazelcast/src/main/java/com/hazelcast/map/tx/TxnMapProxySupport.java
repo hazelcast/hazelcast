@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.tx;
 
-import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.map.ContainsKeyOperation;
 import com.hazelcast.map.GetOperation;
 import com.hazelcast.map.MapService;
@@ -25,10 +24,11 @@ import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.Transaction;
+import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.ThreadUtil;
 
-import java.util.ConcurrentModificationException;
 import java.util.concurrent.Future;
 
 /**
@@ -83,7 +83,7 @@ public abstract class TxnMapProxySupport extends AbstractDistributedObject<MapSe
     public Data putInternal(Data key, Data value) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         if (versionedValue == null) {
-            throw new ConcurrentModificationException("Transaction couldn't obtain lock " + ThreadUtil.getThreadId());
+            throw new TransactionException("Transaction couldn't obtain lock " + ThreadUtil.getThreadId());
         }
         tx.addTransactionLog(new MapTransactionLog(name, key, new TxnSetOperation(name, key, value, -1, versionedValue.version), versionedValue.version));
         return versionedValue.value;
@@ -92,7 +92,7 @@ public abstract class TxnMapProxySupport extends AbstractDistributedObject<MapSe
     public Data putIfAbsentInternal(Data key, Data value) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         if (versionedValue == null) {
-            throw new ConcurrentModificationException("Transaction couldn't obtain lock " + ThreadUtil.getThreadId());
+            throw new TransactionException("Transaction couldn't obtain lock " + ThreadUtil.getThreadId());
         }
         if(versionedValue.value != null)
             return versionedValue.value;
@@ -103,7 +103,7 @@ public abstract class TxnMapProxySupport extends AbstractDistributedObject<MapSe
     public Data replaceInternal(Data key, Data value) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         if (versionedValue == null) {
-            throw new ConcurrentModificationException("Transaction couldn't obtain lock " + ThreadUtil.getThreadId());
+            throw new TransactionException("Transaction couldn't obtain lock " + ThreadUtil.getThreadId());
         }
         if(versionedValue.value == null)
             return null;
@@ -114,7 +114,7 @@ public abstract class TxnMapProxySupport extends AbstractDistributedObject<MapSe
     public boolean replaceIfSameInternal(Data key, Object oldValue, Data newValue) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         if (versionedValue == null) {
-            throw new ConcurrentModificationException("Transaction couldn't obtain lock " + ThreadUtil.getThreadId());
+            throw new TransactionException("Transaction couldn't obtain lock " + ThreadUtil.getThreadId());
         }
         if(!getService().compare(name, oldValue, versionedValue.value))
             return false;
@@ -125,7 +125,7 @@ public abstract class TxnMapProxySupport extends AbstractDistributedObject<MapSe
     public Data removeInternal(Data key) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         if (versionedValue == null) {
-            throw new ConcurrentModificationException("Transaction couldn't obtain lock " + ThreadUtil.getThreadId());
+            throw new TransactionException("Transaction couldn't obtain lock " + ThreadUtil.getThreadId());
         }
         tx.addTransactionLog(new MapTransactionLog(name, key, new TxnDeleteOperation(name, key, versionedValue.version), versionedValue.version));
         return versionedValue.value;
@@ -134,7 +134,7 @@ public abstract class TxnMapProxySupport extends AbstractDistributedObject<MapSe
     public boolean removeIfSameInternal(Data key, Object value) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         if (versionedValue == null) {
-            throw new ConcurrentModificationException("Transaction couldn't obtain lock " + ThreadUtil.getThreadId());
+            throw new TransactionException("Transaction couldn't obtain lock " + ThreadUtil.getThreadId());
         }
         if(!getService().compare(name, versionedValue.value, value)){
             return false;
@@ -146,7 +146,7 @@ public abstract class TxnMapProxySupport extends AbstractDistributedObject<MapSe
     public void setInternal(Data key, Data value) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         if (versionedValue == null) {
-            throw new ConcurrentModificationException("Transaction couldn't obtain lock " + ThreadUtil.getThreadId());
+            throw new TransactionException("Transaction couldn't obtain lock " + ThreadUtil.getThreadId());
         }
         tx.addTransactionLog(new MapTransactionLog(name, key, new TxnSetOperation(name, key, value, -1, versionedValue.version), versionedValue.version));
     }

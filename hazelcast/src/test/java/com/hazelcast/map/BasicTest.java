@@ -19,7 +19,6 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.StaticNodeFactory;
-import com.hazelcast.map.*;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.util.Clock;
 import org.junit.Test;
@@ -32,11 +31,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 
 public class BasicTest {
 
@@ -69,7 +65,6 @@ public class BasicTest {
     public void testMapPutIfAbsent() {
         IMap<String, String> map = getInstance().getMap("testMapPutIfAbsent");
         assertEquals(map.putIfAbsent("key1", "value1"), null);
-        System.out.println(map.get("key1"));
         assertEquals(map.putIfAbsent("key2", "value2"), null);
         assertEquals(map.putIfAbsent("key1", "valueX"), "value1");
         assertEquals(map.get("key1"), "value1");

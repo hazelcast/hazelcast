@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.*;
-import com.hazelcast.instance.*;
+import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import org.junit.After;
 import org.junit.Assert;
@@ -160,7 +160,6 @@ public class EvictionTest {
                     while (latch.getCount() != 0) {
                         try {
                             int msize = map.size();
-//                            System.out.println("size:"+msize +" max"+(size*pnum)+ " target:" + (size * pnum * (100 - mc.getEvictionPercentage()) / 100));
                             assertTrue(msize <= (size * pnum + size * pnum * 10 / 100));
                             Thread.sleep(1000);
                         } catch (InterruptedException e) {
@@ -292,7 +291,6 @@ public class EvictionTest {
 
             Thread.sleep(3000);
 
-            System.out.println("size:" + map.size());
             Assert.assertFalse("No eviction!?!?!?", map.size() == size);
             boolean isFrequentlyUsedEvicted = false;
             for (int i = 0; i < size / 2; i++) {
@@ -399,15 +397,8 @@ public class EvictionTest {
         for (int i = 0; i < size; i++) {
             map.put(i, i);
         }
-        System.out.println("sleeping");
         Thread.sleep(maxIdleSeconds * 1000 + 5000);
-
-//        for (Object key : map.keySet()) {
-//            System.out.println("key:"+key + " value:"+map.get(key));
-//        }
-//        Assert.assertEquals(0, map.size());
         Assert.assertEquals(nsize, map.size());
-        Hazelcast.shutdownAll();
     }
 
     @Test
@@ -494,29 +485,24 @@ public class EvictionTest {
         Hazelcast.shutdownAll();
     }
 
-
-
     @Test
     public void testMapPutTtlWithListener() throws InterruptedException {
         Config cfg = new Config();
         HazelcastInstance[] instances = StaticNodeFactory.newInstances(cfg, 2);
-        int k = 10;
-        final CountDownLatch countDownLatch = new CountDownLatch(k);
-
+        final int k = 10;
+        final int putCount = 10000;
+        final CountDownLatch latch = new CountDownLatch(k * putCount);
+        final AtomicBoolean error = new AtomicBoolean(false);
         final IMap map = instances[0].getMap("testMapEvictionTtlWithListener");
-        map.addEntryListener(new EntryListener() {
-            public void entryAdded(EntryEvent event) {
-            }
 
-            public void entryRemoved(EntryEvent event) {
-            }
-
-            public void entryUpdated(EntryEvent event) {
-            }
-
+        map.addEntryListener(new EntryAdapter() {
             public void entryEvicted(EntryEvent event) {
-                long timeDifference = System.currentTimeMillis() - (Long) (event.getOldValue());
-                assertTrue(timeDifference < 3000);
+                final Long expectedEvictionTime = (Long) (event.getOldValue());
+                long timeDifference = System.currentTimeMillis() - expectedEvictionTime;
+                if (timeDifference > 5000) {
+                    error.set(true);
+                }
+                latch.countDown();
             }
         }, true);
 
@@ -525,14 +511,15 @@ public class EvictionTest {
             new Thread() {
                 public void run() {
                     int ttl = (int) (Math.random() * 5000 + 3000);
-                    for (int j = 0; j < 10000; j++) {
-                        map.put(j + 10000 * threadId, ttl + System.currentTimeMillis(), ttl, TimeUnit.MILLISECONDS);
+                    for (int j = 0; j < putCount; j++) {
+                        final long expectedEvictionTime = ttl + System.currentTimeMillis();
+                        map.put(j + putCount * threadId, expectedEvictionTime, ttl, TimeUnit.MILLISECONDS);
                     }
-                    countDownLatch.countDown();
                 }
             }.start();
         }
-        countDownLatch.await();
+        assertTrue(latch.await(1, TimeUnit.MINUTES));
+        assertFalse(error.get());
     }
 
 

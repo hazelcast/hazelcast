@@ -210,33 +210,30 @@ public class LockTest {
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
         final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
         int k = 0;
-        final AtomicInteger atomicInteger = new AtomicInteger(0);
-        while (!keyOwner.getCluster().getLocalMember().equals(instance1.getPartitionService().getPartition(++k).getOwner()))
-            ;
-        final int key = k;
+        final Member localMember = keyOwner.getCluster().getLocalMember();
+        while (!localMember.equals(instance1.getPartitionService().getPartition(++k).getOwner())) {
+            Thread.sleep(1);
+        }
 
+        final int key = k;
         final ILock lock1 = instance1.getLock(key);
         lock1.lock();
 
-        Thread t = new Thread(new Runnable() {
+        final CountDownLatch latch = new CountDownLatch(1);
+        new Thread(new Runnable() {
             public void run() {
                 final ILock lock = instance2.getLock(key);
                 lock.lock();
-                atomicInteger.incrementAndGet();
+                latch.countDown();
             }
-        });
-        t.start();
+        }).start();
 
         keyOwner.getLifecycleService().shutdown();
-        Assert.assertEquals(true, lock1.isLocked());
-        Assert.assertEquals(true, lock1.tryLock());
+        Assert.assertTrue(lock1.isLocked());
+        Assert.assertTrue(lock1.tryLock());
         lock1.unlock();
         lock1.unlock();
-        Thread.sleep(1000);
-
-        Assert.assertEquals(1, atomicInteger.get());
-        lock1.forceUnlock();
-
+        Assert.assertTrue(latch.await(5, TimeUnit.SECONDS));
     }
 
     @Test(timeout = 100000)
@@ -250,19 +247,18 @@ public class LockTest {
         final String name = "testLockEviction";
         final ILock lock = lockOwner.getLock(name);
         lock.lock(1, TimeUnit.SECONDS);
-        Assert.assertEquals(true, lock.isLocked());
+        Assert.assertTrue(lock.isLocked());
+        final CountDownLatch latch = new CountDownLatch(1);
         Thread t = new Thread(new Runnable() {
             public void run() {
                 final ILock lock = instance1.getLock(name);
                 lock.lock();
-                integer.incrementAndGet();
+                latch.countDown();
 
             }
         });
         t.start();
-        Assert.assertEquals(0, integer.get());
-        Thread.sleep(2000);
-        Assert.assertEquals(1, integer.get());
+        Assert.assertTrue(latch.await(3, TimeUnit.SECONDS));
     }
 
 
@@ -367,8 +363,9 @@ public class LockTest {
         final int size = 50;
         int k = 0;
         final HazelcastInstance keyOwner = nodeFactory.newHazelcastInstance(config);
-        while (!keyOwner.getCluster().getLocalMember().equals(instance.getPartitionService().getPartition(++k).getOwner()))
-            ;
+        while (!keyOwner.getCluster().getLocalMember().equals(instance.getPartitionService().getPartition(++k).getOwner())) {
+            Thread.sleep(1);
+        }
 
         final ILock lock = instance.getLock(k);
         final ICondition condition = lock.newCondition(name);
@@ -378,12 +375,8 @@ public class LockTest {
         for (int i = 0; i < size; i++) {
             new Thread(new Runnable() {
                 public void run() {
+                    lock.lock();
                     try {
-                        lock.lock();
-                        if (lock.isLocked() && lock.tryLock()) {
-                            count.incrementAndGet();
-                            lock.unlock();
-                        }
                         awaitLatch.countDown();
                         condition.await();
                         Thread.sleep(5);
@@ -391,8 +384,7 @@ public class LockTest {
                             count.incrementAndGet();
                             lock.unlock();
                         }
-                    } catch (InterruptedException e) {
-                        return;
+                    } catch (InterruptedException ignored) {
                     } finally {
                         lock.unlock();
                         finalLatch.countDown();
@@ -402,7 +394,6 @@ public class LockTest {
             }).start();
         }
 
-
         final ILock lock1 = keyOwner.getLock(k);
         final ICondition condition1 = lock1.newCondition(name);
         awaitLatch.await(1, TimeUnit.MINUTES);
@@ -411,8 +402,8 @@ public class LockTest {
         lock1.unlock();
         keyOwner.getLifecycleService().shutdown();
 
-        finalLatch.await(1, TimeUnit.MINUTES);
-        Assert.assertEquals(size * 2, count.get());
+        finalLatch.await(2, TimeUnit.MINUTES);
+        Assert.assertEquals(size, count.get());
     }
 
     @Test(timeout = 100000)

@@ -63,6 +63,7 @@ public class MapClientRequestTest extends ClientTestSupport {
         client.send(new MapGetRequest(mapName, TestUtil.toData(7)));
         assertNull(client.receive());
         client.send(new MapSetRequest(mapName, TestUtil.toData(1), TestUtil.toData(7), ThreadUtil.getThreadId()));
+        assertNull(client.receive());
         client.send(new MapGetRequest(mapName, TestUtil.toData(1)));
         assertEquals(7, client.receive());
         client.send(new MapPutTransientRequest(mapName, TestUtil.toData(1), TestUtil.toData(9), ThreadUtil.getThreadId()));
@@ -279,12 +280,5 @@ public class MapClientRequestTest extends ClientTestSupport {
             testSet.remove(x.getName());
         }
         assertEquals(0, testSet.size());
-    }
-
-    @Test
-    public void testVoid() throws IOException {
-        final SimpleClient client = getClient();
-        client.send(new MapPutRequest(mapName, TestUtil.toData(1), TestUtil.toData(5), ThreadUtil.getThreadId()));
-        assertEquals(3, client.receive());
     }
 }

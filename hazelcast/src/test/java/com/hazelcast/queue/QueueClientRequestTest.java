@@ -21,11 +21,13 @@ import com.hazelcast.client.SimpleClient;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.queue.client.*;
 import com.hazelcast.spi.impl.PortableCollection;
+import com.hazelcast.spi.impl.PortableItemEvent;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -80,8 +82,9 @@ public class QueueClientRequestTest extends ClientTestSupport {
         client.receive();
         getQueue().offer("item");
 
-        String result = (String) client.receive();
-        assertTrue(result.startsWith("ItemEvent"));
+        PortableItemEvent result = (PortableItemEvent) client.receive();
+        assertEquals("item", ss.toObject(result.getItem()));
+        assertEquals(ItemEventType.ADDED, result.getEventType());
     }
 
     @Test

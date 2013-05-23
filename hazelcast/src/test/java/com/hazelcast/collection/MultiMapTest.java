@@ -275,20 +275,22 @@ public class MultiMapTest {
         final int insCount = 4;
         final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
         final CountDownLatch latch = new CountDownLatch(1);
+        final CountDownLatch latch2 = new CountDownLatch(1);
         new Thread(){
             public void run() {
                 instances[0].getMultiMap(name).lock("alo");
                 latch.countDown();
                 try {
-                    Thread.sleep(5*1000);
+                    latch2.await(10, TimeUnit.SECONDS);
+                    instances[0].getMultiMap(name).unlock("alo");
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                instances[0].getMultiMap(name).unlock("alo");
             }
         }.start();
         assertTrue(latch.await(10, TimeUnit.SECONDS));
         assertFalse(getMultiMap(instances, name).tryLock("alo"));
+        latch2.countDown();
         assertTrue(instances[0].getMultiMap(name).tryLock("alo", 20, TimeUnit.SECONDS));
 
         new Thread(){

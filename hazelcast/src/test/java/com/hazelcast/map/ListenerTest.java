@@ -192,7 +192,6 @@ public class ListenerTest {
                 if (event.getValue() != null) {
                     valueCount.incrementAndGet();
                 }
-                System.out.println(event);
             }
         };
     }

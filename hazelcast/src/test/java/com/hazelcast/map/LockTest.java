@@ -22,7 +22,6 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import com.hazelcast.transaction.TransactionException;
-import com.hazelcast.util.Clock;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -52,7 +51,6 @@ public class LockTest {
             public void run() {
                 for (int i = 0; i < size; i++) {
                     map1.lock(i);
-                    System.out.println("turn:" + i);
                     try {
                         Thread.sleep(100);
                     } catch (InterruptedException e) {
@@ -74,7 +72,6 @@ public class LockTest {
         new Thread(runnable).start();
         try {
             Thread.sleep(1000);
-            System.out.println("SHUTTING DOWNN");
             h2.getLifecycleService().shutdown();
             latch.await();
             for (int i = 0; i < size; i++) {
@@ -84,7 +81,7 @@ public class LockTest {
         }
     }
 
-//    @Test(timeout = 20000)
+    @Test(timeout = 20000)
     public void testLockEviction() throws Exception {
         final String mapName = "testLockEviction";
         final StaticNodeFactory nodeFactory = new StaticNodeFactory(2);
@@ -92,24 +89,20 @@ public class LockTest {
         config.getMapConfig(mapName).setBackupCount(1);
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
         final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
-        final AtomicInteger counter = new AtomicInteger(0);
 
         final IMap map = instance1.getMap(mapName);
         map.put(1,1);
-        long st = Clock.currentTimeMillis();
         map.lock(1, 3, TimeUnit.SECONDS);
-        Assert.assertEquals(true, map.isLocked(1));
+        Assert.assertTrue(map.isLocked(1));
+        final CountDownLatch latch = new CountDownLatch(1);
         Thread t = new Thread(new Runnable() {
             public void run() {
                 map.lock(1);
-                counter.incrementAndGet();
+                latch.countDown();
             }
         });
         t.start();
-        Thread.sleep(2000);
-        Assert.assertEquals(0, counter.get());
-        Thread.sleep(2000);
-        Assert.assertEquals(1, counter.get());
+        Assert.assertTrue(latch.await(6, TimeUnit.SECONDS));
     }
 
     @Test(timeout = 100000)
@@ -136,7 +129,7 @@ public class LockTest {
             }
         });
         t.start();
-        assertTrue(latch.await(15, TimeUnit.SECONDS));
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
     @Test(timeout = 100000)

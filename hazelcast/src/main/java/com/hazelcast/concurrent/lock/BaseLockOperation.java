@@ -41,6 +41,8 @@ abstract class BaseLockOperation extends AbstractOperation implements PartitionA
 
     protected transient boolean response;
 
+    private transient boolean asyncBackup = false;
+
     public BaseLockOperation() {
     }
 
@@ -75,11 +77,17 @@ abstract class BaseLockOperation extends AbstractOperation implements PartitionA
     }
 
     public final int getSyncBackupCount() {
-        return getLockStore().getBackupCount();
+        return !asyncBackup ? getLockStore().getBackupCount() : 0;
     }
 
     public final int getAsyncBackupCount() {
-        return getLockStore().getAsyncBackupCount();
+        final LockStoreImpl lockStore = getLockStore();
+        return !asyncBackup ? lockStore.getAsyncBackupCount() :
+                lockStore.getBackupCount() + lockStore.getAsyncBackupCount();
+    }
+
+    public final void setAsyncBackup(boolean asyncBackup) {
+        this.asyncBackup = asyncBackup;
     }
 
     @Override

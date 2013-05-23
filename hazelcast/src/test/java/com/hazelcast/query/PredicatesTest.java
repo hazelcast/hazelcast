@@ -16,11 +16,12 @@
 
 package com.hazelcast.query;
 
+import com.hazelcast.instance.TestUtil;
+import com.hazelcast.map.QueryTest;
 import com.hazelcast.query.impl.AttributeType;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryException;
 import com.hazelcast.query.impl.ReflectionHelper;
-import com.hazelcast.instance.TestUtil;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -44,7 +45,7 @@ public class PredicatesTest extends TestUtil {
     public void testEqual() {
         TestUtil.Employee value = new TestUtil.Employee("abc-123-xvz", 34, true, 10D);
         value.setState(TestUtil.State.STATE2);
-        TestUtil.Employee nullNameValue = new QueryTest.Employee(null, 34, true, 10D);
+        TestUtil.Employee nullNameValue = new TestUtil.Employee(null, 34, true, 10D);
         assertTrue(new SqlPredicate("state == TestUtil.State.STATE2").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("state == " + TestUtil.State.STATE2).apply(createEntry("1", value)));
         assertFalse(new SqlPredicate("state == TestUtil.State.STATE1").apply(createEntry("1", value)));

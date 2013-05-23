@@ -31,17 +31,17 @@ import java.util.Set;
 import static junit.framework.Assert.assertEquals;
 
 @RunWith(RandomBlockJUnit4ClassRunner.class)
-public class MapIndexServiceTest extends TestUtil {
+public class IndexServiceTest extends TestUtil {
 
     @Test
     public void testAndWithSingleEntry() throws Exception {
-        IndexService mapIndexService = new IndexService();
-        mapIndexService.addOrGetIndex("name", false);
-        mapIndexService.addOrGetIndex("age", true);
-        mapIndexService.addOrGetIndex("salary", true);
+        IndexService indexService = new IndexService();
+        indexService.addOrGetIndex("name", false);
+        indexService.addOrGetIndex("age", true);
+        indexService.addOrGetIndex("salary", true);
         for (int i = 0; i < 20000; i++) {
             Employee employee = new Employee(i + "Name", i % 80, (i % 2 == 0), 100 + (i % 1000));
-            mapIndexService.saveEntryIndex(new QueryEntry(null, toData(i), i, employee));
+            indexService.saveEntryIndex(new QueryEntry(null, toData(i), i, employee));
         }
         int count = 1000;
         Set<String> ages = new HashSet<String>(count);
@@ -52,13 +52,11 @@ public class MapIndexServiceTest extends TestUtil {
         final PredicateBuilder predicate = entryObject.get("name").equal("140Name").and(entryObject.get("age").in(ages.toArray(new String[0])));
         long total = Runtime.getRuntime().totalMemory();
         long free = Runtime.getRuntime().freeMemory();
-        System.out.println("Used Memory:" + ((total - free) / 1024 / 1024));
         long start = Clock.currentTimeMillis();
         for (int i = 0; i < 10000; i++) {
-            Set<QueryableEntry> results = mapIndexService.query(predicate);
+            Set<QueryableEntry> results = indexService.query(predicate);
             assertEquals(1, results.size());
         }
-        System.out.println("Took " + (Clock.currentTimeMillis() - start));
     }
 
     @Test
@@ -71,16 +69,11 @@ public class MapIndexServiceTest extends TestUtil {
             Employee employee = new Employee(i + "Name", i % 80, (i % 2 == 0), 100 + (i % 1000));
             indexService.saveEntryIndex(new QueryEntry(null, toData(i), i, employee));
         }
-        long total = Runtime.getRuntime().totalMemory();
-        long free = Runtime.getRuntime().freeMemory();
-        System.out.println("Used Memory:" + ((total - free) / 1024 / 1024));
-        long start = Clock.currentTimeMillis();
         for (int i = 0; i < 10000; i++) {
             SqlPredicate predicate = new SqlPredicate("salary=161 and age >20 and age <23");
             Set<QueryableEntry> results = new HashSet<QueryableEntry>(indexService.query(predicate));
             assertEquals(10, results.size());
         }
-        System.out.println("Took " + (Clock.currentTimeMillis() - start));
     }
 
     @Test

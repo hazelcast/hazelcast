@@ -36,9 +36,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static junit.framework.Assert.assertTrue;
-import static junit.framework.Assert.fail;
-import static org.junit.Assert.*;
+import static junit.framework.Assert.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -241,28 +239,33 @@ public class MapStoreTest {
         assertEquals(5, loadCount.get());
     }
 
-
     @Test
     public void testOneMemberWriteBehindWithMaxIdle() throws Exception {
         TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
         Config config = newConfig(testMapStore, 1);
         config.getMapConfig("default").setMaxIdleSeconds(4);
-        StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
+        StaticNodeFactory nodeFactory = new StaticNodeFactory(1);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         IMap map = h1.getMap("default");
-        assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL_KEYS, testMapStore.waitForEvent(20));
-        for (int i = 0; i < 10; i++) {
+
+        final int total = 10;
+        final CountDownLatch latch = new CountDownLatch(total);
+        map.addEntryListener(new EntryAdapter() {
+            public void entryEvicted(EntryEvent event) {
+                latch.countDown();
+            }
+        }, true);
+
+        assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL_KEYS, testMapStore.waitForEvent(10));
+
+        for (int i = 0; i < total; i++) {
             map.put(i, "value" + i);
-            assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD, testMapStore.waitForEvent(10));
+            assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD, testMapStore.waitForEvent(5));
         }
-        Thread.sleep(2000);
-        assertEquals(TestEventBasedMapStore.STORE_EVENTS.STORE_ALL, testMapStore.waitForEvent(10));
-        Thread.sleep(2000);
-        assertEquals(null, testMapStore.waitForEvent(1));
-        assertEquals(10, testMapStore.getStore().size());
+        assertNotNull(testMapStore.waitForEvent(20));
+        latch.await(10, TimeUnit.SECONDS);
         assertEquals(0, map.size());
-        Thread.sleep(2000);
-        assertEquals(null, testMapStore.waitForEvent(10));
+        assertEquals(total, testMapStore.getStore().size());
     }
 
     @Test
@@ -496,7 +499,7 @@ public class MapStoreTest {
         TestMapStore testMapStore = new TestMapStore(1, 1, 1);
         testMapStore.setLoadAllKeys(false);
         Config config = newConfig(testMapStore, 0);
-        StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
+        StaticNodeFactory nodeFactory = new StaticNodeFactory(1);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         Employee employee = new Employee("joe", 25, true, 100.00);
         Employee newEmployee = new Employee("ali", 26, true, 1000);
@@ -506,44 +509,49 @@ public class MapStoreTest {
         testMapStore.insert("4", employee);
         testMapStore.insert("5", employee);
         testMapStore.insert("6", employee);
-        testMapStore.insert("8", employee);
+        testMapStore.insert("7", employee);
+
         IMap map = h1.getMap("default");
         map.addIndex("name", false);
         assertEquals(0, map.size());
-//        assertTrue(map.tryLock("1"));
         assertEquals(employee, map.get("1"));
         assertEquals(employee, testMapStore.getStore().get("1"));
         assertEquals(1, map.size());
         assertEquals(employee, map.put("2", newEmployee));
         assertEquals(newEmployee, testMapStore.getStore().get("2"));
         assertEquals(2, map.size());
-//        Collection values = map.values(new SqlPredicate("name = 'joe'"));
-//        assertEquals(1, values.size());
-//        assertEquals(employee, values.iterator().next());
+
         map.remove("1");
         map.put("1", employee, 1, TimeUnit.SECONDS);
         map.put("1", employee);
         Thread.sleep(2000);
         assertEquals(employee, testMapStore.getStore().get("1"));
         assertEquals(employee, map.get("1"));
+
         map.evict("2");
         assertEquals(newEmployee, map.get("2"));
+
         assertEquals(employee, map.get("3"));
         assertEquals(employee, map.put("3", newEmployee));
         assertEquals(newEmployee, map.get("3"));
+
         assertEquals(employee, map.remove("4"));
+
         assertEquals(employee, map.get("5"));
         assertEquals(employee, map.remove("5"));
+
         assertEquals(employee, map.putIfAbsent("6", newEmployee));
         assertEquals(employee, map.get("6"));
         assertEquals(employee, testMapStore.getStore().get("6"));
-        assertNull(map.get("7"));
-        assertFalse(map.containsKey("7"));
-        assertNull(map.putIfAbsent("7", employee));
+
+        assertTrue(map.containsKey("7"));
         assertEquals(employee, map.get("7"));
-        assertEquals(employee, testMapStore.getStore().get("7"));
-        assertTrue(map.containsKey("8"));
+
+        assertNull(map.get("8"));
+        assertFalse(map.containsKey("8"));
+        assertNull(map.putIfAbsent("8", employee));
         assertEquals(employee, map.get("8"));
+        assertEquals(employee, testMapStore.getStore().get("8"));
     }
 
 
@@ -627,7 +635,6 @@ public class MapStoreTest {
             fail("should have thrown exception");
         } catch (Exception e) {
         }
-        System.out.println("map size:" + map.size());
         assertEquals(0, testMapStore.stores.get());
         assertEquals(0, map.size());
     }
@@ -647,7 +654,6 @@ public class MapStoreTest {
             fail("should have thrown exception");
         } catch (Exception e) {
         }
-        System.out.println("map size:" + map.size());
         assertEquals(0, map.size());
     }
 
@@ -1189,7 +1195,6 @@ public class MapStoreTest {
         }
 
         public void deleteAll(Collection keys) {
-            System.out.println("removeeee allll");
             for (Object key : keys) {
                 store.remove(key);
             }
