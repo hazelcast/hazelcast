@@ -23,14 +23,16 @@ import com.hazelcast.core.IQueue;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
-import com.hazelcast.transaction.*;
+import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionOptions;
+import com.hazelcast.transaction.TransactionalTask;
+import com.hazelcast.transaction.TransactionalTaskContext;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.Random;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
@@ -136,41 +138,6 @@ public class TransactionQueueTest {
 
         assertEquals(0, instances[0].getQueue(queueName).size());
         assertNull(instances[0].getMap(mapName).get("lock1"));
-    }
-
-    @Test
-    public void testFail() throws Exception {
-        Config config = new Config();
-        final int insCount = 2;
-        final String queueName = "defQueue";
-        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
-        final HazelcastInstance ins1 = instances[0];
-        final HazelcastInstance ins2 = instances[1];
-        final CountDownLatch latch = new CountDownLatch(1);
-        new Thread() {
-            public void run() {
-                TransactionContext context = ins1.newTransactionContext(new TransactionOptions().setTransactionType(TransactionOptions.TransactionType.LOCAL));
-                try {
-                    context.beginTransaction();
-                    for (int i = 0; i < 100; i++) {
-                        context.getQueue(queueName).offer("item" + i);
-                        Thread.sleep(50);
-                    }
-                    context.commitTransaction();
-                    latch.countDown();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    context.rollbackTransaction();
-                    latch.countDown();
-                }
-            }
-        }.start();
-        ins2.getLifecycleService().shutdown();
-
-        assertTrue(latch.await(20, TimeUnit.SECONDS));
-
-        assertEquals(100, ins1.getQueue(queueName).size());
-
     }
 
     private IQueue getQueue(HazelcastInstance[] instances, String name) {

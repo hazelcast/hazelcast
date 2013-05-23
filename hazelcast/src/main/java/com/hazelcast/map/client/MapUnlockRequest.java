@@ -44,7 +44,6 @@ public class MapUnlockRequest extends AbstractUnlockRequest {
         this.name = name;
     }
 
-    @Override
     public int getFactoryId() {
         return MapPortableHook.F_ID;
     }
@@ -53,16 +52,18 @@ public class MapUnlockRequest extends AbstractUnlockRequest {
         return MapPortableHook.UNLOCK;
     }
 
-    @Override
     protected ObjectNamespace getNamespace() {
         return new DefaultObjectNamespace(MapService.SERVICE_NAME, name);
     }
 
-    protected void writePortableInternal(PortableWriter writer) throws IOException {
+    public void writePortable(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
+        super.writePortable(writer);
     }
 
-    protected void readPortableInternal(PortableReader reader) throws IOException {
+    public void readPortable(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
+        super.readPortable(reader);
     }
+
 }

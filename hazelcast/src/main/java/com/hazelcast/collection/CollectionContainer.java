@@ -180,7 +180,10 @@ public class CollectionContainer {
         final Collection<Data> locks = lockStore != null ? lockStore.getLockedKeys() : Collections.<Data>emptySet();
         Map<Data, CollectionWrapper> temp = new HashMap<Data, CollectionWrapper>(locks.size());
         for (Data key : locks) {
-            temp.put(key, collections.get(key));
+            CollectionWrapper wrapper = collections.get(key);
+            if (wrapper != null){
+                temp.put(key, wrapper);
+            }
         }
         collections.clear();
         collections.putAll(temp);

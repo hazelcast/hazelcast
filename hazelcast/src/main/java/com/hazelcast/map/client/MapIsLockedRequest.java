@@ -53,13 +53,14 @@ public class MapIsLockedRequest extends AbstractIsLockedRequest {
         return new DefaultObjectNamespace(MapService.SERVICE_NAME, name);
     }
 
-    @Override
-    protected void writePortableInternal(PortableWriter writer) throws IOException {
+    public void writePortable(PortableWriter writer) throws IOException {
         writer.writeUTF("n", name);
+        super.writePortable(writer);
     }
 
-    @Override
-    protected void readPortableInternal(PortableReader reader) throws IOException {
+    public void readPortable(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
+        super.readPortable(reader);
     }
+
 }

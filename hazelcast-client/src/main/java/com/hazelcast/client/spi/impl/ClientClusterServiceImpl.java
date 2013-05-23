@@ -150,16 +150,20 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     private void sendAndHandle(Connection conn, Object obj, ResponseHandler handler) throws IOException {
-        final SerializationService serializationService = getSerializationService();
-        final Data request = serializationService.toData(obj);
-        conn.write(request);
-        final ResponseStream stream = new ResponseStreamImpl(serializationService, conn);
         try {
-            handler.handle(stream);
-        } catch (Exception e) {
-            throw new ClientException(e);
-        } finally {
-            stream.end();
+            final SerializationService serializationService = getSerializationService();
+            final Data request = serializationService.toData(obj);
+            conn.write(request);
+            final ResponseStream stream = new ResponseStreamImpl(serializationService, conn);
+            try {
+                handler.handle(stream);
+            } catch (Exception e) {
+                throw new ClientException(e);
+            } finally {
+                stream.end();
+            }
+        } catch (IOException e){
+            sendAndHandle(obj, handler);
         }
     }
 

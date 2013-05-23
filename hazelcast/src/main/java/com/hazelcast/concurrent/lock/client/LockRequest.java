@@ -40,26 +40,16 @@ public final class LockRequest extends AbstractLockRequest {
         super(key, threadId, ttl, timeout);
     }
 
-    @Override
     protected InternalLockNamespace getNamespace() {
         return new InternalLockNamespace();
     }
 
-    @Override
     public int getFactoryId() {
         return LockPortableHook.FACTORY_ID;
     }
 
-    @Override
     public int getClassId() {
-        return 1;
+        return LockPortableHook.LOCK;
     }
 
-    @Override
-    protected void writePortableInternal(PortableWriter writer) throws IOException {
-    }
-
-    @Override
-    protected void readPortableInternal(PortableReader reader) throws IOException {
-    }
 }

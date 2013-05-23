@@ -18,9 +18,7 @@ package com.hazelcast.client.collection;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ISet;
+import com.hazelcast.core.*;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import com.hazelcast.test.annotation.NetworkRelated;
 import org.junit.*;
@@ -31,6 +29,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
@@ -44,12 +44,13 @@ public class ClientSetTest {
 
     static final String name = "test";
     static HazelcastInstance hz;
+    static HazelcastInstance server;
     static ISet set;
 
     @BeforeClass
     public static void init(){
         Config config = new Config();
-        Hazelcast.newHazelcastInstance(config);
+        server = Hazelcast.newHazelcastInstance(config);
         hz = HazelcastClient.newHazelcastClient(null);
         set = hz.getSet(name);
     }
@@ -155,6 +156,38 @@ public class ClientSetTest {
         l.clear();
         assertTrue(set.retainAll(l));
         assertEquals(0, set.size());
+
+    }
+
+    @Test
+    public void testListener() throws Exception {
+
+//        final ISet tempSet = server.getSet(name);
+        final ISet tempSet = set;
+
+        final CountDownLatch latch = new CountDownLatch(6);
+
+        ItemListener listener = new ItemListener() {
+
+            public void itemAdded(ItemEvent itemEvent) {
+                latch.countDown();
+            }
+
+            public void itemRemoved(ItemEvent item) {
+            }
+        };
+        String registrationId = tempSet.addItemListener(listener, true);
+        System.err.println("reg: " + registrationId);
+
+        new Thread(){
+            public void run() {
+                for (int i=0; i<5; i++){
+                    tempSet.add("item" + i);
+                }
+                tempSet.add("done");
+            }
+        }.start();
+        assertTrue(latch.await(20, TimeUnit.SECONDS));
 
     }
 }

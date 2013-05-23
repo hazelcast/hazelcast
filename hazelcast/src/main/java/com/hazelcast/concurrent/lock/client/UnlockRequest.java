@@ -36,26 +36,16 @@ public final class UnlockRequest extends AbstractUnlockRequest {
         super(key, threadId);
     }
 
-    @Override
     protected InternalLockNamespace getNamespace() {
         return new InternalLockNamespace();
     }
 
-    @Override
     public int getFactoryId() {
         return LockPortableHook.FACTORY_ID;
     }
 
-    @Override
     public int getClassId() {
-        return 2;
+        return LockPortableHook.UNLOCK;
     }
 
-    @Override
-    protected void writePortableInternal(PortableWriter writer) throws IOException {
-    }
-
-    @Override
-    protected void readPortableInternal(PortableReader reader) throws IOException {
-    }
 }

@@ -30,6 +30,10 @@ public class LockPortableHook implements PortableHook {
 
     public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.LOCK_PORTABLE_FACTORY, -15);
 
+    public static final int LOCK = 1;
+    public static final int UNLOCK = 2;
+    public static final int IS_LOCKED = 3;
+
     @Override
     public int getFactoryId() {
         return FACTORY_ID;
@@ -39,13 +43,15 @@ public class LockPortableHook implements PortableHook {
     public PortableFactory createFactory() {
         return new PortableFactory() {
             public Portable create(int classId) {
-                if (classId == 1) {
-                    return new LockRequest();
-                } else if (classId == 2) {
-                    return new UnlockRequest();
-                } else {
-                    return new IsLockedRequest();
+                switch (classId){
+                    case LOCK:
+                        new LockRequest();
+                    case UNLOCK:
+                        new UnlockRequest();
+                    case IS_LOCKED:
+                        new IsLockedRequest();
                 }
+                return null;
             }
         };
     }

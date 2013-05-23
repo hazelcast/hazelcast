@@ -68,15 +68,11 @@ public abstract class AbstractLockRequest extends KeyBasedClientRequest implemen
 
     protected abstract ObjectNamespace getNamespace();
 
-    @Override
     public final String getServiceName() {
         return LockService.SERVICE_NAME;
     }
 
-    @Override
-    public final void writePortable(PortableWriter writer) throws IOException {
-        writePortableInternal(writer);
-
+    public void writePortable(PortableWriter writer) throws IOException {
         writer.writeInt("thread", threadId);
         writer.writeLong("ttl", ttl);
         writer.writeLong("timeout", timeout);
@@ -85,13 +81,7 @@ public abstract class AbstractLockRequest extends KeyBasedClientRequest implemen
         key.writeData(out);
     }
 
-    protected abstract void writePortableInternal(PortableWriter writer) throws IOException;
-
-
-    @Override
-    public final void readPortable(PortableReader reader) throws IOException {
-        readPortableInternal(reader);
-
+    public void readPortable(PortableReader reader) throws IOException {
         threadId = reader.readInt("thread");
         ttl = reader.readLong("ttl");
         timeout = reader.readLong("timeout");
@@ -101,5 +91,4 @@ public abstract class AbstractLockRequest extends KeyBasedClientRequest implemen
         key.readData(in);
     }
 
-    protected abstract void readPortableInternal(PortableReader reader) throws IOException;
 }

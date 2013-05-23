@@ -333,6 +333,45 @@ public interface MultiMap<K, V> extends DistributedObject {
     void lock(K key);
 
     /**
+     * Acquires the lock for the specified key for the specified lease time.
+     * <p>After lease time, lock will be released..
+     * <p/>
+     * <p>If the lock is not available then
+     * the current thread becomes disabled for thread scheduling
+     * purposes and lies dormant until the lock has been acquired.
+     * <p/>
+     * Scope of the lock is this map only.
+     * Acquired lock is only for the key in this map.
+     * <p/>
+     * Locks are re-entrant so if the key is locked N times then
+     * it should be unlocked N times before another thread can acquire it.
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
+     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in <tt>key</tt>'s class.
+     *
+     * @param key key to lock.
+     * @param leaseTime time to wait before releasing the lock.
+     * @param timeUnit unit of time to specify lease time.
+     */
+    void lock(K key, long leaseTime, TimeUnit timeUnit);
+
+    /**
+     * Checks the lock for the specified key.
+     * <p>If the lock is acquired then returns true, else false.
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
+     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in <tt>key</tt>'s class.
+     *
+     * @param key key to lock to be checked.
+     * @return <tt>true</tt> if lock is acquired, <tt>false</tt> otherwise.
+     */
+    boolean isLocked(K key);
+
+    /**
      * Tries to acquire the lock for the specified key.
      * <p>If the lock is not available then the current thread
      * doesn't wait and returns false immediately.
@@ -387,6 +426,20 @@ public interface MultiMap<K, V> extends DistributedObject {
      * @param key key to lock.
      */
     void unlock(K key);
+
+    /**
+     * Releases the lock for the specified key regardless of the lock owner.
+     * It always successfully unlocks the key, never blocks
+     * and returns immediately.
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
+     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in <tt>key</tt>'s class.
+     *
+     * @param key key to lock.
+     */
+    void forceUnlock(K key);
 
     /**
      * Returns LocalMultiMapStats for this map.

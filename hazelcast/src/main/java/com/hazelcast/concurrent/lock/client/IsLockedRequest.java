@@ -48,14 +48,7 @@ public final class IsLockedRequest extends AbstractIsLockedRequest {
 
     @Override
     public int getClassId() {
-        return 3;
+        return LockPortableHook.IS_LOCKED;
     }
 
-    @Override
-    protected void writePortableInternal(PortableWriter writer) throws IOException {
-    }
-
-    @Override
-    protected void readPortableInternal(PortableReader reader) throws IOException {
-    }
 }

@@ -43,9 +43,10 @@ import static org.junit.Assert.*;
 @Category(NetworkRelated.class)
 public class ClientQueueTest {
 
-    static final String queueName = "test";
+    static final String queueName = "test1";
     static HazelcastInstance hz;
     static HazelcastInstance server;
+    static HazelcastInstance second;
     static IQueue q;
 
     @BeforeClass
@@ -96,10 +97,6 @@ public class ClientQueueTest {
         }.start();
         assertTrue(latch.await(20, TimeUnit.SECONDS));
 
-    }
-
-    @Test
-    public void testQueueStats() throws IOException {
     }
 
     @Test
@@ -159,7 +156,9 @@ public class ClientQueueTest {
 
     @Test
     public void testRemainingCapacity() throws IOException {
-
+        assertEquals(6, q.remainingCapacity());
+        q.offer("item");
+        assertEquals(5, q.remainingCapacity());
     }
 
     @Test

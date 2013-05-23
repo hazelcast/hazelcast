@@ -102,7 +102,7 @@ public class ClientConnectionManager {
         if (connection == null) {
             checkLive();
             try {
-                Thread.sleep(1000);
+                Thread.sleep(100);
             } catch (InterruptedException ignored) {
             }
             return getRandomConnection();

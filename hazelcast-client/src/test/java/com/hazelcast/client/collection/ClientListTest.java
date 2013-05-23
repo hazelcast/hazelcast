@@ -18,9 +18,7 @@ package com.hazelcast.client.collection;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IList;
+import com.hazelcast.core.*;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import com.hazelcast.test.annotation.NetworkRelated;
 import org.junit.*;
@@ -32,6 +30,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -193,6 +193,38 @@ public class ClientListTest {
         l.clear();
         assertTrue(list.retainAll(l));
         assertEquals(0, list.size());
+
+    }
+
+    @Test
+    public void testListener() throws Exception {
+
+//        final ISet tempSet = server.getSet(name);
+        final IList tempList = list;
+
+        final CountDownLatch latch = new CountDownLatch(6);
+
+        ItemListener listener = new ItemListener() {
+
+            public void itemAdded(ItemEvent itemEvent) {
+                latch.countDown();
+            }
+
+            public void itemRemoved(ItemEvent item) {
+            }
+        };
+        String registrationId = tempList.addItemListener(listener, true);
+        System.err.println("reg: " + registrationId);
+
+        new Thread(){
+            public void run() {
+                for (int i=0; i<5; i++){
+                    tempList.add("item" + i);
+                }
+                tempList.add("done");
+            }
+        }.start();
+        assertTrue(latch.await(20, TimeUnit.SECONDS));
 
     }
 }

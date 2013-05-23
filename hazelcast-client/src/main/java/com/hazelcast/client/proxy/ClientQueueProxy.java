@@ -65,8 +65,7 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
     }
 
     public LocalQueueStats getLocalQueueStats() {
-        //TODO stats request
-        return null;
+        throw new UnsupportedOperationException("Locality is ambiguous for client!!!");
     }
 
     public boolean add(E e) {
@@ -105,8 +104,9 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
     }
 
     public int remainingCapacity() {
-        //TODO we may need a request here, since QueueConfig is not accessible
-        return 0;
+        RemainingCapacityRequest request = new RemainingCapacityRequest(name);
+        Integer result = invoke(request);
+        return result;
     }
 
     public boolean remove(Object o) {
@@ -243,7 +243,6 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
     }
 
     protected void onDestroy() {
-        //TODO ??
     }
 
     public String getName() {

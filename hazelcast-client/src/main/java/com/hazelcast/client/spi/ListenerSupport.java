@@ -25,7 +25,7 @@ import java.util.concurrent.Future;
 /**
  * @ali 5/20/13
  */
-public class ListenerSupport  {
+public final class ListenerSupport  {
 
     private final ClientContext context;
     private final EventHandler handler;

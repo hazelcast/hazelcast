@@ -15,6 +15,7 @@ public final class SpiPortableHook implements PortableHook {
     public static final int USERNAME_PWD_CRED = 1;
     public static final int COLLECTION = 2;
     public static final int ITEM_EVENT = 3;
+    public static final int ENTRY_EVENT = 4;
 
     public int getFactoryId() {
         return ID;
@@ -30,6 +31,8 @@ public final class SpiPortableHook implements PortableHook {
                         return new PortableCollection();
                     case ITEM_EVENT:
                         return new PortableItemEvent();
+                    case ENTRY_EVENT:
+                        return new PortableEntryEvent();
                 }
                 return null;
             }

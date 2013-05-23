@@ -49,8 +49,12 @@ public class CollectionPortableHook implements PortableHook {
     public static final int SET = 17;
     public static final int SIZE = 18;
     public static final int VALUES = 19;
-    public static final int ADD_LISTENER = 20;
+    public static final int ADD_ENTRY_LISTENER = 20;
     public static final int ENTRY_SET_RESPONSE = 21;
+    public static final int LOCK = 22;
+    public static final int UNLOCK = 23;
+    public static final int IS_LOCKED = 24;
+    public static final int ADD_ITEM_LISTENER = 25;
 
 
 
@@ -59,7 +63,7 @@ public class CollectionPortableHook implements PortableHook {
     }
 
     public PortableFactory createFactory() {
-        ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[22];
+        ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[26];
         constructors[ADD_ALL] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
                 return new AddAllRequest();
@@ -155,14 +159,34 @@ public class CollectionPortableHook implements PortableHook {
                 return new ValuesRequest();
             }
         };
-        constructors[ADD_LISTENER] = new ConstructorFunction<Integer, Portable>() {
+        constructors[ADD_ENTRY_LISTENER] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
-                return new AddListenerRequest();
+                return new AddEntryListenerRequest();
             }
         };
         constructors[ENTRY_SET_RESPONSE] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
                 return new PortableEntrySetResponse();
+            }
+        };
+        constructors[LOCK] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new MultiMapLockRequest();
+            }
+        };
+        constructors[UNLOCK] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new MultiMapUnlockRequest();
+            }
+        };
+        constructors[IS_LOCKED] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new MultiMapIsLockedRequest();
+            }
+        };
+        constructors[ADD_ITEM_LISTENER] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new AddItemListenerRequest();
             }
         };
 

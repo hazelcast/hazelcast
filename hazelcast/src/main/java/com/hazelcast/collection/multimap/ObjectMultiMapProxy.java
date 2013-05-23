@@ -26,7 +26,6 @@ import com.hazelcast.core.MultiMap;
 import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -151,11 +150,21 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     }
 
     public void lock(K key) {
-        try {
-            tryLock(key, -1, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {
-            ExceptionUtil.sneakyThrow(e);
-        }
+        final NodeEngine nodeEngine = getNodeEngine();
+        Data dataKey = nodeEngine.toData(key);
+        lockSupport.lock(nodeEngine, dataKey);
+    }
+
+    public void lock(K key, long leaseTime, TimeUnit timeUnit) {
+        final NodeEngine nodeEngine = getNodeEngine();
+        Data dataKey = nodeEngine.toData(key);
+        lockSupport.lock(nodeEngine, dataKey, timeUnit.toMillis(leaseTime));
+    }
+
+    public boolean isLocked(K key) {
+        final NodeEngine nodeEngine = getNodeEngine();
+        Data dataKey = nodeEngine.toData(key);
+        return lockSupport.isLocked(nodeEngine, dataKey);
     }
 
     public boolean tryLock(K key) {
@@ -176,6 +185,12 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
         final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
         lockSupport.unlock(nodeEngine, dataKey);
+    }
+
+    public void forceUnlock(K key) {
+        final NodeEngine nodeEngine = getNodeEngine();
+        Data dataKey = nodeEngine.toData(key);
+        lockSupport.forceUnlock(nodeEngine, dataKey);
     }
 
     public LocalMultiMapStats getLocalMultiMapStats() {

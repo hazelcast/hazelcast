@@ -31,30 +31,27 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.spi.impl.PortableEntryEvent;
 
 import java.io.IOException;
 
 /**
  * @ali 5/10/13
  */
-public class AddListenerRequest extends CallableClientRequest implements Portable {
+public class AddEntryListenerRequest extends CallableClientRequest implements Portable {
 
     CollectionProxyId proxyId;
-
     Data key;
-
     boolean includeValue;
+    private transient String registrationId;
 
-    boolean local;
-
-    public AddListenerRequest() {
+    public AddEntryListenerRequest() {
     }
 
-    public AddListenerRequest(CollectionProxyId proxyId, Data key, boolean includeValue, boolean local) {
+    public AddEntryListenerRequest(CollectionProxyId proxyId, Data key, boolean includeValue) {
         this.proxyId = proxyId;
         this.key = key;
         this.includeValue = includeValue;
-        this.local = local;
     }
 
     public Object call() throws Exception {
@@ -81,14 +78,22 @@ public class AddListenerRequest extends CallableClientRequest implements Portabl
 
             private void send(EntryEvent event){
                 if (endpoint.live()){
-                    clientEngine.sendResponse(endpoint, event.toString());
+                    Data key = clientEngine.toData(event.getKey());
+                    Data value = clientEngine.toData(event.getValue());
+                    Data oldValue = clientEngine.toData(event.getOldValue());
+                    PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, oldValue, event.getEventType(), event.getMember().getUuid());
+                    clientEngine.sendResponse(endpoint, portableEntryEvent);
                 }
                 else {
-//                    service.removeListener(proxyId.getName(), this, key);
+                    if (registrationId != null){
+                        service.removeListener(proxyId.getName(), registrationId);
+                    } else {
+                        System.err.println("registrationId is null!!!");
+                    }
                 }
             }
         };
-        service.addListener(proxyId.getName(), listener, key, includeValue, local);
+        registrationId = service.addListener(proxyId.getName(), listener, key, includeValue, false);
         return null;
     }
 
@@ -101,12 +106,11 @@ public class AddListenerRequest extends CallableClientRequest implements Portabl
     }
 
     public int getClassId() {
-        return CollectionPortableHook.ADD_LISTENER;
+        return CollectionPortableHook.ADD_ENTRY_LISTENER;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeBoolean("i",includeValue);
-        writer.writeBoolean("l",local);
         final ObjectDataOutput out = writer.getRawDataOutput();
         proxyId.writeData(out);
         IOUtil.writeNullableData(out, key);
@@ -114,7 +118,6 @@ public class AddListenerRequest extends CallableClientRequest implements Portabl
 
     public void readPortable(PortableReader reader) throws IOException {
         includeValue = reader.readBoolean("i");
-        local = reader.readBoolean("l");
         final ObjectDataInput in = reader.getRawDataInput();
         proxyId = new CollectionProxyId();
         proxyId.readData(in);

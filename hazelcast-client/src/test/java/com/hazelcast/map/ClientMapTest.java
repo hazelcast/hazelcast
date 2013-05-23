@@ -231,6 +231,28 @@ public class ClientMapTest {
     }
 
     @Test
+    public void testLockTtl2() throws Exception {
+        map.lock("key1", 3, TimeUnit.SECONDS);
+        final CountDownLatch latch = new CountDownLatch(2);
+        new Thread() {
+            public void run() {
+                if (!map.tryLock("key1")) {
+                    latch.countDown();
+                }
+                try {
+                    if (map.tryLock("key1", 5, TimeUnit.SECONDS)) {
+                        latch.countDown();
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }.start();
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        map.forceUnlock("key1");
+    }
+
+    @Test
     public void testTryLock() throws Exception {
 //        final IMap tempMap = server.getMap(name);
         final IMap tempMap = map;

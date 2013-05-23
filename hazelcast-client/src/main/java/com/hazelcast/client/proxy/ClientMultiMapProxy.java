@@ -17,14 +17,18 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.spi.ClientProxy;
+import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.operations.client.*;
+import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.Member;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.impl.PortableCollection;
+import com.hazelcast.spi.impl.PortableEntryEvent;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
 
@@ -147,38 +151,75 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     public String addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
-        return null;
+        AddEntryListenerRequest request = new AddEntryListenerRequest(proxyId, null, includeValue);
+        EventHandler<PortableEntryEvent> handler = createHandler(listener, includeValue);
+        return listen(request, handler);
     }
 
     public boolean removeEntryListener(String registrationId) {
-        return false;
+        return stopListening(registrationId);
     }
 
     public String addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
-        return null;
+        final Data keyData = getSerializationService().toData(key);
+        AddEntryListenerRequest request = new AddEntryListenerRequest(proxyId, keyData, includeValue);
+        EventHandler<PortableEntryEvent> handler = createHandler(listener, includeValue);
+        return listen(request, keyData, handler);
     }
 
     public void lock(K key) {
+        final Data keyData = getSerializationService().toData(key);
+        MultiMapLockRequest request = new MultiMapLockRequest(keyData, ThreadUtil.getThreadId(), proxyId);
+        invoke(request, keyData);
+    }
 
+    public void lock(K key, long leaseTime, TimeUnit timeUnit) {
+        final Data keyData = getSerializationService().toData(key);
+        MultiMapLockRequest request = new MultiMapLockRequest(keyData, ThreadUtil.getThreadId(),
+                getTimeInMillis(leaseTime, timeUnit), -1, proxyId);
+        invoke(request, keyData);
+    }
+
+    public boolean isLocked(K key) {
+        final Data keyData = getSerializationService().toData(key);
+        final MultiMapIsLockedRequest request = new MultiMapIsLockedRequest(keyData, proxyId);
+        final Boolean result = invoke(request, keyData);
+        return result;
     }
 
     public boolean tryLock(K key) {
-        return false;
+        try {
+            return tryLock(key, 0, null);
+        } catch (InterruptedException e) {
+            return false;
+        }
     }
 
     public boolean tryLock(K key, long time, TimeUnit timeunit) throws InterruptedException {
-        return false;
+        final Data keyData = getSerializationService().toData(key);
+        MultiMapLockRequest request = new MultiMapLockRequest(keyData, ThreadUtil.getThreadId(),
+                Long.MAX_VALUE, getTimeInMillis(time, timeunit), proxyId);
+        Boolean result = invoke(request, keyData);
+        return result;
     }
 
     public void unlock(K key) {
+        final Data keyData = getSerializationService().toData(key);
+        MultiMapUnlockRequest request = new MultiMapUnlockRequest(keyData, ThreadUtil.getThreadId(), proxyId);
+        invoke(request, keyData);
+    }
+
+    public void forceUnlock(K key) {
+        final Data keyData = getSerializationService().toData(key);
+        MultiMapUnlockRequest request = new MultiMapUnlockRequest(keyData, ThreadUtil.getThreadId(), true, proxyId);
+        invoke(request, keyData);
     }
 
     public LocalMultiMapStats getLocalMultiMapStats() {
-        return null;
+        throw new UnsupportedOperationException("Locality is ambiguous for client!!!");
     }
 
     protected void onDestroy() {
-        //TODO ??
     }
 
     public String getName() {
@@ -220,5 +261,36 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
 
     private SerializationService getSerializationService(){
         return getContext().getSerializationService();
+    }
+
+    protected long getTimeInMillis(final long time, final TimeUnit timeunit) {
+        return timeunit != null ? timeunit.toMillis(time) : time;
+    }
+
+    private EventHandler<PortableEntryEvent> createHandler(final EntryListener<K,V> listener, final boolean includeValue){
+        return new EventHandler<PortableEntryEvent>() {
+            public void handle(PortableEntryEvent event) {
+                V value = null;
+                V oldValue = null;
+                if (includeValue){
+                    value = (V)getSerializationService().toObject(event.getValue());
+                    oldValue = (V)getSerializationService().toObject(event.getOldValue());
+                }
+                K key = (K)getSerializationService().toObject(event.getKey());
+                Member member = getContext().getClusterService().getMember(event.getUuid());
+                EntryEvent<K,V> entryEvent = new EntryEvent<K, V>(proxyId.getName(), member,
+                        event.getEventType().getType(), key, oldValue, value);
+                switch (event.getEventType()){
+                    case ADDED:
+                        listener.entryAdded(entryEvent);
+                    case REMOVED:
+                        listener.entryRemoved(entryEvent);
+                    case UPDATED:
+                        listener.entryUpdated(entryEvent);
+                    case EVICTED:
+                        listener.entryEvicted(entryEvent);
+                }
+            }
+        };
     }
 }

@@ -17,13 +17,17 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.spi.ClientProxy;
+import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.operations.client.*;
 import com.hazelcast.core.IList;
+import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
+import com.hazelcast.core.Member;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.impl.PortableCollection;
+import com.hazelcast.spi.impl.PortableItemEvent;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
 
@@ -44,11 +48,13 @@ public class ClientListProxy<E> extends ClientProxy implements IList<E> {
     }
 
     public String addItemListener(ItemListener<E> listener, boolean includeValue) {
-        return null;
+        AddItemListenerRequest request = new AddItemListenerRequest(proxyId, getKey(), includeValue);
+        EventHandler<PortableItemEvent> handler = createHandler(listener, includeValue);
+        return listen(request, getKey(), handler);
     }
 
     public boolean removeItemListener(String registrationId) {
-        return false;
+        return stopListening(registrationId);
     }
 
     public boolean addAll(int index, Collection<? extends E> c) {
@@ -238,5 +244,26 @@ public class ClientListProxy<E> extends ClientProxy implements IList<E> {
 
     private SerializationService getSerializationService(){
         return getContext().getSerializationService();
+    }
+
+    private EventHandler<PortableItemEvent> createHandler(final ItemListener<E> listener, final boolean includeValue){
+        return new EventHandler<PortableItemEvent>() {
+            public void handle(PortableItemEvent event) {
+                E item = null;
+                if (includeValue){
+                    item = (E)getSerializationService().toObject(event.getItem());
+                }
+                Member member = getContext().getClusterService().getMember(event.getUuid());
+                ItemEvent<E> itemEvent = new ItemEvent<E>(proxyId.getKeyName(), event.getEventType(), item, member);
+
+                switch (event.getEventType()){
+                    case ADDED:
+                        listener.itemAdded(itemEvent);
+                    case REMOVED:
+                        listener.itemRemoved(itemEvent);
+
+                }
+            }
+        };
     }
 }

@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.core.ItemEventType;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
@@ -65,21 +66,13 @@ public class PortableItemEvent implements Portable {
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeInt("e", eventType.getType());
         writer.writeUTF("u", uuid);
-        if (item == null){
-            writer.writeInt("i", -1);
-        } else {
-            writer.writeInt("i", 1);
-            item.writeData(writer.getRawDataOutput());
-        }
+        IOUtil.writeNullableData(writer.getRawDataOutput(), item);
 
     }
 
     public void readPortable(PortableReader reader) throws IOException {
         eventType = ItemEventType.getByType(reader.readInt("e"));
         uuid = reader.readUTF("u");
-        if (reader.readInt("i") == 1){
-            item = new Data();
-            item.readData(reader.getRawDataInput());
-        }
+        item = IOUtil.readNullableData(reader.getRawDataInput());
     }
 }

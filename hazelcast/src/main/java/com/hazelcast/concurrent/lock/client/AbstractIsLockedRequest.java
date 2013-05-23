@@ -54,28 +54,19 @@ public abstract class AbstractIsLockedRequest extends KeyBasedClientRequest impl
 
     protected abstract ObjectNamespace getNamespace();
 
-    @Override
     public final String getServiceName() {
         return LockService.SERVICE_NAME;
     }
 
-    @Override
-    public final void writePortable(PortableWriter writer) throws IOException {
-        writePortableInternal(writer);
+    public void writePortable(PortableWriter writer) throws IOException {
         ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
     }
 
-    protected abstract void writePortableInternal(PortableWriter writer) throws IOException;
-
-
-    @Override
-    public final void readPortable(PortableReader reader) throws IOException {
-        readPortableInternal(reader);
+    public void readPortable(PortableReader reader) throws IOException {
         ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);
     }
 
-    protected abstract void readPortableInternal(PortableReader reader) throws IOException;
 }

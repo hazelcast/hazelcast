@@ -460,7 +460,7 @@ public class CollectionClientRequestTest extends ClientTestSupport {
     @Test
     public void testListener() throws IOException {
         final SimpleClient client = getClient();
-        client.send(new AddListenerRequest(mmProxyId, null, true, false));
+        client.send(new AddEntryListenerRequest(mmProxyId, null, true));
         client.receive();
 
         getMultiMap().put("key1", "value1");
@@ -472,7 +472,7 @@ public class CollectionClientRequestTest extends ClientTestSupport {
     @Test
     public void testKeyListener() throws IOException {
         final SimpleClient client = getClient();
-        client.send(new AddListenerRequest(mmProxyId, ss.toData("key2"), true, false));
+        client.send(new AddEntryListenerRequest(mmProxyId, ss.toData("key2"), true));
         client.receive();
 
         final MultiMap<Object, Object> multiMap = getMultiMap();
