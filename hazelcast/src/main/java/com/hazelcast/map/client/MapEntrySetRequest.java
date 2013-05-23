@@ -50,13 +50,13 @@ public class MapEntrySetRequest extends AllPartitionsClientRequest implements Po
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        //TODO set is not portable or identified data serializable
-        Set<Map.Entry<Data, Data>> entrySet = new HashSet<Map.Entry<Data, Data>>();
+        MapEntrySet entrySet = new MapEntrySet();
         MapService service = getService();
         for (Object result : map.values()) {
-            Set entries = ((MapEntrySet) service.toObject(result)).getEntrySet();
-            if (entries != null)
-                entrySet.addAll(entries);
+            Set<Map.Entry<Data,Data>> entries = ((MapEntrySet) service.toObject(result)).getEntrySet();
+            for (Map.Entry<Data,Data> entry : entries) {
+                entrySet.add(entry);
+            }
         }
         return entrySet;
     }

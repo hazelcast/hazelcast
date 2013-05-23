@@ -50,7 +50,7 @@ public class TransactionQueueTest {
     }
 
     @Test
-    public void testTransactionalOfferPoll() throws Exception {
+    public void testTransactionalOfferPoll1() throws Exception {
         Config config = new Config();
         final int insCount = 4;
         final String name = "defQueue";
@@ -71,20 +71,21 @@ public class TransactionQueueTest {
     }
 
     @Test
-    public void testTransactionalOfferPoll1() throws Exception {
+    public void testTransactionalOfferPoll2() throws Exception {
         Config config = new Config();
         final int insCount = 4;
         final String name0 = "defQueue0";
         final String name1 = "defQueue1";
         final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
+        final CountDownLatch latch = new CountDownLatch(1);
         new Thread() {
             public void run() {
                 try {
-                    Thread.sleep(2000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    latch.await(5, TimeUnit.SECONDS);
+                    sleep(3000);
+                    getQueue(instances, name0).offer("item0");
+                } catch (InterruptedException ignored) {
                 }
-                getQueue(instances, name0).offer("item0");
             }
         }.start();
 
@@ -94,11 +95,12 @@ public class TransactionQueueTest {
                         TransactionalQueue<String> q0 = context.getQueue(name0);
                         TransactionalQueue<String> q1 = context.getQueue(name1);
                         String s = null;
+                        latch.countDown();
                         try {
-                            s = q0.poll(6, TimeUnit.SECONDS);
+                            s = q0.poll(10, TimeUnit.SECONDS);
                         } catch (InterruptedException e) {
-                            fail(e.getMessage());
                             e.printStackTrace();
+                            fail(e.getMessage());
                         }
                         assertEquals("item0", s);
                         q1.offer(s);
@@ -132,10 +134,8 @@ public class TransactionQueueTest {
                         }
                     });
         } catch (TransactionException ex) {
-            ex.printStackTrace();
+            // expected
         }
-
-
         assertEquals(0, instances[0].getQueue(queueName).size());
         assertNull(instances[0].getMap(mapName).get("lock1"));
     }

@@ -16,53 +16,28 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.MultiPartitionClientRequest;
-import com.hazelcast.map.MapKeySet;
-import com.hazelcast.map.MapKeySetOperationFactory;
+import com.hazelcast.client.AllPartitionsClientRequest;
+import com.hazelcast.map.ClearOperationFactory;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
-import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.map.SizeOperationFactory;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
-public class MapLocalKeySetRequest extends MultiPartitionClientRequest implements Portable {
+public class MapClearRequest extends AllPartitionsClientRequest implements Portable {
 
     private String name;
 
-    public MapLocalKeySetRequest() {
+    public MapClearRequest() {
     }
 
-    public MapLocalKeySetRequest(String name, Data key) {
+    public MapClearRequest(String name) {
         this.name = name;
-    }
-
-    @Override
-    protected OperationFactory createOperationFactory() {
-        return new MapKeySetOperationFactory(name);
-    }
-
-    @Override
-    protected Object reduce(Map<Integer, Object> map) {
-        Set res = new HashSet();
-        MapService service = getService();
-        for (Object o : map.values()) {
-            Set keys = ((MapKeySet) service.toObject(o)).getKeySet();
-            res.addAll(keys);
-        }
-        return new MapKeySet(res);
-    }
-
-    @Override
-    public Collection<Integer> getPartitions() {
-        return getClientEngine().getPartitionService().getMemberPartitions(getClientEngine().getThisAddress());
     }
 
     public String getServiceName() {
@@ -75,7 +50,7 @@ public class MapLocalKeySetRequest extends MultiPartitionClientRequest implement
     }
 
     public int getClassId() {
-        return MapPortableHook.LOCAL_KEYSET;
+        return MapPortableHook.SIZE;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
@@ -84,5 +59,21 @@ public class MapLocalKeySetRequest extends MultiPartitionClientRequest implement
 
     public void readPortable(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
+    }
+
+    @Override
+    protected OperationFactory createOperationFactory() {
+        return new ClearOperationFactory(name);
+    }
+
+    @Override
+    protected Object reduce(Map<Integer, Object> map) {
+        int total = 0;
+        MapService mapService = getService();
+        for (Object result : map.values()) {
+            Integer size = (Integer) mapService.toObject(result);
+            total += size;
+        }
+        return total;
     }
 }

@@ -493,7 +493,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         }
     }
 
-    public Map executeOnAllKeys(EntryProcessor entryProcessor) {
+    public Map executeOnEntries(EntryProcessor entryProcessor) {
         Map result = new HashMap();
         try {
             NodeEngine nodeEngine = getNodeEngine();

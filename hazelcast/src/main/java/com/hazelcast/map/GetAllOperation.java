@@ -28,7 +28,7 @@ import java.util.Set;
 
 public class GetAllOperation extends AbstractMapOperation implements PartitionAwareOperation {
 
-    Set<Data> keys;
+    Set<Data> keys = new HashSet<Data>();
     MapEntrySet entrySet;
 
     public GetAllOperation(String name, Set<Data> keys) {
@@ -80,7 +80,6 @@ public class GetAllOperation extends AbstractMapOperation implements PartitionAw
         super.readInternal(in);
         int size = in.readInt();
         if (size > -1) {
-            keys = new HashSet<Data>(size);
             for (int i = 0; i < size; i++) {
                 Data data = new Data();
                 data.readData(in);

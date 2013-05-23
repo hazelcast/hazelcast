@@ -9,12 +9,17 @@ import com.hazelcast.instance.GroupProperties;
 import org.junit.*;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @ali 5/22/13
@@ -97,8 +102,24 @@ public class ClientMapTest {
     }
 
     @Test
-    public void getAll(){
-        //TODO
+    public void testGetAllPutAll() {
+        Map mm = new HashMap();
+        for (int i = 0; i < 100; i++) {
+            mm.put(i, i);
+        }
+        map.putAll(mm);
+        assertEquals(map.size(), 100);
+        for (int i = 0; i < 100; i++) {
+            assertEquals(map.get(i), i);
+        }
+
+        Set ss = new HashSet();
+        ss.add(1);
+        ss.add(3);
+        Map m2 = map.getAll(ss);
+        assertEquals(m2.size(), 2);
+        assertEquals(m2.get(1), 1);
+        assertEquals(m2.get(3), 3);
     }
 
     @Test
@@ -147,7 +168,7 @@ public class ClientMapTest {
     }
 
     @Test
-    public void testTtyPutGetRemove() throws Exception {
+    public void testTryPutGetRemove() throws Exception {
         //TODO test after locks
     }
 

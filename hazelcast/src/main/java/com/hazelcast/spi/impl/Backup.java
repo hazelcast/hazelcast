@@ -50,7 +50,8 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
         this.sync = sync;
         this.replicaVersions = replicaVersions;
         if (sync && originalCaller == null) {
-            throw new IllegalArgumentException("Sync backup requires original caller address!");
+            throw new IllegalArgumentException("Sync backup requires original caller address!" +
+                    ", Op: " + backupOp);
         }
     }
 

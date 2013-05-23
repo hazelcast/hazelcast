@@ -95,8 +95,9 @@ public class ExecutorTest {
             final HashMap map = new HashMap();
             map.put("member", instance.getCluster().getLocalMember());
             int key = 0;
-            while (!instance.getCluster().getLocalMember().equals(instance.getPartitionService().getPartition(++key).getOwner()))
-                ;
+            while (!instance.getCluster().getLocalMember().equals(instance.getPartitionService().getPartition(++key).getOwner())) {
+                Thread.sleep(1);
+            }
             service.submitToKeyOwner(new ScriptRunnable(script, map), key, callback);
         }
         latch.await(10, TimeUnit.SECONDS);
@@ -112,8 +113,9 @@ public class ExecutorTest {
         final CountDownLatch latch = new CountDownLatch(k);
         final ExecutionCallback callback = new ExecutionCallback() {
             public void onResponse(Object response) {
-                if (response == null)
+                if (response == null) {
                     count.incrementAndGet();
+                }
                 latch.countDown();
             }
 
@@ -139,27 +141,31 @@ public class ExecutorTest {
         final int k = simpleTestNodeCount;
         final HazelcastInstance[] instances = StaticNodeFactory.newInstances(new Config(), k);
         final AtomicInteger count = new AtomicInteger(0);
+        final CountDownLatch latch = new CountDownLatch(k);
         final MultiExecutionCallback callback = new MultiExecutionCallback() {
             public void onResponse(Member member, Object value) {
                 count.incrementAndGet();
             }
 
             public void onComplete(Map<Member, Object> values) {
+                latch.countDown();
             }
         };
         int sum = 0;
-        final Object[] members = instances[0].getCluster().getMembers().toArray();
+        final Set<Member> membersSet = instances[0].getCluster().getMembers();
+        final Member[] members = membersSet.toArray(new Member[membersSet.size()]);
+        final Random random = new Random();
         for (int i = 0; i < k; i++) {
             final IExecutorService service = instances[i].getExecutorService("testSubmitToMembersRunnable");
             final String script = "hazelcast.getAtomicLong('testSubmitToMembersRunnable').incrementAndGet();";
-            final int n = new Random().nextInt(k) + 1;
+            final int n = random.nextInt(k) + 1;
             sum += n;
             Member[] m = new Member[n];
-            for (int j = 0; j < n; j++)
-                m[j] = (Member) members[j];
+            System.arraycopy(members, 0, m, 0, n);
             service.submitToMembers(new ScriptRunnable(script, null), Arrays.asList(m), callback);
         }
-        Thread.sleep(3000);
+
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
         final IAtomicLong result = instances[0].getAtomicLong("testSubmitToMembersRunnable");
         Assert.assertEquals(sum, result.get());
         Assert.assertEquals(sum, count.get());
@@ -186,7 +192,7 @@ public class ExecutorTest {
             final String script = "hazelcast.getAtomicLong('testSubmitToAllMembersRunnable').incrementAndGet();";
             service.submitToAllMembers(new ScriptRunnable(script, null), callback);
         }
-        latch.await(10, TimeUnit.SECONDS);
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
         final IAtomicLong result = instances[0].getAtomicLong("testSubmitToAllMembersRunnable");
         Assert.assertEquals(k * k, result.get());
         Assert.assertEquals(k * k, count.get());
@@ -209,12 +215,12 @@ public class ExecutorTest {
         final int k = simpleTestNodeCount;
         final HazelcastInstance[] instances = StaticNodeFactory.newInstances(new Config(), k);
         final AtomicInteger count = new AtomicInteger(0);
-        final CountDownLatch countDownLatch = new CountDownLatch(k / 2);
+        final CountDownLatch latch = new CountDownLatch(k / 2);
         final ExecutionCallback callback = new ExecutionCallback() {
             public void onResponse(Object response) {
                 if ((Boolean) response)
                     count.incrementAndGet();
-                countDownLatch.countDown();
+                latch.countDown();
             }
 
             public void onFailure(Throwable t) {
@@ -236,7 +242,7 @@ public class ExecutorTest {
                 service.submitToKeyOwner(new ScriptCallable(script, map), key, callback);
             }
         }
-        countDownLatch.await(10, TimeUnit.SECONDS);
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
         Assert.assertEquals(k / 2, count.get());
     }
 
@@ -245,12 +251,12 @@ public class ExecutorTest {
         final int k = simpleTestNodeCount;
         final HazelcastInstance[] instances = StaticNodeFactory.newInstances(new Config(), k);
         final AtomicInteger count = new AtomicInteger(0);
-        final CountDownLatch countDownLatch = new CountDownLatch(k / 2);
+        final CountDownLatch latch = new CountDownLatch(k / 2);
         final ExecutionCallback callback = new ExecutionCallback() {
             public void onResponse(Object response) {
                 if ((Boolean) response)
                     count.incrementAndGet();
-                countDownLatch.countDown();
+                latch.countDown();
             }
 
             public void onFailure(Throwable t) {
@@ -269,7 +275,7 @@ public class ExecutorTest {
                 service.submitToMember(new ScriptCallable(script, map), instance.getCluster().getLocalMember(), callback);
             }
         }
-        countDownLatch.await(10, TimeUnit.SECONDS);
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
         Assert.assertEquals(k / 2, count.get());
     }
 
@@ -278,28 +284,33 @@ public class ExecutorTest {
         final int k = simpleTestNodeCount;
         final HazelcastInstance[] instances = StaticNodeFactory.newInstances(new Config(), k);
         final AtomicInteger count = new AtomicInteger(0);
+        final CountDownLatch latch = new CountDownLatch(k);
         final MultiExecutionCallback callback = new MultiExecutionCallback() {
             public void onResponse(Member member, Object value) {
                 count.incrementAndGet();
             }
 
             public void onComplete(Map<Member, Object> values) {
+                latch.countDown();
             }
         };
         int sum = 0;
-        final Object[] members = instances[0].getCluster().getMembers().toArray();
+        final Set<Member> membersSet = instances[0].getCluster().getMembers();
+        final Member[] members = membersSet.toArray(new Member[membersSet.size()]);
+        final Random random = new Random();
+        final String name = "testSubmitToMembersCallable";
         for (int i = 0; i < k; i++) {
-            final IExecutorService service = instances[i].getExecutorService("testSubmitToMembersCallable");
-            final String script = "hazelcast.getAtomicLong('testSubmitToMembersCallable').incrementAndGet();";
-            final int n = new Random().nextInt(k) + 1;
+            final IExecutorService service = instances[i].getExecutorService(name);
+            final String script = "hazelcast.getAtomicLong('" + name + "').incrementAndGet();";
+            final int n = random.nextInt(k) + 1;
             sum += n;
             Member[] m = new Member[n];
-            for (int j = 0; j < n; j++)
-                m[j] = (Member) members[j];
+            System.arraycopy(members, 0, m, 0, n);
             service.submitToMembers(new ScriptCallable(script, null), Arrays.asList(m), callback);
         }
-        Thread.sleep(2000);
-        final IAtomicLong result = instances[0].getAtomicLong("testSubmitToMembersCallable");
+
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        final IAtomicLong result = instances[0].getAtomicLong(name);
         Assert.assertEquals(sum, result.get());
         Assert.assertEquals(sum, count.get());
     }

@@ -26,7 +26,6 @@ import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import org.junit.*;
 import org.junit.runner.RunWith;
 
-import java.io.Serializable;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -77,7 +76,7 @@ public class EntryProcessorTest {
             map.put(i, i);
         }
         EntryProcessor entryProcessor = new IncrementorEntryProcessor();
-        Map<Integer, Object> res = map.executeOnAllKeys(entryProcessor);
+        Map<Integer, Object> res = map.executeOnEntries(entryProcessor);
         for (int i = 0; i < size; i++) {
             assertEquals(map.get(i), (Object) (i+1));
         }
@@ -103,7 +102,7 @@ public class EntryProcessorTest {
             map.put(i, i);
         }
         EntryProcessor entryProcessor = new IncrementorEntryProcessor();
-        map.executeOnAllKeys(entryProcessor);
+        map.executeOnEntries(entryProcessor);
         for (int i = 0; i < size; i++) {
             assertEquals(map.get(i), (Object) (i+1));
         }
@@ -116,8 +115,6 @@ public class EntryProcessorTest {
         instance2.getLifecycleService().shutdown();
         instance3.getLifecycleService().shutdown();
     }
-
-
 
     @Test
     public void testBackups() throws InterruptedException {
@@ -147,7 +144,10 @@ public class EntryProcessorTest {
 
     }
 
-    static class IncrementorEntryProcessor implements EntryProcessor, EntryBackupProcessor, Serializable {
+    static class IncrementorEntryProcessor implements EntryProcessor, EntryBackupProcessor {
+
+        IncrementorEntryProcessor() {
+        }
 
         public Object process(Map.Entry entry) {
             Integer value = (Integer) entry.getValue() +1;

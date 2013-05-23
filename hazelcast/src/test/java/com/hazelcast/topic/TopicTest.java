@@ -22,7 +22,6 @@ import com.hazelcast.core.*;
 import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
-import com.hazelcast.util.Clock;
 import junit.framework.Assert;
 import org.junit.After;
 import org.junit.Before;
@@ -230,8 +229,6 @@ public class TopicTest {
 
         MessageListener<String> messageListener = new MessageListener<String>() {
             public void onMessage(Message<String> msg) {
-
-                System.out.println("Received " + msg + " at " + this);
                 latch.countDown();
                 cp.countDown();
 
@@ -270,7 +267,6 @@ public class TopicTest {
     @Test
     public void testPerformance() throws InterruptedException {
         HazelcastInstance hazelcastInstance = new StaticNodeFactory(1).newHazelcastInstance(new Config());
-        long begin = Clock.currentTimeMillis();
         int count = 10000;
         final ITopic topic = hazelcastInstance.getTopic("perf");
         ExecutorService ex = Executors.newFixedThreadPool(10);
@@ -284,9 +280,6 @@ public class TopicTest {
             });
         }
         assertTrue(l.await(20, TimeUnit.SECONDS));
-        long time = Clock.currentTimeMillis() - begin;
-        System.out.println("per second: " + count * 1000 / time);
-        hazelcastInstance.getLifecycleService().shutdown();
     }
 
     @Test

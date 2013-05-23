@@ -874,6 +874,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p/>
      *
      */
-    Map<K,Object> executeOnAllKeys(EntryProcessor entryProcessor);
+    Map<K,Object> executeOnEntries(EntryProcessor entryProcessor);
 
 }

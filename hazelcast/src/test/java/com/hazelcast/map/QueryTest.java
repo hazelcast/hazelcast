@@ -49,8 +49,7 @@ import static org.junit.Assert.*;
 public class QueryTest extends TestUtil {
 
     @BeforeClass
-    public static void init() throws Exception {
-        System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
+    public static void init() {
         Hazelcast.shutdownAll();
     }
 
@@ -193,13 +192,7 @@ public class QueryTest extends TestUtil {
         map.put("2", new ValueType("two"));
         map.put("3", new ValueType("three"));
         final Predicate predicate = new SqlPredicate("typeName in ('one','two')");
-//        testIterator(map.keySet().iterator(), 3);
-        System.out.println("sz keyset:" + map.keySet(predicate).size());
-        System.out.println("sz entryset:" + map.entrySet(predicate).size());
-        System.out.println("sz values:" + map.values(predicate).size());
-
-        System.out.println("sz keyset iter:" + map.keySet(predicate).iterator());
-
+        testIterator(map.keySet().iterator(), 3);
         testIterator(map.keySet(predicate).iterator(), 2);
         testIterator(map.entrySet().iterator(), 3);
         testIterator(map.entrySet(predicate).iterator(), 2);
@@ -283,13 +276,11 @@ public class QueryTest extends TestUtil {
             Employee employee = new Employee("joe" + i, i % 60, ((i & 1) == 1), Double.valueOf(i));
             if (employee.getName().startsWith("joe15") && employee.isActive()) {
                 expectedCount++;
-                System.out.println(employee);
             }
             imap.put(String.valueOf(i), employee);
         }
         Collection<Employee> values = imap.values(new SqlPredicate("active and name LIKE 'joe15%'"));
         for (Employee employee : values) {
-//            System.out.println(employee);
             assertTrue(employee.isActive());
         }
         assertEquals(expectedCount, values.size());
@@ -318,31 +309,6 @@ public class QueryTest extends TestUtil {
     }
 
     @Test
-    public void testQueryDuringAndAfterMigrationWithIndex() throws Exception {
-        Config cfg = new Config();
-        StaticNodeFactory nodeFactory = new StaticNodeFactory(4);
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
-        IMap imap = h1.getMap("employees");
-        imap.addIndex("name", false);
-        imap.addIndex("age", true);
-        imap.addIndex("active", false);
-        for (int i = 0; i < 10000; i++) {
-            imap.put(String.valueOf(i), new Employee("joe" + i, i % 60, ((i & 1) == 1), Double.valueOf(i)));
-        }
-        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance h3 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance h4 = nodeFactory.newHazelcastInstance(cfg);
-        long startNow = Clock.currentTimeMillis();
-        while ((Clock.currentTimeMillis() - startNow) < 50000) {
-            Collection<Employee> values = imap.values(new SqlPredicate("active and name LIKE 'joe15%'"));
-            for (Employee employee : values) {
-                assertTrue(employee.isActive());
-            }
-            assertEquals(56, values.size());
-        }
-    }
-
-    @Test
     public void testQueryDuringAndAfterMigration() throws Exception {
         Config cfg = new Config();
         StaticNodeFactory nodeFactory = new StaticNodeFactory(4);
@@ -356,15 +322,69 @@ public class QueryTest extends TestUtil {
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance h4 = nodeFactory.newHazelcastInstance(cfg);
         long startNow = Clock.currentTimeMillis();
-        while ((Clock.currentTimeMillis() - startNow) < 50000) {
+        while ((Clock.currentTimeMillis() - startNow) < 10000) {
             Collection<Employee> values = imap.values();
             assertEquals(count, values.size());
         }
     }
 
     @Test
-    public void testTwoNodesWithPartialIndexes() throws Exception {
+    public void testQueryDuringAndAfterMigrationWithIndex() throws Exception {
         // todo fails
+        Config cfg = new Config();
+        StaticNodeFactory nodeFactory = new StaticNodeFactory(4);
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
+        IMap imap = h1.getMap("employees");
+        imap.addIndex("name", false);
+        imap.addIndex("age", true);
+        imap.addIndex("active", false);
+        for (int i = 0; i < 50000; i++) {
+            imap.put(String.valueOf(i), new Employee("joe" + i, i % 60, ((i & 1) == 1), (double) i));
+        }
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance h3 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance h4 = nodeFactory.newHazelcastInstance(cfg);
+        long startNow = Clock.currentTimeMillis();
+        while ((Clock.currentTimeMillis() - startNow) < 10000) {
+            Collection<Employee> values = imap.values(new SqlPredicate("active and name LIKE 'joe15%'"));
+            for (Employee employee : values) {
+                assertTrue(employee.isActive());
+            }
+            assertEquals(556, values.size());
+        }
+    }
+
+    @Test
+    public void testQueryWithIndexesWhileMigrating() throws Exception {
+        // todo fails
+        Config cfg = new Config();
+        StaticNodeFactory nodeFactory = new StaticNodeFactory(4);
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
+        IMap imap = h1.getMap("employees");
+        imap.addIndex("name", false);
+        imap.addIndex("age", true);
+        imap.addIndex("active", false);
+        for (int i = 0; i < 500; i++) {
+            Map temp = new HashMap(100);
+            for (int j = 0; j < 100; j++) {
+                String key = String.valueOf((i * 100000) + j);
+                temp.put(key, new Employee("name" + key, i % 60, ((i & 1) == 1), (double) i));
+            }
+            imap.putAll(temp);
+        }
+        assertEquals(50000, imap.size());
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance h3 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance h4 = nodeFactory.newHazelcastInstance(cfg);
+        long startNow = Clock.currentTimeMillis();
+        while ((Clock.currentTimeMillis() - startNow) < 10000) {
+            Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active=true and age>44"));
+            assertEquals(6400, entries.size());
+        }
+    }
+
+    @Test
+    public void testTwoNodesWithPartialIndexes() throws Exception {
         Config cfg = new Config();
         StaticNodeFactory nodeFactory = new StaticNodeFactory(2);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
@@ -374,7 +394,7 @@ public class QueryTest extends TestUtil {
         imap.addIndex("age", true);
         imap.addIndex("active", false);
         for (int i = 0; i < 5000; i++) {
-            Employee employee = new Employee(i, "name" + i % 100, "city" + (i % 100), i % 60, ((i & 1) == 1), Double.valueOf(i));
+            Employee employee = new Employee(i, "name" + i % 100, "city" + (i % 100), i % 60, ((i & 1) == 1), (double) i);
             imap.put(String.valueOf(i), employee);
         }
         assertEquals(2, h1.getCluster().getMembers().size());
@@ -406,7 +426,6 @@ public class QueryTest extends TestUtil {
 
     @Test
     public void testTwoNodesWithIndexes() throws Exception {
-        // todo fails
         Config cfg = new Config();
         StaticNodeFactory nodeFactory = new StaticNodeFactory(2);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
@@ -417,7 +436,7 @@ public class QueryTest extends TestUtil {
         imap.addIndex("age", true);
         imap.addIndex("active", false);
         for (int i = 0; i < 5000; i++) {
-            Employee employee = new Employee(i, "name" + i % 100, "city" + (i % 100), i % 60, ((i & 1) == 1), Double.valueOf(i));
+            Employee employee = new Employee(i, "name" + i % 100, "city" + (i % 100), i % 60, ((i & 1) == 1), (double) i);
             imap.put(String.valueOf(i), employee);
         }
         assertEquals(2, h1.getCluster().getMembers().size());
@@ -445,34 +464,6 @@ public class QueryTest extends TestUtil {
         for (Employee e : entries) {
             assertTrue(e.getName().startsWith("name3"));
             assertTrue(e.getCity().startsWith("city3"));
-        }
-    }
-
-    @Test
-    public void testQueryWithIndexesWhileMigrating() throws Exception {
-        // todo fails
-        Config cfg = new Config();
-        StaticNodeFactory nodeFactory = new StaticNodeFactory(4);
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
-        IMap imap = h1.getMap("employees");
-        imap.addIndex("name", false);
-        imap.addIndex("age", true);
-        imap.addIndex("active", false);
-        for (int i = 0; i < 500; i++) {
-            Map temp = new HashMap(100);
-            for (int j = 0; j < 100; j++) {
-                String key = String.valueOf((i * 100000) + j);
-                temp.put(key, new Employee("name" + key, i % 60, ((i & 1) == 1), Double.valueOf(i)));
-            }
-            imap.putAll(temp);
-        }
-        assertEquals(50000, imap.size());
-        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance h3 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance h4 = nodeFactory.newHazelcastInstance(cfg);
-        for (int i = 0; i < 1; i++) {
-            Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active=true and age>44"));
-            assertEquals(6400, entries.size());
         }
     }
 
@@ -606,7 +597,6 @@ public class QueryTest extends TestUtil {
         }
         assertTrue(foundFirst);
         assertTrue(foundLast);
-        System.out.println(tookWithIndex + " vs. " + tookWithout);
         assertTrue(tookWithIndex < (tookWithout / 2));
         for (int i = 0; i < 50000; i++) {
             imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i & 1) == 1), 100.25D));
@@ -869,7 +859,6 @@ public class QueryTest extends TestUtil {
         assertTrue(entries.size() > 0);
         for (Map.Entry<String, Employee> entry : entries) {
             Employee e = entry.getValue();
-            System.out.println(e);
             assertEquals(e, toto2);
         }
     }
@@ -1163,7 +1152,6 @@ public class QueryTest extends TestUtil {
         assertEquals(23, entries.size());
         for (Map.Entry entry : entries) {
             Employee c = (Employee) entry.getValue();
-            System.out.println(c);
             assertTrue(c.getAge() >= 30);
             assertTrue(c.getAge() <= 40);
         }
@@ -1215,7 +1203,6 @@ public class QueryTest extends TestUtil {
      */
     @Test
     public void testIndexCleanupOnMigration() throws InterruptedException {
-        Config cfg = new Config();
         final int n = 6;
         final int runCount = 500;
         final StaticNodeFactory nodeFactory = new StaticNodeFactory(n);

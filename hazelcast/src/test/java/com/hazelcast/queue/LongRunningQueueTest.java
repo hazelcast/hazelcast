@@ -19,6 +19,7 @@ package com.hazelcast.queue;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
+import org.junit.Ignore;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -31,6 +32,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * @ali 4/29/13
  */
+@Ignore
 public class LongRunningQueueTest {
 
     static final int minNode = 2;
