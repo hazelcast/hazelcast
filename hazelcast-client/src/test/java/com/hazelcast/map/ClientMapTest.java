@@ -2,9 +2,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import com.hazelcast.core.*;
 import com.hazelcast.instance.GroupProperties;
 import org.junit.*;
 
@@ -339,6 +337,68 @@ public class ClientMapTest {
         assertEquals("value2", map.get("key1"));
         assertTrue(map.replace("key1", "value2", "value3"));
         assertEquals("value3", map.get("key1"));
+    }
+
+    @Test
+    public void testListener() throws InterruptedException {
+        final CountDownLatch latch1Add = new CountDownLatch(5);
+        final CountDownLatch latch1Remove = new CountDownLatch(2);
+
+        final CountDownLatch latch2Add = new CountDownLatch(1);
+        final CountDownLatch latch2Remove = new CountDownLatch(1);
+
+        EntryListener listener1 = new EntryListener() {
+
+            public void entryAdded(EntryEvent event) {
+                latch1Add.countDown();
+            }
+
+            public void entryRemoved(EntryEvent event) {
+                latch1Remove.countDown();
+            }
+
+            public void entryUpdated(EntryEvent event) {
+            }
+
+            public void entryEvicted(EntryEvent event) {
+            }
+        };
+
+        EntryListener listener2 = new EntryListener() {
+
+            public void entryAdded(EntryEvent event) {
+                latch2Add.countDown();
+            }
+
+            public void entryRemoved(EntryEvent event) {
+                latch2Remove.countDown();
+            }
+
+            public void entryUpdated(EntryEvent event) {
+            }
+
+            public void entryEvicted(EntryEvent event) {
+            }
+        };
+
+        map.addEntryListener(listener1, true);
+        map.addEntryListener(listener2, "key3", true);
+
+        map.put("key1", "value1");
+        map.put("key2", "value2");
+        map.put("key3", "value3");
+        map.put("key4", "value4");
+        map.put("key5", "value5");
+
+        map.remove("key1");
+
+        map.remove("key3");
+
+        assertTrue(latch1Add.await(20, TimeUnit.SECONDS));
+        assertTrue(latch1Remove.await(20, TimeUnit.SECONDS));
+
+        assertTrue(latch2Add.await(20, TimeUnit.SECONDS));
+        assertTrue(latch2Remove.await(20, TimeUnit.SECONDS));
     }
 
     private void fillMap(){
