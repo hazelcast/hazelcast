@@ -1,15 +1,15 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.spi.ClientProxy;
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.EntryView;
-import com.hazelcast.core.IMap;
+import com.hazelcast.client.spi.EventHandler;
+import com.hazelcast.core.*;
 import com.hazelcast.map.*;
 import com.hazelcast.map.client.*;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryResultEntry;
+import com.hazelcast.spi.impl.PortableEntryEvent;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryDataResultStream;
@@ -232,19 +232,27 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     }
 
     public String addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
-        return null;
+        MapAddEntryListenerRequest request = new MapAddEntryListenerRequest(name, includeValue);
+        EventHandler<PortableEntryEvent> handler = createHandler(listener, includeValue);
+        return listen(request, handler);
     }
 
     public boolean removeEntryListener(String id) {
-        return false;
+        return stopListening(id);
     }
 
     public String addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
-        return null;
+        final Data keyData = toData(key);
+        MapAddEntryListenerRequest request = new MapAddEntryListenerRequest(name, keyData, includeValue);
+        EventHandler<PortableEntryEvent> handler = createHandler(listener, includeValue);
+        return listen(request, keyData, handler);
     }
 
     public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue) {
-        return null;
+        final Data keyData = toData(key);
+        MapAddEntryListenerRequest request = new MapAddEntryListenerRequest(name, keyData, includeValue, predicate);
+        EventHandler<PortableEntryEvent> handler = createHandler(listener, includeValue);
+        return listen(request, keyData, handler);
     }
 
     public EntryView<K, V> getEntryView(K key) {
@@ -280,16 +288,16 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     }
 
     public Map<K, V> getAll(Set<K> keys) {
-        Set keyset = new HashSet(keys.size());
+        Set keySet = new HashSet(keys.size());
         for (Object key : keys) {
-            keyset.add(toData(key));
+            keySet.add(toData(key));
         }
-        MapGetAllRequest request = new MapGetAllRequest(name, keyset);
+        MapGetAllRequest request = new MapGetAllRequest(name, keySet);
         MapEntrySet mapEntrySet = invoke(request);
         Map<K,V> result = new HashMap<K, V>();
         Set<Entry<Data, Data>> entrySet = mapEntrySet.getEntrySet();
         for (Entry<Data, Data> dataEntry : entrySet) {
-            result.put((K)toObject(dataEntry.getKey()), (V)toObject(dataEntry.getValue()));
+            result.put((K) toObject(dataEntry.getKey()), (V) toObject(dataEntry.getValue()));
         }
         return result;
     }
@@ -426,7 +434,8 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     }
 
     protected void onDestroy() {
-        //TODO ?
+        MapDestroyRequest request = new MapDestroyRequest(name);
+        invoke(request);
     }
 
     public String getName() {
@@ -459,6 +468,33 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     protected long getTimeInMillis(final long time, final TimeUnit timeunit) {
         return timeunit != null ? timeunit.toMillis(time) : time;
+    }
+
+    private EventHandler<PortableEntryEvent> createHandler(final EntryListener<K,V> listener, final boolean includeValue){
+        return new EventHandler<PortableEntryEvent>() {
+            public void handle(PortableEntryEvent event) {
+                V value = null;
+                V oldValue = null;
+                if (includeValue){
+                    value = toObject(event.getValue());
+                    oldValue = toObject(event.getOldValue());
+                }
+                K key = toObject(event.getKey());
+                Member member = getContext().getClusterService().getMember(event.getUuid());
+                EntryEvent<K,V> entryEvent = new EntryEvent<K, V>(name, member,
+                        event.getEventType().getType(), key, oldValue, value);
+                switch (event.getEventType()){
+                    case ADDED:
+                        listener.entryAdded(entryEvent);
+                    case REMOVED:
+                        listener.entryRemoved(entryEvent);
+                    case UPDATED:
+                        listener.entryUpdated(entryEvent);
+                    case EVICTED:
+                        listener.entryEvicted(entryEvent);
+                }
+            }
+        };
     }
 
 }

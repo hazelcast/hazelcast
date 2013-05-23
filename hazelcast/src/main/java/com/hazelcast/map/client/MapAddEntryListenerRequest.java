@@ -24,14 +24,16 @@ import com.hazelcast.core.EntryListener;
 import com.hazelcast.map.EntryEventFilter;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
+import com.hazelcast.map.QueryEventFilter;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.EventFilter;
-import com.hazelcast.util.MutableString;
+import com.hazelcast.spi.impl.PortableEntryEvent;
 
 import java.io.IOException;
 
@@ -39,21 +41,26 @@ public class MapAddEntryListenerRequest extends CallableClientRequest implements
 
     private String name;
     private Data key;
+    private Predicate predicate;
     private boolean includeValue;
-    private boolean local;
+    private transient volatile String registrationId;
 
     public MapAddEntryListenerRequest() {
     }
 
-    public MapAddEntryListenerRequest(String name) {
-        this.name = name;
-    }
-
-    public MapAddEntryListenerRequest(String name, Data key, boolean includeValue, boolean local) {
+    public MapAddEntryListenerRequest(String name, boolean includeValue) {
         this.name = name;
         this.includeValue = includeValue;
+    }
+
+    public MapAddEntryListenerRequest(String name, Data key, boolean includeValue) {
+        this(name, includeValue);
         this.key = key;
-        this.local = local;
+    }
+
+    public MapAddEntryListenerRequest(String name, Data key, boolean includeValue, Predicate predicate) {
+        this(name, key, includeValue);
+        this.predicate = predicate;
     }
 
     @Override
@@ -61,46 +68,44 @@ public class MapAddEntryListenerRequest extends CallableClientRequest implements
         final ClientEndpoint endpoint = getEndpoint();
         final ClientEngine clientEngine = getClientEngine();
         final MapService mapService = getService();
-        final MutableString id = new MutableString();
         EntryListener<Object, Object> listener = new EntryListener<Object, Object>() {
 
-            private void handleEvent(EntryEvent<Object, Object> event){
+            private void handleEvent(EntryEvent<Object, Object> event) {
                 if (endpoint.live()) {
-                    clientEngine.sendResponse(endpoint, new PortableEntryEvent(event));
+                    Data key = clientEngine.toData(event.getKey());
+                    Data value = clientEngine.toData(event.getValue());
+                    Data oldValue = clientEngine.toData(event.getOldValue());
+                    PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, oldValue, event.getEventType(), event.getMember().getUuid());
+                    clientEngine.sendResponse(endpoint, portableEntryEvent);
                 } else {
-                    mapService.removeEventListener(name, id.getString());
+                    mapService.removeEventListener(name, registrationId);
                 }
             }
 
-            @Override
             public void entryAdded(EntryEvent<Object, Object> event) {
                 handleEvent(event);
             }
 
-            @Override
             public void entryRemoved(EntryEvent<Object, Object> event) {
                 handleEvent(event);
             }
 
-            @Override
             public void entryUpdated(EntryEvent<Object, Object> event) {
                 handleEvent(event);
             }
 
-            @Override
             public void entryEvicted(EntryEvent<Object, Object> event) {
                 handleEvent(event);
             }
         };
 
-        EventFilter eventFilter = new EntryEventFilter(includeValue, key);
-        if(local) {
-            id.setString(mapService.addLocalEventListener(listener, name));
+        EventFilter eventFilter = null;
+        if (predicate == null){
+            eventFilter = new EntryEventFilter(includeValue, key);
+        } else {
+            eventFilter = new QueryEventFilter(includeValue, key, predicate);
         }
-        else {
-            id.setString(mapService.addEventListener(listener, eventFilter, name));
-        }
-
+        registrationId = mapService.addEventListener(listener, eventFilter, name);
         return true;
     }
 
@@ -120,10 +125,14 @@ public class MapAddEntryListenerRequest extends CallableClientRequest implements
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeUTF("name", name);
         writer.writeBoolean("i", includeValue);
-        writer.writeBoolean("local", local);
         final boolean hasKey = key != null;
         writer.writeBoolean("key", hasKey);
-
+        if (predicate == null){
+            writer.writeBoolean("pre", false);
+        } else {
+            writer.writeBoolean("pre", true);
+            writer.writePortable("p",(Portable)predicate);
+        }
         if (hasKey) {
             final ObjectDataOutput out = writer.getRawDataOutput();
             key.writeData(out);
@@ -133,9 +142,10 @@ public class MapAddEntryListenerRequest extends CallableClientRequest implements
     public void readPortable(PortableReader reader) throws IOException {
         name = reader.readUTF("name");
         includeValue = reader.readBoolean("i");
-        local = reader.readBoolean("local");
         boolean hasKey = reader.readBoolean("key");
-
+        if (reader.readBoolean("pre")){
+            predicate = (Predicate)reader.readPortable("p");
+        }
         if (hasKey) {
             final ObjectDataInput in = reader.getRawDataInput();
             key = new Data();
