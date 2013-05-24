@@ -18,6 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
+import com.hazelcast.test.ParallelTestSupport;
 import com.hazelcast.test.StaticNodeFactory;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import org.junit.*;
@@ -26,28 +27,22 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @RunWith(RandomBlockJUnit4ClassRunner.class)
-public class ListenerTest {
+public class ListenerTest extends ParallelTestSupport {
 
-    final String n = "foo";
+    private final String name = "fooMap";
 
-    HazelcastInstance h1;
-    HazelcastInstance h2;
-    IMap<String, String> map1;
-    IMap<String, String> map2;
+    private HazelcastInstance h1;
+    private HazelcastInstance h2;
+    private IMap<String, String> map1;
+    private IMap<String, String> map2;
 
-    AtomicInteger globalCount = new AtomicInteger();
-    AtomicInteger localCount = new AtomicInteger();
-    AtomicInteger valueCount = new AtomicInteger();
-
-    @BeforeClass
-    @AfterClass
-    public static void cleanup() throws Exception {
-        Hazelcast.shutdownAll();
-    }
+    private AtomicInteger globalCount = new AtomicInteger();
+    private AtomicInteger localCount = new AtomicInteger();
+    private AtomicInteger valueCount = new AtomicInteger();
 
     @Before
     public void before() {
-        StaticNodeFactory nodeFactory = new StaticNodeFactory(2);
+        StaticNodeFactory nodeFactory = createNodeFactory(2);
         Config cfg = new Config();
         h1 = nodeFactory.newHazelcastInstance(cfg);
         h2 = nodeFactory.newHazelcastInstance(cfg);
@@ -57,16 +52,14 @@ public class ListenerTest {
     @After
     public void after() {
         destroyMaps();
-        h1.getLifecycleService().shutdown();
-        h2.getLifecycleService().shutdown();
     }
 
     private void createMaps() {
         globalCount.set(0);
         localCount.set(0);
         valueCount.set(0);
-        map1 = h1.getMap(n);
-        map2 = h2.getMap(n);
+        map1 = h1.getMap(name);
+        map2 = h2.getMap(name);
     }
 
     private void destroyMaps() {

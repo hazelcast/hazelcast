@@ -19,22 +19,21 @@ package com.hazelcast.queue;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.QueueStoreConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.QueueStore;
+import com.hazelcast.test.ParallelTestSupport;
+import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import com.hazelcast.test.StaticNodeFactory;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -42,41 +41,36 @@ import static org.junit.Assert.assertTrue;
  * Date: 2/22/13
  * Time: 2:20 PM
  */
-public class QueueStoreTest {
-    @Before
-    @After
-    public void shutdown() {
-        Hazelcast.shutdownAll();
-    }
+@RunWith(RandomBlockJUnit4ClassRunner.class)
+public class QueueStoreTest extends ParallelTestSupport {
 
     @Test
-    public void testQueueMapStoreLoadMoreThanMaxSize() {
+    public void testQueueStoreLoadMoreThanMaxSize() {
         Config config = new Config();
         int maxSize = 2000;
-        QueueConfig queueConfig = config.getQueueConfig("testQueueMapStore");
+        QueueConfig queueConfig = config.getQueueConfig("testQueueStore");
         queueConfig.setMaxSize(maxSize);
         TestQueueStore queueStore = new TestQueueStore();
         QueueStoreConfig queueStoreConfig = new QueueStoreConfig();
         queueStoreConfig.setStoreImplementation(queueStore);
         queueConfig.setQueueStoreConfig(queueStoreConfig);
 
-        StaticNodeFactory staticNodeFactory = new StaticNodeFactory(1);
+        StaticNodeFactory staticNodeFactory = createNodeFactory(1);
         HazelcastInstance instance = staticNodeFactory.newHazelcastInstance(config);
 
         for (int i = 0; i < maxSize * 2; i++) {
             queueStore.store.put((long) i, i);
         }
 
-        IQueue<Object> queue = instance.getQueue("testQueueMapStore");
+        IQueue<Object> queue = instance.getQueue("testQueueStore");
         Assert.assertEquals("Queue Size should be equal to max size", maxSize, queue.size());
-
     }
 
     @Test
-    public void testQueueMapStore() {
+    public void testQueueStore() {
         Config config = new Config();
         int maxSize = 2000;
-        QueueConfig queueConfig = config.getQueueConfig("testQueueMapStore");
+        QueueConfig queueConfig = config.getQueueConfig("testQueueStore");
         queueConfig.setMaxSize(maxSize);
         TestQueueStore queueStore = new TestQueueStore(1000,0,2000,0,0,0,1);
 
@@ -84,14 +78,14 @@ public class QueueStoreTest {
         queueStoreConfig.setStoreImplementation(queueStore);
         queueConfig.setQueueStoreConfig(queueStoreConfig);
 
-        StaticNodeFactory staticNodeFactory = new StaticNodeFactory(2);
+        StaticNodeFactory staticNodeFactory = createNodeFactory(2);
         HazelcastInstance instance = staticNodeFactory.newHazelcastInstance(config);
 
         for (int i = 0; i < maxSize / 2; i++) {
             queueStore.store.put((long) i, i);
         }
 
-        IQueue<Object> queue = instance.getQueue("testQueueMapStore");
+        IQueue<Object> queue = instance.getQueue("testQueueStore");
 
         for (int i = 0; i < maxSize / 2; i++) {
             queue.offer(i + maxSize / 2);
@@ -100,7 +94,7 @@ public class QueueStoreTest {
         instance.getLifecycleService().shutdown();
         HazelcastInstance instance2 = staticNodeFactory.newHazelcastInstance(config);
 
-        IQueue<Object> queue2 = instance2.getQueue("testQueueMapStore");
+        IQueue<Object> queue2 = instance2.getQueue("testQueueStore");
         Assert.assertEquals(maxSize,queue2.size());
 
 

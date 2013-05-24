@@ -18,16 +18,13 @@ package com.hazelcast.collection;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.TransactionalList;
 import com.hazelcast.core.TransactionalMultiMap;
-import com.hazelcast.test.StaticNodeFactory;
+import com.hazelcast.test.ParallelTestSupport;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
+import com.hazelcast.test.StaticNodeFactory;
 import com.hazelcast.transaction.TransactionContext;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -37,17 +34,7 @@ import static org.junit.Assert.*;
  * @ali 4/5/13
  */
 @RunWith(RandomBlockJUnit4ClassRunner.class)
-public class TxnMultiMapTest {
-    @BeforeClass
-    public static void init() {
-//        System.setProperty("hazelcast.test.use.network","true");
-    }
-
-    @Before
-    @After
-    public void cleanup() {
-        Hazelcast.shutdownAll();
-    }
+public class TxnMultiMapTest extends ParallelTestSupport {
 
     @Test
     public void testPutRemove(){
@@ -56,7 +43,8 @@ public class TxnMultiMapTest {
         config.getMultiMapConfig(name).setValueCollectionType(MultiMapConfig.ValueCollectionType.SET);
 
         final int insCount = 4;
-        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
+        StaticNodeFactory factory = createNodeFactory(insCount);
+        final HazelcastInstance[] instances = factory.newInstances(config);
         TransactionContext context = instances[0].newTransactionContext();
         try {
             context.beginTransaction();
@@ -88,7 +76,8 @@ public class TxnMultiMapTest {
         final String name = "defList";
 
         final int insCount = 4;
-        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
+        StaticNodeFactory factory = createNodeFactory(insCount);
+        final HazelcastInstance[] instances = factory.newInstances(config);
         TransactionContext context = instances[0].newTransactionContext();
         try {
             context.beginTransaction();

@@ -37,17 +37,17 @@ public class IndexTest {
 
     static final int FACTORY_ID = 1;
 
+    final SerializationServiceImpl ss = new SerializationServiceImpl(1, Collections.singletonMap(FACTORY_ID, new TestPortableFactory()));
+
     @Test
     public void testBasics() {
         testIt(true);
         testIt(false);
     }
 
-    QueryRecord newRecord(Object key, final Comparable attributeValue) {
+    private QueryRecord newRecord(Object key, final Comparable attributeValue) {
         return new QueryRecord(toData(key), attributeValue);
     }
-
-    final SerializationServiceImpl ss = new SerializationServiceImpl(1, Collections.singletonMap(FACTORY_ID, new TestPortableFactory()));
 
     @Test
     public void testIndex() throws QueryException {

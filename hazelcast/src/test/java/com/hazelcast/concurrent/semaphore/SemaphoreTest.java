@@ -19,6 +19,7 @@ package com.hazelcast.concurrent.semaphore;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ISemaphore;
+import com.hazelcast.test.ParallelTestSupport;
 import com.hazelcast.test.StaticNodeFactory;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import org.junit.Assert;
@@ -35,13 +36,14 @@ import java.util.concurrent.TimeUnit;
  * Time: 5:12 PM
  */
 @RunWith(RandomBlockJUnit4ClassRunner.class)
-public class SemaphoreTest {
+public class SemaphoreTest extends ParallelTestSupport {
 
     @Test
     public void testSingleNode() {
         final int k = 1;
         final Config config = new Config();
-        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, k);
+        StaticNodeFactory factory = createNodeFactory(k);
+        final HazelcastInstance[] instances = factory.newInstances(config);
 
         ISemaphore semaphore = instances[0].getSemaphore("test");
         int numberOfPermits = 20;
@@ -120,7 +122,8 @@ public class SemaphoreTest {
     public void testMutex() {
         final int k = 5;
         final Config config = new Config();
-        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, k);
+        StaticNodeFactory factory = createNodeFactory(k);
+        final HazelcastInstance[] instances = factory.newInstances(config);
         final CountDownLatch latch = new CountDownLatch(k);
         final int loopCount = 1000;
 
@@ -170,7 +173,8 @@ public class SemaphoreTest {
     public void testSemaphoreWithFailures() throws InterruptedException {
         final int k = 4;
         final Config config = new Config();
-        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, k + 1);
+        StaticNodeFactory factory = createNodeFactory(k + 1);
+        final HazelcastInstance[] instances = factory.newInstances(config);
 
         final ISemaphore semaphore = instances[k].getSemaphore("test");
         int initialPermits = 20;
@@ -202,7 +206,7 @@ public class SemaphoreTest {
     public void testSemaphoreWithFailuresAndJoin() {
 
         final Config config = new Config();
-        final StaticNodeFactory staticNodeFactory = new StaticNodeFactory(3);
+        final StaticNodeFactory staticNodeFactory = createNodeFactory(3);
 
         final HazelcastInstance instance1 = staticNodeFactory.newHazelcastInstance(config);
         final HazelcastInstance instance2 = staticNodeFactory.newHazelcastInstance(config);

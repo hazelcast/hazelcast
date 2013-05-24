@@ -21,7 +21,7 @@ import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
-import com.hazelcast.test.annotation.NetworkRelated;
+import com.hazelcast.test.annotation.NetworkTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -36,7 +36,7 @@ import java.net.URL;
  * Time: 3:33 PM
  */
 @RunWith(RandomBlockJUnit4ClassRunner.class)
-@Category(NetworkRelated.class)
+@Category(NetworkTest.class)
 
 public class RestTest {
 

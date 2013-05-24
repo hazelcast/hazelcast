@@ -1,6 +1,8 @@
 package com.hazelcast.test;
 
+import com.hazelcast.test.annotation.OperationalTest;
 import org.junit.After;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 /**
@@ -8,6 +10,7 @@ import org.junit.runner.RunWith;
  */
 
 @RunWith(RandomBlockJUnit4ClassRunner.class)
+@Category(OperationalTest.class)
 public abstract class ParallelTestSupport {
 
     private StaticNodeFactory factory;

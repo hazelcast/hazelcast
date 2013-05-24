@@ -228,14 +228,14 @@ public class LockTest extends ParallelTestSupport {
     public void testLockEviction() throws Exception {
         final StaticNodeFactory nodeFactory = createNodeFactory(2);
         final Config config = new Config();
-        final AtomicInteger integer = new AtomicInteger(0);
         final HazelcastInstance lockOwner = nodeFactory.newHazelcastInstance(config);
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
 
         final String name = "testLockEviction";
         final ILock lock = lockOwner.getLock(name);
-        lock.lock(1, TimeUnit.SECONDS);
+        lock.lock(3, TimeUnit.SECONDS);
         Assert.assertTrue(lock.isLocked());
+
         final CountDownLatch latch = new CountDownLatch(1);
         Thread t = new Thread(new Runnable() {
             public void run() {
@@ -692,7 +692,7 @@ public class LockTest extends ParallelTestSupport {
         }
 
         try {
-            assertTrue("Lock tasks stuck!", latch.await(60, TimeUnit.SECONDS));
+            assertTrue("Lock tasks stuck!", latch.await(2, TimeUnit.MINUTES));
             assertEquals((threadCount * lockCountPerThread), totalCount.get());
         } catch (InterruptedException e) {
             e.printStackTrace();

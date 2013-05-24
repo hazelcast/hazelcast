@@ -17,14 +17,15 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.*;
-import com.hazelcast.test.StaticNodeFactory;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.test.ParallelTestSupport;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import com.hazelcast.test.StaticNodeFactory;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -35,25 +36,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(RandomBlockJUnit4ClassRunner.class)
-public class QueryListenerTest {
-
-    final String mapName = "map";
-
-    @BeforeClass
-    @AfterClass
-    public static void cleanup() throws Exception {
-        Hazelcast.shutdownAll();
-    }
-
-    @After
-    public void after() {
-        Hazelcast.shutdownAll();
-    }
+public class QueryListenerTest extends ParallelTestSupport {
 
     @Test
     public void testMapQueryListener() throws InterruptedException {
-
-        StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
+        StaticNodeFactory nodeFactory = createNodeFactory(3);
         Config cfg = new Config();
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
@@ -125,7 +112,7 @@ public class QueryListenerTest {
     @Test
     public void testMapQueryListener2() throws InterruptedException {
 
-        StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
+        StaticNodeFactory nodeFactory = createNodeFactory(3);
         Config cfg = new Config();
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);

@@ -20,11 +20,10 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.*;
-import com.hazelcast.test.StaticNodeFactory;
+import com.hazelcast.test.ParallelTestSupport;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
-import org.junit.After;
+import com.hazelcast.test.StaticNodeFactory;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -36,13 +35,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.junit.Assert.*;
 
 @RunWith(RandomBlockJUnit4ClassRunner.class)
-public class EvictionTest {
-
-    @Before
-    @After
-    public void shutdown() {
-        Hazelcast.shutdownAll();
-    }
+public class EvictionTest extends ParallelTestSupport {
 
     @Test
     public void testMapWideEviction() throws InterruptedException {
@@ -57,7 +50,8 @@ public class EvictionTest {
         msc.setSize(size);
         mc.setMaxSizeConfig(msc);
         int n = 3;
-        HazelcastInstance[] instances = StaticNodeFactory.newInstances(cfg, n);
+        StaticNodeFactory factory = createNodeFactory(n);
+        final HazelcastInstance[] instances = factory.newInstances(cfg);
 
         IMap map = instances[0].getMap("testMapWideEviction");
         for (int i = 0; i < size; i++) {
@@ -86,7 +80,8 @@ public class EvictionTest {
         msc.setSize(size);
         mc.setMaxSizeConfig(msc);
 
-        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(cfg, k);
+        StaticNodeFactory factory = createNodeFactory(k);
+        final HazelcastInstance[] instances = factory.newInstances(cfg);
         final AtomicBoolean success = new AtomicBoolean(true);
 
         new Thread() {
@@ -148,7 +143,9 @@ public class EvictionTest {
         msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_PARTITION);
         msc.setSize(size);
         mc.setMaxSizeConfig(msc);
-        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(cfg, k);
+
+        StaticNodeFactory factory = createNodeFactory(k);
+        final HazelcastInstance[] instances = factory.newInstances(cfg);
         final int pnum = instances[0].getPartitionService().getPartitions().size();
 
         new Thread() {
@@ -207,7 +204,8 @@ public class EvictionTest {
         msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_PARTITION);
         msc.setSize(size);
         mc.setMaxSizeConfig(msc);
-        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(cfg, k);
+        StaticNodeFactory factory = createNodeFactory(k);
+        final HazelcastInstance[] instances = factory.newInstances(cfg);
         final int pnum = instances[0].getPartitionService().getPartitions().size();
         int insertCount = size * pnum * 2;
         Map map = instances[0].getMap(mapName);
@@ -235,7 +233,8 @@ public class EvictionTest {
             msc.setSize(size);
             mc.setMaxSizeConfig(msc);
 
-            final HazelcastInstance[] instances = StaticNodeFactory.newInstances(cfg, k);
+            StaticNodeFactory factory = createNodeFactory(k);
+            final HazelcastInstance[] instances = factory.newInstances(cfg);
             IMap<Object, Object> map = instances[0].getMap(mapName);
             Thread.sleep(1000);
 
@@ -255,7 +254,6 @@ public class EvictionTest {
                 }
             }
             Assert.assertTrue(recentlyUsedEvicted == 0);
-            Hazelcast.shutdownAll();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -277,7 +275,8 @@ public class EvictionTest {
             msc.setSize(size);
             mc.setMaxSizeConfig(msc);
 
-            final HazelcastInstance[] instances = StaticNodeFactory.newInstances(cfg, k);
+            StaticNodeFactory factory = createNodeFactory(k);
+            final HazelcastInstance[] instances = factory.newInstances(cfg);
             IMap<Object, Object> map = instances[0].getMap(mapName);
 
             for (int i = 0; i < size / 2; i++) {
@@ -322,7 +321,8 @@ public class EvictionTest {
             msc.setSize(size);
             mc.setMaxSizeConfig(msc);
 
-            final HazelcastInstance[] instances = StaticNodeFactory.newInstances(cfg, k);
+            StaticNodeFactory factory = createNodeFactory(k);
+            final HazelcastInstance[] instances = factory.newInstances(cfg);
             IMap<Object, Object> map = instances[0].getMap(mapName);
 
             for (int i = 0; i < size; i++) {
@@ -351,7 +351,8 @@ public class EvictionTest {
         MapConfig mc = cfg.getMapConfig("testMapRecordEviction");
         mc.setTimeToLiveSeconds(1);
 
-        HazelcastInstance[] instances = StaticNodeFactory.newInstances(cfg, 2);
+        StaticNodeFactory factory = createNodeFactory(2);
+        final HazelcastInstance[] instances = factory.newInstances(cfg);
 
         IMap map = instances[0].getMap("testMapRecordEviction");
         for (int i = 0; i < size; i++) {
@@ -366,7 +367,6 @@ public class EvictionTest {
         Thread.sleep(2000);
 
         assertEquals(nsize, map.size());
-        Hazelcast.shutdownAll();
     }
 
     @Test
@@ -377,7 +377,8 @@ public class EvictionTest {
         int size = 100;
         final int nsize = size / 10;
         mc.setMaxIdleSeconds(maxIdleSeconds);
-        HazelcastInstance[] instances = StaticNodeFactory.newInstances(cfg, 2);
+        StaticNodeFactory factory = createNodeFactory(2);
+        final HazelcastInstance[] instances = factory.newInstances(cfg);
         final IMap map = instances[0].getMap("testMapRecordIdleEviction");
         final Thread thread = new Thread(new Runnable() {
             public void run() {
@@ -411,7 +412,7 @@ public class EvictionTest {
         MapConfig mc = cfg.getMapConfig("testZeroResetsTTL");
         int ttl = 3;
         mc.setTimeToLiveSeconds(ttl);
-        StaticNodeFactory factory = new StaticNodeFactory(1);
+        StaticNodeFactory factory = createNodeFactory(1);
         HazelcastInstance instance = factory.newHazelcastInstance(cfg);
         IMap<Object, Object> map = instance.getMap("testZeroResetsTTL");
         map.put(1,1);
@@ -430,7 +431,7 @@ public class EvictionTest {
         int size = 1000;
         mc.setMaxIdleSeconds(maxIdleSeconds);
 
-        StaticNodeFactory factory = new StaticNodeFactory(3);
+        StaticNodeFactory factory = createNodeFactory(3);
 
         HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
         final IMap map = instance1.getMap("testMapRecordIdleEvictionOnMigration");
@@ -455,7 +456,7 @@ public class EvictionTest {
         int size = 1000;
         final int nsize = size / 5;
         mc.setMaxIdleSeconds(maxIdleSeconds);
-        StaticNodeFactory factory = new StaticNodeFactory(3);
+        StaticNodeFactory factory = createNodeFactory(3);
 
         HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
         final IMap map = instance1.getMap("testMapRecordIdleEvictionOnMigration2");
@@ -491,7 +492,8 @@ public class EvictionTest {
     @Test
     public void testMapPutTtlWithListener() throws InterruptedException {
         Config cfg = new Config();
-        HazelcastInstance[] instances = StaticNodeFactory.newInstances(cfg, 2);
+        StaticNodeFactory factory = createNodeFactory(2);
+        final HazelcastInstance[] instances = factory.newInstances(cfg);
         final int k = 10;
         final int putCount = 10000;
         final CountDownLatch latch = new CountDownLatch(k * putCount);

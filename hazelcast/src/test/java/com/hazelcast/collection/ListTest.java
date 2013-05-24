@@ -17,12 +17,14 @@
 package com.hazelcast.collection;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.*;
-import com.hazelcast.test.StaticNodeFactory;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IList;
+import com.hazelcast.core.ItemEvent;
+import com.hazelcast.core.ItemListener;
+import com.hazelcast.test.ParallelTestSupport;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
+import com.hazelcast.test.StaticNodeFactory;
 import com.hazelcast.test.annotation.ClientCompatible;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -39,13 +41,7 @@ import static org.junit.Assert.*;
  * @ali 3/6/13
  */
 @RunWith(RandomBlockJUnit4ClassRunner.class)
-public class ListTest {
-
-    @Before
-    @After
-    public void cleanup() {
-        Hazelcast.shutdownAll();
-    }
+public class ListTest extends ParallelTestSupport {
 
     @Test
     @ClientCompatible
@@ -54,7 +50,8 @@ public class ListTest {
         final String name = "defList";
         final int count = 100;
         final int insCount = 4;
-        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
+        StaticNodeFactory factory = createNodeFactory(insCount);
+        final HazelcastInstance[] instances = factory.newInstances(config);
 
         for (int i=0; i<count; i++){
             assertTrue(getList(instances, name).add("item"+i));
@@ -105,7 +102,8 @@ public class ListTest {
         final String name = "defList";
         final int count = 10;
         final int insCount = 4;
-        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
+        StaticNodeFactory factory = createNodeFactory(insCount);
+        final HazelcastInstance[] instances = factory.newInstances(config);
         final CountDownLatch latchAdd = new CountDownLatch(count);
         final CountDownLatch latchRemove = new CountDownLatch(count);
 
@@ -131,8 +129,6 @@ public class ListTest {
         assertTrue(latchRemove.await(5, TimeUnit.SECONDS));
 
     }
-
-
 
     private IList getList(HazelcastInstance[] instances, String name){
         final Random rnd = new Random(System.currentTimeMillis());

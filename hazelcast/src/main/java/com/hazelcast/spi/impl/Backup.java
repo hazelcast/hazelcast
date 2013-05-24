@@ -25,6 +25,7 @@ import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.partition.PartitionServiceImpl;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.RetryableException;
+import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
@@ -114,7 +115,11 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
 
     public void logError(Throwable e) {
         final ILogger logger = getLogger();
-        logger.log(Level.INFO, e.getClass() + ": " + e.getMessage());
+        Level level = Level.INFO;
+        if (e instanceof WrongTargetException) {
+            level = ((WrongTargetException) e).getTarget() == null ? Level.FINEST : Level.INFO;
+        }
+        logger.log(level, e.getClass() + ": " + e.getMessage());
     }
 
     @Override

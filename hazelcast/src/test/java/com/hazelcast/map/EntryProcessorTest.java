@@ -18,14 +18,11 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.test.StaticNodeFactory;
+import com.hazelcast.test.ParallelTestSupport;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import com.hazelcast.test.StaticNodeFactory;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -34,24 +31,11 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(RandomBlockJUnit4ClassRunner.class)
-public class EntryProcessorTest {
-
-    final String mapName = "map";
-
-    @BeforeClass
-    @AfterClass
-    public static void cleanup() throws Exception {
-        Hazelcast.shutdownAll();
-    }
-
-    @After
-    public void after() {
-        Hazelcast.shutdownAll();
-    }
+public class EntryProcessorTest extends ParallelTestSupport {
 
     @Test
     public void testMapEntryProcessor() throws InterruptedException {
-        StaticNodeFactory nodeFactory = new StaticNodeFactory(2);
+        StaticNodeFactory nodeFactory = createNodeFactory(2);
         Config cfg = new Config();
         cfg.getMapConfig("default").setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
@@ -67,7 +51,7 @@ public class EntryProcessorTest {
 
     @Test
     public void testMapEntryProcessorAllKeys() throws InterruptedException {
-        StaticNodeFactory nodeFactory = new StaticNodeFactory(2);
+        StaticNodeFactory nodeFactory = createNodeFactory(2);
         Config cfg = new Config();
         cfg.getMapConfig("default").setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
@@ -92,7 +76,7 @@ public class EntryProcessorTest {
 
     @Test
     public void testBackupMapEntryProcessorAllKeys() throws InterruptedException {
-        StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
+        StaticNodeFactory nodeFactory = createNodeFactory(3);
         Config cfg = new Config();
         cfg.getMapConfig("default").setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
@@ -118,7 +102,7 @@ public class EntryProcessorTest {
 
     @Test
     public void testBackups() throws InterruptedException {
-        StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
+        StaticNodeFactory nodeFactory = createNodeFactory(3);
         Config cfg = new Config();
         cfg.getMapConfig("default").setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
@@ -144,7 +128,7 @@ public class EntryProcessorTest {
 
     }
 
-    static class IncrementorEntryProcessor implements EntryProcessor, EntryBackupProcessor {
+    private static class IncrementorEntryProcessor implements EntryProcessor, EntryBackupProcessor {
 
         IncrementorEntryProcessor() {
         }

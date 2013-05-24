@@ -27,7 +27,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
-import com.hazelcast.test.annotation.NetworkRelated;
+import com.hazelcast.test.annotation.NetworkTest;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -47,7 +47,7 @@ import static org.junit.Assert.assertEquals;
  * Tests for issue #274
  */
 @RunWith(RandomBlockJUnit4ClassRunner.class)
-@Category(NetworkRelated.class)
+@Category(NetworkTest.class)
 
 public class MemberListTest {
 

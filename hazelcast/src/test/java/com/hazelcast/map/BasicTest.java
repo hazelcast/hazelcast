@@ -18,10 +18,14 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
+import com.hazelcast.test.ParallelTestSupport;
+import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import com.hazelcast.test.StaticNodeFactory;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.util.Clock;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.*;
@@ -34,12 +38,20 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 
-public class BasicTest {
+@RunWith(RandomBlockJUnit4ClassRunner.class)
+public class BasicTest extends ParallelTestSupport {
 
-    static final Config cfg = new Config();
-    static final int instanceCount = 3;
-    static final HazelcastInstance[] instances = StaticNodeFactory.newInstances(cfg, instanceCount);
-    static final Random rand = new Random(Clock.currentTimeMillis());
+    private static final Config cfg = new Config();
+    private static final int instanceCount = 3;
+    private static final Random rand = new Random(Clock.currentTimeMillis());
+
+    private HazelcastInstance[] instances;
+
+    @Before
+    public void init() {
+        StaticNodeFactory factory = createNodeFactory(instanceCount);
+        instances = factory.newInstances(cfg);
+    }
 
     private HazelcastInstance getInstance() {
         return instances[rand.nextInt(instanceCount)];
@@ -387,10 +399,9 @@ public class BasicTest {
 
     @Test
     public void testEntryView() {
-        StaticNodeFactory nodeFactory = new StaticNodeFactory(1);
         Config config = new Config();
         config.getMapConfig("default").setStatisticsEnabled(true);
-        HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance instance = getInstance();
         final IMap<Integer, Integer> map = instance.getMap("testEntryView");
         long time1 = Clock.currentTimeMillis();
         map.put(1, 1);
@@ -490,9 +501,9 @@ public class BasicTest {
             assertEquals(2, map.removeAsync(1).get());
             assertEquals(0, map.size());
         } catch (InterruptedException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            e.printStackTrace();
         } catch (ExecutionException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            e.printStackTrace();
         }
     }
 
@@ -520,10 +531,8 @@ public class BasicTest {
 
     @Test
     public void testPutAllBackup() {
-        StaticNodeFactory nodeFactory = new StaticNodeFactory(2);
-        Config config = new Config();
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance instance1 = instances[0];
+        HazelcastInstance instance2 = instances[1];
         final IMap<Object, Object> map = instance1.getMap("testGetAllPutAll");
         Map mm = new HashMap();
         for (int i = 0; i < 100; i++) {

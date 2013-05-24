@@ -19,7 +19,7 @@ package com.hazelcast.spring;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.annotation.NetworkRelated;
+import com.hazelcast.test.annotation.NetworkTest;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -32,7 +32,7 @@ import org.springframework.test.context.ContextConfiguration;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"beans-applicationContext-hazelcast.xml"})
-@Category(NetworkRelated.class)
+@Category(NetworkTest.class)
 public class TestBeansApplicationContext {
 
     @BeforeClass

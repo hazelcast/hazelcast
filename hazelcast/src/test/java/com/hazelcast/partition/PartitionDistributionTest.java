@@ -17,15 +17,13 @@
 package com.hazelcast.partition;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
 import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.test.StaticNodeFactory;
+import com.hazelcast.test.ParallelTestSupport;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
-import org.junit.After;
-import org.junit.BeforeClass;
+import com.hazelcast.test.StaticNodeFactory;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -41,17 +39,7 @@ import static org.junit.Assert.assertTrue;
  */
 
 @RunWith(RandomBlockJUnit4ClassRunner.class)
-public class PartitionDistributionTest {
-
-    @BeforeClass
-    public static void init() throws Exception {
-        Hazelcast.shutdownAll();
-    }
-
-    @After
-    public void cleanup() throws Exception {
-        Hazelcast.shutdownAll();
-    }
+public class PartitionDistributionTest extends ParallelTestSupport {
 
     @Test
     public void testTwoNodesDefault() throws InterruptedException {
@@ -86,10 +74,10 @@ public class PartitionDistributionTest {
     private void testPartitionDistribution(final int partitionCount, final int nodeCount) throws InterruptedException {
         final Config config = new Config();
         config.setProperty(GroupProperties.PROP_PARTITION_COUNT, String.valueOf(partitionCount));
-
-        StaticNodeFactory factory = new StaticNodeFactory(nodeCount);
+        StaticNodeFactory factory = createNodeFactory(nodeCount);
         final BlockingQueue<Integer> counts = new ArrayBlockingQueue<Integer>(nodeCount);
         final HazelcastInstance[] instances = new HazelcastInstance[nodeCount];
+
         for (int i = 0; i < nodeCount; i++) {
             instances[i] = factory.newHazelcastInstance(config);
         }

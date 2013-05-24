@@ -17,12 +17,14 @@
 package com.hazelcast.queue;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.*;
-import com.hazelcast.test.StaticNodeFactory;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ItemEvent;
+import com.hazelcast.core.ItemListener;
 import com.hazelcast.monitor.LocalQueueStats;
+import com.hazelcast.test.ParallelTestSupport;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
-import org.junit.After;
-import org.junit.Before;
+import com.hazelcast.test.StaticNodeFactory;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -40,17 +42,11 @@ import static org.junit.Assert.*;
  * @ali 2/12/13
  */
 @RunWith(RandomBlockJUnit4ClassRunner.class)
-public class BasicQueueTest {
-
-    @Before
-    @After
-    public void cleanup() {
-        Hazelcast.shutdownAll();
-    }
+public class BasicQueueTest extends ParallelTestSupport {
 
     @Test
     public void testQueueStats() {
-        StaticNodeFactory factory = new StaticNodeFactory(2);
+        StaticNodeFactory factory = createNodeFactory(2);
         Config config = new Config();
         final String name = "t_queue";
 
@@ -88,7 +84,8 @@ public class BasicQueueTest {
         final int count = 100;
         final int insCount = 4;
         final String name = "defQueue";
-        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
+        StaticNodeFactory factory = createNodeFactory(insCount);
+        final HazelcastInstance[] instances = factory.newInstances(config);
         final Random rnd = new Random(System.currentTimeMillis());
 
         for (int i = 0; i < count; i++) {
@@ -117,7 +114,8 @@ public class BasicQueueTest {
         final int count = 100;
         config.getQueueConfig(name).setMaxSize(count);
         final int insCount = 4;
-        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
+        StaticNodeFactory factory = createNodeFactory(insCount);
+        final HazelcastInstance[] instances = factory.newInstances(config);
         final IQueue<String> q = instances[0].getQueue(name);
         final Random rnd = new Random(System.currentTimeMillis());
 
@@ -179,8 +177,8 @@ public class BasicQueueTest {
         final int count = 100;
         config.getQueueConfig(name).setMaxSize(count);
         final int insCount = 4;
-        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
-
+        StaticNodeFactory factory = createNodeFactory(insCount);
+        final HazelcastInstance[] instances = factory.newInstances(config);
 
         for (int i = 0; i < 10; i++) {
             getQueue(instances, name).offer("item" + i);
@@ -209,7 +207,8 @@ public class BasicQueueTest {
         final int count = 100;
         config.getQueueConfig(name).setMaxSize(count);
         final int insCount = 4;
-        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
+        StaticNodeFactory factory = createNodeFactory(insCount);
+        final HazelcastInstance[] instances = factory.newInstances(config);
 
         for (int i = 0; i < 10; i++) {
             getQueue(instances, name).offer("item" + i);
@@ -259,7 +258,8 @@ public class BasicQueueTest {
         final int count = 100;
         config.getQueueConfig(name).setMaxSize(count);
         final int insCount = 4;
-        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
+        StaticNodeFactory factory = createNodeFactory(insCount);
+        final HazelcastInstance[] instances = factory.newInstances(config);
 
         List<String> list = new ArrayList<String>();
         for (int i = 0; i < 10; i++) {
@@ -299,7 +299,8 @@ public class BasicQueueTest {
         final int count = 100;
         config.getQueueConfig(name).setMaxSize(count);
         final int insCount = 4;
-        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
+        StaticNodeFactory factory = createNodeFactory(insCount);
+        final HazelcastInstance[] instances = factory.newInstances(config);
         final CountDownLatch latch = new CountDownLatch(20);
         final AtomicBoolean notCalled = new AtomicBoolean(true);
 

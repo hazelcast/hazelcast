@@ -71,6 +71,15 @@ public final class StaticNodeFactory {
         return USE_CLIENT ? newHazelcastClient() : HazelcastInstanceFactory.newHazelcastInstance(config);
     }
 
+    public HazelcastInstance[] newInstances(Config config) {
+        final int count = addresses.length;
+        final HazelcastInstance[] instances = new HazelcastInstance[count];
+        for (int i = 0; i < count; i++) {
+            instances[i] = newHazelcastInstance(config);
+        }
+        return instances;
+    }
+
     public void shutdownAll() {
         if (MOCK_NETWORK) {
             nodeIndex.set(Integer.MAX_VALUE);
@@ -120,24 +129,6 @@ public final class StaticNodeFactory {
             }
         }
         return addresses;
-    }
-
-    public static HazelcastInstance[] newInstances(Config config, int count) {
-        final HazelcastInstance[] instances = new HazelcastInstance[count];
-        if (MOCK_NETWORK) {
-            config = init(config);
-            Address[] addresses = createAddresses(count);
-            StaticNodeRegistry staticNodeRegistry = new StaticNodeRegistry(addresses);
-            for (int i = 0; i < count; i++) {
-                NodeContext nodeContext = staticNodeRegistry.createNodeContext(addresses[i]);
-                instances[i] = HazelcastInstanceFactory.newHazelcastInstance(config, null, nodeContext);
-            }
-        } else {
-            for (int i = 0; i < count; i++) {
-                instances[i] = USE_CLIENT ? newHazelcastClient() : HazelcastInstanceFactory.newHazelcastInstance(config);
-            }
-        }
-        return instances;
     }
 
     private static Config init(Config config) {

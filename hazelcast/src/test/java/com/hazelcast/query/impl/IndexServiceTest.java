@@ -28,7 +28,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static com.hazelcast.instance.TestUtil.*;
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(RandomBlockJUnit4ClassRunner.class)
 public class IndexServiceTest {

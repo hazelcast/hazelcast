@@ -48,7 +48,6 @@ public class QueueClientRequestTest extends ClientTestSupport {
     static final String queueName = "test";
     static final SerializationService ss = new SerializationServiceImpl(0);
 
-
     protected Config createConfig() {
         Config config = new Config();
         QueueConfig queueConfig = config.getQueueConfig(queueName);
