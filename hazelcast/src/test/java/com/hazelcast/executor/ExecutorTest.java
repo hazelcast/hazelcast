@@ -159,7 +159,7 @@ public class ExecutorTest extends ParallelTestSupport {
             service.submitToMembers(new ScriptRunnable(script, null), Arrays.asList(m), callback);
         }
 
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertTrue(latch.await(30, TimeUnit.SECONDS));
         final IAtomicLong result = instances[0].getAtomicLong("testSubmitToMembersRunnable");
         Assert.assertEquals(sum, result.get());
         Assert.assertEquals(sum, count.get());
@@ -187,7 +187,7 @@ public class ExecutorTest extends ParallelTestSupport {
             final String script = "hazelcast.getAtomicLong('testSubmitToAllMembersRunnable').incrementAndGet();";
             service.submitToAllMembers(new ScriptRunnable(script, null), callback);
         }
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertTrue(latch.await(30, TimeUnit.SECONDS));
         final IAtomicLong result = instances[0].getAtomicLong("testSubmitToAllMembersRunnable");
         Assert.assertEquals(k * k, result.get());
         Assert.assertEquals(k * k, count.get());
@@ -202,7 +202,7 @@ public class ExecutorTest extends ParallelTestSupport {
             final IExecutorService service = instances[i].getExecutorService("testSubmitMultipleNode");
             final String script = "hazelcast.getAtomicLong('testSubmitMultipleNode').incrementAndGet();";
             final Future future = service.submit(new ScriptCallable(script, null));
-            Assert.assertEquals(Long.valueOf(i + 1), future.get());
+            Assert.assertEquals((long) (i + 1), future.get());
         }
     }
 
@@ -239,7 +239,7 @@ public class ExecutorTest extends ParallelTestSupport {
                 service.submitToKeyOwner(new ScriptCallable(script, map), key, callback);
             }
         }
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertTrue(latch.await(30, TimeUnit.SECONDS));
         Assert.assertEquals(k / 2, count.get());
     }
 
@@ -273,7 +273,7 @@ public class ExecutorTest extends ParallelTestSupport {
                 service.submitToMember(new ScriptCallable(script, map), instance.getCluster().getLocalMember(), callback);
             }
         }
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertTrue(latch.await(30, TimeUnit.SECONDS));
         Assert.assertEquals(k / 2, count.get());
     }
 
@@ -308,7 +308,7 @@ public class ExecutorTest extends ParallelTestSupport {
             service.submitToMembers(new ScriptCallable(script, null), Arrays.asList(m), callback);
         }
 
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertTrue(latch.await(30, TimeUnit.SECONDS));
         final IAtomicLong result = instances[0].getAtomicLong(name);
         Assert.assertEquals(sum, result.get());
         Assert.assertEquals(sum, count.get());
@@ -335,7 +335,7 @@ public class ExecutorTest extends ParallelTestSupport {
             final String script = "hazelcast.getAtomicLong('testSubmitToAllMembersCallable').incrementAndGet();";
             service.submitToAllMembers(new ScriptCallable(script, null), callback);
         }
-        countDownLatch.await(10, TimeUnit.SECONDS);
+        countDownLatch.await(30, TimeUnit.SECONDS);
         final IAtomicLong result = instances[0].getAtomicLong("testSubmitToAllMembersCallable");
         Assert.assertEquals(k * k, result.get());
         Assert.assertEquals(k * k, count.get());
