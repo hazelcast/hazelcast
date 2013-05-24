@@ -14,54 +14,64 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.semaphore.client;
+package com.hazelcast.topic.client;
 
-import com.hazelcast.client.CallableClientRequest;
-import com.hazelcast.concurrent.semaphore.SemaphorePortableHook;
-import com.hazelcast.concurrent.semaphore.SemaphoreService;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.topic.TopicPortableHook;
 
 import java.io.IOException;
 
 /**
  * @ali 5/24/13
  */
-public class SemaphoreDestroyRequest extends CallableClientRequest implements Portable {
+public class PortableMessage implements Portable {
 
-    private String name;
+    private Data message;
+    private long publishTime;
+    private String uuid;
 
-    public SemaphoreDestroyRequest() {
+    public PortableMessage() {
     }
 
-    public SemaphoreDestroyRequest(String name) {
-        this.name = name;
+    public PortableMessage(Data message, long publishTime, String uuid) {
+        this.message = message;
+        this.publishTime = publishTime;
+        this.uuid = uuid;
     }
 
-    public Object call() throws Exception {
-        SemaphoreService service = getService();
-        service.destroyDistributedObject(name);
-        return null;
+    public Data getMessage() {
+        return message;
     }
 
-    public String getServiceName() {
-        return SemaphoreService.SERVICE_NAME;
+    public long getPublishTime() {
+        return publishTime;
+    }
+
+    public String getUuid() {
+        return uuid;
     }
 
     public int getFactoryId() {
-        return SemaphorePortableHook.F_ID;
+        return TopicPortableHook.F_ID;
     }
 
     public int getClassId() {
-        return SemaphorePortableHook.DESTROY;
+        return TopicPortableHook.PORTABLE_MESSAGE;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
-        writer.writeUTF("n", name);
+        writer.writeLong("pt",publishTime);
+        writer.writeUTF("u",uuid);
+        message.writeData(writer.getRawDataOutput());
     }
 
     public void readPortable(PortableReader reader) throws IOException {
-        name = reader.readUTF("n");
+        publishTime = reader.readLong("pt");
+        uuid = reader.readUTF("u");
+        message = new Data();
+        message.readData(reader.getRawDataInput());
     }
 }

@@ -149,7 +149,8 @@ public class ClientSetProxy<E> extends ClientProxy implements ISet<E> {
     }
 
     protected void onDestroy() {
-
+        CollectionDestroyRequest request = new CollectionDestroyRequest(proxyId);
+        invoke(request);
     }
 
     public String getName() {

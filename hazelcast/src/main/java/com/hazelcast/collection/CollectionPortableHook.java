@@ -55,6 +55,7 @@ public class CollectionPortableHook implements PortableHook {
     public static final int UNLOCK = 23;
     public static final int IS_LOCKED = 24;
     public static final int ADD_ITEM_LISTENER = 25;
+    public static final int DESTROY = 26;
 
 
 
@@ -63,7 +64,7 @@ public class CollectionPortableHook implements PortableHook {
     }
 
     public PortableFactory createFactory() {
-        ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[26];
+        ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[27];
         constructors[ADD_ALL] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
                 return new AddAllRequest();
@@ -187,6 +188,11 @@ public class CollectionPortableHook implements PortableHook {
         constructors[ADD_ITEM_LISTENER] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
                 return new AddItemListenerRequest();
+            }
+        };
+        constructors[DESTROY] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new CollectionDestroyRequest();
             }
         };
 

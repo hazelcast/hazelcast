@@ -20,10 +20,7 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
-import com.hazelcast.spi.EventPublishingService;
-import com.hazelcast.spi.ManagedService;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.RemoteService;
+import com.hazelcast.spi.*;
 import com.hazelcast.topic.proxy.TopicProxy;
 import com.hazelcast.topic.proxy.TotalOrderedTopicProxy;
 import com.hazelcast.util.ConcurrencyUtil;
@@ -110,6 +107,22 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
 
     public void incrementReceivedMessages(String topicName) {
         getLocalTopicStats(topicName).incrementReceives();
+    }
+
+    public void publishEvent(String name, TopicEvent event){
+        EventService eventService = nodeEngine.getEventService();
+        eventService.publishEvent(TopicService.SERVICE_NAME, eventService.getRegistrations(TopicService.SERVICE_NAME, name), event);
+    }
+
+    public String addMessageListener(String name, MessageListener listener){
+        EventService eventService = nodeEngine.getEventService();
+        EventRegistration eventRegistration = eventService.registerListener(TopicService.SERVICE_NAME, name, listener);
+        return eventRegistration.getId();
+    }
+
+    public boolean removeMessageListener(String name, String registrationId) {
+        EventService eventService = nodeEngine.getEventService();
+        return eventService.deregisterListener(TopicService.SERVICE_NAME, name, registrationId);
     }
 
 }

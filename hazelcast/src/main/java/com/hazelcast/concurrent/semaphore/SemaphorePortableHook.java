@@ -40,6 +40,8 @@ public class SemaphorePortableHook implements PortableHook {
 
     public static final int RELEASE = 6;
 
+    public static final int DESTROY = 7;
+
     public int getFactoryId() {
         return F_ID;
     }
@@ -61,6 +63,8 @@ public class SemaphorePortableHook implements PortableHook {
                         return new ReduceRequest();
                     case RELEASE:
                         return new ReleaseRequest();
+                    case DESTROY:
+                        return new SemaphoreDestroyRequest();
                 }
                 return null;
             }

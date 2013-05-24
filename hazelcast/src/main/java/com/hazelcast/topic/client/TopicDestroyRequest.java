@@ -14,51 +14,51 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.semaphore.client;
+package com.hazelcast.topic.client;
 
 import com.hazelcast.client.CallableClientRequest;
-import com.hazelcast.concurrent.semaphore.SemaphorePortableHook;
-import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.topic.TopicPortableHook;
+import com.hazelcast.topic.TopicService;
 
 import java.io.IOException;
 
 /**
  * @ali 5/24/13
  */
-public class SemaphoreDestroyRequest extends CallableClientRequest implements Portable {
+public class TopicDestroyRequest extends CallableClientRequest implements Portable {
 
     private String name;
 
-    public SemaphoreDestroyRequest() {
+    public TopicDestroyRequest() {
     }
 
-    public SemaphoreDestroyRequest(String name) {
+    public TopicDestroyRequest(String name) {
         this.name = name;
     }
 
     public Object call() throws Exception {
-        SemaphoreService service = getService();
+        final TopicService service = getService();
         service.destroyDistributedObject(name);
         return null;
     }
 
     public String getServiceName() {
-        return SemaphoreService.SERVICE_NAME;
+        return TopicService.SERVICE_NAME;
     }
 
     public int getFactoryId() {
-        return SemaphorePortableHook.F_ID;
+        return TopicPortableHook.F_ID;
     }
 
     public int getClassId() {
-        return SemaphorePortableHook.DESTROY;
+        return TopicPortableHook.DESTROY;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
-        writer.writeUTF("n", name);
+        writer.writeUTF("n",name);
     }
 
     public void readPortable(PortableReader reader) throws IOException {

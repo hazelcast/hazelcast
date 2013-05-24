@@ -20,8 +20,6 @@ import com.hazelcast.core.MessageListener;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.EventRegistration;
-import com.hazelcast.spi.EventService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.topic.TopicEvent;
 import com.hazelcast.topic.TopicService;
@@ -34,12 +32,10 @@ import com.hazelcast.topic.TopicService;
 public class TopicProxySupport extends AbstractDistributedObject<TopicService> {
 
     private final String name;
-    private final EventService eventService;
 
     TopicProxySupport(String name, NodeEngine nodeEngine, TopicService service) {
         super(nodeEngine, service);
         this.name = name;
-        eventService = nodeEngine.getEventService();
 
     }
 
@@ -50,16 +46,15 @@ public class TopicProxySupport extends AbstractDistributedObject<TopicService> {
     public void publishInternal(Data message) {
         TopicEvent topicEvent = new TopicEvent(name, message, getNodeEngine().getLocalMember());
         getService().getLocalTopicStats(name).incrementPublishes();
-        eventService.publishEvent(TopicService.SERVICE_NAME, eventService.getRegistrations(TopicService.SERVICE_NAME, name), topicEvent);
+        getService().publishEvent(name, topicEvent);
     }
 
     public String addMessageListenerInternal(MessageListener listener) {
-        EventRegistration eventRegistration = eventService.registerListener(TopicService.SERVICE_NAME, name, listener);
-        return eventRegistration.getId();
+        return getService().addMessageListener(name, listener);
     }
 
     public boolean removeMessageListenerInternal(final String registrationId) {
-        return eventService.deregisterListener(TopicService.SERVICE_NAME, name, registrationId);
+        return getService().removeMessageListener(name, registrationId);
     }
 
     public String getServiceName() {

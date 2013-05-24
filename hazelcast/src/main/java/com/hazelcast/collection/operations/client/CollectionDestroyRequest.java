@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.semaphore.client;
+package com.hazelcast.collection.operations.client;
 
 import com.hazelcast.client.CallableClientRequest;
-import com.hazelcast.concurrent.semaphore.SemaphorePortableHook;
-import com.hazelcast.concurrent.semaphore.SemaphoreService;
+import com.hazelcast.collection.CollectionPortableHook;
+import com.hazelcast.collection.CollectionProxyId;
+import com.hazelcast.collection.CollectionService;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
@@ -28,40 +29,41 @@ import java.io.IOException;
 /**
  * @ali 5/24/13
  */
-public class SemaphoreDestroyRequest extends CallableClientRequest implements Portable {
+public class CollectionDestroyRequest extends CallableClientRequest implements Portable{
 
-    private String name;
+    private CollectionProxyId proxyId;
 
-    public SemaphoreDestroyRequest() {
+    public CollectionDestroyRequest() {
     }
 
-    public SemaphoreDestroyRequest(String name) {
-        this.name = name;
+    public CollectionDestroyRequest(CollectionProxyId proxyId) {
+        this.proxyId = proxyId;
     }
 
     public Object call() throws Exception {
-        SemaphoreService service = getService();
-        service.destroyDistributedObject(name);
+        final CollectionService service = getService();
+        service.destroyDistributedObject(proxyId);
         return null;
     }
 
     public String getServiceName() {
-        return SemaphoreService.SERVICE_NAME;
+        return CollectionService.SERVICE_NAME;
     }
 
     public int getFactoryId() {
-        return SemaphorePortableHook.F_ID;
+        return CollectionPortableHook.F_ID;
     }
 
     public int getClassId() {
-        return SemaphorePortableHook.DESTROY;
+        return CollectionPortableHook.DESTROY;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
-        writer.writeUTF("n", name);
+        proxyId.writeData(writer.getRawDataOutput());
     }
 
     public void readPortable(PortableReader reader) throws IOException {
-        name = reader.readUTF("n");
+        proxyId = new CollectionProxyId();
+        proxyId.readData(reader.getRawDataInput());
     }
 }

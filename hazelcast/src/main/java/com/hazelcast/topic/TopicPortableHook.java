@@ -17,7 +17,10 @@
 package com.hazelcast.topic;
 
 import com.hazelcast.nio.serialization.*;
+import com.hazelcast.topic.client.AddMessageListenerRequest;
+import com.hazelcast.topic.client.PortableMessage;
 import com.hazelcast.topic.client.PublishRequest;
+import com.hazelcast.topic.client.TopicDestroyRequest;
 
 import java.util.Collection;
 
@@ -29,6 +32,9 @@ public class TopicPortableHook implements PortableHook {
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.TOPIC_PORTABLE_FACTORY, -18);
 
     public static final int PUBLISH = 1;
+    public static final int ADD_LISTENER = 2;
+    public static final int DESTROY = 3;
+    public static final int PORTABLE_MESSAGE = 4;
 
     @Override
     public int getFactoryId() {
@@ -39,8 +45,15 @@ public class TopicPortableHook implements PortableHook {
     public PortableFactory createFactory() {
         return new PortableFactory() {
             public Portable create(int classId) {
-                if (classId == PUBLISH){
-                    return new PublishRequest();
+                switch (classId){
+                    case PUBLISH:
+                        return new PublishRequest();
+                    case ADD_LISTENER:
+                        return new AddMessageListenerRequest();
+                    case DESTROY:
+                        return new TopicDestroyRequest();
+                    case PORTABLE_MESSAGE:
+                        return new PortableMessage();
                 }
                 return null;
             }

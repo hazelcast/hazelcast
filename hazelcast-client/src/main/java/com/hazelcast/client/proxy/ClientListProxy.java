@@ -209,7 +209,8 @@ public class ClientListProxy<E> extends ClientProxy implements IList<E> {
     }
 
     protected void onDestroy() {
-
+        CollectionDestroyRequest request = new CollectionDestroyRequest(proxyId);
+        invoke(request);
     }
 
     public String getName() {

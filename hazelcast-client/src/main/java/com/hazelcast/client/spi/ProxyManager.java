@@ -27,6 +27,7 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.topic.TopicService;
 
 import java.util.Collection;
 import java.util.Map;
@@ -78,6 +79,11 @@ public final class ProxyManager {
         register(SemaphoreService.SERVICE_NAME, new ClientProxyFactory() {
             public ClientProxy create(Object id) {
                 return new ClientSemaphoreProxy(SemaphoreService.SERVICE_NAME, String.valueOf(id));
+            }
+        });
+        register(TopicService.SERVICE_NAME, new ClientProxyFactory() {
+            public ClientProxy create(Object id) {
+                return new ClientTopicProxy(TopicService.SERVICE_NAME, String.valueOf(id));
             }
         });
 

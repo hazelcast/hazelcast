@@ -243,6 +243,8 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
     }
 
     protected void onDestroy() {
+        QueueDestroyRequest request = new QueueDestroyRequest(name);
+        invoke(request);
     }
 
     public String getName() {
