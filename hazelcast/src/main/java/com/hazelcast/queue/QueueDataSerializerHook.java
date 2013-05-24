@@ -160,7 +160,7 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
         };
         constructors[QUEUE_ITEM] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new PeekOperation();
+                return new QueueItem();
             }
         };
         constructors[QUEUE_REPLICATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {

@@ -27,7 +27,6 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.TransactionalTaskContext;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -66,7 +65,6 @@ public class TransactionQueueTest extends ParallelTestSupport {
     }
 
     @Test
-    @Ignore("TODO: fix test!")
     public void testTransactionalOfferPoll2() throws Exception {
         Config config = new Config();
         final int insCount = 4;
