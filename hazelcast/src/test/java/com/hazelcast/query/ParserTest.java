@@ -29,7 +29,8 @@ import static junit.framework.Assert.*;
 
 @RunWith(RandomBlockJUnit4ClassRunner.class)
 public class ParserTest {
-    Parser parser = new Parser();
+
+    final Parser parser = new Parser();
 
     @Test
     public void parseEmpty() {

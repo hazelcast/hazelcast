@@ -19,10 +19,12 @@ package com.hazelcast.spring.context;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
+import com.hazelcast.test.annotation.NetworkTest;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -37,6 +39,7 @@ import java.util.concurrent.Future;
  */
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"managedContext-applicationContext-hazelcast.xml"})
+@Category(NetworkTest.class)
 public class TestManagedContext {
 
     @Resource(name = "instance1")

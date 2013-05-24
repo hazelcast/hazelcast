@@ -71,7 +71,6 @@ public class StatsCommand extends AbstractTextCommand {
         putLong(DECR_MISSES, stats.decr_misses);
         response.put(END);
         response.flip();
-//        System.out.println(new String(response.array(), 0, response.remaining()));
     }
 
     private void putInt(byte[] name, int value) {

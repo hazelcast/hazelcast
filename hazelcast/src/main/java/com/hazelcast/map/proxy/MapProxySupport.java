@@ -503,9 +503,10 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
                     .invokeOnAllPartitions(SERVICE_NAME, new BinaryOperationFactory(operation, nodeEngine));
             for (Object o : results.values()) {
                 if (o != null) {
-                    Map tempMap = (Map) o;
-                    for (Object key : tempMap.keySet()) {
-                        result.put(getService().toObject(key), getService().toObject(tempMap.get(key)));
+                    final MapService service = getService();
+                    final MapEntrySet mapEntrySet = (MapEntrySet) o;
+                    for (Entry<Data, Data> entry : mapEntrySet.getEntrySet()) {
+                        result.put(service.toObject(entry.getKey()), service.toObject(entry.getValue()));
                     }
                 }
             }

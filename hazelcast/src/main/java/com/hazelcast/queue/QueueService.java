@@ -25,7 +25,6 @@ import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.PartitionInfo;
-import com.hazelcast.queue.proxy.DataQueueProxy;
 import com.hazelcast.queue.proxy.ObjectQueueProxy;
 import com.hazelcast.queue.tx.TransactionalQueueProxy;
 import com.hazelcast.spi.*;
@@ -188,10 +187,8 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         PartitionInfo info = nodeEngine.getPartitionService().getPartitionInfo(partitionId);
         if (thisAddress.equals(info.getOwner())) { //TODO @msk two nodes owner ????
             stats.setOwnedItemCount(container.size());
-//            System.err.println("I am owner : " + nodeEngine.getLocalMember().getAddress());
         } else {
             stats.setBackupItemCount(container.backupSize());
-//            System.err.println("I am backup : " + nodeEngine.getLocalMember().getAddress());
         }
         container.setStats(stats);
         return stats;

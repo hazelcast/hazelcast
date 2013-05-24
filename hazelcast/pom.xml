@@ -166,20 +166,19 @@
                 <version>${maven.surefire.plugin.version}</version>
                 <configuration>
                     <!-- 1C means 1 process per cpu core -->
-                    <forkCount>4C</forkCount>
+                    <forkCount>1C</forkCount>
                     <reuseForks>true</reuseForks>
 
-                    <!-- not using in-JVM parallelism atm, may lead to concurrency issues! -->
-                    <!--<threadCount>4</threadCount>-->
-                    <!--<perCoreThreadCount>true</perCoreThreadCount>-->
-                    <!--<parallel>methods</parallel>-->
+                    <threadCount>4</threadCount>
+                    <perCoreThreadCount>true</perCoreThreadCount>
+                    <parallel>methods</parallel>
 
                     <argLine>-Xms64m -Xmx512m -XX:MaxPermSize=128M
                         -Dhazelcast.version.check.enabled=false
                         -Dhazelcast.mancenter.enabled=false
                         -Dhazelcast.logging.type=none
                     </argLine>
-                    <excludedGroups>com.hazelcast.test.annotation.NetworkRelated</excludedGroups>
+                    <excludedGroups>com.hazelcast.test.annotation.NetworkTest</excludedGroups>
                 </configuration>
             </plugin>
 
@@ -202,7 +201,7 @@
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none
                             </argLine>
-                            <groups>com.hazelcast.test.annotation.NetworkRelated</groups>
+                            <groups>com.hazelcast.test.annotation.NetworkTest</groups>
                         </configuration>
                     </plugin>
                 </plugins>

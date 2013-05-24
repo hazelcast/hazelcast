@@ -32,8 +32,6 @@ public class LocalExecutorStatsImpl implements LocalExecutorStats {
     private final AtomicLong totalStartLatency = new AtomicLong(0);
     private final AtomicLong completed = new AtomicLong(0);
     private final AtomicLong totalExecutionTime = new AtomicLong(0);
-//    final AtomicLong minExecutionTime = new AtomicLong(Long.MAX_VALUE);
-//    final AtomicLong maxExecutionTime = new AtomicLong(Long.MIN_VALUE);
 
     public LocalExecutorStatsImpl() {
         creationTime = Clock.currentTimeMillis();
@@ -46,8 +44,6 @@ public class LocalExecutorStatsImpl implements LocalExecutorStats {
         out.writeLong(totalStartLatency.get());
         out.writeLong(completed.get());
         out.writeLong(totalExecutionTime.get());
-//        out.writeLong(minExecutionTime.get());
-//        out.writeLong(maxExecutionTime.get());
     }
 
 
@@ -58,22 +54,17 @@ public class LocalExecutorStatsImpl implements LocalExecutorStats {
         totalStartLatency.set(in.readLong());
         completed.set(in.readLong());
         totalExecutionTime.set(in.readLong());
-//        minExecutionTime.set(in.readLong());
-//        maxExecutionTime.set(in.readLong());
     }
 
     public void startExecution(long elapsed) {
         totalStartLatency.addAndGet(elapsed);
         started.incrementAndGet();
+        pending.decrementAndGet();
     }
 
     public void finishExecution(long elapsed) {
         totalExecutionTime.addAndGet(elapsed);
         completed.incrementAndGet();
-//        if (elapsed > maxExecutionTime.get())
-//            maxExecutionTime.set(elapsed);
-//        if (elapsed < minExecutionTime.get())
-//            minExecutionTime.set(elapsed);
     }
 
     public void startPending() {
@@ -100,16 +91,7 @@ public class LocalExecutorStatsImpl implements LocalExecutorStats {
         return totalStartLatency.get();
     }
 
-//    public long getMinExecutionTime() {
-//        return minExecutionTime.get();
-//    }
-
     public long getTotalExecutionLatency() {
         return totalExecutionTime.get();
     }
-
-//    public long getMaxExecutionTime() {
-//        return maxExecutionTime.get();
-//    }
-
 }

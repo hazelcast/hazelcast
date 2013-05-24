@@ -20,6 +20,8 @@ import com.hazelcast.nio.Address;
 
 public class WrongTargetException extends RetryableHazelcastException {
 
+    private transient Address target;
+
     public WrongTargetException(Address thisAddress, Address target, int partitionId, int replicaIndex, String operationName) {
         this(thisAddress, target, partitionId, replicaIndex, operationName, null);
     }
@@ -29,5 +31,11 @@ public class WrongTargetException extends RetryableHazelcastException {
         super("WrongTarget! this:" + thisAddress + ", target:" + target
                 + ", partitionId: " + partitionId + ", replicaIndex: " + replicaIndex
                 + ", operation: " + operationName + ", service: " + serviceName);
+
+        this.target = target;
+    }
+
+    public Address getTarget() {
+        return target;
     }
 }

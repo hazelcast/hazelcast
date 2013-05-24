@@ -20,7 +20,7 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
-import com.hazelcast.test.annotation.NetworkRelated;
+import com.hazelcast.test.annotation.NetworkTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -41,7 +41,7 @@ import static org.junit.Assert.assertTrue;
  * @ali 5/20/13
  */
 @RunWith(RandomBlockJUnit4ClassRunner.class)
-@Category(NetworkRelated.class)
+@Category(NetworkTest.class)
 public class ClientListTest {
 
     static final String name = "test";

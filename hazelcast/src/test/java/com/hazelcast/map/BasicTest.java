@@ -18,10 +18,14 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
-import com.hazelcast.instance.StaticNodeFactory;
+import com.hazelcast.test.ParallelTestSupport;
+import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
+import com.hazelcast.test.StaticNodeFactory;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.util.Clock;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.*;
@@ -34,12 +38,20 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 
-public class BasicTest {
+@RunWith(RandomBlockJUnit4ClassRunner.class)
+public class BasicTest extends ParallelTestSupport {
 
-    static final Config cfg = new Config();
-    static final int instanceCount = 3;
-    static final HazelcastInstance[] instances = StaticNodeFactory.newInstances(cfg, instanceCount);
-    static final Random rand = new Random(Clock.currentTimeMillis());
+    private static final Config cfg = new Config();
+    private static final int instanceCount = 3;
+    private static final Random rand = new Random(Clock.currentTimeMillis());
+
+    private HazelcastInstance[] instances;
+
+    @Before
+    public void init() {
+        StaticNodeFactory factory = createNodeFactory(instanceCount);
+        instances = factory.newInstances(cfg);
+    }
 
     private HazelcastInstance getInstance() {
         return instances[rand.nextInt(instanceCount)];
@@ -300,44 +312,51 @@ public class BasicTest {
     @Test
     public void testMapLockAndUnlockAndTryLock() throws InterruptedException {
         final IMap<Object, Object> map = getInstance().getMap("testMapLockAndUnlockAndTryLock");
+        map.lock("key0");
         map.lock("key1");
         map.lock("key2");
         map.lock("key3");
-        map.lock("key0");
         final AtomicBoolean check1 = new AtomicBoolean(false);
         final AtomicBoolean check2 = new AtomicBoolean(false);
-        final CountDownLatch latch = new CountDownLatch(3);
+        final CountDownLatch latch0 = new CountDownLatch(1);
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        final CountDownLatch latch2 = new CountDownLatch(1);
+        final CountDownLatch latch3 = new CountDownLatch(1);
         Thread thread = new Thread(new Runnable() {
             public void run() {
                 try {
                     check1.set(map.tryLock("key0"));
-                    check2.set(map.tryLock("key0", 1500, TimeUnit.MILLISECONDS));
+                    check2.set(map.tryLock("key0", 3000, TimeUnit.MILLISECONDS));
+                    latch0.countDown();
+
                     map.put("key1", "value1");
-                    latch.countDown();
+                    latch1.countDown();
+
                     map.put("key2", "value2");
-                    latch.countDown();
+                    latch2.countDown();
+
                     map.put("key3", "value3");
-                    latch.countDown();
+                    latch3.countDown();
                 } catch (Exception e) {
                     fail(e.getMessage());
                 }
             }
         });
         thread.start();
+
         Thread.sleep(1000);
         map.unlock("key0");
-        assertEquals(3, latch.getCount());
-        map.unlock("key1");
-        Thread.sleep(1000);
-        assertEquals(2, latch.getCount());
-        map.unlock("key2");
-        Thread.sleep(1000);
-        assertEquals(1, latch.getCount());
-        map.unlock("key3");
-        assertTrue(latch.await(3, TimeUnit.SECONDS));
 
+        assertTrue(latch0.await(3, TimeUnit.SECONDS));
         assertFalse(check1.get());
         assertTrue(check2.get());
+
+        map.unlock("key1");
+        assertTrue(latch1.await(3, TimeUnit.SECONDS));
+        map.unlock("key2");
+        assertTrue(latch2.await(3, TimeUnit.SECONDS));
+        map.unlock("key3");
+        assertTrue(latch3.await(3, TimeUnit.SECONDS));
     }
 
     @Test
@@ -387,10 +406,9 @@ public class BasicTest {
 
     @Test
     public void testEntryView() {
-        StaticNodeFactory nodeFactory = new StaticNodeFactory(1);
         Config config = new Config();
         config.getMapConfig("default").setStatisticsEnabled(true);
-        HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance instance = getInstance();
         final IMap<Integer, Integer> map = instance.getMap("testEntryView");
         long time1 = Clock.currentTimeMillis();
         map.put(1, 1);
@@ -490,9 +508,9 @@ public class BasicTest {
             assertEquals(2, map.removeAsync(1).get());
             assertEquals(0, map.size());
         } catch (InterruptedException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            e.printStackTrace();
         } catch (ExecutionException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            e.printStackTrace();
         }
     }
 
@@ -520,26 +538,23 @@ public class BasicTest {
 
     @Test
     public void testPutAllBackup() {
-        StaticNodeFactory nodeFactory = new StaticNodeFactory(2);
-        Config config = new Config();
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance instance1 = instances[0];
+        HazelcastInstance instance2 = instances[1];
         final IMap<Object, Object> map = instance1.getMap("testGetAllPutAll");
         Map mm = new HashMap();
-        for (int i = 0; i < 100; i++) {
+        final int size = 100;
+        for (int i = 0; i < size; i++) {
             mm.put(i, i);
         }
         map.putAll(mm);
-        assertEquals(map.size(), 100);
-        for (int i = 0; i < 100; i++) {
-            assertEquals(map.get(i), i);
+        assertEquals(map.size(), size);
+        for (int i = 0; i < size; i++) {
+            assertEquals(i, map.get(i));
         }
         instance2.getLifecycleService().shutdown();
-        for (int i = 0; i < 100; i++) {
-            assertEquals(map.get(i), i);
+        for (int i = 0; i < size; i++) {
+            assertEquals(i, map.get(i));
         }
-
-        instance1.getLifecycleService().shutdown();
     }
 
     @Test

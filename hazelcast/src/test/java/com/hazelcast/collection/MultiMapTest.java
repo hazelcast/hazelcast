@@ -18,12 +18,13 @@ package com.hazelcast.collection;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.core.*;
-import com.hazelcast.instance.StaticNodeFactory;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.MultiMap;
+import com.hazelcast.test.ParallelTestSupport;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
+import com.hazelcast.test.StaticNodeFactory;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -37,30 +38,17 @@ import static org.junit.Assert.*;
  * @ali 1/17/13
  */
 @RunWith(RandomBlockJUnit4ClassRunner.class)
-public class MultiMapTest {
-
-    private EntryListener listener;
-
-    @BeforeClass
-    public static void init() {
-//        System.setProperty("hazelcast.test.use.network","true");
-    }
-
-    @Before
-    @After
-    public void cleanup() {
-        Hazelcast.shutdownAll();
-    }
+public class MultiMapTest extends ParallelTestSupport {
 
     @Test
     public void testPutGetRemoveWhileCollectionTypeSet() throws InterruptedException {
         Config config = new Config();
         final String name = "defMM";
         config.getMultiMapConfig(name).setValueCollectionType(MultiMapConfig.ValueCollectionType.SET);
-        final int count = 100;
 
         final int insCount = 4;
-        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
+        StaticNodeFactory factory = createNodeFactory(insCount);
+        final HazelcastInstance[] instances = factory.newInstances(config);
 
         assertTrue(getMultiMap(instances, name).put("key1", "key1_value1"));
         assertTrue(getMultiMap(instances, name).put("key1", "key1_value2"));
@@ -99,9 +87,9 @@ public class MultiMapTest {
         Config config = new Config();
         final String name = "defMM";
         config.getMultiMapConfig(name).setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST);
-        final int count = 100;
         final int insCount = 4;
-        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
+        StaticNodeFactory factory = createNodeFactory(insCount);
+        final HazelcastInstance[] instances = factory.newInstances(config);
 
         assertTrue(getMultiMap(instances, name).put("key1", "key1_value1"));
         assertTrue(getMultiMap(instances, name).put("key1", "key1_value2"));
@@ -143,7 +131,8 @@ public class MultiMapTest {
         final String name = "defMM";
         config.getMultiMapConfig(name).setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST);
         final int insCount = 4;
-        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
+        StaticNodeFactory factory = createNodeFactory(insCount);
+        final HazelcastInstance[] instances = factory.newInstances(config);
 
         getMultiMap(instances, name).put("key1", "key1_val1");
         getMultiMap(instances, name).put("key1","key1_val2");
@@ -207,7 +196,8 @@ public class MultiMapTest {
         final String name = "defMM";
         config.getMultiMapConfig(name).setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST);
         final int insCount = 4;
-        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
+        StaticNodeFactory factory = createNodeFactory(insCount);
+        final HazelcastInstance[] instances = factory.newInstances(config);
 
         final Set keys = new HashSet();
 
@@ -273,7 +263,8 @@ public class MultiMapTest {
         final String name = "defMM";
         config.getMultiMapConfig(name).setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST);
         final int insCount = 4;
-        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
+        StaticNodeFactory factory = createNodeFactory(insCount);
+        final HazelcastInstance[] instances = factory.newInstances(config);
         final CountDownLatch latch = new CountDownLatch(1);
         final CountDownLatch latch2 = new CountDownLatch(1);
         new Thread(){

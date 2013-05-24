@@ -14,11 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.instance;
+package com.hazelcast.test;
 
 import com.hazelcast.cluster.AbstractJoiner;
 import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.cluster.Joiner;
+import com.hazelcast.instance.AddressPicker;
+import com.hazelcast.instance.Node;
+import com.hazelcast.instance.NodeContext;
 import com.hazelcast.nio.*;
 import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -28,8 +31,11 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.channels.ServerSocketChannel;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 final class StaticNodeRegistry {
@@ -47,6 +53,14 @@ final class StaticNodeRegistry {
 
     private void register(Address address, NodeEngineImpl nodeEngine) {
         nodes.put(address, nodeEngine);
+    }
+
+    void shutdown() {
+        final Collection<NodeEngineImpl> values = new ArrayList<NodeEngineImpl>(nodes.values());
+        nodes.clear();
+        for (NodeEngineImpl value : values) {
+            value.getHazelcastInstance().getLifecycleService().shutdown();
+        }
     }
 
     private class StaticNodeContext implements NodeContext {

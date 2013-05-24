@@ -87,7 +87,6 @@ public class IdGeneratorProxy implements IdGenerator {
     }
 
     public String getName() {
-        System.out.println("atomic: " + atomicNumber.get() + ", local: " + local.get());
         return name;
     }
 

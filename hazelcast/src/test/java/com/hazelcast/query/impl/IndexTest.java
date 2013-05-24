@@ -21,7 +21,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.*;
 import com.hazelcast.query.Predicates.AndPredicate;
 import com.hazelcast.query.Predicates.EqualPredicate;
-import com.hazelcast.instance.TestUtil;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -30,12 +29,15 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.concurrent.ConcurrentMap;
 
-import static junit.framework.Assert.*;
+import static com.hazelcast.instance.TestUtil.toData;
+import static org.junit.Assert.*;
 
 @RunWith(RandomBlockJUnit4ClassRunner.class)
-public class IndexTest extends TestUtil {
+public class IndexTest {
 
     static final int FACTORY_ID = 1;
+
+    final SerializationServiceImpl ss = new SerializationServiceImpl(1, Collections.singletonMap(FACTORY_ID, new TestPortableFactory()));
 
     @Test
     public void testBasics() {
@@ -43,11 +45,9 @@ public class IndexTest extends TestUtil {
         testIt(false);
     }
 
-    QueryRecord newRecord(Object key, final Comparable attributeValue) {
+    private QueryRecord newRecord(Object key, final Comparable attributeValue) {
         return new QueryRecord(toData(key), attributeValue);
     }
-
-    final SerializationServiceImpl ss = new SerializationServiceImpl(1, Collections.singletonMap(FACTORY_ID, new TestPortableFactory()));
 
     @Test
     public void testIndex() throws QueryException {

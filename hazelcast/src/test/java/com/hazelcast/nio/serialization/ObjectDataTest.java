@@ -39,6 +39,7 @@ public class ObjectDataTest {
 
     @Test
     public void testDataWriter() throws IOException {
+        System.err.println(this);
         SerializationService ss = new SerializationServiceImpl(1);
         final Person person = new Person(111, 123L, 89.56d, "test-person",
                 new Address("street", 987));
@@ -70,6 +71,7 @@ public class ObjectDataTest {
 
     @Test
     public void testDataStreams() throws IOException {
+        System.err.println(this);
         SerializationService ss = new SerializationServiceImpl(1);
 
         final Person person = new Person(111, 123L, 89.56d, "test-person",

@@ -21,17 +21,17 @@ import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import com.hazelcast.util.Clock;
-import com.hazelcast.instance.TestUtil;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import static junit.framework.Assert.assertEquals;
+import static com.hazelcast.instance.TestUtil.*;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(RandomBlockJUnit4ClassRunner.class)
-public class IndexServiceTest extends TestUtil {
+public class IndexServiceTest {
 
     @Test
     public void testAndWithSingleEntry() throws Exception {

@@ -22,11 +22,13 @@ import com.hazelcast.core.*;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.ssl.SSLContextFactory;
+import com.hazelcast.test.annotation.NetworkTest;
 import com.hazelcast.wan.WanReplicationEndpoint;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
@@ -40,6 +42,7 @@ import static org.junit.Assert.*;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"fullcacheconfig-applicationContext-hazelcast.xml"})
+@Category(NetworkTest.class)
 public class TestFullApplicationContext {
 
     private Config config;

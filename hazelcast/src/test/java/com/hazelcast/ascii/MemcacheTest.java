@@ -23,7 +23,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
-import com.hazelcast.test.annotation.NetworkRelated;
+import com.hazelcast.test.annotation.NetworkTest;
 import net.spy.memcached.ConnectionFactory;
 import net.spy.memcached.ConnectionFactoryBuilder;
 import net.spy.memcached.FailureMode;
@@ -45,7 +45,7 @@ import java.util.concurrent.ExecutionException;
  * Time: 2:48 PM
  */
 @RunWith(RandomBlockJUnit4ClassRunner.class)
-@Category(NetworkRelated.class)
+@Category(NetworkTest.class)
 
 public class MemcacheTest {
 
@@ -246,48 +246,5 @@ public class MemcacheTest {
         } finally {
             client.shutdown();
         }
-    }
-
-    @Ignore
-    public void testMemcacheTouch() throws IOException, ExecutionException, InterruptedException {
-        //TODO spymemcache client" does not support touch in ASCII protocol, tested manually from terminal
-//        final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
-//        MemcachedClient client = getMemcacheClient(instance);
-//        OperationFuture<Boolean> future = client.set("testMemcacheTouch", 2, 10);
-//        Assert.assertEquals(Boolean.TRUE, future.get());
-//        final OperationFuture<Boolean> touch = client.touch("testMemcacheTouch", 5);
-//        Assert.assertEquals(Boolean.TRUE, touch.get());
-//        Thread.sleep(3000);
-//        Assert.assertEquals(10, client.get("testMemcacheTouch"));
-//        Thread.sleep(3000);
-//        Assert.assertEquals(null, client.get("testMemcacheTouch"));
-
-    }
-
-
-    @Ignore
-    public void testCAS() throws IOException {
-        //TODO not implemented yet
-//        final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
-//        MemcachedClient client = getMemcacheClient(instance);
-//        for (int i = 0; i < 100; i++) {
-//            client.set(String.valueOf(i), 0, i);
-//        }
-//        for (int i = 0; i < 100; i++) {
-//            final CASValue<Object> value = client.gets(String.valueOf(i));
-//            final CASResponse cas = client.cas(String.valueOf(i), value.getCas(), i + 1);
-//            Assert.assertEquals(CASResponse.OK, cas);
-//        }
-//        for (int i = 100; i < 200; i++) {
-//            final CASValue<Object> value = client.gets(String.valueOf(i));
-//            final CASResponse cas = client.cas(String.valueOf(i), value.getCas(), i + 1);
-//            Assert.assertEquals(CASResponse.NOT_FOUND, cas);
-//        }
-//        for (int i = 0; i < 100; i++) {
-//            final CASValue<Object> value = client.gets(String.valueOf(i));
-//            final CASResponse cas = client.cas(String.valueOf(i), value.getCas() + 1, i + 1);
-//            Assert.assertEquals(CASResponse.EXISTS, cas);
-//        }
-//
     }
 }

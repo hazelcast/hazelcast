@@ -17,17 +17,15 @@
 package com.hazelcast.concurrent.countdownlatch;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.instance.StaticNodeFactory;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
-import com.hazelcast.test.annotation.ClientCompatible;
+import com.hazelcast.test.ParallelTestSupport;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
-import org.junit.After;
+import com.hazelcast.test.StaticNodeFactory;
+import com.hazelcast.test.annotation.ClientCompatible;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -37,20 +35,15 @@ import java.util.concurrent.TimeUnit;
  * @mdogan 1/16/13
  */
 @RunWith(RandomBlockJUnit4ClassRunner.class)
-public class CountDownLatchTest {
-
-    @Before
-    @After
-    public void cleanup() {
-        Hazelcast.shutdownAll();
-    }
+public class CountDownLatchTest extends ParallelTestSupport {
 
     @Test
     @ClientCompatible
     public void testSimpleUsage() {
         final int k = 5;
         final Config config = new Config();
-        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, k);
+        StaticNodeFactory factory = createNodeFactory(k);
+        final HazelcastInstance[] instances = factory.newInstances(config);
         ICountDownLatch latch = instances[0].getCountDownLatch("test");
         latch.trySetCount(k - 1);
         Assert.assertEquals(k - 1, latch.getCount());
@@ -84,7 +77,8 @@ public class CountDownLatchTest {
     public void testAwaitFail() {
         final int k = 3;
         final Config config = new Config();
-        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, k);
+        StaticNodeFactory factory = createNodeFactory(k);
+        final HazelcastInstance[] instances = factory.newInstances(config);
         ICountDownLatch latch = instances[0].getCountDownLatch("test");
         latch.trySetCount(k - 1);
 
@@ -102,7 +96,7 @@ public class CountDownLatchTest {
     @Test(expected = DistributedObjectDestroyedException.class)
     @ClientCompatible
     public void testLatchDestroyed() {
-        StaticNodeFactory factory = new StaticNodeFactory(2);
+        StaticNodeFactory factory = createNodeFactory(2);
         final Config config = new Config();
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);
@@ -134,7 +128,7 @@ public class CountDownLatchTest {
     @Test
     @ClientCompatible
     public void testLatchMigration() throws InterruptedException {
-        StaticNodeFactory factory = new StaticNodeFactory(5);
+        StaticNodeFactory factory = createNodeFactory(5);
         HazelcastInstance hz1 = factory.newHazelcastInstance(new Config());
         HazelcastInstance hz2 = factory.newHazelcastInstance(new Config());
 

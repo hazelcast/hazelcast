@@ -21,7 +21,7 @@ import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
-import com.hazelcast.test.annotation.NetworkRelated;
+import com.hazelcast.test.annotation.NetworkTest;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -29,7 +29,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 @RunWith(RandomBlockJUnit4ClassRunner.class)
-@Category(NetworkRelated.class)
+@Category(NetworkTest.class)
 
 public class EncryptionTest {
 
@@ -41,7 +41,7 @@ public class EncryptionTest {
     /**
      * Simple symmetric encryption test.
      */
-    @Ignore
+    @Ignore("TODO: fix test!")
     @Test(timeout = 160000)
     public void testSymmetricEncryption() throws Exception {
         Config config = new Config();

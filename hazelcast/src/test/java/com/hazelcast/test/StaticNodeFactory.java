@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.instance;
+package com.hazelcast.test;
 
 import com.hazelcast.client.*;
 import com.hazelcast.client.MockSimpleClient;
@@ -23,11 +23,13 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.*;
 import com.hazelcast.nio.Address;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -69,17 +71,35 @@ public final class StaticNodeFactory {
         return USE_CLIENT ? newHazelcastClient() : HazelcastInstanceFactory.newHazelcastInstance(config);
     }
 
+    public HazelcastInstance[] newInstances(Config config) {
+        final int count = addresses.length;
+        final HazelcastInstance[] instances = new HazelcastInstance[count];
+        for (int i = 0; i < count; i++) {
+            instances[i] = newHazelcastInstance(config);
+        }
+        return instances;
+    }
+
+    public void shutdownAll() {
+        if (MOCK_NETWORK) {
+            nodeIndex.set(Integer.MAX_VALUE);
+            registry.shutdown();
+        } else {
+            Hazelcast.shutdownAll();
+        }
+    }
+
     public static SimpleClient newClient(Address nodeAddress) throws IOException {
         Set<HazelcastInstance> instances = Hazelcast.getAllHazelcastInstances();
-        for (HazelcastInstance p : instances) {
-            HazelcastInstanceImpl hz = ((HazelcastInstanceProxy) p).original;
+        for (HazelcastInstance hz : instances) {
+            Node node = TestUtil.getNode(hz);
             MemberImpl m = (MemberImpl) hz.getCluster().getLocalMember();
             if (m.getAddress().equals(nodeAddress)) {
                 if (MOCK_NETWORK) {
-                    ClientEngineImpl engine = hz.node.clientEngine;
+                    ClientEngineImpl engine = node.clientEngine;
                     return new MockSimpleClient(engine);
                 } else {
-                    return new SocketSimpleClient(hz);
+                    return new SocketSimpleClient(node);
                 }
             }
         }
@@ -111,24 +131,6 @@ public final class StaticNodeFactory {
         return addresses;
     }
 
-    public static HazelcastInstance[] newInstances(Config config, int count) {
-        final HazelcastInstance[] instances = new HazelcastInstance[count];
-        if (MOCK_NETWORK) {
-            config = init(config);
-            Address[] addresses = createAddresses(count);
-            StaticNodeRegistry staticNodeRegistry = new StaticNodeRegistry(addresses);
-            for (int i = 0; i < count; i++) {
-                NodeContext nodeContext = staticNodeRegistry.createNodeContext(addresses[i]);
-                instances[i] = HazelcastInstanceFactory.newHazelcastInstance(config, null, nodeContext);
-            }
-        } else {
-            for (int i = 0; i < count; i++) {
-                instances[i] = USE_CLIENT ? newHazelcastClient() : HazelcastInstanceFactory.newHazelcastInstance(config);
-            }
-        }
-        return instances;
-    }
-
     private static Config init(Config config) {
         if (config == null) {
             config = new XmlConfigBuilder().build();
@@ -137,5 +139,14 @@ public final class StaticNodeFactory {
         config.setProperty(GroupProperties.PROP_GRACEFUL_SHUTDOWN_MAX_WAIT, "10");
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         return config;
+    }
+
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("StaticNodeFactory{");
+        sb.append("addresses=").append(Arrays.toString(addresses));
+        sb.append('}');
+        return sb.toString();
     }
 }

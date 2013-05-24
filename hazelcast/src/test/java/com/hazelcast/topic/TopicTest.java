@@ -19,14 +19,11 @@ package com.hazelcast.topic;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.*;
-import com.hazelcast.instance.StaticNodeFactory;
+import com.hazelcast.test.ParallelTestSupport;
+import com.hazelcast.test.StaticNodeFactory;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
-import junit.framework.Assert;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 
 import java.util.HashMap;
@@ -41,19 +38,7 @@ import static org.junit.Assert.*;
 
 
 @RunWith(RandomBlockJUnit4ClassRunner.class)
-public class TopicTest {
-
-    @BeforeClass
-    public static void init() throws Exception {
-        Hazelcast.shutdownAll();
-
-    }
-
-    @After
-    @Before
-    public void shutdown() {
-        Hazelcast.shutdownAll();
-    }
+public class TopicTest extends ParallelTestSupport {
 
     @Test
     public void testTopicPublishingMember() {
@@ -63,7 +48,8 @@ public class TopicTest {
         topicConfig.setName("default");
         config.addTopicConfig(topicConfig);
         final int k = 3;
-        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, k);
+        StaticNodeFactory factory = createNodeFactory(k);
+        final HazelcastInstance[] instances = factory.newInstances(config);
 
         final CountDownLatch mainLatch = new CountDownLatch(k);
         final AtomicInteger count = new AtomicInteger(0);
@@ -108,7 +94,6 @@ public class TopicTest {
         Assert.assertEquals(k, count.get());
         Assert.assertEquals(k * k, count1.get());
         Assert.assertEquals(k, count2.get());
-
     }
 
     @Test
@@ -124,7 +109,8 @@ public class TopicTest {
         final Map<Long, String> stringMap = new HashMap<Long, String>();
         final CountDownLatch countDownLatch = new CountDownLatch(k);
         final CountDownLatch mainLatch = new CountDownLatch(k);
-        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, k);
+        final StaticNodeFactory factory = createNodeFactory(k);
+        final HazelcastInstance[] instances = factory.newInstances(config);
 
         Assert.assertEquals(true, instances[0].getConfig().getTopicConfig("default").isGlobalOrderingEnabled());
 
@@ -174,14 +160,14 @@ public class TopicTest {
 
     @Test
     public void testName() {
-        HazelcastInstance hClient = new StaticNodeFactory(1).newHazelcastInstance(new Config());
+        HazelcastInstance hClient = createNodeFactory(1).newHazelcastInstance(new Config());
         ITopic<?> topic = hClient.getTopic("testName");
         Assert.assertEquals("testName", topic.getName());
     }
 
     @Test
     public void addMessageListener() throws InterruptedException {
-        HazelcastInstance hClient = new StaticNodeFactory(1).newHazelcastInstance(new Config());
+        HazelcastInstance hClient = createNodeFactory(1).newHazelcastInstance(new Config());
         ITopic<String> topic = hClient.getTopic("addMessageListener");
         final CountDownLatch latch = new CountDownLatch(1);
         final String message = "Hazelcast Rocks!";
@@ -198,7 +184,7 @@ public class TopicTest {
 
     @Test
     public void addTwoMessageListener() throws InterruptedException {
-        HazelcastInstance hazelcastInstance = new StaticNodeFactory(1).newHazelcastInstance(new Config());
+        HazelcastInstance hazelcastInstance = createNodeFactory(1).newHazelcastInstance(new Config());
         ITopic<String> topic = hazelcastInstance.getTopic("addTwoMessageListener");
         final CountDownLatch latch = new CountDownLatch(2);
         final String message = "Hazelcast Rocks!";
@@ -222,51 +208,58 @@ public class TopicTest {
 
     @Test
     public void removeMessageListener() throws InterruptedException {
-        HazelcastInstance hazelcastInstance = new StaticNodeFactory(1).newHazelcastInstance(new Config());
-        ITopic<String> topic = hazelcastInstance.getTopic("removeMessageListener");
-        final CountDownLatch latch = new CountDownLatch(2);
-        final CountDownLatch cp = new CountDownLatch(1);
+        try {
+            HazelcastInstance hazelcastInstance = createNodeFactory(1).newHazelcastInstance(new Config());
+            ITopic<String> topic = hazelcastInstance.getTopic("removeMessageListener");
+            final CountDownLatch latch = new CountDownLatch(2);
+            final CountDownLatch cp = new CountDownLatch(1);
 
-        MessageListener<String> messageListener = new MessageListener<String>() {
-            public void onMessage(Message<String> msg) {
-                latch.countDown();
-                cp.countDown();
+            MessageListener<String> messageListener = new MessageListener<String>() {
+                public void onMessage(Message<String> msg) {
+                    latch.countDown();
+                    cp.countDown();
 
-            }
-        };
-        final String message = "message_" + messageListener.hashCode() + "_";
-        final String id = topic.addMessageListener(messageListener);
-        topic.publish(message + "1");
-        cp.await();
-        topic.removeMessageListener(id);
-        topic.publish(message + "2");
-        Thread.sleep(50);
-        Assert.assertEquals(1, latch.getCount());
-        hazelcastInstance.getLifecycleService().shutdown();
+                }
+            };
+            final String message = "message_" + messageListener.hashCode() + "_";
+            final String id = topic.addMessageListener(messageListener);
+            topic.publish(message + "1");
+            cp.await();
+            topic.removeMessageListener(id);
+            topic.publish(message + "2");
+            Thread.sleep(50);
+            Assert.assertEquals(1, latch.getCount());
+        } finally {
+            shutdownNodeFactory();
+        }
     }
 
     @Test
     public void test10TimesRemoveMessageListener() throws InterruptedException {
         ExecutorService ex = Executors.newFixedThreadPool(1);
         final CountDownLatch latch = new CountDownLatch(10);
-        ex.execute(new Runnable() {
-            public void run() {
-                for (int i = 0; i < 10; i++) {
-                    try {
-                        removeMessageListener();
-                        latch.countDown();
-                    } catch (InterruptedException e) {
-                        return;
+        try {
+            ex.execute(new Runnable() {
+                public void run() {
+                    for (int i = 0; i < 10; i++) {
+                        try {
+                            removeMessageListener();
+                            latch.countDown();
+                        } catch (InterruptedException e) {
+                            return;
+                        }
                     }
                 }
-            }
-        });
-        assertTrue(latch.await(30, TimeUnit.SECONDS));
+            });
+            assertTrue(latch.await(30, TimeUnit.SECONDS));
+        } finally {
+            ex.shutdownNow();
+        }
     }
 
     @Test
     public void testPerformance() throws InterruptedException {
-        HazelcastInstance hazelcastInstance = new StaticNodeFactory(1).newHazelcastInstance(new Config());
+        HazelcastInstance hazelcastInstance = createNodeFactory(1).newHazelcastInstance(new Config());
         int count = 10000;
         final ITopic topic = hazelcastInstance.getTopic("perf");
         ExecutorService ex = Executors.newFixedThreadPool(10);
@@ -284,7 +277,7 @@ public class TopicTest {
 
     @Test
     public void add2listenerAndRemoveOne() throws InterruptedException {
-        HazelcastInstance hazelcastInstance = new StaticNodeFactory(1).newHazelcastInstance(new Config());
+        HazelcastInstance hazelcastInstance = createNodeFactory(1).newHazelcastInstance(new Config());
         ITopic<String> topic = hazelcastInstance.getTopic("removeMessageListener");
         final CountDownLatch latch = new CountDownLatch(4);
         final CountDownLatch cp = new CountDownLatch(2);
@@ -325,7 +318,8 @@ public class TopicTest {
     @Test
     public void testTopicCluster() {
         final Config cfg = new Config();
-        HazelcastInstance[] instances = StaticNodeFactory.newInstances(cfg, 2);
+        StaticNodeFactory factory = createNodeFactory(2);
+        HazelcastInstance[] instances = factory.newInstances(cfg);
         HazelcastInstance h1 = instances[0];
         HazelcastInstance h2 = instances[1];
         String topicName = "TestMessages";
@@ -353,14 +347,12 @@ public class TopicTest {
             assertTrue(latch2.await(5, TimeUnit.SECONDS));
         } catch (InterruptedException ignored) {
         }
-
     }
 
     @Test
     public void testTopicStats() throws InterruptedException {
-        HazelcastInstance hazelcastInstance = new StaticNodeFactory(1).newHazelcastInstance(new Config());
+        HazelcastInstance hazelcastInstance = createNodeFactory(1).newHazelcastInstance(new Config());
         ITopic<String> topic = hazelcastInstance.getTopic("testTopicStats");
-
 
         final CountDownLatch latch1 = new CountDownLatch(1000);
         topic.addMessageListener(new MessageListener<String>() {
@@ -387,8 +379,5 @@ public class TopicTest {
 //        Assert.assertTrue(stats.getCreationTime() < stats.getLastPublishTime());
 //        Assert.assertEquals(1000, stats.getOperationStats().getPublishOperationCount());
 //        Assert.assertEquals(2000, stats.getOperationStats().getReceiveOperationCount());
-
-
     }
-
 }

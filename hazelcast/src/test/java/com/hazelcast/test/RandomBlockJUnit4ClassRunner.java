@@ -34,11 +34,12 @@ public final class RandomBlockJUnit4ClassRunner extends BlockJUnit4ClassRunner {
         if (System.getProperty(logging) == null) {
             System.setProperty(logging, "log4j");
         }
-        System.setProperty("java.net.preferIPv4Stack", "true");
+        System.setProperty(StaticNodeFactory.HAZELCAST_TEST_USE_NETWORK, "false");
         System.setProperty("hazelcast.version.check.enabled", "false");
         System.setProperty("hazelcast.mancenter.enabled", "false");
         System.setProperty("hazelcast.wait.seconds.before.join", "1");
         System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
+        System.setProperty("java.net.preferIPv4Stack", "true");
     }
 
 

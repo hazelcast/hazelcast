@@ -17,11 +17,13 @@
 package com.hazelcast.collection;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.*;
-import com.hazelcast.instance.StaticNodeFactory;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ISet;
+import com.hazelcast.core.ItemEvent;
+import com.hazelcast.core.ItemListener;
+import com.hazelcast.test.ParallelTestSupport;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
-import org.junit.After;
-import org.junit.Before;
+import com.hazelcast.test.StaticNodeFactory;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -38,13 +40,8 @@ import static org.junit.Assert.*;
  * @ali 3/6/13
  */
 @RunWith(RandomBlockJUnit4ClassRunner.class)
-public class SetTest {
+public class SetTest extends ParallelTestSupport {
 
-    @Before
-    @After
-    public void cleanup() {
-        Hazelcast.shutdownAll();
-    }
 
     @Test
     public void testSetMethods() throws Exception {
@@ -52,7 +49,8 @@ public class SetTest {
         final String name = "defSet";
         final int count = 100;
         final int insCount = 4;
-        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
+        StaticNodeFactory factory = createNodeFactory(insCount);
+        final HazelcastInstance[] instances = factory.newInstances(config);
 
         for (int i=0; i<count; i++){
             assertTrue(getSet(instances, name).add("item"+i));
@@ -94,7 +92,8 @@ public class SetTest {
         final String name = "defSet";
         final int count = 10;
         final int insCount = 4;
-        final HazelcastInstance[] instances = StaticNodeFactory.newInstances(config, insCount);
+        StaticNodeFactory factory = createNodeFactory(insCount);
+        final HazelcastInstance[] instances = factory.newInstances(config);
         final CountDownLatch latchAdd = new CountDownLatch(count);
         final CountDownLatch latchRemove = new CountDownLatch(count);
 

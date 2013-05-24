@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * @ali 4/29/13
  */
-@Ignore
+@Ignore("not a JUnit test")
 public class LongRunningQueueTest {
 
     static final int minNode = 2;
