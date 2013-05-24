@@ -1,4 +1,4 @@
-package com.hazelcast.map;
+package com.hazelcast.client.map;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;

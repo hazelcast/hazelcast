@@ -1,4 +1,4 @@
-package com.hazelcast.queue;
+package com.hazelcast.client.queue;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.Hazelcast;
