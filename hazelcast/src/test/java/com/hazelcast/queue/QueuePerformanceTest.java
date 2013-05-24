@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * @ali 2/22/13
  */
-@Ignore
+@Ignore("not a JUnit test")
 public class QueuePerformanceTest {
 
     final AtomicLong totalOffer = new AtomicLong();

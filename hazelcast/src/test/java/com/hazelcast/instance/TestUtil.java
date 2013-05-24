@@ -16,10 +16,7 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.PartitionAware;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
@@ -29,9 +26,9 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.Date;
-import java.util.concurrent.Callable;
 
-public class TestUtil {
+@Ignore("not a JUnit test")
+public final class TestUtil {
 
     static final private SerializationService serializationService = new SerializationServiceImpl(1);
 
@@ -53,7 +50,6 @@ public class TestUtil {
         return impl != null ? impl.node : null;
     }
 
-    @Ignore
     public static class ValueType implements Serializable {
         String typeName;
 
@@ -69,45 +65,19 @@ public class TestUtil {
         }
     }
 
-    @Ignore
-    public static abstract class AbstractValue implements Serializable {
-        public String name;
-
-        public AbstractValue(String name) {
-            this.name = name;
-        }
-
-        protected AbstractValue() {
-        }
-
-        @Override
-        public boolean equals(final Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            final AbstractValue that = (AbstractValue) o;
-            if (name != null ? !name.equals(that.name) : that.name != null) return false;
-            return true;
-        }
-
-        @Override
-        public int hashCode() {
-            return name != null ? name.hashCode() : 0;
-        }
-    }
-
-    @Ignore
-    public static class Value extends AbstractValue implements Serializable {
+    public static class Value implements Serializable {
+        String name;
         ValueType type;
         int index;
 
         public Value(String name, ValueType type, int index) {
-            super(name);
+            this.name = name;
             this.type = type;
             this.index = index;
         }
 
         public Value(String name, int index) {
-            super(name);
+            this.name = name;
             this.index = index;
         }
 
@@ -115,8 +85,8 @@ public class TestUtil {
             this(name, null, 0);
         }
 
-        public Value() {
-            super("unknown");
+        public String getName() {
+            return name;
         }
 
         public ValueType getType() {
@@ -132,19 +102,22 @@ public class TestUtil {
         }
 
         @Override
-        public boolean equals(final Object o) {
+        public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            if (!super.equals(o)) return false;
-            final Value value = (Value) o;
+
+            Value value = (Value) o;
+
             if (index != value.index) return false;
+            if (name != null ? !name.equals(value.name) : value.name != null) return false;
             if (type != null ? !type.equals(value.type) : value.type != null) return false;
+
             return true;
         }
 
         @Override
         public int hashCode() {
-            int result = super.hashCode();
+            int result = name != null ? name.hashCode() : 0;
             result = 31 * result + (type != null ? type.hashCode() : 0);
             result = 31 * result + index;
             return result;
@@ -162,265 +135,11 @@ public class TestUtil {
         }
     }
 
-    @Ignore
-    public static class EmptyEntryView implements EntryView {
-        private long cost;
-        private long creationTime;
-        private long expirationTime;
-        private int hits;
-        private long lastAccessTime;
-        private long lastUpdateTime;
-        private long lastStoredTime;
-        private int version;
-        private boolean valid;
-        private Object key;
-        private Object value;
-        private long id;
-
-        public EmptyEntryView(long id) {
-            this.id = id;
-        }
-
-        public long getCost() {
-            return cost;
-        }
-
-        public long getCreationTime() {
-            return creationTime;
-        }
-
-        public long getExpirationTime() {
-            return expirationTime;
-        }
-
-        public long getHits() {
-            return hits;
-        }
-
-        public long getLastAccessTime() {
-            return lastAccessTime;
-        }
-
-        public long getLastStoredTime() {
-            return lastStoredTime;
-        }
-
-        public long getLastUpdateTime() {
-            return lastUpdateTime;
-        }
-
-        public long getVersion() {
-            return version;
-        }
-
-        public boolean isValid() {
-            return valid;
-        }
-
-        public Data getKey() {
-            return toData(key);
-        }
-
-        public Object getValue() {
-            return value;
-        }
-
-        public Object setValue(Object value) {
-            Object oldValue = this.value;
-            this.value = value;
-            return oldValue;
-        }
-
-        public void setCost(long cost) {
-            this.cost = cost;
-        }
-
-        public void setCreationTime(long creationTime) {
-            this.creationTime = creationTime;
-        }
-
-        public void setExpirationTime(long expirationTime) {
-            this.expirationTime = expirationTime;
-        }
-
-        public void setHits(int hits) {
-            this.hits = hits;
-        }
-
-        public void setKey(Object key) {
-            this.key = key;
-        }
-
-        public void setLastAccessTime(long lastAccessTime) {
-            this.lastAccessTime = lastAccessTime;
-        }
-
-        public void setLastUpdateTime(long lastUpdateTime) {
-            this.lastUpdateTime = lastUpdateTime;
-        }
-
-        public void setValid(boolean valid) {
-            this.valid = valid;
-        }
-
-        public void setVersion(int version) {
-            this.version = version;
-        }
-
-        public long getId() {
-            return id;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            EmptyEntryView that = (EmptyEntryView) o;
-            if (id != that.id) return false;
-            return true;
-        }
-
-        @Override
-        public int hashCode() {
-            return (int) (id ^ (id >>> 32));
-        }
-
-        @Override
-        public String toString() {
-            return "EmptyMapEntry{" +
-                    "id=" + id +
-                    ", expirationTime=" + expirationTime +
-                    ", hits=" + hits +
-                    ", lastAccessTime=" + lastAccessTime +
-                    ", lastUpdateTime=" + lastUpdateTime +
-                    ", key=" + key +
-                    ", value=" + value +
-                    ", valid=" + valid +
-                    ", creationTime=" + creationTime +
-                    ", cost=" + cost +
-                    ", version=" + version +
-                    '}';
-        }
-    }
-
-    @Ignore
-    public static class OrderUpdateRunnable implements Serializable, Runnable, PartitionAware<Integer>, HazelcastInstanceAware {
-        int customerId;
-        int orderId;
-        transient HazelcastInstance hazelcastInstance;
-
-        public OrderUpdateRunnable(int orderId, int customerId) {
-            this.customerId = customerId;
-            this.orderId = orderId;
-        }
-
-        public void run() {
-            if (!hazelcastInstance.getPartitionService().getPartition(customerId).getOwner().localMember()) {
-                throw new RuntimeException("Not local member");
-            }
-        }
-
-        public int getCustomerId() {
-            return customerId;
-        }
-
-        public int getOrderId() {
-            return orderId;
-        }
-
-        public Integer getPartitionKey() {
-            return customerId;
-        }
-
-        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-            this.hazelcastInstance = hazelcastInstance;
-        }
-
-        @Override
-        public String toString() {
-            return "OrderUpdateRunnable{" +
-                    "customerId=" + customerId +
-                    ", orderId=" + orderId +
-                    '}';
-        }
-    }
-
-    @Ignore
-    public static class OrderUpdateCallable implements Serializable, Callable<Boolean>, PartitionAware, HazelcastInstanceAware {
-        int customerId;
-        int orderId;
-        transient HazelcastInstance hazelcastInstance;
-
-        public OrderUpdateCallable(int orderId, int customerId) {
-            this.customerId = customerId;
-            this.orderId = orderId;
-        }
-
-        public Boolean call() throws Exception {
-            return hazelcastInstance.getPartitionService().getPartition(customerId).getOwner().localMember();
-        }
-
-        public int getCustomerId() {
-            return customerId;
-        }
-
-        public int getOrderId() {
-            return orderId;
-        }
-
-        public Object getPartitionKey() {
-            return customerId;
-        }
-
-        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-            this.hazelcastInstance = hazelcastInstance;
-        }
-
-        @Override
-        public String toString() {
-            return "OrderUpdateCallable{" +
-                    "customerId=" + customerId +
-                    ", orderId=" + orderId +
-                    '}';
-        }
-    }
-
-    @Ignore
-    public static class OrderKey implements Serializable, PartitionAware {
-        int customerId;
-        int orderId;
-
-        public OrderKey(int orderId, int customerId) {
-            this.customerId = customerId;
-            this.orderId = orderId;
-        }
-
-        public int getCustomerId() {
-            return customerId;
-        }
-
-        public int getOrderId() {
-            return orderId;
-        }
-
-        public Object getPartitionKey() {
-            return customerId;
-        }
-
-        @Override
-        public String toString() {
-            return "OrderKey{" +
-                    "customerId=" + customerId +
-                    ", orderId=" + orderId +
-                    '}';
-        }
-    }
 
     public static enum State {
         STATE1, STATE2
     }
 
-    @Ignore
     public static class Employee implements Serializable {
         long id;
         String name;

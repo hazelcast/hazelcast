@@ -18,7 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
-import com.hazelcast.instance.StaticNodeFactory;
+import com.hazelcast.test.StaticNodeFactory;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.util.Clock;
 import org.junit.Test;

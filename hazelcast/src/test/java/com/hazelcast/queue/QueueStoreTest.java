@@ -23,7 +23,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.QueueStore;
-import com.hazelcast.instance.StaticNodeFactory;
+import com.hazelcast.test.StaticNodeFactory;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;

@@ -20,7 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IAtomicLong;
-import com.hazelcast.instance.StaticNodeFactory;
+import com.hazelcast.test.StaticNodeFactory;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import com.hazelcast.test.annotation.ClientCompatible;
 import org.junit.After;

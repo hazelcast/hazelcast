@@ -30,7 +30,7 @@ import java.net.URL;
 import java.util.Properties;
 import java.util.logging.Level;
 
-public abstract class HibernateTestSupport {
+abstract class HibernateTestSupport {
 
     private final ILogger logger = Logger.getLogger(getClass().getName());
 

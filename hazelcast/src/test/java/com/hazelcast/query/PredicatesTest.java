@@ -17,7 +17,6 @@
 package com.hazelcast.query;
 
 import com.hazelcast.instance.TestUtil;
-import com.hazelcast.map.QueryTest;
 import com.hazelcast.query.impl.AttributeType;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryException;
@@ -31,21 +30,20 @@ import java.sql.Timestamp;
 import java.util.Date;
 import java.util.Map;
 
+import static com.hazelcast.instance.TestUtil.Employee;
+import static com.hazelcast.instance.TestUtil.toData;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static org.junit.Assert.*;
 
 @RunWith(RandomBlockJUnit4ClassRunner.class)
-public class PredicatesTest extends TestUtil {
-    public PredicatesTest() {
-        super();
-    }
+public class PredicatesTest {
 
     @Test
     public void testEqual() {
-        TestUtil.Employee value = new TestUtil.Employee("abc-123-xvz", 34, true, 10D);
+        Employee value = new Employee("abc-123-xvz", 34, true, 10D);
         value.setState(TestUtil.State.STATE2);
-        TestUtil.Employee nullNameValue = new TestUtil.Employee(null, 34, true, 10D);
+        Employee nullNameValue = new Employee(null, 34, true, 10D);
         assertTrue(new SqlPredicate("state == TestUtil.State.STATE2").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("state == " + TestUtil.State.STATE2).apply(createEntry("1", value)));
         assertFalse(new SqlPredicate("state == TestUtil.State.STATE1").apply(createEntry("1", value)));
@@ -70,7 +68,7 @@ public class PredicatesTest extends TestUtil {
         assertTrue(new SqlPredicate("(age >= " + 34 + ") AND (age <= " + 35 + ")").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("age IN (" + 34 + ", " + 35 + ")").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate(" (name LIKE 'abc-%') AND (age <= " + 40 + ")").apply(createEntry("1", value)));
-        assertTrue(new SqlPredicate("age = -33").apply(createEntry("1", new QueryTest.Employee("abc-123-xvz", -33, true, 10D))));
+        assertTrue(new SqlPredicate("age = -33").apply(createEntry("1", new Employee("abc-123-xvz", -33, true, 10D))));
         assertFalse(new SqlPredicate("age = 33").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("age = 34").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("age > 5").apply(createEntry("1", value)));
@@ -80,12 +78,12 @@ public class PredicatesTest extends TestUtil {
         assertTrue(new SqlPredicate("salary between 9.99 and 10.01").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("salary between 5 and 15").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("name='abc-123-xvz'").apply(createEntry("1", value)));
-        assertTrue(new SqlPredicate("name='abc 123-xvz'").apply(createEntry("1", new QueryTest.Employee("abc 123-xvz", 34, true, 10D))));
-        assertTrue(new SqlPredicate("name='abc 123-xvz+(123)'").apply(createEntry("1", new QueryTest.Employee("abc 123-xvz+(123)", 34, true, 10D))));
+        assertTrue(new SqlPredicate("name='abc 123-xvz'").apply(createEntry("1", new Employee("abc 123-xvz", 34, true, 10D))));
+        assertTrue(new SqlPredicate("name='abc 123-xvz+(123)'").apply(createEntry("1", new Employee("abc 123-xvz+(123)", 34, true, 10D))));
         assertFalse(new SqlPredicate("name='abc 123-xvz+(123)'")
-                .apply(createEntry("1", new QueryTest.Employee("abc123-xvz+(123)", 34, true, 10D))));
+                .apply(createEntry("1", new Employee("abc123-xvz+(123)", 34, true, 10D))));
         assertTrue(new SqlPredicate("name LIKE 'abc-%'")
-                .apply(createEntry("1", new QueryTest.Employee("abc-123", 34, true, 10D))));
+                .apply(createEntry("1", new Employee("abc-123", 34, true, 10D))));
         assertTrue(Predicates.equal(null, "value").apply(new DummyEntry("value")));
         assertFalse(Predicates.equal(null, "value1").apply(new DummyEntry("value")));
         assertTrue(Predicates.equal(null, TRUE).apply(new DummyEntry(true)));
@@ -160,7 +158,7 @@ public class PredicatesTest extends TestUtil {
 
     @Test
     public void testCriteriaAPI() {
-        Object value = new QueryTest.Employee(12, "abc-123-xvz", 34, true, 10D);
+        Object value = new Employee(12, "abc-123-xvz", 34, true, 10D);
         EntryObject e = new PredicateBuilder().getEntryObject();
         EntryObject e2 = e.get("age");
         Predicate predicate = e2.greaterEqual(29).and(e2.lessEqual(36));
@@ -219,7 +217,7 @@ public class PredicatesTest extends TestUtil {
         return new SqlPredicate(sql).toString();
     }
 
-    class DummyEntry extends QueryEntry {
+    private class DummyEntry extends QueryEntry {
 
         DummyEntry(Comparable attribute) {
             super(null, toData("1"), "1", attribute);
@@ -236,7 +234,7 @@ public class PredicatesTest extends TestUtil {
         }
     }
 
-    static Map.Entry createEntry(final Object key, final Object value) {
+    private static Map.Entry createEntry(final Object key, final Object value) {
         return new QueryEntry(null, toData(key), key, value);
     }
 }

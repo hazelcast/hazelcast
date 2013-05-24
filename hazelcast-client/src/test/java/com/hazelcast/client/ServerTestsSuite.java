@@ -19,8 +19,9 @@ package com.hazelcast.client;
 
 import com.hazelcast.concurrent.atomiclong.AtomicLongTest;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchTest;
-import com.hazelcast.instance.StaticNodeFactory;
+import com.hazelcast.test.StaticNodeFactory;
 import com.hazelcast.test.annotation.ClientCompatible;
+import org.junit.Ignore;
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Request;
 import org.junit.runner.Result;
@@ -31,6 +32,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
+@Ignore("not a JUnit test")
 public class ServerTestsSuite {
 
     public static void main(String[] args) throws Exception {

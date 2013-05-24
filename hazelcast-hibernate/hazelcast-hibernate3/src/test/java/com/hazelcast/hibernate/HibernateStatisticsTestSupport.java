@@ -35,7 +35,7 @@ import java.util.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-public abstract class HibernateStatisticsTestSupport extends HibernateTestSupport {
+abstract class HibernateStatisticsTestSupport extends HibernateTestSupport {
 
     protected SessionFactory sf;
     protected Statistics stats;

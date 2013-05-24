@@ -19,7 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.StaticNodeFactory;
+import com.hazelcast.test.StaticNodeFactory;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import org.junit.After;
 import org.junit.AfterClass;

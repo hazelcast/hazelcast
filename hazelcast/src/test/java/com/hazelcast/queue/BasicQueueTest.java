@@ -18,12 +18,11 @@ package com.hazelcast.queue;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
-import com.hazelcast.instance.StaticNodeFactory;
+import com.hazelcast.test.StaticNodeFactory;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -43,11 +42,6 @@ import static org.junit.Assert.*;
 @RunWith(RandomBlockJUnit4ClassRunner.class)
 public class BasicQueueTest {
 
-    @BeforeClass
-    public static void init() {
-//        System.setProperty("hazelcast.test.use.network","true");
-    }
-
     @Before
     @After
     public void cleanup() {
@@ -55,38 +49,37 @@ public class BasicQueueTest {
     }
 
     @Test
-    public void testQueueStats(){
+    public void testQueueStats() {
         StaticNodeFactory factory = new StaticNodeFactory(2);
-
         Config config = new Config();
         final String name = "t_queue";
+
         HazelcastInstance ins1 = factory.newHazelcastInstance(config);
-        IQueue q = ins1.getQueue(name);
-        for (int i=0; i<2; i++){
-            q.offer("item"+i);
+        final int items = 20;
+        IQueue q1 = ins1.getQueue(name);
+        for (int i = 0; i < items / 2; i++) {
+            q1.offer("item" + i);
         }
+
         HazelcastInstance ins2 = factory.newHazelcastInstance(config);
-        for (int i=0; i<2; i++){
-            q.offer("item"+i);
-        }
-//        HazelcastInstance ins3 = Hazelcast.newHazelcastInstance(config);
-//        for (int i=0; i<100; i++){
-//            q.offer("item"+i);
-//        }
-
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        IQueue q2 = ins2.getQueue(name);
+        for (int i = 0; i < items / 2; i++) {
+            q2.offer("item" + i);
         }
 
-        LocalQueueStats stats = ins1.getQueue(name).getLocalQueueStats();
-        System.err.println("owned : " + stats.getOwnedItemCount() + " back: " + stats.getBackupItemCount());
-        stats = ins2.getQueue(name).getLocalQueueStats();
-        System.err.println("owned : " + stats.getOwnedItemCount() + " back: " + stats.getBackupItemCount());
-//        stats = ins3.getQueue(name).getLocalQueueStats();
-//        System.err.println("owned : " + stats.getOwnedItemCount() + " back: " + stats.getBackupItemCount());
+        LocalQueueStats stats1 = ins1.getQueue(name).getLocalQueueStats();
+        LocalQueueStats stats2 = ins2.getQueue(name).getLocalQueueStats();
 
+        assertTrue(stats1.getOwnedItemCount() == items || stats2.getOwnedItemCount() == items);
+        assertFalse(stats1.getOwnedItemCount() == items && stats2.getOwnedItemCount() == items);
+
+        if (stats1.getOwnedItemCount() == items) {
+            assertEquals(items, stats2.getBackupItemCount());
+            assertEquals(0, stats1.getBackupItemCount());
+        } else {
+            assertEquals(items, stats1.getBackupItemCount());
+            assertEquals(0, stats2.getBackupItemCount());
+        }
     }
 
     @Test
@@ -260,7 +253,7 @@ public class BasicQueueTest {
     }
 
     @Test
-    public void testAddRemoveRetainAll(){
+    public void testAddRemoveRetainAll() {
         final String name = "defQueue";
         Config config = new Config();
         final int count = 100;
@@ -317,19 +310,17 @@ public class BasicQueueTest {
             int poll;
 
             public void itemAdded(ItemEvent item) {
-                if(item.getItem().equals("item"+offer++)){
+                if (item.getItem().equals("item" + offer++)) {
                     latch.countDown();
-                }
-                else {
+                } else {
                     notCalled.set(false);
                 }
             }
 
             public void itemRemoved(ItemEvent item) {
-                if(item.getItem().equals("item"+poll++)){
+                if (item.getItem().equals("item" + poll++)) {
                     latch.countDown();
-                }
-                else {
+                } else {
                     notCalled.set(false);
                 }
             }
@@ -346,7 +337,7 @@ public class BasicQueueTest {
         q.removeItemListener(id);
         getQueue(instances, name).offer("item-a");
         getQueue(instances, name).poll();
-        Thread.sleep(2*1000);
+        Thread.sleep(2 * 1000);
         assertTrue(notCalled.get());
     }
 

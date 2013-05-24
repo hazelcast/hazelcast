@@ -30,11 +30,6 @@ public class MaxSizeConfig implements DataSerializable {
         PER_NODE, PER_PARTITION, USED_HEAP_PERCENTAGE, USED_HEAP_SIZE
     }
 
-    public static void main(String[] args) {
-        System.out.println(MaxSizePolicy.PER_NODE.name());
-
-    }
-
     public void readData(ObjectDataInput in) throws IOException {
         size = in.readInt();
         maxSizePolicy = MaxSizePolicy.valueOf(in.readUTF());

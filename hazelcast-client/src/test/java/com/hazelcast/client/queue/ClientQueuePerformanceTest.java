@@ -1,9 +1,10 @@
-package com.hazelcast.queue;
+package com.hazelcast.client.queue;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
+import org.junit.Ignore;
 
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
@@ -11,6 +12,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * @ali 5/21/13
  */
+@Ignore("not a JUnit test")
 public class ClientQueuePerformanceTest {
 
     static final AtomicLong totalOffer = new AtomicLong();

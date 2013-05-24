@@ -22,7 +22,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
 import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.StaticNodeFactory;
+import com.hazelcast.test.StaticNodeFactory;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import org.junit.After;
 import org.junit.BeforeClass;

@@ -19,7 +19,7 @@ package com.hazelcast.topic;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.*;
-import com.hazelcast.instance.StaticNodeFactory;
+import com.hazelcast.test.StaticNodeFactory;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import junit.framework.Assert;

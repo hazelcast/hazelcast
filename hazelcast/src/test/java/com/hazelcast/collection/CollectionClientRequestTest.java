@@ -12,6 +12,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.spi.impl.PortableCollection;
+import com.hazelcast.spi.impl.PortableEntryEvent;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -26,7 +27,6 @@ import static org.junit.Assert.*;
  */
 @RunWith(RandomBlockJUnit4ClassRunner.class)
 public class CollectionClientRequestTest extends ClientTestSupport {
-
 
     static final String name = "test";
     static final CollectionProxyId mmProxyId = new CollectionProxyId(name, null, CollectionProxyType.MULTI_MAP);
@@ -465,8 +465,9 @@ public class CollectionClientRequestTest extends ClientTestSupport {
 
         getMultiMap().put("key1", "value1");
 
-        String result = (String) client.receive();
-        assertTrue(result.contains("value1"));
+        PortableEntryEvent result = (PortableEntryEvent) client.receive();
+        assertEquals("key1", ss.toObject(result.getKey()));
+        assertEquals("value1", ss.toObject(result.getValue()));
     }
 
     @Test
@@ -477,11 +478,11 @@ public class CollectionClientRequestTest extends ClientTestSupport {
 
         final MultiMap<Object, Object> multiMap = getMultiMap();
         multiMap.put("key1", "value1");
-
         multiMap.put("key2", "value8");
-        String result = (String) client.receive();
-        assertFalse(result.contains("value1"));
-        assertTrue(result.contains("value8"));
+
+        PortableEntryEvent result = (PortableEntryEvent) client.receive();
+        assertEquals("key2", ss.toObject(result.getKey()));
+        assertEquals("value8", ss.toObject(result.getValue()));
     }
 
     private MultiMap<Object, Object> getMultiMap() {

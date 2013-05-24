@@ -166,10 +166,10 @@
                 <version>${maven.surefire.plugin.version}</version>
                 <configuration>
                     <!-- 1C means 1 process per cpu core -->
-                    <forkCount>4C</forkCount>
+                    <forkCount>2C</forkCount>
                     <reuseForks>true</reuseForks>
 
-                    <!-- not using in-JVM parallelism atm, may lead to concurrency issues! -->
+                    <!-- not using in-JVM parallelism atm, see usages of Hazelcast.shutdownAll() ! -->
                     <!--<threadCount>4</threadCount>-->
                     <!--<perCoreThreadCount>true</perCoreThreadCount>-->
                     <!--<parallel>methods</parallel>-->

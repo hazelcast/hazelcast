@@ -19,7 +19,7 @@ package com.hazelcast.concurrent.semaphore;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ISemaphore;
-import com.hazelcast.instance.StaticNodeFactory;
+import com.hazelcast.test.StaticNodeFactory;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import org.junit.Assert;
 import org.junit.Test;

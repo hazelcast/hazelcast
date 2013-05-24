@@ -541,7 +541,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 sendRequest = true;
             }
             if (target.equals(nodeEngine.getThisAddress())) {
-                System.err.println("partitionInfo = " + partitionInfo);
+                throw new IllegalStateException("Replica target cannot be this node -> " + partitionInfo);
             }
             if (sendRequest) {
                 final Level level = force ? Level.FINEST : Level.INFO;

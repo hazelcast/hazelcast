@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.instance;
+package com.hazelcast.test;
 
 import com.hazelcast.client.*;
 import com.hazelcast.client.MockSimpleClient;
@@ -23,11 +23,13 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.*;
 import com.hazelcast.nio.Address;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -69,17 +71,26 @@ public final class StaticNodeFactory {
         return USE_CLIENT ? newHazelcastClient() : HazelcastInstanceFactory.newHazelcastInstance(config);
     }
 
+    public void shutdownAll() {
+        if (MOCK_NETWORK) {
+            nodeIndex.set(Integer.MAX_VALUE);
+            registry.shutdown();
+        } else {
+            Hazelcast.shutdownAll();
+        }
+    }
+
     public static SimpleClient newClient(Address nodeAddress) throws IOException {
         Set<HazelcastInstance> instances = Hazelcast.getAllHazelcastInstances();
-        for (HazelcastInstance p : instances) {
-            HazelcastInstanceImpl hz = ((HazelcastInstanceProxy) p).original;
+        for (HazelcastInstance hz : instances) {
+            Node node = TestUtil.getNode(hz);
             MemberImpl m = (MemberImpl) hz.getCluster().getLocalMember();
             if (m.getAddress().equals(nodeAddress)) {
                 if (MOCK_NETWORK) {
-                    ClientEngineImpl engine = hz.node.clientEngine;
+                    ClientEngineImpl engine = node.clientEngine;
                     return new MockSimpleClient(engine);
                 } else {
-                    return new SocketSimpleClient(hz);
+                    return new SocketSimpleClient(node);
                 }
             }
         }
@@ -137,5 +148,14 @@ public final class StaticNodeFactory {
         config.setProperty(GroupProperties.PROP_GRACEFUL_SHUTDOWN_MAX_WAIT, "10");
         config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
         return config;
+    }
+
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("StaticNodeFactory{");
+        sb.append("addresses=").append(Arrays.toString(addresses));
+        sb.append('}');
+        return sb.toString();
     }
 }

@@ -14,19 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast;
+package com.hazelcast.client;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.instance.GroupProperties;
+import org.junit.Ignore;
 
 import java.util.concurrent.CountDownLatch;
 
 /**
  * @ali 5/21/13
  */
+@Ignore("not a JUnit test")
 public class ClientConnectionTest {
 
     static {

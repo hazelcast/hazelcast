@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast;
+package com.hazelcast.client;
 
-import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import org.junit.Ignore;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
 
+@Ignore("not a JUnit test")
 public class SimpleMapTestFromClient {
 
     public static int THREAD_COUNT = 40;

@@ -3,7 +3,7 @@ package com.hazelcast.client;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.StaticNodeFactory;
+import com.hazelcast.test.StaticNodeFactory;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;

@@ -16,6 +16,8 @@
 
 package com.hazelcast.test;
 
+import org.junit.Ignore;
+
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -24,6 +26,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+@Ignore("not a JUnit test")
 public class Parallel {
 
     static final SimpleDateFormat format = new SimpleDateFormat("dd HH:mm:ss");

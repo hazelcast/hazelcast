@@ -19,9 +19,10 @@ package com.hazelcast.queue;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.StaticNodeFactory;
+import com.hazelcast.test.StaticNodeFactory;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import org.junit.After;
 import org.junit.BeforeClass;
@@ -86,6 +87,7 @@ public class ClusterQueueTest {
             public void run() {
                 try {
                     q2.take();
+                } catch (HazelcastInstanceNotActiveException ignored) {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -95,7 +97,7 @@ public class ClusterQueueTest {
         new Thread(new Runnable() {
             public void run() {
                 try {
-                    Thread.sleep(2000);
+                    Thread.sleep(3000);
                     h2.getLifecycleService().kill();
                     shutdownLatch.countDown();
                 } catch (InterruptedException e) {

@@ -21,7 +21,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICountDownLatch;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.instance.StaticNodeFactory;
+import com.hazelcast.test.StaticNodeFactory;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.test.annotation.ClientCompatible;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;

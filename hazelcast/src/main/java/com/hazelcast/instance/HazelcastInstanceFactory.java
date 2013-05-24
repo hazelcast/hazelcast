@@ -35,7 +35,7 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
 
 @SuppressWarnings("SynchronizationOnStaticField")
 @PrivateApi
-public class HazelcastInstanceFactory {
+public final class HazelcastInstanceFactory {
 
     private static final ConcurrentMap<String, HazelcastInstanceProxy> INSTANCE_MAP
             = new ConcurrentHashMap<String, HazelcastInstanceProxy>(5);

@@ -18,12 +18,15 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.*;
-import com.hazelcast.instance.StaticNodeFactory;
-import com.hazelcast.map.EntryBackupProcessor;
-import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+import com.hazelcast.test.StaticNodeFactory;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
-import org.junit.*;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.Map;
@@ -61,7 +64,6 @@ public class EntryProcessorTest {
         instance1.getLifecycleService().shutdown();
         instance2.getLifecycleService().shutdown();
     }
-
 
     @Test
     public void testMapEntryProcessorAllKeys() throws InterruptedException {
@@ -112,8 +114,6 @@ public class EntryProcessorTest {
         for (int i = 0; i < size; i++) {
             assertEquals(map2.get(i), (Object) (i+1));
         }
-        instance2.getLifecycleService().shutdown();
-        instance3.getLifecycleService().shutdown();
     }
 
     @Test

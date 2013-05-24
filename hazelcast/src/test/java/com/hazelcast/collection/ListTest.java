@@ -18,7 +18,7 @@ package com.hazelcast.collection;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
-import com.hazelcast.instance.StaticNodeFactory;
+import com.hazelcast.test.StaticNodeFactory;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import com.hazelcast.test.annotation.ClientCompatible;
 import org.junit.After;

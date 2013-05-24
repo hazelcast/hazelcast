@@ -1,10 +1,13 @@
-package com.hazelcast.map;
+package com.hazelcast.client.map;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
-import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
+import com.hazelcast.test.annotation.NetworkRelated;
 import org.junit.*;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -17,11 +20,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 
 /**
  * @ali 5/22/13
  */
+
+@RunWith(RandomBlockJUnit4ClassRunner.class)
+@Category(NetworkRelated.class)
 public class ClientMapTest {
 
     static final String name = "test";
@@ -435,16 +440,6 @@ public class ClientMapTest {
         for (int i=0; i<10; i++){
             map.put("key" + i, "value" + i);
         }
-    }
-
-    static {
-        System.setProperty("hazelcast.version.check.enabled", "false");
-        System.setProperty("hazelcast.socket.bind.any", "false");
-        System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
-        System.setProperty("java.net.preferIPv4Stack", "true");
-        System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
-//        System.setProperty("java.net.preferIPv6Addresses", "true");
-//        System.setProperty("hazelcast.prefer.ipv4.stack", "false");
     }
 
 }

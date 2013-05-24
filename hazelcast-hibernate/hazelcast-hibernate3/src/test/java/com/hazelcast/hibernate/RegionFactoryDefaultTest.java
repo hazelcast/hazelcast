@@ -18,17 +18,20 @@ package com.hazelcast.hibernate;
 
 import com.hazelcast.hibernate.entity.DummyEntity;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
+import com.hazelcast.test.annotation.NetworkRelated;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.cfg.Environment;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Date;
 import java.util.Properties;
 
 @RunWith(RandomBlockJUnit4ClassRunner.class)
+@Category(NetworkRelated.class)
 public class RegionFactoryDefaultTest extends HibernateStatisticsTestSupport {
 
     protected Properties getCacheProperties() {

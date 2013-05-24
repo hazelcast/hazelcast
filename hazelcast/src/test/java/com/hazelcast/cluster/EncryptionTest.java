@@ -41,7 +41,7 @@ public class EncryptionTest {
     /**
      * Simple symmetric encryption test.
      */
-    @Ignore
+    @Ignore("TODO: fix test!")
     @Test(timeout = 160000)
     public void testSymmetricEncryption() throws Exception {
         Config config = new Config();

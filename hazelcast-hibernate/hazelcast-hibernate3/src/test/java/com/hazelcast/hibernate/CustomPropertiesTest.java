@@ -26,12 +26,14 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.hibernate.entity.DummyEntity;
 import com.hazelcast.hibernate.instance.HazelcastAccessor;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
+import com.hazelcast.test.annotation.NetworkRelated;
 import org.hibernate.*;
 import org.hibernate.cache.CacheException;
 import org.hibernate.cache.CacheKey;
 import org.hibernate.cfg.Environment;
 import org.hibernate.engine.SessionFactoryImplementor;
 import org.junit.*;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Date;
@@ -40,6 +42,7 @@ import java.util.Properties;
 import static org.junit.Assert.*;
 
 @RunWith(RandomBlockJUnit4ClassRunner.class)
+@Category(NetworkRelated.class)
 public class CustomPropertiesTest extends HibernateTestSupport {
 
     @Test
