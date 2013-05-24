@@ -22,6 +22,7 @@ import com.hazelcast.client.proxy.*;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionProxyType;
 import com.hazelcast.collection.CollectionService;
+import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.map.MapService;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.DefaultObjectNamespace;
@@ -74,7 +75,11 @@ public final class ProxyManager {
                 return null;
             }
         });
-
+        register(SemaphoreService.SERVICE_NAME, new ClientProxyFactory() {
+            public ClientProxy create(Object id) {
+                return new ClientSemaphoreProxy(SemaphoreService.SERVICE_NAME, String.valueOf(id));
+            }
+        });
 
 
         for (Map.Entry<String, ClientProxyFactory> entry : config.getFactories().entrySet()) {
