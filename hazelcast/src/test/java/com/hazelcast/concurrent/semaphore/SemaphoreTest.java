@@ -204,7 +204,6 @@ public class SemaphoreTest extends ParallelTestSupport {
 
     @Test
     public void testSemaphoreWithFailuresAndJoin() {
-
         final Config config = new Config();
         final StaticNodeFactory staticNodeFactory = createNodeFactory(3);
 
@@ -212,8 +211,9 @@ public class SemaphoreTest extends ParallelTestSupport {
         final HazelcastInstance instance2 = staticNodeFactory.newHazelcastInstance(config);
         final ISemaphore semaphore = instance1.getSemaphore("test");
         final CountDownLatch countDownLatch = new CountDownLatch(1);
-        semaphore.init(0);
-        new Thread() {
+        Assert.assertTrue(semaphore.init(0));
+
+        final Thread thread = new Thread() {
             public void run() {
                 for (int i = 0; i < 2; i++) {
                     try {
@@ -224,7 +224,8 @@ public class SemaphoreTest extends ParallelTestSupport {
                 }
                 countDownLatch.countDown();
             }
-        }.start();
+        };
+        thread.start();
 
         instance2.getLifecycleService().shutdown();
         semaphore.release();
@@ -233,10 +234,11 @@ public class SemaphoreTest extends ParallelTestSupport {
         ISemaphore semaphore1 = instance3.getSemaphore("test");
         semaphore1.release();
         try {
-            countDownLatch.await(2, TimeUnit.SECONDS);
+            Assert.assertTrue(countDownLatch.await(15, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
-            Assert.assertTrue("FAIL", true);
             e.printStackTrace();
+        } finally {
+            thread.interrupt();
         }
     }
 }
