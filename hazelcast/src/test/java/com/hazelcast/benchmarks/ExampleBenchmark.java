@@ -15,7 +15,7 @@ import org.junit.rules.TestRule;
 
 @AxisRange(min = 0, max = 1)
 @BenchmarkMethodChart(filePrefix = "benchmark-map")
-@BenchmarkHistoryChart(filePrefix = "bechmark-map-history", labelWith = LabelType.CUSTOM_KEY, maxRuns = 20)
+@BenchmarkHistoryChart(filePrefix = "benchmark-map-history", labelWith = LabelType.CUSTOM_KEY, maxRuns = 20)
 public class ExampleBenchmark {
     @Rule
     public TestRule benchmarkRun = new BenchmarkRule();
