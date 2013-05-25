@@ -239,8 +239,8 @@
                                 <jub.consumers>CONSOLE,H2</jub.consumers>
                                 <jub.db.file>/data/benchmarks/benchmarks</jub.db.file>
                                 <jub.charts.dir>/usr/share/tomcat7/webapps/benchmarks</jub.charts.dir>
-                                <jub.rounds.warmup>1</jub.rounds.warmup>
-                                <jub.rounds.benchmark>5</jub.rounds.benchmark>
+                                <jub.rounds.warmup>2</jub.rounds.warmup>
+                                <jub.rounds.benchmark>10</jub.rounds.benchmark>
                                 <hazelcast.version.check.enabled>false</hazelcast.version.check.enabled>
                                 <hazelcast.mancenter.enabled>false</hazelcast.mancenter.enabled>
                                 <hazelcast.logging.type>none</hazelcast.logging.type>
