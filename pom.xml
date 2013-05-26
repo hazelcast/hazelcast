@@ -252,6 +252,15 @@
                     </plugin>
                 </plugins>
             </build>
+            <modules>
+                <module>hazelcast</module>
+                <module>hazelcast-client</module>
+                <module>hazelcast-hibernate</module>
+                <module>hazelcast-wm</module>
+                <module>hazelcast-spring</module>
+                <module>hazelcast-all</module>
+                <module>hazelcast-cloud</module>
+            </modules>
         </profile>
     </profiles>
 
