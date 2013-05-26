@@ -16,7 +16,7 @@ import org.junit.rules.TestRule;
 @AxisRange(min = 0, max = 1)
 @BenchmarkMethodChart(filePrefix = "benchmark-map")
 @BenchmarkHistoryChart(filePrefix = "benchmark-map-history", labelWith = LabelType.CUSTOM_KEY, maxRuns = 20)
-public class ExampleBenchmark {
+public class MapBenchmark {
     @Rule
     public TestRule benchmarkRun = new BenchmarkRule();
 
@@ -43,7 +43,6 @@ public class ExampleBenchmark {
         Hazelcast.shutdownAll();
     }
 
-    @BenchmarkOptions
     @Test
     public void get() throws Exception {
         for(int k=0;k<100000;k++){
@@ -51,7 +50,6 @@ public class ExampleBenchmark {
         }
     }
 
-    @BenchmarkOptions
     @Test
     public void set() throws Exception {
         for(int k=0;k<100000;k++){
