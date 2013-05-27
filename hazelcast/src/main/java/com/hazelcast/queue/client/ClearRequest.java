@@ -16,6 +16,7 @@
 
 package com.hazelcast.queue.client;
 
+import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.queue.ClearOperation;
 import com.hazelcast.queue.QueuePortableHook;
 import com.hazelcast.spi.Operation;
@@ -23,7 +24,7 @@ import com.hazelcast.spi.Operation;
 /**
  * @ali 5/8/13
  */
-public class ClearRequest extends QueueRequest {
+public class ClearRequest extends QueueRequest implements RetryableRequest {
 
     public ClearRequest() {
     }

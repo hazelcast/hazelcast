@@ -16,10 +16,7 @@
 
 package com.hazelcast.client.spi.impl;
 
-import com.hazelcast.client.AuthenticationRequest;
-import com.hazelcast.client.ClientPrincipal;
-import com.hazelcast.client.GenericError;
-import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.*;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.connection.Authenticator;
 import com.hazelcast.client.connection.ClientConnectionManager;
@@ -42,6 +39,7 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -127,11 +125,13 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             final Data response = conn.read();
             return (T) serializationService.toObject(response);
         } catch (IOException e){
-            return sendAndReceive(obj);
-        } catch (Exception e){
-            e.printStackTrace();
+            if (client.getClientConfig().isRedoOperation()
+                    || obj instanceof RetryableRequest){
+                return sendAndReceive(obj);
+            } else {
+                throw ExceptionUtil.rethrow(e);
+            }
         }
-        return null;
     }
 
     private SerializationService getSerializationService() {
@@ -166,9 +166,12 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 stream.end();
             }
         } catch (IOException e){
-            sendAndHandle(obj, handler);
-        }  catch (Exception e){
-            e.printStackTrace();
+            if (client.getClientConfig().isRedoOperation()
+                    || obj instanceof RetryableRequest){
+                sendAndHandle(obj, handler);
+            } else {
+                throw ExceptionUtil.rethrow(e);
+            }
         }
     }
 

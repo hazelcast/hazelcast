@@ -1,6 +1,7 @@
 package com.hazelcast.queue.client;
 
 import com.hazelcast.client.CallableClientRequest;
+import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
@@ -13,7 +14,7 @@ import java.io.IOException;
 /**
  * @ali 5/23/13
  */
-public class RemainingCapacityRequest extends CallableClientRequest implements Portable {
+public class RemainingCapacityRequest extends CallableClientRequest implements Portable, RetryableRequest {
 
     protected String name;
 

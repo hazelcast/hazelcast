@@ -17,6 +17,7 @@
 package com.hazelcast.queue.client;
 
 import com.hazelcast.client.CallableClientRequest;
+import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
@@ -28,7 +29,7 @@ import java.io.IOException;
 /**
  * @ali 5/24/13
  */
-public class QueueDestroyRequest extends CallableClientRequest implements Portable {
+public class QueueDestroyRequest extends CallableClientRequest implements Portable, RetryableRequest {
 
     private String name;
 

@@ -16,6 +16,7 @@
 
 package com.hazelcast.queue.client;
 
+import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -32,7 +33,7 @@ import java.util.Collection;
 /**
  * @ali 5/8/13
  */
-public class ContainsRequest extends QueueRequest {
+public class ContainsRequest extends QueueRequest implements RetryableRequest {
 
     Collection<Data> dataList;
 

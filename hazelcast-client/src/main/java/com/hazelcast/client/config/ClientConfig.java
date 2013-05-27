@@ -58,7 +58,7 @@ public class ClientConfig {
      * Note that it uses a cached version of {@link com.hazelcast.core.PartitionService#getPartitions()} and doesn't
      * guarantee that the operation will always be executed on the owner. The cached table is updated every second.
      */
-    private boolean smart = true;
+    private boolean smart = false;
 
     /**
      * If true, client will redo the operations that were executing on the server and client lost the connection.
@@ -68,7 +68,7 @@ public class ClientConfig {
      * <p/>
      * If false, the operation will throw {@link RuntimeException} that is wrapping {@link java.io.IOException}.
      */
-    private boolean redoOperation = true;
+    private boolean redoOperation = false;
 
     /**
      * limit for the Pool size that is used to pool the connections to the members.
