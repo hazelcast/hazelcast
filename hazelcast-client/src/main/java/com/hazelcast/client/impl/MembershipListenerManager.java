@@ -19,11 +19,13 @@ package com.hazelcast.client.impl;
 import com.hazelcast.client.ClientConfig;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.Packet;
+import com.hazelcast.core.InitialMembershipListener;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.hazelcast.client.IOUtil.toObject;
@@ -46,6 +48,9 @@ public class MembershipListenerManager {
     }
 
     public void registerListener(MembershipListener listener) {
+        if(listener instanceof InitialMembershipListener){
+            throw new IllegalArgumentException("Can't register an InitialMembershipListener on the client.");
+        }
         this.memberShipListeners.add(listener);
     }
 
@@ -61,7 +66,7 @@ public class MembershipListenerManager {
         if (memberShipListeners.size() > 0) {
             Member member = (Member) toObject(packet.getKey());
             Integer type = (Integer) toObject(packet.getValue());
-            MembershipEvent event = new MembershipEvent(client.getCluster(), member, type);
+            MembershipEvent event = new MembershipEvent(client.getCluster(), member, type, null);
             if (type.equals(MembershipEvent.MEMBER_ADDED)) {
                 for (MembershipListener membershipListener : memberShipListeners) {
                     membershipListener.memberAdded(event);

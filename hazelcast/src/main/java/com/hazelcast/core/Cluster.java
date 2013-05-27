@@ -26,12 +26,19 @@ public interface Cluster {
     /**
      * Adds MembershipListener to listen for membership updates.
      *
+     * If the MembershipListener already is registered, the call is ignored.
+     *
+     * If the MembershipListener implements the {@link InitialMembershipListener} interface, it will also receive
+     * the {@link InitialMembershipEvent}.
+     *
      * @param listener membership listener
      */
     void addMembershipListener(MembershipListener listener);
 
     /**
      * Removes the specified membership listener.
+     *
+     * If the MembershipListener is not registered, the call is ignored.
      *
      * @param listener membership listener to remove
      */
