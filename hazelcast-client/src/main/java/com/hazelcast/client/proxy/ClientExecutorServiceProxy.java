@@ -20,7 +20,9 @@ import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.core.*;
 import com.hazelcast.executor.RunnableAdapter;
+import com.hazelcast.executor.client.IsShutdownRequest;
 import com.hazelcast.executor.client.LocalTargetCallableRequest;
+import com.hazelcast.executor.client.ShutdownRequest;
 import com.hazelcast.executor.client.TargetCallableRequest;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.monitor.LocalExecutorStats;
@@ -205,19 +207,30 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     }
 
     public void shutdown() {
-
+        final Collection<MemberImpl> memberList = getContext().getClusterService().getMemberList();
+        for (MemberImpl member : memberList) {
+            ShutdownRequest request = new ShutdownRequest(name, member.getAddress());
+            invoke(request, member.getAddress());
+        }
     }
 
     public List<Runnable> shutdownNow() {
-        return null;
+        shutdown();
+        return Collections.emptyList();
     }
 
     public boolean isShutdown() {
-        return false;
+        try {
+            final IsShutdownRequest request = new IsShutdownRequest(name);
+            Boolean result = invoke(request);
+            return result;
+        } catch (HazelcastInstanceNotActiveException e) {
+            return true;
+        }
     }
 
     public boolean isTerminated() {
-        return false;
+        return isShutdown();
     }
 
     public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
@@ -226,28 +239,42 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
 
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
-        return null;
+        final List<Future<T>> futures = new ArrayList<Future<T>>(tasks.size());
+        final List<Future<T>> result = new ArrayList<Future<T>>(tasks.size());
+        for (Callable<T> task : tasks) {
+            futures.add(submit(task));
+        }
+        for (Future<T> future : futures) {
+            Object value;
+            try {
+                value = future.get();
+            } catch (ExecutionException e) {
+                value = e;
+            }
+            result.add(new CompletedFuture<T>(getContext().getSerializationService(), value));
+        }
+        return result;
     }
 
     public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
 
     protected void onDestroy() {
-
+        shutdown();
     }
 
     public String getName() {
-        return null;
+        return name;
     }
 
     private Data getTaskPartitionKey(Object task) {
