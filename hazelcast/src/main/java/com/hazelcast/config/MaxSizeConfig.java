@@ -45,7 +45,7 @@ public class MaxSizeConfig implements DataSerializable {
     }
 
     public MaxSizeConfig setSize(int size) {
-        if (size == 0) {
+        if (size <= 0) {
             size = Integer.MAX_VALUE;
         }
         this.size = size;
@@ -56,7 +56,6 @@ public class MaxSizeConfig implements DataSerializable {
         return maxSizePolicy;
     }
 
-    // todo make policy enum
     public MaxSizeConfig setMaxSizePolicy(MaxSizePolicy maxSizePolicy) {
         this.maxSizePolicy = maxSizePolicy;
         return this;

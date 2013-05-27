@@ -16,6 +16,7 @@
 
 package com.hazelcast.spring.context;
 
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
@@ -31,8 +32,10 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
 
 import javax.annotation.Resource;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @mdogan 4/6/12
@@ -102,8 +105,17 @@ public class TestManagedContext {
 
     @Test
     public void testTransactionalRunnableTask() throws ExecutionException, InterruptedException {
-        Future<?> future = instance1.getExecutorService("test").submit(new SomeTransactionalRunnableTask());
-        future.get();
+        final CountDownLatch latch = new CountDownLatch(1);
+        instance1.getExecutorService("test").submitToMember(new SomeTransactionalRunnableTask(),
+                instance2.getCluster().getLocalMember(), new ExecutionCallback() {
+            public void onResponse(Object response) {
+                latch.countDown();
+            }
+
+            public void onFailure(Throwable t) {
+            }
+        });
+        latch.await(1, TimeUnit.MINUTES);
         Assert.assertTrue("transaction manager could not proxy the submitted task.",
                 transactionManager.isCommitted());
     }

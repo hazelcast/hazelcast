@@ -79,11 +79,9 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                     } else if ("smart".equals(name)) {
                         configBuilder.addPropertyValue("smart", value);
                     } else if ("connect-attempt-limit".equals(name)) {
-                        configBuilder.addPropertyValue("initialConnectionAttemptLimit", value);
+                        configBuilder.addPropertyValue("connectionAttemptLimit", value);
                     } else if ("connect-timeout".equals(name)) {
                         configBuilder.addPropertyValue("connectionTimeout", value);
-                    } else if ("reconnect-attempt-limit".equals(name)) {
-                        configBuilder.addPropertyValue("reconnectionAttemptLimit", value);
                     } else if ("attempt-period".equals(name)) {
                         configBuilder.addPropertyValue("attemptPeriod", value);
                     } else if ("credentials-ref".equals(name)) {

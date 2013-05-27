@@ -113,10 +113,6 @@ public class ConfigXmlGenerator {
         for (String m : members) {
             xml.append("<member>").append(m).append("</member>");
         }
-//        final List<Address> addresses = tcpCfg.getAddresses();
-//        for (Address a : addresses) {
-//            xml.append("<address>").append(a.getHost()).append(":").append(a.getPort()).append("</address>");
-//        }
         if (tcpCfg.getRequiredMember() != null) {
             xml.append("<required-member>").append(tcpCfg.getRequiredMember()).append("</required-member>");
         }
@@ -167,12 +163,18 @@ public class ConfigXmlGenerator {
         }
         xml.append("</symmetric-encryption>");
         xml.append("</network>");
+
+        final PartitionGroupConfig pg = config.getPartitionGroupConfig();
+        if (pg != null && pg.getGroupType() != null) {
+            xml.append("<partition-group enabled=\"").append(pg.isEnabled())
+                    .append("\" group-type=\"").append(pg.getGroupType()).append("\" />");
+        }
+
         final Collection<ExecutorConfig> exCfgs = config.getExecutorConfigs();
         for (ExecutorConfig ex : exCfgs) {
             xml.append("<executor-service name=\"").append(ex.getName()).append("\">");
-//            xml.append("<core-pool-size>").append(ex.getCorePoolSize()).append("</core-pool-size>");
-            xml.append("<max-pool-size>").append(ex.getPoolSize()).append("</max-pool-size>");
-//            xml.append("<keep-alive-seconds>").append(ex.getKeepAliveSeconds()).append("</keep-alive-seconds>");
+            xml.append("<pool-size>").append(ex.getPoolSize()).append("</pool-size>");
+            xml.append("<queue-capacity>").append(ex.getQueueCapacity()).append("</queue-capacity>");
             xml.append("</executor-service>");
         }
         final Collection<QueueConfig> qCfgs = config.getQConfigs().values();

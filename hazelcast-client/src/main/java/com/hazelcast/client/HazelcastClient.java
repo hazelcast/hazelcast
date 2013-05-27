@@ -38,8 +38,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.executor.DistributedExecutorService;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -68,7 +66,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class HazelcastClient implements HazelcastInstance {
 
-    private final static ILogger logger = Logger.getLogger(HazelcastClient.class.getName());
     private final static AtomicInteger CLIENT_ID = new AtomicInteger();
     private final static ConcurrentMap<Integer, HazelcastClientProxy> CLIENTS = new ConcurrentHashMap<Integer, HazelcastClientProxy>(5);
 

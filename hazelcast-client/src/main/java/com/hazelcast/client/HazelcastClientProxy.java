@@ -16,6 +16,7 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.TerminatedLifecycleService;
@@ -159,6 +160,10 @@ public final class HazelcastClientProxy implements HazelcastInstance {
 
     public ConcurrentMap<String, Object> getUserContext() {
         return getClient().getUserContext();
+    }
+
+    public ClientConfig getClientConfig() {
+        return getClient().getClientConfig();
     }
 
     // to be able destroy instance bean from Spring

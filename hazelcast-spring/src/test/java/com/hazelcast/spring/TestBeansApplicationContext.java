@@ -46,7 +46,7 @@ public class TestBeansApplicationContext {
     private ApplicationContext context;
 
     @Test
-    public void testLazy() {
+    public void test() {
         Assert.assertTrue(Hazelcast.getAllHazelcastInstances().isEmpty());
         Assert.assertTrue(HazelcastClient.getAllHazelcastClients().isEmpty());
 
@@ -57,10 +57,7 @@ public class TestBeansApplicationContext {
 
         HazelcastInstance hazelcast = Hazelcast.getAllHazelcastInstances().iterator().next();
         Assert.assertEquals(2, hazelcast.getDistributedObjects().size());
-    }
 
-    @Test
-    public void testScope() {
         context.getBean("client");
         context.getBean("client");
         Assert.assertEquals(3, HazelcastClient.getAllHazelcastClients().size());

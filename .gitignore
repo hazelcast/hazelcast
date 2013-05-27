@@ -6,3 +6,4 @@ target/
 .patch
 *.iml
 .DS_Store
+reports/

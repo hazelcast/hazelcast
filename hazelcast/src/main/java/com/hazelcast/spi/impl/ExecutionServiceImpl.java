@@ -98,7 +98,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
             new ConstructorFunction<String, ExecutorService>() {
                 public ManagedExecutorService createNew(String name) {
                     final ExecutorConfig cfg = nodeEngine.getConfig().getExecutorConfig(name);
-                    final int queueCapacity = cfg.getQueueCapacity() == 0 ? Integer.MAX_VALUE : cfg.getQueueCapacity();
+                    final int queueCapacity = cfg.getQueueCapacity() <= 0 ? Integer.MAX_VALUE : cfg.getQueueCapacity();
                     return new ManagedExecutorService(name, cachedExecutorService, cfg.getPoolSize(), queueCapacity);
                 }
             };

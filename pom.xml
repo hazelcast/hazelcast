@@ -37,7 +37,6 @@
         <module>hazelcast-spring</module>
         <module>hazelcast-all</module>
         <module>hazelcast-cloud</module>
-        <module>hazelcast-documentation</module>
     </modules>
 
     <properties>
@@ -61,6 +60,8 @@
         <findbugs.maven.plugin.version>2.5.2</findbugs.maven.plugin.version>
 
         <junit.version>4.11</junit.version>
+        <junit-benchmarks.version>0.7.0</junit-benchmarks.version>
+        <h2.version>1.3.160</h2.version>
         <mockito.all.version>1.8.2</mockito.all.version>
         <log4j.version>1.2.12</log4j.version>
         <slf4j.api.version>1.6.0</slf4j.api.version>
@@ -199,10 +200,11 @@
                             </execution>
                         </executions>
                     </plugin>
-
-
                 </plugins>
             </build>
+            <modules>
+                <module>hazelcast-documentation</module>
+            </modules>
         </profile>
         <profile>
             <id>sonar</id>
@@ -216,12 +218,40 @@
                 <sonar.jdbc.driverClassName>com.mysql.jdbc.Driver</sonar.jdbc.driverClassName>
                 <sonar.jdbc.username>sonar</sonar.jdbc.username>
                 <sonar.jdbc.password>sonar</sonar.jdbc.password>
-
-                <!-- optional URL to server. Default value is http://localhost:9000 -->
                 <sonar.host.url>
                     http://ec2-54-242-163-124.compute-1.amazonaws.com:8080/sonar/
                 </sonar.host.url>
             </properties>
+        </profile>
+
+        <!-- use this profile if you only want to run the benchmarks-->
+        <profile>
+            <id>benchmark-jenkins</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${maven.surefire.plugin.version}</version>
+                        <configuration>
+                            <parallel>none</parallel>
+                            <systemPropertyVariables>
+                                <jub.consumers>CONSOLE,H2</jub.consumers>
+                                <jub.db.file>/data/benchmarks/benchmarks</jub.db.file>
+                                <jub.charts.dir>/usr/share/tomcat7/webapps/benchmarks</jub.charts.dir>
+                                <jub.rounds.warmup>2</jub.rounds.warmup>
+                                <jub.rounds.benchmark>10</jub.rounds.benchmark>
+                                <hazelcast.version.check.enabled>false</hazelcast.version.check.enabled>
+                                <hazelcast.mancenter.enabled>false</hazelcast.mancenter.enabled>
+                                <hazelcast.logging.type>none</hazelcast.logging.type>
+                            </systemPropertyVariables>
+                            <includes>
+                                <include>**/*Benchmark.java</include>
+                            </includes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
 

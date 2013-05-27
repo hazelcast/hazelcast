@@ -210,7 +210,6 @@
                     <xs:attribute name="group-password" type="xs:string" use="optional"/>
                     <xs:attribute name="connect-attempt-limit" type="xs:string" use="optional"/>
                     <xs:attribute name="connect-timeout" type="xs:string" use="optional"/>
-                    <xs:attribute name="reconnect-attempt-limit" type="xs:string" use="optional"/>
                     <xs:attribute name="attempt-period" type="xs:string" use="optional"/>
                     <xs:attribute name="credentials-ref" type="xs:string" use="optional"/>
                     <xs:attribute name="smart" type="xs:string" use="optional"/>

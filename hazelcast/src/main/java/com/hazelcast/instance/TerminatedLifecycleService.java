@@ -1,5 +1,6 @@
 package com.hazelcast.instance;
 
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
 
@@ -19,10 +20,10 @@ public final class TerminatedLifecycleService implements LifecycleService {
     }
 
     public String addLifecycleListener(LifecycleListener lifecycleListener) {
-        throw new UnsupportedOperationException();
+        throw new HazelcastInstanceNotActiveException();
     }
 
     public boolean removeLifecycleListener(String registrationId) {
-        throw new UnsupportedOperationException();
+        throw new HazelcastInstanceNotActiveException();
     }
 }
