@@ -22,10 +22,10 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.test.StaticNodeFactory;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
+import com.hazelcast.test.StaticNodeFactory;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -36,10 +36,12 @@ import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import static java.lang.Thread.sleep;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @Ignore("TODO: fix test!")
 @RunWith(RandomBlockJUnit4ClassRunner.class)
@@ -490,6 +492,7 @@ public class BackupTest {
                     try {
                         sleep(5);
                     } catch (InterruptedException ignored) {
+                        return;
                     }
                 }
                 TestUtil.getNode(hz).getConnectionManager().shutdown();
@@ -505,6 +508,7 @@ public class BackupTest {
                         try {
                             Thread.sleep(1);
                         } catch (InterruptedException ignored) {
+                            return;
                         }
                     }
                     latch.countDown();
@@ -512,9 +516,12 @@ public class BackupTest {
             });
         }
 
-        latch.await();
-        ex.shutdown();
-        assertEquals("Data lost!", size, map.size());
+        try {
+            assertTrue(latch.await(2, TimeUnit.MINUTES));
+            assertEquals("Data lost!", size, map.size());
+        } finally {
+            ex.shutdownNow();
+        }
     }
 
     @Test
@@ -559,6 +566,7 @@ public class BackupTest {
                     try {
                         sleep(5);
                     } catch (InterruptedException ignored) {
+                        return;
                     }
                 }
                 TestUtil.getNode(hz).getConnectionManager().shutdown();
@@ -583,8 +591,11 @@ public class BackupTest {
             });
         }
 
-        latch.await();
-        ex.shutdown();
-        assertEquals("Remove failed!", 0, map.size());
+        try {
+            assertTrue(latch.await(2, TimeUnit.MINUTES));
+            assertEquals("Remove failed!", 0, map.size());
+        } finally {
+            ex.shutdown();
+        }
     }
 }

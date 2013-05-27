@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.StringTokenizer;
 
 public class TcpIpConfig implements DataSerializable {
+
     private int connectionTimeoutSeconds = 5;
 
     private boolean enabled = false;

@@ -26,7 +26,7 @@ public class AwsConfig {
     private String tagKey;
     private String tagValue;
     private String hostHeader = "ec2.amazonaws.com";
-    private int connectionTimeoutSeconds;
+    private int connectionTimeoutSeconds = 5;
 
     public void setSecurityGroupName(String securityGroupName) {
         this.securityGroupName = securityGroupName;

@@ -173,7 +173,6 @@ public class QueryTest extends ParallelTestSupport {
     }
 
     @Test
-//    @Ignore("TODO: fix test!")
     public void testIteratorContract() {
         StaticNodeFactory nodeFactory = createNodeFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
@@ -247,7 +246,7 @@ public class QueryTest extends ParallelTestSupport {
     }
 
     @Test
-//    @Ignore("TODO: fix test!")
+    @Ignore("TODO: fix test!")
     public void testQueryWithTTL() throws Exception {
         StaticNodeFactory nodeFactory = createNodeFactory(2);
         Config cfg = new Config();
