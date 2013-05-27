@@ -35,7 +35,7 @@
     </modules>
 
     <properties>
-        <hsqldb.version>1.8.0.10</hsqldb.version>
+        <hsqldb.version>2.2.9</hsqldb.version>
         <javaassist.version>3.12.1.GA</javaassist.version>
     </properties>
 
@@ -175,7 +175,7 @@
             <classifier>tests</classifier>
         </dependency>
         <dependency>
-            <groupId>hsqldb</groupId>
+            <groupId>org.hsqldb</groupId>
             <artifactId>hsqldb</artifactId>
             <version>${hsqldb.version}</version>
             <type>jar</type>

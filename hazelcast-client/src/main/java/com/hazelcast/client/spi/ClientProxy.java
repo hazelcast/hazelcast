@@ -41,19 +41,19 @@ public abstract class ClientProxy implements DistributedObject {
         this.objectId = objectId;
     }
 
-    public String listen(Object registrationRequest, Data key, EventHandler handler){
+    protected final String listen(Object registrationRequest, Data key, EventHandler handler){
         ListenerSupport listenerSupport = new ListenerSupport(context, registrationRequest, handler, key);
         String registrationId = listenerSupport.listen();
         listenerSupportMap.put(registrationId, listenerSupport);
         return registrationId;
     }
 
-    public String listen(Object registrationRequest, EventHandler handler){
+    protected final  String listen(Object registrationRequest, EventHandler handler){
         return listen(registrationRequest, null, handler);
     }
 
-    public boolean stopListening(String registrationId){
-        ListenerSupport listenerSupport = listenerSupportMap.get(registrationId);
+    protected final  boolean stopListening(String registrationId){
+        final ListenerSupport listenerSupport = listenerSupportMap.remove(registrationId);
         if (listenerSupport != null){
             listenerSupport.stop();
             return true;
@@ -61,7 +61,7 @@ public abstract class ClientProxy implements DistributedObject {
         return false;
     }
 
-    public final ClientContext getContext() {
+    protected final ClientContext getContext() {
         final ClientContext ctx = context;
         if (ctx == null) {
             throw new HazelcastInstanceNotActiveException();
