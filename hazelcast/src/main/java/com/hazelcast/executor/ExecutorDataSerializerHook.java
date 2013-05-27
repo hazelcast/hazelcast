@@ -16,7 +16,7 @@
 
 package com.hazelcast.executor;
 
-import com.hazelcast.executor.client.PartitionCallableRequest;
+import com.hazelcast.executor.client.LocalTargetCallableRequest;
 import com.hazelcast.executor.client.TargetCallableRequest;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.DataSerializerHook;
@@ -34,8 +34,9 @@ public class ExecutorDataSerializerHook implements DataSerializerHook {
     static final int MEMBER_CALLABLE_TASK = 1;
     static final int RUNNABLE_ADAPTER = 2;
 
-    public static final int PARTITION_CALLABLE_REQUEST = 5;
     public static final int TARGET_CALLABLE_REQUEST = 6;
+    public static final int LOCAL_TARGET_CALLABLE_REQUEST = 7;
+
 
     public int getFactoryId() {
         return F_ID;
@@ -54,12 +55,11 @@ public class ExecutorDataSerializerHook implements DataSerializerHook {
                     case RUNNABLE_ADAPTER:
                         return new RunnableAdapter();
 
-
-                    case PARTITION_CALLABLE_REQUEST:
-                        return new PartitionCallableRequest();
-
                     case TARGET_CALLABLE_REQUEST:
                         return new TargetCallableRequest();
+
+                    case LOCAL_TARGET_CALLABLE_REQUEST:
+                        return new LocalTargetCallableRequest();
                 }
                 return null;
             }

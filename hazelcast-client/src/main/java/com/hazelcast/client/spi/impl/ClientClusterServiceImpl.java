@@ -128,7 +128,10 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             return (T) serializationService.toObject(response);
         } catch (IOException e){
             return sendAndReceive(obj);
+        } catch (Exception e){
+            e.printStackTrace();
         }
+        return null;
     }
 
     private SerializationService getSerializationService() {
@@ -164,6 +167,8 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             }
         } catch (IOException e){
             sendAndHandle(obj, handler);
+        }  catch (Exception e){
+            e.printStackTrace();
         }
     }
 

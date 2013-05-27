@@ -24,6 +24,7 @@ import com.hazelcast.collection.CollectionProxyType;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
+import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.map.MapService;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.DefaultObjectNamespace;
@@ -92,7 +93,11 @@ public final class ProxyManager {
                 return new ClientAtomicLongProxy(AtomicLongService.SERVICE_NAME, String.valueOf(id));
             }
         });
-
+        register(DistributedExecutorService.SERVICE_NAME, new ClientProxyFactory() {
+            public ClientProxy create(Object id) {
+                return new ClientExecutorServiceProxy(DistributedExecutorService.SERVICE_NAME, String.valueOf(id));
+            }
+        });
 
         for (Map.Entry<String, ClientProxyFactory> entry : config.getFactories().entrySet()) {
             register(entry.getKey(), entry.getValue());
