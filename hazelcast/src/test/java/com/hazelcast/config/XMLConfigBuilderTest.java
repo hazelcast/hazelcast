@@ -110,9 +110,18 @@ public class XMLConfigBuilderTest {
     }
 
     @Test
-    public void testConfig2Xml2Config() {
-        final Config config = new ClasspathXmlConfig("hazelcast-fullconfig.xml");
-        final String xml = new ConfigXmlGenerator().generate(config);
+    public void testConfig2Xml2DefaultConfig() {
+        testConfig2Xml2Config("hazelcast-default.xml");
+    }
+
+    @Test
+    public void testConfig2Xml2FullConfig() {
+        testConfig2Xml2Config("hazelcast-fullconfig.xml");
+    }
+
+    private void testConfig2Xml2Config(String fileName) {
+        final Config config = new ClasspathXmlConfig(fileName);
+        final String xml = new ConfigXmlGenerator(true).generate(config);
         final Config config2 = new InMemoryXmlConfig(xml);
         assertTrue(config.isCompatible(config2));
         assertTrue(config2.isCompatible(config));
