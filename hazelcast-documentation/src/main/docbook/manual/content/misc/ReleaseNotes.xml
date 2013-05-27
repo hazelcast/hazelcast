@@ -28,6 +28,17 @@
     </para>
 
     <para>
+        <emphasis role="bold">2.6</emphasis>
+        <itemizedlist>
+            <listitem>
+                <para><link xlink:href="https://github.com/hazelcast/hazelcast/issues?milestone=20&amp;state=closed">
+                    Fixed issues:</link></para>
+                <para>470, 477, 484, 487</para>
+            </listitem>
+        </itemizedlist>
+    </para>
+
+    <para>
         <emphasis role="bold">2.5.1</emphasis>
         <itemizedlist>
             <listitem>
