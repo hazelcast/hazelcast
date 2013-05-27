@@ -37,7 +37,6 @@
         <module>hazelcast-spring</module>
         <module>hazelcast-all</module>
         <module>hazelcast-cloud</module>
-        <module>hazelcast-documentation</module>
     </modules>
 
     <properties>
@@ -201,10 +200,11 @@
                             </execution>
                         </executions>
                     </plugin>
-
-
                 </plugins>
             </build>
+            <modules>
+                <module>hazelcast-documentation</module>
+            </modules>
         </profile>
         <profile>
             <id>sonar</id>
