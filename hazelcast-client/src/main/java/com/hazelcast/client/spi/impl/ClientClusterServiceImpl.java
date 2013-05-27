@@ -29,6 +29,7 @@ import com.hazelcast.client.spi.ResponseStream;
 import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.cluster.client.AddMembershipListenerRequest;
 import com.hazelcast.cluster.client.ClientMembershipEvent;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.MemberImpl;
@@ -39,7 +40,6 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -128,9 +128,8 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             if (client.getClientConfig().isRedoOperation()
                     || obj instanceof RetryableRequest){
                 return sendAndReceive(obj);
-            } else {
-                throw ExceptionUtil.rethrow(e);
             }
+            throw new HazelcastException(e);
         }
     }
 
@@ -169,9 +168,8 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             if (client.getClientConfig().isRedoOperation()
                     || obj instanceof RetryableRequest){
                 sendAndHandle(obj, handler);
-            } else {
-                throw ExceptionUtil.rethrow(e);
             }
+            throw new HazelcastException(e);
         }
     }
 
