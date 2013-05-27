@@ -62,6 +62,19 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         }, 10, 10, TimeUnit.SECONDS);
     }
 
+    public void refreshPartitions() {
+        client.getClientExecutionService().execute(new Runnable() {
+            public void run() {
+                final ClientClusterService clusterService = client.getClientClusterService();
+                final Address master = clusterService.getMasterAddress();
+                final PartitionsResponse response = getPartitionsFrom((ClientClusterServiceImpl) clusterService, master);
+                if (response != null) {
+                    processPartitionResponse(response);
+                }
+            }
+        });
+    }
+
     private void getInitialPartitions() {
         final ClientClusterService clusterService = client.getClientClusterService();
         final Collection<MemberImpl> memberList = clusterService.getMemberList();

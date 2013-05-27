@@ -125,6 +125,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             final Data response = conn.read();
             return (T) serializationService.toObject(response);
         } catch (IOException e){
+            ((ClientPartitionServiceImpl)client.getClientPartitionService()).refreshPartitions();
             if (client.getClientConfig().isRedoOperation()
                     || obj instanceof RetryableRequest){
                 return sendAndReceive(obj);
@@ -165,6 +166,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 stream.end();
             }
         } catch (IOException e){
+            ((ClientPartitionServiceImpl)client.getClientPartitionService()).refreshPartitions();
             if (client.getClientConfig().isRedoOperation()
                     || obj instanceof RetryableRequest){
                 sendAndHandle(obj, handler);
