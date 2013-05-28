@@ -33,14 +33,17 @@ public final class ClientContext {
 
     private final ClientExecutionService executionService;
 
+    private final ProxyManager proxyManager;
+
     ClientContext(SerializationService serializationService, ClientClusterService clusterService,
                   ClientPartitionService partitionService, ClientInvocationService invocationService,
-                  ClientExecutionService executionService) {
+                  ClientExecutionService executionService, ProxyManager proxyManager) {
         this.serializationService = serializationService;
         this.clusterService = clusterService;
         this.partitionService = partitionService;
         this.invocationService = invocationService;
         this.executionService = executionService;
+        this.proxyManager = proxyManager;
     }
 
     public SerializationService getSerializationService() {
@@ -61,5 +64,9 @@ public final class ClientContext {
 
     public ClientExecutionService getExecutionService() {
         return executionService;
+    }
+
+    public void removeProxy(ClientProxy proxy){
+        proxyManager.removeProxy(proxy.getServiceName(), proxy.getId());
     }
 }

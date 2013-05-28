@@ -233,12 +233,11 @@ public final class HazelcastClient implements HazelcastInstance {
 
     @Override
     public String addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
-        return null;
+        return proxyManager.addDistributedObjectListener(distributedObjectListener);
     }
 
-    @Override
     public boolean removeDistributedObjectListener(String registrationId) {
-        return false;
+        return proxyManager.removeDistributedObjectListener(registrationId);
     }
 
     @Override
