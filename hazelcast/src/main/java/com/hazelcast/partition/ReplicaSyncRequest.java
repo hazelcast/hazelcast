@@ -48,45 +48,51 @@ public class ReplicaSyncRequest extends Operation implements PartitionAwareOpera
         final int partitionId = getPartitionId();
         final int replicaIndex = getReplicaIndex();
         final PartitionServiceImpl partitionService = (PartitionServiceImpl) nodeEngine.getPartitionService();
-        final Collection<MigrationAwareService> services = nodeEngine.getServices(MigrationAwareService.class);
-        final PartitionReplicationEvent event = new PartitionReplicationEvent(partitionId, replicaIndex);
-        final List<Operation> tasks = new LinkedList<Operation>();
-        for (MigrationAwareService service : services) {
-            final Operation op = service.prepareReplicationOperation(event);
-            if (op != null) {
-                op.setServiceName(service.getServiceName());
-                tasks.add(op);
-            }
-        }
-        byte[] data = null;
-        if (!tasks.isEmpty()) {
-            final SerializationService serializationService = nodeEngine.getSerializationService();
-            final ObjectDataOutput out = serializationService.createObjectDataOutput(1024 * 32);
-            try {
-                out.writeInt(tasks.size());
-                for (Operation task : tasks) {
-                    serializationService.writeObject(out, task);
-                }
-                data = IOUtil.compress(out.toByteArray());
-            } finally {
-                IOUtil.closeResource(out);
-            }
-        } else {
-            final Level level = Level.FINEST;
-            if (logger.isLoggable(level)) {
-                logger.log(level, "No replica data is found for partition: " + partitionId + ", replica: " + replicaIndex);
-            }
-        }
 
-        final long[] replicaVersions = partitionService.getPartitionReplicaVersions(partitionId);
-        ReplicaSyncResponse syncResponse = new ReplicaSyncResponse(data, replicaVersions);
-        syncResponse.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
-        final Address target = getCallerAddress();
-        if (logger.isLoggable(Level.FINEST)) {
-            logger.log(Level.FINEST, "Sending sync response to -> " + target + "; for partition: " + partitionId + ", replica: " + replicaIndex);
+        partitionService.incrementReplicaSyncProcessCount();
+        try {
+            final Collection<MigrationAwareService> services = nodeEngine.getServices(MigrationAwareService.class);
+            final PartitionReplicationEvent event = new PartitionReplicationEvent(partitionId, replicaIndex);
+            final List<Operation> tasks = new LinkedList<Operation>();
+            for (MigrationAwareService service : services) {
+                final Operation op = service.prepareReplicationOperation(event);
+                if (op != null) {
+                    op.setServiceName(service.getServiceName());
+                    tasks.add(op);
+                }
+            }
+            byte[] data = null;
+            if (!tasks.isEmpty()) {
+                final SerializationService serializationService = nodeEngine.getSerializationService();
+                final ObjectDataOutput out = serializationService.createObjectDataOutput(1024 * 32);
+                try {
+                    out.writeInt(tasks.size());
+                    for (Operation task : tasks) {
+                        serializationService.writeObject(out, task);
+                    }
+                    data = IOUtil.compress(out.toByteArray());
+                } finally {
+                    IOUtil.closeResource(out);
+                }
+            } else {
+                final Level level = Level.FINEST;
+                if (logger.isLoggable(level)) {
+                    logger.log(level, "No replica data is found for partition: " + partitionId + ", replica: " + replicaIndex);
+                }
+            }
+
+            final long[] replicaVersions = partitionService.getPartitionReplicaVersions(partitionId);
+            ReplicaSyncResponse syncResponse = new ReplicaSyncResponse(data, replicaVersions);
+            syncResponse.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
+            final Address target = getCallerAddress();
+            if (logger.isLoggable(Level.FINEST)) {
+                logger.log(Level.FINEST, "Sending sync response to -> " + target + "; for partition: " + partitionId + ", replica: " + replicaIndex);
+            }
+            final OperationService operationService = nodeEngine.getOperationService();
+            operationService.send(syncResponse, target);
+        } finally {
+            partitionService.decrementReplicaSyncProcessCount();
         }
-        final OperationService operationService = nodeEngine.getOperationService();
-        operationService.send(syncResponse, target);
     }
 
     public void afterRun() throws Exception {
