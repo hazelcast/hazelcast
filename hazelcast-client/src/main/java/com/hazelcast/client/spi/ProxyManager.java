@@ -186,20 +186,26 @@ public final class ProxyManager {
         listeners.clear();
     }
 
-    private void triggerListeners(ClientProxy proxy, boolean removed) {
-        final DistributedObjectEvent event;
-        if (removed) {
-            event = new DistributedObjectEvent(DistributedObjectEvent.EventType.DESTROYED, proxy.getServiceName(), proxy.getId());
-        } else {
-            event = new DistributedObjectEvent(DistributedObjectEvent.EventType.CREATED, proxy.getServiceName(), proxy.getId());
-        }
-        for (DistributedObjectListener listener : listeners.values()) {
-            if (removed) {
-                listener.distributedObjectDestroyed(event);
-            } else {
-                listener.distributedObjectCreated(event);
+    private void triggerListeners(final ClientProxy proxy, final boolean removed) {
+        client.getClientExecutionService().execute(new Runnable() {
+            public void run() {
+                final DistributedObjectEvent event;
+                if (removed) {
+                    event = new DistributedObjectEvent(DistributedObjectEvent.EventType.DESTROYED, proxy.getServiceName(), proxy.getId());
+                } else {
+                    event = new DistributedObjectEvent(DistributedObjectEvent.EventType.CREATED, proxy.getServiceName(), proxy.getId());
+                }
+                for (DistributedObjectListener listener : listeners.values()) {
+                    if (removed) {
+                        listener.distributedObjectDestroyed(event);
+                    } else {
+                        listener.distributedObjectCreated(event);
+                    }
+                }
             }
-        }
+        });
+
+
     }
 
     public String addDistributedObjectListener(DistributedObjectListener listener) {
