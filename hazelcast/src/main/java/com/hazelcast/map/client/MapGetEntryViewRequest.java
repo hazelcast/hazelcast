@@ -17,6 +17,7 @@
 package com.hazelcast.map.client;
 
 import com.hazelcast.client.KeyBasedClientRequest;
+import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.map.GetEntryViewOperation;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
@@ -30,7 +31,7 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public class MapGetEntryViewRequest extends KeyBasedClientRequest implements Portable {
+public class MapGetEntryViewRequest extends KeyBasedClientRequest implements Portable, RetryableRequest {
 
     private String name;
     private Data key;

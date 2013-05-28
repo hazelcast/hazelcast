@@ -16,18 +16,15 @@
 
 package com.hazelcast.concurrent.lock.client;
 
+import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.concurrent.lock.InternalLockNamespace;
 import com.hazelcast.concurrent.lock.LockPortableHook;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.PortableWriter;
-
-import java.io.IOException;
 
 /**
  * @mdogan 5/3/13
  */
-public final class IsLockedRequest extends AbstractIsLockedRequest {
+public final class IsLockedRequest extends AbstractIsLockedRequest implements RetryableRequest {
 
     public IsLockedRequest() {
     }

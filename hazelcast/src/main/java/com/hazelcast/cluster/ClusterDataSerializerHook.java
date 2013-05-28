@@ -19,7 +19,6 @@ package com.hazelcast.cluster;
 import com.hazelcast.cluster.client.AddMembershipListenerRequest;
 import com.hazelcast.cluster.client.ClientMembershipEvent;
 import com.hazelcast.cluster.client.ClientPingRequest;
-import com.hazelcast.cluster.client.GetMembersRequest;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.*;
@@ -38,7 +37,6 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
     public static final int HEARTBEAT = 3;
 
     // client
-    public static final int GET_MEMBERS = 6;
     public static final int ADD_MS_LISTENER = 7;
     public static final int MEMBERSHIP_EVENT = 8;
     public static final int PING = 9;
@@ -73,13 +71,6 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
             }
         };
 
-
-
-        ctors[GET_MEMBERS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new GetMembersRequest();
-            }
-        };
 
         ctors[ADD_MS_LISTENER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {

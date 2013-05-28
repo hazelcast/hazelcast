@@ -21,6 +21,7 @@ import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
+import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.ServiceConfig;
@@ -86,6 +87,7 @@ class ServiceManager {
                 registerService(AtomicLongService.SERVICE_NAME, new AtomicLongService());
                 registerService(CountDownLatchService.SERVICE_NAME, new CountDownLatchService());
                 registerService(SemaphoreService.SERVICE_NAME, new SemaphoreService(nodeEngine));
+                registerService(IdGeneratorService.SERVICE_NAME, new IdGeneratorService(nodeEngine));
             }
 
             serviceProps = new HashMap<String, Properties>();

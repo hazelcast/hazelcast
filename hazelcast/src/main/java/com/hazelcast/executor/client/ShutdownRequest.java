@@ -16,6 +16,7 @@
 
 package com.hazelcast.executor.client;
 
+import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.client.TargetClientRequest;
 import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.executor.ExecutorDataSerializerHook;
@@ -31,7 +32,7 @@ import java.io.IOException;
 /**
  * @ali 5/27/13
  */
-public class ShutdownRequest extends TargetClientRequest implements IdentifiedDataSerializable {
+public class ShutdownRequest extends TargetClientRequest implements IdentifiedDataSerializable, RetryableRequest {
 
     String name;
     Address target;

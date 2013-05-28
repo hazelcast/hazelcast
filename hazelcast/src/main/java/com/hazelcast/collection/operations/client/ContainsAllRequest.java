@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.operations.client;
 
+import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.operations.ContainsAllOperation;
@@ -33,7 +34,7 @@ import java.util.Set;
 /**
  * @ali 5/10/13
  */
-public class ContainsAllRequest extends CollectionKeyBasedRequest {
+public class ContainsAllRequest extends CollectionKeyBasedRequest implements RetryableRequest {
 
     Set<Data> dataSet;
 

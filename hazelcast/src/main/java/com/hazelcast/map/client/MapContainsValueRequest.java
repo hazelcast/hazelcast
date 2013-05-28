@@ -17,6 +17,7 @@
 package com.hazelcast.map.client;
 
 import com.hazelcast.client.AllPartitionsClientRequest;
+import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.map.ContainsValueOperationFactory;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
@@ -31,7 +32,7 @@ import com.hazelcast.spi.OperationFactory;
 import java.io.IOException;
 import java.util.Map;
 
-public class MapContainsValueRequest extends AllPartitionsClientRequest implements Portable {
+public class MapContainsValueRequest extends AllPartitionsClientRequest implements Portable, RetryableRequest {
 
     private String name;
     private Data value;

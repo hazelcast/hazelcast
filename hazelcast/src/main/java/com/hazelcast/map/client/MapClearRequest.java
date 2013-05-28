@@ -17,10 +17,10 @@
 package com.hazelcast.map.client;
 
 import com.hazelcast.client.AllPartitionsClientRequest;
+import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.map.ClearOperationFactory;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
-import com.hazelcast.map.SizeOperationFactory;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
@@ -29,7 +29,7 @@ import com.hazelcast.spi.OperationFactory;
 import java.io.IOException;
 import java.util.Map;
 
-public class MapClearRequest extends AllPartitionsClientRequest implements Portable {
+public class MapClearRequest extends AllPartitionsClientRequest implements Portable, RetryableRequest {
 
     private String name;
 

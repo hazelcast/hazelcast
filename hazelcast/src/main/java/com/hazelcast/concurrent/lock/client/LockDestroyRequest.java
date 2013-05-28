@@ -17,6 +17,7 @@
 package com.hazelcast.concurrent.lock.client;
 
 import com.hazelcast.client.CallableClientRequest;
+import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.concurrent.lock.LockPortableHook;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.nio.serialization.Data;
@@ -29,7 +30,7 @@ import java.io.IOException;
 /**
  * @ali 5/28/13
  */
-public class LockDestroyRequest extends CallableClientRequest implements Portable {
+public class LockDestroyRequest extends CallableClientRequest implements Portable, RetryableRequest {
 
     Data keyData;
 

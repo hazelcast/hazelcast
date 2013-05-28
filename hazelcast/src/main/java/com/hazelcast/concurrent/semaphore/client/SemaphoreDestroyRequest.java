@@ -17,6 +17,7 @@
 package com.hazelcast.concurrent.semaphore.client;
 
 import com.hazelcast.client.CallableClientRequest;
+import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.concurrent.semaphore.SemaphorePortableHook;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.nio.serialization.Portable;
@@ -28,7 +29,7 @@ import java.io.IOException;
 /**
  * @ali 5/24/13
  */
-public class SemaphoreDestroyRequest extends CallableClientRequest implements Portable {
+public class SemaphoreDestroyRequest extends CallableClientRequest implements Portable, RetryableRequest {
 
     private String name;
 
