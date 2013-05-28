@@ -1,16 +1,13 @@
 package com.hazelcast.client;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.test.StaticNodeFactory;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
+import com.hazelcast.test.StaticNodeFactory;
+import org.junit.Rule;
+import org.junit.rules.ExternalResource;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
@@ -21,37 +18,43 @@ import java.io.IOException;
 @RunWith(RandomBlockJUnit4ClassRunner.class)
 public abstract class ClientTestSupport {
 
-    private HazelcastInstance instance;
-    private SimpleClient client;
-
-    @BeforeClass
-    @AfterClass
-    public static void cleanup() {
-        Hazelcast.shutdownAll();
-    }
-
-    @Before
-    public final void init() throws IOException {
-        instance = new StaticNodeFactory(1).newHazelcastInstance(createConfig());
-        final Address address = TestUtil.getNode(instance).getThisAddress();
-        client = StaticNodeFactory.newClient(address);
-        client.auth();
-    }
-
-    @After
-    public final void destroy() throws IOException {
-        client.close();
-        instance.getLifecycleService().shutdown();
-    }
+    @Rule
+    public final ClientTestResource clientResource = new ClientTestResource(createConfig());
 
     protected final HazelcastInstance getInstance() {
-        return instance;
+        return clientResource.instance;
     }
 
     protected final SimpleClient getClient() {
-        return client;
+        return clientResource.client;
     }
 
     protected abstract Config createConfig();
 
+
+    public static final class ClientTestResource extends ExternalResource {
+        private final Config config;
+        private HazelcastInstance instance;
+        private SimpleClient client;
+
+        public ClientTestResource(Config config) {
+            this.config = config;
+        }
+
+        protected void before() throws Throwable {
+            instance = new StaticNodeFactory(1).newHazelcastInstance(config);
+            final Address address = TestUtil.getNode(instance).getThisAddress();
+            client = StaticNodeFactory.newClient(address);
+            client.auth();
+        }
+
+        protected void after() {
+            try {
+                client.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            instance.getLifecycleService().shutdown();
+        }
+    }
 }

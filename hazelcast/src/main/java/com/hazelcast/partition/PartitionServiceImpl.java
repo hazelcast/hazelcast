@@ -49,6 +49,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
     private final PartitionInfo[] partitions;
     private final PartitionReplicaVersions[] replicaVersions;
     private final ConcurrentMap<Integer, ReplicaSyncInfo> replicaSyncRequests;
+    private final AtomicInteger replicaSyncProcessCount = new AtomicInteger();
     private final MigrationThread migrationThread;
     private final int partitionMigrationInterval;
     private final long partitionMigrationTimeout;
@@ -541,7 +542,8 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 sendRequest = true;
             }
             if (target.equals(nodeEngine.getThisAddress())) {
-                throw new IllegalStateException("Replica target cannot be this node -> " + partitionInfo);
+                throw new IllegalStateException("Replica target cannot be this node -> partitionId: " + partitionId
+                        + ", replicaIndex: " + replicaIndex + ", partition-info: " + partitionInfo);
             }
             if (sendRequest) {
                 final Level level = force ? Level.FINEST : Level.INFO;
@@ -565,7 +567,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         return node.clusterService.getMember(address);
     }
 
-    public int getVersion() {
+    public int getStateVersion() {
         return stateVersion.get();
     }
 
@@ -583,10 +585,6 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         return p;
     }
 
-    public boolean hasOnGoingMigrationTask() {
-        return !migrationQueue.isEmpty() || !activeMigrations.isEmpty() || hasActiveBackupTask();
-    }
-
     public boolean hasActiveBackupTask() {
         if (!initialized) return false;
 
@@ -602,16 +600,28 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         }
         if (groups < 2) return false;
 
-        final int size = migrationQueue.size();
-        if (size == 0) {
+        final int activeSize = activeMigrations.size();
+        if (activeSize != 0) {
+            logger.log(Level.WARNING, "Waiting for active migration tasks: " + activeSize);
+            return true;
+        }
+
+        final int queueSize = migrationQueue.size();
+        if (queueSize == 0) {
             for (PartitionInfo partition : partitions) {
                 if (partition.getReplicaAddress(1) == null) {
                     logger.log(Level.WARNING, "Should take backup of partition: " + partition.getPartitionId());
                     return true;
+                } else {
+                    final int replicaSyncProcesses = replicaSyncProcessCount.get();
+                    if (replicaSyncProcesses > 0) {
+                        logger.log(Level.WARNING, "Processing replica sync requests: " + replicaSyncProcesses);
+                        return true;
+                    }
                 }
             }
         } else {
-            logger.log(Level.WARNING, "Should complete ongoing total of " + size + " migration tasks!");
+            logger.log(Level.WARNING, "Waiting for active migration tasks: " + queueSize);
             return true;
         }
         return false;
@@ -661,6 +671,14 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
     void finalizeReplicaSync(int partitionId, long[] versions) {
         setPartitionReplicaVersions(partitionId, versions);
         replicaSyncRequests.remove(partitionId);
+    }
+
+    void incrementReplicaSyncProcessCount() {
+        replicaSyncProcessCount.incrementAndGet();
+    }
+
+    void decrementReplicaSyncProcessCount() {
+        replicaSyncProcessCount.decrementAndGet();
     }
 
     private class PartitionReplicaVersions {

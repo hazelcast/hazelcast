@@ -61,9 +61,4 @@ public final class PartitionServiceProxy implements PartitionService {
     public boolean removeMigrationListener(String registrationId) {
         throw new UnsupportedOperationException();
     }
-
-    @Override
-    public boolean hasOngoingMigration() {
-        throw new UnsupportedOperationException();
-    }
 }

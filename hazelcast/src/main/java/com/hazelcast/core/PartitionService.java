@@ -40,6 +40,4 @@ public interface PartitionService {
      */
     boolean removeMigrationListener(final String registrationId);
 
-    // TODO: @mm - method name and/or signature can change!
-    boolean hasOngoingMigration();
 }

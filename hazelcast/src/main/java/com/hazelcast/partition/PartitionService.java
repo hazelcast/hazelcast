@@ -40,6 +40,8 @@ public interface PartitionService extends CoreService {
 
     int getPartitionCount();
 
+    int getStateVersion();
+
     List<Integer> getMemberPartitions(Address target);
 
     Map<Address, List<Integer>> getMemberPartitionsMap();

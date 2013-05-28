@@ -16,11 +16,13 @@
 
 package com.hazelcast.test;
 
+import com.sun.management.OperatingSystemMXBean;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 
+import java.lang.management.ManagementFactory;
 import java.util.Collections;
 import java.util.List;
 
@@ -28,6 +30,8 @@ import java.util.List;
  * Run the tests randomly and log the running test.
  */
 public final class RandomBlockJUnit4ClassRunner extends BlockJUnit4ClassRunner {
+
+    private static final OperatingSystemMXBean osBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
 
     static {
         final String logging = "hazelcast.logging.type";
@@ -58,7 +62,13 @@ public final class RandomBlockJUnit4ClassRunner extends BlockJUnit4ClassRunner {
         long start = System.currentTimeMillis();
         String testName = method.getMethod().getDeclaringClass().getSimpleName() + "." + method.getName();
         System.out.println(" Started Running Test: " + testName);
+        long t0 = System.nanoTime();
+        long cpu0 = osBean.getProcessCpuTime();
         super.runChild(method, notifier);
+        long cpu1 = osBean.getProcessCpuTime();
+        long t1 = System.nanoTime();
+        System.out.println(testName + "-> CPU-TIME: " + ((cpu1 - cpu0) / 1000 / 1000));
+        System.out.println(testName + "-> CPU-USAGE: " + Math.round((double) (cpu1 - cpu0) / (t1 - t0) * 100));
         float took = (float) (System.currentTimeMillis() - start) / 1000;
         System.out.println(String.format("Finished Running Test: %s in %.3f seconds.", testName, took));
     }

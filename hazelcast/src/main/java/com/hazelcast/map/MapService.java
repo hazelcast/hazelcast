@@ -26,7 +26,6 @@ import com.hazelcast.core.*;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.merge.*;
-import com.hazelcast.map.proxy.DataMapProxy;
 import com.hazelcast.map.proxy.ObjectMapProxy;
 import com.hazelcast.map.tx.TxnMapProxy;
 import com.hazelcast.map.wan.MapReplicationRemove;
@@ -36,7 +35,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.partition.*;
+import com.hazelcast.partition.MigrationEndpoint;
+import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
@@ -363,10 +363,12 @@ public class MapService implements ManagedService, MigrationAwareService,
     private void clearPartitionData(final int partitionId) {
         logger.log(Level.FINEST, "Clearing partition data -> " + partitionId);
         final PartitionContainer container = partitionContainers[partitionId];
-        for (PartitionRecordStore mapPartition : container.maps.values()) {
-            mapPartition.clear();
+        if (container != null) {
+            for (PartitionRecordStore mapPartition : container.maps.values()) {
+                mapPartition.clear();
+            }
+            container.maps.clear();
         }
-        container.maps.clear();
     }
 
     public void clearPartitionReplica(int partitionId) {
@@ -860,7 +862,11 @@ public class MapService implements ManagedService, MigrationAwareService,
                 for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
                     Address owner = nodeEngine.getPartitionService().getPartitionOwner(i);
                     if (nodeEngine.getThisAddress().equals(owner)) {
-                        int size = partitionContainers[i].getRecordStore(mapName).getRecords().size();  // TODO: can throw NPE during shutdown!
+                        final PartitionContainer container = partitionContainers[i];
+                        if (container == null) {
+                            return false;
+                        }
+                        int size = container.getRecordStore(mapName).getRecords().size();
                         if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_PARTITION) {
                             if (size >= maxSize) {
                                 return true;
