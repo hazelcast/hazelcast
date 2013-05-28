@@ -33,7 +33,7 @@
             <listitem>
                 <para><link xlink:href="https://github.com/hazelcast/hazelcast/issues?milestone=20&amp;state=closed">
                     Fixed issues:</link></para>
-                <para>470, 477, 484, 487</para>
+                <para>470, 472, 477, 484, 487, 488</para>
             </listitem>
         </itemizedlist>
     </para>
