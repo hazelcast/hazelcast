@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.operations.client;
 
+import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.operations.CountOperation;
@@ -25,7 +26,7 @@ import com.hazelcast.spi.Operation;
 /**
  * @ali 5/10/13
  */
-public class CountRequest extends CollectionKeyBasedRequest {
+public class CountRequest extends CollectionKeyBasedRequest implements RetryableRequest {
 
     public CountRequest() {
     }

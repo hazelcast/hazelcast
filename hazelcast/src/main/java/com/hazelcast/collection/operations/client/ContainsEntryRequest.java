@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.operations.client;
 
+import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.operations.MultiMapOperationFactory;
@@ -33,7 +34,7 @@ import java.util.Map;
 /**
  * @ali 5/10/13
  */
-public class ContainsEntryRequest extends CollectionAllPartitionRequest {
+public class ContainsEntryRequest extends CollectionAllPartitionRequest implements RetryableRequest {
 
     Data key;
 

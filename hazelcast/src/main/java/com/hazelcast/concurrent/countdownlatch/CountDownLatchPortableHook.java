@@ -1,9 +1,6 @@
 package com.hazelcast.concurrent.countdownlatch;
 
-import com.hazelcast.concurrent.countdownlatch.client.AwaitRequest;
-import com.hazelcast.concurrent.countdownlatch.client.CountDownRequest;
-import com.hazelcast.concurrent.countdownlatch.client.GetCountRequest;
-import com.hazelcast.concurrent.countdownlatch.client.SetCountRequest;
+import com.hazelcast.concurrent.countdownlatch.client.*;
 import com.hazelcast.nio.serialization.*;
 
 import java.util.Collection;
@@ -19,6 +16,7 @@ public final class CountDownLatchPortableHook implements PortableHook {
     public static final int AWAIT = 2;
     public static final int SET_COUNT = 3;
     public static final int GET_COUNT = 4;
+    public static final int DESTROY = 5;
 
 
     public int getFactoryId() {
@@ -37,6 +35,8 @@ public final class CountDownLatchPortableHook implements PortableHook {
                         return new SetCountRequest();
                     case GET_COUNT:
                         return new GetCountRequest();
+                    case DESTROY:
+                        return new CountDownLatchDestroyRequest();
                 }
                 return null;
             }

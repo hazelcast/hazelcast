@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.atomiclong.client;
+package com.hazelcast.concurrent.countdownlatch.client;
 
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.RetryableRequest;
-import com.hazelcast.concurrent.atomiclong.AtomicLongPortableHook;
-import com.hazelcast.concurrent.atomiclong.AtomicLongService;
+import com.hazelcast.concurrent.countdownlatch.CountDownLatchPortableHook;
+import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
@@ -27,39 +27,37 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import java.io.IOException;
 
 /**
- * @ali 5/24/13
+ * @ali 5/28/13
  */
-public class AtomicLongDestroyRequest extends CallableClientRequest implements Portable, RetryableRequest {
+public class CountDownLatchDestroyRequest extends CallableClientRequest implements Portable, RetryableRequest {
 
-    private String name;
+    String name;
 
-    public AtomicLongDestroyRequest() {
+    public CountDownLatchDestroyRequest() {
     }
 
-    public AtomicLongDestroyRequest(String name) {
+    public CountDownLatchDestroyRequest(String name) {
         this.name = name;
     }
 
     public Object call() throws Exception {
-        final AtomicLongService service = getService();
-        service.destroyDistributedObject(name);
         return null;
     }
 
     public String getServiceName() {
-        return AtomicLongService.SERVICE_NAME;
+        return CountDownLatchService.SERVICE_NAME;
     }
 
     public int getFactoryId() {
-        return AtomicLongPortableHook.F_ID;
+        return CountDownLatchPortableHook.F_ID;
     }
 
     public int getClassId() {
-        return AtomicLongPortableHook.DESTROY;
+        return CountDownLatchPortableHook.DESTROY;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
-        writer.writeUTF("n",name);
+        writer.writeUTF("n", name);
     }
 
     public void readPortable(PortableReader reader) throws IOException {

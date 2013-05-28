@@ -16,6 +16,7 @@
 
 package com.hazelcast.concurrent.semaphore.client;
 
+import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.concurrent.semaphore.AvailableOperation;
 import com.hazelcast.concurrent.semaphore.SemaphorePortableHook;
 import com.hazelcast.spi.Operation;
@@ -23,7 +24,7 @@ import com.hazelcast.spi.Operation;
 /**
  * @ali 5/13/13
  */
-public class AvailableRequest extends SemaphoreRequest{
+public class AvailableRequest extends SemaphoreRequest implements RetryableRequest {
 
     public AvailableRequest() {
     }

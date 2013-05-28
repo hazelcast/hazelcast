@@ -1,6 +1,7 @@
 package com.hazelcast.concurrent.countdownlatch.client;
 
 import com.hazelcast.client.KeyBasedClientRequest;
+import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchPortableHook;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.countdownlatch.GetCountOperation;
@@ -15,7 +16,7 @@ import java.io.IOException;
  * @mdogan 5/14/13
  */
 
-public final class GetCountRequest extends KeyBasedClientRequest implements Portable {
+public final class GetCountRequest extends KeyBasedClientRequest implements Portable, RetryableRequest {
 
     private String name;
 

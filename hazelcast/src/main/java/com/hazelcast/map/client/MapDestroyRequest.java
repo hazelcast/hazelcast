@@ -17,6 +17,7 @@
 package com.hazelcast.map.client;
 
 import com.hazelcast.client.CallableClientRequest;
+import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.serialization.Portable;
@@ -25,7 +26,7 @@ import com.hazelcast.nio.serialization.PortableWriter;
 
 import java.io.IOException;
 
-public class MapDestroyRequest extends CallableClientRequest implements Portable {
+public class MapDestroyRequest extends CallableClientRequest implements Portable, RetryableRequest {
 
     private String name;
 

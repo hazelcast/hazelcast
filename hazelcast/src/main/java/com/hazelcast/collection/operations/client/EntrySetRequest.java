@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.operations.client;
 
+import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.operations.EntrySetResponse;
@@ -30,7 +31,7 @@ import java.util.Set;
 /**
  * @ali 5/10/13
  */
-public class EntrySetRequest extends CollectionAllPartitionRequest {
+public class EntrySetRequest extends CollectionAllPartitionRequest implements RetryableRequest {
 
     public EntrySetRequest() {
     }

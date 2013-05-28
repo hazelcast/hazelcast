@@ -1,6 +1,7 @@
 package com.hazelcast.partition.client;
 
 import com.hazelcast.client.CallableClientRequest;
+import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
@@ -19,7 +20,7 @@ import java.util.Map;
 /**
  * @mdogan 5/13/13
  */
-public final class GetPartitionsRequest extends CallableClientRequest implements IdentifiedDataSerializable {
+public final class GetPartitionsRequest extends CallableClientRequest implements IdentifiedDataSerializable, RetryableRequest {
 
     public Object call() throws Exception {
         final PartitionServiceImpl service = getService();

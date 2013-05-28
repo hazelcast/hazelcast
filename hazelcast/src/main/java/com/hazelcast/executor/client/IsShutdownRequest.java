@@ -17,6 +17,7 @@
 package com.hazelcast.executor.client;
 
 import com.hazelcast.client.CallableClientRequest;
+import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.executor.ExecutorDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
@@ -28,7 +29,7 @@ import java.io.IOException;
 /**
  * @ali 5/27/13
  */
-public class IsShutdownRequest extends CallableClientRequest implements IdentifiedDataSerializable {
+public class IsShutdownRequest extends CallableClientRequest implements IdentifiedDataSerializable, RetryableRequest {
 
     String name;
 

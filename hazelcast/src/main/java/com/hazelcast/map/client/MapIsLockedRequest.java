@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.client;
 
+import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.concurrent.lock.client.AbstractIsLockedRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
@@ -27,7 +28,7 @@ import com.hazelcast.spi.ObjectNamespace;
 
 import java.io.IOException;
 
-public class MapIsLockedRequest extends AbstractIsLockedRequest {
+public class MapIsLockedRequest extends AbstractIsLockedRequest implements RetryableRequest {
 
     private String name;
 

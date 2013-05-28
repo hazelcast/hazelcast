@@ -17,6 +17,7 @@
 package com.hazelcast.collection.operations.client;
 
 import com.hazelcast.client.CallableClientRequest;
+import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionService;
@@ -29,7 +30,7 @@ import java.io.IOException;
 /**
  * @ali 5/24/13
  */
-public class CollectionDestroyRequest extends CallableClientRequest implements Portable{
+public class CollectionDestroyRequest extends CallableClientRequest implements Portable, RetryableRequest {
 
     private CollectionProxyId proxyId;
 

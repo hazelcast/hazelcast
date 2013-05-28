@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.operations.client;
 
+import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
@@ -31,7 +32,7 @@ import java.util.Collection;
 /**
  * @ali 5/10/13
  */
-public class GetAllRequest extends CollectionKeyBasedRequest {
+public class GetAllRequest extends CollectionKeyBasedRequest implements RetryableRequest {
 
     public GetAllRequest() {
     }

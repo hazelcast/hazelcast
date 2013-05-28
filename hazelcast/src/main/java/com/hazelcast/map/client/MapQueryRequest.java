@@ -18,24 +18,19 @@ package com.hazelcast.map.client;
 
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.InvocationClientRequest;
-import com.hazelcast.client.MultiTargetClientRequest;
+import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.*;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.Callback;
 import com.hazelcast.spi.Invocation;
-import com.hazelcast.spi.OperationFactory;
-import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryDataResultStream;
-import com.hazelcast.util.QueryResultStream;
 
 import java.io.IOException;
 import java.util.*;
@@ -43,7 +38,7 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.map.MapService.SERVICE_NAME;
 
-public class MapQueryRequest extends InvocationClientRequest implements Portable {
+public class MapQueryRequest extends InvocationClientRequest implements Portable, RetryableRequest {
 
     private String name;
     private Predicate predicate;

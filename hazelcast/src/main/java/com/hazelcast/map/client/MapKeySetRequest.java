@@ -17,6 +17,7 @@
 package com.hazelcast.map.client;
 
 import com.hazelcast.client.AllPartitionsClientRequest;
+import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.map.MapKeySetOperationFactory;
 import com.hazelcast.map.MapKeySet;
 import com.hazelcast.map.MapPortableHook;
@@ -31,7 +32,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-public class MapKeySetRequest extends AllPartitionsClientRequest implements Portable {
+public class MapKeySetRequest extends AllPartitionsClientRequest implements Portable, RetryableRequest {
 
     private String name;
 

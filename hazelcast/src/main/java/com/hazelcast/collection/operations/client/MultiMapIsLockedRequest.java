@@ -1,5 +1,6 @@
 package com.hazelcast.collection.operations.client;
 
+import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionService;
@@ -15,7 +16,7 @@ import java.io.IOException;
 /**
  * @ali 5/23/13
  */
-public class MultiMapIsLockedRequest extends AbstractIsLockedRequest {
+public class MultiMapIsLockedRequest extends AbstractIsLockedRequest implements RetryableRequest {
 
     CollectionProxyId proxyId;
 
