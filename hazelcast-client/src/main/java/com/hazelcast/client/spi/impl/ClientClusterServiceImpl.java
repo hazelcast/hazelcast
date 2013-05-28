@@ -373,7 +373,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 try {
                     Address address = new Address(isa);
                     System.err.println("Trying to connect: " + address);
-                    return getConnectionManager().newConnection(address, authenticator);
+                    return getConnectionManager().firstConnection(address, authenticator);
                 } catch (IOException ignored) {
                 }
             }

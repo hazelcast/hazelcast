@@ -18,6 +18,8 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.connection.ClientConnectionManager;
+import com.hazelcast.client.connection.DummyClientConnectionManager;
+import com.hazelcast.client.connection.SmartClientConnectionManager;
 import com.hazelcast.client.proxy.ClientClusterProxy;
 import com.hazelcast.client.proxy.PartitionServiceProxy;
 import com.hazelcast.client.spi.*;
@@ -96,7 +98,11 @@ public final class HazelcastClient implements HazelcastInstance {
         if (loadBalancer == null) {
             loadBalancer = new RoundRobinLB();
         }
-        connectionManager = new ClientConnectionManager(this, clusterService.getAuthenticator(), loadBalancer);
+        if (config.isSmart()){
+            connectionManager = new SmartClientConnectionManager(this, clusterService.getAuthenticator(), loadBalancer);
+        } else {
+            connectionManager = new DummyClientConnectionManager(this, clusterService.getAuthenticator(), loadBalancer);
+        }
         partitionService = new ClientPartitionServiceImpl(this);
         invocationService = new ClientInvocationServiceImpl(this);
         userContext = new ConcurrentHashMap<String, Object>();

@@ -16,6 +16,8 @@
 
 package com.hazelcast.client.connection;
 
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.nio.Address;
 
 import java.io.IOException;
@@ -23,17 +25,22 @@ import java.io.IOException;
 /**
  * @ali 5/27/13
  */
-public interface ClientConnectionManager {
+public class DummyClientConnectionManager extends SmartClientConnectionManager {
 
-    public void shutdown();
+    private volatile Address address;
 
-    public Connection getRandomConnection() throws IOException;
+    public DummyClientConnectionManager(HazelcastClient client, Authenticator authenticator, LoadBalancer loadBalancer) {
+        super(client, authenticator, loadBalancer);
+    }
 
-    public Connection getConnection(Address address) throws IOException ;
+    public Connection firstConnection(Address address, Authenticator authenticator) throws IOException {
+        this.address = address;
+        return newConnection(address, authenticator);
+    }
 
-    public void removeConnectionPool(Address address);
+    public Connection getConnection(Address address) throws IOException {
+        return super.getConnection(this.address);
+    }
 
-    public Connection newConnection(Address address, Authenticator authenticator) throws IOException ;
 
-    public Connection firstConnection(Address address, Authenticator authenticator) throws IOException ;
 }
