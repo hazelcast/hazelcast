@@ -93,6 +93,10 @@ public class Config implements DataSerializable {
         if ("true".equalsIgnoreCase(liteMemberProp)) {
             liteMember = true;
         }
+        addDefaultMergePolicies();
+    }
+
+    private void addDefaultMergePolicies() {
         addMergePolicyConfig(new MergePolicyConfig(AddNewEntryMergePolicy.NAME, new AddNewEntryMergePolicy()));
         addMergePolicyConfig(new MergePolicyConfig(HigherHitsMergePolicy.NAME, new HigherHitsMergePolicy()));
         addMergePolicyConfig(new MergePolicyConfig(LatestUpdateMergePolicy.NAME, new LatestUpdateMergePolicy()));
@@ -114,6 +118,7 @@ public class Config implements DataSerializable {
 
     public Config setMergePolicyConfigs(Map<String, MergePolicyConfig> mapMergePolicyConfigs) {
         this.mergePolicyConfigs = mapMergePolicyConfigs;
+        addDefaultMergePolicies();
         return this;
     }
 

@@ -395,9 +395,12 @@ public class TestFullApplicationContext {
     @Test
     public void testMapMergePolicyConfig() {
         Map<String, MergePolicyConfig> merges = config.getMergePolicyConfigs();
-        assertEquals(1, merges.size());
-        MergePolicyConfig cfg = merges.values().iterator().next();
-        assertEquals("hz.MERGE_POLICY_TEST", cfg.getName());
+        assertEquals(5, merges.size());  // default 4, plus hz.MERGE_POLICY_TEST
+
+        final String name = "hz.MERGE_POLICY_TEST";
+        assertTrue(merges.containsKey(name));
+        MergePolicyConfig cfg = merges.get(name);
+        assertEquals(name, cfg.getName());
         assertEquals("com.hazelcast.spring.TestMapMergePolicy", cfg.getClassName());
         assertEquals(dummyMergePolicy, cfg.getImplementation());
     }
