@@ -274,7 +274,7 @@ public class QueryTest extends ParallelTestSupport {
             assertTrue(employee.isActive());
         }
         assertEquals(expectedCount, values.size());
-        Thread.sleep((TTL + 1) * 1000);
+        Thread.sleep((TTL + 3) * 1000);
         assertEquals(0, imap.size());
         values = imap.values(new SqlPredicate("active and name LIKE 'joe15%'"));
         assertEquals(0, values.size());
@@ -319,9 +319,7 @@ public class QueryTest extends ParallelTestSupport {
     }
 
     @Test
-    @Ignore("TODO: fix test!")
     public void testQueryDuringAndAfterMigrationWithIndex() throws Exception {
-        // todo fails
         Config cfg = new Config();
         StaticNodeFactory nodeFactory = createNodeFactory(4);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
@@ -329,9 +327,11 @@ public class QueryTest extends ParallelTestSupport {
         imap.addIndex("name", false);
         imap.addIndex("age", true);
         imap.addIndex("active", false);
-        for (int i = 0; i < 50000; i++) {
+        int size = 50000;
+        for (int i = 0; i < size; i++) {
             imap.put(String.valueOf(i), new Employee("joe" + i, i % 60, ((i & 1) == 1), (double) i));
         }
+        assertEquals(size, imap.size());
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance h4 = nodeFactory.newHazelcastInstance(cfg);
@@ -346,9 +346,7 @@ public class QueryTest extends ParallelTestSupport {
     }
 
     @Test
-    @Ignore("TODO: fix test!")
     public void testQueryWithIndexesWhileMigrating() throws Exception {
-        // todo fails
         Config cfg = new Config();
         StaticNodeFactory nodeFactory = createNodeFactory(4);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
