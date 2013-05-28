@@ -23,8 +23,10 @@ import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionProxyType;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
+import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
+import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.map.MapService;
 import com.hazelcast.queue.QueueService;
@@ -102,6 +104,14 @@ public final class ProxyManager {
         register(LockService.SERVICE_NAME, new ClientProxyFactory() {
             public ClientProxy create(Object id) {
                 return new ClientLockProxy(DistributedExecutorService.SERVICE_NAME, id);
+            }
+        });
+
+        register(IdGeneratorService.SERVICE_NAME, new ClientProxyFactory() {
+            public ClientProxy create(Object id) {
+                String name = String.valueOf(id);
+                IAtomicLong atomicLong = client.getAtomicLong(IdGeneratorService.ATOMIC_LONG_NAME+name);
+                return new ClientIdGeneratorProxy(DistributedExecutorService.SERVICE_NAME, name, atomicLong);
             }
         });
 

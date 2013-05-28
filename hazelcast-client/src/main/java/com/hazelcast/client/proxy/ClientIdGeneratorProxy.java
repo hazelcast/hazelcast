@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.idgen;
+package com.hazelcast.client.proxy;
 
+import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IdGenerator;
 
@@ -23,9 +24,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * @ali 1/23/13
+ * @ali 5/28/13
  */
-public class IdGeneratorProxy implements IdGenerator {
+public class ClientIdGeneratorProxy extends ClientProxy implements IdGenerator {
+
 
     private static final int BLOCK_SIZE = 10000;
 
@@ -37,9 +39,10 @@ public class IdGeneratorProxy implements IdGenerator {
 
     AtomicLong local;
 
-    public IdGeneratorProxy(IAtomicLong atomicLong, String name) {
-        this.name = name;
+    public ClientIdGeneratorProxy(String serviceName, String objectId, IAtomicLong atomicLong) {
+        super(serviceName, objectId);
         this.atomicLong = atomicLong;
+        this.name = objectId;
         residue = new AtomicInteger(BLOCK_SIZE);
         local = new AtomicLong(-1);
     }
@@ -76,17 +79,13 @@ public class IdGeneratorProxy implements IdGenerator {
         return local.get() * BLOCK_SIZE + value;
     }
 
-    public Object getId() {
-        return name;
+    protected void onDestroy() {
+        atomicLong.destroy();
+        residue = null;
+        local = null;
     }
 
     public String getName() {
         return name;
-    }
-
-    public void destroy() {
-        atomicLong.destroy();
-        residue = null;
-        local = null;
     }
 }
