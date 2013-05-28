@@ -49,9 +49,10 @@ public class QueryOperation extends AbstractMapOperation {
         List<Integer> initialPartitions = mapService.getOwnedPartitions().get();
         IndexService indexService = mapService.getMapContainer(name).getIndexService();
         Set<QueryableEntry> entries = null;
-        if(!getNodeEngine().getHazelcastInstance().getPartitionService().hasOngoingMigration()){
-            entries = indexService.query(predicate);
-        }
+        // TODO: fix
+//        if(!getNodeEngine().getHazelcastInstance().getPartitionService().hasOngoingMigration()){
+//            entries = indexService.query(predicate);
+//        }
         result = new QueryResult();
         if (entries != null) {
             for (QueryableEntry entry : entries) {
