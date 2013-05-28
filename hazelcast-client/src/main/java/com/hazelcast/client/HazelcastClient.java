@@ -35,6 +35,7 @@ import com.hazelcast.collection.list.ObjectListProxy;
 import com.hazelcast.collection.set.ObjectSetProxy;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
+import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
@@ -167,7 +168,7 @@ public final class HazelcastClient implements HazelcastInstance {
 
     @Override
     public ILock getLock(Object key) {
-        return null;
+        return getDistributedObject(LockService.SERVICE_NAME, key);
     }
 
     @Override

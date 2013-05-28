@@ -38,8 +38,18 @@ public class DummyClientConnectionManager extends SmartClientConnectionManager {
         return newConnection(address, authenticator);
     }
 
+    /**
+     * get or create connection
+     * @param address
+     * @return
+     * @throws IOException
+     */
     public Connection getConnection(Address address) throws IOException {
-        return super.getConnection(this.address);
+        if (this.address != null){
+            return super.getConnection(this.address);
+        } else {
+            return super.getConnection(address);
+        }
     }
 
 

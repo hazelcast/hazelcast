@@ -17,6 +17,7 @@
 package com.hazelcast.concurrent.lock;
 
 import com.hazelcast.concurrent.lock.client.IsLockedRequest;
+import com.hazelcast.concurrent.lock.client.LockDestroyRequest;
 import com.hazelcast.concurrent.lock.client.LockRequest;
 import com.hazelcast.concurrent.lock.client.UnlockRequest;
 import com.hazelcast.nio.serialization.*;
@@ -33,6 +34,7 @@ public class LockPortableHook implements PortableHook {
     public static final int LOCK = 1;
     public static final int UNLOCK = 2;
     public static final int IS_LOCKED = 3;
+    public static final int DESTROY = 4;
 
     @Override
     public int getFactoryId() {
@@ -45,11 +47,13 @@ public class LockPortableHook implements PortableHook {
             public Portable create(int classId) {
                 switch (classId){
                     case LOCK:
-                        new LockRequest();
+                        return new LockRequest();
                     case UNLOCK:
-                        new UnlockRequest();
+                        return new UnlockRequest();
                     case IS_LOCKED:
-                        new IsLockedRequest();
+                        return new IsLockedRequest();
+                    case DESTROY:
+                        return new LockDestroyRequest();
                 }
                 return null;
             }

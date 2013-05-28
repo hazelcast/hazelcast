@@ -19,10 +19,6 @@ package com.hazelcast.concurrent.lock.client;
 import com.hazelcast.concurrent.lock.InternalLockNamespace;
 import com.hazelcast.concurrent.lock.LockPortableHook;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.PortableWriter;
-
-import java.io.IOException;
 
 /**
  * @mdogan 5/3/13
@@ -34,6 +30,10 @@ public final class UnlockRequest extends AbstractUnlockRequest {
 
     public UnlockRequest(Data key, int threadId) {
         super(key, threadId);
+    }
+
+    public UnlockRequest(Data key, int threadId, boolean force) {
+        super(key, threadId, force);
     }
 
     protected InternalLockNamespace getNamespace() {
