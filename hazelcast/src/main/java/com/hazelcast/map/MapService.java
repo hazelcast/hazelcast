@@ -162,9 +162,9 @@ public class MapService implements ManagedService, MigrationAwareService,
 
     private void destroyMapStores() {
         for (MapContainer mapContainer : mapContainers.values()) {
-            MapStore store = mapContainer.getStore();
-            if (store != null && store instanceof MapLoaderLifecycleSupport) {
-                ((MapLoaderLifecycleSupport) store).destroy();
+            MapStoreWrapper store = mapContainer.getStore();
+            if (store != null ) {
+                store.destroy();
             }
         }
     }

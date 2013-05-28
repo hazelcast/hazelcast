@@ -51,7 +51,7 @@ public class MapContainer {
     private final String name;
     private final MapConfig mapConfig;
     private final MapService mapService;
-    private final MapStore store;
+    private final MapStoreWrapper storeWrapper;
     private final List<MapInterceptor> interceptors;
     private final Map<String, MapInterceptor> interceptorMap;
     private final IndexService indexService = new IndexService();
@@ -64,9 +64,11 @@ public class MapContainer {
     private final WanReplicationPublisher wanReplicationPublisher;
     private final MapMergePolicy wanMergePolicy;
     private volatile boolean mapReady = false;
+    private final Object initMapStoreLock = new Object();
+
 
     public MapContainer(String name, MapConfig mapConfig, MapService mapService) {
-        MapStore storeTemp = null;
+        Object store = null;
         this.name = name;
         this.mapConfig = mapConfig;
         this.mapService = mapService;
@@ -82,23 +84,28 @@ public class MapContainer {
                         factory = (MapStoreFactory) ClassLoaderUtil.newInstance(factoryClassName);
                     }
                 }
-                storeTemp = (MapStore) (factory == null ? mapStoreConfig.getImplementation() :
+                store = (factory == null ? mapStoreConfig.getImplementation() :
                         factory.newMapStore(name, mapStoreConfig.getProperties()));
-                if (storeTemp == null) {
+                if (store == null) {
                     String mapStoreClassName = mapStoreConfig.getClassName();
-                    storeTemp = ClassLoaderUtil.newInstance(mapStoreClassName);
+                    store = ClassLoaderUtil.newInstance(mapStoreClassName);
                 }
             } catch (Exception e) {
                 ExceptionUtil.rethrow(e);
-                storeTemp = null;
+                store = null;
             }
+            storeWrapper = new MapStoreWrapper(store, mapConfig.getName(), mapStoreConfig.isEnabled());
+        }
+        else {
+            storeWrapper = null;
         }
 
-        store = storeTemp;
 
-        if (store != null) {
+        if (storeWrapper != null) {
             if (store instanceof MapLoaderLifecycleSupport) {
-                ((MapLoaderLifecycleSupport) store).init(nodeEngine.getHazelcastInstance(), mapConfig.getMapStoreConfig().getProperties(), name);
+                synchronized (initMapStoreLock) {
+                    ((MapLoaderLifecycleSupport) store).init(nodeEngine.getHazelcastInstance(), mapConfig.getMapStoreConfig().getProperties(), name);
+                }
             }
             // only master can initiate the loadAll. master will send other members to loadAll.
             // the members join later will not load from mapstore.
@@ -159,7 +166,7 @@ public class MapContainer {
             mapReady = false;
             NodeEngine nodeEngine = mapService.getNodeEngine();
             int chunkSize = nodeEngine.getGroupProperties().MAP_LOAD_CHUNK_SIZE.getInteger();
-            Set keys = store.loadAllKeys();
+            Set keys = storeWrapper.loadAllKeys();
             if (keys == null || keys.isEmpty()) {
                 mapReady = true;
                 return;
@@ -285,8 +292,8 @@ public class MapContainer {
         return mapConfig;
     }
 
-    public MapStore getStore() {
-        return store;
+    public MapStoreWrapper getStore() {
+        return storeWrapper;
     }
 
     private class MapLoadAllTask implements Runnable {
@@ -300,7 +307,7 @@ public class MapContainer {
 
         public void run() {
             NodeEngine nodeEngine = mapService.getNodeEngine();
-            Map values = store.loadAll(keys.values());
+            Map values = storeWrapper.loadAll(keys.values());
             for (Data dataKey : keys.keySet()) {
                 Object key = keys.get(dataKey);
                 Data dataValue = mapService.toData(values.get(key));

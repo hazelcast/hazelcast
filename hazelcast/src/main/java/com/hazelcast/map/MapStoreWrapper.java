@@ -31,22 +31,14 @@ public class MapStoreWrapper implements MapStore {
 
     private final MapLoader mapLoader;
     private final MapStore mapStore;
-    private final Object initLock = new Object();
-    private final boolean shouldInitialize;
     private final Object impl;
-    private final HazelcastInstance hazelcastInstance;
-    private final Properties properties;
     private final String mapName;
 
-    private volatile boolean initialized = false;
 
     private final AtomicBoolean enabled = new AtomicBoolean(false);
 
-    public MapStoreWrapper(Object impl, HazelcastInstance hazelcastInstance,
-                           Properties properties, String mapName, boolean enabled) {
+    public MapStoreWrapper(Object impl, String mapName, boolean enabled) {
         this.impl = impl;
-        this.hazelcastInstance = hazelcastInstance;
-        this.properties = properties;
         this.mapName = mapName;
         MapLoader loader = null;
         MapStore store = null;
@@ -58,21 +50,9 @@ public class MapStoreWrapper implements MapStore {
         }
         this.mapLoader = loader;
         this.mapStore = store;
-        this.shouldInitialize = (impl instanceof MapLoaderLifecycleSupport);
         this.enabled.set(enabled);
     }
 
-    void checkInit() {
-        if (shouldInitialize && !initialized) {
-            synchronized (initLock) {
-                if (!initialized) {
-                    ((MapLoaderLifecycleSupport) impl).init(hazelcastInstance,
-                            properties, mapName);
-                    initialized = true;
-                }
-            }
-        }
-    }
 
     public void setEnabled(boolean enable) {
         enabled.set(enable);
@@ -83,13 +63,8 @@ public class MapStoreWrapper implements MapStore {
     }
 
     public void destroy() {
-        if (shouldInitialize && initialized) {
-            synchronized (initLock) {
-                if (initialized) {
-                    ((MapLoaderLifecycleSupport) impl).destroy();
-                    initialized = false;
-                }
-            }
+        if(impl instanceof MapLoaderLifecycleSupport) {
+            ((MapLoaderLifecycleSupport) impl).destroy();
         }
     }
 
@@ -103,35 +78,30 @@ public class MapStoreWrapper implements MapStore {
 
     public void delete(Object key) {
         if (enabled.get()) {
-            checkInit();
             mapStore.delete(key);
         }
     }
 
     public void store(Object key, Object value) {
         if (enabled.get()) {
-            checkInit();
             mapStore.store(key, value);
         }
     }
 
     public void storeAll(Map map) {
         if (enabled.get()) {
-            checkInit();
             mapStore.storeAll(map);
         }
     }
 
     public void deleteAll(Collection keys) {
         if (enabled.get()) {
-            checkInit();
             mapStore.deleteAll(keys);
         }
     }
 
     public Set loadAllKeys() {
         if (enabled.get()) {
-            checkInit();
             return mapLoader.loadAllKeys();
         }
         return null;
@@ -139,7 +109,6 @@ public class MapStoreWrapper implements MapStore {
 
     public Object load(Object key) {
         if (enabled.get()) {
-            checkInit();
             return mapLoader.load(key);
         }
         return null;
@@ -147,7 +116,6 @@ public class MapStoreWrapper implements MapStore {
 
     public Map loadAll(Collection keys) {
         if (enabled.get()) {
-            checkInit();
             return mapLoader.loadAll(keys);
         }
         return null;

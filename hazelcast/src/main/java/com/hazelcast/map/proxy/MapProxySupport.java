@@ -598,7 +598,6 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
                     missingList.add(i);
                 }
             }
-            System.err.println("missing size:"+missingList.size());
             List<Future> futures = new ArrayList<Future>(missingList.size());
             for (Integer pid : missingList) {
                 QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(name, predicate);
