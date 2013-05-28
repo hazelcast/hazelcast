@@ -363,7 +363,7 @@ public class Node {
                     Thread.sleep(500);
                 } catch (InterruptedException e) {
                 }
-            } while (partitionService.hasActiveBackupTask() && ++waitSeconds < maxWaitSeconds);
+            } while (partitionService.hasOnGoingMigration() && ++waitSeconds < maxWaitSeconds);
             if (waitSeconds >= maxWaitSeconds) {
                 logger.log(Level.WARNING, "Graceful shutdown could not be completed in " + maxWaitSeconds + " seconds!");
             }

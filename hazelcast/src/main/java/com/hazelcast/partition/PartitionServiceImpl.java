@@ -585,7 +585,11 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         return p;
     }
 
-    public boolean hasActiveBackupTask() {
+    public boolean hasOnGoingMigration() {
+        return !migrationQueue.isEmpty() || !activeMigrations.isEmpty() || hasActiveBackupTask();
+    }
+
+    private boolean hasActiveBackupTask() {
         if (!initialized) return false;
 
         MemberGroupFactory mgf = memberGroupFactory;
