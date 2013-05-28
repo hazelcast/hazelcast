@@ -48,7 +48,10 @@ public class QueryOperation extends AbstractMapOperation {
     public void run() throws Exception {
         List<Integer> initialPartitions = mapService.getOwnedPartitions().get();
         IndexService indexService = mapService.getMapContainer(name).getIndexService();
-        Set<QueryableEntry> entries = indexService.query(predicate);
+        Set<QueryableEntry> entries = null;
+        if(!getNodeEngine().getHazelcastInstance().getPartitionService().hasOngoingMigration()){
+            entries = indexService.query(predicate);
+        }
         result = new QueryResult();
         if (entries != null) {
             for (QueryableEntry entry : entries) {
@@ -59,7 +62,7 @@ public class QueryOperation extends AbstractMapOperation {
             runParallel(initialPartitions);
         }
         List<Integer> finalPartitions = mapService.getOwnedPartitions().get();
-        if (initialPartitions == finalPartitions) {
+        if (initialPartitions.equals(finalPartitions)) {
             result.setPartitionIds(finalPartitions);
         }
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
