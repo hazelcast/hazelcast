@@ -17,11 +17,13 @@
 package com.hazelcast.util;
 
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.util.AddressUtil.AddressMatcher;
 import com.hazelcast.util.AddressUtil.InvalidAddressException;
 import com.hazelcast.util.AddressUtil.Ip4AddressMatcher;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Arrays;
@@ -34,6 +36,7 @@ import static org.junit.Assert.assertTrue;
  * Unit tests for AddressUtil class.
  */
 @RunWith(RandomBlockJUnit4ClassRunner.class)
+@Category(ParallelTest.class)
 public class AddressUtilTest {
 
     @Test

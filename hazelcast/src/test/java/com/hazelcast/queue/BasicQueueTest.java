@@ -25,7 +25,9 @@ import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.test.ParallelTestSupport;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import com.hazelcast.test.StaticNodeFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
@@ -42,6 +44,7 @@ import static org.junit.Assert.*;
  * @ali 2/12/13
  */
 @RunWith(RandomBlockJUnit4ClassRunner.class)
+@Category(ParallelTest.class)
 public class BasicQueueTest extends ParallelTestSupport {
 
     @Test

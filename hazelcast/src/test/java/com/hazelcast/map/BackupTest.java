@@ -18,18 +18,18 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.test.ParallelTestSupport;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import com.hazelcast.test.StaticNodeFactory;
-import org.junit.After;
+import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Random;
@@ -43,23 +43,14 @@ import static java.lang.Thread.sleep;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-@Ignore("TODO: fix test!")
 @RunWith(RandomBlockJUnit4ClassRunner.class)
-public class BackupTest {
+@Category(ParallelTest.class)
+public class BackupTest extends ParallelTestSupport {
 
-    @After
-    public void cleanup() throws Exception {
-        Hazelcast.shutdownAll();
-    }
-
-    /**
-     * I should NOT shutdown before I backup everything
-     */
     @Test
-    // todo fails
     public void testGracefulShutdown() throws Exception {
         int size = 250000;
-        StaticNodeFactory nodeFactory = new StaticNodeFactory(5);
+        StaticNodeFactory nodeFactory = createNodeFactory(5);
         final Config config = new Config();
         config.setProperty(GroupProperties.PROP_PARTITION_COUNT, "1111");
 
@@ -91,7 +82,7 @@ public class BackupTest {
         config.getMapConfig("test").setBackupCount(2).setStatisticsEnabled(true);
         config.setProperty(GroupProperties.PROP_PARTITION_COUNT, "1111");
 
-        StaticNodeFactory f = new StaticNodeFactory(6);
+        StaticNodeFactory f = createNodeFactory(6);
         final HazelcastInstance hz = f.newHazelcastInstance(config);
 
         final IMap<Object, Object> map = hz.getMap("test");
@@ -140,7 +131,7 @@ public class BackupTest {
 
     @Test
     public void issue395BackupProblemWithBCount2() throws InterruptedException {
-        StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
+        StaticNodeFactory nodeFactory = createNodeFactory(3);
         final int size = 1000;
         Config config = new Config();
         final String name = "default";
@@ -162,16 +153,9 @@ public class BackupTest {
         assertEquals(2 * size, getTotalBackupEntryCount(map1, map2, map3));
     }
 
-    /**
-     * Testing if we are losing any data when we start a node
-     * or when we shutdown a node.
-     * <p/>
-     * Before the shutdowns we are waiting 2 seconds so that we will give
-     * remaining members some time to backup their data.
-     */
     @Test(timeout = 60000)
     public void testDataRecovery() throws Exception {
-        StaticNodeFactory nodeFactory = new StaticNodeFactory(4);
+        StaticNodeFactory nodeFactory = createNodeFactory(4);
 
         final int size = 1000;
         final String name = "default";
@@ -231,7 +215,7 @@ public class BackupTest {
      */
     @Test
     public void testDataRecovery2() throws Exception {
-        StaticNodeFactory nodeFactory = new StaticNodeFactory(3);
+        StaticNodeFactory nodeFactory = createNodeFactory(3);
         final int size = 100000;
         final Config config = new Config();
         final String name = "default";
@@ -272,7 +256,7 @@ public class BackupTest {
 
     @Test(timeout = 160000)
     public void testBackupCountTwo() throws Exception {
-        StaticNodeFactory nodeFactory = new StaticNodeFactory(4);
+        StaticNodeFactory nodeFactory = createNodeFactory(4);
 
         Config config = new Config();
         final String name = "default";
@@ -324,11 +308,6 @@ public class BackupTest {
         return total;
     }
 
-    private long getOwnedAndBackupCount(IMap imap) {
-        LocalMapStats localMapStats = imap.getLocalMapStats();
-        return localMapStats.getOwnedEntryCount() + localMapStats.getBackupEntryCount();
-    }
-
 
     /**
      * Testing correctness of the sizes during migration.
@@ -345,7 +324,7 @@ public class BackupTest {
      */
     @Test(timeout = 3600000)
     public void testDataRecoveryAndCorrectness() throws Exception {
-        StaticNodeFactory nodeFactory = new StaticNodeFactory(4);
+        StaticNodeFactory nodeFactory = createNodeFactory(4);
 
         final int size = 10000;
         final Config config = new Config();
@@ -399,7 +378,7 @@ public class BackupTest {
 
     @Test
     public void testIssue177BackupCount() throws InterruptedException {
-        final StaticNodeFactory nodeFactory = new StaticNodeFactory(10);
+        final StaticNodeFactory nodeFactory = createNodeFactory(10);
 
         final Config config = new Config();
         config.setProperty("hazelcast.partition.migration.interval", "0");
@@ -469,7 +448,7 @@ public class BackupTest {
      * Test for issue #259.
      */
     public void testBackupPutWhenOwnerNodeDead() throws InterruptedException {
-        final StaticNodeFactory nodeFactory = new StaticNodeFactory(2);
+        final StaticNodeFactory nodeFactory = createNodeFactory(2);
 
         final Config config = new Config();
         config.setProperty("hazelcast.wait.seconds.before.join", "1");
@@ -529,7 +508,7 @@ public class BackupTest {
      * Test for issue #259.
      */
     public void testBackupRemoveWhenOwnerNodeDead() throws InterruptedException {
-        final StaticNodeFactory nodeFactory = new StaticNodeFactory(2);
+        final StaticNodeFactory nodeFactory = createNodeFactory(2);
 
         final Config config = new Config();
         config.setProperty("hazelcast.wait.seconds.before.join", "1");

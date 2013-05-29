@@ -17,8 +17,10 @@
 package com.hazelcast.config;
 
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -37,6 +39,7 @@ import static org.junit.Assert.*;
  *
  */
 @RunWith(RandomBlockJUnit4ClassRunner.class)
+@Category(ParallelTest.class)
 public class IterableNodeListTest {
 
     private Document document;

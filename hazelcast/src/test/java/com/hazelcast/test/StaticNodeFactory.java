@@ -38,18 +38,20 @@ public final class StaticNodeFactory {
     public static final String HAZELCAST_TEST_USE_NETWORK = "hazelcast.test.use.network";
     public static final String HAZELCAST_TEST_USE_CLIENT = "hazelcast.test.use.client";
 
-    public final static boolean MOCK_NETWORK = !Boolean.getBoolean(HAZELCAST_TEST_USE_NETWORK);
-    public final static boolean USE_CLIENT = Boolean.getBoolean(HAZELCAST_TEST_USE_CLIENT);
-
     private final static String HAZELCAST_CLIENT = "com.hazelcast.client.HazelcastClient";
     private final static String HAZELCAST_CLIENT_CONFIG = "com.hazelcast.client.config.ClientConfig";
     private final static AtomicInteger ports = new AtomicInteger(5000);
 
+    public final boolean MOCK_NETWORK = isMockNetwork();
+    public final boolean USE_CLIENT = isUseClient();
+
     private final Address[] addresses;
     private final StaticNodeRegistry registry;
     private final AtomicInteger nodeIndex = new AtomicInteger();
+    private final int count;
 
     public StaticNodeFactory(int count) {
+        this.count = count;
         if (MOCK_NETWORK) {
             addresses = createAddresses(count);
             registry = new StaticNodeRegistry(addresses);
@@ -72,7 +74,6 @@ public final class StaticNodeFactory {
     }
 
     public HazelcastInstance[] newInstances(Config config) {
-        final int count = addresses.length;
         final HazelcastInstance[] instances = new HazelcastInstance[count];
         for (int i = 0; i < count; i++) {
             instances[i] = newHazelcastInstance(config);
@@ -95,7 +96,7 @@ public final class StaticNodeFactory {
             Node node = TestUtil.getNode(hz);
             MemberImpl m = (MemberImpl) hz.getCluster().getLocalMember();
             if (m.getAddress().equals(nodeAddress)) {
-                if (MOCK_NETWORK) {
+                if (isMockNetwork()) {
                     ClientEngineImpl engine = node.clientEngine;
                     return new MockSimpleClient(engine);
                 } else {
@@ -141,6 +142,13 @@ public final class StaticNodeFactory {
         return config;
     }
 
+    private static boolean isMockNetwork() {
+        return !Boolean.getBoolean(HAZELCAST_TEST_USE_NETWORK);
+    }
+
+    private static boolean isUseClient() {
+        return Boolean.getBoolean(HAZELCAST_TEST_USE_CLIENT);
+    }
 
     @Override
     public String toString() {

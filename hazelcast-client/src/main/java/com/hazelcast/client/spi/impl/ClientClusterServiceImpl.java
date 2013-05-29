@@ -57,12 +57,14 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     private final AtomicReference<Map<Address, MemberImpl>> membersRef = new AtomicReference<Map<Address, MemberImpl>>();
     private final ConcurrentMap<String, MembershipListener> listeners = new ConcurrentHashMap<String, MembershipListener>();
 
+    private final boolean redoOperation;
     private final Credentials credentials;
     private volatile ClientPrincipal principal;
 
     public ClientClusterServiceImpl(HazelcastClient client) {
         this.client = client;
         clusterThread = new ClusterListenerThread(client.getThreadGroup(), client.getName() + ".cluster-listener");
+        redoOperation = getClientConfig().isRedoOperation();
         credentials = getClientConfig().getCredentials();
     }
 
@@ -126,8 +128,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             return (T) serializationService.toObject(response);
         } catch (IOException e){
             ((ClientPartitionServiceImpl)client.getClientPartitionService()).refreshPartitions();
-            if (client.getClientConfig().isRedoOperation()
-                    || obj instanceof RetryableRequest){
+            if (redoOperation || obj instanceof RetryableRequest){
                 return sendAndReceive(obj);
             }
             throw new HazelcastException(e);
@@ -167,8 +168,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             }
         } catch (IOException e){
             ((ClientPartitionServiceImpl)client.getClientPartitionService()).refreshPartitions();
-            if (client.getClientConfig().isRedoOperation()
-                    || obj instanceof RetryableRequest){
+            if (redoOperation || obj instanceof RetryableRequest){
                 sendAndHandle(obj, handler);
             }
             throw new HazelcastException(e);

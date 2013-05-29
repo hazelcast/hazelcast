@@ -22,7 +22,9 @@ import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.test.ParallelTestSupport;
 import com.hazelcast.test.StaticNodeFactory;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.*;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.script.ScriptEngine;
@@ -36,6 +38,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.*;
 
 @RunWith(RandomBlockJUnit4ClassRunner.class)
+@Category(ParallelTest.class)
 public class ExecutorTest extends ParallelTestSupport {
 
     public static final int simpleTestNodeCount = 3;

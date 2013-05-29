@@ -24,9 +24,11 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.net.InetAddress;
@@ -36,6 +38,7 @@ import java.util.*;
  * @mdogan 4/17/13
  */
 @RunWith(RandomBlockJUnit4ClassRunner.class)
+@Category(ParallelTest.class)
 public class PartitionStateGeneratorTest {
 
     private static final boolean printState = false;
@@ -95,10 +98,39 @@ public class PartitionStateGeneratorTest {
         PartitionGroupConfig config = new PartitionGroupConfig();
         config.setEnabled(true);
         config.setGroupType(PartitionGroupConfig.MemberGroupType.CUSTOM);
-        config.addMemberGroupConfig(new MemberGroupConfig().addInterface("10.10.0.0").addInterface("10.10.0.2"))
-                .addMemberGroupConfig(new MemberGroupConfig().addInterface("10.10.0.3-5"))
-                .addMemberGroupConfig(new MemberGroupConfig().addInterface("10.10.0.6").addInterface("10.10.0.7").addInterface("10.10.0.8"))
-                .addMemberGroupConfig(new MemberGroupConfig().addInterface("10.10.0.9-100"));
+        MemberGroupConfig mgCfg0 = new MemberGroupConfig();
+        MemberGroupConfig mgCfg1 = new MemberGroupConfig();
+        MemberGroupConfig mgCfg2 = new MemberGroupConfig();
+        MemberGroupConfig mgCfg3 = new MemberGroupConfig();
+
+        config.addMemberGroupConfig(mgCfg0);
+        config.addMemberGroupConfig(mgCfg1);
+        config.addMemberGroupConfig(mgCfg2);
+        config.addMemberGroupConfig(mgCfg3);
+
+        for (int k = 0; k < 3; k++) {
+            for (int i = 0; i < 255; i++) {
+                MemberGroupConfig mg;
+                switch (i % 4) {
+                    case 0:
+                        mg = mgCfg0;
+                        break;
+                    case 1:
+                        mg = mgCfg1;
+                        break;
+                    case 2:
+                        mg = mgCfg2;
+                        break;
+                    case 3:
+                        mg = mgCfg3;
+                        break;
+                    default:
+                        throw new IllegalArgumentException();
+                }
+                mg.addInterface("10.10." + k + "." + i);
+            }
+        }
+
         PartitionStateGenerator generator = PartitionStateGeneratorFactory.newConfigPartitionStateGenerator(config);
         test(generator, new ConfigMemberGroupFactory(config.getMemberGroupConfigs()));
     }
@@ -116,8 +148,7 @@ public class PartitionStateGeneratorTest {
         int maxSameHostCount = 3;
         int[] partitionCounts = new int[]{271, 787, 1549, 3217, 8707};
         int[] members = new int[]{3, 6, 7, 9, 10, 5, 11, 13, 8, 17, 57, 100, 130, 77, 255, 179, 93, 37, 26, 15, 5};
-        for (int i = 0; i < partitionCounts.length; i++) {
-            int partitionCount = partitionCounts[i];
+        for (int partitionCount : partitionCounts) {
             int memberCount = members[0];
             List<Member> memberList = createMembers(memberCount, maxSameHostCount);
             Collection<MemberGroup> groups = nodeGroupFactory.createMemberGroups(memberList);
@@ -316,7 +347,7 @@ public class PartitionStateGeneratorTest {
         if (average <= 1) {
             return;
         }
-        final float r = 2.5f;
+        final float r = 3f;
         Assert.assertTrue("Too low partition count! Owned: " + count + ", Avg: " + average
                 + ", Replica: " + replica, count >= average / r);
         Assert.assertTrue("Too high partition count! Owned: " + count + ", Avg: " + average

@@ -19,8 +19,10 @@ package com.hazelcast.nio.serialization;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
@@ -35,6 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @mdogan 1/4/13
  */
 @RunWith(RandomBlockJUnit4ClassRunner.class)
+@Category(ParallelTest.class)
 public class SerializationConcurrencyTest {
 
     static final int FACTORY_ID = 1;

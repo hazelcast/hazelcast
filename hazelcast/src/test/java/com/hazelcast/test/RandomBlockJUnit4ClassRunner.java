@@ -38,7 +38,9 @@ public final class RandomBlockJUnit4ClassRunner extends BlockJUnit4ClassRunner {
         if (System.getProperty(logging) == null) {
             System.setProperty(logging, "log4j");
         }
-        System.setProperty(StaticNodeFactory.HAZELCAST_TEST_USE_NETWORK, "false");
+        if (System.getProperty(StaticNodeFactory.HAZELCAST_TEST_USE_NETWORK) == null) {
+            System.setProperty(StaticNodeFactory.HAZELCAST_TEST_USE_NETWORK, "false");
+        }
         System.setProperty("hazelcast.version.check.enabled", "false");
         System.setProperty("hazelcast.mancenter.enabled", "false");
         System.setProperty("hazelcast.wait.seconds.before.join", "1");
@@ -61,14 +63,14 @@ public final class RandomBlockJUnit4ClassRunner extends BlockJUnit4ClassRunner {
     protected void runChild(FrameworkMethod method, RunNotifier notifier) {
         long start = System.currentTimeMillis();
         String testName = method.getMethod().getDeclaringClass().getSimpleName() + "." + method.getName();
-        System.out.println(" Started Running Test: " + testName);
+        System.out.println("Started Running Test: " + testName);
         long t0 = System.nanoTime();
         long cpu0 = osBean.getProcessCpuTime();
         super.runChild(method, notifier);
         long cpu1 = osBean.getProcessCpuTime();
         long t1 = System.nanoTime();
-        System.out.println(testName + "-> CPU-TIME: " + ((cpu1 - cpu0) / 1000 / 1000));
-        System.out.println(testName + "-> CPU-USAGE: " + Math.round((double) (cpu1 - cpu0) / (t1 - t0) * 100));
+//        System.out.println(testName + "-> CPU-TIME: " + ((cpu1 - cpu0) / 1000 / 1000));
+//        System.out.println(testName + "-> CPU-USAGE: " + Math.round((double) (cpu1 - cpu0) / (t1 - t0) * 100));
         float took = (float) (System.currentTimeMillis() - start) / 1000;
         System.out.println(String.format("Finished Running Test: %s in %.3f seconds.", testName, took));
     }
