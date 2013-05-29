@@ -16,36 +16,41 @@
 
 package com.hazelcast.test;
 
-import com.sun.management.OperatingSystemMXBean;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 
-import java.lang.management.ManagementFactory;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 
 /**
  * Run the tests randomly and log the running test.
  */
 public final class RandomBlockJUnit4ClassRunner extends BlockJUnit4ClassRunner {
 
-    private static final OperatingSystemMXBean osBean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
-
     static {
         final String logging = "hazelcast.logging.type";
         if (System.getProperty(logging) == null) {
             System.setProperty(logging, "log4j");
         }
-        System.setProperty(StaticNodeFactory.HAZELCAST_TEST_USE_NETWORK, "false");
+        if (System.getProperty(StaticNodeFactory.HAZELCAST_TEST_USE_NETWORK) == null) {
+            System.setProperty(StaticNodeFactory.HAZELCAST_TEST_USE_NETWORK, "false");
+        }
         System.setProperty("hazelcast.version.check.enabled", "false");
         System.setProperty("hazelcast.mancenter.enabled", "false");
         System.setProperty("hazelcast.wait.seconds.before.join", "1");
         System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
         System.setProperty("java.net.preferIPv4Stack", "true");
-    }
 
+        // randomize multicast group...
+        Random rand = new Random();
+        int g1 = rand.nextInt(255);
+        int g2 = rand.nextInt(255);
+        int g3 = rand.nextInt(255);
+        System.setProperty("hazelcast.multicast.group", "224." + g1 + "." + g2 + "." + g3);
+    }
 
     public RandomBlockJUnit4ClassRunner(Class<?> klass) throws InitializationError {
         super(klass);
@@ -61,14 +66,8 @@ public final class RandomBlockJUnit4ClassRunner extends BlockJUnit4ClassRunner {
     protected void runChild(FrameworkMethod method, RunNotifier notifier) {
         long start = System.currentTimeMillis();
         String testName = method.getMethod().getDeclaringClass().getSimpleName() + "." + method.getName();
-        System.out.println(" Started Running Test: " + testName);
-        long t0 = System.nanoTime();
-        long cpu0 = osBean.getProcessCpuTime();
+        System.out.println("Started Running Test: " + testName);
         super.runChild(method, notifier);
-        long cpu1 = osBean.getProcessCpuTime();
-        long t1 = System.nanoTime();
-        System.out.println(testName + "-> CPU-TIME: " + ((cpu1 - cpu0) / 1000 / 1000));
-        System.out.println(testName + "-> CPU-USAGE: " + Math.round((double) (cpu1 - cpu0) / (t1 - t0) * 100));
         float took = (float) (System.currentTimeMillis() - start) / 1000;
         System.out.println(String.format("Finished Running Test: %s in %.3f seconds.", testName, took));
     }

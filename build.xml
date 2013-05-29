@@ -76,8 +76,6 @@
     <target name="report">
         <delete dir="./reports" failonerror="false"/>
         <mkdir dir="./reports"/>
-        <delete dir="./reports" failonerror="false"/>
-        <mkdir dir="./reports"/>
         <junitreport todir="./reports">
             <fileset dir="./hazelcast/target/surefire-reports">
                 <include name="TEST-*.xml"/>
@@ -85,7 +83,10 @@
             <fileset dir="./hazelcast-client/target/surefire-reports" erroronmissingdir="false">
                 <include name="TEST-*.xml"/>
             </fileset>
-            <fileset dir="./hazelcast-hibernate/target/surefire-reports" erroronmissingdir="false">
+            <fileset dir="./hazelcast-hibernate/hazelcast-hibernate3/target/surefire-reports" erroronmissingdir="false">
+                <include name="TEST-*.xml"/>
+            </fileset>
+            <fileset dir="./hazelcast-hibernate/hazelcast-hibernate4/target/surefire-reports" erroronmissingdir="false">
                 <include name="TEST-*.xml"/>
             </fileset>
             <fileset dir="./hazelcast-spring/target/surefire-reports" erroronmissingdir="false">

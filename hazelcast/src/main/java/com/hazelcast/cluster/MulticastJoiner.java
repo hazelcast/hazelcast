@@ -45,20 +45,18 @@ public class MulticastJoiner extends AbstractJoiner {
         int tryCount = 0;
         long joinStartTime = Clock.currentTimeMillis();
         long maxJoinMillis = node.getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
-        
+
         while (node.isActive() && !joined.get() && (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis)) {
-            String msg = "Joining to master node: " + node.getMasterAddress();
-            logger.log(Level.FINEST, msg);
-            systemLogService.logJoin(msg);
-            
             Address masterAddressNow = getTargetAddress();
             if (masterAddressNow == null) {
                 masterAddressNow = findMasterWithMulticast();
             }
             node.setMasterAddress(masterAddressNow);
-            if (masterAddressNow != null) {
-                systemLogService.logJoin("Setting master address to " + masterAddressNow);
-            }
+
+            String msg = "Joining to master node: " + node.getMasterAddress();
+            logger.log(Level.FINEST, msg);
+            systemLogService.logJoin(msg);
+
             if (node.getMasterAddress() == null || node.getThisAddress().equals(node.getMasterAddress())) {
                 TcpIpConfig tcpIpConfig = config.getNetworkConfig().getJoin().getTcpIpConfig();
                 if (tcpIpConfig != null && tcpIpConfig.isEnabled()) {
@@ -151,22 +149,16 @@ public class MulticastJoiner extends AbstractJoiner {
 
     private Address findMasterWithMulticast() {
         try {
-            final String ip = System.getProperty("join.ip");
-            if (ip == null) {
-                JoinRequest joinRequest = node.createJoinRequest();
-                for (; node.isActive() && currentTryCount.incrementAndGet() <= maxTryCount.get(); ) {
-                    joinRequest.setTryCount(currentTryCount.get());
-                    node.multicastService.send(joinRequest);
-                    if (node.getMasterAddress() == null) {
-                        //noinspection BusyWait
-                        Thread.sleep(publishInterval);
-                    } else {
-                        return node.getMasterAddress();
-                    }
+            JoinRequest joinRequest = node.createJoinRequest();
+            while (node.isActive() && currentTryCount.incrementAndGet() <= maxTryCount.get()) {
+                joinRequest.setTryCount(currentTryCount.get());
+                node.multicastService.send(joinRequest);
+                if (node.getMasterAddress() == null) {
+                    //noinspection BusyWait
+                    Thread.sleep(publishInterval);
+                } else {
+                    return node.getMasterAddress();
                 }
-            } else {
-                logger.log(Level.FINEST, "RETURNING join.ip");
-                return new Address(ip, config.getNetworkConfig().getPort());
             }
         } catch (final Exception e) {
             if (logger != null) {

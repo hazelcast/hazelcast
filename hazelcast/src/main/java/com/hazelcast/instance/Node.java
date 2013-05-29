@@ -348,6 +348,7 @@ public class Node {
         long start = Clock.currentTimeMillis();
         logger.log(Level.FINEST, "** we are being asked to shutdown when active = " + String.valueOf(active));
         if (!force && isActive()) {
+            partitionService.sendReplicaVersionCheckTasks();
             final int maxWaitSeconds = groupProperties.GRACEFUL_SHUTDOWN_MAX_WAIT.getInteger();
             int waitSeconds = 0;
             do {
@@ -361,7 +362,7 @@ public class Node {
                 try {
                     //noinspection BusyWait
                     Thread.sleep(500);
-                } catch (InterruptedException e) {
+                } catch (InterruptedException ignored) {
                 }
             } while (partitionService.hasOnGoingMigration() && ++waitSeconds < maxWaitSeconds);
             if (waitSeconds >= maxWaitSeconds) {

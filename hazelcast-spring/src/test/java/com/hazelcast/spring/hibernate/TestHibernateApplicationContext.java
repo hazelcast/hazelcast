@@ -22,7 +22,7 @@ import com.hazelcast.core.Member;
 import com.hazelcast.hibernate.HazelcastCacheRegionFactory;
 import com.hazelcast.hibernate.HazelcastLocalCacheRegionFactory;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
-import com.hazelcast.test.annotation.NetworkTest;
+import com.hazelcast.test.annotation.SerialTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -39,7 +39,7 @@ import static org.junit.Assert.assertNotNull;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"hibernate-applicationContext-hazelcast.xml"})
-@Category(NetworkTest.class)
+@Category(SerialTest.class)
 public class TestHibernateApplicationContext {
 
     @Resource(name = "instance")

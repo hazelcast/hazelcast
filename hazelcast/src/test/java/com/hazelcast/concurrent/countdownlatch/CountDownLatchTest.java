@@ -25,8 +25,10 @@ import com.hazelcast.test.ParallelTestSupport;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import com.hazelcast.test.StaticNodeFactory;
 import com.hazelcast.test.annotation.ClientCompatible;
+import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.TimeUnit;
@@ -35,6 +37,7 @@ import java.util.concurrent.TimeUnit;
  * @mdogan 1/16/13
  */
 @RunWith(RandomBlockJUnit4ClassRunner.class)
+@Category(ParallelTest.class)
 public class CountDownLatchTest extends ParallelTestSupport {
 
     @Test

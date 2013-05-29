@@ -21,7 +21,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
-import com.hazelcast.test.annotation.NetworkTest;
+import com.hazelcast.test.annotation.SerialTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -40,7 +40,7 @@ import static org.junit.Assert.*;
  * @ali 5/19/13
  */
 @RunWith(RandomBlockJUnit4ClassRunner.class)
-@Category(NetworkTest.class)
+@Category(SerialTest.class)
 public class ClientQueueTest {
 
     static final String queueName = "test1";

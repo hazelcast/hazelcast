@@ -23,7 +23,9 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.test.ParallelTestSupport;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import com.hazelcast.test.StaticNodeFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
@@ -31,6 +33,7 @@ import java.io.Serializable;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(RandomBlockJUnit4ClassRunner.class)
+@Category(ParallelTest.class)
 public class InterceptorTest extends ParallelTestSupport {
 
     @Test

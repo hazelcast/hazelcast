@@ -44,12 +44,13 @@ public class ReplicaSyncRequest extends Operation implements PartitionAwareOpera
 
     public void run() throws Exception {
         final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+        final PartitionServiceImpl partitionService = (PartitionServiceImpl) nodeEngine.getPartitionService();
+        partitionService.incrementReplicaSyncProcessCount();
+
         final ILogger logger = nodeEngine.getLogger(getClass());
         final int partitionId = getPartitionId();
         final int replicaIndex = getReplicaIndex();
-        final PartitionServiceImpl partitionService = (PartitionServiceImpl) nodeEngine.getPartitionService();
 
-        partitionService.incrementReplicaSyncProcessCount();
         try {
             final Collection<MigrationAwareService> services = nodeEngine.getServices(MigrationAwareService.class);
             final PartitionReplicationEvent event = new PartitionReplicationEvent(partitionId, replicaIndex);

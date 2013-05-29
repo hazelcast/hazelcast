@@ -24,7 +24,9 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.test.ParallelTestSupport;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import com.hazelcast.test.StaticNodeFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Set;
@@ -39,6 +41,7 @@ import static org.junit.Assert.assertTrue;
  */
 
 @RunWith(RandomBlockJUnit4ClassRunner.class)
+@Category(ParallelTest.class)
 public class PartitionDistributionTest extends ParallelTestSupport {
 
     @Test

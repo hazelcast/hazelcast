@@ -24,9 +24,11 @@ import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.test.ParallelTestSupport;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import com.hazelcast.test.StaticNodeFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.*;
@@ -41,10 +43,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 @RunWith(RandomBlockJUnit4ClassRunner.class)
+@Category(ParallelTest.class)
 public class MapStoreTest extends ParallelTestSupport {
 
     @Test
-    @Ignore("TODO: fix test!")
+//    @Ignore("TODO: fix test!")
     public void testMapInitialLoad() throws InterruptedException {
         int size = 10000;
         StaticNodeFactory nodeFactory = createNodeFactory(3);
@@ -263,7 +266,7 @@ public class MapStoreTest extends ParallelTestSupport {
     }
 
     @Test
-    @Ignore("TODO: fix test!")
+//    @Ignore("TODO: fix test!")
     public void testOneMemberWriteBehindWithEvictions() throws Exception {
         TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
         Config config = newConfig(testMapStore, 2);
@@ -289,9 +292,10 @@ public class MapStoreTest extends ParallelTestSupport {
         }
         for (int i = 0; i < 100; i++) {
             map.evict(i);
+            System.out.println("evict:"+i);
+            assertEquals(TestEventBasedMapStore.STORE_EVENTS.STORE, testMapStore.waitForEvent(3));
         }
-        assertEquals(TestEventBasedMapStore.STORE_EVENTS.STORE_ALL, testMapStore.waitForEvent(10));
-        assertEquals(null, testMapStore.waitForEvent(10));
+        assertEquals(null, testMapStore.waitForEvent(2));
         assertEquals(100, testMapStore.getStore().size());
         assertEquals(0, map.size());
         for (int i = 0; i < 100; i++) {

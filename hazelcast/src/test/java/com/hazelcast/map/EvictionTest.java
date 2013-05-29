@@ -23,8 +23,10 @@ import com.hazelcast.core.*;
 import com.hazelcast.test.ParallelTestSupport;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
 import com.hazelcast.test.StaticNodeFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Map;
@@ -35,6 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.junit.Assert.*;
 
 @RunWith(RandomBlockJUnit4ClassRunner.class)
+@Category(ParallelTest.class)
 public class EvictionTest extends ParallelTestSupport {
 
     @Test
@@ -388,6 +391,8 @@ public class EvictionTest extends ParallelTestSupport {
                             map.get(i);
                         }
                         Thread.sleep(1000);
+                    } catch (HazelcastInstanceNotActiveException e) {
+                        return;
                     } catch (InterruptedException e) {
                         return;
                     }
@@ -472,6 +477,8 @@ public class EvictionTest extends ParallelTestSupport {
                             map.get(i);
                         }
                         Thread.sleep(1000);
+                    } catch (HazelcastInstanceNotActiveException e) {
+                        return;
                     } catch (InterruptedException e) {
                         return;
                     }

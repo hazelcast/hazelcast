@@ -17,7 +17,9 @@
 package com.hazelcast.query;
 
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.security.SecureRandom;
@@ -28,9 +30,10 @@ import java.util.Random;
 import static junit.framework.Assert.*;
 
 @RunWith(RandomBlockJUnit4ClassRunner.class)
+@Category(ParallelTest.class)
 public class ParserTest {
 
-    final Parser parser = new Parser();
+    private final Parser parser = new Parser();
 
     @Test
     public void parseEmpty() {

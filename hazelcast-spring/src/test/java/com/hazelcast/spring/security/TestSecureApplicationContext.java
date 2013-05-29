@@ -25,7 +25,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.security.ICredentialsFactory;
 import com.hazelcast.security.IPermissionPolicy;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
-import com.hazelcast.test.annotation.NetworkTest;
+import com.hazelcast.test.annotation.SerialTest;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -42,7 +42,7 @@ import static org.junit.Assert.*;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"secure-applicationContext-hazelcast.xml"})
-@Category(NetworkTest.class)
+@Category(SerialTest.class)
 public class TestSecureApplicationContext {
 
     @Resource
