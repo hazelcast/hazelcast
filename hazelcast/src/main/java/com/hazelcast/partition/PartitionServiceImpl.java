@@ -559,6 +559,20 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         }
     }
 
+    @PrivateApi
+    public void sendReplicaVersionCheckTasks() {
+        final Address thisAddress = node.getThisAddress();
+        for (PartitionInfo partition : partitions) {
+            if (thisAddress.equals(partition.getOwner()) && partition.getReplicaAddress(1) != null) {
+                SyncReplicaVersion op = new SyncReplicaVersion(1);
+                op.setService(this);
+                op.setPartitionId(partition.getPartitionId());
+                nodeEngine.getOperationService().executeOperation(op);
+            }
+        }
+    }
+
+
     public PartitionInfo[] getPartitions() {
         return partitions;
     }
@@ -796,15 +810,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
 
         public void run() {
             if (node.isActive() && migrationActive.get()) {
-                final Address thisAddress = node.getThisAddress();
-                for (PartitionInfo partition : partitions) {
-                    if (thisAddress.equals(partition.getOwner()) && partition.getReplicaAddress(1) != null) {
-                        SyncReplicaVersion op = new SyncReplicaVersion(1);
-                        op.setService(PartitionServiceImpl.this);
-                        op.setPartitionId(partition.getPartitionId());
-                        nodeEngine.getOperationService().executeOperation(op);
-                    }
-                }
+                sendReplicaVersionCheckTasks();
             }
         }
     }

@@ -22,7 +22,9 @@ import com.hazelcast.concurrent.atomiclong.client.*;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
@@ -33,6 +35,7 @@ import static org.junit.Assert.*;
  * @ali 5/13/13
  */
 @RunWith(RandomBlockJUnit4ClassRunner.class)
+@Category(ParallelTest.class)
 public class AtomicLongClientRequestTest extends ClientTestSupport {
 
     static final String name = "test";

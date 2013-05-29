@@ -21,9 +21,11 @@ import com.hazelcast.concurrent.semaphore.client.*;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.ISemaphore;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
@@ -34,6 +36,7 @@ import static org.junit.Assert.*;
  * @ali 5/13/13
  */
 @RunWith(RandomBlockJUnit4ClassRunner.class)
+@Category(ParallelTest.class)
 public class SemaphoreClientRequestTest extends ClientTestSupport {
 
     static final String name = "test";

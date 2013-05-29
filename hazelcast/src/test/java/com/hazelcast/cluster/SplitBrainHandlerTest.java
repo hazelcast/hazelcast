@@ -25,7 +25,7 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
-import com.hazelcast.test.annotation.NetworkTest;
+import com.hazelcast.test.annotation.SerialTest;
 import com.hazelcast.util.Clock;
 import org.junit.After;
 import org.junit.BeforeClass;
@@ -43,7 +43,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.*;
 
 @RunWith(RandomBlockJUnit4ClassRunner.class)
-@Category(NetworkTest.class)
+@Category(SerialTest.class)
 
 public class SplitBrainHandlerTest {
 

@@ -21,7 +21,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
-import com.hazelcast.test.annotation.NetworkTest;
+import com.hazelcast.test.annotation.SerialTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -39,7 +39,7 @@ import static org.junit.Assert.assertTrue;
  * @ali 5/20/13
  */
 @RunWith(RandomBlockJUnit4ClassRunner.class)
-@Category(NetworkTest.class)
+@Category(SerialTest.class)
 public class ClientMultiMapTest {
 
     static final String name = "test";

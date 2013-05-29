@@ -22,7 +22,9 @@ import com.hazelcast.test.StaticNodeFactory;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.test.ParallelTestSupport;
 import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
+import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.*;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Random;
@@ -42,6 +44,7 @@ import static org.junit.Assert.*;
  * Time: 5:12 PM
  */
 @RunWith(RandomBlockJUnit4ClassRunner.class)
+@Category(ParallelTest.class)
 public class LockTest extends ParallelTestSupport {
 
     @Test
@@ -129,7 +132,6 @@ public class LockTest extends ParallelTestSupport {
     }
 
     @Test(expected = HazelcastInstanceNotActiveException.class)
-    @Ignore("TODO: fix test!")
     public void testShutDownNodeWhenOtherWaitingOnLock() throws InterruptedException {
         final StaticNodeFactory nodeFactory = createNodeFactory(2);
         final HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
@@ -145,7 +147,7 @@ public class LockTest extends ParallelTestSupport {
         new Thread(new Runnable() {
             public void run() {
                 try {
-                    Thread.sleep(3000);
+                    Thread.sleep(5000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -200,7 +202,7 @@ public class LockTest extends ParallelTestSupport {
         int k = 0;
         final Member localMember = keyOwner.getCluster().getLocalMember();
         while (!localMember.equals(instance1.getPartitionService().getPartition(++k).getOwner())) {
-            Thread.sleep(1);
+            Thread.sleep(10);
         }
 
         final int key = k;
@@ -352,7 +354,7 @@ public class LockTest extends ParallelTestSupport {
         int k = 0;
         final HazelcastInstance keyOwner = nodeFactory.newHazelcastInstance(config);
         while (!keyOwner.getCluster().getLocalMember().equals(instance.getPartitionService().getPartition(++k).getOwner())) {
-            Thread.sleep(1);
+            Thread.sleep(10);
         }
 
         final ILock lock = instance.getLock(k);
@@ -403,10 +405,11 @@ public class LockTest extends ParallelTestSupport {
         final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
         int k = 0;
         final AtomicInteger atomicInteger = new AtomicInteger(0);
-        while (keyOwner.getCluster().getLocalMember().equals(instance1.getPartitionService().getPartition(k++).getOwner()))
-            ;
-        final int key = k;
+        while (keyOwner.getCluster().getLocalMember().equals(instance1.getPartitionService().getPartition(k++).getOwner())) {
+            Thread.sleep(10);
+        }
 
+        final int key = k;
         final ILock lock1 = instance1.getLock(key);
         final String name = "testKeyOwnerDiesOnCondition";
         final ICondition condition1 = lock1.newCondition(name);
@@ -478,7 +481,7 @@ public class LockTest extends ParallelTestSupport {
         new Thread(new Runnable() {
             public void run() {
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(5000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -515,7 +518,7 @@ public class LockTest extends ParallelTestSupport {
     }
 
     @Test(timeout = 100000)
-    @Ignore("TODO: fix test!")
+//    @Ignore("TODO: fix test!")
     public void testScheduledLockActionForDeadMember() throws Exception {
         final StaticNodeFactory nodeFactory = createNodeFactory(2);
         final HazelcastInstance h1 = nodeFactory.newHazelcastInstance(new Config());
