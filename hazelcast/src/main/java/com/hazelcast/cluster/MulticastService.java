@@ -50,8 +50,8 @@ public class MulticastService implements Runnable {
     private final Object sendLock = new Object();
     private volatile boolean running = true;
     private final CountDownLatch stopLatch = new CountDownLatch(1);
-    private List<MulticastListener> lsListeners = new CopyOnWriteArrayList<MulticastListener>();
-    final Node node;
+    private List<MulticastListener> listeners = new CopyOnWriteArrayList<MulticastListener>();
+    private final Node node;
 
     private final Deflater deflater = new Deflater(Deflater.BEST_SPEED);
     private final Inflater inflater = new Inflater();
@@ -65,8 +65,8 @@ public class MulticastService implements Runnable {
         Config config = node.getConfig();
         this.multicastSocket = multicastSocket;
 
-        sendOutput = (BufferObjectDataOutput) node.serializationService.createObjectDataOutput(DATAGRAM_BUFFER_SIZE);
-        receiveOutput = (BufferObjectDataOutput) node.serializationService.createObjectDataOutput(DATAGRAM_BUFFER_SIZE);
+        sendOutput = node.serializationService.createObjectDataOutput(DATAGRAM_BUFFER_SIZE);
+        receiveOutput = node.serializationService.createObjectDataOutput(DATAGRAM_BUFFER_SIZE);
 
         this.datagramPacketReceive = new DatagramPacket(new byte[DATAGRAM_BUFFER_SIZE], DATAGRAM_BUFFER_SIZE);
         final MulticastConfig multicastConfig = config.getNetworkConfig().getJoin().getMulticastConfig();
@@ -76,11 +76,11 @@ public class MulticastService implements Runnable {
     }
 
     public void addMulticastListener(MulticastListener multicastListener) {
-        lsListeners.add(multicastListener);
+        listeners.add(multicastListener);
     }
 
     public void removeMulticastListener(MulticastListener multicastListener) {
-        lsListeners.remove(multicastListener);
+        listeners.remove(multicastListener);
     }
 
     public void stop() {
@@ -120,7 +120,7 @@ public class MulticastService implements Runnable {
                 try {
                     final JoinMessage joinMessage = receive();
                     if (joinMessage != null) {
-                        for (MulticastListener multicastListener : lsListeners) {
+                        for (MulticastListener multicastListener : listeners) {
                             try {
                                 multicastListener.onMessage(joinMessage);
                             } catch (Exception e) {
