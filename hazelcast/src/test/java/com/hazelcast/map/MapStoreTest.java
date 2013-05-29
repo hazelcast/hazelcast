@@ -49,7 +49,7 @@ public class MapStoreTest extends ParallelTestSupport {
     @Test
 //    @Ignore("TODO: fix test!")
     public void testMapInitialLoad() throws InterruptedException {
-        int size = 10000;
+        int size = 100000;
         StaticNodeFactory nodeFactory = createNodeFactory(3);
 
         Config cfg = new Config();
@@ -62,6 +62,10 @@ public class MapStoreTest extends ParallelTestSupport {
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         IMap map = instance1.getMap("testMapInitialLoad");
 
+        for (int i = 0; i < 100; i++) {
+            System.out.println(map.size());
+            Thread.sleep(1000);
+        }
         assertEquals(size, map.size());
 
         for (int i = 0; i < size; i++) {
@@ -266,7 +270,6 @@ public class MapStoreTest extends ParallelTestSupport {
     }
 
     @Test
-//    @Ignore("TODO: fix test!")
     public void testOneMemberWriteBehindWithEvictions() throws Exception {
         TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
         Config config = newConfig(testMapStore, 2);
