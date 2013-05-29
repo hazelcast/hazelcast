@@ -292,9 +292,10 @@ public class MapStoreTest extends ParallelTestSupport {
         }
         for (int i = 0; i < 100; i++) {
             map.evict(i);
+            System.out.println("evict:"+i);
+            assertEquals(TestEventBasedMapStore.STORE_EVENTS.STORE, testMapStore.waitForEvent(3));
         }
-        assertEquals(TestEventBasedMapStore.STORE_EVENTS.STORE_ALL, testMapStore.waitForEvent(10));
-        assertEquals(null, testMapStore.waitForEvent(10));
+        assertEquals(null, testMapStore.waitForEvent(2));
         assertEquals(100, testMapStore.getStore().size());
         assertEquals(0, map.size());
         for (int i = 0; i < 100; i++) {
