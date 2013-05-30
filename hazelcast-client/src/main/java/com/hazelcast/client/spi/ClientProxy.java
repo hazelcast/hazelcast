@@ -83,6 +83,7 @@ public abstract class ClientProxy implements DistributedObject {
 
     public final void destroy() {
         onDestroy();
+        context.removeProxy(this);
         context = null;
     }
 
