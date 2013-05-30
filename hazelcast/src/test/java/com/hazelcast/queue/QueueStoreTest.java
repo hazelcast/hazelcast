@@ -22,9 +22,9 @@ import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.QueueStore;
-import com.hazelcast.test.ParallelTestSupport;
-import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
-import com.hazelcast.test.StaticNodeFactory;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Assert;
 import org.junit.Test;
@@ -43,9 +43,9 @@ import static org.junit.Assert.assertTrue;
  * Date: 2/22/13
  * Time: 2:20 PM
  */
-@RunWith(RandomBlockJUnit4ClassRunner.class)
+@RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
-public class QueueStoreTest extends ParallelTestSupport {
+public class QueueStoreTest extends HazelcastTestSupport {
 
     @Test
     public void testQueueStoreLoadMoreThanMaxSize() {
@@ -58,8 +58,8 @@ public class QueueStoreTest extends ParallelTestSupport {
         queueStoreConfig.setStoreImplementation(queueStore);
         queueConfig.setQueueStoreConfig(queueStoreConfig);
 
-        StaticNodeFactory staticNodeFactory = createNodeFactory(1);
-        HazelcastInstance instance = staticNodeFactory.newHazelcastInstance(config);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
 
         for (int i = 0; i < maxSize * 2; i++) {
             queueStore.store.put((long) i, i);
@@ -81,8 +81,8 @@ public class QueueStoreTest extends ParallelTestSupport {
         queueStoreConfig.setStoreImplementation(queueStore);
         queueConfig.setQueueStoreConfig(queueStoreConfig);
 
-        StaticNodeFactory staticNodeFactory = createNodeFactory(2);
-        HazelcastInstance instance = staticNodeFactory.newHazelcastInstance(config);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
 
         for (int i = 0; i < maxSize / 2; i++) {
             queueStore.store.put((long) i, i);
@@ -95,7 +95,7 @@ public class QueueStoreTest extends ParallelTestSupport {
         }
 
         instance.getLifecycleService().shutdown();
-        HazelcastInstance instance2 = staticNodeFactory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
 
         IQueue<Object> queue2 = instance2.getQueue("testQueueStore");
         Assert.assertEquals(maxSize,queue2.size());

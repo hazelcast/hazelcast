@@ -23,9 +23,9 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SqlPredicate;
-import com.hazelcast.test.ParallelTestSupport;
-import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
-import com.hazelcast.test.StaticNodeFactory;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -37,13 +37,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 
-@RunWith(RandomBlockJUnit4ClassRunner.class)
+@RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
-public class QueryListenerTest extends ParallelTestSupport {
+public class QueryListenerTest extends HazelcastTestSupport {
 
     @Test
     public void testMapQueryListener() throws InterruptedException {
-        StaticNodeFactory nodeFactory = createNodeFactory(3);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         Config cfg = new Config();
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
@@ -115,7 +115,7 @@ public class QueryListenerTest extends ParallelTestSupport {
     @Test
     public void testMapQueryListener2() throws InterruptedException {
 
-        StaticNodeFactory nodeFactory = createNodeFactory(3);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         Config cfg = new Config();
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);

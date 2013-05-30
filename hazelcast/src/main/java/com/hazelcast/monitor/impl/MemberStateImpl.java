@@ -41,9 +41,6 @@ public class MemberStateImpl implements MemberState {
     Map<String, LocalQueueStatsImpl> queueStats = new HashMap<String, LocalQueueStatsImpl>();
     Map<String, LocalTopicStatsImpl> topicStats = new HashMap<String, LocalTopicStatsImpl>();
     Map<String, LocalExecutorStatsImpl> executorStats = new HashMap<String, LocalExecutorStatsImpl>();
-    //    Map<String, LocalAtomicLongStatsImpl> atomicNumberStats = new HashMap<String, LocalAtomicLongStatsImpl>();
-//    Map<String, LocalCountDownLatchStatsImpl> countDownLatchStats = new HashMap<String, LocalCountDownLatchStatsImpl>();
-//    Map<String, LocalSemaphoreStatsImpl> semaphoreStats = new HashMap<String, LocalSemaphoreStatsImpl>();
     List<Integer> lsPartitions = new ArrayList<Integer>(271);
 
     public void writeData(ObjectDataOutput out) throws IOException {
@@ -75,21 +72,6 @@ public class MemberStateImpl implements MemberState {
             entry.getValue().writeData(out);
         }
 
-//        out.writeInt(atomicNumberStats.size());
-//        for (Map.Entry<String, LocalAtomicLongStatsImpl> entry : atomicNumberStats.entrySet()) {
-//            out.writeUTF(entry.getKey());
-//            entry.getValue().writeData(out);
-//        }
-//        out.writeInt(countDownLatchStats.size());
-//        for (Map.Entry<String, LocalCountDownLatchStatsImpl> entry : countDownLatchStats.entrySet()) {
-//            out.writeUTF(entry.getKey());
-//            entry.getValue().writeData(out);
-//        }
-//        out.writeInt(semaphoreStats.size());
-//        for (Map.Entry<String, LocalSemaphoreStatsImpl> entry : semaphoreStats.entrySet()) {
-//            out.writeUTF(entry.getKey());
-//            entry.getValue().writeData(out);
-//        }
         out.writeInt(runtimeProps.size());
         for (Map.Entry<String, Long> entry : runtimeProps.entrySet()) {
             out.writeUTF(entry.getKey());
@@ -131,21 +113,6 @@ public class MemberStateImpl implements MemberState {
             (impl = new LocalExecutorStatsImpl()).readData(in);
             executorStats.put(name, (LocalExecutorStatsImpl) impl);
         }
-//        for (int i = in.readInt(); i > 0; i--) {
-//            name = in.readUTF();
-//            (impl = new LocalAtomicLongStatsImpl()).readData(in);
-//            atomicNumberStats.put(name, (LocalAtomicLongStatsImpl) impl);
-//        }
-//        for (int i = in.readInt(); i > 0; i--) {
-//            name = in.readUTF();
-//            (impl = new LocalCountDownLatchStatsImpl()).readData(in);
-//            countDownLatchStats.put(name, (LocalCountDownLatchStatsImpl) impl);
-//        }
-//        for (int i = in.readInt(); i > 0; i--) {
-//            name = in.readUTF();
-//            (impl = new LocalSemaphoreStatsImpl()).readData(in);
-//            semaphoreStats.put(name, (LocalSemaphoreStatsImpl) impl);
-//        }
         for (int i = in.readInt(); i > 0; i--) {
             name = in.readUTF();
             runtimeProps.put(name, in.readLong());
@@ -176,9 +143,6 @@ public class MemberStateImpl implements MemberState {
         result = 31 * result + (queueStats != null ? queueStats.hashCode() : 0);
         result = 31 * result + (topicStats != null ? topicStats.hashCode() : 0);
         result = 31 * result + (executorStats != null ? executorStats.hashCode() : 0);
-//        result = 31 * result + (atomicNumberStats != null ? atomicNumberStats.hashCode() : 0);
-//        result = 31 * result + (countDownLatchStats != null ? countDownLatchStats.hashCode() : 0);
-//        result = 31 * result + (semaphoreStats != null ? semaphoreStats.hashCode() : 0);
         result = 31 * result + (lsPartitions != null ? lsPartitions.hashCode() : 0);
         return result;
     }
@@ -195,14 +159,6 @@ public class MemberStateImpl implements MemberState {
         this.runtimeProps = runtimeProps;
     }
 
-//    public LocalAtomicLongStats getLocalAtomicNumberStats(String atomicLongName) {
-//        return atomicNumberStats.get(atomicLongName);
-//    }
-//
-//    public LocalCountDownLatchStats getLocalCountDownLatchStats(String countDownLatchName) {
-//        return countDownLatchStats.get(countDownLatchName);
-//    }
-
     public LocalMapStats getLocalMapStats(String mapName) {
         return mapStats.get(mapName);
     }
@@ -211,21 +167,9 @@ public class MemberStateImpl implements MemberState {
         return multiMapStats.get(mapName);
     }
 
-//    public LocalExecutorStats getInternalExecutorStats(String name) {
-//        return internalThroughputStats.get(name);
-//    }
-//
-//    public LocalExecutorStats getExternalExecutorStats(String name) {
-//        return throughputStats.get(name);
-//    }
-
     public LocalQueueStats getLocalQueueStats(String queueName) {
         return queueStats.get(queueName);
     }
-
-//    public LocalSemaphoreStats getLocalSemaphoreStats(String semaphoreName) {
-//        return semaphoreStats.get(semaphoreName);
-//    }
 
     public LocalTopicStats getLocalTopicStats(String topicName) {
         return topicStats.get(topicName);
@@ -243,14 +187,6 @@ public class MemberStateImpl implements MemberState {
         this.address = address;
     }
 
-//    public void putLocalAtomicNumberStats(String name, LocalAtomicLongStatsImpl localAtomicLongStats) {
-//        atomicNumberStats.put(name, localAtomicLongStats);
-//    }
-//
-//    public void putLocalCountDownLatchStats(String name, LocalCountDownLatchStatsImpl localCountDownLatchStats) {
-//        countDownLatchStats.put(name, localCountDownLatchStats);
-//    }
-
     public void putLocalMapStats(String name, LocalMapStatsImpl localMapStats) {
         mapStats.put(name, localMapStats);
     }
@@ -262,10 +198,6 @@ public class MemberStateImpl implements MemberState {
     public void putLocalQueueStats(String name, LocalQueueStatsImpl localQueueStats) {
         queueStats.put(name, localQueueStats);
     }
-
-//    public void putLocalSemaphoreStats(String name, LocalSemaphoreStatsImpl localSemaphoreStats) {
-//        semaphoreStats.put(name, localSemaphoreStats);
-//    }
 
     public void putLocalTopicStats(String name, LocalTopicStatsImpl localTopicStats) {
         topicStats.put(name, localTopicStats);

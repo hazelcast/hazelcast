@@ -48,7 +48,8 @@ public class AwaitOperation extends BaseLockOperation implements WaitSupport, Ba
     public void run() throws Exception {
         final LockStoreImpl lockStore = getLockStore();
         if (!lockStore.lock(key, getCallerUuid(), threadId)) {
-            throw new IllegalMonitorStateException("Current thread can not acquire the lock!");
+            throw new IllegalMonitorStateException("Current thread is not owner of the lock! " +
+                    "-> Owner: " + lockStore.getLockOwnerString(key));
         }
         if (!expired) {
             lockStore.removeSignalKey(getWaitKey());

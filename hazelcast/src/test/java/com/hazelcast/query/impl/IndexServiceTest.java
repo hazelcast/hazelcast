@@ -19,7 +19,7 @@ package com.hazelcast.query.impl;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.SqlPredicate;
-import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.util.Clock;
 import org.junit.Test;
@@ -32,7 +32,7 @@ import java.util.Set;
 import static com.hazelcast.instance.TestUtil.*;
 import static org.junit.Assert.assertEquals;
 
-@RunWith(RandomBlockJUnit4ClassRunner.class)
+@RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
 public class IndexServiceTest {
 

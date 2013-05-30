@@ -189,6 +189,13 @@
             <version>${jetty.maven.plugin.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.hazelcast</groupId>
+            <artifactId>hazelcast</artifactId>
+            <scope>test</scope>
+            <version>${project.parent.version}</version>
+            <classifier>tests</classifier>
+        </dependency>
     </dependencies>
 
 </project>

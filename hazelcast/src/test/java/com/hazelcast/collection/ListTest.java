@@ -21,10 +21,10 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
-import com.hazelcast.test.ParallelTestSupport;
-import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
-import com.hazelcast.test.StaticNodeFactory;
-import com.hazelcast.test.annotation.ClientCompatible;
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ClientCompatibleTest;
 import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -42,18 +42,18 @@ import static org.junit.Assert.*;
 /**
  * @ali 3/6/13
  */
-@RunWith(RandomBlockJUnit4ClassRunner.class)
+@RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
-public class ListTest extends ParallelTestSupport {
+public class ListTest extends HazelcastTestSupport {
 
     @Test
-    @ClientCompatible
+    @ClientCompatibleTest
     public void testListMethods() throws Exception {
         Config config = new Config();
         final String name = "defList";
         final int count = 100;
         final int insCount = 4;
-        StaticNodeFactory factory = createNodeFactory(insCount);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
         final HazelcastInstance[] instances = factory.newInstances(config);
 
         for (int i=0; i<count; i++){
@@ -105,7 +105,7 @@ public class ListTest extends ParallelTestSupport {
         final String name = "defList";
         final int count = 10;
         final int insCount = 4;
-        StaticNodeFactory factory = createNodeFactory(insCount);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
         final HazelcastInstance[] instances = factory.newInstances(config);
         final CountDownLatch latchAdd = new CountDownLatch(count);
         final CountDownLatch latchRemove = new CountDownLatch(count);

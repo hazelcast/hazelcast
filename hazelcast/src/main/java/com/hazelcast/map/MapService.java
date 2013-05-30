@@ -151,7 +151,6 @@ public class MapService implements ManagedService, MigrationAwareService,
             if (container != null) {
                 container.clear();
             }
-            containers[i] = null;
         }
         for (NearCache nearCache : nearCacheMap.values()) {
             nearCache.clear();
@@ -813,7 +812,7 @@ public class MapService implements ManagedService, MigrationAwareService,
                     }
                     Address owner = nodeEngine.getPartitionService().getPartitionOwner(i);
                     if (nodeEngine.getThisAddress().equals(owner)) {
-                        PartitionContainer pc = partitionContainers[i];
+                        final PartitionContainer pc = partitionContainers[i];
                         final RecordStore recordStore = pc.getRecordStore(mapName);
                         List<Record> sortedRecords = new ArrayList<Record>(recordStore.getRecords().values());
                         Collections.sort(sortedRecords, comparator);

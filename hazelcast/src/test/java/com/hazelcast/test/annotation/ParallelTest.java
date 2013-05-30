@@ -16,14 +16,9 @@
 
 package com.hazelcast.test.annotation;
 
-import java.lang.annotation.*;
-
 /**
  * @mdogan 5/24/13
  */
 
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.TYPE, ElementType.METHOD})
-@Inherited
-public @interface ParallelTest {
+public final class ParallelTest {
 }

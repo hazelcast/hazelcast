@@ -19,9 +19,9 @@ package com.hazelcast.concurrent.semaphore;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ISemaphore;
-import com.hazelcast.test.ParallelTestSupport;
-import com.hazelcast.test.StaticNodeFactory;
-import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Assert;
 import org.junit.Test;
@@ -37,15 +37,15 @@ import java.util.concurrent.TimeUnit;
  * Date: 2/18/13
  * Time: 5:12 PM
  */
-@RunWith(RandomBlockJUnit4ClassRunner.class)
+@RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
-public class SemaphoreTest extends ParallelTestSupport {
+public class SemaphoreTest extends HazelcastTestSupport {
 
     @Test
     public void testSingleNode() {
         final int k = 1;
         final Config config = new Config();
-        StaticNodeFactory factory = createNodeFactory(k);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
         final HazelcastInstance[] instances = factory.newInstances(config);
 
         ISemaphore semaphore = instances[0].getSemaphore("test");
@@ -125,7 +125,7 @@ public class SemaphoreTest extends ParallelTestSupport {
     public void testMutex() {
         final int k = 5;
         final Config config = new Config();
-        StaticNodeFactory factory = createNodeFactory(k);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
         final HazelcastInstance[] instances = factory.newInstances(config);
         final CountDownLatch latch = new CountDownLatch(k);
         final int loopCount = 1000;
@@ -176,7 +176,7 @@ public class SemaphoreTest extends ParallelTestSupport {
     public void testSemaphoreWithFailures() throws InterruptedException {
         final int k = 4;
         final Config config = new Config();
-        StaticNodeFactory factory = createNodeFactory(k + 1);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k + 1);
         final HazelcastInstance[] instances = factory.newInstances(config);
 
         final ISemaphore semaphore = instances[k].getSemaphore("test");
@@ -200,18 +200,16 @@ public class SemaphoreTest extends ParallelTestSupport {
             semaphore.release(rand);
             initialPermits += rand;
             Assert.assertEquals(initialPermits, semaphore.availablePermits());
-
         }
-
     }
 
     @Test
     public void testSemaphoreWithFailuresAndJoin() {
         final Config config = new Config();
-        final StaticNodeFactory staticNodeFactory = createNodeFactory(3);
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
 
-        final HazelcastInstance instance1 = staticNodeFactory.newHazelcastInstance(config);
-        final HazelcastInstance instance2 = staticNodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance instance1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance instance2 = factory.newHazelcastInstance(config);
         final ISemaphore semaphore = instance1.getSemaphore("test");
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         Assert.assertTrue(semaphore.init(0));
@@ -232,7 +230,7 @@ public class SemaphoreTest extends ParallelTestSupport {
 
         instance2.getLifecycleService().shutdown();
         semaphore.release();
-        HazelcastInstance instance3 = staticNodeFactory.newHazelcastInstance(config);
+        HazelcastInstance instance3 = factory.newHazelcastInstance(config);
 
         ISemaphore semaphore1 = instance3.getSemaphore("test");
         semaphore1.release();

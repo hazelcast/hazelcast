@@ -229,7 +229,7 @@ public class DistributedLock implements DataSerializable {
         lockService.cancelEviction(namespace, key);
     }
 
-    public boolean isEvictable() {
+    public boolean isRemovable() {
         return !isLocked()
                 && (conditions == null || conditions.isEmpty())
                 && (expiredAwaitOps == null || expiredAwaitOps.isEmpty());

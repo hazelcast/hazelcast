@@ -17,8 +17,8 @@
 package com.hazelcast.test.annotation;
 
 /**
- * @mdogan 5/21/13
+ * @mdogan 5/24/13
  */
 
-public final class SerialTest {
+public final class NoTest {
 }

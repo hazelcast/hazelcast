@@ -20,9 +20,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.test.ParallelTestSupport;
-import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
-import com.hazelcast.test.StaticNodeFactory;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -32,13 +32,13 @@ import java.io.Serializable;
 
 import static org.junit.Assert.assertEquals;
 
-@RunWith(RandomBlockJUnit4ClassRunner.class)
+@RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
-public class InterceptorTest extends ParallelTestSupport {
+public class InterceptorTest extends HazelcastTestSupport {
 
     @Test
     public void testMapInterceptor() throws InterruptedException {
-        StaticNodeFactory nodeFactory = createNodeFactory(2);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
         cfg.getMapConfig("default").setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
@@ -123,7 +123,7 @@ public class InterceptorTest extends ParallelTestSupport {
 
     @Test
     public void testMapInterceptorOnNewMember() throws InterruptedException {
-        StaticNodeFactory nodeFactory = createNodeFactory(2);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
         cfg.getMapConfig("default").setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);

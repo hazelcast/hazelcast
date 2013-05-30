@@ -33,7 +33,7 @@ import com.hazelcast.monitor.LocalTopicStats;
 public interface ITopic<E> extends DistributedObject {
 
     /**
-     * Returns the name of this ISemaphore instance
+     * Returns the name of this ITopic instance
      *
      * @return name of this instance
      */
@@ -69,7 +69,6 @@ public interface ITopic<E> extends DistributedObject {
 
     /**
      * Returns statistics of this topic,like total number of publishes/receives
-     * and publishes/receives at last 5 second.
      *
      * @return statistics
      */

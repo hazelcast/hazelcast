@@ -38,17 +38,17 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-final class StaticNodeRegistry {
+final class TestNodeRegistry {
 
     private final Address[] addresses;
     private final ConcurrentMap<Address, NodeEngineImpl> nodes = new ConcurrentHashMap<Address, NodeEngineImpl>(10);
 
-    StaticNodeRegistry(Address[] addresses) {
+    TestNodeRegistry(Address[] addresses) {
         this.addresses = addresses;
     }
 
     NodeContext createNodeContext(Address address) {
-        return new StaticNodeContext(address);
+        return new MockNodeContext(address);
     }
 
     private void register(Address address, NodeEngineImpl nodeEngine) {
@@ -63,11 +63,11 @@ final class StaticNodeRegistry {
         }
     }
 
-    private class StaticNodeContext implements NodeContext {
+    private class MockNodeContext implements NodeContext {
 
         final Address thisAddress;
 
-        public StaticNodeContext(Address thisAddress) {
+        public MockNodeContext(Address thisAddress) {
             this.thisAddress = thisAddress;
         }
 
@@ -76,21 +76,21 @@ final class StaticNodeRegistry {
         }
 
         public Joiner createJoiner(Node node) {
-            return new StaticJoiner(node);
+            return new MockJoiner(node);
         }
 
         public ConnectionManager createConnectionManager(Node node, ServerSocketChannel serverSocketChannel) {
-            return new StaticConnectionManager(node);
+            return new MockConnectionManager(node);
         }
 
-        private class StaticConnectionManager implements ConnectionManager {
+        private class MockConnectionManager implements ConnectionManager {
             final Map<Address, Connection> mapConnections = new ConcurrentHashMap<Address, Connection>(10);
             final Node node;
             final Connection thisConnection;
 
-            StaticConnectionManager(Node node) {
+            MockConnectionManager(Node node) {
                 this.node = node;
-                thisConnection = new StaticConnection(node.getThisAddress(), node.nodeEngine);
+                thisConnection = new MockConnection(node.getThisAddress(), node.nodeEngine);
                 register(node.getThisAddress(), node.nodeEngine);
             }
 
@@ -98,7 +98,7 @@ final class StaticNodeRegistry {
                 Connection conn = mapConnections.get(address);
                 if (conn == null) {
                     NodeEngineImpl nodeEngine = nodes.get(address);
-                    conn = new StaticConnection(address, nodeEngine);
+                    conn = new MockConnection(address, nodeEngine);
                     mapConnections.put(address, conn);
                 }
                 return conn;
@@ -153,11 +153,11 @@ final class StaticNodeRegistry {
                 return 0;
             }
 
-            private class StaticConnection implements Connection {
+            private class MockConnection implements Connection {
                 final Address endpoint;
                 final NodeEngineImpl nodeEngine;
 
-                public StaticConnection(Address address, NodeEngineImpl nodeEngine) {
+                public MockConnection(Address address, NodeEngineImpl nodeEngine) {
                     this.endpoint = address;
                     this.nodeEngine = nodeEngine;
                 }
@@ -230,9 +230,9 @@ final class StaticNodeRegistry {
             }
         }
 
-        private class StaticJoiner extends AbstractJoiner {
+        private class MockJoiner extends AbstractJoiner {
 
-            StaticJoiner(Node node) {
+            MockJoiner(Node node) {
                 super(node);
             }
 
@@ -268,7 +268,7 @@ final class StaticNodeRegistry {
             }
 
             public String toString() {
-                return "StaticJoiner";
+                return "MockJoiner";
             }
         }
     }

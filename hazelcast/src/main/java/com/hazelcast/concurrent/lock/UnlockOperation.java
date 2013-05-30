@@ -41,11 +41,13 @@ public class UnlockOperation extends BaseLockOperation implements Notifier, Back
     }
 
     public void run() throws Exception {
+        final LockStoreImpl lockStore = getLockStore();
         if (force) {
-            response = getLockStore().forceUnlock(key);
+            response = lockStore.forceUnlock(key);
         } else {
-            if (!(response = getLockStore().unlock(key, getCallerUuid(), threadId))) {
-                throw new IllegalMonitorStateException("Current thread is not owner of the lock!");
+            if (!(response = lockStore.unlock(key, getCallerUuid(), threadId))) {
+                throw new IllegalMonitorStateException("Current thread is not owner of the lock! " +
+                        "-> Owner: " + lockStore.getLockOwnerString(key));
             }
         }
     }

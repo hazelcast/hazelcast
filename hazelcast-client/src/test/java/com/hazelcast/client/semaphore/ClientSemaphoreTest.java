@@ -18,7 +18,7 @@ package com.hazelcast.client.semaphore;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.*;
-import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.SerialTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
@@ -35,7 +35,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @ali 5/24/13
  */
-@RunWith(RandomBlockJUnit4ClassRunner.class)
+@RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(SerialTest.class)
 public class ClientSemaphoreTest {
 

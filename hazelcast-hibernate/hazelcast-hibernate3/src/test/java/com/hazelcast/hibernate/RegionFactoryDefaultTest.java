@@ -17,7 +17,7 @@
 package com.hazelcast.hibernate;
 
 import com.hazelcast.hibernate.entity.DummyEntity;
-import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.SerialTest;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
@@ -30,7 +30,7 @@ import org.junit.runner.RunWith;
 import java.util.Date;
 import java.util.Properties;
 
-@RunWith(RandomBlockJUnit4ClassRunner.class)
+@RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(SerialTest.class)
 public class RegionFactoryDefaultTest extends HibernateStatisticsTestSupport {
 

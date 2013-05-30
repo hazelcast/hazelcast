@@ -69,7 +69,7 @@ public class MapKeySetRequest extends AllPartitionsClientRequest implements Port
     }
 
     public int getClassId() {
-        return MapPortableHook.KEYSET;
+        return MapPortableHook.KEY_SET;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {

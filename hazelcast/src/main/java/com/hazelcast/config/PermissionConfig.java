@@ -40,7 +40,7 @@ public class PermissionConfig {
 
     public enum PermissionType {
         MAP, QUEUE, TOPIC, MULTIMAP, LIST, SET, ID_GENERATOR,
-        LOCK, ATOMIC_NUMBER, COUNTDOWN_LATCH, SEMAPHORE,
+        LOCK, ATOMIC_LONG, COUNTDOWN_LATCH, SEMAPHORE,
         EXECUTOR_SERVICE, LISTENER, TRANSACTION, ALL
     }
 

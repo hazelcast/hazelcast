@@ -109,8 +109,7 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
         if (service != null) {
             service.destroyDistributedObject(objectId);
         }
-        nodeEngine.waitNotifyService.cancelWaitingOps(serviceName, objectId,
-                new DistributedObjectDestroyedException(serviceName, objectId));
+        nodeEngine.waitNotifyService.cancelWaitingOps(serviceName, objectId, new DistributedObjectDestroyedException(serviceName, objectId));
     }
 
     public Collection<DistributedObject> getDistributedObjects(String serviceName) {

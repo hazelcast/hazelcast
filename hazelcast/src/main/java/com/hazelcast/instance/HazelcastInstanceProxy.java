@@ -34,13 +34,15 @@ import java.util.concurrent.ConcurrentMap;
 public final class HazelcastInstanceProxy implements HazelcastInstance {
 
     volatile HazelcastInstanceImpl original;
+    private final String name;
 
     HazelcastInstanceProxy(HazelcastInstanceImpl original) {
         this.original = original;
+        name = original.getName();
     }
 
     public String getName() {
-        return getOriginal().getName();
+        return name;
     }
 
     public <K, V> IMap<K, V> getMap(String name) {

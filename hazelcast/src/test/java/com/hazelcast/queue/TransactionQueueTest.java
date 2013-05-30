@@ -20,9 +20,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.TransactionalQueue;
-import com.hazelcast.test.ParallelTestSupport;
-import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
-import com.hazelcast.test.StaticNodeFactory;
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
@@ -41,16 +41,16 @@ import static org.junit.Assert.*;
 /**
  * @ali 3/11/13
  */
-@RunWith(RandomBlockJUnit4ClassRunner.class)
+@RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
-public class TransactionQueueTest extends ParallelTestSupport {
+public class TransactionQueueTest extends HazelcastTestSupport {
 
     @Test
     public void testTransactionalOfferPoll1() throws Exception {
         Config config = new Config();
         final int insCount = 4;
         final String name = "defQueue";
-        StaticNodeFactory factory = createNodeFactory(insCount);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
         final HazelcastInstance[] instances = factory.newInstances(config);
 
         boolean b = instances[0].executeTransaction(new TransactionOptions().setTransactionType(TransactionOptions.TransactionType.LOCAL),
@@ -73,7 +73,7 @@ public class TransactionQueueTest extends ParallelTestSupport {
         final int insCount = 4;
         final String name0 = "defQueue0";
         final String name1 = "defQueue1";
-        StaticNodeFactory factory = createNodeFactory(insCount);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
         final HazelcastInstance[] instances = factory.newInstances(config);
         final CountDownLatch latch = new CountDownLatch(1);
         new Thread() {
@@ -116,7 +116,7 @@ public class TransactionQueueTest extends ParallelTestSupport {
         final int insCount = 4;
         final String queueName = "defQueue";
         final String mapName = "defMap";
-        StaticNodeFactory factory = createNodeFactory(insCount);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
         final HazelcastInstance[] instances = factory.newInstances(config);
         instances[0].getMap(mapName).lock("lock1");
 

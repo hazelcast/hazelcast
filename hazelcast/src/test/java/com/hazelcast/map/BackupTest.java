@@ -23,10 +23,10 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.test.ParallelTestSupport;
-import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
-import com.hazelcast.test.StaticNodeFactory;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.SerialTest;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -43,14 +43,14 @@ import static java.lang.Thread.sleep;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-@RunWith(RandomBlockJUnit4ClassRunner.class)
-@Category(ParallelTest.class)
-public class BackupTest extends ParallelTestSupport {
+@RunWith(HazelcastJUnit4ClassRunner.class)
+@Category(SerialTest.class)
+public class BackupTest extends HazelcastTestSupport {
 
     @Test
     public void testGracefulShutdown() throws Exception {
         int size = 250000;
-        StaticNodeFactory nodeFactory = createNodeFactory(5);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(5);
         final Config config = new Config();
         config.setProperty(GroupProperties.PROP_PARTITION_COUNT, "1111");
 
@@ -82,7 +82,7 @@ public class BackupTest extends ParallelTestSupport {
         config.getMapConfig("test").setBackupCount(2).setStatisticsEnabled(true);
         config.setProperty(GroupProperties.PROP_PARTITION_COUNT, "1111");
 
-        StaticNodeFactory f = createNodeFactory(6);
+        TestHazelcastInstanceFactory f = createHazelcastInstanceFactory(6);
         final HazelcastInstance hz = f.newHazelcastInstance(config);
 
         final IMap<Object, Object> map = hz.getMap("test");
@@ -131,7 +131,7 @@ public class BackupTest extends ParallelTestSupport {
 
     @Test
     public void issue395BackupProblemWithBCount2() throws InterruptedException {
-        StaticNodeFactory nodeFactory = createNodeFactory(3);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         final int size = 1000;
         Config config = new Config();
         final String name = "default";
@@ -155,7 +155,7 @@ public class BackupTest extends ParallelTestSupport {
 
     @Test(timeout = 60000)
     public void testDataRecovery() throws Exception {
-        StaticNodeFactory nodeFactory = createNodeFactory(4);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
 
         final int size = 1000;
         final String name = "default";
@@ -215,7 +215,7 @@ public class BackupTest extends ParallelTestSupport {
      */
     @Test
     public void testDataRecovery2() throws Exception {
-        StaticNodeFactory nodeFactory = createNodeFactory(3);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         final int size = 100000;
         final Config config = new Config();
         final String name = "default";
@@ -256,7 +256,7 @@ public class BackupTest extends ParallelTestSupport {
 
     @Test(timeout = 160000)
     public void testBackupCountTwo() throws Exception {
-        StaticNodeFactory nodeFactory = createNodeFactory(4);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
 
         Config config = new Config();
         final String name = "default";
@@ -324,7 +324,7 @@ public class BackupTest extends ParallelTestSupport {
      */
     @Test(timeout = 3600000)
     public void testDataRecoveryAndCorrectness() throws Exception {
-        StaticNodeFactory nodeFactory = createNodeFactory(4);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
 
         final int size = 10000;
         final Config config = new Config();
@@ -378,7 +378,7 @@ public class BackupTest extends ParallelTestSupport {
 
     @Test
     public void testIssue177BackupCount() throws InterruptedException {
-        final StaticNodeFactory nodeFactory = createNodeFactory(10);
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(10);
 
         final Config config = new Config();
         config.setProperty("hazelcast.partition.migration.interval", "0");
@@ -448,7 +448,7 @@ public class BackupTest extends ParallelTestSupport {
      * Test for issue #259.
      */
     public void testBackupPutWhenOwnerNodeDead() throws InterruptedException {
-        final StaticNodeFactory nodeFactory = createNodeFactory(2);
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 
         final Config config = new Config();
         config.setProperty("hazelcast.wait.seconds.before.join", "1");
@@ -508,7 +508,7 @@ public class BackupTest extends ParallelTestSupport {
      * Test for issue #259.
      */
     public void testBackupRemoveWhenOwnerNodeDead() throws InterruptedException {
-        final StaticNodeFactory nodeFactory = createNodeFactory(2);
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 
         final Config config = new Config();
         config.setProperty("hazelcast.wait.seconds.before.join", "1");
