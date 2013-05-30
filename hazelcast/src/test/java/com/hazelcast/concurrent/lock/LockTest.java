@@ -273,7 +273,6 @@ public class LockTest extends HazelcastTestSupport {
         }
 
         final ILock lock = instance1.getLock(key);
-        // can timeout when waiting backup response if smaller than 5 secs.
         lock.lock(3, TimeUnit.SECONDS);
         Assert.assertTrue(lock.isLocked());
 
@@ -563,11 +562,11 @@ public class LockTest extends HazelcastTestSupport {
         final ILock lock1 = h1.getLock("default");
         final HazelcastInstance h2 = nodeFactory.newHazelcastInstance(new Config());
         final ILock lock2 = h2.getLock("default");
-        final AtomicBoolean error = new AtomicBoolean(false);
 
         assertTrue(lock1.tryLock());
 
-        new Thread(new Runnable() {
+        final AtomicBoolean error = new AtomicBoolean(false);
+        final Thread thread = new Thread(new Runnable() {
             public void run() {
                 try {
                     lock2.lock();
@@ -575,14 +574,19 @@ public class LockTest extends HazelcastTestSupport {
                 } catch (Throwable ignored) {
                 }
             }
-        }).start();
+        });
+        thread.start();
         Thread.sleep(5000);
 
+        assertTrue(lock1.isLocked());
         h2.getLifecycleService().shutdown();
-        Thread.sleep(3000);
-
-        lock1.unlock();
+        thread.join(10000);
+        assertFalse(thread.isAlive());
         assertFalse(error.get());
+
+        assertTrue(lock1.isLocked());
+        lock1.unlock();
+        assertFalse(lock1.isLocked());
         assertTrue(lock1.tryLock());
     }
 

@@ -154,6 +154,7 @@ public class BackupTest extends HazelcastTestSupport {
     }
 
     @Test(timeout = 60000)
+    // TODO: @mm - Test fails randomly!
     public void testDataRecovery() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
 
@@ -214,6 +215,7 @@ public class BackupTest extends HazelcastTestSupport {
      * @throws Exception
      */
     @Test
+    // TODO: @mm - Test fails randomly!
     public void testDataRecovery2() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         final int size = 100000;
@@ -323,6 +325,7 @@ public class BackupTest extends HazelcastTestSupport {
      * be re-done.
      */
     @Test(timeout = 3600000)
+    // TODO: @mm - Test fails randomly!
     public void testDataRecoveryAndCorrectness() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
 
@@ -375,8 +378,8 @@ public class BackupTest extends HazelcastTestSupport {
         }
     }
 
-
     @Test
+    // TODO: @mm - Test fails randomly!
     public void testIssue177BackupCount() throws InterruptedException {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(10);
 

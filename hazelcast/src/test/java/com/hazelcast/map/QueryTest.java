@@ -248,6 +248,7 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    // TODO: @mm - Test fails randomly!
     public void testQueryWithTTL() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
@@ -1193,6 +1194,7 @@ public class QueryTest extends HazelcastTestSupport {
      * test for issue #359
      */
     @Test
+    // TODO: @mm - Test fails randomly!
     public void testIndexCleanupOnMigration() throws InterruptedException {
         final int n = 6;
         final int runCount = 500;
@@ -1236,7 +1238,7 @@ public class QueryTest extends HazelcastTestSupport {
                     } catch (AssertionError e) {
                         e.printStackTrace();
                     } catch (Throwable e) {
-                        System.err.println(e.getClass().getName() + "-> " + e.getMessage());
+                        e.printStackTrace();
                     } finally {
                         latch.countDown();
                     }

@@ -36,8 +36,8 @@ public final class TestHazelcastInstanceFactory {
     private final static String HAZELCAST_CLIENT_CONFIG = "com.hazelcast.client.config.ClientConfig";
     private final static AtomicInteger PORTS = new AtomicInteger(5000);
 
-    public final boolean mockNetwork = TestProperties.isMockNetwork();
-    public final boolean useClient = TestProperties.isUseClient();
+    public final boolean mockNetwork = TestEnvironment.isMockNetwork();
+    public final boolean useClient = TestEnvironment.isUseClient();
 
     private final Address[] addresses;
     private final TestNodeRegistry registry;
