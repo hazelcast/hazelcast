@@ -32,7 +32,6 @@ import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationAccessor;
 import com.hazelcast.spi.ResponseHandler;
-import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
@@ -130,7 +129,7 @@ public class MapContainer {
                         }
                     }
                 } catch (Exception e) {
-                    ExceptionUtil.rethrow(e);
+                    throw ExceptionUtil.rethrow(e);
                 }
             }
 
@@ -191,7 +190,7 @@ public class MapContainer {
                     try {
                         Thread.sleep(10);
                     } catch (InterruptedException e) {
-                        ExceptionUtil.rethrow(e);
+                        throw ExceptionUtil.rethrow(e);
                     }
                 }
                 if (partitionOwner.equals(nodeEngine.getClusterService().getThisAddress())) {

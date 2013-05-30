@@ -24,6 +24,7 @@ import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.SerialTest;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -497,8 +498,40 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
-//    @Category(SerialTest.class)
     public void testMapPutTtlWithListener() throws InterruptedException {
+        Config cfg = new Config();
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance[] instances = factory.newInstances(cfg);
+        warmUpPartitions(instances);
+
+        final int k = 10;
+        final int putCount = 10000;
+        final CountDownLatch latch = new CountDownLatch(k * putCount);
+        final IMap map = instances[0].getMap("testMapEvictionTtlWithListener");
+
+        map.addEntryListener(new EntryAdapter() {
+            public void entryEvicted(EntryEvent event) {
+                latch.countDown();
+            }
+        }, true);
+
+        for (int i = 0; i < k; i++) {
+            final int threadId = i;
+            new Thread() {
+                public void run() {
+                    int ttl = (int) (Math.random() * 5000 + 3000);
+                    for (int j = 0; j < putCount; j++) {
+                        map.put(j + putCount * threadId, "value", ttl, TimeUnit.MILLISECONDS);
+                    }
+                }
+            }.start();
+        }
+        assertTrue(latch.await(1, TimeUnit.MINUTES));
+    }
+
+    @Test
+    @Category(SerialTest.class)
+    public void testMapPutTtlWithListenerWithTimeCheck() throws InterruptedException {
         Config cfg = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance[] instances = factory.newInstances(cfg);
@@ -514,7 +547,7 @@ public class EvictionTest extends HazelcastTestSupport {
             public void entryEvicted(EntryEvent event) {
                 final Long expectedEvictionTime = (Long) (event.getOldValue());
                 long timeDifference = System.currentTimeMillis() - expectedEvictionTime;
-                if (timeDifference > 5000) {
+                if (timeDifference > 3000) {
                     error.set(true);
                 }
                 latch.countDown();
@@ -536,6 +569,4 @@ public class EvictionTest extends HazelcastTestSupport {
         assertTrue(latch.await(1, TimeUnit.MINUTES));
         assertFalse(error.get());
     }
-
-
 }

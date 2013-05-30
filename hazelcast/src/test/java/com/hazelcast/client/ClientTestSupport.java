@@ -8,8 +8,8 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.nio.Address;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.TestEnvironment;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.TestProperties;
 import org.junit.Rule;
 import org.junit.rules.ExternalResource;
 import org.junit.runner.RunWith;
@@ -69,7 +69,7 @@ public abstract class ClientTestSupport {
             Node node = TestUtil.getNode(hz);
             MemberImpl m = (MemberImpl) hz.getCluster().getLocalMember();
             if (m.getAddress().equals(nodeAddress)) {
-                if (TestProperties.isMockNetwork()) {
+                if (TestEnvironment.isMockNetwork()) {
                     ClientEngineImpl engine = node.clientEngine;
                     return new MockSimpleClient(engine);
                 } else {
