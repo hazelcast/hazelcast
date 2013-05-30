@@ -446,7 +446,6 @@
             <xs:enumeration value="hazelcast.mc.topic.excludes"/>
             <xs:enumeration value="hazelcast.version.check.enabled"/>
             <xs:enumeration value="hazelcast.map.max.backup.count"/>
-            <xs:enumeration value="hazelcast.topic.flow.control.enabled"/>
             <xs:enumeration value="hazelcast.max.wait.seconds.before.join"/>
             <xs:enumeration value="hazelcast.mc.max.visible.instance.count"/>
             <xs:enumeration value="hazelcast.logging.type"/>
@@ -654,7 +653,7 @@
                                     maxOccurs="unbounded"/>
                         <xs:element name="lock-permission" type="instance-permission" minOccurs="0"
                                     maxOccurs="unbounded"/>
-                        <xs:element name="atomic-number-permission" type="instance-permission" minOccurs="0"
+                        <xs:element name="atomic-long-permission" type="instance-permission" minOccurs="0"
                                     maxOccurs="unbounded"/>
                         <xs:element name="countdown-latch-permission" type="instance-permission" minOccurs="0"
                                     maxOccurs="unbounded"/>

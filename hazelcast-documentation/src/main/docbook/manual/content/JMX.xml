@@ -115,7 +115,7 @@
             </para>
         </listitem>
         <listitem>
-            <para>AtomicNumber
+            <para>AtomicLong
                 <itemizedlist>
                     <listitem>
                         <para>name</para>

@@ -46,10 +46,7 @@ public class TopicTest extends HazelcastTestSupport {
     @Test
     public void testTopicPublishingMember() {
         final Config config = new Config();
-        TopicConfig topicConfig = new TopicConfig();
-        topicConfig.setGlobalOrderingEnabled(false);
-        topicConfig.setName("default");
-        config.addTopicConfig(topicConfig);
+        config.getTopicConfig("default").setGlobalOrderingEnabled(true);
         final int k = 3;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
         final HazelcastInstance[] instances = factory.newInstances(config);
@@ -102,10 +99,7 @@ public class TopicTest extends HazelcastTestSupport {
     @Test
     public void testTopicTotalOrder() throws Exception {
         final Config config = new Config();
-        TopicConfig topicConfig = new TopicConfig();
-        topicConfig.setGlobalOrderingEnabled(true);
-        topicConfig.setName("default");
-        config.addTopicConfig(topicConfig);
+        config.getTopicConfig("default").setGlobalOrderingEnabled(true);
 
         final int k = 4;
 
@@ -379,8 +373,5 @@ public class TopicTest extends HazelcastTestSupport {
         LocalTopicStatsImpl stats = (LocalTopicStatsImpl) topic.getLocalTopicStats();
         Assert.assertEquals(1000, stats.getPublishOperationCount());
         Assert.assertEquals(2000, stats.getReceiveOperationCount());
-//        Assert.assertTrue(stats.getCreationTime() < stats.getLastPublishTime());
-//        Assert.assertEquals(1000, stats.getOperationStats().getPublishOperationCount());
-//        Assert.assertEquals(2000, stats.getOperationStats().getReceiveOperationCount());
     }
 }

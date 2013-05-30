@@ -60,7 +60,6 @@
         <property name="hazelcast.socket.no.delay">true</property>
         <property name="hazelcast.socket.receive.buffer.size">32</property>
         <property name="hazelcast.socket.send.buffer.size">32</property>
-        <property name="hazelcast.topic.flow.control.enabled">true</property>
         <property name="hazelcast.version.check.enabled">true</property>
         <property name="hazelcast.wait.seconds.before.join">5</property>
     </properties>
