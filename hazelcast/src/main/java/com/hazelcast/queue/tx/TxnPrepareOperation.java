@@ -31,7 +31,7 @@ public class TxnPrepareOperation extends QueueBackupAwareOperation {
     }
 
     public boolean shouldBackup() {
-        return true;//TODO
+        return true;
     }
 
     public Operation getBackupOperation() {
