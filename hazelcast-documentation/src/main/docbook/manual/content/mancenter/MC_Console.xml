@@ -96,7 +96,7 @@ l.set <index> <string>
 l.iterator [remove]
 l.size
 l.clear
--- AtomicNumber commands:
+-- IAtomicLong commands:
 a.get
 a.set <long>
 a.inc

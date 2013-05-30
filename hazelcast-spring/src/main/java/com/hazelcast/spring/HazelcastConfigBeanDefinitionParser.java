@@ -671,8 +671,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     type = PermissionType.SET;
                 } else if ("lock-permission".equals(nodeName)) {
                     type = PermissionType.LOCK;
-                } else if ("atomic-number-permission".equals(nodeName)) {
-                    type = PermissionType.ATOMIC_NUMBER;
+                } else if ("atomic-long-permission".equals(nodeName)) {
+                    type = PermissionType.ATOMIC_LONG;
                 } else if ("countdown-latch-permission".equals(nodeName)) {
                     type = PermissionType.COUNTDOWN_LATCH;
                 } else if ("semaphore-permission".equals(nodeName)) {

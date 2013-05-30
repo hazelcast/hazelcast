@@ -581,14 +581,6 @@ cfg.setProperty("hazelcast.property.foo", "value");
             </tr>
             <tr>
                 <td>
-                    <literal>hazelcast.topic.flow.control.enabled</literal>
-                </td>
-                <td>Enable waiting for the topic publish until messages are written through the sockets</td>
-                <td>boolean</td>
-                <td>true</td>
-            </tr>
-            <tr>
-                <td>
                     <literal>hazelcast.mc.max.visible.instance.count</literal>
                 </td>
                 <td>Management Center maximum visible instance count</td>
