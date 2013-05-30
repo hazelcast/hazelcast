@@ -29,6 +29,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+//TODO Possible leak because of empty lock objects
 public class LockStoreImpl implements DataSerializable, LockStore {
 
     private final ConstructorFunction<Data, DistributedLock> lockConstructor
@@ -127,10 +128,15 @@ public class LockStoreImpl implements DataSerializable, LockStore {
     }
 
     public Set<Data> getLockedKeys() {
-        if (locks.size() != 0){
-            System.err.println("");
+        Set<Data> keySet = new HashSet<Data>(locks.size());
+        for (Map.Entry<Data, DistributedLock> entry : locks.entrySet()) {
+            final Data key = entry.getKey();
+            final DistributedLock lock = entry.getValue();
+            if (lock.isLocked()){
+                keySet.add(key);
+            }
         }
-        return Collections.unmodifiableSet(locks.keySet());
+        return keySet;
     }
 
     public void setLockService(LockService lockService) {
