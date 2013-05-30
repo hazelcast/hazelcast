@@ -77,6 +77,7 @@ public class BackupTest extends HazelcastTestSupport {
     }
 
     @Test
+    // TODO: @mm - Test fails randomly!
     public void testGracefulShutdown2() throws Exception {
         Config config = new Config();
         config.getMapConfig("test").setBackupCount(2).setStatisticsEnabled(true);
@@ -130,6 +131,7 @@ public class BackupTest extends HazelcastTestSupport {
     }
 
     @Test
+    // TODO: @mm - Test fails randomly!
     public void issue395BackupProblemWithBCount2() throws InterruptedException {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         final int size = 1000;
