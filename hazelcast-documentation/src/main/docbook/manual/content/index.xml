@@ -63,6 +63,15 @@
         <xi:include href="dds/Lock.xml"/>
         <xi:include href="dds/Events.xml"/>
     </chapter>
+        
+    
+    <chapter xml:id="Serialization">
+        <title>Serialization</title>
+        <xi:include href="serialization/serialization.xml"/>
+        <xi:include href="serialization/ds.xml"/>
+        <xi:include href="serialization/portable.xml"/>
+        <xi:include href="serialization/custom.xml"/>
+    </chapter>
     <chapter xml:id="ElasticMemory">
         <title>Elastic Memory
             <superscript>(Enterprise Edition Only)</superscript>

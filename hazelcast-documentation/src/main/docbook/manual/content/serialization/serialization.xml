@@ -1,0 +1,43 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+  ~ Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<para version="5.0" xmlns="http://docbook.org/ns/docbook"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd">
+
+    <para>All your distributed objects such as your key and value objects, objects you offer into
+        distributed queue and your distributed callable/runnable objects have to
+        be<literal>Serializable</literal>.
+    </para>
+    <para>Hazelcast serializes all your objects into an instance
+        of<literal>com.hazelcast.nio.serialization.Data</literal>.
+        <literal>Data</literal>
+        is the binary
+        representation of an object. When Hazelcast serializes an object into<literal>Data</literal>,
+        it first checks whether the object is an instance of well-known, optimizable object
+        such as<literal>String, Long, Integer, byte[], ByteBuffer, Date</literal>. If not, it then checks
+        whether the object is an instance
+        of<literal>com.hazelcast.nio.serialization.DataSerializable</literal>. If not, Hazelcast
+        uses standard java serialization to convert the object into binary format. See
+        <literal>com.hazelcast.nio.serialization.SerializerSupport</literal>
+        for details.
+    </para>
+    <para>So for faster serialization, Hazelcast recommends to use of
+        <literal>String, Long,
+            Integer, byte[]
+        </literal>
+
+    </para>
