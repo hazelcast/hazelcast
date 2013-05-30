@@ -32,6 +32,7 @@ import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationAccessor;
+import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
@@ -39,8 +40,7 @@ import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 import com.hazelcast.wan.WanReplicationPublisher;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -95,8 +95,7 @@ public class MapContainer {
                 store = null;
             }
             storeWrapper = new MapStoreWrapper(store, mapConfig.getName(), mapStoreConfig.isEnabled());
-        }
-        else {
+        } else {
             storeWrapper = null;
         }
 
@@ -124,7 +123,22 @@ public class MapContainer {
                     }
                 }
             } else {
-                mapReady = true;
+                try {
+                    Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, new MapIsReadyOperation(name), nodeEngine.getMasterAddress()).build();
+                    Future future = invocation.invoke();
+                    mapReady = (Boolean) future.get();
+                    while (!mapReady) {
+                        Thread.sleep(1000);
+                        invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, new MapIsReadyOperation(name), nodeEngine.getMasterAddress()).build();
+                        future = invocation.invoke();
+                        boolean temp = (Boolean) future.get();
+                        if(!mapReady) {
+                            mapReady = temp;
+                        }
+                    }
+                } catch (Exception e) {
+                    ExceptionUtil.rethrow(e);
+                }
             }
 
             if (mapStoreConfig.getWriteDelaySeconds() > 0) {
@@ -179,7 +193,7 @@ public class MapContainer {
                 Data dataKey = mapService.toData(key);
                 int partitionId = nodeEngine.getPartitionService().getPartitionId(dataKey);
                 Address partitionOwner = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
-                while(partitionOwner == null) {
+                while (partitionOwner == null) {
                     partitionOwner = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
                     try {
                         Thread.sleep(10);
@@ -255,7 +269,7 @@ public class MapContainer {
         return interceptors;
     }
 
-    public Map<String,MapInterceptor> getInterceptorMap() {
+    public Map<String, MapInterceptor> getInterceptorMap() {
         return interceptorMap;
     }
 
@@ -308,21 +322,31 @@ public class MapContainer {
         public void run() {
             NodeEngine nodeEngine = mapService.getNodeEngine();
             Map values = storeWrapper.loadAll(keys.values());
+            final CountDownLatch latch = new CountDownLatch(keys.size());
             for (Data dataKey : keys.keySet()) {
                 Object key = keys.get(dataKey);
                 Data dataValue = mapService.toData(values.get(key));
                 int partitionId = nodeEngine.getPartitionService().getPartitionId(dataKey);
                 PutFromLoadOperation operation = new PutFromLoadOperation(name, dataKey, dataValue, -1);
                 operation.setNodeEngine(nodeEngine);
-                operation.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
+                operation.setResponseHandler(new ResponseHandler() {
+                    @Override
+                    public void sendResponse(Object obj) {
+                        latch.countDown();
+                    }
+                });
                 operation.setPartitionId(partitionId);
                 OperationAccessor.setCallerAddress(operation, nodeEngine.getThisAddress());
                 operation.setServiceName(MapService.SERVICE_NAME);
                 nodeEngine.getOperationService().executeOperation(operation);
             }
 
-            if (counter.decrementAndGet() <= 0) {
-                mapReady = true;
+            try {
+                if (latch.await(30, TimeUnit.SECONDS) && counter.decrementAndGet() <= 0) {
+                    mapReady = true;
+                }
+            } catch (InterruptedException e) {
+                throw ExceptionUtil.rethrow(e);
             }
         }
 
