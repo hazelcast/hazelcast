@@ -102,7 +102,7 @@ public class LockStoreImpl implements DataSerializable, LockStore {
                 result = true;
             }
         }
-        if (lock.isEvictable()) {
+        if (lock.isRemovable()) {
             locks.remove(key);
         }
         return result;
@@ -113,11 +113,10 @@ public class LockStoreImpl implements DataSerializable, LockStore {
         if (lock == null)
             return false;
         else {
-            if (lock.isEvictable()) {
+            lock.clear();
+            if (lock.isRemovable()) {
                 locks.remove(key);
                 lock.cancelEviction();
-            } else {
-                lock.clear();
             }
             return true;
         }
