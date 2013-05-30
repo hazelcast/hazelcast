@@ -612,6 +612,9 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 }
             } else if ("statistics-enabled".equals(nodeName)) {
                 qConfig.setStatisticsEnabled(checkTrue(value));
+            } else if ("queue-store".equals(nodeName)) {
+                final QueueStoreConfig queueStoreConfig = createQueueStoreConfig(n);
+                qConfig.setQueueStoreConfig(queueStoreConfig);
             }
         }
         this.config.addQueueConfig(qConfig);
@@ -777,6 +780,28 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             }
         }
         return mapStoreConfig;
+    }
+
+    private QueueStoreConfig createQueueStoreConfig(final org.w3c.dom.Node node) {
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        QueueStoreConfig queueStoreConfig = new QueueStoreConfig();
+        final NamedNodeMap atts = node.getAttributes();
+        for (int a = 0; a < atts.getLength(); a++) {
+            final org.w3c.dom.Node att = atts.item(a);
+            final String value = getTextContent(att).trim();
+            if (att.getNodeName().equals("enabled")) {
+                queueStoreConfig.setEnabled(checkTrue(value));
+            }
+        }
+        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
+            final String nodeName = cleanNodeName(n.getNodeName());
+            if ("class-name".equals(nodeName)) {
+                queueStoreConfig.setClassName(getTextContent(n).trim());
+            } else if ("properties".equals(nodeName)) {
+                handleProperties(n, queueStoreConfig.getProperties());
+            }
+        }
+        return queueStoreConfig;
     }
 
     private void handleSSLConfig(final org.w3c.dom.Node node) {

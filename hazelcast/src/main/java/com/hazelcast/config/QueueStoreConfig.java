@@ -23,14 +23,10 @@ import java.util.Properties;
 /**
  * @ali 12/14/12
  */
-// TODO: @mm - Add QueueStoreConfig to hazelcast-config-3.0.xsd and XmlConfigBuilder/
 public class QueueStoreConfig {
-
-    public static final int DEFAULT_WRITE_DELAY_SECONDS = 0;
 
     private boolean enabled = true;
     private String className = null;
-    private int writeDelaySeconds = DEFAULT_WRITE_DELAY_SECONDS;
     private Properties properties = new Properties();
     private QueueStore storeImplementation;
 
@@ -73,15 +69,6 @@ public class QueueStoreConfig {
         return this;
     }
 
-    public int getWriteDelaySeconds() {
-        return writeDelaySeconds;
-    }
-
-    public QueueStoreConfig setWriteDelaySeconds(int writeDelaySeconds) {
-        this.writeDelaySeconds = writeDelaySeconds;
-        return this;
-    }
-
     public Properties getProperties() {
         return properties;
     }
@@ -105,7 +92,6 @@ public class QueueStoreConfig {
         sb.append("QueueStoreConfig");
         sb.append("{enabled=").append(enabled);
         sb.append(", className='").append(className).append('\'');
-        sb.append(", writeDelaySeconds=").append(writeDelaySeconds);
         sb.append(", properties=").append(properties);
         sb.append('}');
         return sb.toString();

@@ -96,10 +96,13 @@
             fail-safety. 0 means no backup.
         -->
         <backup-count>1</backup-count>
+
         <!--
             Number of async backups. 0 means no backup.
         -->
         <async-backup-count>0</async-backup-count>
+
+
     </queue>
     <map name="default">
         <!--
@@ -174,6 +177,7 @@
             LATEST_UPDATE ; entry with the latest update wins.
         -->
         <merge-policy>PUT_IF_ABSENT</merge-policy>
+
     </map>
 
     <!-- Add your own semaphore configurations here:
