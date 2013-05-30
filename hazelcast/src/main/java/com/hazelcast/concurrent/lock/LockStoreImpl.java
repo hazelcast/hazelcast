@@ -128,6 +128,9 @@ public class LockStoreImpl implements DataSerializable, LockStore {
     }
 
     public Set<Data> getLockedKeys() {
+        if (locks.size() != 0){
+            System.err.println("");
+        }
         return Collections.unmodifiableSet(locks.keySet());
     }
 

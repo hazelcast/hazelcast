@@ -9,11 +9,7 @@ import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -50,7 +46,7 @@ public class ClientMapTest {
 
     @Before
     @After
-    public void clear() throws IOException {
+    public void clear() throws Exception {
         map.clear();
     }
 
@@ -419,6 +415,8 @@ public class ClientMapTest {
         map.addEntryListener(listener1, true);
         map.addEntryListener(listener2, "key3", true);
 
+        Thread.sleep(1000);
+
         map.put("key1", "value1");
         map.put("key2", "value2");
         map.put("key3", "value3");
@@ -429,11 +427,11 @@ public class ClientMapTest {
 
         map.remove("key3");
 
-        assertTrue(latch1Add.await(20, TimeUnit.SECONDS));
-        assertTrue(latch1Remove.await(20, TimeUnit.SECONDS));
+        assertTrue(latch1Add.await(8, TimeUnit.SECONDS));
+        assertTrue(latch1Remove.await(6, TimeUnit.SECONDS));
 
-        assertTrue(latch2Add.await(20, TimeUnit.SECONDS));
-        assertTrue(latch2Remove.await(20, TimeUnit.SECONDS));
+        assertTrue(latch2Add.await(4, TimeUnit.SECONDS));
+        assertTrue(latch2Remove.await(2, TimeUnit.SECONDS));
     }
 
     private void fillMap(){

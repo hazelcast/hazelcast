@@ -50,7 +50,7 @@ public class MapClearRequest extends AllPartitionsClientRequest implements Porta
     }
 
     public int getClassId() {
-        return MapPortableHook.SIZE;
+        return MapPortableHook.CLEAR;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
@@ -68,12 +68,6 @@ public class MapClearRequest extends AllPartitionsClientRequest implements Porta
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        int total = 0;
-        MapService mapService = getService();
-        for (Object result : map.values()) {
-            Integer size = (Integer) mapService.toObject(result);
-            total += size;
-        }
-        return total;
+        return null;
     }
 }
