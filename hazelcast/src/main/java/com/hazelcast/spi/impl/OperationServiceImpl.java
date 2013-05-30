@@ -27,6 +27,7 @@ import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.PartitionInfo;
+import com.hazelcast.partition.PartitionService;
 import com.hazelcast.partition.PartitionServiceImpl;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
@@ -37,6 +38,10 @@ import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.executor.AbstractExecutorThreadFactory;
+import com.hazelcast.util.scheduler.EntryTaskScheduler;
+import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
+import com.hazelcast.util.scheduler.ScheduledEntry;
+import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -60,6 +65,7 @@ final class OperationServiceImpl implements OperationService {
     private final Set<RemoteCallKey> executingCalls;
     private final ConcurrentMap<Long, Semaphore> backupCalls;
     private final int operationThreadCount;
+    private final EntryTaskScheduler<Object, ScheduledBackup> backupScheduler;
 
     OperationServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -80,6 +86,8 @@ final class OperationServiceImpl implements OperationService {
         responseExecutor = nodeEngine.getExecutionService().getExecutor(ExecutionService.RESPONSE_EXECUTOR);
         executingCalls = Collections.newSetFromMap(new ConcurrentHashMap<RemoteCallKey, Boolean>(1000, 0.75f, concurrencyLevel));
         backupCalls = new ConcurrentHashMap<Long, Semaphore>(1000, 0.75f, concurrencyLevel);
+        backupScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(),
+                new ScheduledBackupProcessor(), false);
     }
 
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, final int partitionId) {
@@ -291,26 +299,74 @@ final class OperationServiceImpl implements OperationService {
             final long[] replicaVersions = partitionService.incrementPartitionReplicaVersions(partitionId, totalBackupCount);
             final PartitionInfo partitionInfo = partitionService.getPartitionInfo(partitionId);
             for (int replicaIndex = 1; replicaIndex <= totalBackupCount; replicaIndex++) {
+                final Operation backupOp = backupAwareOp.getBackupOperation();
+                if (backupOp == null) {
+                    throw new IllegalArgumentException("Backup operation should not be null!");
+                }
+
+                backupOp.setPartitionId(partitionId).setReplicaIndex(replicaIndex).setServiceName(serviceName);
+                final Backup backup = new Backup(backupOp, op.getCallerAddress(), replicaVersions, replicaIndex <= syncBackupCount);
+                backup.setPartitionId(partitionId).setReplicaIndex(replicaIndex).setServiceName(serviceName)
+                        .setCallerUuid(nodeEngine.getLocalMember().getUuid());
+                OperationAccessor.setCallId(backup, op.getCallId());
+
                 final Address target = partitionInfo.getReplicaAddress(replicaIndex);
                 if (target != null) {
-                    final Operation backupOp = backupAwareOp.getBackupOperation();
-                    if (backupOp == null) {
-                        throw new IllegalArgumentException("Backup operation should not be null!");
-                    }
                     if (target.equals(node.getThisAddress())) {
                         throw new IllegalStateException("Normally shouldn't happen!!");
                     } else {
-                        backupOp.setPartitionId(partitionId).setReplicaIndex(replicaIndex).setServiceName(serviceName);
-                        Backup backup = new Backup(backupOp, op.getCallerAddress(), replicaVersions, replicaIndex <= syncBackupCount);
-                        backup.setPartitionId(partitionId).setReplicaIndex(replicaIndex).setServiceName(serviceName)
-                                .setCallerUuid(nodeEngine.getLocalMember().getUuid());
-                        OperationAccessor.setCallId(backup, op.getCallId());
+
                         send(backup, target);
                     }
+                } else {
+                    final RemoteCallKey key = new RemoteCallKey(op.getCallerAddress(), op.getCallId());
+                    if (logger.isLoggable(Level.INFO)) {
+                        logger.log(Level.INFO, "Scheduling -> " + backup);
+                    }
+                    backupScheduler.schedule(500, key, new ScheduledBackup(backup, partitionId, replicaIndex));
                 }
             }
         }
         return syncBackupCount;
+    }
+
+    private class ScheduledBackupProcessor implements ScheduledEntryProcessor<Object, ScheduledBackup> {
+
+        public void process(EntryTaskScheduler<Object, ScheduledBackup> scheduler, Collection<ScheduledEntry<Object, ScheduledBackup>> scheduledEntries) {
+            for (ScheduledEntry<Object, ScheduledBackup> entry : scheduledEntries) {
+                final ScheduledBackup backup = entry.getValue();
+                if (!backup.backup()) {
+                    if (logger.isLoggable(Level.INFO)) {
+                        logger.log(Level.INFO, "Re-scheduling[" + backup.retries + "] -> " + backup);
+                    }
+                    scheduler.schedule(entry.getScheduledDelayMillis(), entry.getKey(), backup);
+                }
+            }
+        }
+    }
+
+    private class ScheduledBackup {
+        final Backup backup;
+        final int partitionId;
+        final int replicaIndex;
+        volatile int retries = 0;
+
+        private ScheduledBackup(Backup backup, int partitionId, int replicaIndex) {
+            this.backup = backup;
+            this.partitionId = partitionId;
+            this.replicaIndex = replicaIndex;
+        }
+
+        public boolean backup() {
+            final PartitionService partitionService = nodeEngine.getPartitionService();
+            final PartitionInfo partitionInfo = partitionService.getPartitionInfo(partitionId);
+            final Address target = partitionInfo.getReplicaAddress(replicaIndex);
+            if (target != null) {
+                send(backup, target);
+                return true;
+            }
+            return ++retries >= 3; // give-up if retried 3 times...
+        }
     }
 
     private void handleOperationError(Operation op, Throwable e) {
@@ -540,6 +596,7 @@ final class OperationServiceImpl implements OperationService {
         }
         remoteCalls.clear();
         backupCalls.clear();
+        backupScheduler.cancelAll();
         for (ExecutorService executor : opExecutors) {
             try {
                 executor.awaitTermination(3, TimeUnit.SECONDS);

@@ -1,0 +1,63 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+  ~ Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<sect1 xml:id="MigratingTo3" version='5.0' xmlns='http://docbook.org/ns/docbook'
+       xmlns:xlink="http://www.w3.org/1999/xlink"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
+      http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
+    <title>Upgrading from previous versions</title>
+    <para>
+        In this section, we list the changes what users should take into account before upgrading to Hazelcast 3.0 from
+        earlier versions of Hazelcast.
+    </para>
+    <para>
+        <itemizedlist>
+            <listitem>
+                <emphasis role="bold">Removal of deprecated static methods:</emphasis>
+                <para>
+                    The static methods of Hazelcast class reaching hazelcast data components have been removed.
+                    The functionality of these methods can be reached from HazelcastInstance interface.
+                    Namely you should replace following:
+                    <programlisting language="java"><![CDATA[
+                    Map<Integer, String> mapCustomers = Hazelcast.getMap("customers");]]></programlisting>
+                    with
+                    <programlisting language="java"><![CDATA[
+                    HazelcastInstance instance = Hazelcast.newHazelcastInstance(cfg);
+                    // or if you already started an instance
+                    // HazelcastInstance instance = Hazelcast.getHazelcastInstanceByName("instance1");
+                    Map<Integer, String> mapCustomers = Hazelcast.getMap("customers");]]></programlisting>
+                </para>
+            </listitem>
+            <listitem>
+                <emphasis role="bold">Removal of lite members:</emphasis>
+                <para>
+                    With 3.0 there will be no member type as lite member.
+                    As 3.0 clients are smart client that they know in which node the data is located, you can replace your lite members with native clients.
+                </para>
+            </listitem>
+            <listitem>
+                <emphasis role="bold">Change in listener API:</emphasis>
+                <para>
+                    With 3.0 there will be no member type as lite member.
+                    As 3.0 clients are smart client that they know in which node the data is located, you can replace your lite members with native clients.
+                </para>
+            </listitem>
+
+        </itemizedlist>
+    </para>
+</sect1>

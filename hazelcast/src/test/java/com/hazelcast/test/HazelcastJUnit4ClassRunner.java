@@ -35,8 +35,8 @@ public final class HazelcastJUnit4ClassRunner extends BlockJUnit4ClassRunner {
         if (System.getProperty(logging) == null) {
             System.setProperty(logging, "log4j");
         }
-        if (System.getProperty(TestProperties.HAZELCAST_TEST_USE_NETWORK) == null) {
-            System.setProperty(TestProperties.HAZELCAST_TEST_USE_NETWORK, "true");
+        if (System.getProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK) == null) {
+            System.setProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK, "false");
         }
         System.setProperty("hazelcast.version.check.enabled", "false");
         System.setProperty("hazelcast.mancenter.enabled", "false");
