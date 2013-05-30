@@ -144,7 +144,10 @@ public final class QueueConfig implements DataSerializable {
         out.writeInt(backupCount);
         out.writeInt(asyncBackupCount);
         out.writeInt(maxSize);
-        //TODO store and listener configs
+        if (queueStoreConfig != null){
+            out.writeBoolean(true);
+            queueStoreConfig.writeData(out);
+        }
     }
 
     public void readData(ObjectDataInput in) throws IOException {
@@ -152,5 +155,9 @@ public final class QueueConfig implements DataSerializable {
         backupCount = in.readInt();
         asyncBackupCount = in.readInt();
         maxSize = in.readInt();
+        if (in.readBoolean()){
+            queueStoreConfig = new QueueStoreConfig();
+            queueStoreConfig.readData(in);
+        }
     }
 }
