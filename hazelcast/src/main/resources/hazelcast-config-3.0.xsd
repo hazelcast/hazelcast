@@ -123,6 +123,8 @@
         <xs:complexType>
             <xs:sequence>
                 <xs:element ref="initial-permits" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="backup-count" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="async-backup-count" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
             <xs:attribute name="name" use="required">
                 <xs:simpleType>

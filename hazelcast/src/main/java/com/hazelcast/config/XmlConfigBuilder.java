@@ -872,7 +872,11 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             final String nodeName = cleanNodeName(n.getNodeName());
             final String value = getTextContent(n).trim();
             if ("initial-permits".equals(nodeName)) {
-                sConfig.setInitialPermits(getIntegerValue("initial-permits", value, MapConfig.DEFAULT_BACKUP_COUNT));
+                sConfig.setInitialPermits(getIntegerValue("initial-permits", value, 0));
+            }  else if ("backup-count".equals(nodeName)) {
+                sConfig.setSyncBackupCount(getIntegerValue("backup-count", value, SemaphoreConfig.DEFAULT_SYNC_BACKUP_COUNT));
+            } else if ("async-backup-count".equals(nodeName)) {
+                sConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value, SemaphoreConfig.DEFAULT_ASYNC_BACKUP_COUNT));
             }
         }
         config.addSemaphoreConfig(sConfig);

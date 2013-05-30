@@ -179,6 +179,11 @@
         <merge-policy>PUT_IF_ABSENT</merge-policy>
 
     </map>
+    <semaphore name="def">
+        <initial-permits>100</initial-permits>
+        <backup-count>1</backup-count>
+        <async-backup-count>0</async-backup-count>
+    </semaphore>
 
     <!-- Add your own semaphore configurations here:
         <semaphore name="default">
