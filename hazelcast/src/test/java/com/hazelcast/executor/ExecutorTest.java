@@ -19,9 +19,9 @@ package com.hazelcast.executor;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.monitor.LocalExecutorStats;
-import com.hazelcast.test.ParallelTestSupport;
-import com.hazelcast.test.StaticNodeFactory;
-import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
@@ -37,22 +37,22 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 
-@RunWith(RandomBlockJUnit4ClassRunner.class)
+@RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
-public class ExecutorTest extends ParallelTestSupport {
+public class ExecutorTest extends HazelcastTestSupport {
 
     public static final int simpleTestNodeCount = 3;
     public static final int COUNT = 1000;
 
     private IExecutorService createSingleNodeExecutorService(String name) {
-        final HazelcastInstance instance = createNodeFactory(1).newHazelcastInstance(new Config());
+        final HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
         return instance.getExecutorService(name);
     }
 
     @Test
     public void testExecuteMultipleNode() throws InterruptedException, ExecutionException {
         final int k = simpleTestNodeCount;
-        StaticNodeFactory factory = createNodeFactory(k);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
         final HazelcastInstance[] instances = factory.newInstances(new Config());
         for (int i = 0; i < k; i++) {
             final IExecutorService service = instances[i].getExecutorService("testExecuteMultipleNode");
@@ -68,7 +68,7 @@ public class ExecutorTest extends ParallelTestSupport {
     @Test
     public void testSubmitToKeyOwnerRunnable() throws InterruptedException {
         final int k = simpleTestNodeCount;
-        StaticNodeFactory factory = createNodeFactory(k);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
         final HazelcastInstance[] instances = factory.newInstances(new Config());
         final AtomicInteger count = new AtomicInteger(0);
         final CountDownLatch latch = new CountDownLatch(k);
@@ -103,7 +103,7 @@ public class ExecutorTest extends ParallelTestSupport {
     @Test
     public void testSubmitToMemberRunnable() throws InterruptedException {
         final int k = simpleTestNodeCount;
-        StaticNodeFactory factory = createNodeFactory(k);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
         final HazelcastInstance[] instances = factory.newInstances(new Config());
         final AtomicInteger count = new AtomicInteger(0);
         final CountDownLatch latch = new CountDownLatch(k);
@@ -135,7 +135,7 @@ public class ExecutorTest extends ParallelTestSupport {
     @Test
     public void testSubmitToMembersRunnable() throws InterruptedException {
         final int k = simpleTestNodeCount;
-        StaticNodeFactory factory = createNodeFactory(k);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
         final HazelcastInstance[] instances = factory.newInstances(new Config());
         final AtomicInteger count = new AtomicInteger(0);
         final CountDownLatch latch = new CountDownLatch(k);
@@ -171,7 +171,7 @@ public class ExecutorTest extends ParallelTestSupport {
     @Test
     public void testSubmitToAllMembersRunnable() throws InterruptedException {
         final int k = simpleTestNodeCount;
-        StaticNodeFactory factory = createNodeFactory(k);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
         final HazelcastInstance[] instances = factory.newInstances(new Config());
         final AtomicInteger count = new AtomicInteger(0);
         final CountDownLatch latch = new CountDownLatch(k * k);
@@ -199,7 +199,7 @@ public class ExecutorTest extends ParallelTestSupport {
     @Test
     public void testSubmitMultipleNode() throws ExecutionException, InterruptedException {
         final int k = simpleTestNodeCount;
-        StaticNodeFactory factory = createNodeFactory(k);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
         final HazelcastInstance[] instances = factory.newInstances(new Config());
         for (int i = 0; i < k; i++) {
             final IExecutorService service = instances[i].getExecutorService("testSubmitMultipleNode");
@@ -212,7 +212,7 @@ public class ExecutorTest extends ParallelTestSupport {
     @Test
     public void testSubmitToKeyOwnerCallable() throws Exception {
         final int k = simpleTestNodeCount;
-        StaticNodeFactory factory = createNodeFactory(k);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
         final HazelcastInstance[] instances = factory.newInstances(new Config());
         final AtomicInteger count = new AtomicInteger(0);
         final CountDownLatch latch = new CountDownLatch(k / 2);
@@ -249,7 +249,7 @@ public class ExecutorTest extends ParallelTestSupport {
     @Test
     public void testSubmitToMemberCallable() throws ExecutionException, InterruptedException, TimeoutException {
         final int k = simpleTestNodeCount;
-        StaticNodeFactory factory = createNodeFactory(k);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
         final HazelcastInstance[] instances = factory.newInstances(new Config());
         final AtomicInteger count = new AtomicInteger(0);
         final CountDownLatch latch = new CountDownLatch(k / 2);
@@ -283,7 +283,7 @@ public class ExecutorTest extends ParallelTestSupport {
     @Test
     public void testSubmitToMembersCallable() throws InterruptedException {
         final int k = simpleTestNodeCount;
-        StaticNodeFactory factory = createNodeFactory(k);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
         final HazelcastInstance[] instances = factory.newInstances(new Config());
         final AtomicInteger count = new AtomicInteger(0);
         final CountDownLatch latch = new CountDownLatch(k);
@@ -320,7 +320,7 @@ public class ExecutorTest extends ParallelTestSupport {
     @Test
     public void testSubmitToAllMembersCallable() throws InterruptedException {
         final int k = simpleTestNodeCount;
-        StaticNodeFactory factory = createNodeFactory(k);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
         final HazelcastInstance[] instances = factory.newInstances(new Config());
         final AtomicInteger count = new AtomicInteger(0);
         final CountDownLatch countDownLatch = new CountDownLatch(k * k);

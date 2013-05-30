@@ -214,13 +214,15 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
         logger.log(Level.FINEST, "Stopping tasks...");
         expirationTask.cancel(true);
         expirationService.shutdown();
+        final Object response = new HazelcastInstanceNotActiveException();
+        final Address thisAddress = nodeEngine.getThisAddress();
         for (Queue<WaitingOp> q : mapWaitingOps.values()) {
             for (WaitingOp waitingOp : q) {
                 if (waitingOp.isValid()) {
                     final Operation op = waitingOp.getOperation();
                     // only for local invocations, remote ones will be expired via #onMemberLeft()
-                    if (op.getCallId() < 0) {
-                        op.getResponseHandler().sendResponse(new HazelcastInstanceNotActiveException());
+                    if (thisAddress.equals(op.getCallerAddress())) {
+                        op.getResponseHandler().sendResponse(response);
                     }
                 }
             }

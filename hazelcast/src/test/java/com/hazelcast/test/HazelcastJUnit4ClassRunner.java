@@ -28,15 +28,15 @@ import java.util.Random;
 /**
  * Run the tests randomly and log the running test.
  */
-public final class RandomBlockJUnit4ClassRunner extends BlockJUnit4ClassRunner {
+public final class HazelcastJUnit4ClassRunner extends BlockJUnit4ClassRunner {
 
     static {
         final String logging = "hazelcast.logging.type";
         if (System.getProperty(logging) == null) {
             System.setProperty(logging, "log4j");
         }
-        if (System.getProperty(StaticNodeFactory.HAZELCAST_TEST_USE_NETWORK) == null) {
-            System.setProperty(StaticNodeFactory.HAZELCAST_TEST_USE_NETWORK, "false");
+        if (System.getProperty(TestProperties.HAZELCAST_TEST_USE_NETWORK) == null) {
+            System.setProperty(TestProperties.HAZELCAST_TEST_USE_NETWORK, "true");
         }
         System.setProperty("hazelcast.version.check.enabled", "false");
         System.setProperty("hazelcast.mancenter.enabled", "false");
@@ -52,7 +52,7 @@ public final class RandomBlockJUnit4ClassRunner extends BlockJUnit4ClassRunner {
         System.setProperty("hazelcast.multicast.group", "224." + g1 + "." + g2 + "." + g3);
     }
 
-    public RandomBlockJUnit4ClassRunner(Class<?> klass) throws InitializationError {
+    public HazelcastJUnit4ClassRunner(Class<?> klass) throws InitializationError {
         super(klass);
     }
 

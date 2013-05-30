@@ -192,6 +192,12 @@ public class LockStoreImpl implements DataSerializable, LockStore {
         return getLock(key).pollExpiredAwaitOp();
     }
 
+    public String getLockOwnerString(Data dataKey) {
+        final DistributedLock lock = locks.get(dataKey);
+        return lock != null ? "Owner: " + lock.getOwner() + ", thread-id: " + lock.getThreadId()
+                : "<not-locked>";
+    }
+
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(namespace);
         out.writeInt(backupCount);

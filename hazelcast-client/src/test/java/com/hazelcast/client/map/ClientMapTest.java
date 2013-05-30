@@ -3,7 +3,7 @@ package com.hazelcast.client.map;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
-import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.SerialTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
@@ -25,7 +25,7 @@ import static org.junit.Assert.*;
  * @ali 5/22/13
  */
 
-@RunWith(RandomBlockJUnit4ClassRunner.class)
+@RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(SerialTest.class)
 public class ClientMapTest {
 

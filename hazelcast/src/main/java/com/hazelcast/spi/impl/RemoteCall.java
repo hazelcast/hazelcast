@@ -45,7 +45,6 @@ final class RemoteCall {
 
     void onMemberLeft(MemberImpl leftMember) {
         boolean notify;
-
         if (uuid != null) {
             notify = leftMember.getUuid().equals(uuid);
         } else {

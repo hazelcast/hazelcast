@@ -20,9 +20,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IQueue;
-import com.hazelcast.test.ParallelTestSupport;
-import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
-import com.hazelcast.test.StaticNodeFactory;
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -36,14 +36,14 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
-@RunWith(RandomBlockJUnit4ClassRunner.class)
+@RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
-public class ClusterQueueTest extends ParallelTestSupport {
+public class ClusterQueueTest extends HazelcastTestSupport {
 
     @Test
     public void testOffer() throws Exception {
         Config config = new Config();
-        StaticNodeFactory factory = createNodeFactory(2);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance[] instances = factory.newInstances(config);
         HazelcastInstance h1 = instances[0];
         HazelcastInstance h2 = instances[1];
@@ -67,7 +67,7 @@ public class ClusterQueueTest extends ParallelTestSupport {
     @Test
     public void testDeadTaker() throws Exception {
         Config config = new Config();
-        StaticNodeFactory factory = createNodeFactory(2);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance[] instances = factory.newInstances(config);
         final HazelcastInstance h1 = instances[0];
         final HazelcastInstance h2 = instances[1];
@@ -104,7 +104,7 @@ public class ClusterQueueTest extends ParallelTestSupport {
     @Test
     public void testShutdown() throws Exception {
         Config config = new Config();
-        StaticNodeFactory factory = createNodeFactory(2);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance[] instances = factory.newInstances(config);
         final HazelcastInstance h1 = instances[0];
         final HazelcastInstance h2 = instances[1];
@@ -126,7 +126,7 @@ public class ClusterQueueTest extends ParallelTestSupport {
     @Test
     public void testPollNull() throws Exception {
         Config config = new Config();
-        StaticNodeFactory factory = createNodeFactory(2);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance[] instances = factory.newInstances(config);
         final HazelcastInstance h1 = instances[0];
         final HazelcastInstance h2 = instances[1];
@@ -143,7 +143,7 @@ public class ClusterQueueTest extends ParallelTestSupport {
     @Test
     public void testTake() throws Exception {
         Config config = new Config();
-        StaticNodeFactory factory = createNodeFactory(2);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance[] instances = factory.newInstances(config);
         final HazelcastInstance h1 = instances[0];
         final HazelcastInstance h2 = instances[1];
@@ -201,7 +201,7 @@ public class ClusterQueueTest extends ParallelTestSupport {
     @Test
     public void testPollLong() throws Exception {
         Config config = new Config();
-        StaticNodeFactory factory = createNodeFactory(2);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance[] instances = factory.newInstances(config);
         final HazelcastInstance h1 = instances[0];
         final HazelcastInstance h2 = instances[1];
@@ -257,7 +257,7 @@ public class ClusterQueueTest extends ParallelTestSupport {
     public void testOfferLong() throws Exception {
         Config config = new Config();
         config.getQueueConfig("default").setMaxSize(200);
-        StaticNodeFactory factory = createNodeFactory(2);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance[] instances = factory.newInstances(config);
         final HazelcastInstance h1 = instances[0];
         final HazelcastInstance h2 = instances[1];
@@ -333,7 +333,7 @@ public class ClusterQueueTest extends ParallelTestSupport {
     @Test
     public void testQueueAfterShutdown() throws Exception {
         Config config = new Config();
-        StaticNodeFactory factory = createNodeFactory(2);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance[] instances = factory.newInstances(config);
         final HazelcastInstance h1 = instances[0];
         final HazelcastInstance h2 = instances[1];
@@ -355,7 +355,7 @@ public class ClusterQueueTest extends ParallelTestSupport {
     @Test
     public void testQueueAfterShutdown2() throws Exception {
         Config config = new Config();
-        StaticNodeFactory factory = createNodeFactory(2);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance[] instances = factory.newInstances(config);
         final HazelcastInstance h1 = instances[0];
         final HazelcastInstance h2 = instances[1];
@@ -374,7 +374,7 @@ public class ClusterQueueTest extends ParallelTestSupport {
     @Test
     public void queueEntriesShouldBeConsistentAfterShutdown() throws Exception {
         Config config = new Config();
-        StaticNodeFactory factory = createNodeFactory(2);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance[] instances = factory.newInstances(config);
         final HazelcastInstance h1 = instances[0];
         final HazelcastInstance h2 = instances[1];
@@ -399,7 +399,7 @@ public class ClusterQueueTest extends ParallelTestSupport {
     @Test
     public void queueEntriesShouldBeConsistentAfterShutdown2() throws Exception {
         Config config = new Config();
-        StaticNodeFactory factory = createNodeFactory(2);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance[] instances = factory.newInstances(config);
         final HazelcastInstance h1 = instances[0];
         final HazelcastInstance h2 = instances[1];

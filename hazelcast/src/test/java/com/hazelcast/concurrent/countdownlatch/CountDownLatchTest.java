@@ -19,12 +19,11 @@ package com.hazelcast.concurrent.countdownlatch;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICountDownLatch;
-import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
-import com.hazelcast.test.ParallelTestSupport;
-import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
-import com.hazelcast.test.StaticNodeFactory;
-import com.hazelcast.test.annotation.ClientCompatible;
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ClientCompatibleTest;
 import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Assert;
 import org.junit.Test;
@@ -36,16 +35,16 @@ import java.util.concurrent.TimeUnit;
 /**
  * @mdogan 1/16/13
  */
-@RunWith(RandomBlockJUnit4ClassRunner.class)
+@RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
-public class CountDownLatchTest extends ParallelTestSupport {
+public class CountDownLatchTest extends HazelcastTestSupport {
 
     @Test
-    @ClientCompatible
+    @ClientCompatibleTest
     public void testSimpleUsage() {
         final int k = 5;
         final Config config = new Config();
-        StaticNodeFactory factory = createNodeFactory(k);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
         final HazelcastInstance[] instances = factory.newInstances(config);
         ICountDownLatch latch = instances[0].getCountDownLatch("test");
         latch.trySetCount(k - 1);
@@ -76,11 +75,11 @@ public class CountDownLatchTest extends ParallelTestSupport {
     }
 
     @Test
-    @ClientCompatible
+    @ClientCompatibleTest
     public void testAwaitFail() {
         final int k = 3;
         final Config config = new Config();
-        StaticNodeFactory factory = createNodeFactory(k);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
         final HazelcastInstance[] instances = factory.newInstances(config);
         ICountDownLatch latch = instances[0].getCountDownLatch("test");
         latch.trySetCount(k - 1);
@@ -97,9 +96,9 @@ public class CountDownLatchTest extends ParallelTestSupport {
     }
 
     @Test(expected = DistributedObjectDestroyedException.class)
-    @ClientCompatible
-    public void testLatchDestroyed() {
-        StaticNodeFactory factory = createNodeFactory(2);
+    @ClientCompatibleTest
+    public void testLatchDestroyed() throws Exception {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final Config config = new Config();
         HazelcastInstance hz1 = factory.newHazelcastInstance(config);
         HazelcastInstance hz2 = factory.newHazelcastInstance(config);
@@ -109,7 +108,7 @@ public class CountDownLatchTest extends ParallelTestSupport {
         new Thread() {
             public void run() {
                 try {
-                    sleep(100);
+                    sleep(1000);
                 } catch (InterruptedException e) {
                     return;
                 }
@@ -117,21 +116,13 @@ public class CountDownLatchTest extends ParallelTestSupport {
             }
         }.start();
 
-        try {
-            hz2.getCountDownLatch("test").await(200, TimeUnit.MILLISECONDS);
-        } catch (MemberLeftException e) {
-            e.printStackTrace();
-            Assert.fail();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            Assert.fail();
-        }
+        hz2.getCountDownLatch("test").await(5, TimeUnit.SECONDS);
     }
 
     @Test
-    @ClientCompatible
+    @ClientCompatibleTest
     public void testLatchMigration() throws InterruptedException {
-        StaticNodeFactory factory = createNodeFactory(5);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(5);
         HazelcastInstance hz1 = factory.newHazelcastInstance(new Config());
         HazelcastInstance hz2 = factory.newHazelcastInstance(new Config());
 

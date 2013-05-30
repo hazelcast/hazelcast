@@ -18,9 +18,9 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
-import com.hazelcast.test.ParallelTestSupport;
-import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
-import com.hazelcast.test.StaticNodeFactory;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.util.Clock;
@@ -40,9 +40,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 
-@RunWith(RandomBlockJUnit4ClassRunner.class)
+@RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
-public class BasicTest extends ParallelTestSupport {
+public class BasicTest extends HazelcastTestSupport {
 
     private static final Config cfg = new Config();
     private static final int instanceCount = 3;
@@ -52,7 +52,7 @@ public class BasicTest extends ParallelTestSupport {
 
     @Before
     public void init() {
-        StaticNodeFactory factory = createNodeFactory(instanceCount);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(instanceCount);
         instances = factory.newInstances(cfg);
     }
 

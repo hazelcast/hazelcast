@@ -155,7 +155,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                         operationService.deregisterRemoteCall(prevCallId);
                     }
                     if (op instanceof BackupAwareOperation) {
-                        final long callId = operationService.newRemoteCallId();
+                        final long callId = operationService.newCallId();
                         registerBackups((BackupAwareOperation) op, callId);
                         OperationAccessor.setCallId(op, callId);
                     }

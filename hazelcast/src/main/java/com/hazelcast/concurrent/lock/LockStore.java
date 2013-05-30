@@ -42,4 +42,5 @@ public interface LockStore {
     Set<Data> getLockedKeys();
 
     boolean forceUnlock(Data dataKey);
+
 }
