@@ -20,7 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.SerializationConcurrencyTest.Address;
 import com.hazelcast.nio.serialization.SerializationConcurrencyTest.Person;
-import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Assert;
 import org.junit.Test;
@@ -36,13 +36,12 @@ import java.util.Arrays;
 /**
  * @mdogan 1/23/13
  */
-@RunWith(RandomBlockJUnit4ClassRunner.class)
+@RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
 public class ObjectDataTest {
 
     @Test
     public void testDataWriter() throws IOException {
-        System.err.println(this);
         SerializationService ss = new SerializationServiceImpl(1);
         final Person person = new Person(111, 123L, 89.56d, "test-person",
                 new Address("street", 987));
@@ -74,7 +73,6 @@ public class ObjectDataTest {
 
     @Test
     public void testDataStreams() throws IOException {
-        System.err.println(this);
         SerializationService ss = new SerializationServiceImpl(1);
 
         final Person person = new Person(111, 123L, 89.56d, "test-person",

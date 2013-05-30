@@ -18,9 +18,9 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
-import com.hazelcast.test.ParallelTestSupport;
-import com.hazelcast.test.StaticNodeFactory;
-import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
@@ -28,9 +28,9 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-@RunWith(RandomBlockJUnit4ClassRunner.class)
+@RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
-public class ListenerTest extends ParallelTestSupport {
+public class ListenerTest extends HazelcastTestSupport {
 
     private final String name = "fooMap";
 
@@ -45,7 +45,7 @@ public class ListenerTest extends ParallelTestSupport {
 
     @Before
     public void before() {
-        StaticNodeFactory nodeFactory = createNodeFactory(2);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
         h1 = nodeFactory.newHazelcastInstance(cfg);
         h2 = nodeFactory.newHazelcastInstance(cfg);

@@ -20,7 +20,6 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.MapLoaderLifecycleSupport;
-import com.hazelcast.core.MapStore;
 import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
@@ -64,8 +63,6 @@ public class MapContainer {
     private final WanReplicationPublisher wanReplicationPublisher;
     private final MapMergePolicy wanMergePolicy;
     private volatile boolean mapReady = false;
-    private final Object initMapStoreLock = new Object();
-
 
     public MapContainer(String name, MapConfig mapConfig, MapService mapService) {
         Object store = null;
@@ -81,7 +78,7 @@ public class MapContainer {
                 if (factory == null) {
                     String factoryClassName = mapStoreConfig.getFactoryClassName();
                     if (factoryClassName != null && !"".equals(factoryClassName)) {
-                        factory = (MapStoreFactory) ClassLoaderUtil.newInstance(factoryClassName);
+                        factory = ClassLoaderUtil.newInstance(factoryClassName);
                     }
                 }
                 store = (factory == null ? mapStoreConfig.getImplementation() :
@@ -91,20 +88,16 @@ public class MapContainer {
                     store = ClassLoaderUtil.newInstance(mapStoreClassName);
                 }
             } catch (Exception e) {
-                ExceptionUtil.rethrow(e);
-                store = null;
+                throw ExceptionUtil.rethrow(e);
             }
             storeWrapper = new MapStoreWrapper(store, mapConfig.getName(), mapStoreConfig.isEnabled());
         } else {
             storeWrapper = null;
         }
 
-
         if (storeWrapper != null) {
             if (store instanceof MapLoaderLifecycleSupport) {
-                synchronized (initMapStoreLock) {
-                    ((MapLoaderLifecycleSupport) store).init(nodeEngine.getHazelcastInstance(), mapConfig.getMapStoreConfig().getProperties(), name);
-                }
+                ((MapLoaderLifecycleSupport) store).init(nodeEngine.getHazelcastInstance(), mapConfig.getMapStoreConfig().getProperties(), name);
             }
             // only master can initiate the loadAll. master will send other members to loadAll.
             // the members join later will not load from mapstore.

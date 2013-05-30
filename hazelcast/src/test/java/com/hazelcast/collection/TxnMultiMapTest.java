@@ -21,9 +21,9 @@ import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.TransactionalList;
 import com.hazelcast.core.TransactionalMultiMap;
-import com.hazelcast.test.ParallelTestSupport;
-import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
-import com.hazelcast.test.StaticNodeFactory;
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.transaction.TransactionContext;
 import org.junit.Test;
@@ -35,9 +35,9 @@ import static org.junit.Assert.*;
 /**
  * @ali 4/5/13
  */
-@RunWith(RandomBlockJUnit4ClassRunner.class)
+@RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
-public class TxnMultiMapTest extends ParallelTestSupport {
+public class TxnMultiMapTest extends HazelcastTestSupport {
 
     @Test
     public void testPutRemove(){
@@ -46,7 +46,7 @@ public class TxnMultiMapTest extends ParallelTestSupport {
         config.getMultiMapConfig(name).setValueCollectionType(MultiMapConfig.ValueCollectionType.SET);
 
         final int insCount = 4;
-        StaticNodeFactory factory = createNodeFactory(insCount);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
         final HazelcastInstance[] instances = factory.newInstances(config);
         TransactionContext context = instances[0].newTransactionContext();
         try {
@@ -79,7 +79,7 @@ public class TxnMultiMapTest extends ParallelTestSupport {
         final String name = "defList";
 
         final int insCount = 4;
-        StaticNodeFactory factory = createNodeFactory(insCount);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
         final HazelcastInstance[] instances = factory.newInstances(config);
         TransactionContext context = instances[0].newTransactionContext();
         try {

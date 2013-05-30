@@ -16,45 +16,39 @@
 
 package com.hazelcast.test;
 
-import com.hazelcast.client.*;
-import com.hazelcast.client.MockSimpleClient;
-import com.hazelcast.client.SimpleClient;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.*;
+import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.NodeContext;
 import com.hazelcast.nio.Address;
 
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.UnknownHostException;
 import java.util.Arrays;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public final class StaticNodeFactory {
-
-    public static final String HAZELCAST_TEST_USE_NETWORK = "hazelcast.test.use.network";
-    public static final String HAZELCAST_TEST_USE_CLIENT = "hazelcast.test.use.client";
+public final class TestHazelcastInstanceFactory {
 
     private final static String HAZELCAST_CLIENT = "com.hazelcast.client.HazelcastClient";
     private final static String HAZELCAST_CLIENT_CONFIG = "com.hazelcast.client.config.ClientConfig";
-    private final static AtomicInteger ports = new AtomicInteger(5000);
+    private final static AtomicInteger PORTS = new AtomicInteger(5000);
 
-    public final boolean MOCK_NETWORK = isMockNetwork();
-    public final boolean USE_CLIENT = isUseClient();
+    public final boolean mockNetwork = TestProperties.isMockNetwork();
+    public final boolean useClient = TestProperties.isUseClient();
 
     private final Address[] addresses;
-    private final StaticNodeRegistry registry;
+    private final TestNodeRegistry registry;
     private final AtomicInteger nodeIndex = new AtomicInteger();
     private final int count;
 
-    public StaticNodeFactory(int count) {
+    public TestHazelcastInstanceFactory(int count) {
         this.count = count;
-        if (MOCK_NETWORK) {
+        if (mockNetwork) {
             addresses = createAddresses(count);
-            registry = new StaticNodeRegistry(addresses);
+            registry = new TestNodeRegistry(addresses);
         } else {
             addresses = null;
             registry = null;
@@ -62,7 +56,7 @@ public final class StaticNodeFactory {
     }
 
     public HazelcastInstance newHazelcastInstance(Config config) {
-        if (MOCK_NETWORK) {
+        if (mockNetwork) {
             if (nodeIndex.get() >= addresses.length) {
                 throw new IndexOutOfBoundsException("Max " + addresses.length + " instances can be created!");
             }
@@ -70,7 +64,7 @@ public final class StaticNodeFactory {
             NodeContext nodeContext = registry.createNodeContext(addresses[nodeIndex.getAndIncrement()]);
             return HazelcastInstanceFactory.newHazelcastInstance(config, null, nodeContext);
         }
-        return USE_CLIENT ? newHazelcastClient() : HazelcastInstanceFactory.newHazelcastInstance(config);
+        return useClient ? newHazelcastClient() : HazelcastInstanceFactory.newHazelcastInstance(config);
     }
 
     public HazelcastInstance[] newInstances(Config config) {
@@ -82,29 +76,12 @@ public final class StaticNodeFactory {
     }
 
     public void shutdownAll() {
-        if (MOCK_NETWORK) {
+        if (mockNetwork) {
             nodeIndex.set(Integer.MAX_VALUE);
             registry.shutdown();
         } else {
             Hazelcast.shutdownAll();
         }
-    }
-
-    public static SimpleClient newClient(Address nodeAddress) throws IOException {
-        Set<HazelcastInstance> instances = Hazelcast.getAllHazelcastInstances();
-        for (HazelcastInstance hz : instances) {
-            Node node = TestUtil.getNode(hz);
-            MemberImpl m = (MemberImpl) hz.getCluster().getLocalMember();
-            if (m.getAddress().equals(nodeAddress)) {
-                if (isMockNetwork()) {
-                    ClientEngineImpl engine = node.clientEngine;
-                    return new MockSimpleClient(engine);
-                } else {
-                    return new SocketSimpleClient(node);
-                }
-            }
-        }
-        throw new IllegalArgumentException("Cannot connect to node: " + nodeAddress);
     }
 
     private static HazelcastInstance newHazelcastClient() {
@@ -124,7 +101,7 @@ public final class StaticNodeFactory {
         Address[] addresses = new Address[count];
         for (int i = 0; i < count; i++) {
             try {
-                addresses[i] = new Address("127.0.0.1", ports.incrementAndGet());
+                addresses[i] = new Address("127.0.0.1", PORTS.incrementAndGet());
             } catch (UnknownHostException e) {
                 e.printStackTrace();
             }
@@ -142,17 +119,9 @@ public final class StaticNodeFactory {
         return config;
     }
 
-    private static boolean isMockNetwork() {
-        return !Boolean.getBoolean(HAZELCAST_TEST_USE_NETWORK);
-    }
-
-    private static boolean isUseClient() {
-        return Boolean.getBoolean(HAZELCAST_TEST_USE_CLIENT);
-    }
-
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("StaticNodeFactory{");
+        final StringBuilder sb = new StringBuilder("TestHazelcastInstanceFactory{");
         sb.append("addresses=").append(Arrays.toString(addresses));
         sb.append('}');
         return sb.toString();

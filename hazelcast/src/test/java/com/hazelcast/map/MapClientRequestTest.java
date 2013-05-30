@@ -24,7 +24,7 @@ import com.hazelcast.instance.TestUtil;
 import com.hazelcast.map.client.*;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.SqlPredicate;
-import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryDataResultStream;
@@ -40,7 +40,7 @@ import java.util.Set;
 
 import static org.junit.Assert.*;
 
-@RunWith(RandomBlockJUnit4ClassRunner.class)
+@RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
 public class MapClientRequestTest extends ClientTestSupport {
 

@@ -19,7 +19,7 @@ package com.hazelcast.cluster;
 import com.hazelcast.config.*;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.SerialTest;
 import com.hazelcast.util.Clock;
 import org.junit.*;
@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 
-@RunWith(RandomBlockJUnit4ClassRunner.class)
+@RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(SerialTest.class)
 
 public class ClusterJoinTest {

@@ -25,7 +25,6 @@ import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.partition.PartitionServiceImpl;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.RetryableException;
-import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
@@ -42,6 +41,8 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
     private long[] replicaVersions;
     private boolean sync;
 
+    private transient boolean valid = true;
+
     Backup() {
     }
 
@@ -51,37 +52,49 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
         this.sync = sync;
         this.replicaVersions = replicaVersions;
         if (sync && originalCaller == null) {
-            throw new IllegalArgumentException("Sync backup requires original caller address!" +
-                    ", Op: " + backupOp);
+            throw new IllegalArgumentException("Sync backup requires original caller address, Op: " + backupOp);
         }
     }
 
     public void beforeRun() throws Exception {
-        if (backupOp != null) {
-            final NodeEngine nodeEngine = getNodeEngine();
-            backupOp.setNodeEngine(nodeEngine);
-            backupOp.setResponseHandler(new ResponseHandler() {
-                public void sendResponse(Object obj) {
-                    if (obj instanceof Throwable && !(obj instanceof RetryableException)) {
-                        Throwable t = (Throwable) obj;
-                        nodeEngine.getLogger(getClass()).log(Level.SEVERE, t.getMessage(), t);
-                    }
-                }
-            });
-            backupOp.setCallerUuid(getCallerUuid());
-            OperationAccessor.setCallerAddress(backupOp, getCallerAddress());
-            OperationAccessor.setInvocationTime(backupOp, Clock.currentTimeMillis());
+        final NodeEngine nodeEngine = getNodeEngine();
+        final int partitionId = getPartitionId();
+        final PartitionInfo partitionInfo = nodeEngine.getPartitionService().getPartitionInfo(partitionId);
+        final Address owner = partitionInfo.getReplicaAddress(getReplicaIndex());
+        if (!nodeEngine.getThisAddress().equals(owner)) {
+            valid = false;
+            final ILogger logger = getLogger();
+            Level level = Level.INFO;
+            if (owner == null) {
+                level = Level.FINEST;
+            }
+            logger.log(level, "Wrong target! " + toString() + " cannot be processed! Target should be: " + owner);
         }
     }
 
     public void run() throws Exception {
-        final NodeEngine nodeEngine = getNodeEngine();
-        final PartitionServiceImpl partitionService = (PartitionServiceImpl) nodeEngine.getPartitionService();
-        partitionService.updatePartitionReplicaVersions(getPartitionId(), replicaVersions, getReplicaIndex());
+        if (valid) {
+            final NodeEngine nodeEngine = getNodeEngine();
+            final PartitionServiceImpl partitionService = (PartitionServiceImpl) nodeEngine.getPartitionService();
+            partitionService.updatePartitionReplicaVersions(getPartitionId(), replicaVersions, getReplicaIndex());
 
-        if (backupOp != null) {
-            final OperationService operationService = nodeEngine.getOperationService();
-            operationService.runOperation(backupOp);
+            if (backupOp != null) {
+                backupOp.setNodeEngine(nodeEngine);
+                backupOp.setResponseHandler(new ResponseHandler() {
+                    public void sendResponse(Object obj) {
+                        if (obj instanceof Throwable && !(obj instanceof RetryableException)) {
+                            Throwable t = (Throwable) obj;
+                            nodeEngine.getLogger(getClass()).log(Level.SEVERE, t.getMessage(), t);
+                        }
+                    }
+                });
+                backupOp.setCallerUuid(getCallerUuid());
+                OperationAccessor.setCallerAddress(backupOp, getCallerAddress());
+                OperationAccessor.setInvocationTime(backupOp, Clock.currentTimeMillis());
+
+                final OperationService operationService = nodeEngine.getOperationService();
+                operationService.runOperation(backupOp);
+            }
         }
     }
 
@@ -110,16 +123,12 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
     }
 
     public boolean validatesTarget() {
-        return true;
+        return false;
     }
 
     public void logError(Throwable e) {
         final ILogger logger = getLogger();
-        Level level = Level.INFO;
-        if (e instanceof WrongTargetException) {
-            level = ((WrongTargetException) e).getTarget() == null ? Level.FINEST : Level.INFO;
-        }
-        logger.log(level, e.getClass() + ": " + e.getMessage());
+        logger.log(Level.WARNING, e.getClass() + ": " + e.getMessage());
     }
 
     @Override

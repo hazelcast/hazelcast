@@ -26,9 +26,9 @@ import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.SqlPredicate;
-import com.hazelcast.test.ParallelTestSupport;
-import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
-import com.hazelcast.test.StaticNodeFactory;
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.util.Clock;
 import org.junit.Test;
@@ -45,13 +45,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.hazelcast.instance.TestUtil.*;
 import static org.junit.Assert.*;
 
-@RunWith(RandomBlockJUnit4ClassRunner.class)
+@RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
-public class QueryTest extends ParallelTestSupport {
+public class QueryTest extends HazelcastTestSupport {
 
     @Test
     public void issue393() {
-        StaticNodeFactory nodeFactory = createNodeFactory(1);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
         final IMap<String, Value> map = instance.getMap("default");
         map.addIndex("name", true);
@@ -74,7 +74,7 @@ public class QueryTest extends ParallelTestSupport {
 
     @Test
     public void issue393Fail() {
-        StaticNodeFactory nodeFactory = createNodeFactory(1);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
         final IMap<String, Value> map = instance.getMap("default");
         map.addIndex("qwe", true);
@@ -89,7 +89,7 @@ public class QueryTest extends ParallelTestSupport {
 
     @Test
     public void negativeDouble() {
-        StaticNodeFactory nodeFactory = createNodeFactory(1);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
         final IMap<String, Employee> map = instance.getMap("default");
         map.addIndex("salary", false);
@@ -107,7 +107,7 @@ public class QueryTest extends ParallelTestSupport {
 
     @Test
     public void issue393SqlEq() {
-        StaticNodeFactory nodeFactory = createNodeFactory(1);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
         final IMap<String, Value> map = instance.getMap("default");
         map.addIndex("name", true);
@@ -130,7 +130,7 @@ public class QueryTest extends ParallelTestSupport {
 
     @Test
     public void issue393SqlIn() {
-        StaticNodeFactory nodeFactory = createNodeFactory(1);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
         final IMap<String, Value> map = instance.getMap("default");
         map.addIndex("name", true);
@@ -153,7 +153,7 @@ public class QueryTest extends ParallelTestSupport {
 
     @Test
     public void issue393SqlInInteger() {
-        StaticNodeFactory nodeFactory = createNodeFactory(1);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
         final IMap<String, Value> map = instance.getMap("default");
         map.addIndex("index", false);
@@ -176,7 +176,7 @@ public class QueryTest extends ParallelTestSupport {
 
     @Test
     public void testIteratorContract() {
-        StaticNodeFactory nodeFactory = createNodeFactory(1);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
         final IMap<String, ValueType> map = instance.getMap("testIteratorContract");
         map.put("1", new ValueType("one"));
@@ -205,7 +205,7 @@ public class QueryTest extends ParallelTestSupport {
 
     @Test
     public void testInnerIndex() {
-        StaticNodeFactory nodeFactory = createNodeFactory(1);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
         final IMap<String, Value> map = instance.getMap("default");
         map.addIndex("name", false);
@@ -228,7 +228,7 @@ public class QueryTest extends ParallelTestSupport {
 
     @Test
     public void testInnerIndexSql() {
-        StaticNodeFactory nodeFactory = createNodeFactory(1);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
         final IMap<String, Value> map = instance.getMap("default");
         map.addIndex("name", false);
@@ -248,9 +248,8 @@ public class QueryTest extends ParallelTestSupport {
     }
 
     @Test
-//    @Ignore("TODO: fix test!")
     public void testQueryWithTTL() throws Exception {
-        StaticNodeFactory nodeFactory = createNodeFactory(2);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
         MapConfig mapConfig = new MapConfig();
         int TTL = 2;
@@ -287,7 +286,7 @@ public class QueryTest extends ParallelTestSupport {
 
     @Test
     public void testOneIndexedFieldsWithTwoCriteriaField() throws Exception {
-        StaticNodeFactory nodeFactory = createNodeFactory(1);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(new Config());
         IMap imap = h1.getMap("employees");
         imap.addIndex("name", false);
@@ -303,7 +302,7 @@ public class QueryTest extends ParallelTestSupport {
     @Test
     public void testQueryDuringAndAfterMigration() throws Exception {
         Config cfg = new Config();
-        StaticNodeFactory nodeFactory = createNodeFactory(4);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
         int count = 100000;
         IMap imap = h1.getMap("values");
@@ -323,7 +322,7 @@ public class QueryTest extends ParallelTestSupport {
     @Test
     public void testQueryDuringAndAfterMigrationWithIndex() throws Exception {
         Config cfg = new Config();
-        StaticNodeFactory nodeFactory = createNodeFactory(4);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
         IMap imap = h1.getMap("employees");
         imap.addIndex("name", false);
@@ -350,7 +349,7 @@ public class QueryTest extends ParallelTestSupport {
     @Test
     public void testQueryWithIndexesWhileMigrating() throws Exception {
         Config cfg = new Config();
-        StaticNodeFactory nodeFactory = createNodeFactory(4);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
         IMap imap = h1.getMap("employees");
         imap.addIndex("name", false);
@@ -378,7 +377,7 @@ public class QueryTest extends ParallelTestSupport {
     @Test
     public void testTwoNodesWithPartialIndexes() throws Exception {
         Config cfg = new Config();
-        StaticNodeFactory nodeFactory = createNodeFactory(2);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance(cfg);
         IMap imap = h1.getMap("employees");
@@ -419,7 +418,7 @@ public class QueryTest extends ParallelTestSupport {
     @Test
     public void testTwoNodesWithIndexes() throws Exception {
         Config cfg = new Config();
-        StaticNodeFactory nodeFactory = createNodeFactory(2);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance(cfg);
         IMap imap = h1.getMap("employees");
@@ -463,7 +462,7 @@ public class QueryTest extends ParallelTestSupport {
     @Test
     public void testOneMemberWithoutIndex() {
         Config cfg = new Config();
-        StaticNodeFactory nodeFactory = createNodeFactory(4);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
         IMap imap = h1.getMap("employees");
         doFunctionalQueryTest(imap);
@@ -472,7 +471,7 @@ public class QueryTest extends ParallelTestSupport {
     @Test
     public void testOneMemberWithIndex() {
         Config cfg = new Config();
-        StaticNodeFactory nodeFactory = createNodeFactory(1);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
         IMap imap = instance.getMap("employees");
         imap.addIndex("name", false);
@@ -484,7 +483,7 @@ public class QueryTest extends ParallelTestSupport {
     @Test
     public void testOneMemberSQLWithoutIndex() {
         Config cfg = new Config();
-        StaticNodeFactory nodeFactory = createNodeFactory(4);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
         IMap imap = h1.getMap("employees");
         doFunctionalSQLQueryTest(imap);
@@ -495,7 +494,7 @@ public class QueryTest extends ParallelTestSupport {
     @Test
     public void testOneMemberSQLWithIndex() {
         Config cfg = new Config();
-        StaticNodeFactory nodeFactory = createNodeFactory(4);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
         IMap imap = h1.getMap("employees");
         imap.addIndex("name", false);
@@ -507,7 +506,7 @@ public class QueryTest extends ParallelTestSupport {
     @Test
     public void testIndexSQLPerformance() {
         Config cfg = new Config();
-        StaticNodeFactory nodeFactory = createNodeFactory(4);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
         IMap imap = h1.getMap("employees");
         for (int i = 0; i < 5000; i++) {
@@ -546,7 +545,7 @@ public class QueryTest extends ParallelTestSupport {
     @Test
     public void testRangeIndexSQLPerformance() {
         Config cfg = new Config();
-        StaticNodeFactory nodeFactory = createNodeFactory(4);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
         IMap imap = h1.getMap("employees");
         for (int i = 0; i < 50000; i++) {
@@ -604,7 +603,7 @@ public class QueryTest extends ParallelTestSupport {
     @Test
     public void testIndexPerformance() {
         Config cfg = new Config();
-        StaticNodeFactory nodeFactory = createNodeFactory(4);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
         IMap imap = h1.getMap("employees");
         for (int i = 0; i < 5000; i++) {
@@ -646,7 +645,7 @@ public class QueryTest extends ParallelTestSupport {
     @Test
     public void testNullIndexing() {
         Config cfg = new Config();
-        StaticNodeFactory nodeFactory = createNodeFactory(2);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance(cfg);
         IMap imap1 = h1.getMap("employees");
@@ -689,7 +688,7 @@ public class QueryTest extends ParallelTestSupport {
     @Test
     public void testIndexPerformanceUsingPredicate() {
         Config cfg = new Config();
-        StaticNodeFactory nodeFactory = createNodeFactory(2);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
         IMap imap = h1.getMap("employees");
         for (int i = 0; i < 5000; i++) {
@@ -731,7 +730,7 @@ public class QueryTest extends ParallelTestSupport {
     @Test
     public void testTwoMembers() {
         Config cfg = new Config();
-        StaticNodeFactory nodeFactory = createNodeFactory(2);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance(cfg);
         IMap imap = h1.getMap("employees");
@@ -741,7 +740,7 @@ public class QueryTest extends ParallelTestSupport {
     @Test
     public void testTwoMembersWithIndexes() {
         Config cfg = new Config();
-        StaticNodeFactory nodeFactory = createNodeFactory(2);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance(cfg);
         IMap imap = h1.getMap("employees");
@@ -754,7 +753,7 @@ public class QueryTest extends ParallelTestSupport {
     @Test
     public void testTwoMembersWithIndexesAndShutdown() {
         Config cfg = new Config();
-        StaticNodeFactory nodeFactory = createNodeFactory(2);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance(cfg);
         IMap imap = h1.getMap("employees");
@@ -777,7 +776,7 @@ public class QueryTest extends ParallelTestSupport {
     @Test
     public void testTwoMembersWithIndexesAndShutdown2() {
         Config cfg = new Config();
-        StaticNodeFactory nodeFactory = createNodeFactory(2);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance(cfg);
         IMap imap = h1.getMap("employees");
@@ -801,7 +800,7 @@ public class QueryTest extends ParallelTestSupport {
     @Test
     public void testTwoMembersWithIndexesAndShutdown3() {
         Config cfg = new Config();
-        StaticNodeFactory nodeFactory = createNodeFactory(2);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
         IMap imap = h1.getMap("employees");
         imap.addIndex("name", false);
@@ -826,7 +825,7 @@ public class QueryTest extends ParallelTestSupport {
     @Test
     public void testSecondMemberAfterAddingIndexes() {
         Config cfg = new Config();
-        StaticNodeFactory nodeFactory = createNodeFactory(2);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
         IMap imap = h1.getMap("employees");
         imap.addIndex("name", false);
@@ -839,7 +838,7 @@ public class QueryTest extends ParallelTestSupport {
     @Test
     public void testWithDashInTheNameAndSqlPredicate() {
         Config cfg = new Config();
-        StaticNodeFactory nodeFactory = createNodeFactory(1);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
         IMap<String, Employee> map = h1.getMap("employee");
         Employee toto = new Employee("toto", 23, true, 165765.0);
@@ -858,7 +857,7 @@ public class QueryTest extends ParallelTestSupport {
     @Test
     public void queryWithThis() {
         Config cfg = new Config();
-        StaticNodeFactory nodeFactory = createNodeFactory(1);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
         IMap<String, String> map = instance.getMap("queryWithThis");
         map.addIndex("this", false);
@@ -877,7 +876,7 @@ public class QueryTest extends ParallelTestSupport {
     @Test
     public void testPredicateWithEntryKeyObject() {
         Config cfg = new Config();
-        StaticNodeFactory nodeFactory = createNodeFactory(1);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
         IMap map = instance.getMap("testPredicateWithEntryKeyObject");
         map.put("1", 11);
@@ -895,7 +894,7 @@ public class QueryTest extends ParallelTestSupport {
     @Test
     public void testPredicateStringAttribute() {
         Config cfg = new Config();
-        StaticNodeFactory nodeFactory = createNodeFactory(1);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
         IMap map = instance.getMap("testPredicateStringWithString");
         testPredicateStringAttribute(map);
@@ -907,7 +906,7 @@ public class QueryTest extends ParallelTestSupport {
     @Test
     public void testPredicateStringAttributesWithIndex() {
         Config cfg = new Config();
-        StaticNodeFactory nodeFactory = createNodeFactory(1);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
         IMap map = instance.getMap("testPredicateStringWithStringIndex");
         map.addIndex("name", false);
@@ -937,7 +936,7 @@ public class QueryTest extends ParallelTestSupport {
     @Test
     public void testPredicateDateAttribute() {
         Config cfg = new Config();
-        StaticNodeFactory nodeFactory = createNodeFactory(1);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
         IMap map = instance.getMap("testPredicateDateAttribute");
         testPredicateDateAttribute(map);
@@ -946,7 +945,7 @@ public class QueryTest extends ParallelTestSupport {
     @Test
     public void testPredicateDateAttributeWithIndex() {
         Config cfg = new Config();
-        StaticNodeFactory nodeFactory = createNodeFactory(1);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
         IMap map = instance.getMap("testPredicateDateAttribute");
         map.addIndex("this", true);
@@ -982,7 +981,7 @@ public class QueryTest extends ParallelTestSupport {
     @Test
     public void testPredicateEnumAttribute() {
         Config cfg = new Config();
-        StaticNodeFactory nodeFactory = createNodeFactory(1);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
         IMap map = instance.getMap("testPredicateEnumAttribute");
         testPredicateEnumAttribute(map);
@@ -991,7 +990,7 @@ public class QueryTest extends ParallelTestSupport {
     @Test
     public void testPredicateEnumAttributeWithIndex() {
         Config cfg = new Config();
-        StaticNodeFactory nodeFactory = createNodeFactory(1);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
         IMap map = instance.getMap("testPredicateEnumAttribute");
         map.addIndex("this", true);
@@ -1049,7 +1048,7 @@ public class QueryTest extends ParallelTestSupport {
     @Test
     public void testPredicateNotEqualWithIndex() {
         Config cfg = new Config();
-        StaticNodeFactory nodeFactory = createNodeFactory(1);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
         IMap map1 = instance.getMap("testPredicateNotEqualWithIndex-ordered");
         IMap map2 = instance.getMap("testPredicateNotEqualWithIndex-unordered");
@@ -1152,7 +1151,7 @@ public class QueryTest extends ParallelTestSupport {
     @Test
     public void testInvalidSqlPredicate() {
         Config cfg = new Config();
-        StaticNodeFactory nodeFactory = createNodeFactory(1);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
         IMap map = instance.getMap("employee");
         map.put(1, new Employee("e", 1, false, 0));
@@ -1197,7 +1196,7 @@ public class QueryTest extends ParallelTestSupport {
     public void testIndexCleanupOnMigration() throws InterruptedException {
         final int n = 6;
         final int runCount = 500;
-        final StaticNodeFactory nodeFactory = createNodeFactory(n);
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(n);
         final Config config = new Config();
         config.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
         final String mapName = "testIndexCleanupOnMigration";
