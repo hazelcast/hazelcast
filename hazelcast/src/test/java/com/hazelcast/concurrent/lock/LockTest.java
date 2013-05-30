@@ -18,12 +18,13 @@ package com.hazelcast.concurrent.lock;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
-import com.hazelcast.test.StaticNodeFactory;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
-import com.hazelcast.test.ParallelTestSupport;
-import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -32,6 +33,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 
@@ -43,13 +45,13 @@ import static org.junit.Assert.*;
  * Date: 2/18/13
  * Time: 5:12 PM
  */
-@RunWith(RandomBlockJUnit4ClassRunner.class)
+@RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
-public class LockTest extends ParallelTestSupport {
+public class LockTest extends HazelcastTestSupport {
 
     @Test
     public void testSimpleUsage() throws InterruptedException {
-        final StaticNodeFactory nodeFactory = createNodeFactory(1);
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         final Config config = new Config();
         final HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
         final AtomicInteger atomicInteger = new AtomicInteger(0);
@@ -104,7 +106,7 @@ public class LockTest extends ParallelTestSupport {
 
     @Test(expected = DistributedObjectDestroyedException.class)
     public void testDestroyLockWhenOtherWaitingOnLock() throws InterruptedException {
-        final StaticNodeFactory nodeFactory = createNodeFactory(1);
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         final HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
         final ILock lock = instance.getLock("testLockDestroyWhenWaitingLock");
         Thread t = new Thread(new Runnable() {
@@ -132,11 +134,29 @@ public class LockTest extends ParallelTestSupport {
     }
 
     @Test(expected = HazelcastInstanceNotActiveException.class)
-    public void testShutDownNodeWhenOtherWaitingOnLock() throws InterruptedException {
-        final StaticNodeFactory nodeFactory = createNodeFactory(2);
+    public void testShutDownNodeWhenOtherWaitingOnLockLocalKey() throws InterruptedException {
+        testShutDownNodeWhenOtherWaitingOnLock(true);
+    }
+
+    @Test(expected = HazelcastInstanceNotActiveException.class)
+    public void testShutDownNodeWhenOtherWaitingOnLockRemoteKey() throws InterruptedException {
+        testShutDownNodeWhenOtherWaitingOnLock(false);
+    }
+
+    private void testShutDownNodeWhenOtherWaitingOnLock(boolean localKey) throws InterruptedException {
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         final HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
-        nodeFactory.newHazelcastInstance(new Config());
-        final ILock lock = instance.getLock("testShutDownNodeWhenOtherWaitingOnLock");
+        final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(new Config());
+        warmUpPartitions(instance2, instance);
+
+        final int key;
+        if (localKey) {
+            key = generateKeyOwnedBy(instance);
+        } else {
+            key = generateKeyNotOwnedBy(instance);
+        }
+
+        final ILock lock = instance.getLock(key);
         final Thread thread = new Thread(new Runnable() {
             public void run() {
                 lock.lock();
@@ -147,7 +167,7 @@ public class LockTest extends ParallelTestSupport {
         new Thread(new Runnable() {
             public void run() {
                 try {
-                    Thread.sleep(5000);
+                    Thread.sleep(3000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -159,7 +179,7 @@ public class LockTest extends ParallelTestSupport {
 
     @Test(expected = IllegalMonitorStateException.class)
     public void testIllegalUnlock() {
-        final StaticNodeFactory nodeFactory = createNodeFactory(1);
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         final HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
         final ILock lock = instance.getLock("testIllegalUnlock");
         lock.unlock();
@@ -167,7 +187,7 @@ public class LockTest extends ParallelTestSupport {
 
     @Test(timeout = 100000)
     public void testLockOwnerDies() throws Exception {
-        final StaticNodeFactory nodeFactory = createNodeFactory(2);
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         final Config config = new Config();
         final AtomicInteger integer = new AtomicInteger(0);
         final HazelcastInstance lockOwner = nodeFactory.newHazelcastInstance(config);
@@ -194,7 +214,7 @@ public class LockTest extends ParallelTestSupport {
 
     @Test(timeout = 100000)
     public void testKeyOwnerDies() throws Exception {
-        final StaticNodeFactory nodeFactory = createNodeFactory(3);
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         final Config config = new Config();
         final HazelcastInstance keyOwner = nodeFactory.newHazelcastInstance(config);
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
@@ -227,21 +247,40 @@ public class LockTest extends ParallelTestSupport {
     }
 
     @Test(timeout = 100000)
-    public void testLockEviction() throws Exception {
-        final StaticNodeFactory nodeFactory = createNodeFactory(2);
-        final Config config = new Config();
-        final HazelcastInstance lockOwner = nodeFactory.newHazelcastInstance(config);
-        final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
+    public void testLockEvictionLocalKey() throws Exception {
+        testLockEviction(true);
+    }
 
-        final String name = "testLockEviction";
-        final ILock lock = lockOwner.getLock(name);
+    @Test(timeout = 100000)
+    public void testLockEvictionRemoteKey() throws Exception {
+        testLockEviction(false);
+    }
+
+    private void testLockEviction(boolean localKey) throws Exception {
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        final Config config = new Config();
+
+        final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
+        final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
+
+        warmUpPartitions(instance2, instance1);
+
+        final int key;
+        if (localKey) {
+            key = generateKeyOwnedBy(instance1);
+        } else {
+            key = generateKeyNotOwnedBy(instance1);
+        }
+
+        final ILock lock = instance1.getLock(key);
+        // can timeout when waiting backup response if smaller than 5 secs.
         lock.lock(3, TimeUnit.SECONDS);
-//        Assert.assertTrue(lock.isLocked()); // under high load, is-locked takes more than 3 seconds and test fails
+        Assert.assertTrue(lock.isLocked());
 
         final CountDownLatch latch = new CountDownLatch(1);
         Thread t = new Thread(new Runnable() {
             public void run() {
-                final ILock lock = instance1.getLock(name);
+                final ILock lock = instance2.getLock(key);
                 lock.lock();
                 latch.countDown();
 
@@ -254,7 +293,7 @@ public class LockTest extends ParallelTestSupport {
 
     @Test
     public void testLockConditionSimpleUsage() throws InterruptedException {
-        final StaticNodeFactory nodeFactory = createNodeFactory(2);
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         final Config config = new Config();
         final String name = "testLockConditionSimpleUsage";
         final ILock lock = nodeFactory.newHazelcastInstance(config).getLock(name);
@@ -297,7 +336,7 @@ public class LockTest extends ParallelTestSupport {
 
     @Test
     public void testLockConditionSignalAll() throws InterruptedException {
-        final StaticNodeFactory nodeFactory = createNodeFactory(2);
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         final Config config = new Config();
         final String name = "testLockConditionSimpleUsage";
         final ILock lock = nodeFactory.newHazelcastInstance(config).getLock(name);
@@ -345,7 +384,7 @@ public class LockTest extends ParallelTestSupport {
 
     @Test
     public void testLockConditionSignalAllShutDownKeyOwner() throws InterruptedException {
-        final StaticNodeFactory nodeFactory = createNodeFactory(2);
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         final Config config = new Config();
         final String name = "testLockConditionSignalAllShutDownKeyOwner";
         final HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
@@ -398,7 +437,7 @@ public class LockTest extends ParallelTestSupport {
 
     @Test(timeout = 100000)
     public void testKeyOwnerDiesOnCondition() throws Exception {
-        final StaticNodeFactory nodeFactory = createNodeFactory(3);
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         final Config config = new Config();
         final HazelcastInstance keyOwner = nodeFactory.newHazelcastInstance(config);
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
@@ -445,7 +484,7 @@ public class LockTest extends ParallelTestSupport {
 
     @Test(expected = DistributedObjectDestroyedException.class)
     public void testDestroyLockWhenOtherWaitingOnConditionAwait() {
-        final StaticNodeFactory nodeFactory = createNodeFactory(2);
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         final HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
         final ILock lock = instance.getLock("testDestroyLockWhenOtherWaitingOnConditionAwait");
         final ICondition condition = lock.newCondition("condition");
@@ -471,7 +510,7 @@ public class LockTest extends ParallelTestSupport {
 
     @Test(expected = HazelcastInstanceNotActiveException.class)
     public void testShutDownNodeWhenOtherWaitingOnConditionAwait() throws InterruptedException {
-        final StaticNodeFactory nodeFactory = createNodeFactory(2);
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         final HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
         nodeFactory.newHazelcastInstance(new Config());
         final String name = "testShutDownNodeWhenOtherWaitingOnConditionAwait";
@@ -498,7 +537,7 @@ public class LockTest extends ParallelTestSupport {
 
     @Test(expected = IllegalMonitorStateException.class)
     public void testIllegalConditionUsage1() {
-        final StaticNodeFactory nodeFactory = createNodeFactory(1);
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         final HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
         final ILock lock = instance.getLock("testIllegalConditionUsage");
         final ICondition condition = lock.newCondition("condition");
@@ -510,7 +549,7 @@ public class LockTest extends ParallelTestSupport {
 
     @Test(expected = IllegalMonitorStateException.class)
     public void testIllegalConditionUsage2() {
-        final StaticNodeFactory nodeFactory = createNodeFactory(1);
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         final HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
         final ILock lock = instance.getLock("testIllegalConditionUsage");
         final ICondition condition = lock.newCondition("condition");
@@ -518,34 +557,39 @@ public class LockTest extends ParallelTestSupport {
     }
 
     @Test(timeout = 100000)
-//    @Ignore("TODO: fix test!")
     public void testScheduledLockActionForDeadMember() throws Exception {
-        final StaticNodeFactory nodeFactory = createNodeFactory(2);
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         final HazelcastInstance h1 = nodeFactory.newHazelcastInstance(new Config());
         final ILock lock1 = h1.getLock("default");
         final HazelcastInstance h2 = nodeFactory.newHazelcastInstance(new Config());
         final ILock lock2 = h2.getLock("default");
+        final AtomicBoolean error = new AtomicBoolean(false);
+
         assertTrue(lock1.tryLock());
+
         new Thread(new Runnable() {
             public void run() {
                 try {
                     lock2.lock();
-                    fail("Shouldn't be able to lock!");
-                } catch (Throwable e) {
+                    error.set(true);
+                } catch (Throwable ignored) {
                 }
             }
         }).start();
         Thread.sleep(5000);
+
         h2.getLifecycleService().shutdown();
         Thread.sleep(3000);
+
         lock1.unlock();
+        assertFalse(error.get());
         assertTrue(lock1.tryLock());
     }
 
     @Test
     public void testLockInterruption() throws InterruptedException {
         Config config = new Config();
-        final StaticNodeFactory nodeFactory = createNodeFactory(1);
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         final HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
 
         final Lock lock = hz.getLock("testLockInterruption");
@@ -580,7 +624,7 @@ public class LockTest extends ParallelTestSupport {
     @Test
     public void testLockInterruption2() throws InterruptedException {
         Config config = new Config();
-        final StaticNodeFactory nodeFactory = createNodeFactory(1);
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         final HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
 
         final Lock lock = hz.getLock("testLockInterruption2");
@@ -610,7 +654,7 @@ public class LockTest extends ParallelTestSupport {
     @Test
     public void testLockIsLocked() throws InterruptedException {
         Config config = new Config();
-        final StaticNodeFactory nodeFactory = createNodeFactory(3);;
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);;
         final HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         final HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
         final HazelcastInstance h3 = nodeFactory.newHazelcastInstance(config);
@@ -627,16 +671,15 @@ public class LockTest extends ParallelTestSupport {
         Thread thread = new Thread(new Runnable() {
             public void run() {
                 ILock lock3 = h3.getLock("testLockIsLocked");
-
                 assertTrue(lock3.isLocked());
                 try {
                     while (lock3.isLocked()) {
                         Thread.sleep(100);
                     }
+                    latch.countDown();
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
-                latch.countDown();
             }
         });
         thread.start();
@@ -651,7 +694,7 @@ public class LockTest extends ParallelTestSupport {
      */
     public void testHighConcurrentLockAndUnlock() {
         Config config = new Config();
-        final StaticNodeFactory nodeFactory = createNodeFactory(1);
+        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         final HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
         final String key = "key";
         final int threadCount = 100;

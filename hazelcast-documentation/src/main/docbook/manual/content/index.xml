@@ -49,6 +49,8 @@
     <chapter xml:id="Introduction">
         <title>Introduction</title>
         <xi:include href="Introduction.xml"/>
+        <xi:include href="WhatsNew3.xml"/>
+        <xi:include href="MigratingTo3.xml"/>
         <xi:include href="GettingStarted.xml"/>
     </chapter>
     <chapter xml:id="DDS">

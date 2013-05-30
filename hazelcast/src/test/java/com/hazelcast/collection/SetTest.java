@@ -21,9 +21,9 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ISet;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
-import com.hazelcast.test.ParallelTestSupport;
-import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
-import com.hazelcast.test.StaticNodeFactory;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -41,9 +41,9 @@ import static org.junit.Assert.*;
 /**
  * @ali 3/6/13
  */
-@RunWith(RandomBlockJUnit4ClassRunner.class)
+@RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
-public class SetTest extends ParallelTestSupport {
+public class SetTest extends HazelcastTestSupport {
 
     @Test
     public void testSetMethods() throws Exception {
@@ -51,7 +51,7 @@ public class SetTest extends ParallelTestSupport {
         final String name = "defSet";
         final int count = 100;
         final int insCount = 4;
-        StaticNodeFactory factory = createNodeFactory(insCount);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
         final HazelcastInstance[] instances = factory.newInstances(config);
 
         for (int i=0; i<count; i++){
@@ -94,7 +94,7 @@ public class SetTest extends ParallelTestSupport {
         final String name = "defSet";
         final int count = 10;
         final int insCount = 4;
-        StaticNodeFactory factory = createNodeFactory(insCount);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
         final HazelcastInstance[] instances = factory.newInstances(config);
         final CountDownLatch latchAdd = new CountDownLatch(count);
         final CountDownLatch latchRemove = new CountDownLatch(count);

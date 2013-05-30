@@ -387,18 +387,18 @@ public interface IPermissionPolicy {
 
                 <listitem>
                     <para>
-                        <emphasis role="bold">AtomicNumber Permission</emphasis>
+                        <emphasis role="bold">AtomicLong Permission</emphasis>
                     </para>
                     <para>
                         <programlisting language="xml"><![CDATA[
-<atomic-number-permission name="name" principal="principal">
+<atomic-long-permission name="name" principal="principal">
     <endpoints>
         ...
     </endpoints>
     <actions>
         ...
     </actions>
-</atomic-number-permission>
+</atomic-long-permission>
 ]]></programlisting>
                     </para>
                     <para>

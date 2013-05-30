@@ -20,7 +20,7 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.*;
-import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.SerialTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
@@ -39,7 +39,7 @@ import static org.junit.Assert.*;
 /**
  * @ali 5/19/13
  */
-@RunWith(RandomBlockJUnit4ClassRunner.class)
+@RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(SerialTest.class)
 public class ClientQueueTest {
 
@@ -73,8 +73,9 @@ public class ClientQueueTest {
 
     @Test
     public void testListener() throws Exception {
+        assertEquals(0, q.size());
 
-        final CountDownLatch latch = new CountDownLatch(6);
+        final CountDownLatch latch = new CountDownLatch(5);
 
         ItemListener listener = new ItemListener() {
 
@@ -85,18 +86,21 @@ public class ClientQueueTest {
             public void itemRemoved(ItemEvent item) {
             }
         };
-        q.addItemListener(listener, true);
+        String id = q.addItemListener(listener, true);
+
+        Thread.sleep(500);
 
         new Thread(){
             public void run() {
                 for (int i=0; i<5; i++){
-                    q.offer("item" + i);
+                    if(!q.offer("event_item" + i)){
+                        throw new RuntimeException();
+                    }
                 }
-                q.offer("done");
             }
         }.start();
-        assertTrue(latch.await(20, TimeUnit.SECONDS));
-
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
+        q.removeItemListener(id);
     }
 
     @Test

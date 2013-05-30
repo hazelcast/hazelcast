@@ -51,7 +51,7 @@ final class OperationServiceImpl implements OperationService {
     private final NodeEngineImpl nodeEngine;
     private final Node node;
     private final ILogger logger;
-    private final AtomicLong remoteCallIdGen = new AtomicLong(0);
+    private final AtomicLong callIdGen = new AtomicLong(0);
     private final ConcurrentMap<Long, RemoteCall> remoteCalls;
     private final ExecutorService[] opExecutors;
     private final ExecutorService systemExecutor;
@@ -195,6 +195,7 @@ final class OperationServiceImpl implements OperationService {
                 }
             }
             op.run();
+
             final boolean returnsResponse = op.returnsResponse();
             Object response = null;
             if (op instanceof BackupAwareOperation) {
@@ -207,7 +208,6 @@ final class OperationServiceImpl implements OperationService {
                     response = new Response(op.getResponse(), op.getCallId(), syncBackupCount);
                 }
             }
-
             if (returnsResponse) {
                 if (response == null) {
                     response = op.getResponse();
@@ -435,16 +435,16 @@ final class OperationServiceImpl implements OperationService {
 
     @PrivateApi
     long registerRemoteCall(RemoteCall call) {
-        final long callId = newRemoteCallId();
+        final long callId = newCallId();
         remoteCalls.put(callId, call);
         return callId;
     }
 
     @PrivateApi
-    long newRemoteCallId() {
-        final long callId = remoteCallIdGen.incrementAndGet();
+    long newCallId() {
+        final long callId = callIdGen.incrementAndGet();
         if (callId == 0) {
-            return newRemoteCallId();
+            return newCallId();
         }
         return callId;
     }
@@ -482,7 +482,10 @@ final class OperationServiceImpl implements OperationService {
             throw new IllegalStateException("No backup record found for call -> " + callId);
         }
         try {
-            return lock.tryAcquire(backupCount, timeout, unit);
+            if (backupCount != 0) {
+                return lock.tryAcquire(backupCount, timeout, unit);
+            }
+            return true;
         } finally {
             backupCalls.remove(callId);
         }

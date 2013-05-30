@@ -1050,7 +1050,7 @@
                 <xs:element ref="list-permission" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element ref="set-permission" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element ref="lock-permission" minOccurs="0" maxOccurs="unbounded"/>
-                <xs:element ref="atomic-number-permission" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element ref="atomic-long-permission" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element ref="countdown-latch-permission" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element ref="semaphore-permission" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element ref="id-generator-permission" minOccurs="0" maxOccurs="unbounded"/>
@@ -1169,7 +1169,7 @@
     <xs:element name="list-permission" type="instance-permission"/>
     <xs:element name="set-permission" type="instance-permission"/>
     <xs:element name="lock-permission" type="instance-permission"/>
-    <xs:element name="atomic-number-permission" type="instance-permission"/>
+    <xs:element name="atomic-long-permission" type="instance-permission"/>
     <xs:element name="countdown-latch-permission" type="instance-permission"/>
     <xs:element name="semaphore-permission" type="instance-permission"/>
     <xs:element name="id-generator-permission" type="instance-permission"/>

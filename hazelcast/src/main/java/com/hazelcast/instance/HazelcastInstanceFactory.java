@@ -127,6 +127,7 @@ public final class HazelcastInstanceFactory {
 
     public static void shutdownAll() {
         final List<HazelcastInstanceProxy> instances = new ArrayList<HazelcastInstanceProxy>(INSTANCE_MAP.values());
+        INSTANCE_MAP.clear();
         Collections.sort(instances, new Comparator<HazelcastInstanceProxy>() {
             public int compare(HazelcastInstanceProxy o1, HazelcastInstanceProxy o2) {
                 return o1.getName().compareTo(o2.getName());
@@ -136,7 +137,6 @@ public final class HazelcastInstanceFactory {
             proxy.getLifecycleService().shutdown();
             proxy.original = null;
         }
-        INSTANCE_MAP.clear();
         ManagementService.shutdownAll();
     }
 

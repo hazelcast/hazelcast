@@ -27,7 +27,6 @@ Queue
 Multimap
     * Values can be Set/List/Queue.
 
-
 Topic
     * support for total ordering
 

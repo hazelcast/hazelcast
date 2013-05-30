@@ -54,12 +54,12 @@ public class MapPortableHook implements PortableHook {
     public static final int ADD_ENTRY_LISTENER = 25;
     public static final int GET_ENTRY_VIEW = 27;
     public static final int ADD_INDEX = 28;
-    public static final int KEYSET = 29;
+    public static final int KEY_SET = 29;
     public static final int VALUES = 30;
     public static final int ENTRY_SET = 31;
     public static final int SIZE = 33;
     public static final int QUERY = 34;
-    public static final int LOCAL_KEYSET = 35;
+    public static final int CLEAR = 35;
     public static final int GET_LOCAL_MAP_STATS = 37;
     public static final int EXECUTE_ON_KEY = 38;
     public static final int EXECUTE_ON_ALL_KEYS = 39;
@@ -227,7 +227,7 @@ public class MapPortableHook implements PortableHook {
                     }
                 };
 
-                constructors[KEYSET] = new ConstructorFunction<Integer, Portable>() {
+                constructors[KEY_SET] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
                         return new MapKeySetRequest();
                     }
@@ -248,6 +248,12 @@ public class MapPortableHook implements PortableHook {
                 constructors[SIZE] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
                         return new MapSizeRequest();
+                    }
+                };
+
+                constructors[CLEAR] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapClearRequest();
                     }
                 };
 

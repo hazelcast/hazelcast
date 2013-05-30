@@ -1,21 +1,26 @@
 package com.hazelcast.client;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.nio.Address;
-import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
-import com.hazelcast.test.StaticNodeFactory;
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.TestProperties;
 import org.junit.Rule;
 import org.junit.rules.ExternalResource;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.util.Set;
 
 /**
  * @mdogan 5/14/13
  */
-@RunWith(RandomBlockJUnit4ClassRunner.class)
+@RunWith(HazelcastJUnit4ClassRunner.class)
 public abstract class ClientTestSupport {
 
     @Rule
@@ -42,9 +47,9 @@ public abstract class ClientTestSupport {
         }
 
         protected void before() throws Throwable {
-            instance = new StaticNodeFactory(1).newHazelcastInstance(config);
+            instance = new TestHazelcastInstanceFactory(1).newHazelcastInstance(config);
             final Address address = TestUtil.getNode(instance).getThisAddress();
-            client = StaticNodeFactory.newClient(address);
+            client = newClient(address);
             client.auth();
         }
 
@@ -56,5 +61,22 @@ public abstract class ClientTestSupport {
             }
             instance.getLifecycleService().shutdown();
         }
+    }
+
+    public static SimpleClient newClient(Address nodeAddress) throws IOException {
+        Set<HazelcastInstance> instances = Hazelcast.getAllHazelcastInstances();
+        for (HazelcastInstance hz : instances) {
+            Node node = TestUtil.getNode(hz);
+            MemberImpl m = (MemberImpl) hz.getCluster().getLocalMember();
+            if (m.getAddress().equals(nodeAddress)) {
+                if (TestProperties.isMockNetwork()) {
+                    ClientEngineImpl engine = node.clientEngine;
+                    return new MockSimpleClient(engine);
+                } else {
+                    return new SocketSimpleClient(node);
+                }
+            }
+        }
+        throw new IllegalArgumentException("Cannot connect to node: " + nodeAddress);
     }
 }

@@ -21,12 +21,11 @@ import com.hazelcast.core.*;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.test.ParallelTestSupport;
-import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
-import com.hazelcast.test.StaticNodeFactory;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -42,15 +41,14 @@ import static junit.framework.Assert.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-@RunWith(RandomBlockJUnit4ClassRunner.class)
+@RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
-public class MapStoreTest extends ParallelTestSupport {
+public class MapStoreTest extends HazelcastTestSupport {
 
     @Test
-//    @Ignore("TODO: fix test!")
     public void testMapInitialLoad() throws InterruptedException {
         int size = 100000;
-        StaticNodeFactory nodeFactory = createNodeFactory(3);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         Config cfg = new Config();
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
@@ -62,10 +60,6 @@ public class MapStoreTest extends ParallelTestSupport {
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         IMap map = instance1.getMap("testMapInitialLoad");
 
-        for (int i = 0; i < 100; i++) {
-            System.out.println(map.size());
-            Thread.sleep(1000);
-        }
         assertEquals(size, map.size());
 
         for (int i = 0; i < size; i++) {
@@ -141,7 +135,7 @@ public class MapStoreTest extends ParallelTestSupport {
                 .setMapStoreConfig(new MapStoreConfig()
                         .setWriteDelaySeconds(1)
                         .setImplementation(new SimpleMapStore<Long, String>(STORE)));
-        StaticNodeFactory nodeFactory = createNodeFactory(3);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         HazelcastInstance h = nodeFactory.newHazelcastInstance(config);
         IMap map = h.getMap("map");
         Collection collection = map.values();
@@ -158,7 +152,7 @@ public class MapStoreTest extends ParallelTestSupport {
                 .getMapConfig("myMap")
                 .setMapStoreConfig(new MapStoreConfig()
                         .setImplementation(myMapStore));
-        StaticNodeFactory nodeFactory = createNodeFactory(3);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         HazelcastInstance hc = nodeFactory.newHazelcastInstance(config);
         IMap<String, Long> myMap = hc.getMap("myMap");
         myMap.put("one", 1L);
@@ -212,7 +206,7 @@ public class MapStoreTest extends ParallelTestSupport {
                 .setMapStoreConfig(new MapStoreConfig()
                         //.setWriteDelaySeconds(1)
                         .setImplementation(myMapStore));
-        StaticNodeFactory nodeFactory = createNodeFactory(3);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         HazelcastInstance hc = nodeFactory.newHazelcastInstance(config);
         store.put("one", 1l);
         store.put("two", 2l);
@@ -245,7 +239,7 @@ public class MapStoreTest extends ParallelTestSupport {
         TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
         Config config = newConfig(testMapStore, 1);
         config.getMapConfig("default").setMaxIdleSeconds(4);
-        StaticNodeFactory nodeFactory = createNodeFactory(1);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         IMap map = h1.getMap("default");
 
@@ -273,7 +267,7 @@ public class MapStoreTest extends ParallelTestSupport {
     public void testOneMemberWriteBehindWithEvictions() throws Exception {
         TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
         Config config = newConfig(testMapStore, 2);
-        StaticNodeFactory nodeFactory = createNodeFactory(3);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         IMap map = h1.getMap("default");
         assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL_KEYS, testMapStore.waitForEvent(20));
@@ -295,7 +289,6 @@ public class MapStoreTest extends ParallelTestSupport {
         }
         for (int i = 0; i < 100; i++) {
             map.evict(i);
-            System.out.println("evict:"+i);
             assertEquals(TestEventBasedMapStore.STORE_EVENTS.STORE, testMapStore.waitForEvent(3));
         }
         assertEquals(null, testMapStore.waitForEvent(2));
@@ -320,7 +313,7 @@ public class MapStoreTest extends ParallelTestSupport {
         TestMapStore testMapStore = new TestMapStore(1, 1, 1);
         testMapStore.setLoadAllKeys(false);
         Config config = newConfig(testMapStore, 2);
-        StaticNodeFactory nodeFactory = createNodeFactory(3);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         testMapStore.insert("1", "value1");
         IMap map = h1.getMap("default");
@@ -351,7 +344,7 @@ public class MapStoreTest extends ParallelTestSupport {
         TestMapStore testMapStore = new TestMapStore(1, 1, 1);
         testMapStore.setLoadAllKeys(false);
         Config config = newConfig(testMapStore, 2);
-        StaticNodeFactory nodeFactory = createNodeFactory(3);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         IMap map = h1.getMap("default");
         assertEquals(0, map.size());
@@ -368,7 +361,7 @@ public class MapStoreTest extends ParallelTestSupport {
         TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
         testMapStore.setLoadAllKeys(false);
         Config config = newConfig(testMapStore, 1);
-        StaticNodeFactory nodeFactory = createNodeFactory(3);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         IMap map = h1.getMap("default");
         assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL_KEYS, testMapStore.waitForEvent(2));
@@ -390,7 +383,7 @@ public class MapStoreTest extends ParallelTestSupport {
         testMapStore.setLoadAllKeys(false);
         int size = 100;
         Config config = newConfig(testMapStore, 200);
-        StaticNodeFactory nodeFactory = createNodeFactory(3);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         IMap map = h1.getMap("default");
         assertEquals(0, map.size());
@@ -420,7 +413,7 @@ public class MapStoreTest extends ParallelTestSupport {
         TestMapStore testMapStore = new TestMapStore(1, 1, 1);
         testMapStore.setLoadAllKeys(false);
         Config config = newConfig(testMapStore, 200);
-        StaticNodeFactory nodeFactory = createNodeFactory(3);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         IMap map1 = h1.getMap("default");
         assertEquals(0, map1.size());
@@ -439,7 +432,7 @@ public class MapStoreTest extends ParallelTestSupport {
         TestMapStore testMapStore = new TestMapStore(1, 1, 1);
         testMapStore.setLoadAllKeys(false);
         Config config = newConfig(testMapStore, 0);
-        StaticNodeFactory nodeFactory = createNodeFactory(3);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         testMapStore.insert("1", "value1");
         IMap map = h1.getMap("default");
@@ -476,7 +469,7 @@ public class MapStoreTest extends ParallelTestSupport {
         MapConfig mapConfig = config.getMapConfig("default");
         mapConfig.setEvictionPolicy(MapConfig.EvictionPolicy.LRU);
         mapConfig.setMaxSizeConfig(maxSizeConfig);
-        StaticNodeFactory nodeFactory = createNodeFactory(3);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         IMap map = h1.getMap("default");
@@ -495,7 +488,7 @@ public class MapStoreTest extends ParallelTestSupport {
         TestMapStore testMapStore = new TestMapStore(1, 1, 1);
         testMapStore.setLoadAllKeys(false);
         Config config = newConfig(testMapStore, 0);
-        StaticNodeFactory nodeFactory = createNodeFactory(1);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         Employee employee = new Employee("joe", 25, true, 100.00);
         Employee newEmployee = new Employee("ali", 26, true, 1000);
@@ -555,7 +548,7 @@ public class MapStoreTest extends ParallelTestSupport {
         TestMapStore testMapStore = new TestMapStore(1, 1, 1);
         testMapStore.setLoadAllKeys(false);
         Config config = newConfig(testMapStore, 0);
-        StaticNodeFactory nodeFactory = createNodeFactory(3);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
         Employee employee = new Employee("joe", 25, true, 100.00);
@@ -585,7 +578,7 @@ public class MapStoreTest extends ParallelTestSupport {
     public void testTwoMemberWriteThrough2() throws Exception {
         TestMapStore testMapStore = new TestMapStore(1000, 0, 0);
         Config config = newConfig(testMapStore, 0);
-        StaticNodeFactory nodeFactory = createNodeFactory(3);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
         IMap map1 = h1.getMap("default");
@@ -606,7 +599,7 @@ public class MapStoreTest extends ParallelTestSupport {
         FailAwareMapStore testMapStore = new FailAwareMapStore();
         testMapStore.setFail(true, true);
         Config config = newConfig(testMapStore, 0);
-        StaticNodeFactory nodeFactory = createNodeFactory(3);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         IMap map = h1.getMap("default");
         assertEquals(0, map.size());
@@ -636,7 +629,7 @@ public class MapStoreTest extends ParallelTestSupport {
         FailAwareMapStore testMapStore = new FailAwareMapStore();
         testMapStore.setFail(true, false);
         Config config = newConfig(testMapStore, 0);
-        StaticNodeFactory nodeFactory = createNodeFactory(3);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         IMap map = h1.getMap("default");
         assertEquals(0, map.size());
@@ -660,7 +653,7 @@ public class MapStoreTest extends ParallelTestSupport {
             keys.add(i);
         }
         Config config = newConfig(testMapStore, 2);
-        StaticNodeFactory nodeFactory = createNodeFactory(3);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
         IMap map1 = h1.getMap("default");

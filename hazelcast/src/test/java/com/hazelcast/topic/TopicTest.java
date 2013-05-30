@@ -19,10 +19,10 @@ package com.hazelcast.topic;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.*;
-import com.hazelcast.test.ParallelTestSupport;
-import com.hazelcast.test.StaticNodeFactory;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
-import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
@@ -39,19 +39,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.*;
 
 
-@RunWith(RandomBlockJUnit4ClassRunner.class)
+@RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
-public class TopicTest extends ParallelTestSupport {
+public class TopicTest extends HazelcastTestSupport {
 
     @Test
     public void testTopicPublishingMember() {
         final Config config = new Config();
-        TopicConfig topicConfig = new TopicConfig();
-        topicConfig.setGlobalOrderingEnabled(false);
-        topicConfig.setName("default");
-        config.addTopicConfig(topicConfig);
+        config.getTopicConfig("default").setGlobalOrderingEnabled(true);
         final int k = 3;
-        StaticNodeFactory factory = createNodeFactory(k);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
         final HazelcastInstance[] instances = factory.newInstances(config);
 
         final CountDownLatch mainLatch = new CountDownLatch(k);
@@ -102,17 +99,14 @@ public class TopicTest extends ParallelTestSupport {
     @Test
     public void testTopicTotalOrder() throws Exception {
         final Config config = new Config();
-        TopicConfig topicConfig = new TopicConfig();
-        topicConfig.setGlobalOrderingEnabled(true);
-        topicConfig.setName("default");
-        config.addTopicConfig(topicConfig);
+        config.getTopicConfig("default").setGlobalOrderingEnabled(true);
 
         final int k = 4;
 
         final Map<Long, String> stringMap = new HashMap<Long, String>();
         final CountDownLatch countDownLatch = new CountDownLatch(k);
         final CountDownLatch mainLatch = new CountDownLatch(k);
-        final StaticNodeFactory factory = createNodeFactory(k);
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
         final HazelcastInstance[] instances = factory.newInstances(config);
 
         Assert.assertEquals(true, instances[0].getConfig().getTopicConfig("default").isGlobalOrderingEnabled());
@@ -163,14 +157,14 @@ public class TopicTest extends ParallelTestSupport {
 
     @Test
     public void testName() {
-        HazelcastInstance hClient = createNodeFactory(1).newHazelcastInstance(new Config());
+        HazelcastInstance hClient = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
         ITopic<?> topic = hClient.getTopic("testName");
         Assert.assertEquals("testName", topic.getName());
     }
 
     @Test
     public void addMessageListener() throws InterruptedException {
-        HazelcastInstance hClient = createNodeFactory(1).newHazelcastInstance(new Config());
+        HazelcastInstance hClient = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
         ITopic<String> topic = hClient.getTopic("addMessageListener");
         final CountDownLatch latch = new CountDownLatch(1);
         final String message = "Hazelcast Rocks!";
@@ -187,7 +181,7 @@ public class TopicTest extends ParallelTestSupport {
 
     @Test
     public void addTwoMessageListener() throws InterruptedException {
-        HazelcastInstance hazelcastInstance = createNodeFactory(1).newHazelcastInstance(new Config());
+        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
         ITopic<String> topic = hazelcastInstance.getTopic("addTwoMessageListener");
         final CountDownLatch latch = new CountDownLatch(2);
         final String message = "Hazelcast Rocks!";
@@ -212,7 +206,7 @@ public class TopicTest extends ParallelTestSupport {
     @Test
     public void removeMessageListener() throws InterruptedException {
         try {
-            HazelcastInstance hazelcastInstance = createNodeFactory(1).newHazelcastInstance(new Config());
+            HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
             ITopic<String> topic = hazelcastInstance.getTopic("removeMessageListener");
             final CountDownLatch latch = new CountDownLatch(2);
             final CountDownLatch cp = new CountDownLatch(1);
@@ -262,7 +256,7 @@ public class TopicTest extends ParallelTestSupport {
 
     @Test
     public void testPerformance() throws InterruptedException {
-        HazelcastInstance hazelcastInstance = createNodeFactory(1).newHazelcastInstance(new Config());
+        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
         int count = 10000;
         final ITopic topic = hazelcastInstance.getTopic("perf");
         ExecutorService ex = Executors.newFixedThreadPool(10);
@@ -280,7 +274,7 @@ public class TopicTest extends ParallelTestSupport {
 
     @Test
     public void add2listenerAndRemoveOne() throws InterruptedException {
-        HazelcastInstance hazelcastInstance = createNodeFactory(1).newHazelcastInstance(new Config());
+        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
         ITopic<String> topic = hazelcastInstance.getTopic("removeMessageListener");
         final CountDownLatch latch = new CountDownLatch(4);
         final CountDownLatch cp = new CountDownLatch(2);
@@ -321,7 +315,7 @@ public class TopicTest extends ParallelTestSupport {
     @Test
     public void testTopicCluster() {
         final Config cfg = new Config();
-        StaticNodeFactory factory = createNodeFactory(2);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance[] instances = factory.newInstances(cfg);
         HazelcastInstance h1 = instances[0];
         HazelcastInstance h2 = instances[1];
@@ -354,7 +348,7 @@ public class TopicTest extends ParallelTestSupport {
 
     @Test
     public void testTopicStats() throws InterruptedException {
-        HazelcastInstance hazelcastInstance = createNodeFactory(1).newHazelcastInstance(new Config());
+        HazelcastInstance hazelcastInstance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
         ITopic<String> topic = hazelcastInstance.getTopic("testTopicStats");
 
         final CountDownLatch latch1 = new CountDownLatch(1000);
@@ -379,8 +373,5 @@ public class TopicTest extends ParallelTestSupport {
         LocalTopicStatsImpl stats = (LocalTopicStatsImpl) topic.getLocalTopicStats();
         Assert.assertEquals(1000, stats.getPublishOperationCount());
         Assert.assertEquals(2000, stats.getReceiveOperationCount());
-//        Assert.assertTrue(stats.getCreationTime() < stats.getLastPublishTime());
-//        Assert.assertEquals(1000, stats.getOperationStats().getPublishOperationCount());
-//        Assert.assertEquals(2000, stats.getOperationStats().getReceiveOperationCount());
     }
 }

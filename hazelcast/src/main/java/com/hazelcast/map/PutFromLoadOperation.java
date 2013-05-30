@@ -33,7 +33,7 @@ public class PutFromLoadOperation extends BasePutOperation {
 
     @Override
     public boolean returnsResponse() {
-        return false;
+        return true;
     }
 
     @Override

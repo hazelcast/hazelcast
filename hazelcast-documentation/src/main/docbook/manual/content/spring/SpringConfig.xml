@@ -186,7 +186,7 @@
             <para>idGenerator</para>
         </listitem>
         <listitem>
-            <para>atomicNumber</para>
+            <para>atomicLong</para>
         </listitem>
         <listitem>
             <para>semaphore</para>
@@ -207,10 +207,10 @@
 <hz:list id="list" instance-ref="instance" name="list"/>
 <hz:executorService id="executorService" instance-ref="client" name="executorService"/>
 <hz:idGenerator id="idGenerator" instance-ref="instance" name="idGenerator"/>
-<hz:atomicNumber id="atomicNumber" instance-ref="instance" name="atomicNumber"/>
-<hz:atomicNumber id="semaphore" instance-ref="client" name="semaphore"/>
-<hz:atomicNumber id="countDownLatch" instance-ref="instance" name="countDownLatch"/>
-<hz:atomicNumber id="lock" instance-ref="client" name="lock"/>
+<hz:atomicLong id="atomicLong" instance-ref="instance" name="atomicLong"/>
+<hz:semaphore id="semaphore" instance-ref="instance" name="semaphore"/>
+<hz:countDownLatch id="countDownLatch" instance-ref="instance" name="countDownLatch"/>
+<hz:lock id="lock" instance-ref="instance" name="lock"/>
 ]]></programlisting>
     </para>
     <anchor xml:id="SpringInjectingTypedBean"/>

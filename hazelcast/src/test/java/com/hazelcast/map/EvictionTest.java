@@ -20,9 +20,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.*;
-import com.hazelcast.test.ParallelTestSupport;
-import com.hazelcast.test.RandomBlockJUnit4ClassRunner;
-import com.hazelcast.test.StaticNodeFactory;
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Assert;
 import org.junit.Test;
@@ -36,9 +36,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.*;
 
-@RunWith(RandomBlockJUnit4ClassRunner.class)
+@RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
-public class EvictionTest extends ParallelTestSupport {
+public class EvictionTest extends HazelcastTestSupport {
 
     @Test
     public void testMapWideEviction() throws InterruptedException {
@@ -53,7 +53,7 @@ public class EvictionTest extends ParallelTestSupport {
         msc.setSize(size);
         mc.setMaxSizeConfig(msc);
         int n = 3;
-        StaticNodeFactory factory = createNodeFactory(n);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
         final HazelcastInstance[] instances = factory.newInstances(cfg);
 
         IMap map = instances[0].getMap("testMapWideEviction");
@@ -83,7 +83,7 @@ public class EvictionTest extends ParallelTestSupport {
         msc.setSize(size);
         mc.setMaxSizeConfig(msc);
 
-        StaticNodeFactory factory = createNodeFactory(k);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
         final HazelcastInstance[] instances = factory.newInstances(cfg);
         final AtomicBoolean success = new AtomicBoolean(true);
 
@@ -147,7 +147,7 @@ public class EvictionTest extends ParallelTestSupport {
         msc.setSize(size);
         mc.setMaxSizeConfig(msc);
 
-        StaticNodeFactory factory = createNodeFactory(k);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
         final HazelcastInstance[] instances = factory.newInstances(cfg);
         final int pnum = instances[0].getPartitionService().getPartitions().size();
 
@@ -207,7 +207,7 @@ public class EvictionTest extends ParallelTestSupport {
         msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_PARTITION);
         msc.setSize(size);
         mc.setMaxSizeConfig(msc);
-        StaticNodeFactory factory = createNodeFactory(k);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
         final HazelcastInstance[] instances = factory.newInstances(cfg);
         final int pnum = instances[0].getPartitionService().getPartitions().size();
         int insertCount = size * pnum * 2;
@@ -236,7 +236,7 @@ public class EvictionTest extends ParallelTestSupport {
             msc.setSize(size);
             mc.setMaxSizeConfig(msc);
 
-            StaticNodeFactory factory = createNodeFactory(k);
+            TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
             final HazelcastInstance[] instances = factory.newInstances(cfg);
             IMap<Object, Object> map = instances[0].getMap(mapName);
             Thread.sleep(1000);
@@ -278,7 +278,7 @@ public class EvictionTest extends ParallelTestSupport {
             msc.setSize(size);
             mc.setMaxSizeConfig(msc);
 
-            StaticNodeFactory factory = createNodeFactory(k);
+            TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
             final HazelcastInstance[] instances = factory.newInstances(cfg);
             IMap<Object, Object> map = instances[0].getMap(mapName);
 
@@ -324,7 +324,7 @@ public class EvictionTest extends ParallelTestSupport {
             msc.setSize(size);
             mc.setMaxSizeConfig(msc);
 
-            StaticNodeFactory factory = createNodeFactory(k);
+            TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
             final HazelcastInstance[] instances = factory.newInstances(cfg);
             IMap<Object, Object> map = instances[0].getMap(mapName);
 
@@ -354,7 +354,7 @@ public class EvictionTest extends ParallelTestSupport {
         MapConfig mc = cfg.getMapConfig("testMapRecordEviction");
         mc.setTimeToLiveSeconds(1);
 
-        StaticNodeFactory factory = createNodeFactory(2);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance[] instances = factory.newInstances(cfg);
 
         IMap map = instances[0].getMap("testMapRecordEviction");
@@ -380,7 +380,7 @@ public class EvictionTest extends ParallelTestSupport {
         int size = 100;
         final int nsize = size / 10;
         mc.setMaxIdleSeconds(maxIdleSeconds);
-        StaticNodeFactory factory = createNodeFactory(2);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance[] instances = factory.newInstances(cfg);
         final IMap map = instances[0].getMap("testMapRecordIdleEviction");
         final Thread thread = new Thread(new Runnable() {
@@ -417,7 +417,7 @@ public class EvictionTest extends ParallelTestSupport {
         MapConfig mc = cfg.getMapConfig("testZeroResetsTTL");
         int ttl = 3;
         mc.setTimeToLiveSeconds(ttl);
-        StaticNodeFactory factory = createNodeFactory(1);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = factory.newHazelcastInstance(cfg);
         IMap<Object, Object> map = instance.getMap("testZeroResetsTTL");
         map.put(1,1);
@@ -436,7 +436,7 @@ public class EvictionTest extends ParallelTestSupport {
         int size = 1000;
         mc.setMaxIdleSeconds(maxIdleSeconds);
 
-        StaticNodeFactory factory = createNodeFactory(3);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
         final IMap map = instance1.getMap("testMapRecordIdleEvictionOnMigration");
@@ -461,7 +461,7 @@ public class EvictionTest extends ParallelTestSupport {
         int size = 1000;
         final int nsize = size / 5;
         mc.setMaxIdleSeconds(maxIdleSeconds);
-        StaticNodeFactory factory = createNodeFactory(3);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
         final IMap map = instance1.getMap("testMapRecordIdleEvictionOnMigration2");
@@ -497,21 +497,26 @@ public class EvictionTest extends ParallelTestSupport {
     }
 
     @Test
+//    @Category(SerialTest.class)
     public void testMapPutTtlWithListener() throws InterruptedException {
         Config cfg = new Config();
-        StaticNodeFactory factory = createNodeFactory(2);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance[] instances = factory.newInstances(cfg);
+        warmUpPartitions(instances);
+
         final int k = 10;
         final int putCount = 10000;
         final CountDownLatch latch = new CountDownLatch(k * putCount);
         final IMap map = instances[0].getMap("testMapEvictionTtlWithListener");
+        final AtomicBoolean error = new AtomicBoolean(false);
 
         map.addEntryListener(new EntryAdapter() {
             public void entryEvicted(EntryEvent event) {
-//                final Long expectedEvictionTime = (Long) (event.getOldValue());
-//                long timeDifference = System.currentTimeMillis() - expectedEvictionTime;
-//                if (timeDifference > 5000) {
-//                }
+                final Long expectedEvictionTime = (Long) (event.getOldValue());
+                long timeDifference = System.currentTimeMillis() - expectedEvictionTime;
+                if (timeDifference > 5000) {
+                    error.set(true);
+                }
                 latch.countDown();
             }
         }, true);
@@ -529,6 +534,7 @@ public class EvictionTest extends ParallelTestSupport {
             }.start();
         }
         assertTrue(latch.await(1, TimeUnit.MINUTES));
+        assertFalse(error.get());
     }
 
 
