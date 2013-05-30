@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -147,6 +148,17 @@ public final class QueueConfig implements DataSerializable {
         if (queueStoreConfig != null){
             out.writeBoolean(true);
             queueStoreConfig.writeData(out);
+        } else {
+            out.writeBoolean(false);
+        }
+
+        out.writeInt(listenerConfigs == null ? -1 : listenerConfigs.size());
+        if (listenerConfigs != null){
+            for (ItemListenerConfig listenerConfig : listenerConfigs) {
+                out.writeUTF(listenerConfig.getClassName());
+                out.writeBoolean(listenerConfig.isIncludeValue());
+                out.writeObject(listenerConfig.getImplementation());
+            }
         }
     }
 
@@ -158,6 +170,18 @@ public final class QueueConfig implements DataSerializable {
         if (in.readBoolean()){
             queueStoreConfig = new QueueStoreConfig();
             queueStoreConfig.readData(in);
+        }
+        int size = in.readInt();
+        if (size != -1){
+            listenerConfigs = new ArrayList<ItemListenerConfig>(size);
+            for (int i=0; i<size; i++){
+                final String className = in.readUTF();
+                final boolean include = in.readBoolean();
+                final ItemListener implementation = in.readObject();
+                final ItemListenerConfig itemListenerConfig = new ItemListenerConfig(className, include);
+                itemListenerConfig.setImplementation(implementation);
+                listenerConfigs.add(itemListenerConfig);
+            }
         }
     }
 }

@@ -52,7 +52,7 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
         for (ItemListenerConfig itemListenerConfig : itemListenerConfigs) {
             ItemListener listener = itemListenerConfig.getImplementation();
             try {
-                listener = listener == null ? (ItemListener) ClassLoaderUtil.newInstance(itemListenerConfig.getClassName()) : null;
+                listener = listener == null ? (ItemListener) ClassLoaderUtil.newInstance(itemListenerConfig.getClassName()) : listener;
             } catch (Exception e) {
                 e.printStackTrace();
             }
