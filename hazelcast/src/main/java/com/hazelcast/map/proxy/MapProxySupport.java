@@ -17,11 +17,13 @@
 package com.hazelcast.map.proxy;
 
 import com.hazelcast.concurrent.lock.LockProxySupport;
+import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.map.*;
 import com.hazelcast.monitor.LocalMapStats;
@@ -54,6 +56,29 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         mapConfig = service.getMapContainer(name).getMapConfig();
         localMapStats = service.getLocalMapStatsImpl(name);
         lockSupport = new LockProxySupport(new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
+        List<EntryListenerConfig> listenerConfigs = mapConfig.getEntryListenerConfigs();
+        for (EntryListenerConfig listenerConfig : listenerConfigs) {
+            EntryListener entryListener = null;
+            if(listenerConfig.getImplementation() != null) {
+                entryListener = listenerConfig.getImplementation();
+            }
+            else if(listenerConfig.getClassName() != null) {
+                try {
+                    entryListener = ClassLoaderUtil.newInstance(listenerConfig.getClassName());
+                } catch (Exception e) {
+                    ExceptionUtil.rethrow(e);
+                }
+            }
+
+            if (entryListener != null ) {
+                if(listenerConfig.isLocal())  {
+                    addLocalEntryListener(entryListener);
+                }
+                else {
+                    addEntryListenerInternal(entryListener, null, listenerConfig.isIncludeValue());
+                }
+            }
+        }
     }
 
     // this operation returns the object in data format except it is got from near-cache and near-cache memory format is object.
