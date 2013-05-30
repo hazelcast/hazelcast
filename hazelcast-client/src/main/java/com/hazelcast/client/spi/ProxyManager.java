@@ -27,6 +27,8 @@ import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
+import com.hazelcast.core.DistributedObjectEvent;
+import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.map.MapService;
@@ -37,6 +39,7 @@ import com.hazelcast.topic.TopicService;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -48,6 +51,7 @@ public final class ProxyManager {
     private final HazelcastClient client;
     private final ConcurrentMap<String, ClientProxyFactory> proxyFactories = new ConcurrentHashMap<String, ClientProxyFactory>();
     private final ConcurrentMap<ObjectNamespace, ClientProxy> proxies = new ConcurrentHashMap<ObjectNamespace, ClientProxy>();
+    private final ConcurrentMap<String, DistributedObjectListener> listeners = new ConcurrentHashMap<String, DistributedObjectListener>();
 
     public ProxyManager(HazelcastClient client) {
         this.client = client;
@@ -67,7 +71,7 @@ public final class ProxyManager {
         });
         register(CollectionService.SERVICE_NAME, new ClientProxyFactory() {
             public ClientProxy create(Object id) {
-                CollectionProxyId proxyId = (CollectionProxyId)id;
+                CollectionProxyId proxyId = (CollectionProxyId) id;
                 final CollectionProxyType type = proxyId.getType();
                 switch (type) {
                     case MULTI_MAP:
@@ -111,7 +115,7 @@ public final class ProxyManager {
         register(IdGeneratorService.SERVICE_NAME, new ClientProxyFactory() {
             public ClientProxy create(Object id) {
                 String name = String.valueOf(id);
-                IAtomicLong atomicLong = client.getAtomicLong(IdGeneratorService.ATOMIC_LONG_NAME+name);
+                IAtomicLong atomicLong = client.getAtomicLong(IdGeneratorService.ATOMIC_LONG_NAME + name);
                 return new ClientIdGeneratorProxy(DistributedExecutorService.SERVICE_NAME, name, atomicLong);
             }
         });
@@ -146,12 +150,25 @@ public final class ProxyManager {
         final ClientProxy clientProxy = factory.create(id);
         initialize(clientProxy);
         final ClientProxy current = proxies.putIfAbsent(ns, clientProxy);
-        return current != null ? current : clientProxy;
+        if (current != null){
+            return current;
+        }
+        triggerListeners(clientProxy, false);
+        return clientProxy;
+    }
+
+    public ClientProxy removeProxy(String service, Object id) {
+        final ObjectNamespace ns = new DefaultObjectNamespace(service, id);
+        final ClientProxy clientProxy = proxies.remove(ns);
+        if (clientProxy != null){
+            triggerListeners(clientProxy, true);
+        }
+        return clientProxy;
     }
 
     private void initialize(ClientProxy clientProxy) {
         clientProxy.setContext(new ClientContext(client.getSerializationService(), client.getClientClusterService(),
-                client.getClientPartitionService(), client.getInvocationService(), client.getClientExecutionService()));
+                client.getClientPartitionService(), client.getInvocationService(), client.getClientExecutionService(), this));
     }
 
     public Collection<ClientProxy> getProxies() {
@@ -166,5 +183,38 @@ public final class ProxyManager {
             }
         }
         proxies.clear();
+        listeners.clear();
+    }
+
+    private void triggerListeners(final ClientProxy proxy, final boolean removed) {
+        client.getClientExecutionService().execute(new Runnable() {
+            public void run() {
+                final DistributedObjectEvent event;
+                if (removed) {
+                    event = new DistributedObjectEvent(DistributedObjectEvent.EventType.DESTROYED, proxy.getServiceName(), proxy.getId());
+                } else {
+                    event = new DistributedObjectEvent(DistributedObjectEvent.EventType.CREATED, proxy.getServiceName(), proxy.getId());
+                }
+                for (DistributedObjectListener listener : listeners.values()) {
+                    if (removed) {
+                        listener.distributedObjectDestroyed(event);
+                    } else {
+                        listener.distributedObjectCreated(event);
+                    }
+                }
+            }
+        });
+
+
+    }
+
+    public String addDistributedObjectListener(DistributedObjectListener listener) {
+        String id = UUID.randomUUID().toString();
+        listeners.put(id, listener);
+        return id;
+    }
+
+    public boolean removeDistributedObjectListener(String id) {
+        return listeners.remove(id) != null;
     }
 }

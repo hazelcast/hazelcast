@@ -47,7 +47,7 @@ public class MapStoreTest extends HazelcastTestSupport {
 
     @Test
     public void testMapInitialLoad() throws InterruptedException {
-        int size = 10000;
+        int size = 100000;
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
 
         Config cfg = new Config();

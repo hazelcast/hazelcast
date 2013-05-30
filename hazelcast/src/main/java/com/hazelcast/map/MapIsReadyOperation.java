@@ -16,19 +16,18 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.nio.serialization.Data;
+public class MapIsReadyOperation extends AbstractMapOperation {
+    boolean response = false;
 
-public class PutFromLoadOperation extends BasePutOperation {
-
-    public PutFromLoadOperation(String name, Data dataKey, Data value, long ttl) {
-        super(name, dataKey, value, ttl);
+    public MapIsReadyOperation(String name) {
+        super(name);
     }
 
-    public PutFromLoadOperation() {
+    public MapIsReadyOperation() {
     }
 
     public void run() {
-        recordStore.putTransient(dataKey, dataValue, ttl);
+        response = mapContainer.isMapReady();
     }
 
     @Override
@@ -38,17 +37,6 @@ public class PutFromLoadOperation extends BasePutOperation {
 
     @Override
     public Object getResponse() {
-        return true;
+        return response;
     }
-
-    @Override
-    public void onWaitExpire() {
-        getResponseHandler().sendResponse(true);
-    }
-
-    @Override
-    public String toString() {
-        return "PutFromLoadOperation{" + name + "}";
-    }
-
 }

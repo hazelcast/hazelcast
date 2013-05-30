@@ -38,7 +38,7 @@ public abstract class AbstractMapOperation extends AbstractNamedOperation {
         mapService = getService();
         mapContainer = mapService.getMapContainer(name);
         if (!(this instanceof BackupOperation) && !mapContainer.isMapReady()) {
-            throw new RetryableHazelcastException("Map is not ready.");
+            throw new RetryableHazelcastException("Map is not ready." );
         }
         innerBeforeRun();
     }
