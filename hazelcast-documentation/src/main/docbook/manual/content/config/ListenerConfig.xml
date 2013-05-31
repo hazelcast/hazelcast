@@ -256,7 +256,7 @@ queueConfig.addItemListenerConfig(new ItemListenerConfig("com.hazelcast.examples
                 <para>
                     <emphasis role="italic">Spring XML configuration</emphasis>
                     <programlisting language="xml"><![CDATA[
-<hz:queue name="default" max-size-per-jvm="1000" backing-map-ref="default">
+<hz:queue name="default" >
     <hz:item-listeners>
         <hz:item-listener class-name="com.hazelcast.spring.DummyItemListener" include-value="true"/>
     </hz:item-listeners>
