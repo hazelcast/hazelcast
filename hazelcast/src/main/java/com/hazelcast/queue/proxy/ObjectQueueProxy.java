@@ -16,7 +16,6 @@
 
 package com.hazelcast.queue.proxy;
 
-import com.hazelcast.core.ItemListener;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.QueueService;
@@ -188,14 +187,6 @@ public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy
 
     public boolean retainAll(Collection<?> objects) {
         return compareAndRemove(getDataList(objects), true);
-    }
-
-    public String addItemListener(ItemListener<E> listener, boolean includeValue) {
-        return getService().addItemListener(name, listener, includeValue);
-    }
-
-    public boolean removeItemListener(String registrationId) {
-        return getService().removeItemListener(name, registrationId);
     }
 
     public String toString() {

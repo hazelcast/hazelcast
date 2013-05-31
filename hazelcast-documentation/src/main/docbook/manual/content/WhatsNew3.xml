@@ -20,7 +20,7 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
       http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
-    <title>What's new in Hazelcast 3.0?</title>
+    <title>What's new in 3.0?</title>
     <para>
         <emphasis role="bold">Core architecture:</emphasis>
         <itemizedlist>

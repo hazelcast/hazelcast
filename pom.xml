@@ -34,6 +34,7 @@
         <module>hazelcast-hibernate</module>
         <module>hazelcast-wm</module>
         <!--<module>hazelcast-ra</module>-->
+        <!--<module>hazelcast-documentation</module>-->
         <module>hazelcast-spring</module>
         <module>hazelcast-all</module>
         <module>hazelcast-cloud</module>
@@ -229,7 +230,7 @@
                             <forkCount>1C</forkCount>
                             <reuseForks>true</reuseForks>
 
-                            <threadCount>1</threadCount>
+                            <threadCount>2</threadCount>
                             <perCoreThreadCount>true</perCoreThreadCount>
                             <!-- has no effect when thread count is 1 -->
                             <parallel>methods</parallel>
@@ -265,7 +266,6 @@
                                 -Dhazelcast.test.use.network=true
                             </argLine>
                             <groups>com.hazelcast.test.annotation.SerialTest</groups>
-                            <excludedGroups>com.hazelcast.test.annotation.ParallelTest</excludedGroups>
                         </configuration>
                     </plugin>
                 </plugins>

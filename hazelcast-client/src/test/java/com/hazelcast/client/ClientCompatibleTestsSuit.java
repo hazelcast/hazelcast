@@ -1,6 +1,6 @@
 package com.hazelcast.client;
 
-import com.hazelcast.test.TestProperties;
+import com.hazelcast.test.TestEnvironment;
 import com.hazelcast.test.annotation.ClientCompatibleTest;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -20,8 +20,8 @@ public class ClientCompatibleTestsSuit {
 
     @BeforeClass
     public static void setUp() {
-        System.setProperty(TestProperties.HAZELCAST_TEST_USE_NETWORK, "true");
-        System.setProperty(TestProperties.HAZELCAST_TEST_USE_CLIENT, "true");
+        System.setProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK, "true");
+        System.setProperty(TestEnvironment.HAZELCAST_TEST_USE_CLIENT, "true");
 
         System.setProperty("hazelcast.version.check.enabled", "false");
         System.setProperty("hazelcast.mancenter.enabled", "false");

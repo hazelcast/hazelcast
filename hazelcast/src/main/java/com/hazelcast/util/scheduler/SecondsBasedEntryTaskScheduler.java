@@ -16,7 +16,6 @@
 
 package com.hazelcast.util.scheduler;
 
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.Clock;
 
 import java.util.HashSet;
@@ -40,7 +39,7 @@ import java.util.concurrent.TimeUnit;
  * b) being able to reschedule (postpone) execution
  */
 
-class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K, V> {
+final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K, V> {
 
     private static final long initialTimeMillis = Clock.currentTimeMillis();
 

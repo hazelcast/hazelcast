@@ -335,7 +335,7 @@ public class QueueContainer implements DataSerializable {
     }
 
     public int size() {
-        return Math.min(config.getMaxSize(),getItemQueue().size()); //TODO check max size
+        return Math.min(config.getMaxSize(),getItemQueue().size());
     }
 
     public int backupSize(){

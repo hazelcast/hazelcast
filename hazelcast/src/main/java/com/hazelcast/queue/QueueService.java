@@ -185,7 +185,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
 
         Address thisAddress = nodeEngine.getClusterService().getThisAddress();
         PartitionInfo info = nodeEngine.getPartitionService().getPartitionInfo(partitionId);
-        if (thisAddress.equals(info.getOwner())) { //TODO @msk two nodes owner ????
+        if (thisAddress.equals(info.getOwner())) {
             stats.setOwnedItemCount(container.size());
         } else {
             stats.setBackupItemCount(container.backupSize());
