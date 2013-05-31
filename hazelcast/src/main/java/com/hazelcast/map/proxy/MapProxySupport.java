@@ -24,6 +24,8 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.partition.PartitionInfo;
+import com.hazelcast.partition.PartitionService;
 import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.map.*;
 import com.hazelcast.monitor.LocalMapStats;
@@ -88,7 +90,24 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         if (nearCacheEnabled) {
             Object cached = mapService.getFromNearCache(name, key);
             if (cached != null) {
+                mapService.interceptAfterGet(name, cached);
                 return cached;
+            }
+        }
+        // todo action for read-backup true is not well tested.
+        if(mapConfig.isReadBackupData()) {
+            int backupCount = mapConfig.getTotalBackupCount();
+            PartitionService partitionService = mapService.getNodeEngine().getPartitionService();
+            for (int i = 0; i <= backupCount; i++) {
+                int partitionId = partitionService.getPartitionId(key);
+                PartitionInfo partitionInfo = partitionService.getPartitionInfo(partitionId);
+                if ( partitionInfo.getReplicaAddress(i).equals(getNodeEngine().getThisAddress()) ) {
+                    Object val = mapService.getPartitionContainer(partitionId).getRecordStore(name).get(key);
+                    if(val != null){
+                        mapService.interceptAfterGet(name, val);
+                        return val;
+                    }
+                }
             }
         }
         GetOperation operation = new GetOperation(name, key);

@@ -85,6 +85,13 @@ final class TransactionImpl implements Transaction {
             throw new TransactionNotActiveException("Transaction is not active!");
         }
         checkThread();
+        // there should be just one tx log for the same key. so if there is older we are removing it
+        if(transactionLog instanceof KeyAwareTransactionLog) {
+            KeyAwareTransactionLog keyAwareTransactionLog = (KeyAwareTransactionLog) transactionLog;
+            TransactionLog removed = txLogMap.remove(keyAwareTransactionLog.getKey());
+            txLogs.remove(removed);
+        }
+
         txLogs.add(transactionLog);
         if (transactionLog instanceof KeyAwareTransactionLog){
             KeyAwareTransactionLog keyAwareTransactionLog = (KeyAwareTransactionLog)transactionLog;
@@ -94,6 +101,11 @@ final class TransactionImpl implements Transaction {
 
     public TransactionLog getTransactionLog(Object key){
         return txLogMap.get(key);
+    }
+
+    public void removeTransactionLog(Object key){
+        TransactionLog removed = txLogMap.remove(key);
+        txLogs.remove(removed);
     }
 
     private void checkThread() {
