@@ -102,7 +102,6 @@
         <title>Cluster Utilities</title>
         <xi:include href="cluster/ClusterInterface.xml"/>
         <xi:include href="cluster/IdGenerator.xml"/>
-        <xi:include href="cluster/LiteMember.xml"/>
     </chapter>
     <chapter xml:id="Transactions">
         <title>Transactions</title>
@@ -113,7 +112,7 @@
         <title>Distributed Executor Service</title>
         <xi:include href="executor/ExecutorService.xml"/>
         <xi:include href="executor/DistributedExecution.xml"/>
-        <xi:include href="executor/ExecutionCancellation.xml"/>
+        <!--<xi:include href="executor/ExecutionCancellation.xml"/>-->
         <xi:include href="executor/ExecutionCallback.xml"/>
     </chapter>
     <chapter xml:id="HttpSessionClustering">
@@ -149,33 +148,27 @@
         <xi:include href="spring/SpringJPA.xml"/>
         <xi:include href="spring/SpringMongoDB.xml"/>
     </chapter>
-    <chapter xml:id="Protocol">
-        <title>Client Protocol</title>
-        <xi:include href="client/ClientProtocol.xml"/>
-        <xi:include href="client/GeneralCommands.xml"/>
-        <xi:include href="client/MapCommands.xml"/>
-        <xi:include href="client/QueueCommands.xml"/>
-        <xi:include href="client/SetCommands.xml"/>
-        <xi:include href="client/ListCommands.xml"/>
-        <xi:include href="client/MultiMapCommands.xml"/>
-        <xi:include href="client/TopicCommands.xml"/>
-        <xi:include href="client/AtomicLongCommands.xml"/>
-        <xi:include href="client/IdGeneratorCommands.xml"/>
-        <xi:include href="client/CountDownLatchCommands.xml"/>
-        <xi:include href="client/LockCommands.xml"/>
-    </chapter>
+    <!--<chapter xml:id="Protocol">-->
+        <!--<title>Client Protocol</title>-->
+        <!--<xi:include href="client/ClientProtocol.xml"/>-->
+        <!--<xi:include href="client/GeneralCommands.xml"/>-->
+        <!--<xi:include href="client/MapCommands.xml"/>-->
+        <!--<xi:include href="client/QueueCommands.xml"/>-->
+        <!--<xi:include href="client/SetCommands.xml"/>-->
+        <!--<xi:include href="client/ListCommands.xml"/>-->
+        <!--<xi:include href="client/MultiMapCommands.xml"/>-->
+        <!--<xi:include href="client/TopicCommands.xml"/>-->
+        <!--<xi:include href="client/AtomicLongCommands.xml"/>-->
+        <!--<xi:include href="client/IdGeneratorCommands.xml"/>-->
+        <!--<xi:include href="client/CountDownLatchCommands.xml"/>-->
+        <!--<xi:include href="client/LockCommands.xml"/>-->
+    <!--</chapter>-->
     <chapter xml:id="Clients">
         <title>Clients</title>
         <xi:include href="client/Clients.xml"/>
         <xi:include href="client/NativeClient.xml"/>
         <xi:include href="client/MemcacheClient.xml"/>
         <xi:include href="client/RestClient.xml"/>
-    </chapter>
-    <chapter xml:id="Internals">
-        <title>Internals</title>
-        <xi:include href="internals/InternalsSerialization.xml"/>
-        <xi:include href="internals/InternalsClusterMembership.xml"/>
-        <xi:include href="internals/InternalsDistributedMap.xml"/>
     </chapter>
     <chapter xml:id="ManagementCenter">
         <title>Management Center</title>
@@ -195,6 +188,5 @@
         <xi:include href="misc/CommonGotchas.xml"/>
         <xi:include href="misc/ClusterTestHowTo.xml"/>
         <xi:include href="misc/Todo.xml"/>
-        <xi:include href="misc/ReleaseNotes.xml"/>
     </chapter>
 </book>

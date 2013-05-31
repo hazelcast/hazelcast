@@ -25,6 +25,7 @@ import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.Transaction;
 import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionLog;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
@@ -96,6 +97,7 @@ public abstract class TxnMapProxySupport extends AbstractDistributedObject<MapSe
         }
         if(versionedValue.value != null)
             return versionedValue.value;
+
         tx.addTransactionLog(new MapTransactionLog(name, key, new TxnSetOperation(name, key, value, -1, versionedValue.version), versionedValue.version));
         return versionedValue.value;
     }

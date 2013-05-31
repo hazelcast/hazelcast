@@ -127,7 +127,6 @@ public class MyPortableFactory implements PortableFactory {
                 <programlisting language="java"><![CDATA[
 Config config = new Config();
 config.getSerializationConfig().addPortableFactory(1, new MyPortableFactory());
-SerializationService ss = new SerializationServiceImpl(config, null);
                 ]]></programlisting>
             </para>
 
@@ -154,5 +153,8 @@ SerializationService ss = new SerializationServiceImpl(config, null);
             class returns.
         </para>
 
+        <para>
+            TODO: ClassDefinitionBuilder...
+        </para>
     </para>
 </sect1>

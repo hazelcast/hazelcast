@@ -98,11 +98,10 @@
         <literal>MergePolicy</literal>
         set for that map. There are built-in merge policies such
         as
-        <literal>hz.NO_MERGE, hz.ADD_NEW_ENTRY and hz.LATEST_UPDATE</literal>
+        <literal>PassThroughMergePolicy, PutIfAbsentMapMergePolicy, HigherHitsMapMergePolicy and LatestUpdateMapMergePolicy</literal>
         but you can develop
         your own merge policy by implementing <literal>com.hazelcast.map.merge.MapMergePolicy</literal>. You
-        should register your custom merge policy in the configuration so that Hazelcast can find it
-        by name.
+        should set the full class name of your implementation to the merge-policy configuration.
         <programlisting language="java"><![CDATA[
 public interface MergePolicy {
     /**
@@ -113,14 +112,14 @@ public interface MergePolicy {
     * @param mapName       name of the map
     * @param mergingEntry  entry merging into the destination cluster
     * @param existingEntry existing entry in the destination cluster
-    * @return final value of the entry. If returns null then no change on the entry.
+    * @return final value of the entry. If returns null then entry will be removed.
     */
-    Object merge(String mapName, MapEntry mergingEntry, MapEntry existingEntry);
+    Object merge(String mapName, EntryView mergingEntry, EntryView existingEntry);
 }]]></programlisting>
      </para>
 
      <para>
-        Here is how merge policies are registered and specified per map.
+        Here is how merge policies are specified per map.
         <programlisting language="xml"><![CDATA[
 <hazelcast>
     ...
@@ -139,20 +138,15 @@ public interface MergePolicy {
             the policy set here. Default policy is hz.ADD_NEW_ENTRY
 
             There are built-in merge policies such as
-            hz.NO_MERGE      ; no entry will merge.
-            hz.ADD_NEW_ENTRY ; entry will be added if the merging entry's key
-                               doesn't exist in the cluster.
-            hz.HIGHER_HITS   ; entry with the higher hits wins.
-            hz.LATEST_UPDATE ; entry with the latest update wins.
+            There are built-in merge policies such as
+            com.hazelcast.map.merge.PassThroughMergePolicy; entry will be added if there is no existing entry for the key.
+            com.hazelcast.map.merge.PutIfAbsentMapMergePolicy ; entry will be added if the merging entry doesn't exist in the cluster.
+            com.hazelcast.map.merge.HigherHitsMapMergePolicy ; entry with the higher hits wins.
+            com.hazelcast.map.merge.LatestUpdateMapMergePolicy ; entry with the latest update wins.
         -->
-        <merge-policy>MY_MERGE_POLICY</merge-policy>
+        <merge-policy>MY_MERGE_POLICY_CLASS</merge-policy>
     </map>
 
-    <merge-policies>
-        <map-merge-policy name="MY_MERGE_POLICY">
-            <class-name>com.acme.MyOwnMergePolicy</class-name>
-        </map-merge-policy>
-    </merge-policies>
     ...
 </hazelcast>
 ]]></programlisting>

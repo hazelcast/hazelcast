@@ -488,12 +488,7 @@
     </xs:element>
     <xs:simpleType name="propertyNameEnum">
         <xs:restriction base="xs:string">
-            <xs:enumeration value="hazelcast.merge.first.run.delay.seconds"/>
-            <xs:enumeration value="hazelcast.merge.next.run.delay.seconds"/>
-            <xs:enumeration value="hazelcast.redo.wait.millis"/>
             <xs:enumeration value="hazelcast.socket.bind.any"/>
-            <xs:enumeration value="hazelcast.serializer.gzip.enabled"/>
-            <xs:enumeration value="hazelcast.serializer.shared"/>
             <xs:enumeration value="hazelcast.shutdownhook.enabled"/>
             <xs:enumeration value="hazelcast.wait.seconds.before.join"/>
             <xs:enumeration value="hazelcast.max.no.heartbeat.seconds"/>
@@ -505,8 +500,6 @@
             <xs:enumeration value="hazelcast.mancenter.enabled"/>
             <xs:enumeration value="hazelcast.memcache.enabled"/>
             <xs:enumeration value="hazelcast.rest.enabled"/>
-            <xs:enumeration value="hazelcast.in.thread.priority"/>
-            <xs:enumeration value="hazelcast.out.thread.priority"/>
             <xs:enumeration value="hazelcast.socket.receive.buffer.size"/>
             <xs:enumeration value="hazelcast.socket.send.buffer.size"/>
             <xs:enumeration value="hazelcast.socket.keep.alive"/>

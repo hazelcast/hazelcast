@@ -20,7 +20,6 @@
        xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd">
     <title>Data Serializable</title>
 
-
     <para>
         For a faster serialization of objects, Hazelcast recommends to implement
         <literal>com.hazelcast.nio.serialization.IdentifiedDataSerializable</literal>
