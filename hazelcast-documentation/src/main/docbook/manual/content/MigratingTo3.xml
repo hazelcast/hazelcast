@@ -34,13 +34,13 @@
                     The functionality of these methods can be reached from HazelcastInstance interface.
                     Namely you should replace following:
                     <programlisting language="java"><![CDATA[
-                    Map<Integer, String> mapCustomers = Hazelcast.getMap("customers");]]></programlisting>
+Map<Integer, String> mapCustomers = Hazelcast.getMap("customers");]]></programlisting>
                     with
                     <programlisting language="java"><![CDATA[
-                    HazelcastInstance instance = Hazelcast.newHazelcastInstance(cfg);
-                    // or if you already started an instance
-                    // HazelcastInstance instance = Hazelcast.getHazelcastInstanceByName("instance1");
-                    Map<Integer, String> mapCustomers = Hazelcast.getMap("customers");]]></programlisting>
+HazelcastInstance instance = Hazelcast.newHazelcastInstance(cfg);
+// or if you already started an instance
+// HazelcastInstance instance = Hazelcast.getHazelcastInstanceByName("instance1");
+Map<Integer, String> mapCustomers = Hazelcast.getMap("customers");]]></programlisting>
                 </para>
             </listitem>
             <listitem>

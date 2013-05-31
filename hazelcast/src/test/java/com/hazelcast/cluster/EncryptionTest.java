@@ -22,6 +22,8 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.SerialTest;
+import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -33,6 +35,7 @@ import org.junit.runner.RunWith;
 public class EncryptionTest {
 
     @BeforeClass
+    @AfterClass
     public static void init() throws Exception {
         Hazelcast.shutdownAll();
     }
@@ -41,7 +44,6 @@ public class EncryptionTest {
      * Simple symmetric encryption test.
      */
     @Test(timeout = 1000 * 30)
-    // TODO: @mm - Test fails always!
     public void testSymmetricEncryption() throws Exception {
         Config config = new Config();
         SymmetricEncryptionConfig encryptionConfig = new SymmetricEncryptionConfig();
@@ -50,5 +52,8 @@ public class EncryptionTest {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
 
+        Assert.assertEquals(2, h1.getCluster().getMembers().size());
+        Assert.assertEquals(2, h2.getCluster().getMembers().size());
+        Assert.assertEquals(h1.getCluster().getLocalMember(), h2.getCluster().getMembers().iterator().next());
     }
 }

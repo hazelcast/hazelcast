@@ -25,13 +25,7 @@
     <title>Indexing</title>
     <para>
         Map entries can be indexed to be able to query faster. These indexes can be created using IMap API.
-        But this usage has a limitation; all indexes must be created before any value is put into map.
-        Sometimes by design adding an index to map may be impossible before any value is added.
-        For example if a map has
-        <code>MapLoader</code>
-        that loads entries during map creation,
-        then adding indexes to map becomes meaningless.
-        To solve this problem, Hazelcast introduces defining
+        Also you can define
         <code>IMap</code>
         indexes in configuration.
     </para>
