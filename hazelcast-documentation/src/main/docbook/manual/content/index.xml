@@ -69,10 +69,10 @@
     
     <chapter xml:id="Serialization">
         <title>Serialization</title>
-        <xi:include href="serialization/serialization.xml"/>
-        <xi:include href="serialization/ds.xml"/>
-        <xi:include href="serialization/portable.xml"/>
-        <xi:include href="serialization/custom.xml"/>
+        <xi:include href="serialization/Serialization.xml"/>
+        <xi:include href="serialization/DataSerializable.xml"/>
+        <xi:include href="serialization/Portable.xml"/>
+        <xi:include href="serialization/Custom.xml"/>
     </chapter>
     <chapter xml:id="ElasticMemory">
         <title>Elastic Memory

@@ -22,6 +22,93 @@
     <para>
         Hazelcast lets you to plug a custom serializer to be used for serialization of objects.
     </para>
-    <para>TODO Give more details and examples.
-    </para>
+    Let's say you have a class
+    <literal>Foo</literal>
+    and you would like to customize the serialization.
+    The reasons could be
+    <literal>Foo</literal>
+    is not Serializable or you are not happy with the default serialization.
+
+    <programlisting language="java"><![CDATA[
+public class Foo {
+    private String foo;
+    public String getFoo() {
+        return foo;
+    }
+    public void setFoo(String foo) {
+        this.foo = foo;
+    }
+}
+            ]]></programlisting>
+
+    Let's say our custom serialization will serialize
+    <literal>Foo</literal>
+    into XML. First we need to implement a
+    <literal>com.hazelcast.nio.serialization.TypeSerializer</literal>.
+    A very simple one that uses XMLEncoder and XMLDecoder, would look like the following:
+
+    <programlisting language="java"><![CDATA[
+public static class FooXmlSerializer implements TypeSerializer<Foo> {
+
+    @Override
+    public int getTypeId() {
+        return 10;
+    }
+
+    @Override
+    public void write(ObjectDataOutput out, Foo object) throws IOException {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        XMLEncoder encoder = new XMLEncoder(bos);
+        encoder.writeObject(object);
+        encoder.close();
+        out.write(bos.toByteArray());
+    }
+
+    @Override
+    public Foo read(ObjectDataInput in) throws IOException {
+        final InputStream inputStream = (InputStream) in;
+        XMLDecoder decoder = new XMLDecoder(inputStream);
+        return (Foo) decoder.readObject();
+    }
+
+    @Override
+    public void destroy() {
+    }
+}
+
+            ]]></programlisting>
+
+    Note that the
+    <literal>typeId</literal>
+    must be unique as Hazelcast will use it to lookup the TypeSerializer while
+    it de-serializes the object. Now the last required step is to register the TypeSerializer to the Configuration
+
+    <para>Programmatic Configuration</para>
+
+    <programlisting language="java"><![CDATA[
+TypeSerializerConfig tsc = new TypeSerializerConfig().
+        setImplementation(new FooXmlSerializer()).
+        setTypeClass(Foo.class);
+Config config = new Config();
+config.getSerializationConfig().addTypeSerializer(tsc);
+            ]]></programlisting>
+
+    <para>XML Configuration</para>
+
+    <programlisting language="java"><![CDATA[
+<hazelcast>
+    <serialization>
+        <serializers>
+            <type-serializer type-class="com.www.Foo">
+                com.www.FooXmlSerializer
+            </type-serializer>
+        </serializers>
+    </serialization>
+</hazelcast>
+    ]]></programlisting>
+    
+    From now on, Hazelcast will use <literal>FooXmlSerializer</literal> to serialize Foo objects. 
+    This way one can write an adapter (<literal>TypeSerializer</literal>) for any Serialization framework
+    and plug it into Hazelcast.
+
 </sect1>
