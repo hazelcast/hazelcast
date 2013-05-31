@@ -140,21 +140,21 @@
         <xi:include href="spring/SpringJPA.xml"/>
         <xi:include href="spring/SpringMongoDB.xml"/>
     </chapter>
-    <chapter xml:id="Protocol">
-        <title>Client Protocol</title>
-        <xi:include href="client/ClientProtocol.xml"/>
-        <xi:include href="client/GeneralCommands.xml"/>
-        <xi:include href="client/MapCommands.xml"/>
-        <xi:include href="client/QueueCommands.xml"/>
-        <xi:include href="client/SetCommands.xml"/>
-        <xi:include href="client/ListCommands.xml"/>
-        <xi:include href="client/MultiMapCommands.xml"/>
-        <xi:include href="client/TopicCommands.xml"/>
-        <xi:include href="client/AtomicLongCommands.xml"/>
-        <xi:include href="client/IdGeneratorCommands.xml"/>
-        <xi:include href="client/CountDownLatchCommands.xml"/>
-        <xi:include href="client/LockCommands.xml"/>
-    </chapter>
+    <!--<chapter xml:id="Protocol">-->
+        <!--<title>Client Protocol</title>-->
+        <!--<xi:include href="client/ClientProtocol.xml"/>-->
+        <!--<xi:include href="client/GeneralCommands.xml"/>-->
+        <!--<xi:include href="client/MapCommands.xml"/>-->
+        <!--<xi:include href="client/QueueCommands.xml"/>-->
+        <!--<xi:include href="client/SetCommands.xml"/>-->
+        <!--<xi:include href="client/ListCommands.xml"/>-->
+        <!--<xi:include href="client/MultiMapCommands.xml"/>-->
+        <!--<xi:include href="client/TopicCommands.xml"/>-->
+        <!--<xi:include href="client/AtomicLongCommands.xml"/>-->
+        <!--<xi:include href="client/IdGeneratorCommands.xml"/>-->
+        <!--<xi:include href="client/CountDownLatchCommands.xml"/>-->
+        <!--<xi:include href="client/LockCommands.xml"/>-->
+    <!--</chapter>-->
     <chapter xml:id="Clients">
         <title>Clients</title>
         <xi:include href="client/Clients.xml"/>

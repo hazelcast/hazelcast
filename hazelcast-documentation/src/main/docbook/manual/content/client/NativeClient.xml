@@ -22,9 +22,9 @@
        xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
        http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
     <title>Native Client</title>
-    <para>Native Client enables you to do all Hazelcast operations without being a member of the
+    <para>Native Client enables you to do almost all Hazelcast operations without being a member of the
         cluster. It connects to one of the cluster members and delegates all cluster wide operations
-        to it. When the relied cluster member dies, client will transparently switch to another live
+        to it or connects to all of them and delegate operations smartly. When the relied cluster member dies, client will transparently switch to another live
         member.
     </para>
     <para>There can be hundreds, even thousands of clients connected to the cluster. But by default there is 40 threads
@@ -35,34 +35,11 @@
         access and modify the data in the Hazelcast cluster.
     </para>
     <para>Currently Hazelcast has Native Java and C# Client available.
+        C# Client implementation has not yet finished as of version 3.
     </para>
-    <para>
-        <emphasis role="bold">
-            <emphasis role="italic">
-                LiteMember vs. Native Client
-            </emphasis>
-        </emphasis>
-    </para>
-    <para>LiteMember is a member of the cluster, it has socket connection to every member in the
-        cluster and it knows where the data is so it will get to the data much faster. But LiteMember
-        has the clustering overhead and it must be on the same data center even on the same
-        RAC. However Native client is not member and relies on one of the cluster members. Native
-        Clients can be anywhere in the LAN or WAN. It scales much better and overhead is quite less.
-        So if your clients are less than Hazelcast nodes then LiteMember can be an option;
-        otherwise definitely try Native Client. As a rule of thumb: Try Native client first, if it
-        doesn't perform well enough for you, then consider LiteMember.
-    </para>
-    <para>The following picture describes the clients connecting to Hazelcast Cluster. Note the
-        difference between LiteMember and Java Client
-        <inlinemediaobject>
-            <imageobject>
-                <imagedata fileref="http://www.hazelcast.com/resources/hazelcast-cluster-labels.png"
-                        />
-            </imageobject>
-        </inlinemediaobject>
-    </para>
-    <sect2 xml:id="JavaClient" version="5.0" xmlns="http://docbook.org/ns/docbook"
-            >
+
+
+    <sect2 xml:id="JavaClient" version="5.0" xmlns="http://docbook.org/ns/docbook">
         <title>Java Client</title>
         <para>You can do almost all hazelcast operations with Java Client. It already implements the
             same interface. You must include hazelcast-client.jar into your classpath.
@@ -94,103 +71,104 @@ for (Customer customer : colCustomers) {
     <sect2 xml:id="CSharpClient" version="5.0" xmlns="http://docbook.org/ns/docbook"
             >
         <title>CSharp Client <superscript>(Enterprise Edition Only)</superscript></title>
-        <para>You can use native C# client to connect to the running Hazelcast instances. All you need is to include
-            Hazelcast.Client.dll into your C# project. The API is very similar to Java native client. Note that C# client
-            doesn't have automatic reconnection feature. If the node that it connected dies, it will not switch to another member.
-            User must connect to another member itself.
-            <programlisting language="CSharp"><![CDATA[
+        <para>Not yet implemented as for version 3</para>
+        <!--<para>You can use native C# client to connect to the running Hazelcast instances. All you need is to include-->
+            <!--Hazelcast.Client.dll into your C# project. The API is very similar to Java native client. Note that C# client-->
+            <!--doesn't have automatic reconnection feature. If the node that it connected dies, it will not switch to another member.-->
+            <!--User must connect to another member itself.-->
+            <!--<programlisting language="CSharp"><![CDATA[-->
 
-using System;
-using System.Collections.Generic;
+<!--using System;-->
+<!--using System.Collections.Generic;-->
 
-using Hazelcast.Client;
-using Hazelcast.Core;
+<!--using Hazelcast.Client;-->
+<!--using Hazelcast.Core;-->
 
-ClientConfig clientConfig = new ClientConfig();
-clientConfig.GroupConfig.Name = "dev";
-clientConfig.GroupConfig.Password = "dev-pass";
-clientConfig.addAddress("10.90.0.1");
+<!--ClientConfig clientConfig = new ClientConfig();-->
+<!--clientConfig.GroupConfig.Name = "dev";-->
+<!--clientConfig.GroupConfig.Password = "dev-pass";-->
+<!--clientConfig.addAddress("10.90.0.1");-->
 
-HazelcastClient client = HazelcastClient.newHazelcastClient(clientConfig);
-//Allmost all cluster operations that you can do with ordinary HazelcastInstance
-//Note that the Customer class must have Serializable attribute or implement Hazelcast.IO.DataSerializable
-IMap<String, Customer> mapCustomers = client.getMap("customers");
-mapCustomers.put("1", new Customer("Joe", "Smith"));
-mapCustomers.put("2", new Customer("Ali", "Selam"));
-mapCustomers.put("3", new Customer("Avi", "Noyan"));
+<!--HazelcastClient client = HazelcastClient.newHazelcastClient(clientConfig);-->
+<!--//Allmost all cluster operations that you can do with ordinary HazelcastInstance-->
+<!--//Note that the Customer class must have Serializable attribute or implement Hazelcast.IO.DataSerializable-->
+<!--IMap<String, Customer> mapCustomers = client.getMap("customers");-->
+<!--mapCustomers.put("1", new Customer("Joe", "Smith"));-->
+<!--mapCustomers.put("2", new Customer("Ali", "Selam"));-->
+<!--mapCustomers.put("3", new Customer("Avi", "Noyan"));-->
 
-ICollection<Customer> colCustomers = mapCustomers.values();
-foreach (Customer customer in colCustomers) {
-     // process customer
-}
-]]></programlisting>
+<!--ICollection<Customer> colCustomers = mapCustomers.values();-->
+<!--foreach (Customer customer in colCustomers) {-->
+     <!--// process customer-->
+<!--}-->
+<!--]]></programlisting>-->
 
 
-        </para>
-        <para>
-            You can serialize back and forth Java and C# Objects between C# client and Hazelcast server.
-            All you need is to have your classes that you want to share to implement DataSerializable both on Java and C#
-            in the exact same way. And on C# ClientConfig you must set a TypeConverter implementation that will convert
-            Java Class name into C# Type and vice versa.
+        <!--</para>-->
+        <!--<para>-->
+            <!--You can serialize back and forth Java and C# Objects between C# client and Hazelcast server.-->
+            <!--All you need is to have your classes that you want to share to implement DataSerializable both on Java and C#-->
+            <!--in the exact same way. And on C# ClientConfig you must set a TypeConverter implementation that will convert-->
+            <!--Java Class name into C# Type and vice versa.-->
 
-            A basic TypeConverter might look like this.
-            <programlisting language="CSharp"><![CDATA[
+            <!--A basic TypeConverter might look like this.-->
+            <!--<programlisting language="CSharp"><![CDATA[-->
 
-public class MyTypeConverter: Hazelcast.IO.ITypeConverter
-{
-    public string getJavaName(Type type)
-    {
-        if(type.Equals(typeof(Hazelcast.Client.Examples.MyCSharpClass)))
-            return "com.hazelcast.examples.MyClass";
+<!--public class MyTypeConverter: Hazelcast.IO.ITypeConverter-->
+<!--{-->
+    <!--public string getJavaName(Type type)-->
+    <!--{-->
+        <!--if(type.Equals(typeof(Hazelcast.Client.Examples.MyCSharpClass)))-->
+            <!--return "com.hazelcast.examples.MyClass";-->
 
-        return null;
-    }
+        <!--return null;-->
+    <!--}-->
 
-    public Type getType(String javaName)
-    {
-        if("com.hazelcast.examples.MyClass".Equals(javaName))
-            return typeof(Hazelcast.Client.Examples.MyCSharpClass);
+    <!--public Type getType(String javaName)-->
+    <!--{-->
+        <!--if("com.hazelcast.examples.MyClass".Equals(javaName))-->
+            <!--return typeof(Hazelcast.Client.Examples.MyCSharpClass);-->
 
-        return null;
-    }
-}
+        <!--return null;-->
+    <!--}-->
+<!--}-->
 
-            ]]></programlisting>
+            <!--]]></programlisting>-->
 
-            A basic MyCSharpClass implementing DataSerializable
+            <!--A basic MyCSharpClass implementing DataSerializable-->
 
-            <programlisting language="CSharp"><![CDATA[
+            <!--<programlisting language="CSharp"><![CDATA[-->
 
-using System;
-using Hazelcast.IO;
+<!--using System;-->
+<!--using Hazelcast.IO;-->
 
-public class MyCSharpClass: Hazelcast.IO.DataSerializable
-{
-    String field1 = "";
-    int field2;
+<!--public class MyCSharpClass: Hazelcast.IO.DataSerializable-->
+<!--{-->
+    <!--String field1 = "";-->
+    <!--int field2;-->
 
-    public MyCSharpClass ()
-    {
-    }
+    <!--public MyCSharpClass ()-->
+    <!--{-->
+    <!--}-->
 
-    public MyCSharpClass (String f1, int f2)
-    {
-        this.field1 = f1;
-        this.field2 = f2;
-    }
+    <!--public MyCSharpClass (String f1, int f2)-->
+    <!--{-->
+        <!--this.field1 = f1;-->
+        <!--this.field2 = f2;-->
+    <!--}-->
 
-    public void writeData(IDataOutput dout){
-        dout.writeUTF(field1);
-        dout.writeInt(field2);
-    }
+    <!--public void writeData(IDataOutput dout){-->
+        <!--dout.writeUTF(field1);-->
+        <!--dout.writeInt(field2);-->
+    <!--}-->
 
-    public void readData(IDataInput din){
-        field1 = din.readUTF();
-        field2 = din.readInt();
-    }
-}
+    <!--public void readData(IDataInput din){-->
+        <!--field1 = din.readUTF();-->
+        <!--field2 = din.readInt();-->
+    <!--}-->
+<!--}-->
 
-            ]]></programlisting>
-        </para>
+            <!--]]></programlisting>-->
+        <!--</para>-->
     </sect2>
 </sect1>
