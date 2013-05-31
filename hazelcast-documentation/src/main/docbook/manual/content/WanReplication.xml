@@ -105,7 +105,7 @@
     <map name="my-shared-map">
         ...
         <wan-replication-ref name="my-wan-cluster">
-            <merge-policy>hz.PASS_THROUGH</merge-policy>
+            <merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy>
         </wan-replication-ref>
     </map>
 </network>

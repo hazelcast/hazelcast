@@ -97,7 +97,7 @@
                 read-backup-data="true"
                 cache-value="true"
                 eviction-policy="NONE"
-                merge-policy="hz.ADD_NEW_ENTRY"/>
+                merge-policy="com.hazelcast.map.merge.PassThroughMergePolicy"/>
     </hz:config>
 </hz:hazelcast>
 ]]></programlisting>
