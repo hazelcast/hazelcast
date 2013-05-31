@@ -27,7 +27,7 @@
         It's often desired to access Spring managed beans, to apply bean properties or to apply factory callbacks
         such as <code>ApplicationContextAware</code>, <code>BeanNameAware</code> or to apply bean post-processing
         such as <code>InitializingBean</code>, <code>@PostConstruct</code> like annotations
-        while using Hazelcast distributed <code>ExecutorService</code> or <code>DistributedTask</code>s or more
+        while using Hazelcast distributed <code>ExecutorService</code> or more
         generally any Hazelcast managed object. Achieving those features are as simple as adding <code>@SpringAware</code>
         annotation to your distributed object types. Once you have configured HazelcastInstance as explained in
         <link xlink:href="#SpringConfig">Spring configuration</link>,
@@ -103,7 +103,7 @@ Assert.assertEquals(bean.value, f.get().longValue());
 Member member = hazelcast.getCluster().getMembers().iterator().next();
 
 Future<Long> f2 = (Future<Long>) hazelcast.getExecutorService()
-    .submit(new DistributedTask<Long>(new SomeTask(), member));
+    .submitToMember(new SomeTask(), member);
 Assert.assertEquals(bean.value, f2.get().longValue());
 
 ]]></programlisting>

@@ -32,7 +32,7 @@
             </listitem>
             <listitem>
                 <para>
-                    <emphasis role="bold">InstanceListener</emphasis> for distributed instance creation and destroy events
+                    <emphasis role="bold">DistributedObjectListener</emphasis> for distributed object creation and destroy events
                 </para>
             </listitem>
             <listitem>
@@ -107,25 +107,25 @@ config.addListenerConfig(new ListenerConfig("com.hazelcast.examples.MembershipLi
             </listitem>
             <listitem>
                 <para>
-                    <emphasis role="bold">InstanceListener</emphasis>
+                    <emphasis role="bold">DistributedObjectListener</emphasis>
                 </para>
                 <para>
                     <emphasis role="italic">Hazelcast XML configuration</emphasis>
                     <programlisting language="xml"><![CDATA[
 <listeners>
-        <listener>com.hazelcast.examples.InstanceListener</listener>
+        <listener>com.hazelcast.examples.DistributedObjectListener</listener>
 </listeners>]]></programlisting>
                 </para>
                 <para><emphasis role="italic">Config API</emphasis>
                     <programlisting language="java">
-config.addListenerConfig(new ListenerConfig("com.hazelcast.examples.InstanceListener"));</programlisting>
+config.addListenerConfig(new ListenerConfig("com.hazelcast.examples.DistributedObjectListener"));</programlisting>
                 </para>
                 <para>
                 <emphasis role="italic">Spring XML configuration</emphasis>
                 <programlisting language="xml"><![CDATA[
 <hz:listeners>
-    <hz:listener class-name="com.hazelcast.spring.DummyInstanceListener"/>
-    <hz:listener implementation="dummyInstanceListener"/>
+    <hz:listener class-name="com.hazelcast.spring.DummyDistributedObjectListener"/>
+    <hz:listener implementation="dummyDistributedObjectListener"/>
 </hz:listeners>]]></programlisting>
                 </para>
             </listitem>
@@ -166,7 +166,7 @@ config.addListenerConfig(new ListenerConfig("com.hazelcast.examples.MigrationLis
                 </para>
                 <para><emphasis role="italic">Config API</emphasis>
                     <programlisting language="java">
-                        config.addListenerConfig(new ListenerConfig("com.hazelcast.examples.LifecycleListener"));</programlisting>
+config.addListenerConfig(new ListenerConfig("com.hazelcast.examples.LifecycleListener"));</programlisting>
                 </para>
                 <para>
                     <emphasis role="italic">Spring XML configuration</emphasis>

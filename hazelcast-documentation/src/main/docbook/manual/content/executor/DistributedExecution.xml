@@ -49,63 +49,47 @@
         </itemizedlist>
         <programlisting language="java"><![CDATA[import com.hazelcast.core.Member;
 import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.MultiTask;
-import com.hazelcast.core.DistributedTask;
-import java.util.concurrent.ExecutorService;   
-import java.util.concurrent.FutureTask;   
+import com.hazelcast.core.IExecutorService;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Future;   
 import java.util.Set;
 import com.hazelcast.config.Config;
 
 
 public void echoOnTheMember(String input, Member member) throws Exception {
-   FutureTask<String> task = new DistributedTask<String>(new Echo(input), member);
-   Config cfg = new Config();
-   HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
-   ExecutorService executorService = hz.getExecutorService();
-   executorService.execute(task);
-   String echoResult = task.get();
+   Callable<String> task = new Echo(input);
+   HazelcastInstance hz = Hazelcast.newHazelcastInstance();
+   IExecutorService executorService = hz.getExecutorService();
+   Future<String> future = executorService.submitToMember(task, member);
+   String echoResult = future.get();
 }
 
 public void echoOnTheMemberOwningTheKey(String input, Object key) throws Exception {
-   FutureTask<String> task = new DistributedTask<String>(new Echo(input), key);
-   Config cfg = new Config();
-   HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
-   ExecutorService executorService = hz.getExecutorService();
-   executorService.execute(task);
-   String echoResult = task.get();
+   Callable<String> task = new Echo(input);
+   HazelcastInstance hz = Hazelcast.newHazelcastInstance();
+   IExecutorService executorService = hz.getExecutorService();
+   Future<String> future = executorService.submitToKeyOwner(task, key);
+   String echoResult = future.get();
 }
 
 public void echoOnSomewhere(String input) throws Exception { 
-   Config cfg = new Config();
-   HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
-   ExecutorService executorService = hz.getExecutorService();
-   Future<String> task = executorService.submit(new Echo(input));
-   String echoResult = task.get();
+   HazelcastInstance hz = Hazelcast.newHazelcastInstance();
+   IExecutorService executorService = hz.getExecutorService();
+   Future<String> future = executorService.submit(new Echo(input));
+   String echoResult = future.get();
 }
 
 public void echoOnMembers(String input, Set<Member> members) throws Exception {
-   Config cfg = new Config();
-   HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
-   MultiTask<String> task = new MultiTask<String>(new Echo(input), members);
-   ExecutorService executorService = hz.getExecutorService();
-   executorService.execute(task);
-   Collection<String> results = task.get();
-} 
+   HazelcastInstance hz = Hazelcast.newHazelcastInstance();
+   IExecutorService executorService = hz.getExecutorService();
+   Map<Member, Future<String>> futures = executorService.submitToMembers(new Echo(input), members);
+   for (Future<String> future : futures.values()) {
+        String echoResult = future.get();
+        // ...
+   }
+}
 ]]></programlisting>
         Note that you can obtain the set of cluster members via
-        <literal>Hazelcast.getCluster().getMembers()</literal>
-        call.
-        You can also extend the
-        <literal>MultiTask</literal>
-        class to override
-        <literal>set(V result), setException(Throwable exception), done()</literal>
-        methods for custom behaviour.
-        Just like
-        <literal>java.util.concurrent.FutureTask.get() , MultiTask.get()</literal>
-        will throw
-        <literal>java.util.concurrent.ExecutionException</literal>
-        if any of the executions throws exception.
-
+        <literal>Hazelcast.getCluster().getMembers()</literal> call.
     </para>
 </sect1>

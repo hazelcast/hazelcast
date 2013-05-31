@@ -46,7 +46,7 @@ instance.getLock ("key1").lock();
 // lock operation will still execute on the same member of the cluster
 // since the key ("key1") is same
 
-instance.getExecutorService().execute(new DistributedTask(runnable, "key1"));
+instance.getExecutorService().executeOnKeyOwner(runnable, "key1");
 // distributed execution will execute the 'runnable' on the same member
 // since "key1" is passed as the key.
     ]]></programlisting>

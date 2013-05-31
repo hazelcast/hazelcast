@@ -177,7 +177,7 @@ map.removeEntryListener(listenerId);
                 <emphasis role="bold">ExecutorService API change:</emphasis>
                 <para>Classes MultiTask and DistributedTask have been removed. All the functionality is supported by the newly presented interface IExecutorService.
                     See distributed execution part for detailed usage example:
-                    <link xlink:href="#DistributedExecution"> Distributed Transactions </link>
+                    <link xlink:href="#DistributedExecution"> Distributed Execution </link>
                 </para>
             </listitem>
             <listitem>
