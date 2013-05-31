@@ -99,12 +99,12 @@
         While Hazelcast serializes a DataSerializable it writes the className first and when de-serializes it,
         className is used to instantiate the object using reflection.
 
-        <sect2>
-            <title>IdentifiedDataSerializable</title>
-        
+
+        <emphasis role="bold">IdentifiedDataSerializable</emphasis>
+
         To avoid the reflection and long class names
         <literal>IdentifiedDataSerializable</literal>
-        can be used instead of <literal>DataSerializable</literal>. Note that
+        can be used instead of<literal>DataSerializable</literal>. Note that
         <literal>IdentifiedDataSerializable</literal>
         extends
         <literal>DataSerializable</literal>
@@ -134,16 +134,5 @@
         object, given the id. So far this is the most efficient
         way of Serialization that Hazelcast supports of the shelf.
 
-        </sect2>
-    </para>
-    <para>
-        <emphasis role="bold">Caution:</emphasis>
-        Hazelcast serialization is done on the user
-        thread and it assumes that there will be only one object serialization at a time. So
-        putting any Hazelcast operation that will require to serialize anything else will
-        break the serialization. For Example: Putting<programlisting language="java"><![CDATA[hazelcast.getMap("anyMap").put("key", "dummy value");
-]]></programlisting>line in readData or writeData methods will break the serialization. If you have
-        to perform such an operation, at least it should be performed in another thread
-        which will force the serialization to take on different thread.
     </para>
 </sect1>
