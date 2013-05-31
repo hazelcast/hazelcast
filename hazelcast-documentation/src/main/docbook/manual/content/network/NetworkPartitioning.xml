@@ -98,11 +98,10 @@
         <literal>MergePolicy</literal>
         set for that map. There are built-in merge policies such
         as
-        <literal>hz.NO_MERGE, hz.ADD_NEW_ENTRY and hz.LATEST_UPDATE</literal>
+        <literal>PassThroughMergePolicy, PutIfAbsentMapMergePolicy, HigherHitsMapMergePolicy and LatestUpdateMapMergePolicy</literal>
         but you can develop
         your own merge policy by implementing <literal>com.hazelcast.map.merge.MapMergePolicy</literal>. You
-        should register your custom merge policy in the configuration so that Hazelcast can find it
-        by name.
+        should set the full class name of your implementation to the merge-policy configuration.
         <programlisting language="java"><![CDATA[
 public interface MergePolicy {
     /**
@@ -113,14 +112,14 @@ public interface MergePolicy {
     * @param mapName       name of the map
     * @param mergingEntry  entry merging into the destination cluster
     * @param existingEntry existing entry in the destination cluster
-    * @return final value of the entry. If returns null then no change on the entry.
+    * @return final value of the entry. If returns null then entry will be removed.
     */
-    Object merge(String mapName, MapEntry mergingEntry, MapEntry existingEntry);
+    Object merge(String mapName, EntryView mergingEntry, EntryView existingEntry);
 }]]></programlisting>
      </para>
 
      <para>
-        Here is how merge policies are registered and specified per map.
+        Here is how merge policies are specified per map.
         <programlisting language="xml"><![CDATA[
 <hazelcast>
     ...

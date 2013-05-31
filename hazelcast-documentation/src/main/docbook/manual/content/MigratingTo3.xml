@@ -159,6 +159,7 @@ map.removeEntryListener(listenerId);
 <merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy>
     ]]></programlisting>
                         </para>
+                        Also MergePolicy interface has been renamed to MapMergePolicy and also returning null from the implemented merge() method causes the existing entry to be removed.
                     </listitem>
                 </itemizedlist>
             </listitem>
