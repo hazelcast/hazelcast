@@ -60,7 +60,7 @@
         Hazelcast also optimizes the following types, however you can override them by creating a custom serializer
         and registering it.
         See
-        <link xlink:href="Custom.xml">Custom Serialization</link>
+        <link xlink:href="#CustomSerialization">Custom Serialization</link>
         for more information.
 
         <itemizedlist>
@@ -74,7 +74,7 @@
 
         Not that if the object is not instance of any explicit type, Hazelcast uses Java Serialization
         for Serializable and Externalizable objects. The default behaviour can be changed using a
-        <link xlink:href="Custom.xml">Custom Serialization</link>.
+        <link xlink:href="#CustomSerialization">Custom Serialization</link>.
 
     </para>
 </para>
