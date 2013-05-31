@@ -17,6 +17,8 @@
 package com.hazelcast.queue;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ItemListenerConfig;
+import com.hazelcast.config.QueueConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ItemEvent;
@@ -46,6 +48,22 @@ import static org.junit.Assert.*;
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
 public class BasicQueueTest extends HazelcastTestSupport {
+
+    @Test
+    public void testWithConfig() throws InterruptedException {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        Config config = new Config();
+        final String name = "l_queue";
+        final QueueConfig queueConfig = config.getQueueConfig(name);
+        final ItemListenerConfig itemListenerConfig = new ItemListenerConfig(DummyListener.class.getName(), true);
+        queueConfig.addItemListenerConfig(itemListenerConfig);
+        final HazelcastInstance instance = factory.newHazelcastInstance(config);
+        final IQueue queue = instance.getQueue(name);
+        queue.offer("item");
+        queue.poll();
+        assertTrue(DummyListener.latchForListenerTest.await(10, TimeUnit.SECONDS));
+
+    }
 
     @Test
     public void testQueueStats() {

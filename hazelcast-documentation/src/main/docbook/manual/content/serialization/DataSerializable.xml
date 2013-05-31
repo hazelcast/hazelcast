@@ -15,41 +15,23 @@
   ~ limitations under the License.
   -->
 
-<sect1 xml:id="InternalsSerialization" version='5.0' xmlns='http://docbook.org/ns/docbook'
-       xmlns:xi="http://www.w3.org/2001/XInclude"
-       xmlns:xlink="http://www.w3.org/1999/xlink"
+<sect1 xml:id="DataSerializable" version='5.0' xmlns='http://docbook.org/ns/docbook'
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
-       http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
-    <title>Internals 1: Serialization</title>
-    <para>All your distributed objects such as your key and value objects, objects you offer into
-        distributed queue and your distributed callable/runnable objects have to
-        be<literal>Serializable</literal>.
-    </para>
-    <para>Hazelcast serializes all your objects into an instance
-        of<literal>com.hazelcast.nio.serialization.Data</literal>.
-        <literal>Data</literal>
-        is the binary
-        representation of an object. When Hazelcast serializes an object into<literal>Data</literal>,
-        it first checks whether the object is an instance of well-known, optimizable object
-        such as<literal>String, Long, Integer, byte[], ByteBuffer, Date</literal>. If not, it then checks
-        whether the object is an instance
-        of<literal>com.hazelcast.nio.serialization.DataSerializable</literal>. If not, Hazelcast
-        uses standard java serialization to convert the object into binary format. See
-        <literal>com.hazelcast.nio.serialization.SerializerSupport</literal>
-        for details.
-    </para>
-    <para>So for faster serialization, Hazelcast recommends to use of
-        <literal>String, Long,
-            Integer, byte[]
-        </literal>
-        objects or to implement
-        <literal>com.hazelcast.nio.serialization.DataSerializable</literal>
-        interface. Here is an
-        example of a class implementing
-        <literal>com.hazelcast.nio.serialization.DataSerializable</literal>
-        interface.
-        <programlisting language="java"><![CDATA[public class Address implements com.hazelcast.nio.serialization.DataSerializable {
+       xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd">
+    <title>Data Serializable</title>
+
+
+    <para>
+        For a faster serialization of objects, Hazelcast recommends to implement
+        <literal>com.hazelcast.nio.serialization.IdentifiedDataSerializable</literal>
+        which is slightly better
+        version of
+        <literal>com.hazelcast.nio.serialization.DataSerializable</literal>.
+        <para>
+            Here is an example of a class implementing
+            <literal>com.hazelcast.nio.serialization.DataSerializable</literal>
+            interface.
+            <programlisting language="java"><![CDATA[public class Address implements com.hazelcast.nio.serialization.DataSerializable {
     private String street;
     private int zipCode;
     private String city;
@@ -74,6 +56,7 @@
     }
 }
 ]]></programlisting>
+        </para>
         Lets take a look at another example which is encapsulating a
         <literal>DataSerializable</literal>
         field.<programlisting language="java"><![CDATA[public class Employee implements com.hazelcast.nio.serialization.DataSerializable {
@@ -112,14 +95,53 @@
         <literal>address.writeData(out)</literal>
         when writing and
         <literal>address.readData(in)</literal>
-        when reading.
+        when reading. Also note that the order of writing and reading fields should be the same.
+        While Hazelcast serializes a DataSerializable it writes the className first and when de-serializes it,
+        className is used to instantiate the object using reflection.
+
+        <sect2>
+            <title>IdentifiedDataSerializable</title>
+        
+        To avoid the reflection and long class names
+        <literal>IdentifiedDataSerializable</literal>
+        can be used instead of <literal>DataSerializable</literal>. Note that
+        <literal>IdentifiedDataSerializable</literal>
+        extends
+        <literal>DataSerializable</literal>
+        and introduces two new methods.
+
+        <itemizedlist>
+            <listitem>
+                int getId();
+            </listitem>
+            <listitem>
+                int getFactoryId();
+            </listitem>
+        </itemizedlist>
+
+        IdentifiedDataSerializable uses
+        <literal>getId()</literal>
+        instead of className and uses getFactoryId()
+        to load the class given the Id.
+        To complete the implementation a
+        <literal>com.hazelcast.nio.serialization.DataSerializableFactory</literal>
+        should also be implemented and registered into
+        <literal>SerializationConfig</literal>
+        which can be accessed from
+        <literal>Config.getSerializationConfig()</literal>. The Factories responsibility is to return an instance of
+        the right
+        <literal>IdentifiedDataSerializable</literal>
+        object, given the id. So far this is the most efficient
+        way of Serialization that Hazelcast supports of the shelf.
+
+        </sect2>
     </para>
     <para>
         <emphasis role="bold">Caution:</emphasis>
         Hazelcast serialization is done on the user
         thread and it assumes that there will be only one object serialization at a time. So
         putting any Hazelcast operation that will require to serialize anything else will
-        break the serialization. For Example: Putting<programlisting language="java"><![CDATA[Hazelcast.getMap("anyMap").put("key", "dummy value");
+        break the serialization. For Example: Putting<programlisting language="java"><![CDATA[hazelcast.getMap("anyMap").put("key", "dummy value");
 ]]></programlisting>line in readData or writeData methods will break the serialization. If you have
         to perform such an operation, at least it should be performed in another thread
         which will force the serialization to take on different thread.

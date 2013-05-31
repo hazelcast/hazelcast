@@ -85,6 +85,7 @@
                 <xs:element ref="backup-count" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="async-backup-count" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="item-listeners" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="queue-store" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
             <xs:attribute name="name" use="optional" default="default">
                 <xs:simpleType>
@@ -122,6 +123,8 @@
         <xs:complexType>
             <xs:sequence>
                 <xs:element ref="initial-permits" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="backup-count" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="async-backup-count" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
             <xs:attribute name="name" use="required">
                 <xs:simpleType>
@@ -648,6 +651,17 @@
                     <xs:element ref="factory-class-name"/>
                 </xs:choice>
                 <xs:element ref="write-delay-seconds" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="properties" minOccurs="0" maxOccurs="1"/>
+            </xs:sequence>
+            <xs:attribute name="enabled" default="true" type="xs:boolean"/>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="queue-store">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:choice minOccurs="0" maxOccurs="1">
+                    <xs:element ref="class-name"/>
+                </xs:choice>
                 <xs:element ref="properties" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
             <xs:attribute name="enabled" default="true" type="xs:boolean"/>

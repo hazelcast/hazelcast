@@ -16,7 +16,10 @@
 
 package com.hazelcast.queue.proxy;
 
+import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.QueueConfig;
+import com.hazelcast.core.ItemListener;
+import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.*;
 import com.hazelcast.spi.AbstractDistributedObject;
@@ -45,6 +48,18 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
         this.name = name;
         this.partitionId = nodeEngine.getPartitionService().getPartitionId(nodeEngine.toData(name));
         this.config = nodeEngine.getConfig().getQueueConfig(name);
+        final List<ItemListenerConfig> itemListenerConfigs = config.getItemListenerConfigs();
+        for (ItemListenerConfig itemListenerConfig : itemListenerConfigs) {
+            ItemListener listener = itemListenerConfig.getImplementation();
+            try {
+                listener = listener == null ? (ItemListener) ClassLoaderUtil.newInstance(itemListenerConfig.getClassName()) : listener;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            if (listener != null){
+                addItemListener(listener, itemListenerConfig.isIncludeValue());
+            }
+        }
     }
 
     boolean offerInternal(Data data, long timeout) throws InterruptedException {
@@ -163,5 +178,13 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
 
     public final String getName() {
         return name;
+    }
+
+    public String addItemListener(ItemListener listener, boolean includeValue) {
+        return getService().addItemListener(name, listener, includeValue);
+    }
+
+    public boolean removeItemListener(String registrationId) {
+        return getService().removeItemListener(name, registrationId);
     }
 }

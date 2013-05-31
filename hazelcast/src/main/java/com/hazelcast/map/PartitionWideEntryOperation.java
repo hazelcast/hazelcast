@@ -25,7 +25,6 @@ import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
 import java.util.AbstractMap;
-import java.util.HashMap;
 import java.util.Map;
 
 public class PartitionWideEntryOperation extends AbstractMapOperation implements BackupAwareOperation, PartitionAwareOperation {
@@ -43,7 +42,6 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
 
     public void run() {
         response = new MapEntrySet();
-        //TODO response is not DataSerializable
         Map.Entry entry;
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
         Map<Data, Record> records = recordStore.getRecords();

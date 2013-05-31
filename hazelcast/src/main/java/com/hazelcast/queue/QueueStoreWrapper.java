@@ -212,7 +212,7 @@ public class QueueStoreWrapper implements QueueStore<Data> {
 
     private int parseInt(String name, int defaultValue) {
         String val = storeConfig.getProperty(name);
-        if (val == null) {
+        if (val == null || val.trim().isEmpty()) {
             return defaultValue;
         }
         try {

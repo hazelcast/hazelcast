@@ -18,7 +18,6 @@ package com.hazelcast.core;
 
 import java.util.concurrent.TimeUnit;
 
-// TODO: @mm - Rename!!!
 public interface BaseQueue<E> extends DistributedObject {
 
     boolean offer(E e);

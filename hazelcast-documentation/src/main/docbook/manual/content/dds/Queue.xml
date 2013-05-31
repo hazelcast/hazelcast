@@ -68,6 +68,27 @@ if (task != null) {
         Dfault is 1.
         -->
         <backup-count>0</backup-count>
+
+        <!--
+            Number of async backups. 0 means no backup.
+        -->
+        <async-backup-count>0</async-backup-count>
+
+
+        <!--
+            QueueStore implementation to persist items.
+            'binary' property indicates that storing items will be in binary format
+            'memory-limit' property enables 'overflow to store' after reaching limit
+            'bulk-load' property enables bulk-loading from store
+        -->
+        <queue-store>
+            <class-name>com.hazelcast.QueueStore</class-name>
+            <properties>
+                <property name="binary">true</property>
+                <property name="memory-limit">1000</property>
+                <property name="bulk-load">100</property>
+            </properties>
+        </queue-store>
     </queue>
 
 
@@ -77,7 +98,7 @@ if (task != null) {
     <sect2>
         <title>Persistence</title>
         <para>Hazelcast allows you to load and store the distributed queue entries from/to a
-            persistent datastore such as relational database.
+            persistent datastore such as relational database via a queue-store.
         </para>
         <!-- TODO more explanation -->
     </sect2>
