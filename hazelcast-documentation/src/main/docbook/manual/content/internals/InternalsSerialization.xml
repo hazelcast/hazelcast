@@ -21,7 +21,7 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
        http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
-    <title>Internals 2: Serialization</title>
+    <title>Internals 1: Serialization</title>
     <para>All your distributed objects such as your key and value objects, objects you offer into
         distributed queue and your distributed callable/runnable objects have to
         be<literal>Serializable</literal>.

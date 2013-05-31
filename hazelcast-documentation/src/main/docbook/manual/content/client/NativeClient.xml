@@ -71,7 +71,7 @@ for (Customer customer : colCustomers) {
     <sect2 xml:id="CSharpClient" version="5.0" xmlns="http://docbook.org/ns/docbook"
             >
         <title>CSharp Client <superscript>(Enterprise Edition Only)</superscript></title>
-        <para>Not yet implemented as for version 3</para>
+        <para>Not yet implemented as of version 3</para>
         <!--<para>You can use native C# client to connect to the running Hazelcast instances. All you need is to include-->
             <!--Hazelcast.Client.dll into your C# project. The API is very similar to Java native client. Note that C# client-->
             <!--doesn't have automatic reconnection feature. If the node that it connected dies, it will not switch to another member.-->

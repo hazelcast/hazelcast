@@ -21,7 +21,7 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
        http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
-    <title>Internals 3: Cluster Membership</title>
+    <title>Internals 2: Cluster Membership</title>
     <para>It is important to note that Hazelcast is a peer to peer clustering so there is no
         'master' kind of server in Hazelcast. Every member in the cluster is equal and has the same
         rights and responsibilities.
