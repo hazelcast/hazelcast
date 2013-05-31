@@ -254,7 +254,7 @@ public interface HazelcastInstance {
 
     /**
      * Returns the lifecycle service for this instance. LifecycleService allows you
-     * to shutdown, restart, pause and resume this HazelcastInstance and listen for
+     * to shutdown this HazelcastInstance and listen for
      * the lifecycle events.
      *
      * @return lifecycle service
