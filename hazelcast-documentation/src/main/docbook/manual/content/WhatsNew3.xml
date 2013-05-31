@@ -29,7 +29,7 @@
                 With Hazelcast 2, there was a single thread.
             </listitem>
             <listitem>
-                <para><link xlink:href=""> SPI </link> </para>: Service Programming Interface for developing new partitioned services, data structures.
+                <para><link xlink:href="SPI"> SPI </link> </para>: Service Programming Interface for developing new partitioned services, data structures.
                 All Hazelcast data structures like Map, Queue are reimplemented with SPI.
             </listitem>
         </itemizedlist>
@@ -62,7 +62,8 @@
         <emphasis role="bold">Map</emphasis>
         <itemizedlist>
             <listitem>
-                <para>Entry Processor</para> : Executing an EntryProcessor on the key or on all entries. Hazelcast
+                <para><link xlink:href="#MapEntryProcessor">Entry Processor</link></para> :
+                Executing an EntryProcessor on the key or on all entries. Hazelcast
                 implicitly locks the entree and guarantees no migration while the execution of the Processor.
             </listitem>
             <listitem>
@@ -89,10 +90,10 @@
                 <para>No more dependency on the distributed map</para>
             </listitem>
             <listitem>
-                <para>scales really well as you have thousands of separate queues.</para>
+                <para>Scales really well as you have thousands of separate queues.</para>
             </listitem>
             <listitem>
-                <para>Persistency</para>: Support for persistence with QueueStore.
+                <para>Persistence</para>: Support for persistence with QueueStore.
             </listitem>
         </itemizedlist>
     </para>

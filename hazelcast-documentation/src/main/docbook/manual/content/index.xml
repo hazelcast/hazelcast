@@ -65,8 +65,8 @@
         <xi:include href="dds/Lock.xml"/>
         <xi:include href="dds/Events.xml"/>
     </chapter>
-        
-    
+
+
     <chapter xml:id="Serialization">
         <title>Serialization</title>
         <xi:include href="serialization/Serialization.xml"/>
@@ -123,6 +123,10 @@
         <title>WAN Replication</title>
         <xi:include href="WanReplication.xml"/>
     </chapter>
+    <chapter xml:id="SPI">
+        <title>Service Provider Interface</title>
+        <xi:include href="SPI.xml"/>
+    </chapter>
     <chapter xml:id="Config">
         <title>Configuration</title>
         <xi:include href="config/Config.xml"/>
@@ -149,19 +153,19 @@
         <xi:include href="spring/SpringMongoDB.xml"/>
     </chapter>
     <!--<chapter xml:id="Protocol">-->
-        <!--<title>Client Protocol</title>-->
-        <!--<xi:include href="client/ClientProtocol.xml"/>-->
-        <!--<xi:include href="client/GeneralCommands.xml"/>-->
-        <!--<xi:include href="client/MapCommands.xml"/>-->
-        <!--<xi:include href="client/QueueCommands.xml"/>-->
-        <!--<xi:include href="client/SetCommands.xml"/>-->
-        <!--<xi:include href="client/ListCommands.xml"/>-->
-        <!--<xi:include href="client/MultiMapCommands.xml"/>-->
-        <!--<xi:include href="client/TopicCommands.xml"/>-->
-        <!--<xi:include href="client/AtomicLongCommands.xml"/>-->
-        <!--<xi:include href="client/IdGeneratorCommands.xml"/>-->
-        <!--<xi:include href="client/CountDownLatchCommands.xml"/>-->
-        <!--<xi:include href="client/LockCommands.xml"/>-->
+    <!--<title>Client Protocol</title>-->
+    <!--<xi:include href="client/ClientProtocol.xml"/>-->
+    <!--<xi:include href="client/GeneralCommands.xml"/>-->
+    <!--<xi:include href="client/MapCommands.xml"/>-->
+    <!--<xi:include href="client/QueueCommands.xml"/>-->
+    <!--<xi:include href="client/SetCommands.xml"/>-->
+    <!--<xi:include href="client/ListCommands.xml"/>-->
+    <!--<xi:include href="client/MultiMapCommands.xml"/>-->
+    <!--<xi:include href="client/TopicCommands.xml"/>-->
+    <!--<xi:include href="client/AtomicLongCommands.xml"/>-->
+    <!--<xi:include href="client/IdGeneratorCommands.xml"/>-->
+    <!--<xi:include href="client/CountDownLatchCommands.xml"/>-->
+    <!--<xi:include href="client/LockCommands.xml"/>-->
     <!--</chapter>-->
     <chapter xml:id="Clients">
         <title>Clients</title>
