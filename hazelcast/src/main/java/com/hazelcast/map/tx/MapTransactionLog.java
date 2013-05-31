@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.tx;
 
+import com.hazelcast.transaction.KeyAwareTransactionLog;
 import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ObjectDataInput;
@@ -31,7 +32,7 @@ import com.hazelcast.util.ExceptionUtil;
 import java.io.IOException;
 import java.util.concurrent.Future;
 
-public class MapTransactionLog implements TransactionLog {
+public class MapTransactionLog implements KeyAwareTransactionLog {
 
     // todo remove version as it is already defined in operation
     long version;
@@ -119,5 +120,10 @@ public class MapTransactionLog implements TransactionLog {
         }
         threadId = in.readInt();
         op = in.readObject();
+    }
+
+    @Override
+    public Object getKey() {
+        return key;
     }
 }
