@@ -167,16 +167,15 @@
             cluster, there might an existing entry with the same key already.
             Values of these entries might be different for that same key.
             Which value should be set for the key? Conflict is resolved by
-            the policy set here. Default policy is hz.ADD_NEW_ENTRY
+            the policy set here. Default policy is PutIfAbsentMapMergePolicy
 
             There are built-in merge policies such as
-            NO_MERGE      ; no entry will merge.
-            PUT_IF_ABSENT ; entry will be added if the merging entry's key
-                               doesn't exist in the cluster.
-            HIGHER_HITS   ; entry with the higher hits wins.
-            LATEST_UPDATE ; entry with the latest update wins.
+            com.hazelcast.map.merge.PassThroughMergePolicy; entry will be added if there is no existing entry for the key.
+            com.hazelcast.map.merge.PutIfAbsentMapMergePolicy ; entry will be added if the merging entry doesn't exist in the cluster.
+            com.hazelcast.map.merge.HigherHitsMapMergePolicy ; entry with the higher hits wins.
+            com.hazelcast.map.merge.LatestUpdateMapMergePolicy ; entry with the latest update wins.
         -->
-        <merge-policy>PUT_IF_ABSENT</merge-policy>
+        <merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy>
 
     </map>
     <semaphore name="def">
