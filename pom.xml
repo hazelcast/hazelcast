@@ -23,7 +23,7 @@
     <groupId>com.hazelcast</groupId>
     <artifactId>hazelcast-root</artifactId>
     <packaging>pom</packaging>
-    <version>3.0-ALPHA</version>
+    <version>3.0-SNAPSHOT</version>
     <name>Hazelcast Root</name>
     <description>Hazelcast In-Memory DataGrid</description>
     <url>http://www.hazelcast.com/</url>
@@ -33,7 +33,9 @@
         <module>hazelcast-client</module>
         <module>hazelcast-hibernate</module>
         <module>hazelcast-wm</module>
+        <!--ra module is not available atm-->
         <!--<module>hazelcast-ra</module>-->
+        <!--documentation is moved to release profile-->
         <!--<module>hazelcast-documentation</module>-->
         <module>hazelcast-spring</module>
         <module>hazelcast-all</module>
