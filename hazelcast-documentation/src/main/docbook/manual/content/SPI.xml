@@ -16,7 +16,7 @@
   ~ limitations under the License.
   -->
 
-<simplesect xml:id="SPI" version='5.0' xmlns='http://docbook.org/ns/docbook'
+<simplesect version='5.0' xmlns='http://docbook.org/ns/docbook'
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
             xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd">
 

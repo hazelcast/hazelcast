@@ -25,11 +25,12 @@
         <emphasis role="bold">Core architecture:</emphasis>
         <itemizedlist>
             <listitem>
-                <para>Multithread execution</para>: Multiple thread handling the operations on Node.
+                Multithread execution: Multiple thread handling the operations on Node.
                 With Hazelcast 2, there was a single thread.
             </listitem>
             <listitem>
-                <para><link xlink:href="SPI"> SPI </link> </para>: Service Programming Interface for developing new partitioned services, data structures.
+                <link xlink:href="SPI">SPI</link>: Service Programming Interface for developing new partitioned
+                services, data structures.
                 All Hazelcast data structures like Map, Queue are reimplemented with SPI.
             </listitem>
         </itemizedlist>
@@ -39,22 +40,22 @@
         <emphasis role="bold">Serialization</emphasis>
         <itemizedlist>
             <listitem>
-                <para><link xlink:href="#DataSerializable"> IdentifiedDataSerializable </link></para>:
+                <link xlink:href="#DataSerializable">IdentifiedDataSerializable</link>:
                 A slightly optimized version of DataSerializable that doesn't
                 use class name and reflection for de-serialization.
             </listitem>
             <listitem>
-                <para><link xlink:href="#PortableSerialization"> Portable Serialization </link></para>:
+                <link xlink:href="#PortableSerialization">Portable Serialization</link>:
                 Another Serialization interface that doesn't use reflection and
                 can navigate through binary data and fetch/query/index individual field without having any reflection
                 or whole object de-serialization.
             </listitem>
             <listitem>
-                <para><link xlink:href="#CustomSerialization"> Custom Serialization </link></para>:
+                <link xlink:href="#CustomSerialization">Custom Serialization</link>:
                 Support for custom serialization that can be plugged into Hazelcast.
             </listitem>
             <listitem>
-                <para>Support for multi-version</para>: Support for multiple versions of the same Portable object.
+                Support for multi-version: Support for multiple versions of the same Portable object.
             </listitem>
         </itemizedlist>
     </para>
@@ -62,23 +63,30 @@
         <emphasis role="bold">Map</emphasis>
         <itemizedlist>
             <listitem>
-                <para><link xlink:href="#MapEntryProcessor">Entry Processor</link></para> :
+
+                <link xlink:href="#MapEntryProcessor">Entry Processor</link>
+
+                :
                 Executing an EntryProcessor on the key or on all entries. Hazelcast
                 implicitly locks the entree and guarantees no migration while the execution of the Processor.
             </listitem>
             <listitem>
-                <para>Storage Stype</para> : Support for storing entries in Binary, Object and Cached format.
+                Storage Stype
+                : Support for storing entries in Binary, Object and Cached format.
             </listitem>
             <listitem>
-                <para>Continuous Query</para> : Support for listeners that register with a query and are notified when
+                Continuous Query
+                : Support for listeners that register with a query and are notified when
                 there is a change on the Map that matches the Query.
             </listitem>
             <listitem>
-                <para><link xlink:href="#MapInterceptor"> Interceptors </link></para> :
+                <link xlink:href="#MapInterceptor">Interceptors</link>
+                :
                 Ability to intercept the Map operation before/after it is actually executed.
             </listitem>
             <listitem>
-                <para><link xlink:href="#MapIndex"> Lazy Indexing </link></para> :Ability to index existing items in the map. No need to add
+                <link xlink:href="#MapIndex">Lazy Indexing</link>
+                :Ability to index existing items in the map. No need to add
                 indexes at the very beginning.
             </listitem>
         </itemizedlist>
@@ -87,13 +95,13 @@
         <emphasis role="bold">Queue</emphasis>
         <itemizedlist>
             <listitem>
-                <para>No more dependency on the distributed map</para>
+                No more dependency on the distributed map
             </listitem>
             <listitem>
-                <para>Scales really well as you have thousands of separate queues.</para>
+                Scales really well as you have thousands of separate queues.
             </listitem>
             <listitem>
-                <para>Persistence</para>: Support for persistence with QueueStore.
+                Persistence: Support for persistence with QueueStore.
             </listitem>
         </itemizedlist>
     </para>
@@ -101,7 +109,7 @@
         <emphasis role="bold">Multimap</emphasis>
         <itemizedlist>
             <listitem>
-                <para>Values can be Set/List/Queue.</para>
+                Values can be Set/List/Queue.
             </listitem>
         </itemizedlist>
     </para>
@@ -109,7 +117,8 @@
         <emphasis role="bold">Topic</emphasis>
         <itemizedlist>
             <listitem>
-                <para>Total Ordering</para> : Support for global ordering where all Nodes receive all messages in the same order.
+                Total Ordering
+                : Support for global ordering where all Nodes receive all messages in the same order.
             </listitem>
         </itemizedlist>
     </para>
@@ -117,7 +126,8 @@
         <emphasis role="bold">Transactions</emphasis>
         <itemizedlist>
             <listitem>
-                <para><link xlink:href="TransactionInterface"> XA Transaction</link></para>: Support for both 1-phase (local) and 2 phase transactions
+                <link xlink:href="#TransactionInterface">XA Transaction</link>
+                : Support for both 1-phase (local) and 2 phase transactions with a totally new API.
             </listitem>
         </itemizedlist>
     </para>
@@ -125,11 +135,11 @@
         <emphasis role="bold">Client</emphasis>
         <itemizedlist>
             <listitem>
-                <para>New Binary Protocol</para>: A new binary protocol based on portable serialization.
+                New Binary Protocol: A new binary protocol based on portable serialization.
                 The same protocol is used for Java/C/C# and other client
             </listitem>
             <listitem>
-                <para>Smart client</para>: Support for dummy and smart client.
+                Smart client: Support for dummy and smart client.
                 Where a dummy client will maintain a connection to only one member, whereas the smart
                 client can route the operations to the Node that owns the data.
             </listitem>
