@@ -156,7 +156,7 @@
             <listitem>
                 <emphasis role="bold">IQueue changes:</emphasis>
                 <para>There is no change on IQueue API but there are changes how IQueue is configured. With Hazelcast 3.0 there will not be backing map configuration for queue.
-                    Settings like bakup count
+                    Settings like backup count
 
                 </para>
                 <itemizedlist>
