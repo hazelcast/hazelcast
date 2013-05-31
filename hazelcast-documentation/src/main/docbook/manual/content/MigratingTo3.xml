@@ -47,16 +47,112 @@
                 <emphasis role="bold">Removal of lite members:</emphasis>
                 <para>
                     With 3.0 there will be no member type as lite member.
-                    As 3.0 clients are smart client that they know in which node the data is located, you can replace your lite members with native clients.
+                    As 3.0 clients are smart client that they know in which node the data is located, you can replace
+                    your lite members with native clients.
                 </para>
             </listitem>
             <listitem>
-                <emphasis role="bold">Change in listener API:</emphasis>
+                <emphasis role="bold">Renaming "instance" to "distributed object":</emphasis>
                 <para>
-                    With 3.0 there will be no member type as lite member.
-                    As 3.0 clients are smart client that they know in which node the data is located, you can replace your lite members with native clients.
+                    Before 3.0 there was a confusion for the term "instance".
+                    It was used for both the cluster members and the distributed objects (map, queue, topic etc.
+                    instances).
+                    Starting 3.0, the term instance will be only used for hazelcast instances, namely cluster members.
+                    We will use the term "distributed object" for map, queue etc. instances.
+                    So you should replace the related methods with the new renamed ones:
+                    As 3.0 clients are smart client that they know in which node the data is located, you can replace
+                    your lite members with native clients.
+                    <programlisting language="java"><![CDATA[
+                     public static void main(String[] args) throws InterruptedException {
+        Config cfg = new Config();
+        HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
+        IMap map = hz.getMap("test");
+        Collection<Instance> instances = hz.getInstances();
+        for (Instance instance : instances) {
+            if(instance.getInstanceType() == Instance.InstanceType.MAP) {
+                System.out.println("there is a map with name:"+instance.getId());
+            }
+        }
+    }
+    ]]></programlisting>
+                    with
+                    <programlisting language="java"><![CDATA[
+                            public static void main(String[] args) throws InterruptedException {
+        Config cfg = new Config();
+        HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
+        IMap map = hz.getMap("test");
+        Collection<DistributedObject> distributedObjects = hz.getDistributedObjects();
+        for (DistributedObject distributedObject : distributedObjects) {
+            if(distributedObject instanceof IMap)
+                System.out.println("there is a map with name:"+distributedObject.getName());
+        }
+    }
+                            ]]></programlisting>
+
                 </para>
             </listitem>
+
+            <listitem>
+                <emphasis role="bold">Package structure change:</emphasis>
+                <para>
+                    PartitionService has been moved to package "com.hazelcast.core" from "com.hazelcast.partition"
+                </para>
+            </listitem>
+
+            <listitem>
+                <emphasis role="bold">Listener API change:</emphasis>
+                <para>
+                    Before 3.0, you can removeListener methods was taking the Listener object as parameter.
+                    But it causes confusion as same listener object may be used as parameter for different listener
+                    registrations.
+                    So we have changed the listener API. Anymore, addListener methods return you an unique id and you
+                    can remove listener by using this id.
+                    So you should do following replacement if needed:
+                    <programlisting language="java"><![CDATA[
+                        IMap map = instance.getMap("map");
+        map.addEntryListener(listener,true);
+        map.removeEntryListener(listener);
+    ]]></programlisting>
+                    with
+                    <programlisting language="java"><![CDATA[
+                     IMap map = instance.getMap("map");
+        String listenerId = map.addEntryListener(listener, true);
+        map.removeEntryListener(listenerId);
+    ]]></programlisting>
+                </para>
+            </listitem>
+
+            <listitem>
+                <emphasis role="bold">IMap API changes:</emphasis>
+                <itemizedlist>
+                    <listitem>
+                        <para>
+                            tryRemove(K key, long timeout, TimeUnit timeunit) returns boolean indicating whether operation is successful.
+                        </para>
+                    </listitem>
+                    <listitem>
+                        <para>
+                            tryLockAndGet(K key, long time, TimeUnit timeunit) is removed.
+                        </para>
+                    </listitem>
+                    <listitem>
+                        <para>
+                            putAndUnlock(K key, V value) is removed.
+                        </para>
+                    </listitem>
+                    <listitem>
+                        <para>
+                            lockMap(long time, TimeUnit timeunit) and unlockMap() are removed
+                        </para>
+                    </listitem>
+                    <listitem>
+                        <para>
+                            getMapEntry(K key) is renamed as getEntryView(K key). The returned object's type, MapEntry class is renamed as EntryView.
+                        </para>
+                    </listitem>
+                </itemizedlist>
+            </listitem>
+
 
         </itemizedlist>
     </para>
