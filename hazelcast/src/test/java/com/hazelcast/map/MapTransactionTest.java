@@ -21,7 +21,10 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.TransactionalMap;
-import com.hazelcast.instance.StaticNodeFactory;
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
@@ -29,6 +32,7 @@ import com.hazelcast.transaction.TransactionalTaskContext;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
@@ -36,8 +40,9 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
-@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
-public class MapTransactionTest {
+@RunWith(HazelcastJUnit4ClassRunner.class)
+@Category(ParallelTest.class)
+public class MapTransactionTest extends HazelcastTestSupport {
 
     @BeforeClass
     public static void init() {
@@ -52,11 +57,11 @@ public class MapTransactionTest {
     @Test
     public void testCommitOrder() throws TransactionException {
         Config config = new Config();
-        StaticNodeFactory factory = new StaticNodeFactory(4);
-        HazelcastInstance h1 = factory.newHazelcastInstance(config);
-        HazelcastInstance h2 = factory.newHazelcastInstance(config);
-        HazelcastInstance h3 = factory.newHazelcastInstance(config);
-        HazelcastInstance h4 = factory.newHazelcastInstance(config);
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(4);
+        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance h2 = factory.newHazelcastInstance(config);
+        final HazelcastInstance h3 = factory.newHazelcastInstance(config);
+        final HazelcastInstance h4 = factory.newHazelcastInstance(config);
 
         boolean b = h1.executeTransaction(new TransactionalTask<Boolean>() {
             public Boolean execute(TransactionalTaskContext context) throws TransactionException {
@@ -76,9 +81,9 @@ public class MapTransactionTest {
     @Test
     public void testTxnCommit() throws TransactionException {
         Config config = new Config();
-        StaticNodeFactory factory = new StaticNodeFactory(2);
-        HazelcastInstance h1 = factory.newHazelcastInstance(config);
-        HazelcastInstance h2 = factory.newHazelcastInstance(config);
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance h2 = factory.newHazelcastInstance(config);
         final IMap map2 = h2.getMap("default");
 
         boolean b = h1.executeTransaction(new TransactionalTask<Boolean>() {
@@ -103,7 +108,7 @@ public class MapTransactionTest {
     @Test
     public void testTxnBackupDies() throws TransactionException {
         Config config = new Config();
-        StaticNodeFactory factory = new StaticNodeFactory(2);
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance h1 = factory.newHazelcastInstance(config);
         final HazelcastInstance h2 = factory.newHazelcastInstance(config);
         final IMap map1 = h1.getMap("default");
@@ -148,10 +153,10 @@ public class MapTransactionTest {
     @Test
     public void testTxnOwnerDies() throws TransactionException {
         Config config = new Config();
-        StaticNodeFactory factory = new StaticNodeFactory(3);
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         final HazelcastInstance h1 = factory.newHazelcastInstance(config);
-        HazelcastInstance h2 = factory.newHazelcastInstance(config);
-        HazelcastInstance h3 = factory.newHazelcastInstance(config);
+        final HazelcastInstance h2 = factory.newHazelcastInstance(config);
+        final HazelcastInstance h3 = factory.newHazelcastInstance(config);
         final IMap map1 = h1.getMap("default");
         final int size = 50;
 
@@ -196,9 +201,9 @@ public class MapTransactionTest {
     @Test
     public void testTxnSet() throws TransactionException {
         Config config = new Config();
-        StaticNodeFactory factory = new StaticNodeFactory(2);
-        HazelcastInstance h1 = factory.newHazelcastInstance(config);
-        HazelcastInstance h2 = factory.newHazelcastInstance(config);
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance h2 = factory.newHazelcastInstance(config);
         final IMap map2 = h2.getMap("default");
 
         boolean b = h1.executeTransaction(new TransactionalTask<Boolean>() {
@@ -222,9 +227,9 @@ public class MapTransactionTest {
     @Test
     public void testTxnRemove() throws TransactionException {
         Config config = new Config();
-        StaticNodeFactory factory = new StaticNodeFactory(2);
-        HazelcastInstance h1 = factory.newHazelcastInstance(config);
-        HazelcastInstance h2 = factory.newHazelcastInstance(config);
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance h2 = factory.newHazelcastInstance(config);
         final IMap map2 = h2.getMap("default");
         map2.put("1", "1");
         map2.put("2", "2");
@@ -261,9 +266,9 @@ public class MapTransactionTest {
     @Test
     public void testTxnRemoveIfSame() throws TransactionException {
         Config config = new Config();
-        StaticNodeFactory factory = new StaticNodeFactory(2);
-        HazelcastInstance h1 = factory.newHazelcastInstance(config);
-        HazelcastInstance h2 = factory.newHazelcastInstance(config);
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance h2 = factory.newHazelcastInstance(config);
         final IMap map2 = h2.getMap("default");
         map2.put("1", "1");
         map2.put("2", "2");
@@ -302,9 +307,9 @@ public class MapTransactionTest {
     @Test
     public void testTxnDelete() throws TransactionException {
         Config config = new Config();
-        StaticNodeFactory factory = new StaticNodeFactory(2);
-        HazelcastInstance h1 = factory.newHazelcastInstance(config);
-        HazelcastInstance h2 = factory.newHazelcastInstance(config);
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance h2 = factory.newHazelcastInstance(config);
         final IMap map2 = h2.getMap("default");
         map2.put("1", "1");
         map2.put("2", "2");
@@ -341,9 +346,9 @@ public class MapTransactionTest {
     @Test
     public void testTxnPutIfAbsent() throws TransactionException {
         Config config = new Config();
-        StaticNodeFactory factory = new StaticNodeFactory(2);
-        HazelcastInstance h1 = factory.newHazelcastInstance(config);
-        HazelcastInstance h2 = factory.newHazelcastInstance(config);
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance h2 = factory.newHazelcastInstance(config);
         final IMap map2 = h2.getMap("default");
 
         boolean b = h1.executeTransaction(new TransactionalTask<Boolean>() {
@@ -367,9 +372,9 @@ public class MapTransactionTest {
     @Test
     public void testTxnReplace() throws TransactionException {
         Config config = new Config();
-        StaticNodeFactory factory = new StaticNodeFactory(2);
-        HazelcastInstance h1 = factory.newHazelcastInstance(config);
-        HazelcastInstance h2 = factory.newHazelcastInstance(config);
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance h2 = factory.newHazelcastInstance(config);
         final IMap map2 = h2.getMap("default");
 
         boolean b = h1.executeTransaction(new TransactionOptions().setTimeout(1, TimeUnit.SECONDS), new TransactionalTask<Boolean>() {
@@ -395,9 +400,9 @@ public class MapTransactionTest {
     @Test
     public void testTxnReplaceIfSame() throws TransactionException {
         Config config = new Config();
-        StaticNodeFactory factory = new StaticNodeFactory(2);
-        HazelcastInstance h1 = factory.newHazelcastInstance(config);
-        HazelcastInstance h2 = factory.newHazelcastInstance(config);
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance h2 = factory.newHazelcastInstance(config);
         final IMap map2 = h2.getMap("default");
         map2.put("1", "1");
         map2.put("2", "2");
@@ -427,9 +432,9 @@ public class MapTransactionTest {
     @Test
     public void testTxnReplace2() throws TransactionException {
         Config config = new Config();
-        StaticNodeFactory factory = new StaticNodeFactory(2);
-        HazelcastInstance h1 = factory.newHazelcastInstance(config);
-        HazelcastInstance h2 = factory.newHazelcastInstance(config);
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance h2 = factory.newHazelcastInstance(config);
         final IMap map2 = h2.getMap("default");
         map2.put("1", "value2");
         boolean b = h1.executeTransaction(new TransactionalTask<Boolean>() {
