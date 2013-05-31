@@ -102,7 +102,6 @@
         <title>Cluster Utilities</title>
         <xi:include href="cluster/ClusterInterface.xml"/>
         <xi:include href="cluster/IdGenerator.xml"/>
-        <!--<xi:include href="cluster/LiteMember.xml"/>-->
     </chapter>
     <chapter xml:id="Transactions">
         <title>Transactions</title>
@@ -170,12 +169,6 @@
         <xi:include href="client/NativeClient.xml"/>
         <xi:include href="client/MemcacheClient.xml"/>
         <xi:include href="client/RestClient.xml"/>
-    </chapter>
-    <chapter xml:id="Internals">
-        <title>Internals</title>
-        <xi:include href="internals/InternalsSerialization.xml"/>
-        <xi:include href="internals/InternalsClusterMembership.xml"/>
-        <xi:include href="internals/InternalsDistributedMap.xml"/>
     </chapter>
     <chapter xml:id="ManagementCenter">
         <title>Management Center</title>
