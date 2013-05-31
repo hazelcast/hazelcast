@@ -139,20 +139,15 @@ public interface MergePolicy {
             the policy set here. Default policy is hz.ADD_NEW_ENTRY
 
             There are built-in merge policies such as
-            hz.NO_MERGE      ; no entry will merge.
-            hz.ADD_NEW_ENTRY ; entry will be added if the merging entry's key
-                               doesn't exist in the cluster.
-            hz.HIGHER_HITS   ; entry with the higher hits wins.
-            hz.LATEST_UPDATE ; entry with the latest update wins.
+            There are built-in merge policies such as
+            com.hazelcast.map.merge.PassThroughMergePolicy; entry will be added if there is no existing entry for the key.
+            com.hazelcast.map.merge.PutIfAbsentMapMergePolicy ; entry will be added if the merging entry doesn't exist in the cluster.
+            com.hazelcast.map.merge.HigherHitsMapMergePolicy ; entry with the higher hits wins.
+            com.hazelcast.map.merge.LatestUpdateMapMergePolicy ; entry with the latest update wins.
         -->
-        <merge-policy>MY_MERGE_POLICY</merge-policy>
+        <merge-policy>MY_MERGE_POLICY_CLASS</merge-policy>
     </map>
 
-    <merge-policies>
-        <map-merge-policy name="MY_MERGE_POLICY">
-            <class-name>com.acme.MyOwnMergePolicy</class-name>
-        </map-merge-policy>
-    </merge-policies>
     ...
 </hazelcast>
 ]]></programlisting>
