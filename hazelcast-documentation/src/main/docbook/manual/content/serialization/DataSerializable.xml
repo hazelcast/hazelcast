@@ -20,7 +20,6 @@
        xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd">
     <title>Data Serializable</title>
 
-
     <para>
         For a faster serialization of objects, Hazelcast recommends to implement
         <literal>com.hazelcast.nio.serialization.IdentifiedDataSerializable</literal>
@@ -99,12 +98,12 @@
         While Hazelcast serializes a DataSerializable it writes the className first and when de-serializes it,
         className is used to instantiate the object using reflection.
 
-        <sect2>
-            <title>IdentifiedDataSerializable</title>
-        
+
+        <emphasis role="bold">IdentifiedDataSerializable</emphasis>
+
         To avoid the reflection and long class names
         <literal>IdentifiedDataSerializable</literal>
-        can be used instead of <literal>DataSerializable</literal>. Note that
+        can be used instead of<literal>DataSerializable</literal>. Note that
         <literal>IdentifiedDataSerializable</literal>
         extends
         <literal>DataSerializable</literal>
@@ -134,6 +133,5 @@
         object, given the id. So far this is the most efficient
         way of Serialization that Hazelcast supports of the shelf.
 
-        </sect2>
     </para>
 </sect1>
