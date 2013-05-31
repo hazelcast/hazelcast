@@ -131,7 +131,6 @@ public class InterceptorTest {
     @Test
     public void testMapInterceptor() throws InterruptedException {
         Config cfg = new Config();
-        cfg.getMapConfig("default").setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT);
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(cfg);
         final IMap<Object, Object> map = instance1.getMap("testMapInterceptor");
