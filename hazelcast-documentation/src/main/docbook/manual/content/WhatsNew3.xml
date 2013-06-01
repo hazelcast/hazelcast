@@ -29,7 +29,7 @@
                 With Hazelcast 2, there was a single thread.
             </listitem>
             <listitem>
-                <link xlink:href="SPI">SPI</link>: Service Programming Interface for developing new partitioned
+                <link xlink:href="#SPI">SPI</link>: Service Programming Interface for developing new partitioned
                 services, data structures.
                 All Hazelcast data structures like Map, Queue are reimplemented with SPI.
             </listitem>
