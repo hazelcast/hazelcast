@@ -48,20 +48,20 @@ class SocketPacketWriter implements SocketWriter<Packet> {
         return packetWriter.writePacket(socketWritable, socketBuffer);
     }
 
-    interface PacketWriter {
+    private interface PacketWriter {
         boolean writePacket(Packet packet, ByteBuffer socketBB) throws Exception;
     }
 
-    class DefaultPacketWriter implements PacketWriter {
+    private class DefaultPacketWriter implements PacketWriter {
         public boolean writePacket(Packet packet, ByteBuffer socketBB) {
             return packet.writeTo(socketBB);
         }
     }
 
-    class SymmetricCipherPacketWriter implements PacketWriter {
+    private class SymmetricCipherPacketWriter implements PacketWriter {
         boolean sizeWritten = false;
-        ByteBuffer packetBuffer = ByteBuffer.allocate(ioService.getSocketSendBufferSize());
-        final ByteBuffer cipherBuffer = ByteBuffer.allocate(ioService.getSocketSendBufferSize());
+        ByteBuffer packetBuffer = ByteBuffer.allocate(ioService.getSocketSendBufferSize() * IOService.KILO_BYTE);
+        final ByteBuffer cipherBuffer = ByteBuffer.allocate(ioService.getSocketSendBufferSize() * IOService.KILO_BYTE);
         final Cipher cipher;
 
         SymmetricCipherPacketWriter() {

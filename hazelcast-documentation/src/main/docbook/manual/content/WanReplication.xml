@@ -105,7 +105,7 @@
     <map name="my-shared-map">
         ...
         <wan-replication-ref name="my-wan-cluster">
-            <merge-policy>hz.PASS_THROUGH</merge-policy>
+            <merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy>
         </wan-replication-ref>
     </map>
 </network>
@@ -125,9 +125,7 @@
         Note that you will also need to define a
         <literal>merge policy</literal>
         for merging replica entries and resolving conflicts
-        during the merge. Default merge policy is
-        <literal>hz.PASS_THROUGH</literal>
-        which will apply all in-coming updates as is.
+        during the merge.
     </para>
 
 </simplesect>

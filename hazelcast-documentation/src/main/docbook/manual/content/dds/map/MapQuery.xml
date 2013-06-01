@@ -320,9 +320,6 @@ imap.addIndex("active", false);    // not ordered, because boolean field cannot 
         parameter should be<literal>true</literal>, otherwise set
         it to<literal>false</literal>.
     </para>
-
-
-
     <para>
         <emphasis role="bold">Continuous Query</emphasis>
     </para>

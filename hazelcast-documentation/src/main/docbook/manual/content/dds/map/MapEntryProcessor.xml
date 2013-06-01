@@ -24,7 +24,6 @@
         Practically, hazelcast locks the entry applies your modification then unlocks the entry.
         If entry processing is the major operation for a map and the map consists of complex objects then using Object type as in-memory-format
         is recommended to minimize serialization cost.
-
     </para>
     <para>
         There are two methods in IMap interface for entry processing:
