@@ -30,7 +30,6 @@ public final class PoolExecutorThreadFactory extends AbstractExecutorThreadFacto
     private final String threadNamePrefix;
     private final AtomicInteger idGen = new AtomicInteger(0);
     private final Queue<Integer> idQ = new LinkedBlockingQueue<Integer>(1000); // to reuse previous thread IDs
-    //TODO @ali idQ is useless?
 
     public PoolExecutorThreadFactory(ThreadGroup threadGroup, String threadNamePrefix, ClassLoader classLoader) {
         super(threadGroup, classLoader);
@@ -60,6 +59,11 @@ public final class PoolExecutorThreadFactory extends AbstractExecutorThreadFacto
                 super.run();
             } catch (OutOfMemoryError e) {
                 OutOfMemoryErrorDispatcher.onOutOfMemory(e);
+            } finally {
+                try {
+                    idQ.offer(id);
+                } catch (Throwable ignored) {
+                }
             }
         }
     }
