@@ -90,7 +90,7 @@ public class NearCache {
                     public void run() {
                         try {
                             // todo test adding a sorted set
-                            List<CacheRecord> values = new ArrayList(cache.values());
+                            List<CacheRecord> values = new ArrayList<CacheRecord>(cache.values());
                             Collections.sort(values);
                             int evictSize = Math.min(values.size(), cache.size() * evictionPercentage / 100);
                             for (int i = 0; i < evictSize; i++) {
@@ -104,7 +104,7 @@ public class NearCache {
             } catch (RejectedExecutionException e) {
                 canEvict.set(true);
             } catch (Exception e) {
-                ExceptionUtil.rethrow(e);
+                throw ExceptionUtil.rethrow(e);
             }
         }
     }
@@ -119,9 +119,7 @@ public class NearCache {
                     public void run() {
                         try {
                             lastCleanup = Clock.currentTimeMillis();
-                            Iterator<Map.Entry<Data, CacheRecord>> iterator = cache.entrySet().iterator();
-                            while (iterator.hasNext()) {
-                                Map.Entry<Data, CacheRecord> entry = iterator.next();
+                            for (Map.Entry<Data, CacheRecord> entry : cache.entrySet()) {
                                 if (entry.getValue().expired()) {
                                     cache.remove(entry.getKey());
                                 }
@@ -134,7 +132,7 @@ public class NearCache {
             } catch (RejectedExecutionException e) {
                 canCleanUp.set(true);
             } catch (Exception e) {
-                ExceptionUtil.rethrow(e);
+                throw ExceptionUtil.rethrow(e);
             }
         }
     }
@@ -189,9 +187,9 @@ public class NearCache {
         }
 
         public int compareTo(CacheRecord o) {
-            if (evictionPolicy.equals("LRU"))
+            if (EvictionPolicy.LRU.equals(evictionPolicy))
                 return ((Long) this.lastAccessTime).compareTo((o.lastAccessTime));
-            else if (evictionPolicy.equals("LFU"))
+            else if (EvictionPolicy.LFU.equals(evictionPolicy))
                 return ((Integer) this.hit.get()).compareTo((o.hit.get()));
 
             return 0;

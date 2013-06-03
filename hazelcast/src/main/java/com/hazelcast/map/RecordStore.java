@@ -97,8 +97,6 @@ public interface RecordStore {
 
     Map.Entry<Data,Object> getMapEntryObject(Data dataKey);
 
-    void setRecordValue(Record record, Object value);
-
     void flush();
 
     void removeAll();

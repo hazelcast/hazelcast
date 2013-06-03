@@ -600,9 +600,9 @@ public class MapService implements ManagedService, MigrationAwareService,
                     value = value != null ? value : toObject(dataValue);
                     testValue = value;
                 }
-                key = key != null ? key : toObject(key);
+                key = key != null ? key : toObject(dataKey);
                 QueryEventFilter queryEventFilter = (QueryEventFilter) filter;
-                QueryEntry entry = new QueryEntry(getSerializationService(), dataKey, dataKey, testValue);
+                QueryEntry entry = new QueryEntry(getSerializationService(), dataKey, key, testValue);
                 if (queryEventFilter.eval(entry)) {
                     if (queryEventFilter.isIncludeValue()) {
                         registrationsWithValue.add(candidate);
@@ -755,19 +755,11 @@ public class MapService implements ManagedService, MigrationAwareService,
                     public int compare(AbstractRecord o1, AbstractRecord o2) {
                         return o1.getLastAccessTime().compareTo(o2.getLastAccessTime());
                     }
-
-                    public boolean equals(Object obj) {
-                        return this.equals(obj);
-                    }
                 };
             } else if (evictionPolicy == MapConfig.EvictionPolicy.LFU) {
                 comparator = new Comparator<AbstractRecord>() {
                     public int compare(AbstractRecord o1, AbstractRecord o2) {
                         return o1.getHits().compareTo(o2.getHits());
-                    }
-
-                    public boolean equals(Object obj) {
-                        return this.equals(obj);
                     }
                 };
             }

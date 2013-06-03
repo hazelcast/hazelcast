@@ -502,12 +502,16 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
                 switch (event.getEventType()){
                     case ADDED:
                         listener.entryAdded(entryEvent);
+                        break;
                     case REMOVED:
                         listener.entryRemoved(entryEvent);
+                        break;
                     case UPDATED:
                         listener.entryUpdated(entryEvent);
+                        break;
                     case EVICTED:
                         listener.entryEvicted(entryEvent);
+                        break;
                 }
             }
         };

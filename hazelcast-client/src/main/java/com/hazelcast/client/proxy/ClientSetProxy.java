@@ -200,8 +200,10 @@ public class ClientSetProxy<E> extends ClientProxy implements ISet<E> {
                 switch (event.getEventType()){
                     case ADDED:
                         listener.itemAdded(itemEvent);
+                        break;
                     case REMOVED:
                         listener.itemRemoved(itemEvent);
+                        break;
 
                 }
             }

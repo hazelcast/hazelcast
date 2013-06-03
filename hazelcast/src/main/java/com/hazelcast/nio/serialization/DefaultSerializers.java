@@ -17,6 +17,7 @@
 package com.hazelcast.nio.serialization;
 
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -177,10 +178,14 @@ public class DefaultSerializers {
             } else {
                 objectOutputStream = new ObjectOutputStream(outputStream);
             }
-            if (shared) {
-                objectOutputStream.writeObject(obj);
-            } else {
-                objectOutputStream.writeUnshared(obj);
+            try {
+                if (shared) {
+                    objectOutputStream.writeObject(obj);
+                } else {
+                    objectOutputStream.writeUnshared(obj);
+                }
+            } finally {
+                IOUtil.closeResource(objectOutputStream);
             }
         }
     }
