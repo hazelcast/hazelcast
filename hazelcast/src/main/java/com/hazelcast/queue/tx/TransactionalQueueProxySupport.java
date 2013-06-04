@@ -16,9 +16,11 @@
 
 package com.hazelcast.queue.tx;
 
+import com.hazelcast.config.QueueConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.QueueItem;
 import com.hazelcast.queue.QueueService;
+import com.hazelcast.queue.SizeOperation;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
@@ -27,8 +29,7 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.LinkedList;
 import java.util.concurrent.Future;
 
 /**
@@ -39,26 +40,30 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
     protected final String name;
     protected final Transaction tx;
     protected final int partitionId;
-    private final Set<Long> itemIdSet = new HashSet<Long>();
+    private final LinkedList<QueueItem> offerIdQueue = new LinkedList<QueueItem>();
+    private final LinkedList<Long> pollIdQueue = new LinkedList<Long>();
+    protected final QueueConfig config;
 
     protected TransactionalQueueProxySupport(NodeEngine nodeEngine, QueueService service, String name, Transaction tx) {
         super(nodeEngine, service);
         this.name = name;
         this.tx = tx;
         partitionId = nodeEngine.getPartitionService().getPartitionId(name);
+        config = nodeEngine.getConfig().getQueueConfig(name);
     }
 
     public boolean offerInternal(Data data, long timeout){
         throwExceptionIfNull(data);
-        TxnReserveOfferOperation operation = new TxnReserveOfferOperation(name, timeout);
+        TxnReserveOfferOperation operation = new TxnReserveOfferOperation(name, timeout, offerIdQueue.size());
         try {
             Invocation invocation = getNodeEngine().getOperationService().createInvocationBuilder(QueueService.SERVICE_NAME, operation, partitionId).build();
             Future<Long> f = invocation.invoke();
             Long itemId = f.get();
             if (itemId != null){
-                if(!itemIdSet.add(itemId)){
+                if(offerIdQueue.contains(itemId) || pollIdQueue.contains(itemId)){
                     throw new TransactionException("Duplicate itemId: " + itemId);
                 }
+                offerIdQueue.offer(new QueueItem(null, itemId, data));
                 tx.addTransactionLog(new QueueTransactionLog(itemId, name, partitionId, new TxnOfferOperation(name, itemId, data)));
                 return true;
             }
@@ -69,15 +74,22 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
     }
 
     public Data pollInternal(long timeout){
-        TxnReservePollOperation operation = new TxnReservePollOperation(name, timeout);
+        QueueItem reservedOffer = offerIdQueue.peek();
+        TxnReservePollOperation operation = new TxnReservePollOperation(name, timeout, reservedOffer == null ? -1 : reservedOffer.getItemId());
         try {
             Invocation invocation = getNodeEngine().getOperationService().createInvocationBuilder(QueueService.SERVICE_NAME, operation, partitionId).build();
             Future<QueueItem> f = invocation.invoke();
             QueueItem item = f.get();
             if (item != null){
-                if(!itemIdSet.add(item.getItemId())){
+                if (reservedOffer != null && item.getItemId() == reservedOffer.getItemId()){
+                    offerIdQueue.poll();
+                    tx.removeTransactionLog(reservedOffer.getItemId());
+                    return reservedOffer.getData();
+                }
+                if(pollIdQueue.contains(item.getItemId()) || offerIdQueue.contains(item.getItemId())){
                     throw new TransactionException("Duplicate itemId: " + item.getItemId());
                 }
+                pollIdQueue.offer(item.getItemId());
                 tx.addTransactionLog(new QueueTransactionLog(item.getItemId(), name, partitionId, new TxnPollOperation(name, item.getItemId())));
                 return item.getData();
             }
@@ -85,6 +97,19 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
             ExceptionUtil.rethrow(t);
         }
         return null;
+    }
+
+    public int size() {
+        SizeOperation operation = new SizeOperation(name);
+        try {
+            Invocation invocation = getNodeEngine().getOperationService().createInvocationBuilder(QueueService.SERVICE_NAME, operation, partitionId).build();
+            Future<Integer> f = invocation.invoke();
+            Integer size = f.get();
+            return size + offerIdQueue.size();
+        } catch (Throwable t) {
+            ExceptionUtil.rethrow(t);
+        }
+        return 0;
     }
 
     public Object getId() {

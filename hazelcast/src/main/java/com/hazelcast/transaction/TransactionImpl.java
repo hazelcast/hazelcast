@@ -105,7 +105,9 @@ final class TransactionImpl implements Transaction {
 
     public void removeTransactionLog(Object key){
         TransactionLog removed = txLogMap.remove(key);
-        txLogs.remove(removed);
+        if (removed != null){
+            txLogs.remove(removed);
+        }
     }
 
     private void checkThread() {

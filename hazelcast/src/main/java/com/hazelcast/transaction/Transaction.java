@@ -35,6 +35,8 @@ public interface Transaction {
 
     void addTransactionLog(TransactionLog transactionLog);
 
+    void removeTransactionLog(Object key);
+
     TransactionLog getTransactionLog(Object key);
 
     String getTxnId();
