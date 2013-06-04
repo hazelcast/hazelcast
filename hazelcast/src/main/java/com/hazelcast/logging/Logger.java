@@ -41,7 +41,7 @@ public class Logger {
         String loggerClass = System.getProperty("hazelcast.logging.class");
         if (loggerClass != null) {
             try {
-                loggerFactory = (LoggerFactory) ClassLoaderUtil.loadClass(loggerClass).newInstance();
+                loggerFactory = (LoggerFactory) ClassLoaderUtil.loadClass(null, loggerClass).newInstance();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -50,13 +50,13 @@ public class Logger {
             if (loggerType != null) {
                 if ("log4j".equals(loggerType)) {
                     try {
-                        loggerFactory = (LoggerFactory) ClassLoaderUtil.loadClass("com.hazelcast.logging.Log4jFactory").newInstance();
+                        loggerFactory = (LoggerFactory) ClassLoaderUtil.loadClass(null, "com.hazelcast.logging.Log4jFactory").newInstance();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                 } else if ("slf4j".equals(loggerType)) {
                     try {
-                        loggerFactory = (LoggerFactory) ClassLoaderUtil.loadClass("com.hazelcast.logging.Slf4jFactory").newInstance();
+                        loggerFactory = (LoggerFactory) ClassLoaderUtil.loadClass(null, "com.hazelcast.logging.Slf4jFactory").newInstance();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }

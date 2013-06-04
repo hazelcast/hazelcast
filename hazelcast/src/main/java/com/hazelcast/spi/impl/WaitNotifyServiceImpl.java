@@ -50,7 +50,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
         logger = node.getLogger(WaitNotifyService.class.getName());
 
         expirationService = Executors.newSingleThreadExecutor(
-                new SingleExecutorThreadFactory(node.threadGroup, node.getConfig().getClassLoader(), node.getThreadNamePrefix("wait-notify")));
+                new SingleExecutorThreadFactory(node.threadGroup, node.getConfigClassLoader(), node.getThreadNamePrefix("wait-notify")));
 
         expirationTask = expirationService.submit(new Runnable() {
             public void run() {

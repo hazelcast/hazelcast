@@ -65,8 +65,8 @@ public class MulticastService implements Runnable {
         Config config = node.getConfig();
         this.multicastSocket = multicastSocket;
 
-        sendOutput = node.serializationService.createObjectDataOutput(DATAGRAM_BUFFER_SIZE);
-        receiveOutput = node.serializationService.createObjectDataOutput(DATAGRAM_BUFFER_SIZE);
+        sendOutput = node.getSerializationService().createObjectDataOutput(DATAGRAM_BUFFER_SIZE);
+        receiveOutput = node.getSerializationService().createObjectDataOutput(DATAGRAM_BUFFER_SIZE);
 
         this.datagramPacketReceive = new DatagramPacket(new byte[DATAGRAM_BUFFER_SIZE], DATAGRAM_BUFFER_SIZE);
         final MulticastConfig multicastConfig = config.getNetworkConfig().getJoin().getMulticastConfig();
@@ -155,7 +155,7 @@ public class MulticastService implements Runnable {
                 final int count = inflater.inflate(out.getBuffer());
                 out.position(count);
 
-                ObjectDataInput input = node.serializationService.createObjectDataInput(out.toByteArray());
+                ObjectDataInput input = node.getSerializationService().createObjectDataInput(out.toByteArray());
                 final byte packetVersion = input.readByte();
                 if (packetVersion != Packet.PACKET_VERSION) {
                     logger.log(Level.WARNING, "Received a JoinRequest with different packet version: "

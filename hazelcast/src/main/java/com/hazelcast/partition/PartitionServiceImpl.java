@@ -26,6 +26,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.util.Clock;
 
 import java.util.*;
@@ -566,6 +567,9 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             if (thisAddress.equals(partition.getOwner()) && partition.getReplicaAddress(1) != null) {
                 SyncReplicaVersion op = new SyncReplicaVersion(1);
                 op.setService(this);
+                op.setNodeEngine(nodeEngine);
+                op.setResponseHandler(ResponseHandlerFactory
+                        .createErrorLoggingResponseHandler(node.getLogger(SyncReplicaVersion.class)));
                 op.setPartitionId(partition.getPartitionId());
                 nodeEngine.getOperationService().executeOperation(op);
             }
@@ -647,7 +651,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
 
     public final int getPartitionId(Data key) {
         int hash = key.getPartitionHash();
-        return (hash == Integer.MIN_VALUE) ? 0 : Math.abs(hash) % partitionCount;
+        return (hash != Integer.MIN_VALUE) ? Math.abs(hash) % partitionCount : 0;
     }
 
     public final int getPartitionId(Object key) {

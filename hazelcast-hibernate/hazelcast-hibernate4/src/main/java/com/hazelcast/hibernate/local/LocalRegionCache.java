@@ -238,6 +238,24 @@ public class LocalRegionCache implements RegionCache {
             final long anotherVal = o.value.getCreationTime();
             return (thisVal < anotherVal ? -1 : (thisVal == anotherVal ? 0 : 1));
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            EvictionEntry that = (EvictionEntry) o;
+
+            if (key != null ? !key.equals(that.key) : that.key != null) return false;
+            if (value != null ? !value.equals(that.value) : that.value != null) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return key != null ? key.hashCode() : 0;
+        }
     }
 
     private static final SoftLock LOCK_SUCCESS = new SoftLock() {

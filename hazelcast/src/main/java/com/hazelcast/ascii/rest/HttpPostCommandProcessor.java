@@ -41,7 +41,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 command.setResponse(HttpCommand.RES_204);
             } else if (uri.startsWith(URI_MANCENTER_CHANGE_URL)) {
                 if (textCommandService.getNode().getGroupProperties().MC_URL_CHANGE_ENABLED.getBoolean()) {
-                    byte[] res = null;
+                    byte[] res = HttpCommand.RES_204;
                     byte[] data = command.getData();
                     String[] strList = new String(data).split("&");
                     String cluster = URLDecoder.decode(strList[0], "UTF-8");

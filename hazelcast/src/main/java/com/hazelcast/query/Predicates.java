@@ -48,7 +48,9 @@ public final class Predicates {
             }
             Comparable fromConvertedValue = convert(entry, from);
             Comparable toConvertedValue = convert(entry, to);
-            if (firstValue == null || fromConvertedValue == null || toConvertedValue == null) return false;
+            if (fromConvertedValue == null || toConvertedValue == null) {
+                return false;
+            }
             return firstValue.compareTo(fromConvertedValue) >= 0 && firstValue.compareTo(toConvertedValue) <= 0;
         }
 

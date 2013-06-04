@@ -186,7 +186,7 @@ public class PartitionRecordStore implements RecordStore {
         if (record == null) {
             // already removed from map by eviction but still need to delete it
             if (mapContainer.getStore() != null && mapContainer.getStore().load(mapService.toObject(dataKey)) != null) {
-                mapStoreDelete(record, dataKey);
+                mapStoreDelete(null, dataKey);
             }
         } else {
             accessRecord(record);
@@ -276,7 +276,7 @@ public class PartitionRecordStore implements RecordStore {
             if (mapContainer.getStore() != null) {
                 oldValue = mapContainer.getStore().load(mapService.toObject(dataKey));
                 if (oldValue != null) {
-                    mapStoreDelete(record, dataKey);
+                    mapStoreDelete(null, dataKey);
                 }
             }
         } else {
@@ -297,7 +297,7 @@ public class PartitionRecordStore implements RecordStore {
             if (mapContainer.getStore() != null) {
                 oldValue = mapContainer.getStore().load(mapService.toObject(dataKey));
                 if (oldValue != null) {
-                    mapStoreDelete(record, dataKey);
+                    mapStoreDelete(null, dataKey);
                 }
             }
         } else {
@@ -630,7 +630,7 @@ public class PartitionRecordStore implements RecordStore {
 
     }
 
-    public void setRecordValue(Record record, Object value) {
+    private void setRecordValue(Record record, Object value) {
         accessRecord(record);
         record.onUpdate();
         if (record instanceof DataRecord)

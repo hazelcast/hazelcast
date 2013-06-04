@@ -96,10 +96,11 @@ public class QueueContainer implements DataSerializable {
     }
 
     //TX Poll
-    public QueueItem txnPollReserve() {
+    public QueueItem txnPollReserve(long reservedOfferId) {
         QueueItem item = getItemQueue().poll();
         if (item == null) {
-            return null;
+            item = txMap.remove(reservedOfferId);
+            return item;
         }
         if (store.isEnabled() && item.getData() == null) {
             try {

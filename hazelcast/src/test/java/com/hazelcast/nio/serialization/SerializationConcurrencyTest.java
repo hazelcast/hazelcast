@@ -26,7 +26,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -55,7 +54,7 @@ public class SerializationConcurrencyTest {
                 throw new IllegalArgumentException();
             }
         };
-        final SerializationService ss = new SerializationServiceImpl(0, Collections.singletonMap(FACTORY_ID, portableFactory));
+        final SerializationService ss = new SerializationServiceBuilder().addPortableFactory(FACTORY_ID, portableFactory).build();
 
         final int k = 10;
         final AtomicBoolean error = new AtomicBoolean(false);

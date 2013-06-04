@@ -16,9 +16,6 @@
 
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.config.GlobalSerializerConfig;
-import com.hazelcast.config.SerializationConfig;
-import com.hazelcast.config.TypeSerializerConfig;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.core.PartitionAware;
@@ -50,119 +47,24 @@ public final class SerializationServiceImpl implements SerializationService {
 
     private final ConcurrentMap<Class, TypeSerializer> typeMap = new ConcurrentHashMap<Class, TypeSerializer>();
     private final ConcurrentMap<Integer, TypeSerializer> idMap = new ConcurrentHashMap<Integer, TypeSerializer>();
-    private final AtomicReference<TypeSerializer> fallback = new AtomicReference<TypeSerializer>();
+    private final AtomicReference<TypeSerializer> global = new AtomicReference<TypeSerializer>();
 
     private final Queue<ContextAwareDataOutput> outputPool = new ConcurrentLinkedQueue<ContextAwareDataOutput>();
     private final DataSerializer dataSerializer;
     private final PortableSerializer portableSerializer;
+    private final ClassLoader classLoader;
     private final ManagedContext managedContext;
     private final SerializationContextImpl serializationContext;
 
     private volatile boolean active = true;
 
-    public SerializationServiceImpl(int version) {
-        this(version, Collections.<Integer, DataSerializableFactory>emptyMap(), Collections.<Integer, PortableFactory>emptyMap(), null);
-    }
+    SerializationServiceImpl(int version, ClassLoader classLoader,
+                             Map<Integer, ? extends DataSerializableFactory> dataSerializableFactories,
+                             Map<Integer, ? extends PortableFactory> portableFactories,
+                             Collection<ClassDefinition> classDefinitions, boolean checkClassDefErrors,
+                             ManagedContext managedContext) {
 
-    public SerializationServiceImpl(int version, Map<Integer, ? extends PortableFactory> portableFactoryMap) {
-        this(version, Collections.<Integer, DataSerializableFactory>emptyMap(), portableFactoryMap, null);
-    }
-
-    public SerializationServiceImpl(SerializationConfig config, ManagedContext managedContext) throws Exception {
-        this(config.getPortableVersion(), createDataSerializableFactories(config), createPortableFactories(config), managedContext);
-        if (config.getGlobalSerializer() != null) {
-            GlobalSerializerConfig globalSerializerConfig = config.getGlobalSerializer();
-            TypeSerializer serializer = globalSerializerConfig.getImplementation();
-            if (serializer == null) {
-                serializer = ClassLoaderUtil.newInstance(globalSerializerConfig.getClassName());
-            }
-            registerFallback(serializer);
-        }
-        final Collection<TypeSerializerConfig> typeSerializers = config.getTypeSerializers();
-        for (TypeSerializerConfig typeSerializerConfig : typeSerializers) {
-            TypeSerializer serializer = typeSerializerConfig.getImplementation();
-            if (serializer == null) {
-                serializer = ClassLoaderUtil.newInstance(typeSerializerConfig.getClassName());
-            }
-            Class typeClass = typeSerializerConfig.getTypeClass();
-            if (typeClass == null) {
-                typeClass = ClassLoaderUtil.loadClass(typeSerializerConfig.getTypeClassName());
-            }
-            register(serializer, typeClass);
-        }
-        registerConfiguredClassDefinitions(config);
-    }
-
-    private static Map<Integer, DataSerializableFactory> createDataSerializableFactories(SerializationConfig config) throws Exception {
-        final Map<Integer, DataSerializableFactory> dataSerializableFactories = new HashMap<Integer, DataSerializableFactory>(config.getDataSerializableFactories());
-        final Map<Integer, String> dataSerializableFactoryClasses = config.getDataSerializableFactoryClasses();
-        for (Map.Entry<Integer, String> entry : dataSerializableFactoryClasses.entrySet()) {
-            if (dataSerializableFactories.containsKey(entry.getKey())) {
-                throw new IllegalArgumentException("DataSerializableFactory with factoryId '" + entry.getKey() + "' is already registered!");
-            }
-            DataSerializableFactory f = ClassLoaderUtil.newInstance(entry.getValue());
-            dataSerializableFactories.put(entry.getKey(), f);
-        }
-        for (Map.Entry<Integer, DataSerializableFactory> entry : dataSerializableFactories.entrySet()) {
-            if (entry.getKey() <= 0 ) {
-                throw new IllegalArgumentException("DataSerializableFactory factoryId must be positive! -> " + entry.getValue());
-            }
-        }
-        return dataSerializableFactories;
-    }
-
-    private static Map<Integer, PortableFactory> createPortableFactories(SerializationConfig config) throws Exception {
-        final Map<Integer, PortableFactory> portableFactories = new HashMap<Integer, PortableFactory>(config.getPortableFactories());
-        final Map<Integer, String> portableFactoryClasses = config.getPortableFactoryClasses();
-        for (Map.Entry<Integer, String> entry : portableFactoryClasses.entrySet()) {
-            if (portableFactories.containsKey(entry.getKey())) {
-                throw new IllegalArgumentException("PortableFactory with factoryId '" + entry.getKey() + "' is already registered!");
-            }
-            PortableFactory f = ClassLoaderUtil.newInstance(entry.getValue());
-            portableFactories.put(entry.getKey(), f);
-        }
-        for (Map.Entry<Integer, PortableFactory> entry : portableFactories.entrySet()) {
-            if (entry.getKey() <= 0 ) {
-                throw new IllegalArgumentException("PortableFactory factoryId must be positive! -> " + entry.getValue());
-            }
-        }
-        return portableFactories;
-    }
-
-    private void registerConfiguredClassDefinitions(SerializationConfig config) {
-        final Collection<ClassDefinition> classDefinitions = config.getClassDefinitions();
-        final Map<Integer, ClassDefinition> classDefMap = new HashMap<Integer, ClassDefinition>(classDefinitions.size());
-        for (ClassDefinition cd : classDefinitions) {
-            if (classDefMap.containsKey(cd.getClassId())) {
-                throw new HazelcastSerializationException("Duplicate registration found for class-id[" + cd.getClassId() + "]!");
-            }
-            classDefMap.put(cd.getClassId(), cd);
-        }
-        for (ClassDefinition classDefinition : classDefinitions) {
-            registerClassDefinition(classDefinition, classDefMap, config.isCheckClassDefErrors());
-        }
-    }
-
-    private void registerClassDefinition(ClassDefinition cd, Map<Integer, ClassDefinition> classDefMap, boolean checkClassDefErrors) {
-        for (int i = 0; i < cd.getFieldCount(); i++) {
-            FieldDefinition fd = cd.get(i);
-            if (fd.getType() == FieldType.PORTABLE || fd.getType() == FieldType.PORTABLE_ARRAY) {
-                int classId = fd.getClassId();
-                ClassDefinition nestedCd = classDefMap.get(classId);
-                if (nestedCd != null) {
-                    ((ClassDefinitionImpl) cd).addClassDef(nestedCd);
-                    registerClassDefinition(nestedCd, classDefMap, checkClassDefErrors);
-                    serializationContext.registerClassDefinition(nestedCd);
-                } else if (checkClassDefErrors) {
-                    throw new HazelcastSerializationException("Could not find registered ClassDefinition for class-id: " + classId);
-                }
-            }
-        }
-        serializationContext.registerClassDefinition(cd);
-    }
-
-    public SerializationServiceImpl(int version, Map<Integer, ? extends DataSerializableFactory> dataSerializableFactories,
-                                    Map<Integer, ? extends PortableFactory> portableFactories, ManagedContext managedContext) {
+        this.classLoader = classLoader;
         this.managedContext = managedContext;
         PortableHookLoader loader = new PortableHookLoader(portableFactories);
         serializationContext = new SerializationContextImpl(loader.getFactories().keySet(), version);
@@ -195,6 +97,38 @@ public final class SerializationServiceImpl implements SerializationService {
         safeRegister(Serializable.class, new ObjectSerializer());
         safeRegister(Class.class, new ClassSerializer());
 
+        registerClassDefinitions(classDefinitions, checkClassDefErrors);
+    }
+
+    private void registerClassDefinitions(final Collection<ClassDefinition> classDefinitions, boolean checkClassDefErrors) {
+        final Map<Integer, ClassDefinition> classDefMap = new HashMap<Integer, ClassDefinition>(classDefinitions.size());
+        for (ClassDefinition cd : classDefinitions) {
+            if (classDefMap.containsKey(cd.getClassId())) {
+                throw new HazelcastSerializationException("Duplicate registration found for class-id[" + cd.getClassId() + "]!");
+            }
+            classDefMap.put(cd.getClassId(), cd);
+        }
+        for (ClassDefinition classDefinition : classDefinitions) {
+            registerClassDefinition(classDefinition, classDefMap, checkClassDefErrors);
+        }
+    }
+
+    private void registerClassDefinition(ClassDefinition cd, Map<Integer, ClassDefinition> classDefMap, boolean checkClassDefErrors) {
+        for (int i = 0; i < cd.getFieldCount(); i++) {
+            FieldDefinition fd = cd.get(i);
+            if (fd.getType() == FieldType.PORTABLE || fd.getType() == FieldType.PORTABLE_ARRAY) {
+                int classId = fd.getClassId();
+                ClassDefinition nestedCd = classDefMap.get(classId);
+                if (nestedCd != null) {
+                    ((ClassDefinitionImpl) cd).addClassDef(nestedCd);
+                    registerClassDefinition(nestedCd, classDefMap, checkClassDefErrors);
+                    serializationContext.registerClassDefinition(nestedCd);
+                } else if (checkClassDefErrors) {
+                    throw new HazelcastSerializationException("Could not find registered ClassDefinition for class-id: " + classId);
+                }
+            }
+        }
+        serializationContext.registerClassDefinition(cd);
     }
 
     @SuppressWarnings("unchecked")
@@ -353,10 +287,10 @@ public final class SerializationServiceImpl implements SerializationService {
     }
 
     public ObjectDataInputStream createObjectDataInputStream(InputStream in) {
-        return new ObjectDataInputStream(in, this);
+        return new ObjectDataInputStream(in, this, classLoader);
     }
 
-    public void register(final TypeSerializer serializer, final Class type) {
+    public void register(Class type, TypeSerializer serializer) {
         if (type == null) {
             throw new IllegalArgumentException("Class type information is required!");
         }
@@ -367,8 +301,8 @@ public final class SerializationServiceImpl implements SerializationService {
         safeRegister(type, serializer);
     }
 
-    public void registerFallback(final TypeSerializer serializer) {
-        if (!fallback.compareAndSet(null, serializer)) {
+    public void registerGlobal(final TypeSerializer serializer) {
+        if (!global.compareAndSet(null, serializer)) {
             throw new IllegalStateException("Fallback serializer is already registered!");
         }
     }
@@ -405,7 +339,7 @@ public final class SerializationServiceImpl implements SerializationService {
                     }
                 }
             }
-            if (serializer == null && (serializer = fallback.get()) != null) {
+            if (serializer == null && (serializer = global.get()) != null) {
                 safeRegister(type, serializer);
             }
         }
@@ -479,7 +413,7 @@ public final class SerializationServiceImpl implements SerializationService {
         }
         typeMap.clear();
         idMap.clear();
-        fallback.set(null);
+        global.set(null);
         constantTypesMap.clear();
         for (ContextAwareDataOutput output : outputPool) {
             output.close();
@@ -598,6 +532,10 @@ public final class SerializationServiceImpl implements SerializationService {
             }
             return currentClassDef;
         }
+    }
+
+    public ClassLoader getClassLoader() {
+        return classLoader;
     }
 
     private static void compress(byte[] input, OutputStream out) throws IOException {

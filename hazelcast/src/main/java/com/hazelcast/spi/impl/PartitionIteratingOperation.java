@@ -35,7 +35,7 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
     private transient Map<Integer, Object> results;
 
     public PartitionIteratingOperation(List<Integer> partitions, OperationFactory operationFactory) {
-        this.partitions = partitions;
+        this.partitions = partitions != null ? partitions : Collections.<Integer>emptyList();
         this.operationFactory = operationFactory;
     }
 
@@ -44,7 +44,7 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
 
     public final void run() throws Exception {
         final NodeEngine nodeEngine = getNodeEngine();
-        results = new HashMap<Integer, Object>(partitions != null ? partitions.size() : 0);
+        results = new HashMap<Integer, Object>(partitions.size());
         try {
             Map<Integer, ResponseQueue> responses = new HashMap<Integer, ResponseQueue>(partitions.size());
             for (final int partitionId : partitions) {

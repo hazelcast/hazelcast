@@ -23,6 +23,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.exception.RetryableException;
 
 import java.io.IOException;
 import java.util.logging.Level;
@@ -82,7 +83,11 @@ public class SyncReplicaVersion extends Operation implements PartitionAwareOpera
 
     public void logError(Throwable e) {
         final ILogger logger = getLogger();
-        logger.log(Level.FINEST, e.getClass() + ": " + e.getMessage());
+        if (e instanceof RetryableException) {
+            logger.log(Level.FINEST, e.getClass() + ": " + e.getMessage());
+        } else {
+            logger.log(Level.WARNING, e.toString());
+        }
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
@@ -91,5 +96,14 @@ public class SyncReplicaVersion extends Operation implements PartitionAwareOpera
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("SyncReplicaVersion{");
+        sb.append("partitionId=").append(getPartitionId());
+        sb.append(", replicaIndex=").append(syncReplicaIndex);
+        sb.append('}');
+        return sb.toString();
     }
 }

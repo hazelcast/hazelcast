@@ -126,7 +126,7 @@
         <emphasis role="bold">Transactions</emphasis>
         <itemizedlist>
             <listitem>
-                <link xlink:href="#TransactionInterface">XA Transaction</link>
+                <link xlink:href="#TransactionInterface">Distributed Transaction</link>
                 : Support for both 1-phase (local) and 2 phase transactions with a totally new API.
             </listitem>
         </itemizedlist>

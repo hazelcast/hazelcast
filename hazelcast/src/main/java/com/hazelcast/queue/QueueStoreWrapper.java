@@ -65,7 +65,7 @@ public class QueueStoreWrapper implements QueueStore<Data> {
         try {
             store = storeConfig.getStoreImplementation();
             if (store == null){
-                store = ClassLoaderUtil.newInstance(storeConfig.getClassName());
+                store = ClassLoaderUtil.newInstance(serializationService.getClassLoader(), storeConfig.getClassName());
             }
             enabled = storeConfig.isEnabled();
             binary = Boolean.parseBoolean(storeConfig.getProperty("binary"));

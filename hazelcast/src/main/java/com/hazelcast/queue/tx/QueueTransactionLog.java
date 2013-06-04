@@ -22,7 +22,7 @@ import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.transaction.TransactionLog;
+import com.hazelcast.transaction.KeyAwareTransactionLog;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
@@ -31,7 +31,7 @@ import java.util.concurrent.Future;
 /**
  * @ali 3/25/13
  */
-public class QueueTransactionLog implements TransactionLog {
+public class QueueTransactionLog implements KeyAwareTransactionLog {
 
     long itemId;
     String name;
@@ -94,5 +94,9 @@ public class QueueTransactionLog implements TransactionLog {
         name = in.readUTF();
         partitionId = in.readInt();
         op = in.readObject();
+    }
+
+    public Object getKey() {
+        return itemId;
     }
 }

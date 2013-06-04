@@ -28,4 +28,6 @@ public interface BaseQueue<E> extends DistributedObject {
 
     E poll(long timeout, TimeUnit unit) throws InterruptedException;
 
+    int size();
+
 }

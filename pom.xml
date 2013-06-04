@@ -220,6 +220,13 @@
         </profile>
 
         <profile>
+            <id>zip</id>
+            <modules>
+                <module>hazelcast-documentation</module>
+            </modules>
+        </profile>
+
+        <profile>
             <id>parallel-test</id>
             <build>
                 <plugins>

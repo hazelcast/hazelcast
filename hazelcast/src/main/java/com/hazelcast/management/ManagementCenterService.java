@@ -81,7 +81,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         commandHandler = new ConsoleCommandHandler(this.instance);
         String tmpWebServerUrl = managementCenterConfig.getUrl();
         webServerUrl = tmpWebServerUrl != null ?
-                (!tmpWebServerUrl.endsWith("/") ? tmpWebServerUrl + '/' : tmpWebServerUrl) : tmpWebServerUrl;
+                (!tmpWebServerUrl.endsWith("/") ? tmpWebServerUrl + '/' : tmpWebServerUrl) : null;
         updateIntervalMs = (managementCenterConfig.getUpdateInterval() > 0)
                 ? managementCenterConfig.getUpdateInterval() * 1000 : 5000;
         taskPoller = new TaskPoller();

@@ -17,6 +17,7 @@
 package com.hazelcast.ascii.memcache;
 
 import com.hazelcast.ascii.TextCommandService;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 
 import java.io.UnsupportedEncodingException;
@@ -38,7 +39,7 @@ public class GetCommandProcessor extends MemcacheCommandProcessor<GetCommand> {
         try {
             key = URLDecoder.decode(getCommand.getKey(), "UTF-8");
         } catch (UnsupportedEncodingException e) {
-            logger.log(Level.WARNING, e.getMessage(), e);
+            throw new HazelcastException(e);
         }
         String mapName = DefaultMapName;
         int index = key.indexOf(':');

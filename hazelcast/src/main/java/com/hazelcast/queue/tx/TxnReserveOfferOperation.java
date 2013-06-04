@@ -16,27 +16,34 @@
 
 package com.hazelcast.queue.tx;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.queue.QueueContainer;
 import com.hazelcast.queue.QueueDataSerializerHook;
 import com.hazelcast.queue.QueueOperation;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
 
+import java.io.IOException;
+
 /**
  * @ali 3/27/13
  */
 public class TxnReserveOfferOperation extends QueueOperation implements WaitSupport {
 
+    int txSize;
+
     public TxnReserveOfferOperation() {
     }
 
-    public TxnReserveOfferOperation(String name, long timeoutMillis) {
+    public TxnReserveOfferOperation(String name, long timeoutMillis, int txSize) {
         super(name, timeoutMillis);
+        this.txSize = txSize;
     }
 
     public void run() throws Exception {
         QueueContainer container = getOrCreateContainer();
-        if (container.hasEnoughCapacity()) {
+        if (container.hasEnoughCapacity(txSize+1)) {
             response = container.txnOfferReserve();
         }
     }
@@ -47,7 +54,7 @@ public class TxnReserveOfferOperation extends QueueOperation implements WaitSupp
 
     public boolean shouldWait() {
         QueueContainer container = getOrCreateContainer();
-        return getWaitTimeoutMillis() != 0 && !container.hasEnoughCapacity();
+        return getWaitTimeoutMillis() != 0 && !container.hasEnoughCapacity(txSize+1);
     }
 
     public void onWaitExpire() {
@@ -58,4 +65,13 @@ public class TxnReserveOfferOperation extends QueueOperation implements WaitSupp
         return QueueDataSerializerHook.TXN_RESERVE_OFFER;
     }
 
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeInt(txSize);
+    }
+
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        txSize = in.readInt();
+    }
 }
