@@ -79,6 +79,7 @@ public class QueueItem implements IdentifiedDataSerializable, Comparable<QueueIt
         return creationTime;
     }
 
+    // TODO: @mm - equals method is weird and does not obey equals/hashCode contract!
     public boolean equals(Object obj) {
         if (obj instanceof QueueItem) {
             QueueItem other = (QueueItem) obj;
