@@ -17,6 +17,7 @@
 package com.hazelcast.partition;
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -56,7 +57,7 @@ public class ReplicaSyncResponse extends Operation implements PartitionAwareOper
         final SerializationService serializationService = nodeEngine.getSerializationService();
         final int partitionId = getPartitionId();
         final int replicaIndex = getReplicaIndex();
-        ObjectDataInput in = null;
+        BufferObjectDataInput in = null;
         try {
             if (data != null) {
                 final ILogger logger = nodeEngine.getLogger(getClass());

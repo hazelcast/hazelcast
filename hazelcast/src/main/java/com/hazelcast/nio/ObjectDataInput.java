@@ -16,14 +16,13 @@
 
 package com.hazelcast.nio;
 
-import java.io.Closeable;
 import java.io.DataInput;
 import java.io.IOException;
 
 /**
  * @mdogan 12/28/12
  */
-public interface ObjectDataInput extends DataInput, Closeable {
+public interface ObjectDataInput extends DataInput {
 
     <T> T readObject() throws IOException;
 

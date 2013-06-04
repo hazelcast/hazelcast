@@ -17,6 +17,7 @@
 package com.hazelcast.partition;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -55,7 +56,7 @@ public final class MigrationOperation extends BaseMigrationOperation {
             throw new RetryableHazelcastException("Migration initiator is not master node! => " + toString());
         }
         SerializationService serializationService = nodeEngine.getSerializationService();
-        ObjectDataInput in = null;
+        BufferObjectDataInput in = null;
         if (migrationInfo.startProcessing()) {
             try {
                 final byte[] taskData = IOUtil.decompress(zippedTaskData);

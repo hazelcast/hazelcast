@@ -121,7 +121,7 @@ public class QueueStoreWrapper implements QueueStore<Data> {
             if (binary) {
                 // WARNING: we can't pass original Data to the user
                 // TODO: @mm - is there really an advantage of using binary storeAll? since we need to do array copy for each item.
-                BufferObjectDataOutput out = (BufferObjectDataOutput) serializationService.createObjectDataOutput(1024);
+                BufferObjectDataOutput out = serializationService.createObjectDataOutput(1024);
                 try {
                     for (Map.Entry<Long, Data> entry : map.entrySet()) {
                         entry.getValue().writeData(out);

@@ -18,7 +18,6 @@ package com.hazelcast.nio.serialization;
 
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -126,7 +125,7 @@ public class DefaultSerializers {
                 return ds;
             } catch (final Exception e) {
                 throw new HazelcastSerializationException("Problem while reading Externalizable class : "
-                                                          + className + ", exception: " + e);
+                        + className + ", exception: " + e);
             }
         }
 
@@ -177,14 +176,10 @@ public class DefaultSerializers {
             } else {
                 objectOutputStream = new ObjectOutputStream(outputStream);
             }
-            try {
-                if (shared) {
-                    objectOutputStream.writeObject(obj);
-                } else {
-                    objectOutputStream.writeUnshared(obj);
-                }
-            } finally {
-                IOUtil.closeResource(objectOutputStream);
+            if (shared) {
+                objectOutputStream.writeObject(obj);
+            } else {
+                objectOutputStream.writeUnshared(obj);
             }
         }
     }
@@ -195,6 +190,7 @@ public class DefaultSerializers {
         }
     }
 
-    private DefaultSerializers() {}
+    private DefaultSerializers() {
+    }
 
 }
