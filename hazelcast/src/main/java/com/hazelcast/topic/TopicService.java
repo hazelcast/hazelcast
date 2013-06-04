@@ -67,7 +67,8 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
     }
 
     public Lock getOrderLock(String key) {
-        return orderingLocks[Math.abs(key.hashCode()) % orderingLocks.length];
+        final int hash = key.hashCode();
+        return orderingLocks[hash != Integer.MIN_VALUE ? (Math.abs(hash) % orderingLocks.length) : 0];
     }
 
     public String getServiceName() {

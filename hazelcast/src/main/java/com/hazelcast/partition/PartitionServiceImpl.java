@@ -647,7 +647,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
 
     public final int getPartitionId(Data key) {
         int hash = key.getPartitionHash();
-        return (hash == Integer.MIN_VALUE) ? 0 : Math.abs(hash) % partitionCount;
+        return (hash != Integer.MIN_VALUE) ? Math.abs(hash) % partitionCount : 0;
     }
 
     public final int getPartitionId(Object key) {

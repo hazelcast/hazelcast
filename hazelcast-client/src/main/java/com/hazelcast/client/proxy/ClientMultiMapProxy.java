@@ -285,12 +285,16 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
                 switch (event.getEventType()){
                     case ADDED:
                         listener.entryAdded(entryEvent);
+                        break;
                     case REMOVED:
                         listener.entryRemoved(entryEvent);
+                        break;
                     case UPDATED:
                         listener.entryUpdated(entryEvent);
+                        break;
                     case EVICTED:
                         listener.entryEvicted(entryEvent);
+                        break;
                 }
             }
         };

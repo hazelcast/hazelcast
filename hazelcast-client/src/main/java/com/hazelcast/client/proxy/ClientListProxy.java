@@ -260,9 +260,10 @@ public class ClientListProxy<E> extends ClientProxy implements IList<E> {
                 switch (event.getEventType()){
                     case ADDED:
                         listener.itemAdded(itemEvent);
+                        break;
                     case REMOVED:
                         listener.itemRemoved(itemEvent);
-
+                        break;
                 }
             }
         };

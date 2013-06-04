@@ -80,8 +80,9 @@ public abstract class AbstractRecord<V> implements Record<V>, DataSerializable {
     }
 
     public void onUpdate() {
-        if (statistics != null)
+        if (statistics != null) {
             statistics.update();
+        }
         version++;
     }
 

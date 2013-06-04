@@ -770,11 +770,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 .setTryCount(50).build().invoke();
     }
 
-    private Future invokeClusterOperation(Operation op, Address target, Callback<Object> callback) {
-        return nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, op, target)
-                .setTryCount(50).setCallback(callback).build().invoke();
-    }
-
     public NodeEngineImpl getNodeEngine() {
         return nodeEngine;
     }

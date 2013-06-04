@@ -117,6 +117,11 @@ public class LoggingServiceImpl implements LoggingService {
                 return false;
             return true;
         }
+
+        @Override
+        public int hashCode() {
+            return logListener != null ? logListener.hashCode() : 0;
+        }
     }
 
     class DefaultLogger implements ILogger {
