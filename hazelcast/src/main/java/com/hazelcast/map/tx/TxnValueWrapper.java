@@ -14,31 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.map.tx;
 
-import com.hazelcast.transaction.TransactionalObject;
+public class TxnValueWrapper {
 
-public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, V> {
+    Object value;
+    Type type;
 
-    boolean containsKey(Object key);
+    public TxnValueWrapper(Object value, Type type) {
+        this.value = value;
+        this.type = type;
+    }
 
-    V get(Object key);
+    enum Type {
+        NEW, UPDATED, REMOVED,
+    }
 
-    int size();
-
-    V put(K key, V value);
-
-    void set(K key, V value);
-
-    V putIfAbsent(K key, V value);
-
-    V replace(K key, V value);
-
-    boolean replace(K key, V oldValue, V newValue);
-
-    V remove(Object key);
-
-    void delete(Object key);
-
-    boolean remove(Object key, Object value);
 }

@@ -19,6 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -30,16 +31,117 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
 public class EvictionTest extends HazelcastTestSupport {
+
+
+    /**
+     * Test for the issue 477.
+     * Updates should also update the TTL
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testMapPutWithTTL() throws Exception {
+        int n = 1;
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
+        IMap<Integer, String> map = factory.newHazelcastInstance(null).getMap("testMapPutWithTTL");
+        map.put(1, "value0", 100, TimeUnit.MILLISECONDS);
+        assertEquals(true, map.containsKey(1));
+        Thread.sleep(2500);
+        assertEquals(false, map.containsKey(1));
+        map.put(1, "value1", 10, TimeUnit.SECONDS);
+        assertEquals(true, map.containsKey(1));
+        Thread.sleep(5000);
+        assertEquals(true, map.containsKey(1));
+        map.put(1, "value2", 10, TimeUnit.SECONDS);
+        Thread.sleep(5000);
+        assertEquals(true, map.containsKey(1));
+        map.put(1, "value3", 10, TimeUnit.SECONDS);
+        assertEquals(true, map.containsKey(1));
+    }
+
+    /*
+       github issue 455
+    */
+    @Test
+    public void testIssue455ZeroTTLShouldPreventEviction() throws InterruptedException {
+        Config config = new Config();
+        config.getGroupConfig().setName("testIssue455ZeroTTLShouldPreventEviction");
+        NearCacheConfig nearCacheConfig = new NearCacheConfig();
+        config.getMapConfig("default").setNearCacheConfig(nearCacheConfig);
+        int n = 1;
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
+        HazelcastInstance h = factory.newHazelcastInstance(config);
+        IMap<String, String> map = h.getMap("testIssue455ZeroTTLShouldPreventEviction");
+        map.put("key", "value", 1, TimeUnit.SECONDS);
+        map.put("key", "value2", 0, TimeUnit.SECONDS);
+        Thread.sleep(2000);
+        assertEquals("value2", map.get("key"));
+        h.getLifecycleService().shutdown();
+    }
+
+
+    /*
+       github issue 304
+    */
+    @Test
+    public void testIssue304EvictionDespitePut() throws InterruptedException {
+        Config c = new Config();
+        c.getGroupConfig().setName("testIssue304EvictionDespitePut");
+        final HashMap<String, MapConfig> mapConfigs = new HashMap<String, MapConfig>();
+        final MapConfig value = new MapConfig();
+        value.setMaxIdleSeconds(3);
+        mapConfigs.put("default", value);
+        c.setMapConfigs(mapConfigs);
+        final Properties properties = new Properties();
+        properties.setProperty("hazelcast.map.cleanup.delay.seconds", "1"); // we need faster cleanups
+        c.setProperties(properties);
+        int n = 1;
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
+        final HazelcastInstance hazelcastInstance = factory.newHazelcastInstance(c);
+
+        IMap<String, Long> map = hazelcastInstance.getMap("testIssue304EvictionDespitePutMap");
+        final AtomicInteger evictCount = new AtomicInteger(0);
+        map.addEntryListener(new EntryListener<String, Long>() {
+            public void entryAdded(EntryEvent<String, Long> event) {
+            }
+
+            public void entryRemoved(EntryEvent<String, Long> event) {
+            }
+
+            public void entryUpdated(EntryEvent<String, Long> event) {
+            }
+
+            public void entryEvicted(EntryEvent<String, Long> event) {
+                evictCount.incrementAndGet();
+            }
+        }, true);
+
+
+        String key = "key";
+        for (int i = 0; i < 5; i++) {
+            map.put(key, System.currentTimeMillis());
+            Thread.sleep(1000);
+        }
+        assertEquals(evictCount.get(), 0);
+        assertNotNull(map.get(key));
+        hazelcastInstance.getLifecycleService().shutdown();
+    }
 
     @Test
     public void testMapWideEviction() throws InterruptedException {

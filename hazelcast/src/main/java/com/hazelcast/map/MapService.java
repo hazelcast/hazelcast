@@ -622,6 +622,9 @@ public class MapService implements ManagedService, MigrationAwareService,
         if (registrationsWithValue.isEmpty() && registrationsWithoutValue.isEmpty())
             return;
         String source = nodeEngine.getThisAddress().toString();
+        if (eventType == EntryEvent.TYPE_REMOVED || eventType == EntryEvent.TYPE_EVICTED) {
+            dataValue = dataValue != null ? dataValue : dataOldValue;
+        }
         EventData event = new EventData(source, mapName, caller, dataKey, dataValue, dataOldValue, eventType);
         nodeEngine.getEventService().publishEvent(SERVICE_NAME, registrationsWithValue, event);
         nodeEngine.getEventService().publishEvent(SERVICE_NAME, registrationsWithoutValue, event.cloneWithoutValues());
