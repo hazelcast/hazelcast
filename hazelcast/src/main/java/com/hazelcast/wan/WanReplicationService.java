@@ -62,7 +62,7 @@ public class WanReplicationService implements CoreService {
                 WanReplicationEndpoint target;
                 if (targetClusterConfig.getReplicationImpl() != null) {
                     try {
-                        target = ClassLoaderUtil.newInstance(targetClusterConfig.getReplicationImpl());
+                        target = ClassLoaderUtil.newInstance(node.getConfigClassLoader(), targetClusterConfig.getReplicationImpl());
                     } catch (Exception e) {
                         throw ExceptionUtil.rethrow(e);
                     }

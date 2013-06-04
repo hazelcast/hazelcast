@@ -490,6 +490,11 @@ class ContextAwareDataInput extends InputStream implements BufferObjectDataInput
     }
 
     @Override
+    public ClassLoader getClassLoader() {
+        return service.getClassLoader();
+    }
+
+    @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         sb.append("ContextAwareDataInput");

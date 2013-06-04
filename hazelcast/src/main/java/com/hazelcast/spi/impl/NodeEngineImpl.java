@@ -94,16 +94,20 @@ public class NodeEngineImpl implements NodeEngine {
         return node.getConfig();
     }
 
+    public ClassLoader getConfigClassLoader() {
+        return node.getConfigClassLoader();
+    }
+
     public EventService getEventService() {
         return eventService;
     }
 
     public SerializationService getSerializationService() {
-        return node.serializationService;
+        return node.getSerializationService();
     }
 
     public SerializationContext getSerializationContext() {
-        return node.serializationService.getSerializationContext();
+        return node.getSerializationService().getSerializationContext();
     }
 
     public OperationService getOperationService() {
@@ -143,12 +147,12 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     public Data toData(final Object object) {
-        return node.serializationService.toData(object);
+        return node.getSerializationService().toData(object);
     }
 
     public Object toObject(final Object object) {
         if (object instanceof Data) {
-            return node.serializationService.toObject((Data) object);
+            return node.getSerializationService().toObject((Data) object);
         }
         return object;
     }

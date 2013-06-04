@@ -57,7 +57,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         logger = nodeEngine.getLogger(EventService.class.getName());
         final Node node = nodeEngine.getNode();
         eventExecutorService = Executors.newSingleThreadExecutor(
-                new SingleExecutorThreadFactory(node.threadGroup, node.getConfig().getClassLoader(), node.getThreadNamePrefix("event")));
+                new SingleExecutorThreadFactory(node.threadGroup, node.getConfigClassLoader(), node.getThreadNamePrefix("event")));
         segments = new ConcurrentHashMap<String, EventServiceSegment>();
     }
 

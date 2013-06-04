@@ -244,7 +244,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         if (mergePolicy == null && mergePolicyName != null) {
             try {
                 // check if user has entered custom class name instead of policy name
-                mergePolicy = ClassLoaderUtil.newInstance(mergePolicyName);
+                mergePolicy = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), mergePolicyName);
                 mergePolicyMap.put(mergePolicyName, mergePolicy);
             } catch (Exception e) {
                 logger.log(Level.SEVERE, e.getMessage(), e);

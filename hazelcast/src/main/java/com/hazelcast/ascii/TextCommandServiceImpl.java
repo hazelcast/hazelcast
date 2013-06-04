@@ -92,7 +92,7 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
     }
 
     public byte[] toByteArray(Object value) {
-        Data data = node.serializationService.toData(value);
+        Data data = node.getSerializationService().toData(value);
         return data.getBuffer();
     }
 

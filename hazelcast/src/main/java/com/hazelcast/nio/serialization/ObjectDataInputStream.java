@@ -28,9 +28,11 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
 
     private final SerializationService serializationService;
     private final DataInputStream dataInput;
+    private final ClassLoader classLoader;
 
-    public ObjectDataInputStream(InputStream in, SerializationService serializationService) {
+    public ObjectDataInputStream(InputStream in, SerializationService serializationService, ClassLoader classLoader) {
         this.serializationService = serializationService;
+        this.classLoader = classLoader;
         this.dataInput = new DataInputStream(in);
     }
 
@@ -140,5 +142,9 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
 
     public SerializationContext getSerializationContext() {
         return serializationService.getSerializationContext();
+    }
+
+    public ClassLoader getClassLoader() {
+        return classLoader;
     }
 }

@@ -142,8 +142,8 @@ public final class HazelcastInstanceProxy implements HazelcastInstance {
         return getOriginal().getDistributedObject(serviceName, id);
     }
 
-    public void registerSerializer(TypeSerializer serializer, Class type) {
-        getOriginal().registerSerializer(serializer, type);
+    public void registerSerializer(final Class type, final TypeSerializer serializer){
+        getOriginal().registerSerializer(type, serializer);
     }
 
     public void registerGlobalSerializer(TypeSerializer serializer) {

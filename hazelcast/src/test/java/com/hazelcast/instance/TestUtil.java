@@ -19,7 +19,7 @@ package com.hazelcast.instance;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.nio.serialization.SerializationServiceImpl;
+import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import org.junit.Ignore;
 
 import java.io.Serializable;
@@ -30,7 +30,7 @@ import java.util.Date;
 @Ignore("not a JUnit test")
 public final class TestUtil {
 
-    static final private SerializationService serializationService = new SerializationServiceImpl(1);
+    static final private SerializationService serializationService = new SerializationServiceBuilder().build();
 
     public static Data toData(Object obj) {
         return serializationService.toData(obj);

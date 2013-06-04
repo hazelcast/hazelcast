@@ -27,4 +27,6 @@ public interface ObjectDataInput extends DataInput, Closeable {
 
     <T> T readObject() throws IOException;
 
+    ClassLoader getClassLoader();
+
 }

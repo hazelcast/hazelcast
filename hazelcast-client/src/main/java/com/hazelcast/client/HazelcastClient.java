@@ -45,6 +45,7 @@ import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.queue.QueueService;
@@ -78,7 +79,7 @@ public final class HazelcastClient implements HazelcastInstance {
     private final ClientConfig config;
     private final ThreadGroup threadGroup;
     private final LifecycleServiceImpl lifecycleService;
-    private final SerializationServiceImpl serializationService = new SerializationServiceImpl(0, null);
+    private final SerializationServiceImpl serializationService = (SerializationServiceImpl) new SerializationServiceBuilder().build();
     private final ClientConnectionManager connectionManager;
     private final ClientClusterServiceImpl clusterService;
     private final ClientPartitionServiceImpl partitionService;
@@ -266,13 +267,13 @@ public final class HazelcastClient implements HazelcastInstance {
     }
 
     @Override
-    public void registerSerializer(TypeSerializer serializer, Class type) {
-        serializationService.register(serializer, type);
+    public void registerSerializer(final Class type, final TypeSerializer serializer) {
+        serializationService.register(type, serializer);
     }
 
     @Override
     public void registerGlobalSerializer(TypeSerializer serializer) {
-        serializationService.registerFallback(serializer);
+        serializationService.registerGlobal(serializer);
     }
 
     @Override

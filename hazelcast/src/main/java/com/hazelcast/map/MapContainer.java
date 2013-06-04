@@ -77,14 +77,14 @@ public class MapContainer {
                 if (factory == null) {
                     String factoryClassName = mapStoreConfig.getFactoryClassName();
                     if (factoryClassName != null && !"".equals(factoryClassName)) {
-                        factory = ClassLoaderUtil.newInstance(factoryClassName);
+                        factory = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), factoryClassName);
                     }
                 }
                 store = (factory == null ? mapStoreConfig.getImplementation() :
                         factory.newMapStore(name, mapStoreConfig.getProperties()));
                 if (store == null) {
                     String mapStoreClassName = mapStoreConfig.getClassName();
-                    store = ClassLoaderUtil.newInstance(mapStoreClassName);
+                    store = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), mapStoreClassName);
                 }
             } catch (Exception e) {
                 throw ExceptionUtil.rethrow(e);

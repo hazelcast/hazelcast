@@ -49,7 +49,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
         this.nodeEngine = nodeEngine;
         final Node node = nodeEngine.getNode();
         logger = node.getLogger(ExecutionService.class.getName());
-        final ClassLoader classLoader = node.getConfig().getClassLoader();
+        final ClassLoader classLoader = node.getConfigClassLoader();
         final ThreadFactory threadFactory = new PoolExecutorThreadFactory(node.threadGroup,
                 node.getThreadPoolNamePrefix("cached"), classLoader);
 

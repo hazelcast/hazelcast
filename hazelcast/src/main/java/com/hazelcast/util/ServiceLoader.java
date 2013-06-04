@@ -63,7 +63,7 @@ public class ServiceLoader {
             public T next() {
                 final String className = classIter.next();
                 try {
-                    return clazz.cast(ClassLoaderUtil.newInstance(className));
+                    return clazz.cast(ClassLoaderUtil.newInstance(null, className));
                 } catch (Exception e) {
                     throw new HazelcastException(e);
                 }
