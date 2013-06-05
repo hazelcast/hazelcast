@@ -19,9 +19,7 @@ package com.hazelcast.collection.multimap.tx;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.collection.CollectionService;
-import com.hazelcast.collection.operations.CollectionResponse;
-import com.hazelcast.collection.operations.CountOperation;
-import com.hazelcast.collection.operations.GetAllOperation;
+import com.hazelcast.collection.operations.*;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.nio.serialization.Data;
@@ -146,9 +144,10 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
             }
             version = response.getTxVersion();
             coll =  createCollection(response.getRecordCollection(getNodeEngine()));
-            txMap.put(key, coll);
         }
+        txMap.put(key, createCollection());
         TxnRemoveAllOperation operation = new TxnRemoveAllOperation(proxyId, key, coll);
+
         MultiMapTransactionLog log = (MultiMapTransactionLog)tx.getTransactionLog(key);
         if (log != null){
             log.addOperation(operation);
@@ -196,6 +195,31 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
             }
         }
         return coll.size();
+    }
+
+    public int size(){
+        try {
+            final Map<Integer, Object> results = getNodeEngine().getOperationService().invokeOnAllPartitions(CollectionService.SERVICE_NAME,
+                    new MultiMapOperationFactory(proxyId, MultiMapOperationFactory.OperationFactoryType.SIZE));
+            int size = 0;
+            for (Object obj : results.values()) {
+                if (obj == null) {
+                    continue;
+                }
+                Integer result = getNodeEngine().toObject(obj);
+                size += result;
+            }
+            for (Data key : txMap.keySet()) {
+                MultiMapTransactionLog log = (MultiMapTransactionLog)tx.getTransactionLog(key);
+                if (log != null){
+                    size += log.size();
+                }
+            }
+
+            return size;
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
     }
 
     public Object getId() {
@@ -246,6 +270,16 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
+    }
+
+    private Collection<CollectionRecord> createCollection(){
+        if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.SET)){
+            return new HashSet<CollectionRecord>();
+        }
+        else if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.LIST)){
+            return new ArrayList<CollectionRecord>();
+        }
+        return null;
     }
 
     private Collection<CollectionRecord> createCollection(Collection<CollectionRecord> coll){

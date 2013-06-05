@@ -36,4 +36,6 @@ public interface TransactionalMultiMap<K, V> extends TransactionalObject {
 
     int valueCount(K key);
 
+    int size();
+
 }

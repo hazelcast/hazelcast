@@ -158,4 +158,19 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
         }
         opList.add(op);
     }
+
+    public int size(){
+        int size = 0;
+        for (Operation operation : opList) {
+            if (operation instanceof TxnRemoveAllOperation) {
+                TxnRemoveAllOperation removeAllOperation = (TxnRemoveAllOperation)operation;
+                size -= removeAllOperation.getRecordIds().size();
+            } else if (operation instanceof TxnRemoveOperation) {
+                size--;
+            } else {
+                size++;
+            }
+        }
+        return size;
+    }
 }
