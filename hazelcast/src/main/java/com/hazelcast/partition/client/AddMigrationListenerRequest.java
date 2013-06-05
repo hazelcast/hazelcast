@@ -17,11 +17,11 @@
 package com.hazelcast.partition.client;
 
 import com.hazelcast.client.CallableClientRequest;
+import com.hazelcast.core.MigrationEvent;
+import com.hazelcast.core.MigrationListener;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.partition.MigrationEvent;
-import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.PartitionDataSerializerHook;
 import com.hazelcast.partition.PartitionServiceImpl;
 

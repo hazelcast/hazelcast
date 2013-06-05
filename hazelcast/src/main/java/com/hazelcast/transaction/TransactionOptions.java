@@ -99,7 +99,7 @@ public final class TransactionOptions implements DataSerializable {
     public enum TransactionType {
         TWO_PHASE(1), LOCAL(2);
 
-        final int value;
+        private final int value;
 
         TransactionType(int value){
             this.value = value;
@@ -113,6 +113,5 @@ public final class TransactionOptions implements DataSerializable {
             }
             return TWO_PHASE;
         }
-
     }
 }

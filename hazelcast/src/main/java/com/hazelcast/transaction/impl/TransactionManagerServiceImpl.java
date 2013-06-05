@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.transaction;
+package com.hazelcast.transaction.impl;
 
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.instance.MemberImpl;
@@ -22,6 +22,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.transaction.*;
 
 import java.util.ArrayList;
 import java.util.Collections;

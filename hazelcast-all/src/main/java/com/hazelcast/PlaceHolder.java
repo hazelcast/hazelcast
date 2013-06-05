@@ -14,20 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.transaction;
-
-import com.hazelcast.transaction.TransactionContext;
-import com.hazelcast.transaction.TransactionException;
-import com.hazelcast.transaction.TransactionOptions;
-import com.hazelcast.transaction.TransactionalTask;
+package com.hazelcast;
 
 /**
- * @mdogan 2/26/13
+ * @mdogan 6/5/13
  */
-public interface TransactionManagerService  {
-
-    <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException;
-
-    TransactionContext newTransactionContext(TransactionOptions options);
-
+public class PlaceHolder {
 }

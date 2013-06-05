@@ -23,7 +23,7 @@ import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.TransactionalSet;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.transaction.Transaction;
+import com.hazelcast.transaction.impl.Transaction;
 
 /**
  * @ali 4/16/13

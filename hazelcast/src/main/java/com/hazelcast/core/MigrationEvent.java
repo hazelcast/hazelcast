@@ -14,21 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.partition;
+package com.hazelcast.core;
 
-import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.partition.MigrationStatus;
 
 import java.io.IOException;
 
-/**
- * will be moved to com.hazelcast.core package
- */
 
 public class MigrationEvent implements DataSerializable {
+
     private int partitionId;
     private Member oldOwner;
     private Member newOwner;

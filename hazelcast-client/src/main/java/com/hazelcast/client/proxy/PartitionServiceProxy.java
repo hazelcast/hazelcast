@@ -17,9 +17,9 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.spi.ClientPartitionService;
+import com.hazelcast.core.MigrationListener;
 import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitionService;
-import com.hazelcast.partition.MigrationListener;
 
 import java.util.LinkedHashSet;
 import java.util.Set;

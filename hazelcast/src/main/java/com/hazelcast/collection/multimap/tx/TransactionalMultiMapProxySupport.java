@@ -23,14 +23,14 @@ import com.hazelcast.collection.operations.CollectionResponse;
 import com.hazelcast.collection.operations.CountOperation;
 import com.hazelcast.collection.operations.GetAllOperation;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.transaction.Transaction;
 import com.hazelcast.transaction.TransactionalObject;
+import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.ThreadUtil;
 
 import java.util.*;
 import java.util.concurrent.Future;
