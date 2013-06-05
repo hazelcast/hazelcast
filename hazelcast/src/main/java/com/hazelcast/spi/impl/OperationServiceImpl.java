@@ -667,7 +667,7 @@ final class OperationServiceImpl implements OperationService {
         final int threadId;
 
         public OperationThreadFactory(int threadId) {
-            super(node.threadGroup, node.getConfig().getClassLoader());
+            super(node.threadGroup, node.getConfigClassLoader());
             final String poolNamePrefix = node.getThreadPoolNamePrefix("operation");
             this.threadName = poolNamePrefix + threadId;
             this.threadId = threadId;

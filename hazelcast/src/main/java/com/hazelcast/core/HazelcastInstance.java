@@ -265,7 +265,7 @@ public interface HazelcastInstance {
     <T extends DistributedObject> T getDistributedObject(String serviceName, Object id);
 
 
-    void registerSerializer(final TypeSerializer serializer, Class type);
+    void registerSerializer(final Class type, final TypeSerializer serializer);
 
 
     void registerGlobalSerializer(final TypeSerializer serializer);

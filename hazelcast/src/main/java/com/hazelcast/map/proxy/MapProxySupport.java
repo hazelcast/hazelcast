@@ -66,9 +66,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
             }
             else if(listenerConfig.getClassName() != null) {
                 try {
-                    entryListener = ClassLoaderUtil.newInstance(listenerConfig.getClassName());
+                    entryListener = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), listenerConfig.getClassName());
                 } catch (Exception e) {
-                    ExceptionUtil.rethrow(e);
+                    throw ExceptionUtil.rethrow(e);
                 }
             }
 

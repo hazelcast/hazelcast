@@ -24,6 +24,8 @@ public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, 
 
     V get(Object key);
 
+    int size();
+
     V put(K key, V value);
 
     void set(K key, V value);

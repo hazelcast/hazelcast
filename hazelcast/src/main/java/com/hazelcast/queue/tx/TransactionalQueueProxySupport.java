@@ -52,15 +52,17 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
         config = nodeEngine.getConfig().getQueueConfig(name);
     }
 
-    public boolean offerInternal(Data data, long timeout){
+    public boolean offerInternal(Data data, long timeout) {
         throwExceptionIfNull(data);
         TxnReserveOfferOperation operation = new TxnReserveOfferOperation(name, timeout, offerIdQueue.size());
         try {
             Invocation invocation = getNodeEngine().getOperationService().createInvocationBuilder(QueueService.SERVICE_NAME, operation, partitionId).build();
             Future<Long> f = invocation.invoke();
             Long itemId = f.get();
-            if (itemId != null){
-                if(offerIdQueue.contains(itemId) || pollIdQueue.contains(itemId)){
+            if (itemId != null) {
+                // TODO: @mm - offerIdQueue is queue of QueueItems not longs!
+                // !!! offerIdQueue.contains(item.getItemId() fails always !!!
+                if (offerIdQueue.contains(itemId) || pollIdQueue.contains(itemId)) {
                     throw new TransactionException("Duplicate itemId: " + itemId);
                 }
                 offerIdQueue.offer(new QueueItem(null, itemId, data));
@@ -68,25 +70,25 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
                 return true;
             }
         } catch (Throwable t) {
-            ExceptionUtil.rethrow(t);
+            throw ExceptionUtil.rethrow(t);
         }
         return false;
     }
 
-    public Data pollInternal(long timeout){
+    public Data pollInternal(long timeout) {
         QueueItem reservedOffer = offerIdQueue.peek();
         TxnReservePollOperation operation = new TxnReservePollOperation(name, timeout, reservedOffer == null ? -1 : reservedOffer.getItemId());
         try {
             Invocation invocation = getNodeEngine().getOperationService().createInvocationBuilder(QueueService.SERVICE_NAME, operation, partitionId).build();
             Future<QueueItem> f = invocation.invoke();
             QueueItem item = f.get();
-            if (item != null){
-                if (reservedOffer != null && item.getItemId() == reservedOffer.getItemId()){
+            if (item != null) {
+                if (reservedOffer != null && item.getItemId() == reservedOffer.getItemId()) {
                     offerIdQueue.poll();
                     tx.removeTransactionLog(reservedOffer.getItemId());
                     return reservedOffer.getData();
                 }
-                if(pollIdQueue.contains(item.getItemId()) || offerIdQueue.contains(item.getItemId())){
+                if (pollIdQueue.contains(item.getItemId()) || offerIdQueue.contains(item)) {
                     throw new TransactionException("Duplicate itemId: " + item.getItemId());
                 }
                 pollIdQueue.offer(item.getItemId());
@@ -94,7 +96,7 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
                 return item.getData();
             }
         } catch (Throwable t) {
-            ExceptionUtil.rethrow(t);
+            throw ExceptionUtil.rethrow(t);
         }
         return null;
     }
@@ -107,9 +109,8 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
             Integer size = f.get();
             return size + offerIdQueue.size();
         } catch (Throwable t) {
-            ExceptionUtil.rethrow(t);
+            throw ExceptionUtil.rethrow(t);
         }
-        return 0;
     }
 
     public Object getId() {
@@ -124,8 +125,8 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
         return QueueService.SERVICE_NAME;
     }
 
-    private void throwExceptionIfNull(Object o){
-        if (o == null){
+    private void throwExceptionIfNull(Object o) {
+        if (o == null) {
             throw new NullPointerException("Object is null");
         }
     }

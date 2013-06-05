@@ -244,7 +244,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         if (mergePolicy == null && mergePolicyName != null) {
             try {
                 // check if user has entered custom class name instead of policy name
-                mergePolicy = ClassLoaderUtil.newInstance(mergePolicyName);
+                mergePolicy = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), mergePolicyName);
                 mergePolicyMap.put(mergePolicyName, mergePolicy);
             } catch (Exception e) {
                 logger.log(Level.SEVERE, e.getMessage(), e);
@@ -622,6 +622,9 @@ public class MapService implements ManagedService, MigrationAwareService,
         if (registrationsWithValue.isEmpty() && registrationsWithoutValue.isEmpty())
             return;
         String source = nodeEngine.getThisAddress().toString();
+        if (eventType == EntryEvent.TYPE_REMOVED || eventType == EntryEvent.TYPE_EVICTED) {
+            dataValue = dataValue != null ? dataValue : dataOldValue;
+        }
         EventData event = new EventData(source, mapName, caller, dataKey, dataValue, dataOldValue, eventType);
         nodeEngine.getEventService().publishEvent(SERVICE_NAME, registrationsWithValue, event);
         nodeEngine.getEventService().publishEvent(SERVICE_NAME, registrationsWithoutValue, event.cloneWithoutValues());

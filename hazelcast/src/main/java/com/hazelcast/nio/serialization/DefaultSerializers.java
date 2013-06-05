@@ -17,7 +17,7 @@
 package com.hazelcast.nio.serialization;
 
 import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -28,8 +28,6 @@ import java.util.Date;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-import static com.hazelcast.nio.ClassLoaderUtil.loadClass;
-import static com.hazelcast.nio.ClassLoaderUtil.newInstance;
 import static com.hazelcast.nio.IOUtil.newObjectInputStream;
 import static com.hazelcast.nio.serialization.SerializationConstants.*;
 
@@ -102,7 +100,7 @@ public class DefaultSerializers {
 
         public Class read(final ObjectDataInput in) throws IOException {
             try {
-                return loadClass(in.readUTF());
+                return ClassLoaderUtil.loadClass(in.getClassLoader(), in.readUTF());
             } catch (ClassNotFoundException e) {
                 throw new HazelcastSerializationException(e);
             }
@@ -122,12 +120,12 @@ public class DefaultSerializers {
         public Externalizable read(final ObjectDataInput in) throws IOException {
             final String className = in.readUTF();
             try {
-                final Externalizable ds = (Externalizable) newInstance(loadClass(className));
-                ds.readExternal(newObjectInputStream((InputStream) in));
+                final Externalizable ds = ClassLoaderUtil.newInstance(in.getClassLoader(), className);
+                ds.readExternal(newObjectInputStream(in.getClassLoader(), (InputStream) in));
                 return ds;
             } catch (final Exception e) {
                 throw new HazelcastSerializationException("Problem while reading Externalizable class : "
-                                                          + className + ", exception: " + e);
+                        + className + ", exception: " + e);
             }
         }
 
@@ -151,9 +149,9 @@ public class DefaultSerializers {
             final ObjectInputStream objectInputStream;
             final InputStream inputStream = (InputStream) in;
             if (gzipEnabled) {
-                objectInputStream = newObjectInputStream(new BufferedInputStream(new GZIPInputStream(inputStream)));
+                objectInputStream = newObjectInputStream(in.getClassLoader(), new BufferedInputStream(new GZIPInputStream(inputStream)));
             } else {
-                objectInputStream = newObjectInputStream(inputStream);
+                objectInputStream = newObjectInputStream(in.getClassLoader(), inputStream);
             }
 
             final Object result;
@@ -178,14 +176,10 @@ public class DefaultSerializers {
             } else {
                 objectOutputStream = new ObjectOutputStream(outputStream);
             }
-            try {
-                if (shared) {
-                    objectOutputStream.writeObject(obj);
-                } else {
-                    objectOutputStream.writeUnshared(obj);
-                }
-            } finally {
-                IOUtil.closeResource(objectOutputStream);
+            if (shared) {
+                objectOutputStream.writeObject(obj);
+            } else {
+                objectOutputStream.writeUnshared(obj);
             }
         }
     }
@@ -196,6 +190,7 @@ public class DefaultSerializers {
         }
     }
 
-    private DefaultSerializers() {}
+    private DefaultSerializers() {
+    }
 
 }

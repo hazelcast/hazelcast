@@ -117,4 +117,15 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
     public int size() {
         return (data != null  ? data.totalSize() : 0) + 6; // 6 = short(header) + int(partitionId)
     }
+
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("Packet{");
+        sb.append("header=").append(header);
+        sb.append(", partitionId=").append(partitionId);
+        sb.append(", conn=").append(conn);
+        sb.append('}');
+        return sb.toString();
+    }
 }

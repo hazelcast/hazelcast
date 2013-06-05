@@ -37,6 +37,7 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.PartitionServiceImpl;
@@ -74,7 +75,7 @@ public class Node {
 
     private final NodeShutdownHookThread shutdownHookThread = new NodeShutdownHookThread("hz.ShutdownThread");
 
-    public final SerializationServiceImpl serializationService;
+    private final SerializationServiceImpl serializationService;
 
     public final NodeEngineImpl nodeEngine;
 
@@ -118,18 +119,22 @@ public class Node {
 
     public final ThreadGroup threadGroup;
 
+    private final ClassLoader configClassLoader;
+
     public Node(HazelcastInstanceImpl hazelcastInstance, Config config, NodeContext nodeContext) {
         this.hazelcastInstance = hazelcastInstance;
         this.threadGroup = hazelcastInstance.threadGroup;
         this.config = config;
+        configClassLoader = config.getClassLoader();
         this.groupProperties = new GroupProperties(config);
-        SerializationServiceImpl ss;
+        SerializationService ss;
         try {
-            ss = new SerializationServiceImpl(config.getSerializationConfig(), hazelcastInstance.managedContext);
+            ss = new SerializationServiceBuilder().setClassLoader(configClassLoader)
+                .setConfig(config.getSerializationConfig()).setManagedContext(hazelcastInstance.managedContext).build();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-        serializationService = ss;
+        serializationService = (SerializationServiceImpl) ss;
         systemLogService = new SystemLogService(this);
         final AddressPicker addressPicker = nodeContext.createAddressPicker(this);
         try {
@@ -209,7 +214,7 @@ public class Node {
             Object listener = listenerCfg.getImplementation();
             if (listener == null) {
                 try {
-                    listener = ClassLoaderUtil.newInstance(listenerCfg.getClassName());
+                    listener = ClassLoaderUtil.newInstance(configClassLoader, listenerCfg.getClassName());
                 } catch (Exception e) {
                     logger.log(Level.SEVERE, e.getMessage(), e);
                 }
@@ -452,6 +457,10 @@ public class Node {
 
     public Set<Address> getFailedConnections() {
         return failedConnections;
+    }
+
+    public ClassLoader getConfigClassLoader() {
+        return configClassLoader;
     }
 
     public class NodeShutdownHookThread extends Thread {

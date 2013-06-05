@@ -46,8 +46,8 @@ public final class ClassLoaderUtil {
         PRIMITIVE_CLASSES = Collections.unmodifiableMap(primitives);
     }
 
-    public static <T> T newInstance(final String className) throws Exception {
-        return (T) newInstance(loadClass(className));
+    public static <T> T newInstance(ClassLoader classLoader, final String className) throws Exception {
+        return (T) newInstance(loadClass(classLoader, className));
     }
 
     public static <T> T newInstance(final Class<T> klass) throws Exception {
@@ -56,10 +56,6 @@ public final class ClassLoaderUtil {
             constructor.setAccessible(true);
         }
         return constructor.newInstance();
-    }
-
-    public static Class<?> loadClass(final String className) throws ClassNotFoundException {
-        return loadClass(null, className);
     }
 
     public static Class<?> loadClass(final ClassLoader classLoader, final String className)

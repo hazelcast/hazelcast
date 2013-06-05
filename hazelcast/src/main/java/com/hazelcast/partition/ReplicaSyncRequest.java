@@ -17,10 +17,7 @@
 package com.hazelcast.partition;
 
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.IOUtil;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.*;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -65,7 +62,7 @@ public class ReplicaSyncRequest extends Operation implements PartitionAwareOpera
             byte[] data = null;
             if (!tasks.isEmpty()) {
                 final SerializationService serializationService = nodeEngine.getSerializationService();
-                final ObjectDataOutput out = serializationService.createObjectDataOutput(1024 * 32);
+                final BufferObjectDataOutput out = serializationService.createObjectDataOutput(1024 * 32);
                 try {
                     out.writeInt(tasks.size());
                     for (Operation task : tasks) {

@@ -47,7 +47,7 @@ public interface RecordStore {
 
     boolean replace(Data dataKey, Object oldValue, Object newValue);
 
-    void set(Data dataKey, Object value, long ttl);
+    boolean set(Data dataKey, Object value, long ttl);
 
     void putTransient(Data dataKey, Object value, long ttl);
 

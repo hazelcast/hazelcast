@@ -122,7 +122,7 @@ class ServiceManager {
     @SuppressWarnings("unchecked")
     private Object createServiceObject(String className) {
         try {
-            Class serviceClass = ClassLoaderUtil.loadClass(className);
+            Class serviceClass = ClassLoaderUtil.loadClass(nodeEngine.getConfigClassLoader(), className);
             try {
                 Constructor constructor = serviceClass.getConstructor(NodeEngine.class);
                 return constructor.newInstance(nodeEngine);

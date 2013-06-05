@@ -14,18 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.map.tx;
 
-import java.io.DataInput;
-import java.io.IOException;
+public class TxnValueWrapper {
 
-/**
- * @mdogan 12/28/12
- */
-public interface ObjectDataInput extends DataInput {
+    Object value;
+    Type type;
 
-    <T> T readObject() throws IOException;
+    public TxnValueWrapper(Object value, Type type) {
+        this.value = value;
+        this.type = type;
+    }
 
-    ClassLoader getClassLoader();
+    enum Type {
+        NEW, UPDATED, REMOVED,
+    }
 
 }

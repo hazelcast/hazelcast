@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.util.ExceptionUtil;
@@ -26,7 +27,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import static com.hazelcast.nio.ClassLoaderUtil.newInstance;
 import static com.hazelcast.nio.serialization.SerializationConstants.CONSTANT_TYPE_DATA;
 
 /**
@@ -92,7 +92,7 @@ public final class DataSerializer implements TypeSerializer<DataSerializable> {
                 // TODO: @mm - we can check if DS class is final.
             } else {
                 className = in.readUTF();
-                ds = newInstance(className);
+                ds = ClassLoaderUtil.newInstance(in.getClassLoader(), className);
             }
             ds.readData(in);
             return ds;

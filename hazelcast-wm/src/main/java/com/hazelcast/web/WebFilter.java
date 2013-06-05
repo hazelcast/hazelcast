@@ -502,7 +502,7 @@ public class WebFilter implements Filter {
         public synchronized Data writeObject(final Object obj) {
             if (obj == null)
                 return null;
-            return hazelcastInstance.node.serializationService.toData(obj);
+            return hazelcastInstance.node.getSerializationService().toData(obj);
         }
 
         void destroy() {

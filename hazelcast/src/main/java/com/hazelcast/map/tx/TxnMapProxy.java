@@ -24,15 +24,15 @@ import com.hazelcast.transaction.Transaction;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @mdogan 2/26/13
  */
 public class TxnMapProxy extends TxnMapProxySupport implements TransactionalMap {
 
-    private static final Object NULL = new Object();
 
-    private final Map<Object, Object> txMap = new HashMap<Object, Object>();
+    private final ConcurrentHashMap<Object, TxnValueWrapper> txMap = new ConcurrentHashMap<Object, TxnValueWrapper>();
 
     public TxnMapProxy(String name, MapService mapService, NodeEngine nodeEngine, Transaction transaction) {
         super(name, mapService, nodeEngine, transaction);
@@ -42,104 +42,122 @@ public class TxnMapProxy extends TxnMapProxySupport implements TransactionalMap 
         return txMap.containsKey(key) || containsKeyInternal(getService().toData(key));
     }
 
-    public Object get(Object key) {
-        Object currentValue = txMap.get(key);
-        if (currentValue != null) {
-            return checkIfNull(currentValue);
+    public int size() {
+        int currentSize = sizeInternal();
+        for (TxnValueWrapper wrapper : txMap.values()) {
+            if (wrapper.type == TxnValueWrapper.Type.NEW) {
+                currentSize++;
+            } else if (wrapper.type == TxnValueWrapper.Type.REMOVED) {
+                currentSize--;
+            }
         }
-        final Object value = getService().toObject(getInternal(getService().toData(key)));
-        return checkIfNull(value);
+        return currentSize;
     }
 
-    private Object checkIfNull(Object value) {
-        return value == null || value.equals(NULL) ? null : value;
+    public Object get(Object key) {
+        TxnValueWrapper currentValue = txMap.get(key);
+        if (currentValue != null) {
+            return checkIfRemoved(currentValue);
+        }
+        final Object value = getService().toObject(getInternal(getService().toData(key)));
+        return value;
+    }
+
+    private Object checkIfRemoved(TxnValueWrapper wrapper) {
+        return wrapper == null || wrapper.type == TxnValueWrapper.Type.REMOVED ? null : wrapper.value;
     }
 
     public Object put(Object key, Object value) {
         final Object valueBeforeTxn = getService().toObject(putInternal(getService().toData(key), getService().toData(value)));
-        Object currentValue = txMap.get(key);
-        if (value != null)
-            txMap.put(key, value);
-        return currentValue == null ? valueBeforeTxn : checkIfNull(currentValue);
+        TxnValueWrapper currentValue = txMap.get(key);
+        if (value != null) {
+            TxnValueWrapper wrapper = valueBeforeTxn == null ? new TxnValueWrapper(value, TxnValueWrapper.Type.NEW) : new TxnValueWrapper(value, TxnValueWrapper.Type.UPDATED);
+            txMap.put(key, wrapper);
+        }
+        return currentValue == null ? valueBeforeTxn : checkIfRemoved(currentValue);
     }
 
     @Override
     public void set(Object key, Object value) {
-        if (value != null)
-            txMap.put(key, value);
-        setInternal(getService().toData(key), getService().toData(value));
+        final Data dataBeforeTxn = putInternal(getService().toData(key), getService().toData(value));
+        if (value != null) {
+            TxnValueWrapper wrapper = dataBeforeTxn == null ? new TxnValueWrapper(value, TxnValueWrapper.Type.NEW) : new TxnValueWrapper(value, TxnValueWrapper.Type.UPDATED);
+            txMap.put(key, wrapper);
+        }
     }
 
     @Override
     public Object putIfAbsent(Object key, Object value) {
-        Object current = txMap.get(key);
-        boolean haveTxnPast = current != null;
+        TxnValueWrapper wrapper = txMap.get(key);
+        boolean haveTxnPast = wrapper != null;
         if (haveTxnPast) {
-            if (!current.equals(NULL)) {
-                return current;
+            if (wrapper.type != TxnValueWrapper.Type.REMOVED) {
+                return wrapper.value;
             }
-            setInternal(getService().toData(key), getService().toData(value));
-            txMap.put(key, value);
+            putInternal(getService().toData(key), getService().toData(value));
+            txMap.put(key, new TxnValueWrapper(value, TxnValueWrapper.Type.NEW));
             return null;
         } else {
             Data oldValue = putIfAbsentInternal(getService().toData(key), getService().toData(value));
-            if (oldValue == null)
-                txMap.put(key, value);
+            if (oldValue == null) {
+                txMap.put(key, new TxnValueWrapper(value, TxnValueWrapper.Type.NEW));
+            }
             return getService().toObject(oldValue);
         }
     }
 
     @Override
     public Object replace(Object key, Object value) {
-        Object current = txMap.get(key);
-        boolean haveTxnPast = current != null;
+        TxnValueWrapper wrapper = txMap.get(key);
+        boolean haveTxnPast = wrapper != null;
 
-        if(haveTxnPast) {
-            if(current.equals(NULL)){
+        if (haveTxnPast) {
+            if (wrapper.type == TxnValueWrapper.Type.REMOVED) {
                 return null;
             }
-            setInternal(getService().toData(key), getService().toData(value));
-            txMap.put(key, value);
-            return current;
-        }
-        else {
+            putInternal(getService().toData(key), getService().toData(value));
+            txMap.put(key, new TxnValueWrapper(value, TxnValueWrapper.Type.UPDATED));
+            return wrapper.value;
+        } else {
             Data oldValue = replaceInternal(getService().toData(key), getService().toData(value));
-            if(oldValue != null)
-                txMap.put(key, value);
+            if (oldValue != null) {
+                txMap.put(key, new TxnValueWrapper(value, TxnValueWrapper.Type.UPDATED));
+            }
             return getService().toObject(oldValue);
         }
     }
 
     @Override
     public boolean replace(Object key, Object oldValue, Object newValue) {
-        Object current = txMap.get(key);
-        boolean haveTxnPast = current != null;
+        TxnValueWrapper wrapper = txMap.get(key);
+        boolean haveTxnPast = wrapper != null;
 
-        if(haveTxnPast) {
-            if(!current.equals(oldValue)){
+        if (haveTxnPast) {
+            if (!wrapper.value.equals(oldValue)) {
                 return false;
             }
-            setInternal(getService().toData(key), getService().toData(newValue));
-            txMap.put(key, newValue);
+            putInternal(getService().toData(key), getService().toData(newValue));
+            txMap.put(key, new TxnValueWrapper(wrapper.value, TxnValueWrapper.Type.UPDATED));
             return true;
-        }
-        else {
+        } else {
             boolean success = replaceIfSameInternal(getService().toData(key), getService().toData(oldValue), getService().toData(newValue));
-            if(success)
-                txMap.put(key, newValue);
+            if (success) {
+                txMap.put(key, new TxnValueWrapper(newValue, TxnValueWrapper.Type.UPDATED));
+            }
             return success;
         }
     }
 
     @Override
     public boolean remove(Object key, Object value) {
-        Object current = txMap.get(key);
-        if (current != null && !getService().compare(name, current, value)) {
+        TxnValueWrapper wrapper = txMap.get(key);
+
+        if (wrapper != null && !getService().compare(name, wrapper.value, value)) {
             return false;
         }
         boolean removed = removeIfSameInternal(getService().toData(key), value);
         if (removed) {
-            txMap.put(key, NULL);
+            txMap.put(key, new TxnValueWrapper(value, TxnValueWrapper.Type.REMOVED));
         }
         return removed;
     }
@@ -147,14 +165,19 @@ public class TxnMapProxy extends TxnMapProxySupport implements TransactionalMap 
     @Override
     public Object remove(Object key) {
         final Object valueBeforeTxn = getService().toObject(removeInternal(getService().toData(key)));
-        Object currentValue = txMap.put(key, NULL);
-        return currentValue == null ? valueBeforeTxn : checkIfNull(currentValue);
+        TxnValueWrapper wrapper = null;
+        if(valueBeforeTxn != null || txMap.containsKey(key) ) {
+            wrapper = txMap.put(key, new TxnValueWrapper(valueBeforeTxn, TxnValueWrapper.Type.REMOVED));
+        }
+        return wrapper == null ? valueBeforeTxn : checkIfRemoved(wrapper);
     }
 
     @Override
     public void delete(Object key) {
-        removeInternal(getService().toData(key));
-        txMap.put(key, NULL);
+        Data data = removeInternal(getService().toData(key));
+        if(data != null || txMap.containsKey(key) ) {
+            txMap.put(key, new TxnValueWrapper(getService().toObject(data), TxnValueWrapper.Type.REMOVED));
+        }
     }
 
 }
