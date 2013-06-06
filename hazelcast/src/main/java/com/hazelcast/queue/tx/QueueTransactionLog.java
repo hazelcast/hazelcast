@@ -22,7 +22,7 @@ import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.transaction.KeyAwareTransactionLog;
+import com.hazelcast.transaction.impl.KeyAwareTransactionLog;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;

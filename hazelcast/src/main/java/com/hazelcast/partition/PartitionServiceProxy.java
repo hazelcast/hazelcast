@@ -17,6 +17,7 @@
 package com.hazelcast.partition;
 
 import com.hazelcast.core.Member;
+import com.hazelcast.core.MigrationListener;
 import com.hazelcast.core.Partition;
 import com.hazelcast.nio.Address;
 

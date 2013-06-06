@@ -148,7 +148,6 @@
                     <stopKey>stop</stopKey>
                 </configuration>
             </plugin>
-
         </plugins>
     </build>
 

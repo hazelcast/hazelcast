@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.transaction;
+package com.hazelcast.transaction.impl;
 
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionNotActiveException;
+import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -29,7 +32,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-import static com.hazelcast.transaction.Transaction.State.*;
+import static com.hazelcast.transaction.impl.Transaction.State.*;
 import static com.hazelcast.transaction.TransactionOptions.TransactionType;
 
 final class TransactionImpl implements Transaction {
@@ -297,7 +300,7 @@ final class TransactionImpl implements Transaction {
         sb.append("Transaction");
         sb.append("{txnId='").append(txnId).append('\'');
         sb.append(", state=").append(state);
-        sb.append(", txType=").append(transactionType.value);
+        sb.append(", txType=").append(transactionType);
         sb.append(", timeoutMillis=").append(timeoutMillis);
         sb.append('}');
         return sb.toString();

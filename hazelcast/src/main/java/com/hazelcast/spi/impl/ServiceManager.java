@@ -39,7 +39,7 @@ import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.topic.TopicService;
-import com.hazelcast.transaction.TransactionManagerServiceImpl;
+import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 
 import java.lang.reflect.Constructor;
 import java.util.*;

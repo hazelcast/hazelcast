@@ -16,8 +16,6 @@
 
 package com.hazelcast.map.tx;
 
-import com.hazelcast.transaction.KeyAwareTransactionLog;
-import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -26,8 +24,9 @@ import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.transaction.TransactionException;
-import com.hazelcast.transaction.TransactionLog;
+import com.hazelcast.transaction.impl.KeyAwareTransactionLog;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.ThreadUtil;
 
 import java.io.IOException;
 import java.util.concurrent.Future;

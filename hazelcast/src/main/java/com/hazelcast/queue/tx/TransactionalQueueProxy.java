@@ -20,7 +20,7 @@ import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.transaction.Transaction;
+import com.hazelcast.transaction.impl.Transaction;
 
 import java.util.concurrent.TimeUnit;
 

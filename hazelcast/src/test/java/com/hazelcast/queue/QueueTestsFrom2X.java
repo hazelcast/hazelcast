@@ -13,13 +13,11 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 
 /**
  * @ali 6/3/13
@@ -176,7 +174,7 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
     public void issue391() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
 
-        final Collection<String> results = new CopyOnWriteArrayList<String>();
+        final Collection<String> results = new ArrayList<String>(5);
         final HazelcastInstance hz1 = factory.newHazelcastInstance(new Config());
         final CountDownLatch latchOffer = new CountDownLatch(1);
         final CountDownLatch latchTake = new CountDownLatch(1);
@@ -192,16 +190,19 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
                 }
             }
         }).start();
+
         final HazelcastInstance hz2 = factory.newHazelcastInstance(new Config());
         new Thread(new Runnable() {
             public void run() {
                 for (int i = 0; i < 5; i++) {
-                    hz2.getQueue("q").offer(Integer.toString(i));
+                    boolean offered = hz2.getQueue("q").offer(Integer.toString(i));
+                    System.err.println("offered: " + offered);
                 }
+                System.err.println("done");
                 latchOffer.countDown();
             }
         }).start();
-        Assert.assertTrue(latchOffer.await(10, TimeUnit.SECONDS));
+        Assert.assertTrue(latchOffer.await(100, TimeUnit.SECONDS));
         Assert.assertTrue(latchTake.await(10, TimeUnit.SECONDS));
         Assert.assertTrue(hz1.getQueue("q").isEmpty());
         hz1.getLifecycleService().shutdown();

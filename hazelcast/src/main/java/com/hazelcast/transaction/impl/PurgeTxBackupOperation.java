@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.transaction;
+package com.hazelcast.transaction.impl;
 
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.ObjectDataInput;
@@ -27,14 +27,14 @@ import java.io.IOException;
 /**
  * @mdogan 3/25/13
  */
-public final class RollbackTxBackupOperation extends Operation {
+public final class PurgeTxBackupOperation extends Operation {
 
     private String txnId;
 
-    public RollbackTxBackupOperation() {
+    public PurgeTxBackupOperation() {
     }
 
-    public RollbackTxBackupOperation(String txnId) {
+    public PurgeTxBackupOperation(String txnId) {
         this.txnId = txnId;
     }
 
@@ -45,7 +45,7 @@ public final class RollbackTxBackupOperation extends Operation {
     @Override
     public void run() throws Exception {
         TransactionManagerServiceImpl txManagerService = getService();
-        txManagerService.rollbackTxBackupLog(txnId);
+        txManagerService.purgeTxBackupLog(txnId);
     }
 
     @Override
