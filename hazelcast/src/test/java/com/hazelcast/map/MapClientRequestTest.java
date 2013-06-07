@@ -38,6 +38,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import static com.hazelcast.query.SampleObjects.Employee;
 import static org.junit.Assert.*;
 
 @RunWith(HazelcastJUnit4ClassRunner.class)
@@ -270,16 +271,16 @@ public class MapClientRequestTest extends ClientTestSupport {
         testSet.add("serra");
         testSet.add("met");
         final IMap map = getMap();
-        map.put(1, new TestUtil.Employee("enes", 29, true, 100d));
-        map.put(2, new TestUtil.Employee("serra", 3, true, 100d));
-        map.put(3, new TestUtil.Employee("met", 7, true, 100d));
+        map.put(1, new Employee("enes", 29, true, 100d));
+        map.put(2, new Employee("serra", 3, true, 100d));
+        map.put(3, new Employee("met", 7, true, 100d));
         MapQueryRequest request = new MapQueryRequest(mapName, new SqlPredicate("age < 10"), IterationType.VALUE);
         final SimpleClient client = getClient();
         client.send(request);
         QueryDataResultStream result = (QueryDataResultStream) client.receive();
         Iterator iterator = result.iterator();
         while(iterator.hasNext()) {
-            TestUtil.Employee x = (TestUtil.Employee) TestUtil.toObject((Data) iterator.next());
+            Employee x = (Employee) TestUtil.toObject((Data) iterator.next());
             testSet.remove(x.getName());
         }
         assertEquals(0, testSet.size());

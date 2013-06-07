@@ -124,7 +124,6 @@ final class TestNodeRegistry {
                                 clusterService.removeAddress(thisAddress);
                             }
                         });
-                        break;
                     }
                 }
             }

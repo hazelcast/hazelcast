@@ -406,7 +406,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private void assignNewMaster() {
         final Address oldMasterAddress = node.getMasterAddress();
-        logger.log(Level.FINEST, "Master " + oldMasterAddress + " is dead...");
         if (node.joined()) {
             final Collection<MemberImpl> members = getMemberList();
             MemberImpl newMaster = null;
@@ -426,6 +425,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 logger.log(Level.WARNING, "Old master is dead and this node is not master " +
                         "but member list contains only " + size + " members! -> " + members);
             }
+            logger.log(Level.INFO, "Master " + oldMasterAddress + " left the cluster. Assigning new master " + newMaster);
             if (newMaster != null) {
                 node.setMasterAddress(newMaster.getAddress());
             } else {

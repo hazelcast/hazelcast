@@ -21,6 +21,7 @@ import com.hazelcast.core.*;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.monitor.LocalMapStats;
+import com.hazelcast.query.SampleObjects;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -37,10 +38,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.hazelcast.instance.TestUtil.Employee;
-import static junit.framework.Assert.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static com.hazelcast.query.SampleObjects.Employee;
+import static org.junit.Assert.*;
 
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
@@ -329,7 +328,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertEquals("value1", testMapStore.getStore().get("1"));
         assertEquals(1, map.size());
         map.flush();
-        Assert.assertTrue(map.evict("1"));
+        assertTrue(map.evict("1"));
         assertEquals("value2", testMapStore.getStore().get("1"));
         assertEquals(0, map.size());
         assertEquals(1, testMapStore.getStore().size());
@@ -441,14 +440,14 @@ public class MapStoreTest extends HazelcastTestSupport {
         testMapStore.insert("1", "value1");
         IMap map = h1.getMap("default");
         assertEquals(0, map.size());
-        Assert.assertTrue(map.tryLock("1", 1, TimeUnit.SECONDS));
+        assertTrue(map.tryLock("1", 1, TimeUnit.SECONDS));
         assertEquals("value1", map.get("1"));
         map.unlock("1");
         assertEquals("value1", map.put("1", "value2"));
         assertEquals("value2", map.get("1"));
         assertEquals("value2", testMapStore.getStore().get("1"));
         assertEquals(1, map.size());
-        Assert.assertTrue(map.evict("1"));
+        assertTrue(map.evict("1"));
         assertEquals(0, map.size());
         assertEquals(1, testMapStore.getStore().size());
         assertEquals("value2", map.get("1"));

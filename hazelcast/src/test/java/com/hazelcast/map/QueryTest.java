@@ -22,8 +22,6 @@ import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.instance.HazelcastInstanceImpl;
-import com.hazelcast.instance.TestUtil;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
@@ -45,7 +43,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.instance.TestUtil.*;
+import static com.hazelcast.query.SampleObjects.*;
 import static org.junit.Assert.*;
 
 @RunWith(HazelcastJUnit4ClassRunner.class)

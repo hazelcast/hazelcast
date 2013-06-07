@@ -29,7 +29,9 @@ import org.junit.runner.RunWith;
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.hazelcast.instance.TestUtil.*;
+import static com.hazelcast.instance.TestUtil.toData;
+import static com.hazelcast.query.SampleObjects.Employee;
+import static com.hazelcast.query.SampleObjects.Value;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastJUnit4ClassRunner.class)

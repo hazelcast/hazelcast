@@ -258,7 +258,7 @@
             </build>
             <modules>
                 <module>hazelcast-all</module>
-                <!--<module>hazelcast-documentation</module>-->
+                <module>hazelcast-documentation</module>
             </modules>
         </profile>
 

@@ -109,8 +109,7 @@ public class ReplicaSyncRequest extends Operation implements PartitionAwareOpera
     }
 
     public void logError(Throwable e) {
-        final ILogger logger = getLogger();
-        logger.log(Level.INFO, e.getClass() + ": " + e.getMessage());
+        ReplicaErrorLogger.log(e, getLogger());
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
