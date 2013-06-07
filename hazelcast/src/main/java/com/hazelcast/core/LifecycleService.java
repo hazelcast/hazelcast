@@ -17,8 +17,8 @@
 package com.hazelcast.core;
 
 /**
- * LifecycleService allows you to shutdown, kill an HazelcastInstance.
- * LifecycleListeners also can be added to listen for lifecycle state changes.
+ * LifecycleService allows you to shutdown, kill and listen to {@link LifecycleEvent}'s
+ * on HazelcastInstance.
  */
 public interface LifecycleService {
 

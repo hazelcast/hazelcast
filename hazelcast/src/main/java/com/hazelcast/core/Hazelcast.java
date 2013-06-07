@@ -23,9 +23,7 @@ import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import java.util.Set;
 
 /**
- * Factory for all of the Hazelcast data and execution components such as
- * maps, queues, multimaps, topics and executor service.
- * <p/>
+ * Factory for {@link HazelcastInstance}'s, a node in a cluster.
  */
 public final class Hazelcast {
 
