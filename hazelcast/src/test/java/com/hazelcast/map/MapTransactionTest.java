@@ -17,8 +17,8 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
@@ -29,30 +29,20 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.TransactionalTaskContext;
-import org.junit.After;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.*;
 
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
 public class MapTransactionTest extends HazelcastTestSupport {
-
-    @BeforeClass
-    public static void init() {
-        Hazelcast.shutdownAll();
-    }
-
-    @After
-    public void cleanUp() {
-        Hazelcast.shutdownAll();
-    }
 
     @Test
     public void testCommitOrder() throws TransactionException {
@@ -72,10 +62,11 @@ public class MapTransactionTest extends HazelcastTestSupport {
                 assertEquals("value3", txMap.put("1", "value4"));
                 assertEquals("value4", txMap.put("1", "value5"));
                 assertEquals("value5", txMap.put("1", "value6"));
+                assertEquals(1, txMap.size());
                 return true;
             }
         });
-        assertEquals("value6",h4.getMap("default").get("1"));
+        assertEquals("value6", h4.getMap("default").get("1"));
     }
 
     @Test
@@ -106,26 +97,32 @@ public class MapTransactionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTxnBackupDies() throws TransactionException {
+    public void testTxnBackupDies() throws TransactionException, InterruptedException {
         Config config = new Config();
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance h1 = factory.newHazelcastInstance(config);
         final HazelcastInstance h2 = factory.newHazelcastInstance(config);
         final IMap map1 = h1.getMap("default");
-        final int size = 50;
+        final int size = 100;
         final CountDownLatch latch = new CountDownLatch(size + 1);
+        final CountDownLatch latch2 = new CountDownLatch(1);
 
         Runnable runnable = new Runnable() {
             public void run() {
                 try {
-                    boolean b = h1.executeTransaction(new TransactionOptions().setDurability(1), new TransactionalTask<Boolean>() {
+                    final int oneThird = size / 3;
+                    final int threshold = new Random().nextInt(oneThird) + oneThird;
+                    h1.executeTransaction(new TransactionOptions().setDurability(1), new TransactionalTask<Boolean>() {
                         public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                             final TransactionalMap<Object, Object> txMap = context.getMap("default");
                             for (int i = 0; i < size; i++) {
+                                if (i == threshold) {
+                                    latch2.countDown();
+                                }
                                 txMap.put(i, i);
                                 try {
                                     Thread.sleep(100);
-                                } catch (InterruptedException e) {
+                                } catch (InterruptedException ignored) {
                                 }
                                 latch.countDown();
                             }
@@ -133,25 +130,23 @@ public class MapTransactionTest extends HazelcastTestSupport {
                         }
                     });
                     fail();
-                } catch (Exception e) {
+                } catch (Exception ignored) {
                 }
                 latch.countDown();
             }
         };
         new Thread(runnable).start();
-        try {
-            Thread.sleep(1000);
-            h2.getLifecycleService().shutdown();
-            latch.await();
-            for (int i = 0; i < size; i++) {
-                assertNull(map1.get(i));
-            }
-        } catch (InterruptedException e) {
+        assertTrue(latch2.await(20, TimeUnit.SECONDS));
+        h2.getLifecycleService().shutdown();
+
+        assertTrue(latch.await(60, TimeUnit.SECONDS));
+        for (int i = 0; i < size; i++) {
+            assertNull(map1.get(i));
         }
     }
 
     @Test
-    public void testTxnOwnerDies() throws TransactionException {
+    public void testTxnOwnerDies() throws TransactionException, InterruptedException {
         Config config = new Config();
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         final HazelcastInstance h1 = factory.newHazelcastInstance(config);
@@ -159,6 +154,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         final HazelcastInstance h3 = factory.newHazelcastInstance(config);
         final IMap map1 = h1.getMap("default");
         final int size = 50;
+        final AtomicBoolean result = new AtomicBoolean(false);
 
         Runnable runnable = new Runnable() {
             public void run() {
@@ -170,7 +166,6 @@ public class MapTransactionTest extends HazelcastTestSupport {
                                 txMap.put(i, i);
                                 try {
                                     Thread.sleep(100);
-                                    System.out.println("turn:" + i);
                                 } catch (InterruptedException e) {
                                     e.printStackTrace();
                                 }
@@ -178,22 +173,23 @@ public class MapTransactionTest extends HazelcastTestSupport {
                             return true;
                         }
                     });
-                    fail();
-                } catch (TransactionException e) {
+                    result.set(b);
+                } catch (HazelcastInstanceNotActiveException ignored) {
+                } catch (TransactionException ignored) {
                 }
             }
         };
-        try {
-            Thread thread = new Thread(runnable);
-            thread.start();
-            Thread.sleep(200);
-            h1.getLifecycleService().shutdown();
-            thread.join();
-            final IMap map2 = h2.getMap("default");
-            for (int i = 0; i < size; i++) {
-                assertNull(map2.get(i));
-            }
-        } catch (InterruptedException e) {
+
+        Thread thread = new Thread(runnable);
+        thread.start();
+        Thread.sleep(200);
+        h1.getLifecycleService().shutdown();
+        thread.join();
+
+        assertFalse(result.get());
+        final IMap map2 = h2.getMap("default");
+        for (int i = 0; i < size; i++) {
+            assertNull(map2.get(i));
         }
     }
 
@@ -214,6 +210,8 @@ public class MapTransactionTest extends HazelcastTestSupport {
                 assertEquals("value2", txMap.get("1"));
                 assertNull(map2.get("1"));
                 assertNull(map2.get("2"));
+                assertEquals(1, txMap.size());
+
                 return true;
             }
         });
@@ -244,6 +242,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
                 assertEquals("1", map2.get("1"));
                 assertEquals(null, txMap.get("1"));
                 assertEquals(null, txMap.remove("2"));
+                assertEquals(2, txMap.size());
                 return true;
             }
         });
@@ -285,6 +284,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
                 assertEquals(true, txMap.remove("2", "2"));
                 assertEquals(false, txMap.remove("3", null));
                 assertEquals(false, txMap.remove("5", "2"));
+                assertEquals(2, txMap.size());
                 return true;
             }
         });
@@ -324,6 +324,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
                 assertEquals("1", map2.get("1"));
                 assertEquals(null, txMap.get("1"));
                 txMap.delete("2");
+                assertEquals(2, txMap.size());
                 return true;
             }
         });
@@ -377,7 +378,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         final HazelcastInstance h2 = factory.newHazelcastInstance(config);
         final IMap map2 = h2.getMap("default");
 
-        boolean b = h1.executeTransaction(new TransactionOptions().setTimeout(1, TimeUnit.SECONDS), new TransactionalTask<Boolean>() {
+        boolean b = h1.executeTransaction(new TransactionalTask<Boolean>() {
             public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                 final TransactionalMap<Object, Object> txMap = context.getMap("default");
                 assertNull(txMap.replace("1", "value"));
@@ -452,83 +453,5 @@ public class MapTransactionTest extends HazelcastTestSupport {
         assertEquals("value3", map1.get("1"));
         assertEquals("value3", map2.get("1"));
     }
-
-//    @Test
-//    public void testTxnRollback() {
-//        Config config = new Config();
-//        StaticNodeFactory factory = new StaticNodeFactory(2);
-//        HazelcastInstance h1 = factory.newInstance(config);
-//        HazelcastInstance h2 = factory.newInstance(config);
-//        IMap map1 = h1.getMap("default");
-//        IMap map2 = h2.getMap("default");
-//        Transaction txn = h1.getTransaction();
-//        txn.begin();
-//        map1.put("1", "value");
-//        map1.put("13", "value");
-//        assertEquals("value", map1.get("1"));
-//        assertEquals("value", map1.get("13"));
-//        assertNull(map2.get("1"));
-//        assertNull(map2.get("13"));
-//        txn.rollback();
-//        assertNull(map1.get("1"));
-//        assertNull(map1.get("13"));
-//        assertNull(map2.get("1"));
-//        assertNull(map2.get("13"));
-//    }
-
-//    @Test(expected = IllegalStateException.class)
-//    public void testAccessTransactionalMapAfterTxEnds() throws TransactionException {
-//        Config config = new Config();
-//        StaticNodeFactory factory = new StaticNodeFactory(2);
-//        HazelcastInstance hz = factory.newHazelcastInstance(config);
-//        AutoTransactionContext txCtx = hz.newTransactionContext();
-//        Transaction tx = txCtx.beginTransaction();
-//        TransactionalMap txMap = txCtx.getMap("default");
-//        tx.commit();
-//        txMap.put("1", "value");
-//    }
-//
-//    @Test
-//    public void testTxnTimeout() {
-//        Config config = new Config();
-//        StaticNodeFactory factory = new StaticNodeFactory(2);
-//        HazelcastInstance h1 = factory.newHazelcastInstance(config);
-//        HazelcastInstance h2 = factory.newHazelcastInstance(config);
-//        IMap map1 = h1.getMap("default");
-//        IMap map2 = h2.getMap("default");
-//        AutoTransactionContext txCtx = h1.newTransactionContext();
-//        Transaction tx = txCtx.getTransaction();
-//        tx.setTransactionTimeout(1);
-//        tx.begin();
-//        TransactionalMap txMap = txCtx.getMap("default");
-//        try {
-//            txMap.put("1", "value");
-//            Thread.sleep(1100);
-//            txMap.put("13", "value");
-//            tx.commit();
-//            fail();
-//        } catch (Throwable e) {
-//            tx.rollback();
-//        }
-
-//        assertNull(map1.get("1"));
-//        assertFalse(map1.isLocked("1"));
-//        assertTrue(map1.tryLock("1"));
-
-//        txCtx = h1.newTransactionContext();
-//        tx = txCtx.beginTransaction();
-//        txMap = txCtx.getMap("default");
-//        try {
-//            txMap.put("1", "value");
-//            tx.commit();
-//        } catch (Exception e) {
-//            tx.rollback();
-//            e.printStackTrace();
-//            fail(e.getMessage());
-//        }
-//        assertEquals("value", map1.get("1"));
-//        assertTrue(map1.isLocked("1"));
-//    }
-
 
 }

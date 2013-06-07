@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2010, Hazel Ltd. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package com.hazelcast.nio.serialization;
@@ -46,7 +45,7 @@ public class CustomSerializationTest {
                 setImplementation(new FooXmlSerializer()).
                 setTypeClass(Foo.class);
         config.addTypeSerializer(tsc);
-        SerializationService ss = new SerializationServiceImpl(config, null);
+        SerializationService ss = new SerializationServiceBuilder().setConfig(config).build();
         Foo foo = new Foo();
         foo.setFoo("f");
         Data d = ss.toData(foo);

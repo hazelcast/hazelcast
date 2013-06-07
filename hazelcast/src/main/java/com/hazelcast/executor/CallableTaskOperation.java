@@ -23,13 +23,13 @@ import java.util.concurrent.Callable;
 /**
  * @mdogan 1/18/13
  */
-public final class CallableTaskOperation<V> extends BaseCallableTaskOperation<V> implements IdentifiedDataSerializable {
+public final class CallableTaskOperation extends BaseCallableTaskOperation implements IdentifiedDataSerializable {
 
     public CallableTaskOperation() {
     }
 
-    public CallableTaskOperation(String name, Callable<V> callable) {
-        super(name, callable);
+    public CallableTaskOperation(String name, String uuid, Callable callable) {
+        super(name, uuid, callable);
     }
 
     public int getFactoryId() {

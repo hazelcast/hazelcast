@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,14 +20,16 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.queue.QueueBackupAwareOperation;
 import com.hazelcast.queue.QueueDataSerializerHook;
+import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.WaitNotifyKey;
 
 import java.io.IOException;
 
 /**
  * @ali 3/27/13
  */
-public class TxnRollbackOperation extends QueueBackupAwareOperation {
+public class TxnRollbackOperation extends QueueBackupAwareOperation implements Notifier {
 
     long itemId;
 
@@ -73,5 +75,17 @@ public class TxnRollbackOperation extends QueueBackupAwareOperation {
 
     public int getId() {
         return QueueDataSerializerHook.TXN_ROLLBACK;
+    }
+
+    public boolean shouldNotify() {
+        return true;
+    }
+
+    public WaitNotifyKey getNotifiedKey() {
+        if (pollOperation){
+            return getOrCreateContainer().getPollWaitNotifyKey();
+        }
+        return getOrCreateContainer().getOfferWaitNotifyKey();
+
     }
 }

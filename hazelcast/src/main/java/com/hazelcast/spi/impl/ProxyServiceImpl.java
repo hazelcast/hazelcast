@@ -141,14 +141,21 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
 
     public void dispatchEvent(final DistributedObjectEvent event, Object ignore) {
         final String serviceName = event.getServiceName();
-        final ProxyRegistry registry = registries.get(serviceName);
         if (event.getEventType() == CREATED) {
-            if (registry == null || !registry.contains(event.getObjectId())) {
+            final ProxyRegistry registry = ConcurrencyUtil.getOrPutIfAbsent(registries, serviceName, registryConstructor);
+            nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
+                public void run() {
+                    registry.getProxy(event.getObjectId());
+                }
+            });
+
+            if (!registry.contains(event.getObjectId())) {
                 for (DistributedObjectListener listener : listeners.values()) {
                     listener.distributedObjectCreated(event);
                 }
             }
         } else {
+            final ProxyRegistry registry = registries.get(serviceName);
             if (registry != null) {
                 registry.removeProxy(event.getObjectId());
             }

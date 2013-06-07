@@ -14,21 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.transaction;
+package com.hazelcast.core;
 
-import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.spi.NodeEngine;
+import java.util.EventListener;
 
-import java.util.concurrent.Future;
+public interface MigrationListener extends EventListener {
 
-/**
- * @mdogan 3/25/13
- */
-public interface TransactionLog extends DataSerializable {
+    void migrationStarted(MigrationEvent migrationEvent);
 
-    Future prepare(NodeEngine nodeEngine);
+    void migrationCompleted(MigrationEvent migrationEvent);
 
-    Future commit(NodeEngine nodeEngine);
-
-    Future rollback(NodeEngine nodeEngine);
+    void migrationFailed(MigrationEvent migrationEvent);
 }

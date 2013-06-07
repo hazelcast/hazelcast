@@ -56,10 +56,10 @@ public class TcpIpJoiner extends AbstractJoiner {
 
     private void joinViaTargetMember(AtomicBoolean joined, Address targetAddress, long maxJoinMillis) {
         try {
-            logger.log(Level.FINEST, "Joining over target member " + targetAddress);
             if (targetAddress == null) {
-                throw new RuntimeException("Invalid target address " + targetAddress);
+                throw new IllegalArgumentException("Invalid target address -> NULL");
             }
+            logger.log(Level.FINEST, "Joining over target member " + targetAddress);
             if (targetAddress.equals(node.getThisAddress()) || isLocalAddress(targetAddress)) {
                 node.setAsMaster();
                 return;

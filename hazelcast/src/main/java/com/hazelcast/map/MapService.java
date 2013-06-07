@@ -44,7 +44,7 @@ import com.hazelcast.query.impl.QueryResultEntryImpl;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
-import com.hazelcast.transaction.Transaction;
+import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
@@ -244,7 +244,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         if (mergePolicy == null && mergePolicyName != null) {
             try {
                 // check if user has entered custom class name instead of policy name
-                mergePolicy = ClassLoaderUtil.newInstance(mergePolicyName);
+                mergePolicy = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), mergePolicyName);
                 mergePolicyMap.put(mergePolicyName, mergePolicy);
             } catch (Exception e) {
                 logger.log(Level.SEVERE, e.getMessage(), e);
@@ -600,9 +600,9 @@ public class MapService implements ManagedService, MigrationAwareService,
                     value = value != null ? value : toObject(dataValue);
                     testValue = value;
                 }
-                key = key != null ? key : toObject(key);
+                key = key != null ? key : toObject(dataKey);
                 QueryEventFilter queryEventFilter = (QueryEventFilter) filter;
-                QueryEntry entry = new QueryEntry(getSerializationService(), dataKey, dataKey, testValue);
+                QueryEntry entry = new QueryEntry(getSerializationService(), dataKey, key, testValue);
                 if (queryEventFilter.eval(entry)) {
                     if (queryEventFilter.isIncludeValue()) {
                         registrationsWithValue.add(candidate);
@@ -622,6 +622,9 @@ public class MapService implements ManagedService, MigrationAwareService,
         if (registrationsWithValue.isEmpty() && registrationsWithoutValue.isEmpty())
             return;
         String source = nodeEngine.getThisAddress().toString();
+        if (eventType == EntryEvent.TYPE_REMOVED || eventType == EntryEvent.TYPE_EVICTED) {
+            dataValue = dataValue != null ? dataValue : dataOldValue;
+        }
         EventData event = new EventData(source, mapName, caller, dataKey, dataValue, dataOldValue, eventType);
         nodeEngine.getEventService().publishEvent(SERVICE_NAME, registrationsWithValue, event);
         nodeEngine.getEventService().publishEvent(SERVICE_NAME, registrationsWithoutValue, event.cloneWithoutValues());
@@ -755,19 +758,11 @@ public class MapService implements ManagedService, MigrationAwareService,
                     public int compare(AbstractRecord o1, AbstractRecord o2) {
                         return o1.getLastAccessTime().compareTo(o2.getLastAccessTime());
                     }
-
-                    public boolean equals(Object obj) {
-                        return this.equals(obj);
-                    }
                 };
             } else if (evictionPolicy == MapConfig.EvictionPolicy.LFU) {
                 comparator = new Comparator<AbstractRecord>() {
                     public int compare(AbstractRecord o1, AbstractRecord o2) {
                         return o1.getHits().compareTo(o2.getHits());
-                    }
-
-                    public boolean equals(Object obj) {
-                        return this.equals(obj);
                     }
                 };
             }

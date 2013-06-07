@@ -19,18 +19,21 @@ package com.hazelcast.map.tx;
 import com.hazelcast.map.ContainsKeyOperation;
 import com.hazelcast.map.GetOperation;
 import com.hazelcast.map.MapService;
+import com.hazelcast.map.SizeOperationFactory;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.transaction.Transaction;
 import com.hazelcast.transaction.TransactionException;
-import com.hazelcast.transaction.TransactionLog;
 import com.hazelcast.transaction.TransactionalObject;
+import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
 
+import java.util.Map;
 import java.util.concurrent.Future;
+
+import static com.hazelcast.map.MapService.SERVICE_NAME;
 
 /**
  * @mdogan 2/26/13
@@ -76,6 +79,23 @@ public abstract class TxnMapProxySupport extends AbstractDistributedObject<MapSe
                     .createInvocationBuilder(MapService.SERVICE_NAME, operation, partitionId).build();
             Future f = invocation.invoke();
             return (Data) f.get();
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
+    }
+
+
+    public int sizeInternal() {
+        final NodeEngine nodeEngine = getNodeEngine();
+        try {
+            Map<Integer, Object> results = nodeEngine.getOperationService()
+                    .invokeOnAllPartitions(SERVICE_NAME, new SizeOperationFactory(name));
+            int total = 0;
+            for (Object result : results.values()) {
+                Integer size = (Integer) getService().toObject(result);
+                total += size;
+            }
+            return total;
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -143,14 +163,6 @@ public abstract class TxnMapProxySupport extends AbstractDistributedObject<MapSe
         }
         tx.addTransactionLog(new MapTransactionLog(name, key, new TxnDeleteOperation(name, key, versionedValue.version), versionedValue.version));
         return true;
-    }
-
-    public void setInternal(Data key, Data value) {
-        VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
-        if (versionedValue == null) {
-            throw new TransactionException("Transaction couldn't obtain lock " + ThreadUtil.getThreadId());
-        }
-        tx.addTransactionLog(new MapTransactionLog(name, key, new TxnSetOperation(name, key, value, -1, versionedValue.version), versionedValue.version));
     }
 
     private VersionedValue lockAndGet(Data key, long timeout) {

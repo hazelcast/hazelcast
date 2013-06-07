@@ -14,11 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.impl;
+package com.hazelcast.map.tx;
 
-public class PlaceHolder {
-    public static void main(String[] args) {
-        // Empty file for hazelcast-all module to
-        // create source jar
+public class TxnValueWrapper {
+
+    Object value;
+    Type type;
+
+    public TxnValueWrapper(Object value, Type type) {
+        this.value = value;
+        this.type = type;
     }
+
+    enum Type {
+        NEW, UPDATED, REMOVED,
+    }
+
 }

@@ -17,12 +17,13 @@
 package com.hazelcast.ascii.memcache;
 
 import com.hazelcast.ascii.TextCommandServiceImpl;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.ByteUtil;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.util.logging.Level;
 
 /**
  * User: sancar
@@ -43,7 +44,7 @@ public class IncrementCommandProcessor extends MemcacheCommandProcessor<Incremen
         try {
             key = URLDecoder.decode(incrementCommand.getKey(), "UTF-8");
         } catch (UnsupportedEncodingException e) {
-            logger.log(Level.WARNING, e.getMessage(), e);
+            throw new HazelcastException(e);
         }
         String mapName = DefaultMapName;
         int index = key.indexOf(':');
@@ -73,11 +74,11 @@ public class IncrementCommandProcessor extends MemcacheCommandProcessor<Incremen
                 try {
                     entry = new MemcacheEntry(incrementCommand.getKey(), textCommandService.toByteArray(value), 0);
                 } catch (Exception e) {
-                    logger.log(Level.WARNING, e.getMessage(), e);
+                    throw ExceptionUtil.rethrow(e);
                 }
             }
             final byte[] value1 = entry.getValue();
-            final long current = value1.equals("") ? 0 : byteArrayToLong(value1);
+            final long current = (value1 == null || value1.length == 0) ? 0 : byteArrayToLong(value1);
             long result = -1;
             if (incrementCommand.getType() == TextCommandType.INCREMENT) {
                 result = current + incrementCommand.getValue();

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.transaction;
+package com.hazelcast.transaction.impl;
 
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.instance.MemberImpl;
@@ -22,6 +22,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.transaction.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -55,7 +56,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
     }
 
     public <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException {
-        final TransactionContextImpl context = new TransactionContextImpl(this, nodeEngine, options);
+        final TransactionContextImpl context = new TransactionContextImpl(this, nodeEngine, options, false);
         context.beginTransaction();
         try {
             final T value = task.execute(context);
@@ -80,7 +81,11 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
     }
 
     public TransactionContext newTransactionContext(TransactionOptions options) {
-        return new TransactionContextImpl(this, nodeEngine, options);
+        return new TransactionContextImpl(this, nodeEngine, options, false);
+    }
+
+    public TransactionContext newClientTransactionContext(TransactionOptions options) {
+        return new TransactionContextImpl(this, nodeEngine, options, true);
     }
 
     public void init(NodeEngine nodeEngine, Properties properties) {

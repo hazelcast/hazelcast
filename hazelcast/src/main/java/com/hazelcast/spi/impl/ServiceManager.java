@@ -39,7 +39,7 @@ import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.topic.TopicService;
-import com.hazelcast.transaction.TransactionManagerServiceImpl;
+import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 
 import java.lang.reflect.Constructor;
 import java.util.*;
@@ -122,7 +122,7 @@ class ServiceManager {
     @SuppressWarnings("unchecked")
     private Object createServiceObject(String className) {
         try {
-            Class serviceClass = ClassLoaderUtil.loadClass(className);
+            Class serviceClass = ClassLoaderUtil.loadClass(nodeEngine.getConfigClassLoader(), className);
             try {
                 Constructor constructor = serviceClass.getConstructor(NodeEngine.class);
                 return constructor.newInstance(nodeEngine);

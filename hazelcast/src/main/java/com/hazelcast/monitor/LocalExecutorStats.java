@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,13 @@ public interface LocalExecutorStats extends LocalInstanceStats {
      * @return the number of completed operations
      */
     long getCompletedTaskCount();
+
+    /**
+     * Returns the number of cancelled operations of the executor service
+     *
+     * @return the number of cancelled operations
+     */
+    long getCancelledTaskCount();
 
     /**
      * Returns the total start latency of operations started

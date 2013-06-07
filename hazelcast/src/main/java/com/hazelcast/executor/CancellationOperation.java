@@ -14,69 +14,57 @@
  * limitations under the License.
  */
 
-package com.hazelcast.transaction;
+package com.hazelcast.executor;
 
-import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
 /**
- * @mdogan 3/25/13
+ * @mdogan 6/7/13
  */
-public final class PurgeTxBackupOperation extends Operation {
+public final class CancellationOperation extends Operation {
 
-    private String txnId;
+    private String uuid;
+    private boolean interrupt;
+    private transient boolean response;
 
-    public PurgeTxBackupOperation() {
+    public CancellationOperation() {
     }
 
-    public PurgeTxBackupOperation(String txnId) {
-        this.txnId = txnId;
+    public CancellationOperation(String uuid, boolean interrupt) {
+        this.uuid = uuid;
+        this.interrupt = interrupt;
     }
 
-    @Override
     public void beforeRun() throws Exception {
     }
 
-    @Override
     public void run() throws Exception {
-        TransactionManagerServiceImpl txManagerService = getService();
-        txManagerService.purgeTxBackupLog(txnId);
+        DistributedExecutorService service = getService();
+        response = service.cancel(uuid, interrupt);
     }
 
-    @Override
     public void afterRun() throws Exception {
     }
 
-    @Override
     public boolean returnsResponse() {
         return true;
     }
 
-    @Override
     public Object getResponse() {
-        return Boolean.TRUE;
+        return response;
     }
 
-    @Override
-    public ExceptionAction onException(Throwable throwable) {
-        if (throwable instanceof MemberLeftException) {
-            return ExceptionAction.THROW_EXCEPTION;
-        }
-        return super.onException(throwable);
-    }
-
-    @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        out.writeUTF(txnId);
+        out.writeUTF(uuid);
+        out.writeBoolean(interrupt);
     }
 
-    @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
-        txnId = in.readUTF();
+        uuid = in.readUTF();
+        interrupt = in.readBoolean();
     }
 }

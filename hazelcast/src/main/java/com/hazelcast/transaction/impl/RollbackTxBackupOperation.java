@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.transaction;
+package com.hazelcast.transaction.impl;
 
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.ObjectDataInput;

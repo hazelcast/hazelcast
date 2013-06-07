@@ -150,8 +150,8 @@ public final class HazelcastClientProxy implements HazelcastInstance {
         return getClient().getDistributedObject(serviceName, id);
     }
 
-    public void registerSerializer(TypeSerializer serializer, Class type) {
-        getClient().registerSerializer(serializer, type);
+    public void registerSerializer(Class type, TypeSerializer serializer) {
+        getClient().registerSerializer(type, serializer);
     }
 
     public void registerGlobalSerializer(TypeSerializer serializer) {

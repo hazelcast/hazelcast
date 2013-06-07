@@ -59,6 +59,11 @@ public final class PoolExecutorThreadFactory extends AbstractExecutorThreadFacto
                 super.run();
             } catch (OutOfMemoryError e) {
                 OutOfMemoryErrorDispatcher.onOutOfMemory(e);
+            } finally {
+                try {
+                    idQ.offer(id);
+                } catch (Throwable ignored) {
+                }
             }
         }
     }

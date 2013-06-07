@@ -14,33 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.transaction;
+package com.hazelcast.transaction.impl;
+
+import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.spi.NodeEngine;
+
+import java.util.concurrent.Future;
 
 /**
- * Hazelcast transaction interface.
+ * @mdogan 3/25/13
  */
-public interface Transaction {
+public interface TransactionLog extends DataSerializable {
 
-    public enum State {
-        NO_TXN,
-        ACTIVE,
-        PREPARING,
-        PREPARED,
-        COMMITTING,
-        COMMITTED,
-        COMMIT_FAILED,
-        ROLLING_BACK,
-        ROLLED_BACK
-    }
+    Future prepare(NodeEngine nodeEngine);
 
-    void addTransactionLog(TransactionLog transactionLog);
+    Future commit(NodeEngine nodeEngine);
 
-    TransactionLog getTransactionLog(Object key);
-
-    String getTxnId();
-
-    State getState();
-
-    long getTimeoutMillis();
-
+    Future rollback(NodeEngine nodeEngine);
 }

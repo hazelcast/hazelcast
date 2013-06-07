@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ import com.hazelcast.collection.CollectionService;
 import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.transaction.Transaction;
 import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.impl.Transaction;
 
 import java.util.ArrayList;
 import java.util.Collection;

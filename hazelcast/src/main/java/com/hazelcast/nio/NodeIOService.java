@@ -210,7 +210,7 @@ public class NodeIOService implements IOService {
     }
 
     public SerializationContext getSerializationContext() {
-        return node.serializationService.getSerializationContext();
+        return node.getSerializationService().getSerializationContext();
     }
 
     public Collection<Integer> getOutboundPorts() {

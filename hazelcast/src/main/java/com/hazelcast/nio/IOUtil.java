@@ -71,10 +71,10 @@ public final class IOUtil {
         return data;
     }
 
-    public static ObjectInputStream newObjectInputStream(final InputStream in) throws IOException {
+    public static ObjectInputStream newObjectInputStream(final ClassLoader classLoader, final InputStream in) throws IOException {
         return new ObjectInputStream(in) {
             protected Class<?> resolveClass(final ObjectStreamClass desc) throws ClassNotFoundException {
-                return ClassLoaderUtil.loadClass(desc.getName());
+                return ClassLoaderUtil.loadClass(classLoader, desc.getName());
             }
         };
     }
@@ -135,19 +135,6 @@ public final class IOUtil {
         if (n > 0) {
             dest.put(src.array(), src.position(), n);
             src.position(src.position() + n);
-        }
-        return n;
-    }
-
-    public static int copyFromDirectToDirectBuffer(ByteBuffer src, ByteBuffer dest) {
-        int n = Math.min(src.remaining(), dest.remaining());
-        if (src.remaining() <= n) {
-            dest.put(src);
-        } else {
-            int realLimit = src.limit();
-            src.limit(src.position() + n);
-            dest.put(src);
-            src.limit(realLimit);
         }
         return n;
     }

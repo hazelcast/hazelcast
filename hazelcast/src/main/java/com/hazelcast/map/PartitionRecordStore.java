@@ -186,7 +186,7 @@ public class PartitionRecordStore implements RecordStore {
         if (record == null) {
             // already removed from map by eviction but still need to delete it
             if (mapContainer.getStore() != null && mapContainer.getStore().load(mapService.toObject(dataKey)) != null) {
-                mapStoreDelete(record, dataKey);
+                mapStoreDelete(null, dataKey);
             }
         } else {
             accessRecord(record);
@@ -276,7 +276,7 @@ public class PartitionRecordStore implements RecordStore {
             if (mapContainer.getStore() != null) {
                 oldValue = mapContainer.getStore().load(mapService.toObject(dataKey));
                 if (oldValue != null) {
-                    mapStoreDelete(record, dataKey);
+                    mapStoreDelete(null, dataKey);
                 }
             }
         } else {
@@ -297,7 +297,7 @@ public class PartitionRecordStore implements RecordStore {
             if (mapContainer.getStore() != null) {
                 oldValue = mapContainer.getStore().load(mapService.toObject(dataKey));
                 if (oldValue != null) {
-                    mapStoreDelete(record, dataKey);
+                    mapStoreDelete(null, dataKey);
                 }
             }
         } else {
@@ -437,13 +437,15 @@ public class PartitionRecordStore implements RecordStore {
         return oldValue;
     }
 
-    public void set(Data dataKey, Object value, long ttl) {
+    public boolean set(Data dataKey, Object value, long ttl) {
         Record record = records.get(dataKey);
+        boolean newRecord = false;
         if (record == null) {
             value = mapService.interceptPut(name, null, value);
             record = mapService.createRecord(name, dataKey, value, ttl);
             mapStoreWrite(record, dataKey, value);
             records.put(dataKey, record);
+            newRecord = true;
         } else {
             value = mapService.interceptPut(name, record.getValue(), value);
             mapStoreWrite(record, dataKey, value);
@@ -452,6 +454,7 @@ public class PartitionRecordStore implements RecordStore {
         }
         saveIndex(record);
 
+        return newRecord;
     }
 
     public boolean merge(Data dataKey, EntryView mergingEntry, MapMergePolicy mergePolicy) {
@@ -630,7 +633,7 @@ public class PartitionRecordStore implements RecordStore {
 
     }
 
-    public void setRecordValue(Record record, Object value) {
+    private void setRecordValue(Record record, Object value) {
         accessRecord(record);
         record.onUpdate();
         if (record instanceof DataRecord)

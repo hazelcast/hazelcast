@@ -75,25 +75,23 @@ public class GetMapEntryRequest implements ConsoleRequest {
 
         if (entry == null) {
             result.put("No Value Found!", " ");
+        } else {
+            Object value = entry.getValue();
+            result.put("browse_value", value != null ? value.toString() : "null");
+            result.put("browse_class", value != null ? value.getClass().getName() : "null");
+            result.put("memory_cost", Long.toString(entry.getCost()));
+            result.put("date_creation_time", Long.toString(entry.getCreationTime()));
+            result.put("date_expiration_time", Long.toString(entry.getExpirationTime()));
+            result.put("browse_hits", Long.toString(entry.getHits()));
+            result.put("date_access_time", Long.toString(entry.getLastAccessTime()));
+            result.put("date_update_time", Long.toString(entry.getLastUpdateTime()));
+            result.put("browse_version", Long.toString(entry.getVersion()));
         }
-        Object value = entry.getValue();
-
-        result.put("browse_value", value != null ? value.toString() : "null");
-        result.put("browse_class", value != null ? value.getClass().getName() : "null");
-
-        result.put("memory_cost", Long.toString(entry.getCost()));
-        result.put("date_creation_time", Long.toString(entry.getCreationTime()));
-        result.put("date_expiration_time", Long.toString(entry.getExpirationTime()));
-        result.put("browse_hits", Long.toString(entry.getHits()));
-        result.put("date_access_time", Long.toString(entry.getLastAccessTime()));
-        result.put("date_update_time", Long.toString(entry.getLastUpdateTime()));
-        result.put("browse_version", Long.toString(entry.getVersion()));
-
 
         dos.writeInt(result.size());
 
         for (Object property : result.keySet()) {
-            dos.writeUTF((String) property + ":#" + (String) result.get(property));
+            dos.writeUTF(property + ":#" + result.get(property));
         }
 
     }

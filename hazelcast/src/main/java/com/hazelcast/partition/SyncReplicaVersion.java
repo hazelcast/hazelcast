@@ -16,7 +16,6 @@
 
 package com.hazelcast.partition;
 
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -25,7 +24,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
-import java.util.logging.Level;
 
 /**
  * @mdogan 4/11/13
@@ -81,8 +79,7 @@ public class SyncReplicaVersion extends Operation implements PartitionAwareOpera
     }
 
     public void logError(Throwable e) {
-        final ILogger logger = getLogger();
-        logger.log(Level.FINEST, e.getClass() + ": " + e.getMessage());
+        ReplicaErrorLogger.log(e, getLogger());
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
@@ -91,5 +88,14 @@ public class SyncReplicaVersion extends Operation implements PartitionAwareOpera
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("SyncReplicaVersion{");
+        sb.append("partitionId=").append(getPartitionId());
+        sb.append(", replicaIndex=").append(syncReplicaIndex);
+        sb.append('}');
+        return sb.toString();
     }
 }

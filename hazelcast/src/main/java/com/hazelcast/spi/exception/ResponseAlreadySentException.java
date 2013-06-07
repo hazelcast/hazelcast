@@ -14,19 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.partition;
+package com.hazelcast.spi.exception;
 
-import java.util.EventListener;
+import com.hazelcast.core.HazelcastException;
 
 /**
- * will be moved to com.hazelcast.core package
+ * @mdogan 6/7/13
  */
+public class ResponseAlreadySentException extends HazelcastException {
 
-public interface MigrationListener extends EventListener {
+    public ResponseAlreadySentException() {
+        super();
+    }
 
-    void migrationStarted(MigrationEvent migrationEvent);
-
-    void migrationCompleted(MigrationEvent migrationEvent);
-
-    void migrationFailed(MigrationEvent migrationEvent);
+    public ResponseAlreadySentException(String message) {
+        super(message);
+    }
 }

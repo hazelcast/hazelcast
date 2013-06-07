@@ -32,7 +32,7 @@ import java.util.concurrent.ConcurrentMap;
 //TODO Possible leak because of empty lock objects
 public class LockStoreImpl implements DataSerializable, LockStore {
 
-    private final ConstructorFunction<Data, DistributedLock> lockConstructor
+    private transient final ConstructorFunction<Data, DistributedLock> lockConstructor
             = new ConstructorFunction<Data, DistributedLock>() {
         public DistributedLock createNew(Data key) {
             return new DistributedLock(key, lockService, namespace);

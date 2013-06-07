@@ -269,7 +269,6 @@ class ContextAwareDataOutput extends OutputStream implements BufferObjectDataOut
         pos = 0;
     }
 
-    @Override
     public void close() {
         reset();
         buffer = null;

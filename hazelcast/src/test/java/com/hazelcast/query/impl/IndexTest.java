@@ -28,7 +28,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.concurrent.ConcurrentMap;
 
 import static com.hazelcast.instance.TestUtil.toData;
@@ -40,7 +39,7 @@ public class IndexTest {
 
     static final int FACTORY_ID = 1;
 
-    final SerializationServiceImpl ss = new SerializationServiceImpl(1, Collections.singletonMap(FACTORY_ID, new TestPortableFactory()));
+    final SerializationService ss = new SerializationServiceBuilder().addPortableFactory(FACTORY_ID, new TestPortableFactory()).build();
 
     @Test
     public void testBasics() {

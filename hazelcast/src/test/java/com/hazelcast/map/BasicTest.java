@@ -18,10 +18,10 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.HazelcastJUnit4ClassRunner;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.util.Clock;
 import org.junit.Before;
@@ -31,10 +31,7 @@ import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.util.*;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -85,6 +82,162 @@ public class BasicTest extends HazelcastTestSupport {
         assertEquals(map.get("key1"), "value1");
         assertEquals(map.size(), 2);
     }
+
+    @Test
+    public void valuesToArray() {
+        IMap<String, String> map = getInstance().getMap("valuesToArray");
+        assertEquals(0, map.size());
+        map.put("a", "1");
+        map.put("b", "2");
+        map.put("c", "3");
+        assertEquals(3, map.size());
+        {
+            final Object[] values = map.values().toArray();
+            Arrays.sort(values);
+            assertArrayEquals(new Object[]{"1", "2", "3"}, values);
+        }
+        {
+            final String[] values = map.values().toArray(new String[3]);
+            Arrays.sort(values);
+            assertArrayEquals(new String[]{"1", "2", "3"}, values);
+        }
+        {
+            final String[] values = map.values().toArray(new String[2]);
+            Arrays.sort(values);
+            assertArrayEquals(new String[]{"1", "2", "3"}, values);
+        }
+        {
+            final String[] values = map.values().toArray(new String[5]);
+            Arrays.sort(values, 0, 3);
+            assertArrayEquals(new String[]{"1", "2", "3", null, null}, values);
+        }
+    }
+
+    @Test
+    public void testMapEvictAndListener() throws InterruptedException {
+        IMap<String, String> map = getInstance().getMap("testMapEvictAndListener");
+        String a = "/home/data/file1.dat";
+        String b = "/home/data/file2.dat";
+        List<String> list = new CopyOnWriteArrayList<String>();
+        list.add(a);
+        list.add(b);
+        final List<String> newList = new CopyOnWriteArrayList<String>();
+        final CountDownLatch latch = new CountDownLatch(list.size());
+        map.addEntryListener(new EntryListener<String, String>() {
+            public void entryAdded(EntryEvent<String, String> event) {
+            }
+
+            public void entryRemoved(EntryEvent<String, String> event) {
+            }
+
+            public void entryUpdated(EntryEvent<String, String> event) {
+            }
+
+            public void entryEvicted(EntryEvent<String, String> event) {
+                newList.add(event.getValue());
+                latch.countDown();
+            }
+        }, true);
+        map.put("a", list.get(0), 1, TimeUnit.SECONDS);
+        Thread.sleep(1100);
+        map.put("a", list.get(1), 1, TimeUnit.SECONDS);
+        assertTrue(latch.await(20, TimeUnit.SECONDS));
+        assertEquals(list.get(0), newList.get(0));
+        assertEquals(list.get(1), newList.get(1));
+    }
+
+    @Test
+    public void testMapEntryListener() {
+        IMap<String, String> map = getInstance().getMap("testMapEntryListener");
+        final CountDownLatch latchAdded = new CountDownLatch(1);
+        final CountDownLatch latchRemoved = new CountDownLatch(1);
+        final CountDownLatch latchUpdated = new CountDownLatch(1);
+        map.addEntryListener(new EntryListener<String, String>() {
+            public void entryAdded(EntryEvent event) {
+                assertEquals("world", event.getValue());
+                assertEquals("hello", event.getKey());
+                latchAdded.countDown();
+            }
+
+            public void entryRemoved(EntryEvent event) {
+                assertEquals("hello", event.getKey());
+                assertEquals("new world", event.getValue());
+                latchRemoved.countDown();
+            }
+
+            public void entryUpdated(EntryEvent event) {
+                assertEquals("world", event.getOldValue());
+                assertEquals("new world", event.getValue());
+                assertEquals("hello", event.getKey());
+                latchUpdated.countDown();
+            }
+
+            public void entryEvicted(EntryEvent event) {
+                entryRemoved(event);
+            }
+        }, true);
+        map.put("hello", "world");
+        map.put("hello", "new world");
+        map.remove("hello");
+        try {
+            assertTrue(latchAdded.await(5, TimeUnit.SECONDS));
+            assertTrue(latchUpdated.await(5, TimeUnit.SECONDS));
+            assertTrue(latchRemoved.await(5, TimeUnit.SECONDS));
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            assertFalse(e.getMessage(), true);
+        }
+    }
+
+    /**
+     * Test for issue #181
+     */
+    @Test
+    public void testMapKeyListenerWithRemoveAndUnlock() throws InterruptedException {
+        IMap<String, String> map = getInstance().getMap("testMapKeyListenerWithRemoveAndUnlock");
+        final String key = "key";
+        final int count = 20;
+        final CountDownLatch latch = new CountDownLatch(count * 2);
+        map.addEntryListener(new EntryAdapter<String, String>() {
+            public void entryAdded(final EntryEvent<String, String> e) {
+                testEvent(e);
+            }
+
+            public void entryRemoved(final EntryEvent<String, String> e) {
+                testEvent(e);
+            }
+
+            private void testEvent(final EntryEvent<String, String> e) {
+                if (key.equals(e.getKey())) {
+                    latch.countDown();
+                } else {
+                    fail("Invalid event: " + e);
+                }
+            }
+        }, key, true);
+
+        for (int i = 0; i < count; i++) {
+            map.lock(key);
+            map.put(key, "value");
+            map.remove(key);
+            map.unlock(key);
+        }
+        assertTrue("Listener events are missing! Remaining: " + latch.getCount(),
+                latch.await(5, TimeUnit.SECONDS));
+    }
+
+
+    @Test
+    public void testMapEntrySetWhenRemoved() {
+        IMap<String, String> map = getInstance().getMap("testMapEntrySetWhenRemoved");
+        map.put("Hello", "World");
+        map.remove("Hello");
+        Set<IMap.Entry<String, String>> set = map.entrySet();
+        for (IMap.Entry<String, String> e : set) {
+            fail("Iterator should not contain removed entry, found " + e.getKey());
+        }
+    }
+
 
     @Test
     public void testMapRemove() {

@@ -47,7 +47,7 @@ public interface RecordStore {
 
     boolean replace(Data dataKey, Object oldValue, Object newValue);
 
-    void set(Data dataKey, Object value, long ttl);
+    boolean set(Data dataKey, Object value, long ttl);
 
     void putTransient(Data dataKey, Object value, long ttl);
 
@@ -96,8 +96,6 @@ public interface RecordStore {
     Map.Entry<Data,Data> getMapEntryData(Data dataKey);
 
     Map.Entry<Data,Object> getMapEntryObject(Data dataKey);
-
-    void setRecordValue(Record record, Object value);
 
     void flush();
 

@@ -28,7 +28,6 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collections;
 
 /**
  * @mdogan 1/4/13
@@ -71,23 +70,24 @@ public class PortableTest {
         Assert.assertEquals(main, serializationService2.toObject(data));
     }
 
-    private SerializationServiceImpl createSerializationService(int version) {
-        return new SerializationServiceImpl(version, Collections.singletonMap(FACTORY_ID, new TestPortableFactory()));
+    private SerializationService createSerializationService(int version) {
+        return new SerializationServiceBuilder().setVersion(version).addPortableFactory(FACTORY_ID, new TestPortableFactory()).build();
     }
 
     @Test
     public void testDifferentVersions() {
-        final SerializationService serializationService = new SerializationServiceImpl(1, Collections.singletonMap(FACTORY_ID, new PortableFactory() {
+        final SerializationService serializationService = new SerializationServiceBuilder().setVersion(1).addPortableFactory(FACTORY_ID, new PortableFactory() {
             public Portable create(int classId) {
                 return new NamedPortable();
             }
 
-        }));
-        final SerializationService serializationService2 = new SerializationServiceImpl(2, Collections.singletonMap(FACTORY_ID, new PortableFactory() {
+        }).build();
+
+        final SerializationService serializationService2 = new SerializationServiceBuilder().setVersion(2).addPortableFactory(FACTORY_ID, new PortableFactory() {
             public Portable create(int classId) {
                 return new NamedPortableV2();
             }
-        }));
+        }).build();
 
         NamedPortable p1 = new NamedPortable("portable-v1", 111);
         Data data = serializationService.toData(p1);
@@ -207,13 +207,17 @@ public class PortableTest {
                         .addLongField("l").addCharArrayField("c").addPortableField("p", createNamedPortableClassDefinition()).build());
 
         try {
-            new SerializationServiceImpl(serializationConfig, null);
+            new SerializationServiceBuilder().setConfig(serializationConfig).build();
             Assert.fail("Should throw HazelcastSerializationException!");
         } catch (HazelcastSerializationException e) {
         }
 
+        new SerializationServiceBuilder().setConfig(serializationConfig).setCheckClassDefErrors(false).build();
+
+        // -- OR --
+
         serializationConfig.setCheckClassDefErrors(false);
-        new SerializationServiceImpl(serializationConfig, null);
+        new SerializationServiceBuilder().setConfig(serializationConfig).build();
     }
 
     @Test
@@ -230,7 +234,7 @@ public class PortableTest {
                         .addUTFField("name").addIntField("myint").build()
                 );
 
-        SerializationService serializationService = new SerializationServiceImpl(serializationConfig, null);
+        SerializationService serializationService = new SerializationServiceBuilder().setConfig(serializationConfig).build();
         RawDataPortable p = new RawDataPortable(System.currentTimeMillis(), "test chars".toCharArray(),
                 new NamedPortable("named portable", 34567),
                 9876, "Testing raw portable", new SimpleDataSerializable("test bytes".getBytes()));

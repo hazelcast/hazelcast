@@ -47,12 +47,13 @@ public interface SerializationService {
 
     ObjectDataInputStream createObjectDataInputStream(InputStream in);
 
-    void register(TypeSerializer serializer, Class type);
+    void register(Class type, TypeSerializer serializer);
 
-    void registerFallback(TypeSerializer serializer);
+    void registerGlobal(TypeSerializer serializer);
 
     SerializationContext getSerializationContext();
 
     PortableReader createPortableReader(Data data);
 
+    ClassLoader getClassLoader();
 }

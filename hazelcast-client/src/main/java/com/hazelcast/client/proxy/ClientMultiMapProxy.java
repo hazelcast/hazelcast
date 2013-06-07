@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -285,12 +285,16 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
                 switch (event.getEventType()){
                     case ADDED:
                         listener.entryAdded(entryEvent);
+                        break;
                     case REMOVED:
                         listener.entryRemoved(entryEvent);
+                        break;
                     case UPDATED:
                         listener.entryUpdated(entryEvent);
+                        break;
                     case EVICTED:
                         listener.entryEvicted(entryEvent);
+                        break;
                 }
             }
         };

@@ -16,8 +16,8 @@
 
 package com.hazelcast.spi;
 
-import com.hazelcast.transaction.Transaction;
 import com.hazelcast.transaction.TransactionalObject;
+import com.hazelcast.transaction.impl.Transaction;
 
 public interface TransactionalService {
 

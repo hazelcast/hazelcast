@@ -24,7 +24,7 @@ import com.hazelcast.core.IQueue;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.nio.serialization.SerializationServiceImpl;
+import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.queue.client.*;
 import com.hazelcast.spi.impl.PortableCollection;
 import com.hazelcast.spi.impl.PortableItemEvent;
@@ -49,7 +49,7 @@ import static org.junit.Assert.*;
 public class QueueClientRequestTest extends ClientTestSupport {
 
     static final String queueName = "test";
-    static final SerializationService ss = new SerializationServiceImpl(0);
+    static final SerializationService ss = new SerializationServiceBuilder().build();
 
     protected Config createConfig() {
         Config config = new Config();

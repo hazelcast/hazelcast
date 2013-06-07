@@ -210,12 +210,12 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         return (S) node.nodeEngine.getProxyService().getDistributedObject(serviceName, id);
     }
 
-    public void registerSerializer(final TypeSerializer serializer, final Class type) {
-        node.serializationService.register(serializer, type);
+    public void registerSerializer(final Class type, final TypeSerializer serializer) {
+        node.getSerializationService().register(type, serializer);
     }
 
     public void registerGlobalSerializer(final TypeSerializer serializer) {
-        node.serializationService.registerFallback(serializer);
+        node.getSerializationService().registerGlobal(serializer);
     }
 
     public String addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {

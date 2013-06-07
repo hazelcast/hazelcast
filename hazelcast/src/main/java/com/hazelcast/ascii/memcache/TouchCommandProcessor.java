@@ -17,11 +17,11 @@
 package com.hazelcast.ascii.memcache;
 
 import com.hazelcast.ascii.TextCommandServiceImpl;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.util.logging.Level;
 
 /**
  * User: sancar
@@ -42,7 +42,7 @@ public class TouchCommandProcessor extends MemcacheCommandProcessor<TouchCommand
         try {
             key = URLDecoder.decode(touchCommand.getKey(), "UTF-8");
         } catch (UnsupportedEncodingException e) {
-            logger.log(Level.WARNING, e.getMessage(), e);
+            throw new HazelcastException(e);
         }
         String mapName = DefaultMapName;
         int index = key.indexOf(':');

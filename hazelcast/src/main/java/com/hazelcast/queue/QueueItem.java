@@ -34,25 +34,18 @@ public class QueueItem implements IdentifiedDataSerializable, Comparable<QueueIt
 
     private Data data;
 
-    private long creationTime;
+    private final long creationTime;
 
     private transient QueueContainer container;
 
     public QueueItem() {
-    }
-
-    QueueItem(QueueContainer container) {
-        this.container = container;
         this.creationTime = Clock.currentTimeMillis();
     }
 
-    QueueItem(QueueContainer container, long itemId) {
-        this(container);
-        this.itemId = itemId;
-    }
-
     public QueueItem(QueueContainer container, long itemId, Data data) {
-        this(container, itemId);
+        this();
+        this.container = container;
+        this.itemId = itemId;
         this.data = data;
     }
 
@@ -79,21 +72,6 @@ public class QueueItem implements IdentifiedDataSerializable, Comparable<QueueIt
         return creationTime;
     }
 
-    public boolean equals(Object obj) {
-        if (obj instanceof QueueItem) {
-            QueueItem other = (QueueItem) obj;
-            if (itemId == -1 || other.getItemId() == -1) {
-                return getData() != null && data.equals(other.getData());
-            }
-            return itemId == other.getItemId();
-        } else if (obj instanceof Data) {
-            return getData() != null && data.equals(obj);
-        } else if (obj instanceof Long) {
-            return itemId == (Long) obj;
-        }
-        return false;
-    }
-
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeLong(itemId);
         IOUtil.writeNullableData(out, data);
@@ -104,12 +82,6 @@ public class QueueItem implements IdentifiedDataSerializable, Comparable<QueueIt
         data = IOUtil.readNullableData(in);
     }
 
-    public int hashCode() {
-        int result = (int) (itemId ^ (itemId >>> 32));
-        result = 31 * result + (data != null ? data.hashCode() : 0);
-        return result;
-    }
-
     public int compareTo(QueueItem o) {
         if (itemId < o.getItemId()){
             return -1;
@@ -118,6 +90,26 @@ public class QueueItem implements IdentifiedDataSerializable, Comparable<QueueIt
             return 1;
         }
         return 0;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof QueueItem)) return false;
+
+        QueueItem item = (QueueItem) o;
+
+        if (itemId != item.itemId) return false;
+        if (data != null ? !data.equals(item.data) : item.data != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = (int) (itemId ^ (itemId >>> 32));
+        result = 31 * result + (data != null ? data.hashCode() : 0);
+        return result;
     }
 
     public int getFactoryId() {

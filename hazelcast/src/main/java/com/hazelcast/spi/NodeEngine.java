@@ -62,6 +62,8 @@ public interface NodeEngine {
 
     Config getConfig();
 
+    ClassLoader getConfigClassLoader();
+
     GroupProperties getGroupProperties();
 
     ILogger getLogger(String name);

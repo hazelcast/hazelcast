@@ -40,10 +40,7 @@ import com.hazelcast.core.Partition;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.Operation;
 
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.*;
 import java.lang.management.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -67,6 +64,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     private volatile String webServerUrl;
     private volatile boolean urlChanged = false;
     private boolean versionMismatch = false;
+    private final ManagementCenterIdentifier identifier;
 
     public ManagementCenterService(HazelcastInstanceImpl instance) {
         this.instance = instance;
@@ -81,12 +79,14 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         commandHandler = new ConsoleCommandHandler(this.instance);
         String tmpWebServerUrl = managementCenterConfig.getUrl();
         webServerUrl = tmpWebServerUrl != null ?
-                (!tmpWebServerUrl.endsWith("/") ? tmpWebServerUrl + '/' : tmpWebServerUrl) : tmpWebServerUrl;
+                (!tmpWebServerUrl.endsWith("/") ? tmpWebServerUrl + '/' : tmpWebServerUrl) : null;
         updateIntervalMs = (managementCenterConfig.getUpdateInterval() > 0)
                 ? managementCenterConfig.getUpdateInterval() * 1000 : 5000;
         taskPoller = new TaskPoller();
         stateSender = new StateSender();
         serializationService = instance.node.getSerializationService();
+        final Address address = instance.node.address;
+        identifier = new ManagementCenterIdentifier(instance.node.initializer.getVersion(),instance.getConfig().getGroupConfig().getName(), address.getHost() + ":" + address.getPort());
     }
 
     public void start() {
@@ -440,11 +440,10 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                         connection.setRequestMethod("POST");
                         connection.setConnectTimeout(1000);
                         connection.setReadTimeout(1000);
-                        final ObjectDataOutputStream out = serializationService.createObjectDataOutputStream(connection.getOutputStream());
+                        final OutputStream outputStream = connection.getOutputStream();
+                        identifier.write(outputStream);
+                        final ObjectDataOutputStream out = serializationService.createObjectDataOutputStream(outputStream);
                         TimedMemberState ts = getTimedMemberState();
-                        out.writeUTF(instance.node.initializer.getVersion());
-                        instance.node.address.writeData(out);
-                        out.writeUTF(instance.getConfig().getGroupConfig().getName());
                         ts.writeData(out);
                         out.flush();
                         connection.getInputStream();
@@ -480,7 +479,6 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             register(new ClusterPropsRequest());
             register(new SetLogLevelRequest());
             register(new GetLogLevelRequest());
-            register(new GetVersionRequest());
             register(new GetLogsRequest());
             register(new RunGcRequest());
             register(new GetMemberSystemPropertiesRequest());
@@ -501,7 +499,8 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 connection.setRequestMethod("POST");
                 connection.setConnectTimeout(2000);
                 connection.setReadTimeout(2000);
-                OutputStream outputStream = connection.getOutputStream();
+                final OutputStream outputStream = connection.getOutputStream();
+                identifier.write(outputStream);
                 final ObjectDataOutputStream out = serializationService.createObjectDataOutputStream(outputStream);
                 out.writeInt(taskId);
                 out.writeInt(request.getType());
@@ -522,6 +521,10 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 Address address = ((MemberImpl) instance.node.getClusterService().getLocalMember()).getAddress();
                 GroupConfig groupConfig = instance.getConfig().getGroupConfig();
                 while (running.get()) {
+                    if (versionMismatch) {
+                        Thread.sleep(1000 * 5);
+                        versionMismatch = false;
+                    }
                     try {
                         URL url = new URL(webServerUrl + "getTask.do?member=" + address.getHost()
                                 + ":" + address.getPort() + "&cluster=" + groupConfig.getName());

@@ -20,6 +20,8 @@ import com.hazelcast.nio.serialization.Data;
 
 public class SetOperation extends BasePutOperation {
 
+    boolean newRecord = false;
+
     public SetOperation(String name, Data dataKey, Data value, long ttl) {
         super(name, dataKey, value, ttl);
     }

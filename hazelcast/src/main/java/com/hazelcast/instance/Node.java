@@ -24,10 +24,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MulticastConfig;
-import com.hazelcast.core.DistributedObjectListener;
-import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.core.MembershipListener;
+import com.hazelcast.core.*;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
 import com.hazelcast.logging.SystemLogService;
@@ -37,8 +34,8 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ConnectionManager;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
-import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.PartitionServiceImpl;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
@@ -74,7 +71,7 @@ public class Node {
 
     private final NodeShutdownHookThread shutdownHookThread = new NodeShutdownHookThread("hz.ShutdownThread");
 
-    public final SerializationServiceImpl serializationService;
+    private final SerializationServiceImpl serializationService;
 
     public final NodeEngineImpl nodeEngine;
 
@@ -118,18 +115,22 @@ public class Node {
 
     public final ThreadGroup threadGroup;
 
+    private final ClassLoader configClassLoader;
+
     public Node(HazelcastInstanceImpl hazelcastInstance, Config config, NodeContext nodeContext) {
         this.hazelcastInstance = hazelcastInstance;
         this.threadGroup = hazelcastInstance.threadGroup;
         this.config = config;
+        configClassLoader = config.getClassLoader();
         this.groupProperties = new GroupProperties(config);
-        SerializationServiceImpl ss;
+        SerializationService ss;
         try {
-            ss = new SerializationServiceImpl(config.getSerializationConfig(), hazelcastInstance.managedContext);
+            ss = new SerializationServiceBuilder().setClassLoader(configClassLoader)
+                .setConfig(config.getSerializationConfig()).setManagedContext(hazelcastInstance.managedContext).build();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-        serializationService = ss;
+        serializationService = (SerializationServiceImpl) ss;
         systemLogService = new SystemLogService(this);
         final AddressPicker addressPicker = nodeContext.createAddressPicker(this);
         try {
@@ -209,7 +210,7 @@ public class Node {
             Object listener = listenerCfg.getImplementation();
             if (listener == null) {
                 try {
-                    listener = ClassLoaderUtil.newInstance(listenerCfg.getClassName());
+                    listener = ClassLoaderUtil.newInstance(configClassLoader, listenerCfg.getClassName());
                 } catch (Exception e) {
                     logger.log(Level.SEVERE, e.getMessage(), e);
                 }
@@ -293,7 +294,7 @@ public class Node {
 
     public void setMasterAddress(final Address master) {
         if (master != null) {
-            logger.log(Level.FINEST, "** setting master address to " + master.toString());
+            logger.log(Level.FINEST, "** setting master address to " + master);
         }
         masterAddress = master;
     }
@@ -348,17 +349,10 @@ public class Node {
         long start = Clock.currentTimeMillis();
         logger.log(Level.FINEST, "** we are being asked to shutdown when active = " + String.valueOf(active));
         if (!force && isActive()) {
-            partitionService.sendReplicaVersionCheckTasks();
             final int maxWaitSeconds = groupProperties.GRACEFUL_SHUTDOWN_MAX_WAIT.getInteger();
             int waitSeconds = 0;
             do {
-                // Although a node closes its connections to other nodes during shutdown,
-                // others will try to connect it to ensure that node is shutdown or terminated.
-                // This initial wait before active backup check is to make sure this node aware of all
-                // possible disconnecting nodes. Otherwise there may be a data race between
-                // syncForDead events and node shutdown.
-                // A better way of solving this issue is to make a node to inform others about its termination
-                // by sending shutting down message to all others.
+                partitionService.sendReplicaVersionCheckOperations();
                 try {
                     //noinspection BusyWait
                     Thread.sleep(500);
@@ -370,7 +364,9 @@ public class Node {
             }
         }
         if (isActive()) {
-            clusterService.sendShutdownMessage();
+            if (!force) {
+                clusterService.sendShutdownMessage();
+            }
             // set the joined=false first so that
             // threads do not process unnecessary
             // events, such as remove address
@@ -452,6 +448,10 @@ public class Node {
 
     public Set<Address> getFailedConnections() {
         return failedConnections;
+    }
+
+    public ClassLoader getConfigClassLoader() {
+        return configClassLoader;
     }
 
     public class NodeShutdownHookThread extends Thread {

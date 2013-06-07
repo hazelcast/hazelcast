@@ -14,29 +14,35 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util.executor;
-
-import java.util.concurrent.Executor;
+package com.hazelcast.transaction.impl;
 
 /**
- * @mdogan 12/17/12
+ * Hazelcast transaction interface.
  */
-public interface FastExecutor extends Executor {
+public interface Transaction {
 
-    void shutdown();
-
-    void setInterceptor(WorkerLifecycleInterceptor interceptor);
-
-    int getCoreThreadSize();
-
-    int getMaxThreadSize();
-
-    long getKeepAliveMillis();
-
-    int getActiveThreadCount();
-
-    public interface WorkerLifecycleInterceptor {
-        void beforeWorkerStart();
-        void afterWorkerTerminate();
+    public enum State {
+        NO_TXN,
+        ACTIVE,
+        PREPARING,
+        PREPARED,
+        COMMITTING,
+        COMMITTED,
+        COMMIT_FAILED,
+        ROLLING_BACK,
+        ROLLED_BACK
     }
+
+    void addTransactionLog(TransactionLog transactionLog);
+
+    void removeTransactionLog(Object key);
+
+    TransactionLog getTransactionLog(Object key);
+
+    String getTxnId();
+
+    State getState();
+
+    long getTimeoutMillis();
+
 }

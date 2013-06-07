@@ -78,7 +78,7 @@ public class QueueContainer implements DataSerializable {
             Set<Long> keys = store.loadAllKeys();
             if (keys != null) {
                 for (Long key : keys) {
-                    QueueItem item = new QueueItem(this, key);
+                    QueueItem item = new QueueItem(this, key, null);
                     getItemQueue().offer(item);
                     nextId();
                 }
@@ -96,10 +96,11 @@ public class QueueContainer implements DataSerializable {
     }
 
     //TX Poll
-    public QueueItem txnPollReserve() {
+    public QueueItem txnPollReserve(long reservedOfferId) {
         QueueItem item = getItemQueue().poll();
         if (item == null) {
-            return null;
+            item = txMap.remove(reservedOfferId);
+            return item;
         }
         if (store.isEnabled() && item.getData() == null) {
             try {
@@ -151,13 +152,13 @@ public class QueueContainer implements DataSerializable {
 
     //TX Offer
     public long txnOfferReserve() {
-        QueueItem item = new QueueItem(this, nextId());
+        QueueItem item = new QueueItem(this, nextId(), null);
         txMap.put(item.getItemId(), item);
         return item.getItemId();
     }
 
     public void txnOfferBackupReserve(long itemId) {
-        QueueItem item = new QueueItem(this, itemId);
+        QueueItem item = new QueueItem(this, itemId, null);
         Object o = txMap.put(itemId, item);
         if (o != null) {
             logger.log(Level.SEVERE, "txnOfferBackupReserve operation-> Item exists already at txMap for itemId: " + itemId);
@@ -200,7 +201,7 @@ public class QueueContainer implements DataSerializable {
 
 
     public long offer(Data data) {
-        QueueItem item = new QueueItem(this, nextId());
+        QueueItem item = new QueueItem(this, nextId(), null);
         if (store.isEnabled()) {
             try {
                 store.store(item.getItemId(), data);
@@ -216,7 +217,7 @@ public class QueueContainer implements DataSerializable {
     }
 
     public void offerBackup(Data data, long itemId) {
-        QueueItem item = new QueueItem(this, itemId);
+        QueueItem item = new QueueItem(this, itemId, null);
         if (!store.isEnabled() || store.getMemoryLimit() > getItemQueue().size()) {
             item.setData(data);
         }
@@ -226,7 +227,7 @@ public class QueueContainer implements DataSerializable {
     public Map<Long, Data> addAll(Collection<Data> dataList) {
         Map<Long, Data> dataMap = new HashMap<Long, Data>(dataList.size());
         for (Data data : dataList) {
-            QueueItem item = new QueueItem(this, nextId());
+            QueueItem item = new QueueItem(this, nextId(), null);
             if (!store.isEnabled() || store.getMemoryLimit() > getItemQueue().size()) {
                 item.setData(data);
             }
@@ -248,7 +249,7 @@ public class QueueContainer implements DataSerializable {
 
     public void addAllBackup(Map<Long, Data> dataMap) {
         for (Map.Entry<Long, Data> entry : dataMap.entrySet()) {
-            QueueItem item = new QueueItem(this, entry.getKey());
+            QueueItem item = new QueueItem(this, entry.getKey(), null);
             if (!store.isEnabled() || store.getMemoryLimit() > getItemQueue().size()) {
                 item.setData(entry.getValue());
             }
@@ -397,11 +398,19 @@ public class QueueContainer implements DataSerializable {
      * This method does not trigger store load.
      */
     public boolean contains(Collection<Data> dataSet) {
-        Set<QueueItem> set = new HashSet<QueueItem>(dataSet.size());
         for (Data data : dataSet) {
-            set.add(new QueueItem(this, -1, data));
+            boolean contains = false;
+            for (QueueItem item : getItemQueue()) {
+                if (item.getData() != null && item.getData().equals(data)){
+                    contains = true;
+                    break;
+                }
+            }
+            if (!contains){
+                return false;
+            }
         }
-        return getItemQueue().containsAll(set);
+        return true;
     }
 
     /**
@@ -601,14 +610,14 @@ public class QueueContainer implements DataSerializable {
         partitionId = in.readInt();
         int size = in.readInt();
         for (int j = 0; j < size; j++) {
-            QueueItem item = new QueueItem(this);
+            QueueItem item = new QueueItem(this, -1, null);
             item.readData(in);
             getItemQueue().offer(item);
             setId(item.getItemId());
         }
         int txSize = in.readInt();
         for (int j = 0; j < txSize; j++) {
-            QueueItem item = new QueueItem(this);
+            QueueItem item = new QueueItem(this, -1, null);
             item.readData(in);
             txMap.put(item.getItemId(), item);
             setId(item.getItemId());

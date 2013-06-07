@@ -27,16 +27,18 @@ import java.util.concurrent.Callable;
 /**
  * @mdogan 1/18/13
  */
-public abstract class BaseCallableTaskOperation<V> extends Operation {
+abstract class BaseCallableTaskOperation extends Operation {
 
     protected String name;
-    protected Callable<V> callable;
+    protected String uuid;
+    protected Callable callable;
 
     public BaseCallableTaskOperation() {
     }
 
-    public BaseCallableTaskOperation(String name, Callable<V> callable) {
+    public BaseCallableTaskOperation(String name, String uuid, Callable callable) {
         this.name = name;
+        this.uuid = uuid;
         this.callable = callable;
     }
 
@@ -49,7 +51,7 @@ public abstract class BaseCallableTaskOperation<V> extends Operation {
 
     public final void run() throws Exception {
         DistributedExecutorService service = getService();
-        service.execute(name, callable, getResponseHandler());
+        service.execute(name, uuid, callable, getResponseHandler());
     }
 
     @Override
@@ -69,12 +71,14 @@ public abstract class BaseCallableTaskOperation<V> extends Operation {
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
+        out.writeUTF(uuid);
         out.writeObject(callable);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         name = in.readUTF();
+        uuid = in.readUTF();
         callable = in.readObject();
     }
 }

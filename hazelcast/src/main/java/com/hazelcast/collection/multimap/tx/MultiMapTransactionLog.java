@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.transaction.KeyAwareTransactionLog;
+import com.hazelcast.transaction.impl.KeyAwareTransactionLog;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
@@ -157,5 +157,20 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
             }
         }
         opList.add(op);
+    }
+
+    public int size(){
+        int size = 0;
+        for (Operation operation : opList) {
+            if (operation instanceof TxnRemoveAllOperation) {
+                TxnRemoveAllOperation removeAllOperation = (TxnRemoveAllOperation)operation;
+                size -= removeAllOperation.getRecordIds().size();
+            } else if (operation instanceof TxnRemoveOperation) {
+                size--;
+            } else {
+                size++;
+            }
+        }
+        return size;
     }
 }

@@ -24,10 +24,7 @@ import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.transaction.TransactionException;
-import com.hazelcast.transaction.TransactionOptions;
-import com.hazelcast.transaction.TransactionalTask;
-import com.hazelcast.transaction.TransactionalTaskContext;
+import com.hazelcast.transaction.*;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -53,18 +50,15 @@ public class TransactionQueueTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
         final HazelcastInstance[] instances = factory.newInstances(config);
 
-        boolean b = instances[0].executeTransaction(new TransactionOptions().setTransactionType(TransactionOptions.TransactionType.LOCAL),
-                new TransactionalTask<Boolean>() {
-                    public Boolean execute(TransactionalTaskContext context) throws TransactionException {
-                        TransactionalQueue<String> q = context.getQueue(name);
-                        assertTrue(q.offer("ali"));
-                        String s = q.poll();
-                        assertNull(s);
-                        return true;
-                    }
-                });
-        assertTrue(b);
-        assertEquals(1, getQueue(instances, name).size());
+
+        final TransactionContext context = instances[0].newTransactionContext();
+        context.beginTransaction();
+        TransactionalQueue<String> q = context.getQueue(name);
+        assertTrue(q.offer("ali"));
+        String s = q.poll();
+        assertEquals("ali",s);
+        context.commitTransaction();
+        assertEquals(0, getQueue(instances, name).size());
     }
 
     @Test
@@ -87,25 +81,22 @@ public class TransactionQueueTest extends HazelcastTestSupport {
             }
         }.start();
 
-        boolean b = instances[0].executeTransaction(new TransactionOptions().setTransactionType(TransactionOptions.TransactionType.LOCAL),
-                new TransactionalTask<Boolean>() {
-                    public Boolean execute(TransactionalTaskContext context) throws TransactionException {
-                        TransactionalQueue<String> q0 = context.getQueue(name0);
-                        TransactionalQueue<String> q1 = context.getQueue(name1);
-                        String s = null;
-                        latch.countDown();
-                        try {
-                            s = q0.poll(10, TimeUnit.SECONDS);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                            fail(e.getMessage());
-                        }
-                        assertEquals("item0", s);
-                        q1.offer(s);
-                        return true;
-                    }
-                });
-        assertTrue(b);
+        final TransactionContext context = instances[0].newTransactionContext();
+        context.beginTransaction();
+        TransactionalQueue<String> q0 = context.getQueue(name0);
+        TransactionalQueue<String> q1 = context.getQueue(name1);
+        String s = null;
+        latch.countDown();
+        try {
+            s = q0.poll(10, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            fail(e.getMessage());
+        }
+        assertEquals("item0", s);
+        q1.offer(s);
+        context.commitTransaction();
+
         assertEquals(0, getQueue(instances, name0).size());
         assertEquals("item0", getQueue(instances, name1).poll());
     }
@@ -121,17 +112,14 @@ public class TransactionQueueTest extends HazelcastTestSupport {
         instances[0].getMap(mapName).lock("lock1");
 
         try {
-            instances[1].executeTransaction(new TransactionOptions().setTimeout(5, TimeUnit.SECONDS)
-                    .setTransactionType(TransactionOptions.TransactionType.LOCAL),
-                    new TransactionalTask<Object>() {
-                        public Object execute(TransactionalTaskContext context) throws TransactionException {
-                            boolean offered = context.getQueue(queueName).offer("item1");
-                            assertTrue(offered);
-                            context.getMap(mapName).put("lock1", "value1");
-                            fail();
-                            return null;
-                        }
-                    });
+            final TransactionContext context = instances[1].newTransactionContext(new TransactionOptions().setTimeout(5, TimeUnit.SECONDS));
+            context.beginTransaction();
+
+            boolean offered = context.getQueue(queueName).offer("item1");
+            assertTrue(offered);
+            context.getMap(mapName).put("lock1", "value1");
+            fail();
+
         } catch (TransactionException ex) {
             // expected
         }

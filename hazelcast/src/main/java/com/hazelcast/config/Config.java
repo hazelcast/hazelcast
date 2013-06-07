@@ -274,15 +274,6 @@ public class Config implements DataSerializable {
         return executorConfigs.values();
     }
 
-    public Map<String, ExecutorConfig> getExecutorConfigMap() {
-        return Collections.unmodifiableMap(executorConfigs);
-    }
-
-    public Config setExecutorConfigMap(Map executorConfigs){
-        this.executorConfigs = executorConfigs;
-        return this;
-    }
-
     public Config addTopicConfig(TopicConfig topicConfig) {
         topicConfigs.put(topicConfig.getName(), topicConfig);
         return this;
@@ -367,12 +358,14 @@ public class Config implements DataSerializable {
         return this;
     }
 
-    public void setExecutorConfigs(Map<String, ExecutorConfig> executorConfigs) {
+    public Config setExecutorConfigs(Map<String, ExecutorConfig> executorConfigs) {
         this.executorConfigs = executorConfigs;
+        return this;
     }
 
-    public void setSemaphoreConfigs(Map<String, SemaphoreConfig> semaphoreConfigs) {
+    public Config setSemaphoreConfigs(Map<String, SemaphoreConfig> semaphoreConfigs) {
         this.semaphoreConfigs = semaphoreConfigs;
+        return this;
     }
 
     public Config addMapConfig(MapConfig mapConfig) {

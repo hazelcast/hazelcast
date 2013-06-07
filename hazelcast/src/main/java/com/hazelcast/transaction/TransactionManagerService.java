@@ -25,4 +25,6 @@ public interface TransactionManagerService  {
 
     TransactionContext newTransactionContext(TransactionOptions options);
 
+    TransactionContext newClientTransactionContext(TransactionOptions options);
+
 }
