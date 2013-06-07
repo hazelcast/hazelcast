@@ -14,29 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast;
 
-
-import java.util.Set;
-
-public interface PartitionService {
-
-    Set<Partition> getPartitions();
-
-    Partition getPartition(Object key);
-
-    /**
-     * @param migrationListener
-     *
-     * @return returns registration id.
-     */
-    String addMigrationListener(MigrationListener migrationListener);
-
-    /**
-     * @param registrationId Id of listener registration.
-     *
-     * @return true if registration is removed, false otherwise
-     */
-    boolean removeMigrationListener(final String registrationId);
-
+/**
+ * @mdogan 6/5/13
+ */
+public class PlaceHolder {
 }

@@ -36,7 +36,7 @@ import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.transaction.TransactionManagerService;
-import com.hazelcast.transaction.TransactionManagerServiceImpl;
+import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 import com.hazelcast.wan.WanReplicationService;
 
 import java.util.Collection;

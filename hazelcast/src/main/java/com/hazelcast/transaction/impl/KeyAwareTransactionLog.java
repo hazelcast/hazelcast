@@ -14,35 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.transaction;
+package com.hazelcast.transaction.impl;
 
 /**
- * Hazelcast transaction interface.
+ * @ali 4/12/13
  */
-public interface Transaction {
+public interface KeyAwareTransactionLog extends TransactionLog {
 
-    public enum State {
-        NO_TXN,
-        ACTIVE,
-        PREPARING,
-        PREPARED,
-        COMMITTING,
-        COMMITTED,
-        COMMIT_FAILED,
-        ROLLING_BACK,
-        ROLLED_BACK
-    }
-
-    void addTransactionLog(TransactionLog transactionLog);
-
-    void removeTransactionLog(Object key);
-
-    TransactionLog getTransactionLog(Object key);
-
-    String getTxnId();
-
-    State getState();
-
-    long getTimeoutMillis();
+    Object getKey();
 
 }
