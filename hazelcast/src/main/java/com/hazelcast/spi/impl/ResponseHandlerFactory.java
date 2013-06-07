@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.spi.*;
+import com.hazelcast.spi.exception.ResponseAlreadySentException;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -96,7 +97,7 @@ public final class ResponseHandlerFactory {
 
         public void sendResponse(Object obj) {
             if (!sent.compareAndSet(false, true)) {
-                throw new IllegalStateException("Response already sent for call: " + callId
+                throw new ResponseAlreadySentException("Response already sent for call: " + callId
                                                 + " to " + conn.getEndPoint() + ", current-response: " + obj);
             }
             final ResponseOperation responseOp = new ResponseOperation(obj);
@@ -118,7 +119,7 @@ public final class ResponseHandlerFactory {
 
         public void sendResponse(Object obj) {
             if (!sent.compareAndSet(false, true)) {
-                throw new IllegalStateException("Response already sent for callback: " + callback
+                throw new ResponseAlreadySentException("Response already sent for callback: " + callback
                         + ", current-response: : " + obj);
             }
             callback.notify(obj);

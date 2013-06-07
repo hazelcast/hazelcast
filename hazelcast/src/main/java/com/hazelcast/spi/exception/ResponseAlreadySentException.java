@@ -14,29 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.executor;
+package com.hazelcast.spi.exception;
 
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-
-import java.util.concurrent.Callable;
+import com.hazelcast.core.HazelcastException;
 
 /**
- * @mdogan 1/18/13
+ * @mdogan 6/7/13
  */
-public final class CallableTaskOperation extends BaseCallableTaskOperation implements IdentifiedDataSerializable {
+public class ResponseAlreadySentException extends HazelcastException {
 
-    public CallableTaskOperation() {
+    public ResponseAlreadySentException() {
+        super();
     }
 
-    public CallableTaskOperation(String name, String uuid, Callable callable) {
-        super(name, uuid, callable);
-    }
-
-    public int getFactoryId() {
-        return ExecutorDataSerializerHook.F_ID;
-    }
-
-    public int getId() {
-        return ExecutorDataSerializerHook.CALLABLE_TASK;
+    public ResponseAlreadySentException(String message) {
+        super(message);
     }
 }

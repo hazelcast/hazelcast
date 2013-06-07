@@ -16,8 +16,10 @@
 
 package com.hazelcast.executor;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.impl.LocalExecutorStatsImpl;
 import com.hazelcast.spi.*;
+import com.hazelcast.spi.exception.ResponseAlreadySentException;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
@@ -25,8 +27,7 @@ import com.hazelcast.util.ConstructorFunction;
 import java.util.Collections;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
 import java.util.logging.Level;
 
 /**
@@ -36,6 +37,9 @@ public class DistributedExecutorService implements ManagedService, RemoteService
 
     public static final String SERVICE_NAME = "hz:impl:executorService";
 
+    private NodeEngine nodeEngine;
+    private ExecutionService executionService;
+    private final ConcurrentMap<String, CallableProcessor> submittedTasks = new ConcurrentHashMap<String, CallableProcessor>(100);
     private final Set<String> shutdownExecutors = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
     private final ConcurrentHashMap<String, LocalExecutorStatsImpl> statsMap = new ConcurrentHashMap<String, LocalExecutorStatsImpl>();
     private final ConstructorFunction<String, LocalExecutorStatsImpl> localExecutorStatsConstructorFunction = new ConstructorFunction<String, LocalExecutorStatsImpl>() {
@@ -43,8 +47,6 @@ public class DistributedExecutorService implements ManagedService, RemoteService
             return new LocalExecutorStatsImpl();
         }
     };
-    private NodeEngine nodeEngine;
-    private ExecutionService executionService;
 
     public void init(NodeEngine nodeEngine, Properties properties) {
         this.nodeEngine = nodeEngine;
@@ -53,15 +55,31 @@ public class DistributedExecutorService implements ManagedService, RemoteService
 
     public void reset() {
         shutdownExecutors.clear();
+        submittedTasks.clear();
+        statsMap.clear();
     }
 
     public void shutdown() {
         reset();
     }
 
-    public void execute(String name, final Callable callable, final ResponseHandler responseHandler) {
+    public void execute(String name, String uuid, final Callable callable, final ResponseHandler responseHandler) {
         startPending(name);
-        executionService.execute(name, new CallableProcessor(name, callable, responseHandler));
+        final CallableProcessor processor = new CallableProcessor(name, uuid, callable, responseHandler);
+        if (uuid != null) {
+            submittedTasks.put(uuid, processor);
+        }
+        executionService.execute(name, processor);
+    }
+
+    public boolean cancel(String uuid, boolean interrupt) {
+        final CallableProcessor processor = submittedTasks.remove(uuid);
+        if (processor != null && processor.cancel(interrupt)) {
+            processor.responseHandler.sendResponse(new CancellationException());
+            getLocalExecutorStats(processor.name).cancelExecution();
+            return true;
+        }
+        return false;
     }
 
     public void shutdownExecutor(String name) {
@@ -104,15 +122,18 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         getLocalExecutorStats(name).startPending();
     }
 
-    private class CallableProcessor implements Runnable {
-        final Callable callable;
-        final ResponseHandler responseHandler;
-        final long creationTime = Clock.currentTimeMillis();
+    private class CallableProcessor extends FutureTask implements Runnable {
         final String name;
+        final String uuid;
+        final ResponseHandler responseHandler;
+        final String callableToString;
+        final long creationTime = Clock.currentTimeMillis();
 
-        private CallableProcessor(String name, Callable callable, ResponseHandler responseHandler) {
+        private CallableProcessor(String name, String uuid, Callable callable, ResponseHandler responseHandler) {
+            super(callable);
             this.name = name;
-            this.callable = callable;
+            this.uuid = uuid;
+            this.callableToString = String.valueOf(callable);
             this.responseHandler = responseHandler;
         }
 
@@ -121,16 +142,33 @@ public class DistributedExecutorService implements ManagedService, RemoteService
             startExecution(name, start - creationTime);
             Object result = null;
             try {
-                result = callable.call();
+                super.run();
+                result = get();
             } catch (Exception e) {
-                nodeEngine.getLogger(DistributedExecutorService.class.getName())
-                        .log(Level.FINEST, "While executing callable: " + callable, e);
+                final ILogger logger = getLogger();
+                logger.log(Level.FINEST, "While executing callable: " + callableToString, e);
                 result = e;
             } finally {
-                responseHandler.sendResponse(result);
-                finishExecution(name, Clock.currentTimeMillis() - start);
+                if (uuid != null) {
+                    submittedTasks.remove(uuid);
+                }
+                final boolean cancelled = isCancelled();
+                try {
+                    responseHandler.sendResponse(result);
+                } catch (ResponseAlreadySentException e) {
+                    if (!cancelled) {
+                        final ILogger logger = getLogger();
+                        logger.log(Level.SEVERE, e.getMessage(), e);
+                    }
+                }
+                if (!cancelled) {
+                    finishExecution(name, Clock.currentTimeMillis() - start);
+                }
             }
         }
     }
 
+    private ILogger getLogger() {
+        return nodeEngine.getLogger(DistributedExecutorService.class.getName());
+    }
 }
