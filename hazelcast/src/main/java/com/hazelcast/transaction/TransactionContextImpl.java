@@ -44,6 +44,10 @@ class TransactionContextImpl implements TransactionContext {
         this.transaction = new TransactionImpl(transactionManagerService, nodeEngine, options);
     }
 
+    public String getTxnId() {
+        return transaction.getTxnId();
+    }
+
     public void beginTransaction() {
         transaction.begin();
     }

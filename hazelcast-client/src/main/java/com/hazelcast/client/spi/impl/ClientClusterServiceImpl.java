@@ -135,6 +135,14 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         }
     }
 
+    public <T> T sendAndReceiveFixedConnection(Connection conn, Object obj) throws IOException {
+        final SerializationService serializationService = getSerializationService();
+        final Data request = serializationService.toData(obj);
+        conn.write(request);
+        final Data response = conn.read();
+        return (T) serializationService.toObject(response);
+    }
+
     private SerializationService getSerializationService() {
         return client.getSerializationService();
     }

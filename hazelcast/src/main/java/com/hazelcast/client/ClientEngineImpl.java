@@ -30,6 +30,7 @@ import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
+import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.UuidUtil;
@@ -125,6 +126,10 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
         final Data resultData = response != null ? serializationService.toData(response) : NULL;
         Connection conn = endpoint.getConnection();
         conn.write(new DataAdapter(resultData, serializationService.getSerializationContext()));
+    }
+
+    public TransactionManagerService getTransactionManagerService() {
+        return nodeEngine.getTransactionManagerService();
     }
 
     public Address getMasterAddress() {

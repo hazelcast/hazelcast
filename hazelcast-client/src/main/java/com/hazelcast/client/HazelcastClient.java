@@ -27,6 +27,7 @@ import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.ClientPartitionServiceImpl;
+import com.hazelcast.client.txn.TransactionContextProxy;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionProxyType;
@@ -195,12 +196,12 @@ public final class HazelcastClient implements HazelcastInstance {
 
     @Override
     public TransactionContext newTransactionContext() {
-        throw new UnsupportedOperationException("Transactions not implemented yet!");
+        return newTransactionContext(TransactionOptions.getDefault());
     }
 
     @Override
     public TransactionContext newTransactionContext(TransactionOptions options) {
-        throw new UnsupportedOperationException("Transactions not implemented yet!");
+        return new TransactionContextProxy(this, options);
     }
 
     @Override

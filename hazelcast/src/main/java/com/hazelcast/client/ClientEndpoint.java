@@ -20,6 +20,7 @@ import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientType;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.TcpIpConnection;
+import com.hazelcast.transaction.TransactionContext;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
@@ -32,6 +33,7 @@ public class ClientEndpoint implements Client {
     private String uuid;
     private LoginContext loginContext = null;
     private ClientPrincipal principal;
+    private TransactionContext transactionContext;
     private volatile boolean authenticated = false;
 
     ClientEndpoint(Connection conn, String uuid) {
@@ -82,6 +84,14 @@ public class ClientEndpoint implements Client {
 
     public ClientType getClientType() {
         return ClientType.Native;
+    }
+
+    public TransactionContext getTransactionContext() {
+        return transactionContext;
+    }
+
+    public void setTransactionContext(TransactionContext transactionContext) {
+        this.transactionContext = transactionContext;
     }
 
     void destroy() throws LoginException {
