@@ -27,13 +27,12 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-import static com.hazelcast.transaction.impl.Transaction.State.*;
 import static com.hazelcast.transaction.TransactionOptions.TransactionType;
+import static com.hazelcast.transaction.impl.Transaction.State.*;
 
 final class TransactionImpl implements Transaction {
 
@@ -48,17 +47,19 @@ final class TransactionImpl implements Transaction {
     private final long timeoutMillis;
     private final int durability;
     private final TransactionType transactionType;
+    private final boolean client;
     private State state = NO_TXN;
     private long startTime = 0L;
     private Address[] backupAddresses;
 
-    public TransactionImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngine nodeEngine, TransactionOptions options) {
+    public TransactionImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngine nodeEngine, TransactionOptions options, boolean client) {
         this.transactionManagerService = transactionManagerService;
         this.nodeEngine = nodeEngine;
         this.txnId = UUID.randomUUID().toString();
         this.timeoutMillis = options.getTimeoutMillis();
         this.durability = options.getDurability();
         this.transactionType = options.getTransactionType();
+        this.client = client;
     }
 
     // used by tx backups
@@ -73,6 +74,7 @@ final class TransactionImpl implements Transaction {
         this.transactionType = TransactionType.TWO_PHASE;
         this.txLogs.addAll(txLogs);
         this.state = PREPARED;
+        this.client = false;
     }
 
     public String getTxnId() {
@@ -89,32 +91,32 @@ final class TransactionImpl implements Transaction {
         }
         checkThread();
         // there should be just one tx log for the same key. so if there is older we are removing it
-        if(transactionLog instanceof KeyAwareTransactionLog) {
+        if (transactionLog instanceof KeyAwareTransactionLog) {
             KeyAwareTransactionLog keyAwareTransactionLog = (KeyAwareTransactionLog) transactionLog;
             TransactionLog removed = txLogMap.remove(keyAwareTransactionLog.getKey());
             txLogs.remove(removed);
         }
 
         txLogs.add(transactionLog);
-        if (transactionLog instanceof KeyAwareTransactionLog){
-            KeyAwareTransactionLog keyAwareTransactionLog = (KeyAwareTransactionLog)transactionLog;
+        if (transactionLog instanceof KeyAwareTransactionLog) {
+            KeyAwareTransactionLog keyAwareTransactionLog = (KeyAwareTransactionLog) transactionLog;
             txLogMap.put(keyAwareTransactionLog.getKey(), keyAwareTransactionLog);
         }
     }
 
-    public TransactionLog getTransactionLog(Object key){
+    public TransactionLog getTransactionLog(Object key) {
         return txLogMap.get(key);
     }
 
-    public void removeTransactionLog(Object key){
+    public void removeTransactionLog(Object key) {
         TransactionLog removed = txLogMap.remove(key);
-        if (removed != null){
+        if (removed != null) {
             txLogs.remove(removed);
         }
     }
 
     private void checkThread() {
-        if (threadId != Thread.currentThread().getId()) {
+        if (!client && threadId != Thread.currentThread().getId()) {
             throw new IllegalStateException("Transaction cannot span multiple threads!");
         }
     }
@@ -127,10 +129,16 @@ final class TransactionImpl implements Transaction {
         if (threadFlag.get() != null) {
             throw new IllegalStateException("Nested transactions are not allowed!");
         }
-        threadFlag.set(true);
+        setThreadFlag(Boolean.TRUE);
         startTime = Clock.currentTimeMillis();
         backupAddresses = transactionManagerService.pickBackupAddresses(durability);
         state = ACTIVE;
+    }
+
+    private void setThreadFlag(Boolean flag) {
+        if (!client) {
+            threadFlag.set(flag);
+        }
     }
 
     void prepare() throws TransactionException {
@@ -141,20 +149,20 @@ final class TransactionImpl implements Transaction {
         checkTimeout();
         try {
             final List<Future> futures = new ArrayList<Future>(txLogs.size());
-                state = PREPARING;
-                for (TransactionLog txLog : txLogs) {
-                    futures.add(txLog.prepare(nodeEngine));
-                }
-                for (Future future : futures) {
-                    future.get(timeoutMillis, TimeUnit.MILLISECONDS);
-                }
-                futures.clear();
-                state = PREPARED;
+            state = PREPARING;
+            for (TransactionLog txLog : txLogs) {
+                futures.add(txLog.prepare(nodeEngine));
+            }
+            for (Future future : futures) {
+                future.get(timeoutMillis, TimeUnit.MILLISECONDS);
+            }
+            futures.clear();
+            state = PREPARED;
             // replicate tx log
             if (durability > 0) {
                 final OperationService operationService = nodeEngine.getOperationService();
                 for (Address backupAddress : backupAddresses) {
-                    if (nodeEngine.getClusterService().getMember(backupAddress) != null){
+                    if (nodeEngine.getClusterService().getMember(backupAddress) != null) {
                         final Invocation inv = operationService.createInvocationBuilder(TransactionManagerServiceImpl.SERVICE_NAME,
                                 new ReplicateTxOperation(txLogs, nodeEngine.getLocalMember().getUuid(), txnId, timeoutMillis, startTime),
                                 backupAddress).build();
@@ -168,10 +176,7 @@ final class TransactionImpl implements Transaction {
             }
 
         } catch (Throwable e) {
-            if (e instanceof ExecutionException && e.getCause() instanceof TransactionException) {
-                throw (TransactionException) e.getCause();
-            }
-            throw ExceptionUtil.rethrow(e);
+            throw ExceptionUtil.rethrow(e, TransactionException.class);
         }
     }
 
@@ -203,12 +208,9 @@ final class TransactionImpl implements Transaction {
             purgeTxBackups();
         } catch (Throwable e) {
             state = COMMIT_FAILED;
-            if (e instanceof ExecutionException && e.getCause() instanceof TransactionException) {
-                throw (TransactionException) e.getCause();
-            }
-            throw ExceptionUtil.rethrow(e);
+            throw ExceptionUtil.rethrow(e, TransactionException.class);
         } finally {
-            threadFlag.set(null);
+            setThreadFlag(null);
         }
     }
 
@@ -231,7 +233,7 @@ final class TransactionImpl implements Transaction {
             // rollback tx backup
             if (durability > 0 && transactionType.equals(TransactionType.TWO_PHASE)) {
                 for (Address backupAddress : backupAddresses) {
-                    if (nodeEngine.getClusterService().getMember(backupAddress) != null){
+                    if (nodeEngine.getClusterService().getMember(backupAddress) != null) {
                         final Invocation inv = operationService.createInvocationBuilder(TransactionManagerServiceImpl.SERVICE_NAME,
                                 new RollbackTxBackupOperation(txnId), backupAddress).build();
                         futures.add(inv.invoke());
@@ -265,7 +267,7 @@ final class TransactionImpl implements Transaction {
             throw ExceptionUtil.rethrow(e);
         } finally {
             state = ROLLED_BACK;
-            threadFlag.set(null);
+            setThreadFlag(null);
         }
     }
 
@@ -273,7 +275,7 @@ final class TransactionImpl implements Transaction {
         if (durability > 0 && transactionType.equals(TransactionType.TWO_PHASE)) {
             final OperationService operationService = nodeEngine.getOperationService();
             for (Address backupAddress : backupAddresses) {
-                if (nodeEngine.getClusterService().getMember(backupAddress) != null){
+                if (nodeEngine.getClusterService().getMember(backupAddress) != null) {
                     try {
                         final Invocation inv = operationService.createInvocationBuilder(TransactionManagerServiceImpl.SERVICE_NAME,
                                 new PurgeTxBackupOperation(txnId), backupAddress).build();
