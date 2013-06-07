@@ -25,6 +25,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.SerialTest;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -46,6 +47,7 @@ import static org.junit.Assert.assertNull;
 public class MapStoreTest extends HazelcastTestSupport {
 
     @Test
+    // TODO: fails
     public void testMapInitialLoad() throws InterruptedException {
         int size = 100000;
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
@@ -264,6 +266,8 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     @Test
+    // TODO: fails
+    @Category(SerialTest.class)
     public void testOneMemberWriteBehindWithEvictions() throws Exception {
         TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
         Config config = newConfig(testMapStore, 2);

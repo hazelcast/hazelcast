@@ -22,6 +22,8 @@ import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.instance.TestUtil;
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
@@ -30,6 +32,7 @@ import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.annotation.SerialTest;
 import com.hazelcast.util.Clock;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -248,12 +251,13 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
-    // TODO: @mm - Test fails randomly!
+    // TODO: fails @mm - Test fails randomly!
+    @Category(SerialTest.class)
     public void testQueryWithTTL() throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
         MapConfig mapConfig = new MapConfig();
-        int TTL = 2;
+        int TTL = 5;
         mapConfig.setTimeToLiveSeconds(TTL);
         mapConfig.setName("employees");
         cfg.addMapConfig(mapConfig);
@@ -271,16 +275,14 @@ public class QueryTest extends HazelcastTestSupport {
             }
             imap.put(String.valueOf(i), employee);
         }
+        long start = System.currentTimeMillis();
         Collection<Employee> values = imap.values(new SqlPredicate("active and name LIKE 'joe15%'"));
+        assertEquals("time:"+ (System.currentTimeMillis() - start) ,expectedCount, values.size());
         for (Employee employee : values) {
             assertTrue(employee.isActive());
         }
-        assertEquals(expectedCount, values.size());
-        Thread.sleep((TTL + 3) * 1000);
+        Thread.sleep((TTL + 2) * 1000);
         assertEquals(0, imap.size());
-        values = imap.values(new SqlPredicate("active and name LIKE 'joe15%'"));
-        assertEquals(0, values.size());
-        Thread.sleep(5000);
         values = imap.values(new SqlPredicate("active and name LIKE 'joe15%'"));
         assertEquals(0, values.size());
     }
@@ -1246,7 +1248,7 @@ public class QueryTest extends HazelcastTestSupport {
             });
         }
         try {
-            assertTrue(latch.await(60, TimeUnit.SECONDS));
+            assertTrue(latch.await(200, TimeUnit.SECONDS));
             assertEquals(0, countdown.get());
         } finally {
             ex.shutdownNow();

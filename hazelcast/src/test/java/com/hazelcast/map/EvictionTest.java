@@ -557,6 +557,7 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(SerialTest.class)
     public void testMapRecordIdleEvictionOnMigration2() throws InterruptedException {
         Config cfg = new Config();
         MapConfig mc = cfg.getMapConfig("testMapRecordIdleEvictionOnMigration2");
