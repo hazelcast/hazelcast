@@ -51,19 +51,19 @@ public class Config implements DataSerializable {
 
     private NetworkConfig networkConfig = new NetworkConfig();
 
-    private Map<String, MapConfig> mapConfigs = new ConcurrentHashMap<String, MapConfig>();
+    private Map<String, MapConfig> mapConfigs = new HashMap<String, MapConfig>();
 
-    private Map<String, TopicConfig> topicConfigs = new ConcurrentHashMap<String, TopicConfig>();
+    private Map<String, TopicConfig> topicConfigs = new HashMap<String, TopicConfig>();
 
-    private Map<String, QueueConfig> queueConfigs = new ConcurrentHashMap<String, QueueConfig>();
+    private Map<String, QueueConfig> queueConfigs = new HashMap<String, QueueConfig>();
 
-    private Map<String, MultiMapConfig> multiMapConfigs = new ConcurrentHashMap<String, MultiMapConfig>();
+    private Map<String, MultiMapConfig> multiMapConfigs = new HashMap<String, MultiMapConfig>();
 
-    private Map<String, ExecutorConfig> executorConfigs = new ConcurrentHashMap<String, ExecutorConfig>();
+    private Map<String, ExecutorConfig> executorConfigs = new HashMap<String, ExecutorConfig>();
 
-    private Map<String, SemaphoreConfig> semaphoreConfigs = new ConcurrentHashMap<String, SemaphoreConfig>();
+    private Map<String, SemaphoreConfig> semaphoreConfigs = new HashMap<String, SemaphoreConfig>();
 
-    private Map<String, WanReplicationConfig> wanReplicationConfigs = new ConcurrentHashMap<String, WanReplicationConfig>();
+    private Map<String, WanReplicationConfig> wanReplicationConfigs = new HashMap<String, WanReplicationConfig>();
 
     private ServicesConfig servicesConfig = new ServicesConfig();
 
@@ -86,19 +86,6 @@ public class Config implements DataSerializable {
     public Config() {
     }
 
-    public WanReplicationConfig getWanReplicationConfig(String name) {
-        return wanReplicationConfigs.get(name);
-    }
-
-    public Config addWanReplicationConfig(WanReplicationConfig wanReplicationConfig) {
-        wanReplicationConfigs.put(wanReplicationConfig.getName(), wanReplicationConfig);
-        return this;
-    }
-
-    public Map<String, WanReplicationConfig> getWanReplicationConfigs() {
-        return wanReplicationConfigs;
-    }
-
     public ClassLoader getClassLoader() {
         return classLoader;
     }
@@ -106,6 +93,11 @@ public class Config implements DataSerializable {
     public Config setClassLoader(ClassLoader classLoader) {
         this.classLoader = classLoader;
         return this;
+    }
+
+    public String getProperty(String name) {
+        String value = properties.getProperty(name);
+        return value != null ? value : System.getProperty(name);
     }
 
     public Config setProperty(String name, String value) {
@@ -117,24 +109,36 @@ public class Config implements DataSerializable {
         return properties;
     }
 
-    public String getProperty(String name) {
-        String value = properties.getProperty(name);
-        return value != null ? value : System.getProperty(name);
+    public Config setProperties(Properties properties) {
+        this.properties = properties;
+        return this;
     }
 
-    public QueueConfig getQueueConfig(final String name) {
-        QueueConfig config;
-        if ((config = lookupByPattern(queueConfigs, name)) != null) return config;
-        QueueConfig defConfig = queueConfigs.get("default");
-        if (defConfig == null) {
-            defConfig = new QueueConfig();
-            defConfig.setName("default");
-            addQueueConfig(defConfig);
-        }
-        config = new QueueConfig(defConfig);
-        config.setName(name);
-        addQueueConfig(config);
-        return config;
+    public String getInstanceName() {
+        return instanceName;
+    }
+
+    public Config setInstanceName(String instanceName) {
+        this.instanceName = instanceName;
+        return this;
+    }
+
+    public GroupConfig getGroupConfig() {
+        return groupConfig;
+    }
+
+    public Config setGroupConfig(GroupConfig groupConfig) {
+        this.groupConfig = groupConfig;
+        return this;
+    }
+
+    public NetworkConfig getNetworkConfig() {
+        return networkConfig;
+    }
+
+    public Config setNetworkConfig(NetworkConfig networkConfig) {
+        this.networkConfig = networkConfig;
+        return this;
     }
 
     public MapConfig getMapConfig(final String name) {
@@ -152,6 +156,61 @@ public class Config implements DataSerializable {
         return config;
     }
 
+    public Config addMapConfig(MapConfig mapConfig) {
+        mapConfigs.put(mapConfig.getName(), mapConfig);
+        return this;
+    }
+
+    /**
+     * @return the mapConfigs
+     */
+    public Map<String, MapConfig> getMapConfigs() {
+        return mapConfigs;
+    }
+
+    /**
+     * @param mapConfigs the mapConfigs to set
+     */
+    public Config setMapConfigs(Map<String, MapConfig> mapConfigs) {
+        this.mapConfigs = mapConfigs;
+        for (final Entry<String, MapConfig> entry : this.mapConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
+        return this;
+    }
+
+    public QueueConfig getQueueConfig(final String name) {
+        QueueConfig config;
+        if ((config = lookupByPattern(queueConfigs, name)) != null) return config;
+        QueueConfig defConfig = queueConfigs.get("default");
+        if (defConfig == null) {
+            defConfig = new QueueConfig();
+            defConfig.setName("default");
+            addQueueConfig(defConfig);
+        }
+        config = new QueueConfig(defConfig);
+        config.setName(name);
+        addQueueConfig(config);
+        return config;
+    }
+
+    public Config addQueueConfig(QueueConfig queueConfig) {
+        queueConfigs.put(queueConfig.getName(), queueConfig);
+        return this;
+    }
+
+    /**
+     * @return the mapQConfigs
+     */
+    public Map<String, QueueConfig> getQueueConfigs() {
+        return queueConfigs;
+    }
+
+    public Config setQueueConfigs(Map<String, QueueConfig> queueConfigs) {
+        this.queueConfigs = queueConfigs;
+        return this;
+    }
+
     public MultiMapConfig getMultiMapConfig(final String name) {
         MultiMapConfig config;
         if ((config = lookupByPattern(multiMapConfigs, name)) != null) return config;
@@ -165,6 +224,23 @@ public class Config implements DataSerializable {
         config.setName(name);
         addMultiMapConfig(config);
         return config;
+    }
+
+    public Config addMultiMapConfig(MultiMapConfig multiMapConfig) {
+        multiMapConfigs.put(multiMapConfig.getName(), multiMapConfig);
+        return this;
+    }
+
+    public Map<String, MultiMapConfig> getMultiMapConfigs() {
+        return multiMapConfigs;
+    }
+
+    public Config setMultiMapConfigs(Map<String, MultiMapConfig> multiMapConfigs) {
+        this.multiMapConfigs = multiMapConfigs;
+        for (final Entry<String, MultiMapConfig> entry : this.multiMapConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
+        return this;
     }
 
     public TopicConfig getTopicConfig(final String name) {
@@ -184,60 +260,26 @@ public class Config implements DataSerializable {
         return config;
     }
 
-    public static <T> T lookupByPattern(Map<String, T> map, String name) {
-        T t = map.get(name);
-        if (t == null) {
-            final Set<String> tNames = map.keySet();
-            for (final String pattern : tNames) {
-                if (nameMatches(name, pattern)) {
-                    return map.get(pattern);
-                }
-            }
-        }
-        return t;
-    }
-
-    public static boolean nameMatches(final String name, final String pattern) {
-        final int index = pattern.indexOf('*');
-        if (index == -1) {
-            return name.equals(pattern);
-        } else {
-            final String firstPart = pattern.substring(0, index);
-            final int indexFirstPart = name.indexOf(firstPart, 0);
-            if (indexFirstPart == -1) {
-                return false;
-            }
-            final String secondPart = pattern.substring(index + 1);
-            final int indexSecondPart = name.indexOf(secondPart, index + 1);
-            return indexSecondPart != -1;
-        }
-    }
-
-    public NetworkConfig getNetworkConfig() {
-        return networkConfig;
-    }
-
-    public GroupConfig getGroupConfig() {
-        return groupConfig;
-    }
-
-    public boolean isCheckCompatibility() {
-        return this.checkCompatibility;
-    }
-
-    public Config setCheckCompatibility(boolean checkCompatibility) {
-        this.checkCompatibility = checkCompatibility;
+    public Config addTopicConfig(TopicConfig topicConfig) {
+        topicConfigs.put(topicConfig.getName(), topicConfig);
         return this;
     }
 
     /**
-     * Adds a new ExecutorConfig by name
-     *
-     * @param executorConfig executor config to add
-     * @return this config instance
+     * @return the topicConfigs
      */
-    public Config addExecutorConfig(ExecutorConfig executorConfig) {
-        this.executorConfigs.put(executorConfig.getName(), executorConfig);
+    public Map<String, TopicConfig> getTopicConfigs() {
+        return topicConfigs;
+    }
+
+    /**
+     * @param mapTopicConfigs the topicConfigs to set
+     */
+    public Config setTopicConfigs(Map<String, TopicConfig> mapTopicConfigs) {
+        this.topicConfigs = mapTopicConfigs;
+        for (final Entry<String, TopicConfig> entry : this.topicConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
         return this;
     }
 
@@ -266,156 +308,22 @@ public class Config implements DataSerializable {
     }
 
     /**
-     * Returns the collection of executor configs.
+     * Adds a new ExecutorConfig by name
      *
-     * @return collection of executor configs.
+     * @param executorConfig executor config to add
+     * @return this config instance
      */
-    public Collection<ExecutorConfig> getExecutorConfigs() {
-        return executorConfigs.values();
-    }
-
-    public Config addTopicConfig(TopicConfig topicConfig) {
-        topicConfigs.put(topicConfig.getName(), topicConfig);
+    public Config addExecutorConfig(ExecutorConfig executorConfig) {
+        this.executorConfigs.put(executorConfig.getName(), executorConfig);
         return this;
     }
 
-    /**
-     * @return the topicConfigs
-     */
-    public Map<String, TopicConfig> getTopicConfigs() {
-        return Collections.unmodifiableMap(topicConfigs);
-    }
-
-    /**
-     * @param mapTopicConfigs the topicConfigs to set
-     */
-    public Config setTopicConfigs(Map<String, TopicConfig> mapTopicConfigs) {
-        this.topicConfigs = mapTopicConfigs;
-        for (final Entry<String, TopicConfig> entry : this.topicConfigs.entrySet()) {
-            entry.getValue().setName(entry.getKey());
-        }
-        return this;
-    }
-
-    public void setProperties(Properties properties) {
-        this.properties = properties;
-    }
-
-    public void setGroupConfig(GroupConfig groupConfig) {
-        this.groupConfig = groupConfig;
-    }
-
-    public void setNetworkConfig(NetworkConfig networkConfig) {
-        this.networkConfig = networkConfig;
-    }
-
-    public void setQueueConfigs(Map<String, QueueConfig> queueConfigs) {
-        this.queueConfigs = queueConfigs;
-    }
-
-    public void setWanReplicationConfigs(Map<String, WanReplicationConfig> wanReplicationConfigs) {
-        this.wanReplicationConfigs = wanReplicationConfigs;
-    }
-
-    public void setServicesConfig(ServicesConfig servicesConfig) {
-        this.servicesConfig = servicesConfig;
-    }
-
-    public void setSecurityConfig(SecurityConfig securityConfig) {
-        this.securityConfig = securityConfig;
-    }
-
-    public void setListenerConfigs(List<ListenerConfig> listenerConfigs) {
-        this.listenerConfigs = listenerConfigs;
-    }
-
-    public void setPartitionGroupConfig(PartitionGroupConfig partitionGroupConfig) {
-        this.partitionGroupConfig = partitionGroupConfig;
-    }
-
-    public void setManagementCenterConfig(ManagementCenterConfig managementCenterConfig) {
-        this.managementCenterConfig = managementCenterConfig;
-    }
-
-    public void setSerializationConfig(SerializationConfig serializationConfig) {
-        this.serializationConfig = serializationConfig;
-    }
-
-    /**
-     * @return the mapQConfigs
-     */
-    public Map<String, QueueConfig> getQConfigs() {
-        return Collections.unmodifiableMap(queueConfigs);
-    }
-
-    public Config addQueueConfig(QueueConfig queueConfig) {
-        queueConfigs.put(queueConfig.getName(), queueConfig);
-        return this;
-    }
-
-    public Config setQConfigs(Map queueConfigs) {
-        this.queueConfigs = queueConfigs;
-        return this;
+    public Map<String, ExecutorConfig> getExecutorConfigs() {
+        return executorConfigs;
     }
 
     public Config setExecutorConfigs(Map<String, ExecutorConfig> executorConfigs) {
         this.executorConfigs = executorConfigs;
-        return this;
-    }
-
-    public Config setSemaphoreConfigs(Map<String, SemaphoreConfig> semaphoreConfigs) {
-        this.semaphoreConfigs = semaphoreConfigs;
-        return this;
-    }
-
-    public Config addMapConfig(MapConfig mapConfig) {
-        mapConfigs.put(mapConfig.getName(), mapConfig);
-        return this;
-    }
-
-    public Config addMultiMapConfig(MultiMapConfig multiMapConfig) {
-        multiMapConfigs.put(multiMapConfig.getName(), multiMapConfig);
-        return this;
-    }
-
-    /**
-     * @return the mapConfigs
-     */
-    public Map<String, MapConfig> getMapConfigs() {
-        return Collections.unmodifiableMap(mapConfigs);
-    }
-
-    public Map<String, MultiMapConfig> getMultiMapConfigs() {
-        return Collections.unmodifiableMap(multiMapConfigs);
-    }
-
-    /**
-     * @param mapConfigs the mapConfigs to set
-     */
-    public Config setMapConfigs(Map<String, MapConfig> mapConfigs) {
-        this.mapConfigs = mapConfigs;
-        for (final Entry<String, MapConfig> entry : this.mapConfigs.entrySet()) {
-            entry.getValue().setName(entry.getKey());
-        }
-        return this;
-    }
-
-    public Config setMultiMapConfigs(Map<String, MultiMapConfig> multiMapConfigs) {
-        this.multiMapConfigs = multiMapConfigs;
-        for (final Entry<String, MultiMapConfig> entry : this.multiMapConfigs.entrySet()) {
-            entry.getValue().setName(entry.getKey());
-        }
-        return this;
-    }
-
-    /**
-     * Adds a new SemaphoreConfig by name
-     *
-     * @param semaphoreConfig semaphore config to add
-     * @return this config instance
-     */
-    public Config addSemaphoreConfig(SemaphoreConfig semaphoreConfig) {
-        this.semaphoreConfigs.put(semaphoreConfig.getName(), semaphoreConfig);
         return this;
     }
 
@@ -442,6 +350,16 @@ public class Config implements DataSerializable {
         return sc;
     }
 
+    /**
+     * Adds a new SemaphoreConfig by name
+     *
+     * @param semaphoreConfig semaphore config to add
+     * @return this config instance
+     */
+    public Config addSemaphoreConfig(SemaphoreConfig semaphoreConfig) {
+        this.semaphoreConfigs.put(semaphoreConfig.getName(), semaphoreConfig);
+        return this;
+    }
 
     /**
      * Returns the collection of semaphore configs.
@@ -452,15 +370,107 @@ public class Config implements DataSerializable {
         return semaphoreConfigs.values();
     }
 
-    public Map<String, SemaphoreConfig> getSemaphoreConfigMap() {
-        return Collections.unmodifiableMap(semaphoreConfigs);
-    }
-
-    public Config setSemaphoreConfigMap(Map<String, SemaphoreConfig> mapSemaphores) {
-        this.semaphoreConfigs = mapSemaphores;
+    public Config setSemaphoreConfigs(Map<String, SemaphoreConfig> semaphoreConfigs) {
+        this.semaphoreConfigs = semaphoreConfigs;
         for (final Entry<String, SemaphoreConfig> entry : this.semaphoreConfigs.entrySet()) {
             entry.getValue().setName(entry.getKey());
         }
+        return this;
+    }
+
+
+    public WanReplicationConfig getWanReplicationConfig(String name) {
+        return wanReplicationConfigs.get(name);
+    }
+
+    public Config addWanReplicationConfig(WanReplicationConfig wanReplicationConfig) {
+        wanReplicationConfigs.put(wanReplicationConfig.getName(), wanReplicationConfig);
+        return this;
+    }
+
+    public Map<String, WanReplicationConfig> getWanReplicationConfigs() {
+        return wanReplicationConfigs;
+    }
+
+    public Config setWanReplicationConfigs(Map<String, WanReplicationConfig> wanReplicationConfigs) {
+        this.wanReplicationConfigs = wanReplicationConfigs;
+        return this;
+    }
+
+    public ManagementCenterConfig getManagementCenterConfig() {
+        return managementCenterConfig;
+    }
+
+    public Config setManagementCenterConfig(ManagementCenterConfig managementCenterConfig) {
+        this.managementCenterConfig = managementCenterConfig;
+        return this;
+    }
+
+    public ServicesConfig getServicesConfig() {
+        return servicesConfig;
+    }
+
+    public Config setServicesConfig(ServicesConfig servicesConfig) {
+        this.servicesConfig = servicesConfig;
+        return this;
+    }
+
+    public SecurityConfig getSecurityConfig() {
+        return securityConfig;
+    }
+
+    public Config setSecurityConfig(SecurityConfig securityConfig) {
+        this.securityConfig = securityConfig;
+        return this;
+    }
+
+    public Config addListenerConfig(ListenerConfig listenerConfig) {
+        getListenerConfigs().add(listenerConfig);
+        return this;
+    }
+
+    public List<ListenerConfig> getListenerConfigs() {
+        return listenerConfigs;
+    }
+
+    public Config setListenerConfigs(List<ListenerConfig> listenerConfigs) {
+        this.listenerConfigs = listenerConfigs;
+        return this;
+    }
+
+    public SerializationConfig getSerializationConfig() {
+        return serializationConfig;
+    }
+
+    public Config setSerializationConfig(SerializationConfig serializationConfig) {
+        this.serializationConfig = serializationConfig;
+        return this;
+    }
+
+    public PartitionGroupConfig getPartitionGroupConfig() {
+        return partitionGroupConfig;
+    }
+
+    public Config setPartitionGroupConfig(PartitionGroupConfig partitionGroupConfig) {
+        this.partitionGroupConfig = partitionGroupConfig;
+        return this;
+    }
+
+    public ManagedContext getManagedContext() {
+        return managedContext;
+    }
+
+    public Config setManagedContext(final ManagedContext managedContext) {
+        this.managedContext = managedContext;
+        return this;
+    }
+
+    public ConcurrentMap<String, Object> getUserContext() {
+        return userContext;
+    }
+
+    public Config setUserContext(ConcurrentMap<String, Object> userContext) {
+        this.userContext = userContext;
         return this;
     }
 
@@ -494,43 +504,51 @@ public class Config implements DataSerializable {
         return this;
     }
 
-    public SecurityConfig getSecurityConfig() {
-        return securityConfig;
+    public boolean isCheckCompatibility() {
+        return this.checkCompatibility;
     }
 
-    public Config addListenerConfig(ListenerConfig listenerConfig) {
-        getListenerConfigs().add(listenerConfig);
+    public Config setCheckCompatibility(boolean checkCompatibility) {
+        this.checkCompatibility = checkCompatibility;
         return this;
     }
 
-    public List<ListenerConfig> getListenerConfigs() {
-        return listenerConfigs;
+    public String getLicenseKey() {
+        return licenseKey;
     }
 
-    public SerializationConfig getSerializationConfig() {
-        return serializationConfig;
-    }
-
-    public PartitionGroupConfig getPartitionGroupConfig() {
-        return partitionGroupConfig;
-    }
-
-    public ManagedContext getManagedContext() {
-        return managedContext;
-    }
-
-    public Config setManagedContext(final ManagedContext managedContext) {
-        this.managedContext = managedContext;
+    public Config setLicenseKey(final String licenseKey) {
+        this.licenseKey = licenseKey;
         return this;
     }
 
-    public ConcurrentMap<String, Object> getUserContext() {
-        return userContext;
+    private static <T> T lookupByPattern(Map<String, T> map, String name) {
+        T t = map.get(name);
+        if (t == null) {
+            final Set<String> tNames = map.keySet();
+            for (final String pattern : tNames) {
+                if (nameMatches(name, pattern)) {
+                    return map.get(pattern);
+                }
+            }
+        }
+        return t;
     }
 
-    public Config setUserContext(ConcurrentMap<String, Object> userContext) {
-        this.userContext = userContext;
-        return this;
+    private static boolean nameMatches(final String name, final String pattern) {
+        final int index = pattern.indexOf('*');
+        if (index == -1) {
+            return name.equals(pattern);
+        } else {
+            final String firstPart = pattern.substring(0, index);
+            final int indexFirstPart = name.indexOf(firstPart, 0);
+            if (indexFirstPart == -1) {
+                return false;
+            }
+            final String secondPart = pattern.substring(index + 1);
+            final int indexSecondPart = name.indexOf(secondPart, index + 1);
+            return indexSecondPart != -1;
+        }
     }
 
     /**
@@ -615,7 +633,7 @@ public class Config implements DataSerializable {
         networkConfig.readData(in);
         if (hasMapConfigs) {
             int size = in.readInt();
-            mapConfigs = new ConcurrentHashMap<String, MapConfig>(size);
+            mapConfigs = new HashMap<String, MapConfig>(size);
             for (int i = 0; i < size; i++) {
                 final MapConfig mapConfig = new MapConfig();
                 mapConfig.readData(in);
@@ -624,7 +642,7 @@ public class Config implements DataSerializable {
         }
         if (hasExecutors) {
             int size = in.readInt();
-            executorConfigs = new ConcurrentHashMap<String, ExecutorConfig>(size);
+            executorConfigs = new HashMap<String, ExecutorConfig>(size);
             for (int i = 0; i < size; i++) {
                 final ExecutorConfig executorConfig = new ExecutorConfig();
                 executorConfig.readData(in);
@@ -633,7 +651,7 @@ public class Config implements DataSerializable {
         }
         if (hasTopicConfigs) {
             int size = in.readInt();
-            topicConfigs = new ConcurrentHashMap<String, TopicConfig>(size);
+            topicConfigs = new HashMap<String, TopicConfig>(size);
             for (int i = 0; i < size; i++) {
                 final TopicConfig topicConfig = new TopicConfig();
                 topicConfig.readData(in);
@@ -642,7 +660,7 @@ public class Config implements DataSerializable {
         }
         if (hasQueueConfigs) {
             int size = in.readInt();
-            queueConfigs = new ConcurrentHashMap<String, QueueConfig>(size);
+            queueConfigs = new HashMap<String, QueueConfig>(size);
             for (int i = 0; i < size; i++) {
                 final QueueConfig queueConfig = new QueueConfig();
                 queueConfig.readData(in);
@@ -651,7 +669,7 @@ public class Config implements DataSerializable {
         }
         if (hasSemaphoreConfigs) {
             int size = in.readInt();
-            semaphoreConfigs = new ConcurrentHashMap<String, SemaphoreConfig>(size);
+            semaphoreConfigs = new HashMap<String, SemaphoreConfig>(size);
             for (int i = 0; i < size; i++) {
                 final SemaphoreConfig semaphoreConfig = new SemaphoreConfig();
                 semaphoreConfig.readData(in);
@@ -740,32 +758,6 @@ public class Config implements DataSerializable {
                 out.writeUTF(value);
             }
         }
-    }
-
-    public String getInstanceName() {
-        return instanceName;
-    }
-
-    public Config setInstanceName(String instanceName) {
-        this.instanceName = instanceName;
-        return this;
-    }
-
-    public String getLicenseKey() {
-        return licenseKey;
-    }
-
-    public Config setLicenseKey(final String licenseKey) {
-        this.licenseKey = licenseKey;
-        return this;
-    }
-
-    public ManagementCenterConfig getManagementCenterConfig() {
-        return managementCenterConfig;
-    }
-
-    public ServicesConfig getServicesConfig() {
-        return servicesConfig;
     }
 
     @Override

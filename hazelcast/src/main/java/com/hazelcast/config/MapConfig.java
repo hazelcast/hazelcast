@@ -170,7 +170,6 @@ public class MapConfig implements DataSerializable {
      *
      * @param backupCount the backupCount to set
      * @see #setAsyncBackupCount(int)
-     * @see #setBackupCounts(int, int)
      */
     public MapConfig setBackupCount(final int backupCount) {
         if (backupCount < MIN_BACKUP_COUNT) {
@@ -199,7 +198,6 @@ public class MapConfig implements DataSerializable {
      *
      * @param asyncBackupCount the asyncBackupCount to set
      * @see #setBackupCount(int)
-     * @see #setBackupCounts(int, int)
      */
     public MapConfig setAsyncBackupCount(final int asyncBackupCount) {
         if (asyncBackupCount < MIN_BACKUP_COUNT) {
@@ -210,29 +208,6 @@ public class MapConfig implements DataSerializable {
             throw new IllegalArgumentException("total (sync + async) map backup count must be less than "
                     + MAX_BACKUP_COUNT);
         }
-        this.asyncBackupCount = asyncBackupCount;
-        return this;
-    }
-
-    /**
-     * Number of sync and async backups.
-     * 0 means no backup.
-     *
-     * @param backupCount      the sync backup count to set
-     * @param asyncBackupCount the async backup count to set
-     * @see #setBackupCount(int)
-     * @see #setAsyncBackupCount(int)
-     */
-    public MapConfig setBackupCounts(final int backupCount, final int asyncBackupCount) {
-        if (backupCount < MIN_BACKUP_COUNT || asyncBackupCount < MIN_BACKUP_COUNT) {
-            throw new IllegalArgumentException("map backup count must be equal to or bigger than "
-                    + MIN_BACKUP_COUNT);
-        }
-        if ((backupCount + asyncBackupCount) > MAX_BACKUP_COUNT) {
-            throw new IllegalArgumentException("total (sync + async) map backup count must be less than "
-                    + MAX_BACKUP_COUNT);
-        }
-        this.backupCount = backupCount;
         this.asyncBackupCount = asyncBackupCount;
         return this;
     }
@@ -555,7 +530,6 @@ public class MapConfig implements DataSerializable {
         maxSizeConfig.readData(in);
         boolean[] b = ByteUtil.fromByte(in.readByte());
         readBackupData = b[0];
-//        valueIndexed = b[1];
         evictionPolicy = MapConfig.EvictionPolicy.valueOf(in.readUTF());
 //        mergePolicyConfig = new MapMergePolicyConfig();
         // TODO: MapStoreConfig mapStoreConfig

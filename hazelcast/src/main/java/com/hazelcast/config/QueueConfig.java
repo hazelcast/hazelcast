@@ -99,8 +99,9 @@ public final class QueueConfig implements DataSerializable {
         return statisticsEnabled;
     }
 
-    public void setStatisticsEnabled(boolean statisticsEnabled) {
+    public QueueConfig setStatisticsEnabled(boolean statisticsEnabled) {
         this.statisticsEnabled = statisticsEnabled;
+        return this;
     }
 
     /**
@@ -131,8 +132,9 @@ public final class QueueConfig implements DataSerializable {
         return listenerConfigs;
     }
 
-    public void setItemListenerConfigs(List<ItemListenerConfig> listenerConfigs) {
+    public QueueConfig setItemListenerConfigs(List<ItemListenerConfig> listenerConfigs) {
         this.listenerConfigs = listenerConfigs;
+        return this;
     }
 
     public boolean isCompatible(final QueueConfig queueConfig) {

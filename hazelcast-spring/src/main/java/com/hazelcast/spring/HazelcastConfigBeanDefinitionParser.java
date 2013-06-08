@@ -60,10 +60,10 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.executorManagedMap = new ManagedMap();
             this.wanReplicationManagedMap = new ManagedMap();
             this.configBuilder.addPropertyValue("mapConfigs", mapConfigManagedMap);
-            this.configBuilder.addPropertyValue("QConfigs", queueManagedMap);
+            this.configBuilder.addPropertyValue("queueConfigs", queueManagedMap);
             this.configBuilder.addPropertyValue("topicConfigs", topicManagedMap);
             this.configBuilder.addPropertyValue("multiMapConfigs", multiMapManagedMap);
-            this.configBuilder.addPropertyValue("executorConfigMap", executorManagedMap);
+            this.configBuilder.addPropertyValue("executorConfigs", executorManagedMap);
             this.configBuilder.addPropertyValue("wanReplicationConfigs", wanReplicationManagedMap);
 
             BeanDefinitionBuilder managedContextBeanBuilder = createBeanBuilder(SpringManagedContext.class);

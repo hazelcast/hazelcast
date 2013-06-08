@@ -82,16 +82,18 @@ public final class TopicConfig implements DataSerializable {
         return listenerConfigs;
     }
 
-    public void setMessageListenerConfigs(List<ListenerConfig> listenerConfigs) {
+    public TopicConfig setMessageListenerConfigs(List<ListenerConfig> listenerConfigs) {
         this.listenerConfigs = listenerConfigs;
+        return this;
     }
 
     public boolean isStatisticsEnabled() {
         return statisticsEnabled;
     }
 
-    public void setStatisticsEnabled(boolean statisticsEnabled) {
+    public TopicConfig setStatisticsEnabled(boolean statisticsEnabled) {
         this.statisticsEnabled = statisticsEnabled;
+        return this;
     }
 
     public int hashCode() {
