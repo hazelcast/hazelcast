@@ -17,7 +17,6 @@
 package com.hazelcast.concurrent.atomiclong;
 
 import com.hazelcast.concurrent.atomiclong.proxy.AtomicLongProxy;
-import com.hazelcast.config.Config;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.spi.*;
 import com.hazelcast.util.ConcurrencyUtil;
@@ -61,14 +60,6 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
 
     public void shutdown() {
         reset();
-    }
-
-    public Config getConfig() {
-        return nodeEngine.getConfig();
-    }
-
-    public String getServiceName() {
-        return SERVICE_NAME;
     }
 
     public AtomicLongProxy createDistributedObject(Object objectId) {

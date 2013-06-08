@@ -89,7 +89,7 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
 
     public void registerLockStoreConstructor(String serviceName, ConstructorFunction<ObjectNamespace, LockStoreInfo> constructorFunction) {
         if (constructors.putIfAbsent(serviceName, constructorFunction) != null) {
-            throw new IllegalArgumentException("!!!");
+            throw new IllegalArgumentException("LockStore constructor for service[" + serviceName + "] is already registered!");
         }
     }
 
@@ -193,10 +193,6 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
 
     public void clearPartitionReplica(int partitionId) {
         clearPartition(partitionId);
-    }
-
-    public String getServiceName() {
-        return SERVICE_NAME;
     }
 
     public DistributedObject createDistributedObject(Object objectId) {

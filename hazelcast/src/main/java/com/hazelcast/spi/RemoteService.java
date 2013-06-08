@@ -23,8 +23,6 @@ import com.hazelcast.core.DistributedObject;
  */
 public interface RemoteService {
 
-    String getServiceName();
-
     DistributedObject createDistributedObject(Object objectId);
 
     void destroyDistributedObject(Object objectId);

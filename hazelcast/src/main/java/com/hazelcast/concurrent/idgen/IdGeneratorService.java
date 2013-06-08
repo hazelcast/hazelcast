@@ -39,10 +39,6 @@ public class IdGeneratorService implements ManagedService, RemoteService {
         this.nodeEngine = nodeEngine;
     }
 
-    public String getServiceName() {
-        return SERVICE_NAME;
-    }
-
     public void init(NodeEngine nodeEngine, Properties properties) {
         this.nodeEngine = nodeEngine;
     }
@@ -53,8 +49,8 @@ public class IdGeneratorService implements ManagedService, RemoteService {
     public void shutdown() {
     }
 
-    public IAtomicLong getAtomicLong(String name){
-        return nodeEngine.getHazelcastInstance().getAtomicLong(ATOMIC_LONG_NAME+name);
+    private IAtomicLong getAtomicLong(String name) {
+        return nodeEngine.getHazelcastInstance().getAtomicLong(ATOMIC_LONG_NAME + name);
     }
 
     public DistributedObject createDistributedObject(Object objectId) {

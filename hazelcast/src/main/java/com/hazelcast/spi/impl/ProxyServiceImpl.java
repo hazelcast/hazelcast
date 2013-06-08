@@ -105,7 +105,7 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
 
     @PrivateApi
     public void destroyLocalDistributedObject(String serviceName, Object objectId) {
-        final RemoteService service = nodeEngine.serviceManager.getService(serviceName);
+        final RemoteService service = nodeEngine.getService(serviceName);
         if (service != null) {
             service.destroyDistributedObject(objectId);
         }
@@ -167,12 +167,13 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
 
     private class ProxyRegistry {
 
+        final String serviceName;
         final RemoteService service;
-
         final ConcurrentMap<Object, DistributedObject> proxies = new ConcurrentHashMap<Object, DistributedObject>();
 
         private ProxyRegistry(String serviceName) {
-            this.service = nodeEngine.serviceManager.getService(serviceName);
+            this.serviceName = serviceName;
+            this.service = nodeEngine.getService(serviceName);
             if (service == null) {
                 if (nodeEngine.isActive()) {
                     throw new IllegalArgumentException("Unknown service: " + serviceName);
@@ -225,7 +226,7 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
         }
 
         private DistributedObjectEvent createEvent(Object objectId, DistributedObjectEvent.EventType type) {
-            final DistributedObjectEvent event = new DistributedObjectEvent(type, service.getServiceName(), objectId);
+            final DistributedObjectEvent event = new DistributedObjectEvent(type, serviceName, objectId);
             event.setHazelcastInstance(nodeEngine.getNode().hazelcastInstance);
             return event;
         }

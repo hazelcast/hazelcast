@@ -71,10 +71,6 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         return orderingLocks[hash != Integer.MIN_VALUE ? (Math.abs(hash) % orderingLocks.length) : 0];
     }
 
-    public String getServiceName() {
-        return SERVICE_NAME;
-    }
-
     public TopicProxy createDistributedObject(Object objectId) {
         final String name = String.valueOf(objectId);
         TopicProxy proxy;

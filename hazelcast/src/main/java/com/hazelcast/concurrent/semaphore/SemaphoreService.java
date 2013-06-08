@@ -91,10 +91,6 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
         }
     }
 
-    public String getServiceName() {
-        return SERVICE_NAME;
-    }
-
     public SemaphoreProxy createDistributedObject(Object objectId) {
         return new SemaphoreProxy((String)objectId, this, nodeEngine);
     }

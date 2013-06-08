@@ -125,10 +125,6 @@ public class CollectionService implements ManagedService, RemoteService,
         return proxy.createNew();
     }
 
-    public String getServiceName() {
-        return SERVICE_NAME;
-    }
-
     public DistributedObject createDistributedObject(Object objectId) {
         CollectionProxyId collectionProxyId = (CollectionProxyId) objectId;
         final CollectionProxyType type = collectionProxyId.type;
