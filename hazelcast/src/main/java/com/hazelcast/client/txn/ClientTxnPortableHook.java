@@ -12,6 +12,8 @@ public class ClientTxnPortableHook implements PortableHook{
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.CLIENT_TXN_PORTABLE_FACTORY, -19);
 
     public static final int CREATE = 1;
+    public static final int COMMIT = 2;
+    public static final int ROLLBACK = 3;
 
     public int getFactoryId() {
         return F_ID;
@@ -23,6 +25,10 @@ public class ClientTxnPortableHook implements PortableHook{
                 switch (classId){
                     case CREATE:
                         return new CreateTransactionRequest();
+                    case COMMIT:
+                        return new CommitTransactionRequest();
+                    case ROLLBACK:
+                        return new RollbackTransactionRequest();
                 }
                 return null;
             }

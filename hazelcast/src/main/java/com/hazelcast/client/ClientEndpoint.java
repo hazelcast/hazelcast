@@ -99,6 +99,12 @@ public class ClientEndpoint implements Client {
         if (lc != null) {
             lc.logout();
         }
+        final TransactionContext context = transactionContext;
+        if (context != null){
+            transactionContext = null;
+            //TODO
+//            transactionContext.rollbackTransaction();
+        }
         authenticated = false;
     }
 
