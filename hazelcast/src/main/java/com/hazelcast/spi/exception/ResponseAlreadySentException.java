@@ -14,26 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue;
+package com.hazelcast.spi.exception;
 
-import com.hazelcast.core.ItemEvent;
-import com.hazelcast.core.ItemListener;
+import com.hazelcast.core.HazelcastException;
 
-import java.io.Serializable;
-import java.util.concurrent.CountDownLatch;
+/**
+ * @mdogan 6/7/13
+ */
+public class ResponseAlreadySentException extends HazelcastException {
 
-public class DummyListener implements ItemListener, Serializable {
-
-    public static CountDownLatch latchForListenerTest = new CountDownLatch(2);
-
-    public DummyListener() {
+    public ResponseAlreadySentException() {
+        super();
     }
 
-    public void itemAdded(ItemEvent item) {
-        latchForListenerTest.countDown();
-    }
-
-    public void itemRemoved(ItemEvent item) {
-        latchForListenerTest.countDown();
+    public ResponseAlreadySentException(String message) {
+        super(message);
     }
 }

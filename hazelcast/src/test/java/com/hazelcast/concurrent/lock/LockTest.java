@@ -219,13 +219,8 @@ public class LockTest extends HazelcastTestSupport {
         final HazelcastInstance keyOwner = nodeFactory.newHazelcastInstance(config);
         final HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(config);
         final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
-        int k = 0;
-        final Member localMember = keyOwner.getCluster().getLocalMember();
-        while (!localMember.equals(instance1.getPartitionService().getPartition(++k).getOwner())) {
-            Thread.sleep(10);
-        }
 
-        final int key = k;
+        final int key = generateKeyOwnedBy(keyOwner);
         final ILock lock1 = instance1.getLock(key);
         lock1.lock();
 

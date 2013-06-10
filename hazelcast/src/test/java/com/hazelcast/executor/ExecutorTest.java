@@ -17,6 +17,7 @@
 package com.hazelcast.executor;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.monitor.LocalExecutorStats;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -45,8 +46,35 @@ public class ExecutorTest extends HazelcastTestSupport {
     public static final int COUNT = 1000;
 
     private IExecutorService createSingleNodeExecutorService(String name) {
-        final HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        return createSingleNodeExecutorService(name, ExecutorConfig.DEFAULT_POOL_SIZE);
+    }
+
+    private IExecutorService createSingleNodeExecutorService(String name, int poolSize) {
+        final Config config = new Config();
+        config.addExecutorConfig(new ExecutorConfig(name, poolSize));
+        final HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance(config);
         return instance.getExecutorService(name);
+    }
+
+    /**
+     * Submit a null task must raise a NullPointerException
+     */
+    @Test(expected = NullPointerException.class)
+    public void submitNullTask() throws Exception {
+        ExecutorService executor = createSingleNodeExecutorService("submitNullTask");
+        Callable c = null;
+        executor.submit(c);
+    }
+
+    /**
+     * Run a basic task
+     */
+    @Test
+    public void testBasicTask() throws Exception {
+        Callable<String> task = new BasicTestTask();
+        ExecutorService executor = createSingleNodeExecutorService("testBasicTask");
+        Future future = executor.submit(task);
+        assertEquals(future.get(), BasicTestTask.RESULT);
     }
 
     @Test
@@ -360,27 +388,6 @@ public class ExecutorTest extends HazelcastTestSupport {
         assertTrue(response instanceof Member);
     }
 
-    /**
-     * Submit a null task must raise a NullPointerException
-     */
-    @Test(expected = NullPointerException.class)
-    public void submitNullTask() throws Exception {
-        ExecutorService executor = createSingleNodeExecutorService("submitNullTask");
-        Callable c = null;
-        executor.submit(c);
-    }
-
-    /**
-     * Run a basic task
-     */
-    @Test
-    public void testBasicTask() throws Exception {
-        Callable<String> task = new BasicTestTask();
-        ExecutorService executor = createSingleNodeExecutorService("testBasicTask");
-        Future future = executor.submit(task);
-        assertEquals(future.get(), BasicTestTask.RESULT);
-    }
-
     @Test
     public void testCancellationAwareTask() {
         CancellationAwareTask task = new CancellationAwareTask(5000);
@@ -391,28 +398,49 @@ public class ExecutorTest extends HazelcastTestSupport {
             fail("Should throw TimeoutException!");
         } catch (TimeoutException expected) {
         } catch (Exception e) {
-            fail("No other Exception!!");
+            fail("No other Exception!! -> " + e);
         }
         assertFalse(future.isDone());
-        assertFalse(future.cancel(true));
-        assertFalse(future.isCancelled());
+        assertTrue(future.cancel(true));
+        assertTrue(future.isCancelled());
         assertTrue(future.isDone());
 
         try {
             future.get();
-        } catch (InterruptedException e) {
-            fail();
-        } catch (ExecutionException e) {
-            fail();
+            fail("Should not complete the task successfully");
+        } catch (CancellationException expected) {
+        } catch (Exception e) {
+            fail("Unexpected exception " + e);
         }
+    }
 
+    @Test
+    public void testCancellationAwareTask2() {
+        Callable task1 = new CancellationAwareTask(5000);
+        ExecutorService executor = createSingleNodeExecutorService("testCancellationAwareTask", 1);
+        executor.submit(task1);
+
+        Callable task2 = new BasicTestTask();
+        Future future = executor.submit(task2);
+        assertFalse(future.isDone());
+        assertTrue(future.cancel(true));
+        assertTrue(future.isCancelled());
+        assertTrue(future.isDone());
+
+        try {
+            future.get();
+            fail("Should not complete the task successfully");
+        } catch (CancellationException expected) {
+        } catch (Exception e) {
+            fail("Unexpected exception " + e);
+        }
     }
 
     /**
      * Test the method isDone()
      */
     @Test
-    public void isDoneMethod() throws Exception {
+    public void testIsDoneMethod() throws Exception {
         Callable<String> task = new BasicTestTask();
         IExecutorService executor = createSingleNodeExecutorService("isDoneMethod");
         Future future = executor.submit(task);
@@ -429,7 +457,7 @@ public class ExecutorTest extends HazelcastTestSupport {
      * get().
      */
     @Test
-    public void isDoneMethod2() throws Exception {
+    public void testIsDoneMethod2() throws Exception {
         ExecutorService executor = createSingleNodeExecutorService("isDoneMethod2");
         for (int i = 0; i < COUNT; i++) {
             Callable<String> task1 = new BasicTestTask();
@@ -480,7 +508,7 @@ public class ExecutorTest extends HazelcastTestSupport {
      * Test multiple Future.get() invocation
      */
     @Test
-    public void isTwoGetFromFuture() throws Exception {
+    public void testMultipleFutureGets() throws Exception {
         Callable<String> task = new BasicTestTask();
         ExecutorService executor = createSingleNodeExecutorService("isTwoGetFromFuture");
         Future<String> future = executor.submit(task);
@@ -570,7 +598,7 @@ public class ExecutorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testExecutorServiceStats() throws InterruptedException {
+    public void testExecutorServiceStats() throws InterruptedException, ExecutionException {
         final IExecutorService executorService = createSingleNodeExecutorService("testExecutorServiceStats");
         final int k = 10;
         final CountDownLatch latch = new CountDownLatch(k);
@@ -590,10 +618,18 @@ public class ExecutorTest extends HazelcastTestSupport {
         }
         latch.await(2, TimeUnit.MINUTES);
 
+        final Future<Boolean> f = executorService.submit(new CancellationAwareTask(3000));
+        f.cancel(true);
+        try {
+            f.get();
+        } catch (CancellationException e) {
+        }
+
         final LocalExecutorStats stats = executorService.getLocalExecutorStats();
-        Assert.assertEquals(k, stats.getStartedTaskCount());
+        Assert.assertEquals(k + 1, stats.getStartedTaskCount());
         Assert.assertEquals(k, stats.getCompletedTaskCount());
         Assert.assertEquals(0, stats.getPendingTaskCount());
+        Assert.assertEquals(1, stats.getCancelledTaskCount());
     }
 
     private static class ScriptRunnable implements Runnable, Serializable, HazelcastInstanceAware {

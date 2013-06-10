@@ -17,7 +17,6 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
@@ -39,7 +38,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
-import static java.lang.Thread.sleep;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -47,70 +45,71 @@ import static org.junit.Assert.assertTrue;
 @Category(SerialTest.class)
 public class BackupTest extends HazelcastTestSupport {
 
+    private static final String MAP_NAME = "default";
+
     @Test
     public void testGracefulShutdown() throws Exception {
         int size = 250000;
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(5);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
         final Config config = new Config();
         config.setProperty(GroupProperties.PROP_PARTITION_COUNT, "1111");
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
-        IMap m1 = h1.getMap("default");
+        IMap m1 = h1.getMap(MAP_NAME);
         for (int i = 0; i < size; i++) {
             m1.put(i, i);
         }
 
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
-        IMap m2 = h2.getMap("default");
+        IMap m2 = h2.getMap(MAP_NAME);
         h1.getLifecycleService().shutdown();
         assertEquals(size, m2.size());
 
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance(config);
-        IMap m3 = h3.getMap("default");
+        IMap m3 = h3.getMap(MAP_NAME);
         h2.getLifecycleService().shutdown();
         assertEquals(size, m3.size());
 
         HazelcastInstance h4 = nodeFactory.newHazelcastInstance(config);
-        IMap m4 = h4.getMap("default");
+        IMap m4 = h4.getMap(MAP_NAME);
         h3.getLifecycleService().shutdown();
         assertEquals(size, m4.size());
     }
 
     @Test
-    // TODO: @mm - Test fails randomly!
     public void testGracefulShutdown2() throws Exception {
         Config config = new Config();
-        config.getMapConfig("test").setBackupCount(2).setStatisticsEnabled(true);
+        config.getMapConfig(MAP_NAME).setBackupCount(2).setStatisticsEnabled(true);
         config.setProperty(GroupProperties.PROP_PARTITION_COUNT, "1111");
 
         TestHazelcastInstanceFactory f = createHazelcastInstanceFactory(6);
         final HazelcastInstance hz = f.newHazelcastInstance(config);
 
-        final IMap<Object, Object> map = hz.getMap("test");
+        final IMap<Object, Object> map = hz.getMap(MAP_NAME);
         final int size = 200000;
         for (int i = 0; i < size; i++) {
             map.put(i, i);
         }
 
         final HazelcastInstance hz2 = f.newHazelcastInstance(config);
-        final IMap<Object, Object> map2 = hz2.getMap("test");
+        final IMap<Object, Object> map2 = hz2.getMap(MAP_NAME);
 
         Assert.assertEquals(size, map2.size());
 
         final HazelcastInstance hz3 = f.newHazelcastInstance(config);
-        final IMap<Object, Object> map3 = hz3.getMap("test");
+        final IMap<Object, Object> map3 = hz3.getMap(MAP_NAME);
 
         final HazelcastInstance hz4 = f.newHazelcastInstance(config);
-        final IMap<Object, Object> map4 = hz4.getMap("test");
+        final IMap<Object, Object> map4 = hz4.getMap(MAP_NAME);
 
         Assert.assertEquals(size, map3.size());
         Assert.assertEquals(size, map4.size());
 
         final HazelcastInstance hz5 = f.newHazelcastInstance(config);
-        final IMap<Object, Object> map5 = hz5.getMap("test");
+        final IMap<Object, Object> map5 = hz5.getMap(MAP_NAME);
 
         final HazelcastInstance hz6 = f.newHazelcastInstance(config);
-        final IMap<Object, Object> map6 = hz6.getMap("test");
+        final IMap<Object, Object> map6 = hz6.getMap(MAP_NAME);
 
         Assert.assertEquals(size, map5.size());
         Assert.assertEquals(size, map6.size());
@@ -130,266 +129,130 @@ public class BackupTest extends HazelcastTestSupport {
         Assert.assertEquals(size, map6.size());
     }
 
-    @Test
-    // TODO: @mm - Test fails randomly!
-    public void issue395BackupProblemWithBCount2() throws InterruptedException {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
-        final int size = 1000;
-        Config config = new Config();
-        final String name = "default";
-        config.getMapConfig(name).setBackupCount(2).setStatisticsEnabled(true);
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
-        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
-        IMap map1 = h1.getMap(name);
-        IMap map2 = h2.getMap(name);
-        for (int i = 0; i < size; i++) {
-            map1.put(i, i);
-        }
-        assertEquals(size, getTotalOwnedEntryCount(map1, map2));
-        assertEquals(size, getTotalBackupEntryCount(map1, map2));
-        HazelcastInstance h3 = nodeFactory.newHazelcastInstance(config);
-        IMap map3 = h3.getMap(name);
-
-        Thread.sleep(1000 * 3);
-        assertEquals(size, getTotalOwnedEntryCount(map1, map2, map3));
-        assertEquals(2 * size, getTotalBackupEntryCount(map1, map2, map3));
-    }
-
-    @Test(timeout = 60000)
-    // TODO: @mm - Test fails randomly!
-    public void testDataRecovery() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
-
-        final int size = 1000;
-        final String name = "default";
-        final Config config = new Config();
-        config.getMapConfig(name).setStatisticsEnabled(true);
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
-        IMap map1 = h1.getMap(name);
-        for (int i = 0; i < size; i++) {
-            map1.put(i, "value" + i);
-        }
-        assertEquals(size, map1.size());
-        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
-        IMap map2 = h2.getMap(name);
-        assertEquals(size, map1.size());
-        assertEquals(size, map2.size());
-        HazelcastInstance h3 = nodeFactory.newHazelcastInstance(config);
-        IMap map3 = h3.getMap(name);
-        assertEquals(size, map1.size());
-        assertEquals(size, map2.size());
-        assertEquals(size, map3.size());
-        HazelcastInstance h4 = nodeFactory.newHazelcastInstance(config);
-        IMap map4 = h4.getMap(name);
-        assertEquals(size, map1.size());
-        assertEquals(size, map2.size());
-        assertEquals(size, map3.size());
-        assertEquals(size, map4.size());
-        sleep(3000);
-        long ownedSize = getTotalOwnedEntryCount(map1, map2, map3, map4);
-        long backupSize = getTotalBackupEntryCount(map1, map2, map3, map4);
-        assertEquals(size, ownedSize);
-        assertEquals(size, backupSize);
-        h4.getLifecycleService().shutdown();
-        assertEquals(size, map1.size());
-        assertEquals(size, map2.size());
-        assertEquals(size, map3.size());
-        sleep(3000);
-        ownedSize = getTotalOwnedEntryCount(map1, map2, map3);
-        backupSize = getTotalBackupEntryCount(map1, map2, map3);
-        assertEquals(size, ownedSize);
-        assertEquals(size, backupSize);
-        h1.getLifecycleService().shutdown();
-        assertEquals(size, map2.size());
-        assertEquals(size, map3.size());
-        sleep(3000);
-        ownedSize = getTotalOwnedEntryCount(map2, map3);
-        backupSize = getTotalBackupEntryCount(map2, map3);
-        assertEquals(size, ownedSize);
-        assertEquals(size, backupSize);
-        h2.getLifecycleService().shutdown();
-        assertEquals(size, map3.size());
-    }
-
     /**
      * Fix for the issue 275.
-     *
-     * @throws Exception
      */
-    @Test
-    // TODO: @mm - Test fails randomly!
-    public void testDataRecovery2() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
-        final int size = 100000;
-        final Config config = new Config();
-        final String name = "default";
-        config.getMapConfig(name).setStatisticsEnabled(true);
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
-        IMap map1 = h1.getMap(name);
-        for (int i = 0; i < size; i++) {
-            map1.put(i, "value" + i);
-        }
-        assertEquals(size, map1.size());
-
-        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
-        sleep(3000);
-        IMap map2 = h2.getMap(name);
-        assertEquals(size, map1.size());
-        assertEquals(size, map2.size());
-        assertEquals(size, getTotalOwnedEntryCount(map1, map2));
-        assertEquals(size, getTotalBackupEntryCount(map1, map2));
-
-        HazelcastInstance h3 = nodeFactory.newHazelcastInstance(config);
-        IMap map3 = h3.getMap(name);
-        sleep(3000);
-        assertEquals(size, map1.size());
-        assertEquals(size, map2.size());
-        assertEquals(size, map3.size());
-        assertEquals(size, getTotalOwnedEntryCount(map1, map2, map3));
-        assertEquals(size, getTotalBackupEntryCount(map1, map2, map3));
-
-        h2.getLifecycleService().shutdown();
-        sleep(3000);
-        assertEquals(size, map1.size());
-        assertEquals(size, map3.size());
-        assertEquals(size, getTotalOwnedEntryCount(map1, map3));
-        assertEquals(size, getTotalBackupEntryCount(map1, map3));
-        h1.getLifecycleService().shutdown();
-        assertEquals(size, map3.size());
+    @Test(timeout = 300 * 1000)
+    public void testBackupMigrationAndRecovery() throws Exception {
+        testBackupMigrationAndRecovery(4, 1, 50000);
     }
-
-    @Test(timeout = 160000)
-    public void testBackupCountTwo() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
-
-        Config config = new Config();
-        final String name = "default";
-        final int partitionCount = 1111;
-        config.setProperty(GroupProperties.PROP_PARTITION_COUNT, String.valueOf(partitionCount));
-        MapConfig mapConfig = config.getMapConfig(name);
-        final int backupCount = 2;
-        mapConfig.setBackupCount(backupCount).setStatisticsEnabled(true);
-
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
-        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
-        IMap map1 = h1.getMap(name);
-        IMap map2 = h2.getMap(name);
-
-        int size = 100000;
-        for (int i = 0; i < size; i++) {
-            map1.put(i, i);
-        }
-        assertEquals(size, getTotalOwnedEntryCount(map1, map2));
-        assertEquals(size, getTotalBackupEntryCount(map1, map2));
-
-        HazelcastInstance h3 = nodeFactory.newHazelcastInstance(config);
-        IMap map3 = h3.getMap(name);
-
-        Thread.sleep(3000);
-        assertEquals(size, getTotalOwnedEntryCount(map1, map2, map3));
-        assertEquals(backupCount * size, getTotalBackupEntryCount(map1, map2, map3));
-
-        HazelcastInstance h4 = nodeFactory.newHazelcastInstance(config);
-        IMap map4 = h4.getMap(name);
-        Thread.sleep(3000);
-        assertEquals(size, getTotalOwnedEntryCount(map1, map2, map3, map4));
-        assertEquals(backupCount * size, getTotalBackupEntryCount(map1, map2, map3, map4));
-    }
-
-    private long getTotalOwnedEntryCount(IMap... maps) {
-        long total = 0;
-        for (IMap iMap : maps) {
-            total += iMap.getLocalMapStats().getOwnedEntryCount();
-        }
-        return total;
-    }
-
-    private long getTotalBackupEntryCount(IMap... maps) {
-        long total = 0;
-        for (IMap iMap : maps) {
-            total += iMap.getLocalMapStats().getBackupEntryCount();
-        }
-        return total;
-    }
-
 
     /**
-     * Testing correctness of the sizes during migration.
-     * <p/>
-     * Migration happens block by block and after completion of
-     * each block, next block will start migrating after a fixed
-     * time interval. While a block migrating, for the multicall
-     * operations, such as size() and queries, there might be a case
-     * where data is migrated but not counted/queried. To avoid this
-     * hazelcast will compare the block-owners hash. If req.blockId
-     * (which is holding requester's block-owners hash value) is not same
-     * as the target's block-owners hash value, then request will
-     * be re-done.
+     * Fix for the issue 395.
      */
-    @Test(timeout = 3600000)
-    // TODO: @mm - Test fails randomly!
-    public void testDataRecoveryAndCorrectness() throws Exception {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
+    @Test(timeout = 300 * 1000)
+    public void testBackupMigrationAndRecovery2() throws Exception {
+        testBackupMigrationAndRecovery(6, 2, 50000);
+    }
 
-        final int size = 10000;
+    @Test(timeout = 600 * 1000)
+    // TODO: @mm - Test fails randomly!
+    public void testBackupMigrationAndRecovery3() throws Exception {
+        testBackupMigrationAndRecovery(10, 3, 50000);
+    }
+
+    private void testBackupMigrationAndRecovery(int nodeCount, int backupCount, int mapSize) throws Exception {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(nodeCount);
+        final String name = MAP_NAME;
         final Config config = new Config();
-        final String name = "default";
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
-        assertEquals(1, h1.getCluster().getMembers().size());
-        IMap map1 = h1.getMap(name);
-        for (int i = 0; i < size; i++) {
+        config.setProperty(GroupProperties.PROP_PARTITION_COUNT, "1111");
+        config.getMapConfig(name).setBackupCount(backupCount).setStatisticsEnabled(true);
+
+        final HazelcastInstance[] instances = new HazelcastInstance[nodeCount];
+
+        HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
+        instances[0] = hz;
+        IMap map1 = hz.getMap(name);
+        for (int i = 0; i < mapSize; i++) {
             map1.put(i, "value" + i);
         }
-        assertEquals(size, map1.size());
-        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
-        IMap map2 = h2.getMap(name);
-        for (int i = 0; i < 100; i++) {
-            assertEquals(size, map1.size());
-            assertEquals(size, map2.size());
+        checkMapSizes(mapSize, backupCount, instances);
+
+        for (int i = 1; i < nodeCount; i++) {
+            instances[i] = nodeFactory.newHazelcastInstance(config);
+            checkMapSizes(mapSize, backupCount, instances);
         }
-        HazelcastInstance h3 = nodeFactory.newHazelcastInstance(config);
-        IMap map3 = h3.getMap(name);
-        for (int i = 0; i < 100; i++) {
-            assertEquals(size, map1.size());
-            assertEquals(size, map2.size());
-            assertEquals(size, map3.size());
+
+        final Random rand = new Random();
+        for (int i = 1; i < nodeCount; i++) {
+            int ix;
+            do {
+                ix = rand.nextInt(nodeCount);
+            } while (instances[ix] == null);
+
+            TestUtil.terminateInstance(instances[ix]);
+            instances[ix] = null;
+            checkMapSizes(mapSize, backupCount, instances);
         }
-        assertEquals(3, h3.getCluster().getMembers().size());
-        HazelcastInstance h4 = nodeFactory.newHazelcastInstance(config);
-        IMap map4 = h4.getMap(name);
-        for (int i = 0; i < 100; i++) {
-            assertEquals(size, map1.size());
-            assertEquals(size, map2.size());
-            assertEquals(size, map3.size());
-            assertEquals(size, map4.size());
+    }
+
+    private static void checkMapSizes(final int expectedSize, int backupCount, HazelcastInstance... instances) throws InterruptedException {
+        int nodeCount = 0;
+        final IMap[] maps = new IMap[instances.length];
+        for (int i = 0; i < 20; i++) {
+            for (int j = 0; j < instances.length; j++) {
+                final HazelcastInstance hz = instances[j];
+                if (hz != null) {
+                    if (i == 0) {
+                        maps[j] = hz.getMap(MAP_NAME);
+                        nodeCount++;
+                    }
+                    assertEquals(expectedSize, maps[j].size());
+                }
+            }
+            Thread.sleep(10);
         }
-        h4.getLifecycleService().shutdown();
+        final int expectedBackupSize = Math.min(nodeCount - 1, backupCount) * expectedSize;
+
         for (int i = 0; i < 100; i++) {
-            assertEquals(size, map1.size());
-            assertEquals(size, map2.size());
-            assertEquals(size, map3.size());
+            long ownedSize = getTotalOwnedEntryCount(maps);
+            long backupSize = getTotalBackupEntryCount(maps);
+            if (ownedSize == expectedSize && backupSize == expectedBackupSize) {
+                int votes = 0;
+                for (HazelcastInstance hz : instances) {
+                    if (hz != null) {
+                        votes += TestUtil.getNode(hz).getPartitionService().hasOnGoingMigration() ? 0 : 1;
+                    }
+                }
+                if (votes == nodeCount) {
+                    break;
+                }
+            }
+            Thread.sleep(250);
         }
-        h1.getLifecycleService().shutdown();
-        for (int i = 0; i < 100; i++) {
-            assertEquals(size, map2.size());
-            assertEquals(size, map3.size());
+        long ownedSize = getTotalOwnedEntryCount(maps);
+        long backupSize = getTotalBackupEntryCount(maps);
+        assertEquals("Owned size invalid, node-count: " + nodeCount, expectedSize, ownedSize);
+        assertEquals("Backup size invalid, node-count: " + nodeCount, expectedBackupSize, backupSize);
+    }
+
+    private static long getTotalOwnedEntryCount(IMap... maps) {
+        long total = 0;
+        for (IMap map : maps) {
+            if (map != null) {
+                total += map.getLocalMapStats().getOwnedEntryCount();
+            }
         }
-        h2.getLifecycleService().shutdown();
-        for (int i = 0; i < 100; i++) {
-            assertEquals(size, map3.size());
+        return total;
+    }
+
+    private static long getTotalBackupEntryCount(IMap... maps) {
+        long total = 0;
+        for (IMap map : maps) {
+            if (map != null) {
+                total += map.getLocalMapStats().getBackupEntryCount();
+            }
         }
+        return total;
     }
 
     @Test
     // TODO: @mm - Test fails randomly!
     public void testIssue177BackupCount() throws InterruptedException {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(10);
-
         final Config config = new Config();
-        config.setProperty("hazelcast.partition.migration.interval", "0");
-        config.setProperty("hazelcast.wait.seconds.before.join", "1");
-        final String name = "test";
-        config.getMapConfig(name).setBackupCounts(1, 0).setStatisticsEnabled(true);
+        final String name = MAP_NAME;
+        config.getMapConfig(name).setBackupCount(1).setStatisticsEnabled(true);
 
         final Random rand = new Random(System.currentTimeMillis());
         final AtomicReferenceArray<HazelcastInstance> instances = new AtomicReferenceArray<HazelcastInstance>(10);
@@ -448,16 +311,15 @@ public class BackupTest extends HazelcastTestSupport {
         }
     }
 
-    @Test
     /**
      * Test for issue #259.
      */
+    @Test
     public void testBackupPutWhenOwnerNodeDead() throws InterruptedException {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 
         final Config config = new Config();
-        config.setProperty("hazelcast.wait.seconds.before.join", "1");
-        final String name = "test";
+        final String name = MAP_NAME;
 
         final HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
         final HazelcastInstance hz2 = nodeFactory.newHazelcastInstance(config);
@@ -479,7 +341,7 @@ public class BackupTest extends HazelcastTestSupport {
                         return;
                     }
                 }
-                TestUtil.getNode(hz).getConnectionManager().shutdown();
+                TestUtil.terminateInstance(hz);
             }
         }.start();
 
@@ -516,8 +378,7 @@ public class BackupTest extends HazelcastTestSupport {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 
         final Config config = new Config();
-        config.setProperty("hazelcast.wait.seconds.before.join", "1");
-        final String name = "test";
+        final String name = MAP_NAME;
 
         final HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
         final HazelcastInstance hz2 = nodeFactory.newHazelcastInstance(config);
@@ -553,7 +414,7 @@ public class BackupTest extends HazelcastTestSupport {
                         return;
                     }
                 }
-                TestUtil.getNode(hz).getConnectionManager().shutdown();
+                TestUtil.terminateInstance(hz);
             }
         }.start();
 

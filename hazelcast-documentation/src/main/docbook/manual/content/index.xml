@@ -112,7 +112,7 @@
         <title>Distributed Executor Service</title>
         <xi:include href="executor/ExecutorService.xml"/>
         <xi:include href="executor/DistributedExecution.xml"/>
-        <!--<xi:include href="executor/ExecutionCancellation.xml"/>-->
+        <xi:include href="executor/ExecutionCancellation.xml"/>
         <xi:include href="executor/ExecutionCallback.xml"/>
     </chapter>
     <chapter xml:id="HttpSessionClustering">

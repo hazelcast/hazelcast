@@ -220,7 +220,7 @@ final class OperationServiceImpl implements OperationService {
                 if (response == null) {
                     response = op.getResponse();
                 }
-                ResponseHandler responseHandler = op.getResponseHandler();
+                final ResponseHandler responseHandler = op.getResponseHandler();
                 if (responseHandler == null) {
                     throw new IllegalStateException("ResponseHandler should not be null!");
                 }
@@ -278,7 +278,8 @@ final class OperationServiceImpl implements OperationService {
     private int sendBackups(BackupAwareOperation backupAwareOp) throws Exception {
         final Operation op = (Operation) backupAwareOp;
         final boolean returnsResponse = op.returnsResponse();
-        final int maxBackups = Math.min(node.getClusterService().getSize(), PartitionInfo.MAX_REPLICA_COUNT) - 1;
+        final PartitionServiceImpl partitionService = (PartitionServiceImpl) nodeEngine.getPartitionService();
+        final int maxBackups = Math.min(partitionService.getMemberGroupsSize() - 1, PartitionInfo.MAX_BACKUP_COUNT);
 
         int syncBackupCount = backupAwareOp.getSyncBackupCount() > 0
                 ? Math.min(maxBackups, backupAwareOp.getSyncBackupCount()) : 0;
@@ -295,7 +296,6 @@ final class OperationServiceImpl implements OperationService {
         if (totalBackupCount > 0) {
             final String serviceName = op.getServiceName();
             final int partitionId = op.getPartitionId();
-            final PartitionServiceImpl partitionService = (PartitionServiceImpl) nodeEngine.getPartitionService();
             final long[] replicaVersions = partitionService.incrementPartitionReplicaVersions(partitionId, totalBackupCount);
             final PartitionInfo partitionInfo = partitionService.getPartitionInfo(partitionId);
             for (int replicaIndex = 1; replicaIndex <= totalBackupCount; replicaIndex++) {
@@ -315,7 +315,6 @@ final class OperationServiceImpl implements OperationService {
                     if (target.equals(node.getThisAddress())) {
                         throw new IllegalStateException("Normally shouldn't happen!!");
                     } else {
-
                         send(backup, target);
                     }
                 } else {
@@ -365,7 +364,7 @@ final class OperationServiceImpl implements OperationService {
                 send(backup, target);
                 return true;
             }
-            return ++retries >= 3; // give-up if retried 3 times...
+            return ++retries >= 3; // if retried 3 times, give-up!
         }
     }
 

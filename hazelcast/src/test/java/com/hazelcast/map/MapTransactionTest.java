@@ -62,6 +62,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
                 assertEquals("value3", txMap.put("1", "value4"));
                 assertEquals("value4", txMap.put("1", "value5"));
                 assertEquals("value5", txMap.put("1", "value6"));
+                assertEquals(1, txMap.size());
                 return true;
             }
         });
@@ -209,6 +210,8 @@ public class MapTransactionTest extends HazelcastTestSupport {
                 assertEquals("value2", txMap.get("1"));
                 assertNull(map2.get("1"));
                 assertNull(map2.get("2"));
+                assertEquals(1, txMap.size());
+
                 return true;
             }
         });
@@ -239,6 +242,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
                 assertEquals("1", map2.get("1"));
                 assertEquals(null, txMap.get("1"));
                 assertEquals(null, txMap.remove("2"));
+                assertEquals(2, txMap.size());
                 return true;
             }
         });
@@ -280,6 +284,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
                 assertEquals(true, txMap.remove("2", "2"));
                 assertEquals(false, txMap.remove("3", null));
                 assertEquals(false, txMap.remove("5", "2"));
+                assertEquals(2, txMap.size());
                 return true;
             }
         });
@@ -319,6 +324,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
                 assertEquals("1", map2.get("1"));
                 assertEquals(null, txMap.get("1"));
                 txMap.delete("2");
+                assertEquals(2, txMap.size());
                 return true;
             }
         });

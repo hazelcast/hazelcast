@@ -17,12 +17,11 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.*;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.HazelcastJUnit4ClassRunner;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.util.Clock;
 import org.junit.Before;
@@ -126,19 +125,15 @@ public class BasicTest extends HazelcastTestSupport {
         final CountDownLatch latch = new CountDownLatch(list.size());
         map.addEntryListener(new EntryListener<String, String>() {
             public void entryAdded(EntryEvent<String, String> event) {
-                System.out.println(event);
             }
 
             public void entryRemoved(EntryEvent<String, String> event) {
-                System.out.println(event);
             }
 
             public void entryUpdated(EntryEvent<String, String> event) {
-                System.out.println(event);
             }
 
             public void entryEvicted(EntryEvent<String, String> event) {
-                System.out.println(event);
                 newList.add(event.getValue());
                 latch.countDown();
             }

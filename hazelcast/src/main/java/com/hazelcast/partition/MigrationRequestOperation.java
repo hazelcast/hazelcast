@@ -124,10 +124,11 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
         final PartitionReplicationEvent replicationEvent = new PartitionReplicationEvent(migrationInfo.getPartitionId(), 0);
         final PartitionMigrationEvent migrationEvent = new PartitionMigrationEvent(MigrationEndpoint.SOURCE, migrationInfo.getPartitionId());
         final Collection<Operation> tasks = new LinkedList<Operation>();
-        for (MigrationAwareService service : nodeEngine.getServices(MigrationAwareService.class)) {
+        for (ServiceInfo serviceInfo : nodeEngine.getServiceInfos(MigrationAwareService.class)) {
+            MigrationAwareService service = (MigrationAwareService) serviceInfo.getService();
             final Operation op = service.prepareReplicationOperation(replicationEvent);
             if (op != null) {
-                op.setServiceName(service.getServiceName());
+                op.setServiceName(serviceInfo.getName());
                 service.beforeMigration(migrationEvent);
                 tasks.add(op);
             }

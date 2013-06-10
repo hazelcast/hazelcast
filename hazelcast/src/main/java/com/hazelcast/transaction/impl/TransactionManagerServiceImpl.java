@@ -51,10 +51,6 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         logger = nodeEngine.getLogger(TransactionManagerService.class);
     }
 
-    public String getServiceName() {
-        return SERVICE_NAME;
-    }
-
     public <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException {
         final TransactionContextImpl context = new TransactionContextImpl(this, nodeEngine, options, false);
         context.beginTransaction();

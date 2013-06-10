@@ -16,6 +16,7 @@
 
 package com.hazelcast.spring;
 
+import com.hazelcast.client.HazelcastClientProxy;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.*;
@@ -40,10 +41,10 @@ import static org.junit.Assert.*;
 public class TestClientApplicationContext {
 
     @Resource (name = "client")
-    private HazelcastClient client;
+    private HazelcastClientProxy client;
 
     @Resource (name = "client2")
-    private HazelcastClient client2;
+    private HazelcastClientProxy client2;
 
     @Resource(name = "instance")
     private HazelcastInstance instance;

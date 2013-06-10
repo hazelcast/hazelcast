@@ -19,7 +19,7 @@ package com.hazelcast.core;
 import java.util.Collection;
 
 /**
- * Concurrent, distributed, partitioned, observable collection.
+ * Concurrent, distributed, partitioned, listenable collection.
  *
  * @param <E> item
  */

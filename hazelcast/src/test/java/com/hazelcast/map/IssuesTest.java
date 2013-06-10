@@ -59,8 +59,8 @@ public class IssuesTest extends HazelcastTestSupport {
             }
         }, true);
         imap.put(1, 1);
-        final EntryEvent<Integer, Integer> event1 = events1.poll(10, TimeUnit.MILLISECONDS);
-        final EntryEvent<Integer, Integer> event2 = events2.poll(10, TimeUnit.MILLISECONDS);
+        final EntryEvent<Integer, Integer> event1 = events1.poll(10, TimeUnit.SECONDS);
+        final EntryEvent<Integer, Integer> event2 = events2.poll(10, TimeUnit.SECONDS);
         assertNotNull(event1);
         assertNotNull(event2);
         assertNotNull(event1.getValue());
@@ -89,8 +89,8 @@ public class IssuesTest extends HazelcastTestSupport {
             }
         }, false);
         imap.put(1, 1);
-        final EntryEvent<Integer, Integer> event1 = events1.poll(10, TimeUnit.MILLISECONDS);
-        final EntryEvent<Integer, Integer> event2 = events2.poll(10, TimeUnit.MILLISECONDS);
+        final EntryEvent<Integer, Integer> event1 = events1.poll(10, TimeUnit.SECONDS);
+        final EntryEvent<Integer, Integer> event2 = events2.poll(10, TimeUnit.SECONDS);
         assertNotNull(event1);
         assertNotNull(event2);
         assertNotNull(event1.getValue());
@@ -114,8 +114,8 @@ public class IssuesTest extends HazelcastTestSupport {
         Thread.sleep(50L);
         imap.addEntryListener(listener, false);
         imap.put(1, 1);
-        final EntryEvent<Integer, Integer> event1 = events.poll(10, TimeUnit.MILLISECONDS);
-        final EntryEvent<Integer, Integer> event2 = events.poll(10, TimeUnit.MILLISECONDS);
+        final EntryEvent<Integer, Integer> event1 = events.poll(10, TimeUnit.SECONDS);
+        final EntryEvent<Integer, Integer> event2 = events.poll(10, TimeUnit.SECONDS);
         assertNotNull(event1);
         assertNotNull(event2);
         assertNotNull(event1.getValue());

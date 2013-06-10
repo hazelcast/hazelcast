@@ -63,7 +63,7 @@
         <programlisting language="java"><![CDATA[long fib(int n) throws Exception {
     Config cfg = new Config();
     HazelcastInstance hz = Hazelcast.newHazelcastInstance(cfg);
-    ExecutorService es = hz.getExecutorService();
+    IExecutorService es = hz.getExecutorService();
     Future future = es.submit(new Fibonacci(n));  
     try {
         return future.get(3, TimeUnit.SECONDS);

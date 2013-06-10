@@ -458,10 +458,6 @@ public class MapService implements ManagedService, MigrationAwareService,
         return nodeEngine;
     }
 
-    public String getServiceName() {
-        return SERVICE_NAME;
-    }
-
     public ObjectMapProxy createDistributedObject(Object objectId) {
         final String name = String.valueOf(objectId);
         initMap(name);

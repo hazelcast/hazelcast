@@ -49,15 +49,15 @@ public class NodeEngineImpl implements NodeEngine {
     private final Node node;
     private final ILogger logger;
 
-    final ProxyServiceImpl proxyService;
-    final ServiceManager serviceManager;
+    private final ServiceManager serviceManager;
+    private final ProxyServiceImpl proxyService;
+    private final ExecutionServiceImpl executionService;
+    private final TransactionManagerServiceImpl transactionManagerService;
+    private final WanReplicationService wanReplicationService;
+
     final OperationServiceImpl operationService;
-    final ExecutionServiceImpl executionService;
     final EventServiceImpl eventService;
     final WaitNotifyServiceImpl waitNotifyService;
-    final TransactionManagerServiceImpl transactionManagerService;
-    final WanReplicationService wanReplicationService;
-
 
     public NodeEngineImpl(Node node) {
         this.node = node;
@@ -244,15 +244,19 @@ public class NodeEngineImpl implements NodeEngine {
 
     @PrivateApi
     public <T> T getService(String serviceName) {
-        return serviceManager.getService(serviceName);
+        final ServiceInfo serviceInfo = serviceManager.getServiceInfo(serviceName);
+        return serviceInfo != null ? (T) serviceInfo.getService() : null;
     }
 
     public <T extends SharedService> T getSharedService(String serviceName) {
-        final Object service = serviceManager.getService(serviceName);
+        final Object service = getService(serviceName);
         if (service == null) {
             return null;
         }
-        return (T) service;
+        if (service instanceof SharedService) {
+            return (T) service;
+        }
+        throw new IllegalArgumentException("No SharedService registered with name: " + serviceName);
     }
 
     /**
@@ -263,6 +267,11 @@ public class NodeEngineImpl implements NodeEngine {
     @PrivateApi
     public <S> Collection<S> getServices(Class<S> serviceClass) {
         return serviceManager.getServices(serviceClass);
+    }
+
+    @PrivateApi
+    public Collection<ServiceInfo> getServiceInfos(Class serviceClass) {
+        return serviceManager.getServiceInfos(serviceClass);
     }
 
     @PrivateApi

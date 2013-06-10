@@ -14,62 +14,57 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi.impl;
+package com.hazelcast.executor;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.partition.ReplicaErrorLogger;
-import com.hazelcast.spi.AbstractOperation;
+import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-final class BackupResponse extends AbstractOperation implements IdentifiedDataSerializable {
+/**
+ * @mdogan 6/7/13
+ */
+public final class CancellationOperation extends Operation {
 
-    public BackupResponse() {
+    private String uuid;
+    private boolean interrupt;
+    private transient boolean response;
+
+    public CancellationOperation() {
     }
 
-    @Override
+    public CancellationOperation(String uuid, boolean interrupt) {
+        this.uuid = uuid;
+        this.interrupt = interrupt;
+    }
+
     public void beforeRun() throws Exception {
     }
 
     public void run() throws Exception {
-        final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-        final long callId = getCallId();
-        final OperationServiceImpl operationService = nodeEngine.operationService;
-        operationService.notifyBackupCall(callId);
+        DistributedExecutorService service = getService();
+        response = service.cancel(uuid, interrupt);
     }
 
-    @Override
     public void afterRun() throws Exception {
     }
 
-    @Override
     public boolean returnsResponse() {
-        return false;
+        return true;
     }
 
-    @Override
-    public void logError(Throwable e) {
-        ReplicaErrorLogger.log(e, getLogger());
+    public Object getResponse() {
+        return response;
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
+        out.writeUTF(uuid);
+        out.writeBoolean(interrupt);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
-    }
-
-    @Override
-    public String toString() {
-        return "BackupResponse";
-    }
-
-    public int getFactoryId() {
-        return SpiDataSerializerHook.F_ID;
-    }
-
-    public int getId() {
-        return SpiDataSerializerHook.BACKUP_RESPONSE;
+        uuid = in.readUTF();
+        interrupt = in.readBoolean();
     }
 }

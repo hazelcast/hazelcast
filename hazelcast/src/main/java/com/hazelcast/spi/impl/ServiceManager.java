@@ -34,9 +34,9 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.partition.PartitionServiceImpl;
 import com.hazelcast.queue.QueueService;
-import com.hazelcast.spi.CoreService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.ServiceInfo;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.topic.TopicService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
@@ -56,7 +56,7 @@ class ServiceManager {
 
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
-    private final ConcurrentMap<String, Object> services = new ConcurrentHashMap<String, Object>(10, .75f, 1);
+    private final ConcurrentMap<String, ServiceInfo> services = new ConcurrentHashMap<String, ServiceInfo>(20, .75f, 1);
 
     ServiceManager(final NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -99,7 +99,8 @@ class ServiceManager {
                         service = createServiceObject(serviceConfig.getClassName());
                     }
                     if (service != null) {
-                        registerService(serviceConfig.getName(), service, serviceConfig.getProperties());
+                        registerService(serviceConfig.getName(), service);
+                        serviceProps.put(serviceConfig.getName(), serviceConfig.getProperties());
                     }
                 }
             }
@@ -107,11 +108,13 @@ class ServiceManager {
             serviceProps = Collections.emptyMap();
         }
 
-        for (Object service : services.values()) {
-            if (service instanceof ManagedService) {
+        for (ServiceInfo serviceInfo : services.values()) {
+            final Object service = serviceInfo.getService();
+            if (serviceInfo.isManagedService()) {
                 try {
                     logger.log(Level.FINEST, "Initializing service -> " + service);
-                    ((ManagedService) service).init(nodeEngine, serviceProps.get(((ManagedService) service).getServiceName()));
+                    final Properties props = serviceProps.get(serviceInfo.getName());
+                    ((ManagedService) service).init(nodeEngine, props != null ? props : new Properties());
                 } catch (Throwable t) {
                     logger.log(Level.SEVERE, "Error while initializing service: " + t.getMessage(), t);
                 }
@@ -156,28 +159,24 @@ class ServiceManager {
     }
 
     private synchronized void registerService(String serviceName, Object service) {
-        registerService(serviceName, service, new Properties());
-    }
-
-    private synchronized void registerService(String serviceName, Object service, Properties props) {
         logger.log(Level.FINEST, "Registering service: '" + serviceName + "'");
-        Object oldService = services.putIfAbsent(serviceName, service);
-        if (oldService != null) {
-            logger.log(Level.WARNING, "Replacing " + serviceName + ": " +
-                    oldService + " with " + service);
-            if (oldService instanceof CoreService) {
+        final ServiceInfo serviceInfo = new ServiceInfo(serviceName, service);
+        final ServiceInfo currentServiceInfo = services.putIfAbsent(serviceName, serviceInfo);
+        if (currentServiceInfo != null) {
+            logger.log(Level.WARNING, "Replacing " + currentServiceInfo + " with " + serviceInfo);
+            if (currentServiceInfo.isCoreService()) {
                 throw new HazelcastException("Can not replace a CoreService! Name: " + serviceName
-                        + ", Service: " + oldService);
+                        + ", Service: " + currentServiceInfo.getService());
             }
-            if (oldService instanceof ManagedService) {
-                shutdownService((ManagedService) oldService);
+            if (currentServiceInfo.isManagedService()) {
+                shutdownService((ManagedService) currentServiceInfo.getService());
             }
-            services.put(serviceName, service);
+            services.put(serviceName, serviceInfo);
         }
     }
 
-    <T> T getService(String serviceName) {
-        return (T) services.get(serviceName);
+    ServiceInfo getServiceInfo(String serviceName) {
+        return services.get(serviceName);
     }
 
     /**
@@ -187,12 +186,32 @@ class ServiceManager {
      */
     <S> List<S> getServices(Class<S> serviceClass) {
         final LinkedList<S> result = new LinkedList<S>();
-        for (Object service : services.values()) {
-            if (serviceClass.isAssignableFrom(service.getClass())) {
-                if (service instanceof CoreService) {
-                    result.addFirst((S) service);
+        for (ServiceInfo serviceInfo : services.values()) {
+            if (serviceInfo.isInstanceOf(serviceClass)) {
+                final S service = (S) serviceInfo.getService();
+                if (serviceInfo.isCoreService()) {
+                    result.addFirst(service);
                 } else {
-                    result.addLast((S) service);
+                    result.addLast(service);
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Returns a list of services matching provided service class/interface.
+     * <br></br>
+     * <b>CoreServices will be placed at the beginning of the list.</b>
+     */
+    List<ServiceInfo> getServiceInfos(Class serviceClass) {
+        final LinkedList<ServiceInfo> result = new LinkedList<ServiceInfo>();
+        for (ServiceInfo serviceInfo : services.values()) {
+            if (serviceInfo.isInstanceOf(serviceClass)) {
+                if (serviceInfo.isCoreService()) {
+                    result.addFirst(serviceInfo);
+                } else {
+                    result.addLast(serviceInfo);
                 }
             }
         }

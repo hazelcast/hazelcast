@@ -31,10 +31,4 @@ public final class TestEnvironment {
     public static boolean isUseClient() {
         return Boolean.getBoolean(HAZELCAST_TEST_USE_CLIENT);
     }
-
-    public static final ThreadLocal<Boolean> FLAG = new ThreadLocal<Boolean>() {
-        protected Boolean initialValue() {
-            return Boolean.FALSE;
-        }
-    };
 }

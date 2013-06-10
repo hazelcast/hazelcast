@@ -28,7 +28,7 @@ import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * Hazelcast instance. Each Hazelcast instance is a member.
+ * Hazelcast instance. Each Hazelcast instance is a member (node) in a cluster.
  * Multiple Hazelcast instances can be created on a JVM.
  * Each Hazelcast instance has its own socket, threads.
  *
@@ -134,7 +134,7 @@ public interface HazelcastInstance {
      * name.
      * Executor service enables you to run your <tt>Runnable</tt>s and <tt>Callable</tt>s
      * on the Hazelcast cluster.
-     *
+     * <p/>
      * <p><b>Note:</b> Note that it don't support invokeAll/Any
      * and don't have standard shutdown behavior</p>
      *
@@ -190,30 +190,26 @@ public interface HazelcastInstance {
     ISemaphore getSemaphore(String name);
 
     /**
-     * Returns all queue, map, set, list, topic, lock, multimap
-     * instances created by Hazelcast.
+     * Returns all {@link DistributedObject}'s such as; queue, map, set, list, topic, lock, multimap.
      *
      * @return the collection of instances created by Hazelcast.
      */
     Collection<DistributedObject> getDistributedObjects();
 
     /**
-     * Add a instance listener which will be notified when a
-     * new instance such as map, queue, multimap, topic, lock is
-     * added or removed.
+     * Adds a Distributed Object listener which will be notified when a
+     * new {@link DistributedObject} will be created or destroyed.
      *
      * @param distributedObjectListener instance listener
-     *
      * @return returns registration id.
      */
     String addDistributedObjectListener(DistributedObjectListener distributedObjectListener);
 
     /**
-     * Removes the specified instance listener. Returns silently
+     * Removes the specified Distributed Object listener. Returns silently
      * if specified instance listener doesn't exist.
      *
      * @param registrationId Id of listener registration.
-     *
      * @return true if registration is removed, false otherwise
      */
     boolean removeDistributedObjectListener(String registrationId);
@@ -261,25 +257,22 @@ public interface HazelcastInstance {
      */
     LifecycleService getLifecycleService();
 
-
     <T extends DistributedObject> T getDistributedObject(String serviceName, Object id);
 
-
     void registerSerializer(final Class type, final TypeSerializer serializer);
-
 
     void registerGlobalSerializer(final TypeSerializer serializer);
 
     /**
      * Returns a ConcurrentMap that can be used to add user-context to the HazelcastInstance. This can be used
-     * for example to store dependencies that otherwise are hard to obtain. The HazelcastInstance can often easily
-     * be obtained by making use of the HazelcastInstanceAware functionality, but non Hazelcast dependencies are without
-     * this user-context hard to obtain. By storing the dependencies in the user-context, they can be retrieved as soon
+     * to store dependencies that otherwise are hard to obtain. HazelcastInstance can be
+     * obtained by implementing HazelcastInstanceAware interface when submitting a Runnable/Callable to
+     * Hazelcast ExecutorService. By storing the dependencies in the user-context, they can be retrieved as soon
      * as you have a reference to the HazelcastInstance.
-     *
+     * <p/>
      * This structure is purely local and Hazelcast remains agnostic abouts its content.
      *
-     * @return  the user context.
+     * @return the user context.
      */
     ConcurrentMap<String, Object> getUserContext();
 }

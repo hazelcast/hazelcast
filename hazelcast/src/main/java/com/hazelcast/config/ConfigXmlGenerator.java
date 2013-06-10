@@ -170,14 +170,14 @@ public class ConfigXmlGenerator {
                     .append("\" group-type=\"").append(pg.getGroupType()).append("\" />");
         }
 
-        final Collection<ExecutorConfig> exCfgs = config.getExecutorConfigs();
+        final Collection<ExecutorConfig> exCfgs = config.getExecutorConfigs().values();
         for (ExecutorConfig ex : exCfgs) {
             xml.append("<executor-service name=\"").append(ex.getName()).append("\">");
             xml.append("<pool-size>").append(ex.getPoolSize()).append("</pool-size>");
             xml.append("<queue-capacity>").append(ex.getQueueCapacity()).append("</queue-capacity>");
             xml.append("</executor-service>");
         }
-        final Collection<QueueConfig> qCfgs = config.getQConfigs().values();
+        final Collection<QueueConfig> qCfgs = config.getQueueConfigs().values();
         for (QueueConfig q : qCfgs) {
             xml.append("<queue name=\"").append(q.getName()).append("\">");
             xml.append("<queue-max-size>").append(q.getMaxSize()).append("</queue-max-size>");
