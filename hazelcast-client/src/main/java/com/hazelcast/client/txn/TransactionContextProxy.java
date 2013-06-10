@@ -3,8 +3,10 @@ package com.hazelcast.client.txn;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.connection.Connection;
 import com.hazelcast.client.spi.ClientProxy;
-import com.hazelcast.client.txn.proxy.ClientTxtQueueProxy;
+import com.hazelcast.client.txn.proxy.ClientTxnMapProxy;
+import com.hazelcast.client.txn.proxy.ClientTxnQueueProxy;
 import com.hazelcast.core.*;
+import com.hazelcast.map.MapService;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.transaction.*;
 import com.hazelcast.transaction.impl.Transaction;
@@ -50,7 +52,7 @@ public class TransactionContextProxy implements TransactionContext {
     }
 
     public <K, V> TransactionalMap<K, V> getMap(String name) {
-        return null;
+        return getTransactionalObject(MapService.SERVICE_NAME, name);
     }
 
     public <E> TransactionalQueue<E> getQueue(String name) {
@@ -78,7 +80,9 @@ public class TransactionContextProxy implements TransactionContext {
         TransactionalObject obj = txnObjectMap.get(key);
         if (obj == null) {
             if (serviceName.equals(QueueService.SERVICE_NAME)){
-                obj = new ClientTxtQueueProxy(String.valueOf(id), this);
+                obj = new ClientTxnQueueProxy(String.valueOf(id), this);
+            } else if (serviceName.equals(MapService.SERVICE_NAME)){
+                obj = new ClientTxnMapProxy(String.valueOf(id), this);
             } else {
                 throw new IllegalArgumentException("Service[" + serviceName + "] is not transactional!");
             }
