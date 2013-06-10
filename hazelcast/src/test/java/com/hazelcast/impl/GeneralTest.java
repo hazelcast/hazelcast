@@ -16,6 +16,9 @@
 
 package com.hazelcast.impl;
 
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ICollection;
 import com.hazelcast.nio.Data;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -51,4 +54,24 @@ public class GeneralTest {
         assertTrue(hardCopy.value.size() > 0);
         assertEquals("value", toObject(hardCopy.value));
     }
+
+    @Test
+    public void testListDestroy(){
+        HazelcastInstance ins = Hazelcast.newHazelcastInstance();
+
+        final ICollection<String> list = ins.getList("listTest");
+        assertEquals(0, list.size());
+        list.add("1");
+        list.add("2");
+        assertEquals(2, list.size());
+        list.clear();
+        assertEquals(0, list.size());
+        list.add("1");
+        list.add("2");
+        assertEquals(2, list.size());
+        list.destroy();
+        assertEquals(0, list.size());
+
+    }
+
 }

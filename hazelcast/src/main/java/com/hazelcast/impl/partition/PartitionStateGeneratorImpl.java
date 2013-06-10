@@ -366,7 +366,9 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
     }
 
     private LinkedList<NodeGroup> createNodeGroups(Collection<MemberGroup> memberGroups) {
-        LinkedList<NodeGroup> nodeGroups = new LinkedList<NodeGroup>();
+        LinkedList <NodeGroup> nodeGroups = new LinkedList<NodeGroup>();
+        if (memberGroups == null || memberGroups.isEmpty()) return nodeGroups;
+
         for (MemberGroup memberGroup : memberGroups) {
             final NodeGroup nodeGroup;
             if (memberGroup.size() == 0) {

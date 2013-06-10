@@ -73,29 +73,40 @@ public class SemaphoreTest {
     }
 
     @Test
-    public void testSimpleSemaphore() {
+    public void testSimpleSemaphore() throws InstanceDestroyedException, InterruptedException {
         SemaphoreConfig semaphoreConfig = new SemaphoreConfig("default", 1);
         Config config = new Config();
         config.addSemaphoreConfig(semaphoreConfig);
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         ISemaphore semaphore = instance.getSemaphore("test");
         assertEquals(1, semaphore.availablePermits());
-        semaphore.tryAcquire();
+        assertTrue(semaphore.tryAcquire());
         assertEquals(0, semaphore.availablePermits());
         semaphore.release();
         assertEquals(1, semaphore.availablePermits());
-        semaphore.tryAcquire();
-        assertEquals(0, semaphore.availablePermits());
-        semaphore.release();
+        assertFalse(semaphore.tryAcquire(2));
         assertEquals(1, semaphore.availablePermits());
-        semaphore.tryAcquire();
-        assertEquals(0, semaphore.availablePermits());
         semaphore.release();
-        assertEquals(1, semaphore.availablePermits());
-        semaphore.tryAcquire();
+        assertEquals(2, semaphore.availablePermits());
+        assertTrue(semaphore.tryAcquire(2));
         assertEquals(0, semaphore.availablePermits());
-        semaphore.release();
+        semaphore.release(2);
+        assertEquals(2, semaphore.availablePermits());
+        semaphore.acquireAttach(2);
+        assertEquals(0, semaphore.availablePermits());
+        assertEquals(2, semaphore.attachedPermits());
+        semaphore.detach();
+        assertEquals(0, semaphore.availablePermits());
+        assertEquals(1, semaphore.attachedPermits());
+        semaphore.releaseDetach(1);
         assertEquals(1, semaphore.availablePermits());
+        assertEquals(0, semaphore.attachedPermits());
+        semaphore.attach(3);
+        assertEquals(3, semaphore.attachedPermits());
+        semaphore.releaseDetach(3);
+        assertEquals(4, semaphore.availablePermits());
+        assertEquals(0, semaphore.attachedPermits());
+
     }
 
     @Test

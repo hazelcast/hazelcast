@@ -23,14 +23,11 @@ import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 /**
  * @mdogan 4/6/12
  */
 public class SpringManagedContext implements ManagedContext, ApplicationContextAware {
 
-    private final AtomicInteger idGen = new AtomicInteger();
     private AutowireCapableBeanFactory beanFactory;
 
     public SpringManagedContext() {
@@ -54,7 +51,7 @@ public class SpringManagedContext implements ManagedContext, ApplicationContextA
     private Object initializeIfSpringAwareIsPresent(Object obj) {
         Class clazz = obj.getClass();
         if (clazz.isAnnotationPresent(SpringAware.class)) {
-            final String name = clazz.getName() + "#" + idGen.incrementAndGet();
+            final String name = clazz.getName();
             beanFactory.autowireBean(obj);
             obj = beanFactory.initializeBean(obj, name);
         }

@@ -24,11 +24,18 @@ public class ExecutorThreadFactory implements ThreadFactory {
     private final AtomicInteger threadNumber = new AtomicInteger(1);
     private final String namePrefix;
     private final ClassLoader classLoader;
+    private final ThreadCleanup cleanup;
 
     public ExecutorThreadFactory(final ThreadGroup threadGroup, final String threadNamePrefix, final ClassLoader classLoader) {
+        this(threadGroup, threadNamePrefix, classLoader, null);
+    }
+
+    public ExecutorThreadFactory(final ThreadGroup threadGroup, final String threadNamePrefix,
+                                 final ClassLoader classLoader, ThreadCleanup cleanup) {
         this.group = threadGroup;
         this.classLoader = classLoader;
         this.namePrefix = threadNamePrefix;
+        this.cleanup = new CleanupImpl(cleanup);
     }
 
     public Thread newThread(Runnable r) {
@@ -39,11 +46,7 @@ public class ExecutorThreadFactory implements ThreadFactory {
                 } catch (OutOfMemoryError e) {
                     OutOfMemoryErrorDispatcher.onOutOfMemory(e);
                 } finally {
-                    try {
-                        ThreadContext.shutdown(this);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+                    cleanup.cleanup(this);
                 }
             }
         };
@@ -55,5 +58,33 @@ public class ExecutorThreadFactory implements ThreadFactory {
             t.setPriority(Thread.NORM_PRIORITY);
         }
         return t;
+    }
+
+    public interface ThreadCleanup {
+        void cleanup(final Thread t);
+    }
+
+    private class CleanupImpl implements ThreadCleanup {
+
+        private final ThreadCleanup externalCleanup;
+
+        private CleanupImpl(ThreadCleanup externalCleanup) {
+            this.externalCleanup = externalCleanup;
+        }
+
+        public void cleanup(final Thread t) {
+            if (externalCleanup != null) {
+                try {
+                    externalCleanup.cleanup(t);
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
+            }
+            try {
+                ThreadContext.shutdown(t);
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

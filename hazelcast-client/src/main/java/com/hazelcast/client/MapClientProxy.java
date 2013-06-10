@@ -59,6 +59,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
             if (ncc.isInvalidateOnChange()) {
                 addEntryListener(new EntryListener<K, V>() {
                     public void entryAdded(EntryEvent<K, V> kvEntryEvent) {
+                    	nearCache.invalidate(kvEntryEvent.getKey());
                     }
 
                     public void entryRemoved(EntryEvent<K, V> kvEntryEvent) {

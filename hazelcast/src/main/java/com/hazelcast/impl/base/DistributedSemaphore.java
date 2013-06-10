@@ -96,7 +96,7 @@ public class DistributedSemaphore implements DataSerializable {
 
     public void release(int permits, Address address) {
         available += permits;
-        attachDetach(permits, address);
+        attachDetach(-permits, address);
     }
 
     public boolean tryAcquire(int permits, Address address) {
@@ -119,6 +119,6 @@ public class DistributedSemaphore implements DataSerializable {
 
     @Override
     public String toString() {
-        return String.format("Semahpore{available=%d, global attached=%d}", available, getAttached());
+        return String.format("Semaphore{available=%d, global attached=%d}", available, getAttached());
     }
 }

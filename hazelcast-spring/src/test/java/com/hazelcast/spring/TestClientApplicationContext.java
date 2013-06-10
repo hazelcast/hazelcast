@@ -99,7 +99,7 @@ public class TestClientApplicationContext {
         ClientConfig config = client.getClientConfig();
         assertEquals(3, config.getInitialConnectionAttemptLimit());
         assertEquals(2, config.getReconnectionAttemptLimit());
-        assertEquals(1000, config.getConnectionTimeout());
+        assertEquals(10000, config.getConnectionTimeout());
         assertEquals(3000, config.getReConnectionTimeOut());
         assertFalse(config.isUpdateAutomatic());
         assertTrue(config.isShuffle());

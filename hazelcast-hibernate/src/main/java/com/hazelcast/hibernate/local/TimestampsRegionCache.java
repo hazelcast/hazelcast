@@ -36,9 +36,7 @@ public class TimestampsRegionCache extends LocalRegionCache implements RegionCac
         return new MessageListener<Object>() {
             public void onMessage(final Message<Object> message) {
                 final Timestamp ts = (Timestamp) message.getMessageObject();
-//                System.err.println("ts = " + ts);
                 final Object key = ts.getKey();
-
                 for (;;) {
                     final Value value = cache.get(key);
                     final Long current = value != null ? (Long) value.getValue() : null;
@@ -52,8 +50,7 @@ public class TimestampsRegionCache extends LocalRegionCache implements RegionCac
                             return;
                         }
                     } else {
-                        if (cache.putIfAbsent(key, new Value(null, ts.getTimestamp(),
-                                Clock.currentTimeMillis())) == null) {
+                        if (cache.putIfAbsent(key, new Value(null, ts.getTimestamp(), Clock.currentTimeMillis())) == null) {
                             return;
                         }
                     }

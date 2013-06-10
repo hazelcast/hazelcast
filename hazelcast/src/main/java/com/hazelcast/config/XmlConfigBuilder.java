@@ -158,7 +158,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         return build(config, element);
     }
 
-    Config build(Config config, Element element) {
+    private Config build(Config config, Element element) {
         try {
             parse(config, element);
         } catch (Exception e) {

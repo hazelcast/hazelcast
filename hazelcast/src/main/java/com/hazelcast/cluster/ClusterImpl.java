@@ -16,10 +16,8 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.core.Cluster;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.core.MembershipListener;
+import com.hazelcast.core.*;
+import com.hazelcast.impl.NamedExecutorService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.impl.Node;
@@ -30,89 +28,127 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static java.util.Collections.unmodifiableSet;
+
 public class ClusterImpl implements Cluster {
 
     final CopyOnWriteArraySet<MembershipListener> listeners = new CopyOnWriteArraySet<MembershipListener>();
-    final AtomicReference<Set<Member>> members = new AtomicReference<Set<Member>>();
-    final AtomicReference<Member> localMember = new AtomicReference<Member>();
-    final Map<Member, Member> clusterMembers = new ConcurrentHashMap<Member, Member>();
-    final Map<Address, Member> mapMembers = new ConcurrentHashMap<Address, Member>();
+    final AtomicReference<Set<MemberImpl>> members = new AtomicReference<Set<MemberImpl>>(Collections.EMPTY_SET);
+    final AtomicReference<MemberImpl> localMember = new AtomicReference<MemberImpl>();
+    final Map<Address, MemberImpl> memberAddressMap = new ConcurrentHashMap<Address, MemberImpl>();
+    final Map<MemberImpl, MemberImpl> memberMap = new ConcurrentHashMap<MemberImpl, MemberImpl>();
+
     @SuppressWarnings("VolatileLongOrDoubleField")
     volatile long clusterTimeDiff = Long.MAX_VALUE;
     final Node node;
+    final Object memberChangeMutex = new Object();
 
     public ClusterImpl(Node node) {
         this.node = node;
-        this.setMembers(Arrays.asList(node.getLocalMember()));
+        reset();
     }
 
     public void reset() {
-        mapMembers.clear();
-        clusterMembers.clear();
-        members.set(null);
-        this.setMembers(Arrays.asList(node.getLocalMember()));
+        setMembers(Arrays.asList(node.getLocalMember()));
     }
 
-    public void setMembers(List<MemberImpl> lsMembers) {
-        Set<Member> setNew = new LinkedHashSet<Member>(lsMembers.size());
-        ArrayList<Runnable> notifications = new ArrayList<Runnable>();
-        for (MemberImpl member : lsMembers) {
-            if (member != null) {
-                final MemberImpl dummy = new MemberImpl(member.getAddress(), member.localMember(),
-                        member.getNodeType(), member.getUuid());
-                Member clusterMember = clusterMembers.get(dummy);
-                if (clusterMember == null) {
-                    clusterMember = dummy;
-                    if (listeners.size() > 0) {
-                        notifications.add(new Runnable() {
-                            public void run() {
-                                MembershipEvent membershipEvent = new MembershipEvent(ClusterImpl.this,
-                                        dummy, MembershipEvent.MEMBER_ADDED);
-                                for (MembershipListener listener : listeners) {
-                                    listener.memberAdded(membershipEvent);
-                                }
-                            }
-                        });
-                    }
-                }
-                if (clusterMember.localMember()) {
-                    localMember.set(clusterMember);
-                }
-                setNew.add(clusterMember);
+    public void setMembers(List<MemberImpl> incomingMembers) {
+        final Set<MemberImpl> newMembers = new LinkedHashSet<MemberImpl>(incomingMembers.size());
+        final Set<MemberImpl> oldMembers = members.get();
+
+        final List<MemberImpl> addedMembers = new LinkedList<MemberImpl>();
+        final List<MemberImpl> removedMembers = new LinkedList<MemberImpl>();
+
+        //checking for added members
+        for (MemberImpl incomingMember : incomingMembers) {
+            MemberImpl member = memberMap.get(incomingMember);
+            if (member == null) {
+                //the member previously didn't exist, so its an new member.
+
+                member = incomingMember;
+                addedMembers.add(member);
+                memberMap.put(member, member);
+                memberAddressMap.put(member.getAddress(), member);
+            }
+
+            if (member.localMember()) {
+                localMember.set(member);
+            }
+            newMembers.add(member);
+        }
+
+        //checking for removed members
+        for (MemberImpl oldMember : oldMembers) {
+            if (!newMembers.contains(oldMember)) {
+                //so the old member doesn't exist anymore, so it needs to be removed.
+                removedMembers.add(oldMember);
+                memberMap.remove(oldMember);
+                memberAddressMap.remove(oldMember.getAddress());
             }
         }
-        if (listeners.size() > 0) {
-            Set<Member> it = clusterMembers.keySet();
-            // build a list of notifications but send them AFTER removal
-            for (final Member member : it) {
-                if (!setNew.contains(member)) {
-                    notifications.add(new Runnable() {
+
+        //this lock is needed to correctly deal with the InitialMembershipListener to prevent that is starts
+        //receiving regular MembershopEvents before it has received the InitialMembershipEvent.
+        synchronized (memberChangeMutex){
+            members.set(unmodifiableSet(newMembers));
+
+            //if there are no listeners, we are done.
+            if(listeners.isEmpty()){
+                return;
+            }
+
+            final LinkedHashSet<Member> membersAfterEvent = new LinkedHashSet<Member>(oldMembers);
+            final NamedExecutorService eventExecutor = node.executorManager.getEventExecutorService();
+            for (Member addedMember : addedMembers) {
+                membersAfterEvent.add(addedMember);
+
+                final MembershipEvent event = new MembershipEvent(this, addedMember, MembershipEvent.MEMBER_ADDED,
+                        unmodifiableSet(new LinkedHashSet<Member>(membersAfterEvent)));
+                for (final MembershipListener listener : listeners) {
+                    eventExecutor.executeOrderedRunnable(listener.hashCode(), new Runnable() {
                         public void run() {
-                            MembershipEvent membershipEvent = new MembershipEvent(ClusterImpl.this,
-                                    member, MembershipEvent.MEMBER_REMOVED);
-                            for (MembershipListener listener : listeners) {
-                                listener.memberRemoved(membershipEvent);
-                            }
+                            listener.memberAdded(event);
+                        }
+                    });
+                }
+            }
+
+            for (Member removedMember : removedMembers) {
+                membersAfterEvent.remove(removedMember);
+
+                final MembershipEvent event = new MembershipEvent(this, removedMember, MembershipEvent.MEMBER_REMOVED,
+                        unmodifiableSet(new LinkedHashSet<Member>(membersAfterEvent)));
+                for (final MembershipListener listener : listeners) {
+                    eventExecutor.executeOrderedRunnable(listener.hashCode(), new Runnable() {
+                        public void run() {
+                            listener.memberRemoved(event);
                         }
                     });
                 }
             }
         }
-        clusterMembers.clear();
-        mapMembers.clear();
-        for (Member member : setNew) {
-            mapMembers.put(((MemberImpl) member).getAddress(), member);
-            clusterMembers.put(member, member);
-        }
-        members.set(Collections.unmodifiableSet(setNew));
-        // send notifications now
-        for (Runnable notification : notifications) {
-            node.executorManager.getEventExecutorService().execute(notification);
-        }
     }
 
     public void addMembershipListener(MembershipListener listener) {
-        listeners.add(listener);
+        if(!(listener instanceof InitialMembershipListener)){
+            listeners.add(listener);
+        }else{
+            synchronized (memberChangeMutex) {
+                if(!listeners.add(listener)){
+                    //the listener is already registered, so we are done. We don't want to send another InitialMembershipEvent.
+                    return;
+                }
+
+                final InitialMembershipListener initializingListener = (InitialMembershipListener) listener;
+                final InitialMembershipEvent event = new InitialMembershipEvent(this, getMembers());
+
+                node.executorManager.getEventExecutorService().executeOrderedRunnable(listener.hashCode(), new Runnable(){
+                    public void run() {
+                        initializingListener.init(event);
+                    }
+                });
+            }
+        }
     }
 
     public void removeMembershipListener(MembershipListener listener) {
@@ -124,7 +160,8 @@ public class ClusterImpl implements Cluster {
     }
 
     public Set<Member> getMembers() {
-        return members.get();
+        //ieeeuwwwwww
+        return (Set)members.get();
     }
 
     public long getClusterTime() {
@@ -143,7 +180,7 @@ public class ClusterImpl implements Cluster {
     }
 
     public Member getMember(Address address) {
-        return mapMembers.get(address);
+        return memberAddressMap.get(address);
     }
 
     @Override
@@ -159,5 +196,28 @@ public class ClusterImpl implements Cluster {
         }
         sb.append("\n}\n");
         return sb.toString();
+    }
+
+    private static class Notification implements Runnable{
+        private final MembershipListener listener;
+        private final MembershipEvent event;
+
+        private Notification(MembershipEvent event, MembershipListener listener) {
+            this.event = event;
+            this.listener = listener;
+        }
+
+        public void run() {
+            switch (event.getEventType()) {
+                case MembershipEvent.MEMBER_ADDED:
+                    listener.memberAdded(event);
+                    break;
+                case MembershipEvent.MEMBER_REMOVED:
+                    listener.memberRemoved(event);
+                    break;
+                default:
+                    throw new RuntimeException("Unhandeled event: " + event);
+            }
+        }
     }
 }

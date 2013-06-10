@@ -121,7 +121,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
     }
 
     public Object put(Object key, Object value) {
-        return put(key, value, 0, TimeUnit.SECONDS);
+        return put(key, value, -1, TimeUnit.SECONDS);
     }
 
     public Future getAsync(Object key) {
@@ -517,15 +517,19 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
 
         public void addIndex(final Expression expression, final boolean ordered) {
             final CountDownLatch latch = new CountDownLatch(1);
+            final AddMapIndex addMapIndexProcess = new AddMapIndex(name, expression, ordered);
             concurrentMapManager.enqueueAndReturn(new Processable() {
                 public void process() {
-                    AddMapIndex addMapIndexProcess = new AddMapIndex(name, expression, ordered);
                     concurrentMapManager.sendProcessableToAll(addMapIndexProcess, true);
                     latch.countDown();
                 }
             });
             try {
                 latch.await();
+                final Throwable error = addMapIndexProcess.getError();
+                if (error != null) {
+                    Util.throwUncheckedException(error);
+                }
             } catch (InterruptedException ignored) {
             }
         }
@@ -553,7 +557,7 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         }
 
         public Object put(Object key, Object value) {
-            return put(key, value, 0, TimeUnit.SECONDS);
+            return put(key, value, -1, TimeUnit.SECONDS);
         }
 
         public void putForSync(Object key, Object value) {
@@ -595,12 +599,10 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         }
 
         public Object put(Object key, Object value, long ttl, TimeUnit timeunit) {
-            if (ttl < 0) {
+            if (ttl < 0 && ttl != -1) {
                 throw new IllegalArgumentException("ttl value cannot be negative. " + ttl);
             }
-            if (ttl == 0) {
-                ttl = -1;
-            } else {
+            if (ttl > 0) {
                 ttl = toMillis(ttl, timeunit);
             }
             return put(key, value, ttl);
@@ -983,7 +985,8 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         }
 
         public void clear() {
-            if (concurrentMapManager.getMap(name).isClearQuick()) {
+            final CMap cMap = concurrentMapManager.getMap(name);
+            if (cMap != null && cMap.isClearQuick()) {
                 mapOperationCounter.incrementOtherOperations();
                 MClearQuick mClearQuick = concurrentMapManager.new MClearQuick(name);
                 mClearQuick.call();

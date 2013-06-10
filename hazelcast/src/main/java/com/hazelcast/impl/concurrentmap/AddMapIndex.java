@@ -23,6 +23,7 @@ import com.hazelcast.query.Expression;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.logging.Level;
 
 public class AddMapIndex extends AbstractRemotelyProcessable {
 
@@ -30,6 +31,8 @@ public class AddMapIndex extends AbstractRemotelyProcessable {
     private Expression expression;
     private boolean ordered;
     private int attributeIndex = -1;
+
+    private transient Throwable error;
 
     public AddMapIndex() {
     }
@@ -48,8 +51,13 @@ public class AddMapIndex extends AbstractRemotelyProcessable {
     }
 
     public void process() {
-        CMap cmap = getNode().concurrentMapManager.getOrCreateMap(mapName);
-        cmap.addIndex(getExpression(), isOrdered(), attributeIndex);
+        CMap cmap = node.concurrentMapManager.getOrCreateMap(mapName);
+        try {
+            cmap.addIndex(getExpression(), isOrdered(), attributeIndex);
+        } catch (Exception e) {
+            error = e;
+            node.getLogger(getClass().getName()).log(Level.WARNING, e.getMessage());
+        }
     }
 
     public void writeData(DataOutput out) throws IOException {
@@ -100,5 +108,9 @@ public class AddMapIndex extends AbstractRemotelyProcessable {
 
     public void setAttributeIndex(int attributeIndex) {
         this.attributeIndex = attributeIndex;
+    }
+
+    public Throwable getError() {
+        return error;
     }
 }

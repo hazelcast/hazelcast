@@ -347,7 +347,7 @@ public abstract class BaseManager {
             systemLogService.logObject(request, INFO, "ReturnResponse");
         }
         if (request.local) {
-            final TargetAwareOp targetAwareOp = (TargetAwareOp) request.attachment;
+            final TargetAwareOp targetAwareOp = (TargetAwareOp) request.call;
             if (request.response == OBJECT_REDO) {
                 targetAwareOp.setRedoResult(RedoType.getRedoType(request.redoCode));
             } else {
@@ -512,7 +512,7 @@ public abstract class BaseManager {
                 valueData = toData(value);
             }
             request.setLocal(operation, name, keyData, valueData, -1, getOperationTimeout(timeout), ttl, thisAddress);
-            request.attachment = this;
+            request.call = this;
         }
 
         abstract void doOp();
@@ -581,10 +581,6 @@ public abstract class BaseManager {
 
         public Object waitAndGetResult() {
             // should be more than request timeout
-//            final long noResponseTimeout = (request.timeout == Long.MAX_VALUE || request.timeout < 0)
-//                                           ? Long.MAX_VALUE
-//                                           : request.timeout > 0 ? (long)(request.timeout * 1.5f) + MIN_POLL_TIMEOUT
-//                                                                         : responsePollTimeout;
             final long noResponseTimeout = (request.timeout == Long.MAX_VALUE || request.timeout < 0)
                     ? Long.MAX_VALUE : maxOperationTimeout;
 
@@ -834,9 +830,13 @@ public abstract class BaseManager {
         protected void onStillWaiting() {
             enqueueAndReturn(new Processable() {
                 public void process() {
-                if (targetConnection != null && !targetConnection.live()) {
-                    redo(REDO_CONNECTION_NOT_ALIVE);
-                }
+                    if (targetConnection != null && !targetConnection.live()) {
+                        if (target == null && !thisAddress.equals(target)) {
+                            redo(REDO_CONNECTION_NOT_ALIVE);
+                        } else {
+                            targetConnection = null;
+                        }
+                    }
                 }
             });
         }
@@ -923,7 +923,8 @@ public abstract class BaseManager {
             if (isMigrationAware() && isPartitionMigrating()) {
                 setRedoResult(REDO_PARTITION_MIGRATING);
             } else {
-                request.attachment = TargetAwareOp.this;
+                request.call = TargetAwareOp.this;
+                targetConnection = null;
                 request.local = true;
                 ((RequestHandler) getPacketProcessor(request.operation)).handle(request);
             }

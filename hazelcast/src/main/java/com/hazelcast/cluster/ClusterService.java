@@ -192,7 +192,7 @@ public final class ClusterService implements Runnable, Constants {
                 if (!readPackets && !readProcessables) {
                     try {
                         long startWait = System.nanoTime();
-                        LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(1));
+                        LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(473)); // magic number :)
                         long now = System.nanoTime();
                         threadWatcher.addWait((now - startWait), now);
                     } catch (Exception e) {

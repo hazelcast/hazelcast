@@ -117,7 +117,14 @@ public class LocalRegionCache implements RegionCache {
     }
 
     public boolean remove(final Object key) {
-        return cache.remove(key) != null;
+        final Value value = cache.remove(key);
+        if (value != null) {
+            if (topic != null) {
+                topic.publish(createMessage(key, null, value.getVersion()));
+            }
+            return true;
+        }
+        return false;
     }
 
     public SoftLock tryLock(final Object key, final Object version) {
@@ -193,7 +200,7 @@ public class LocalRegionCache implements RegionCache {
                 if (v.getLock() == LOCK_SUCCESS) {
                     continue;
                 }
-                if (v.getCreationTime() + timeToLive > now) {
+                if (v.getCreationTime() + timeToLive < now) {
                     iter.remove();
                 } else if (maxSize > 0 && maxSize != Integer.MAX_VALUE) {
                     if (entries == null) {

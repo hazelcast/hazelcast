@@ -61,6 +61,7 @@ public class Request implements CallStateAware {
     public long txnId = DEFAULT_TXN_ID;
     public Long[] indexes;
     public byte[] indexTypes;
+    public Object call = null;
     public Object attachment = null;
     public Object response = null;
     public ResponseType responseType = ResponseType.OBJECT;
@@ -111,7 +112,7 @@ public class Request implements CallStateAware {
         this.version = DEFAULT_VERSION;
         this.response = null;
         this.scheduled = false;
-        this.attachment = null;
+        this.call = null;
         this.redoCount = DEFAULT_REDO_COUNT;
         this.indexes = null;
         this.indexTypes = null;
@@ -119,6 +120,7 @@ public class Request implements CallStateAware {
         this.record = null;
         this.callState = null;
         this.target = null;
+        this.attachment = null;
     }
 
     public void beforeRedo() {
@@ -167,10 +169,11 @@ public class Request implements CallStateAware {
         //set the defaults here//
         this.response = null;
         this.scheduled = false;
-        this.attachment = null;
+        this.call = null;
 //        this.redoCount = DEFAULT_REDO_COUNT;
         this.indexes = null;
         this.indexTypes = null;
+        this.attachment = null;
         this.responseType = ResponseType.OBJECT;
         // set the values //
         set(true,
@@ -202,7 +205,7 @@ public class Request implements CallStateAware {
         set(req.local, req.operation, req.name, req.key, req.value, req.blockId, req.timeout, req.ttl,
                 req.txnId, req.callId, req.lockThreadId, req.lockAddress, req.lockCount,
                 req.caller, req.longValue, req.version, req.redoCount);
-        attachment = req.attachment;
+        call = req.call;
         response = req.response;
         scheduled = req.scheduled;
         indexes = req.indexes;

@@ -179,6 +179,12 @@ public class ConfigXmlGenerator {
         }
         xml.append("</asymmetric-encryption>");
         xml.append("</network>");
+        final PartitionGroupConfig pg = config.getPartitionGroupConfig();
+        if (pg != null && pg.getGroupType() != null) {
+            xml.append("<partition-group enabled=\"").append(pg.isEnabled())
+                    .append("\" group-type=\"").append(pg.getGroupType()).append("\" />");
+        }
+
         final Collection<ExecutorConfig> exCfgs = config.getExecutorConfigs();
         for (ExecutorConfig ex : exCfgs) {
             xml.append("<executor-service name=\"").append(ex.getName()).append("\">");

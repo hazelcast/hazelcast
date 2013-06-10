@@ -29,6 +29,11 @@ public class PartitionGroupConfig {
 
     private final List<MemberGroupConfig> memberGroupConfigs = new LinkedList<MemberGroupConfig>();
 
+    /**
+     * used for testing
+     */
+    private String memberGroupFactoryClassname;
+
     public enum MemberGroupType {
         HOST_AWARE, CUSTOM
     }
@@ -69,6 +74,14 @@ public class PartitionGroupConfig {
         this.memberGroupConfigs.clear();
         this.memberGroupConfigs.addAll(memberGroupConfigs);
         return this;
+    }
+
+    public String getMemberGroupFactoryClassname() {
+        return memberGroupFactoryClassname;
+    }
+
+    public void setMemberGroupFactoryClassname(String memberGroupFactoryClassname) {
+        this.memberGroupFactoryClassname = memberGroupFactoryClassname;
     }
 
     @Override

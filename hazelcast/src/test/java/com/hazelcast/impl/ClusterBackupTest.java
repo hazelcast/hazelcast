@@ -16,10 +16,11 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.*;
 import com.hazelcast.core.*;
+import com.hazelcast.impl.partition.DefaultMemberGroup;
+import com.hazelcast.impl.partition.MemberGroup;
+import com.hazelcast.impl.partition.MemberGroupFactory;
 import com.hazelcast.impl.partition.PartitionInfo;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.Address;
@@ -31,6 +32,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
@@ -39,6 +41,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
+import static com.hazelcast.config.PartitionGroupConfig.MemberGroupType;
 import static com.hazelcast.impl.TestUtil.getConcurrentMapManager;
 import static java.lang.Thread.sleep;
 import static org.junit.Assert.*;
@@ -790,5 +793,110 @@ public class ClusterBackupTest {
         latch.await();
         ex.shutdown();
         assertEquals("Remove failed!", 0, map.size());
+    }
+
+    @Test
+    public void testMultiNodePartitionGroupFailure() throws InterruptedException {
+        final Config config = new Config();
+        config.setProperty("hazelcast.wait.seconds.before.join", "0");
+        final String name = "testMultiNodePartitionGroupFailure";
+        config.getMapConfig(name).setBackupCount(1);
+
+        final PartitionGroupConfig pg = config.getPartitionGroupConfig().setEnabled(true).setGroupType(MemberGroupType.CUSTOM);
+        final String factoryClassName = CustomMemberGroupFactory.class.getName();
+        pg.setMemberGroupFactoryClassname(factoryClassName);
+        final NetworkConfig network = config.getNetworkConfig();
+
+        class TerminateNode extends Thread {
+            HazelcastInstance hz;
+            TerminateNode(HazelcastInstance hz) {
+                this.hz = hz;
+            }
+            public void run() {
+                final Node node = TestUtil.getNode(hz);
+                node.getConnectionManager().shutdown();
+                node.doShutdown(true);
+            }
+        }
+
+        network.setPort(5001);
+        final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(config);
+        network.setPort(5002);
+        final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(config);
+        network.setPort(5003);
+        final HazelcastInstance hz3 = Hazelcast.newHazelcastInstance(config);
+        network.setPort(5004);
+        final HazelcastInstance hz4 = Hazelcast.newHazelcastInstance(config);
+        network.setPort(5005);
+        final HazelcastInstance hz5 = Hazelcast.newHazelcastInstance(config);
+        network.setPort(5006);
+        final HazelcastInstance hz6 = Hazelcast.newHazelcastInstance(config);
+
+        final IMap<Object, Object> map1 = hz1.getMap(name);
+        final IMap<Object, Object> map2 = hz2.getMap(name);
+        final IMap<Object, Object> map3 = hz3.getMap(name);
+        final IMap<Object, Object> map4 = hz4.getMap(name);
+        final IMap<Object, Object> map5 = hz5.getMap(name);
+        final IMap<Object, Object> map6 = hz6.getMap(name);
+
+        final int total = 10000;
+        for (int i = 0; i < total; i++) {
+            map6.put(i, i);
+        }
+
+        assertEquals(total, getTotalOwnedEntryCount(map1, map2, map3, map4, map5, map6));
+        assertEquals(total, getTotalBackupEntryCount(map1, map2, map3, map4, map5, map6));
+
+        // kill the node group where master (hz1) is in.
+        final TerminateNode term1 = new TerminateNode(hz2);
+        final TerminateNode term2 = new TerminateNode(hz1);
+        term1.start();
+        term2.start();
+        term1.join();
+        term2.join();
+        Thread.sleep(5000);
+
+        assertEquals(total, getTotalOwnedEntryCount(map3, map4, map5, map6));
+        assertEquals(total, getTotalBackupEntryCount(map3, map4, map5, map6));
+
+        final TerminateNode term3 = new TerminateNode(hz3);
+        final TerminateNode term4 = new TerminateNode(hz4);
+        term3.start();
+        term4.start();
+        term3.join();
+        term4.join();
+        Thread.sleep(5000);
+
+        assertEquals(total, getTotalOwnedEntryCount(map5, map6));
+        assertEquals(0, getTotalBackupEntryCount(map5, map6));
+    }
+
+    private static class CustomMemberGroupFactory implements MemberGroupFactory {
+
+        public Collection<MemberGroup> createMemberGroups(Collection<MemberImpl> members) {
+            MemberGroup mg1 = new DefaultMemberGroup();
+            MemberGroup mg2 = new DefaultMemberGroup();
+            MemberGroup mg3 = new DefaultMemberGroup();
+
+            for (MemberImpl member : members) {
+                switch (member.getAddress().getPort() % 10) {
+                    case 1:
+                    case 2:
+                        mg1.addMember(member);
+                        break;
+
+                    case 3:
+                    case 4:
+                        mg2.addMember(member);
+                        break;
+
+                    case 5:
+                    case 6:
+                        mg3.addMember(member);
+                        break;
+                }
+            }
+            return Arrays.asList(mg1, mg2, mg3);
+        }
     }
 }

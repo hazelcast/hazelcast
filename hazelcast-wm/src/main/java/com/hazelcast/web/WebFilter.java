@@ -248,8 +248,8 @@ public class WebFilter implements Filter {
     private HazelcastHttpSession getSessionWithId(final String sessionId) {
         HazelcastHttpSession session = mapSessions.get(sessionId);
         if (session != null && !session.isValid()) {
-            session = null;
             destroySession(session, true);
+            session = null;
         }
         return session;
     }
@@ -550,7 +550,11 @@ public class WebFilter implements Filter {
         if (sessionCookieDomain != null) {
             sessionCookie.setDomain(sessionCookieDomain);
         }
-        sessionCookie.setHttpOnly(sessionCookieHttpOnly);
+		try {
+			sessionCookie.setHttpOnly(sessionCookieHttpOnly);
+		} catch (NoSuchMethodError e) {
+			// must be servlet spec before 3.0, don't worry about it!
+		}
         sessionCookie.setSecure(sessionCookieSecure);
         req.res.addCookie(sessionCookie);
     }

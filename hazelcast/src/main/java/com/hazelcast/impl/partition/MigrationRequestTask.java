@@ -22,6 +22,7 @@ import com.hazelcast.impl.Node;
 import com.hazelcast.impl.PartitionManager;
 import com.hazelcast.impl.concurrentmap.CostAwareRecordList;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.DataSerializable;
 
@@ -71,19 +72,20 @@ public class MigrationRequestTask extends MigratingPartition implements Callable
     }
 
     public Boolean call() throws Exception {
+        final ILogger logger = getLogger();
         if (to.equals(from)) {
-            getLogger().log(Level.FINEST, "To and from addresses are same! => " + toString());
+            logger.log(Level.FINEST, "To and from addresses are same! => " + toString());
             return Boolean.TRUE;
         }
         if (from == null) {
-            getLogger().log(Level.FINEST, "From address is null => " + toString());
+            logger.log(Level.FINEST, "From address is null => " + toString());
         }
         final Node node = ((FactoryImpl) hazelcast).node;
         PartitionManager pm = node.concurrentMapManager.getPartitionManager();
         try {
             Member target = pm.getMember(to);
             if (target == null) {
-                getLogger().log(Level.WARNING, "Target member of task could not be found! => " + toString());
+                logger.log(Level.WARNING, "Target member of task could not be found! => " + toString());
                 return Boolean.FALSE;
             }
             final CostAwareRecordList costAwareRecordList = pm.getActivePartitionRecords(partitionId, replicaIndex, to, diffOnly);
@@ -96,17 +98,21 @@ public class MigrationRequestTask extends MigratingPartition implements Callable
         } catch (Throwable e) {
             Level level = Level.WARNING;
             if (e instanceof ExecutionException) {
-                e = e.getCause();
+                final Throwable cause = e.getCause();
+                e = cause != null ? cause : e;
             }
             if (e instanceof MemberLeftException || e instanceof IllegalStateException) {
                 level = Level.FINEST;
             }
-            getLogger().log(level, e.getMessage(), e);
+            logger.log(level, e.getMessage(), e);
         }
         return Boolean.FALSE;
     }
 
     private ILogger getLogger() {
+        if (hazelcast == null) {
+            return Logger.getLogger(MigrationRequestTask.class.getName());
+        }
         return ((FactoryImpl) hazelcast).node.getLogger(MigrationRequestTask.class.getName());
     }
 

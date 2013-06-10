@@ -426,6 +426,37 @@ public class ClusterTest {
         assertEquals(expectedCount, actualCount);
     }
 
+    @Test(timeout = 60000)
+    public void testMapReplaceIfSameEntryEventIssue418() throws Exception {
+        Config cfg = new Config();
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(cfg);
+        IMap<Object, Object> map = instance.getMap("default");
+        final CountDownLatch latch = new CountDownLatch(1);
+        final AtomicInteger oldValue = new AtomicInteger(0);
+        map.addEntryListener(new EntryListener<Object, Object>() {
+            public void entryAdded(EntryEvent<Object, Object> event) {
+            }
+
+            public void entryRemoved(EntryEvent<Object, Object> event) {
+            }
+
+            public void entryUpdated(EntryEvent<Object, Object> event) {
+                oldValue.set((Integer)event.getOldValue());
+                latch.countDown();
+            }
+
+            public void entryEvicted(EntryEvent<Object, Object> event) {
+            }
+        }, true);
+
+        map.put(1,1);
+        map.replace(1, 1, 3);
+        latch.await();
+        assertEquals(1, oldValue.get());
+        Hazelcast.shutdownAll();
+    }
+
+
     @Test
     public void testMapRemoveIfSame() throws Exception {
         HazelcastInstance hz = Hazelcast.newHazelcastInstance(new Config());

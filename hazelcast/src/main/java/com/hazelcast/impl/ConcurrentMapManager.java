@@ -613,11 +613,13 @@ public class ConcurrentMapManager extends BaseManager {
                 Record record = cMap.getOwnedRecord(dataKey);
                 if (record != null && record.isActive() && record.isValid() && record.hasValueData()) {
                     if (cMap.isReadBackupData()) {
+                        record.setLastAccessed();
                         return true;
                     } else {
                         PartitionServiceImpl.PartitionProxy partition = partitionServiceImpl.getPartition(record.getBlockId());
                         if (partition != null && !partitionManager.isOwnedPartitionMigrating(partition.getPartitionId())
                                 && partition.getOwner() != null && partition.getOwner().localMember()) {
+                            record.setLastAccessed();
                             return true;
                         }
                     }
@@ -1751,13 +1753,14 @@ public class ConcurrentMapManager extends BaseManager {
             DataRecordEntry dataRecordEntry = new DataRecordEntry(record, valueData, false);
             request.setFromRecord(record);
             request.operation = CONCURRENT_MAP_MERGE;
-            request.value = toData(dataRecordEntry);
+            Data realValue = toData(dataRecordEntry);
+            request.value = realValue;
             request.setBooleanRequest();
             doOp();
             Boolean returnObject = getResultAsBoolean();
             if (returnObject) {
                 request.value = valueData;
-                backup(CONCURRENT_MAP_BACKUP_PUT);
+                backup(CONCURRENT_MAP_BACKUP_PUT, realValue);
             }
         }
 
@@ -1811,11 +1814,12 @@ public class ConcurrentMapManager extends BaseManager {
                 request.longValue = (request.value == null) ? Integer.MIN_VALUE : dataNew.hashCode();
                 setIndexValues(request, newValue);
                 request.setBooleanRequest();
+                final Data realValue = request.value; // will be used if op is retried after backup...
                 doOp();
                 Object returnObject = getResultAsBoolean();
                 if (!Boolean.FALSE.equals(returnObject)) {
                     request.value = dataNew;
-                    backup(CONCURRENT_MAP_BACKUP_PUT);
+                    backup(CONCURRENT_MAP_BACKUP_PUT, realValue);
                 }
                 return returnObject;
             }
@@ -1877,7 +1881,7 @@ public class ConcurrentMapManager extends BaseManager {
                         || operation == CONCURRENT_MAP_PUT_FROM_LOAD
                         || operation == CONCURRENT_MAP_PUT_TRANSIENT) {
                     request.setBooleanRequest();
-                    Data valueData = request.value;
+                    final Data valueData = request.value;
                     doOp();
                     Boolean successful = getResultAsBoolean();
                     if (successful) {
@@ -2138,6 +2142,10 @@ public class ConcurrentMapManager extends BaseManager {
         protected volatile int asyncBackupCount = 0;
 
         protected void backup(ClusterOperation operation) {
+            backup(operation, null);
+        }
+
+        protected void backup(ClusterOperation operation, Data realValue) {
             final int localBackupCount = backupCount;
             final int localAsyncBackupCount = asyncBackupCount;
             final int totalBackupCount = localBackupCount + localAsyncBackupCount;
@@ -2180,13 +2188,15 @@ public class ConcurrentMapManager extends BaseManager {
                     logger.log(Level.FINEST, e.getMessage(), e);
                 }
             }
+
             if (totalBackupCount > 0 && shouldRedoWhenOwnerDies()
                     && target != null && node.getClusterImpl().getMember(target) == null) {
                 // Operation seems successful but since owner target is dead, we may loose data!
                 // We should retry actual operation for the new target
-                logger.log(Level.WARNING, "Target[" + target + "] is dead! " +
-                        "Hazelcast will retry " + request.operation);
-                // TODO: what if another call changes actual value? Do we need version check?
+                logger.log(Level.WARNING, "Target[" + target + "] is dead! Hazelcast will retry " + request.operation);
+                if (realValue != null) { // some operations uses different values for real op and backup op.
+                    request.value = realValue;
+                }
                 doOp(); // means redo...
                 getRedoAwareResult();   // wait for operation to complete...
             }
@@ -2897,10 +2907,11 @@ public class ConcurrentMapManager extends BaseManager {
             public void doMapStoreOperation() {
                 MultiData multiData = (MultiData) toObject(request.value);
                 Object expectedValue = toObject(multiData.getData(0));
+                request.attachment = multiData.getData(0); // old value for event
                 request.value = multiData.getData(1); // new value
                 request.response = expectedValue.equals(record.getValue());
 
-                if (request.response == Boolean.TRUE) {
+                if (Boolean.TRUE.equals(request.response)) {
                     // to prevent possible race condition!
                     // See testMapReplaceIfSame# tests in ClusterTest
                     record.setValueData(request.value);
@@ -3644,11 +3655,21 @@ public class ConcurrentMapManager extends BaseManager {
                         winner = cmap.mergePolicy.merge(cmap.getName(), newEntry, existingRecord);
                         if (winner != null) {
                             if (cmap.isMultiMap()) {
-                                MPutMulti mput = node.concurrentMapManager.new MPutMulti();
-                                mput.put(request.name, request.key, winner);
+                                if (winner == MergePolicy.REMOVE_EXISTING) {
+                                    MRemoveMulti mremove = new MRemoveMulti();
+                                    mremove.remove(request.name, request.key);
+                                } else {
+                                    MPutMulti mput = new MPutMulti();
+                                    mput.put(request.name, request.key, winner);
+                                }
                             } else {
-                                ConcurrentMapManager.MPut mput = node.concurrentMapManager.new MPut();
-                                mput.put(request.name, request.key, winner, -1);
+                                if (winner == MergePolicy.REMOVE_EXISTING) {
+                                    MRemove mremove = new MRemove();
+                                    mremove.remove(request.name, request.key);
+                                } else {
+                                    ConcurrentMapManager.MPut mput = new MPut();
+                                    mput.put(request.name, request.key, winner, -1);
+                                }
                             }
                             success = true;
                         }
@@ -3916,6 +3937,9 @@ public class ConcurrentMapManager extends BaseManager {
                     if (record.valueCount() == 0 && record.isEvictable()) {
                         cmap.markAsEvicted(record);
                     }
+                    if(record.isRemoved()) {
+                        record.setActive(false);
+                    }
                     cmap.fireScheduledActions(record);
                 }
             }
@@ -4084,6 +4108,12 @@ public class ConcurrentMapManager extends BaseManager {
             @Override
             public void onMigrate() {
                 returnRedoResponse(request, REDO_PARTITION_MIGRATING);
+            }
+
+            @Override
+            public String toString() {
+                return getClass().getSimpleName() + "[" + id + "]{ request= " + request +
+                        ", neverExpires=" + neverExpires() + ", timeout= " + timeout + "}";
             }
         };
         record.addScheduledAction(scheduledAction);
@@ -4353,8 +4383,10 @@ public class ConcurrentMapManager extends BaseManager {
         Record record = cmap.getRecord(req);
         if (record == null || !record.isActive() || !record.isValid()) {
             final Map<Address, Boolean> listeners = record != null ? record.getListeners() : null;
+            final long removeTime = record != null ? record.getRemoveTime() : 0;
             record = cmap.createAndAddNewRecord(req.key, defaultValue);
             record.setMapListeners(listeners);
+            record.setRemoveTime(removeTime);
         }
         return record;
     }

@@ -26,6 +26,7 @@ import com.hazelcast.impl.CMap;
 import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.impl.NodeType;
 import com.hazelcast.impl.TestUtil;
+import com.hazelcast.impl.concurrentmap.QueryException;
 import com.hazelcast.util.Clock;
 import org.junit.After;
 import org.junit.BeforeClass;
@@ -1161,4 +1162,47 @@ public class QueryTest extends TestUtil {
             ex.shutdownNow();
         }
     }
+
+    @Test
+    public void testOneMemberWithIndexAndOneMemberWithout() {
+        final int size = 10000;
+        final String name = "testOneMemberWithIndexAndOneMemberWithout";
+        Config config = new Config();
+        config.getMapConfig(name).addMapIndexConfig(new MapIndexConfig("this", false));
+
+        final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(config);
+        final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(new Config());
+
+        final IMap<Object,Object> map1 = hz1.getMap(name);
+        final IMap<Object,Object> map2 = hz2.getMap(name);
+
+        for (int i = 0; i < size; i++) {
+            if (i % 2 == 1) {
+                map1.put(i, i);
+            } else {
+                map2.put(i, i);
+            }
+        }
+        assertEquals(size, map1.size());
+        assertEquals(size, map2.size());
+
+        for (int i = 0; i < size; i++) {
+            map1.remove(i);
+        }
+        assertTrue(map1.isEmpty());
+        assertTrue(map2.isEmpty());
+    }
+
+    @Test(expected = QueryException.class)
+    public void testAddMapIndexAfterAddingEntry() throws Exception {
+        HazelcastInstance hazelcast = Hazelcast.newHazelcastInstance();
+        IMap<String, String> testMap = hazelcast.getMap("testAddMapIndexAfterAddingEntry");
+        testMap.put("key", "value");
+        try {
+            testMap.addIndex("this", false);
+        } finally {
+            assertNotNull("Code should reach here!", testMap.get("key"));
+        }
+    }
+
 }
