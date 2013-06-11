@@ -45,14 +45,13 @@ final class ConnectionImpl implements Connection {
     }
 
     private final Socket socket;
-    private final Address endpoint;
+    private Address endpoint;
     private final ObjectDataOutputStream out;
     private final ObjectDataInputStream in;
     private final int id = newConnId();
     private volatile long lastRead = Clock.currentTimeMillis();
 
     public ConnectionImpl(Address address, SocketOptions options, SerializationService serializationService) throws IOException {
-        this.endpoint = address;
         final InetSocketAddress isa = address.getInetSocketAddress();
         final Socket socket = new Socket();
         try {
@@ -137,5 +136,9 @@ final class ConnectionImpl implements Connection {
     public String toString() {
         return "Connection [" + endpoint + " -> " +
                 socket.getInetAddress().getHostAddress() + ":" + socket.getPort() + "]";
+    }
+
+    public void setEndpoint(Address address){
+        this.endpoint = address;
     }
 }

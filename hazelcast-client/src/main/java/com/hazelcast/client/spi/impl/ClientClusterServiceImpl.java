@@ -436,6 +436,10 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         auth.setReAuth(reAuth);
         final SerializationService serializationService = getSerializationService();
         connection.write(serializationService.toData(auth));
+        final Data addressData = connection.read();
+        Address address = (Address)serializationService.toObject(addressData);
+        connection.setEndpoint(address);
+
         final Data data = connection.read();
         Object response = serializationService.toObject(data);
         if (response instanceof GenericError) {

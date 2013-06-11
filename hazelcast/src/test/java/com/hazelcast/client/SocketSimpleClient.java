@@ -55,6 +55,7 @@ public class SocketSimpleClient implements SimpleClient {
         AuthenticationRequest auth = new AuthenticationRequest(new UsernamePasswordCredentials("dev", "dev-pass"));
         send(auth);
         receive();
+        receive();
     }
 
     public void send(Object o) throws IOException {
