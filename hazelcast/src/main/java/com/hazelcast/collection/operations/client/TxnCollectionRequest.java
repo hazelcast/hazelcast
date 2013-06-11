@@ -55,10 +55,6 @@ public abstract class TxnCollectionRequest extends CallableClientRequest impleme
         return CollectionPortableHook.F_ID;
     }
 
-    Object toObject(Data data){
-        return getClientEngine().toObject(data);
-    }
-
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeUTF("n",name);
         IOUtil.writeNullableData(writer.getRawDataOutput(), data);

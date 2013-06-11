@@ -36,7 +36,6 @@ public class TxnListSizeRequest extends TxnCollectionRequest {
         return context.getList(name).size();
     }
 
-    @Override
     public int getClassId() {
         return CollectionPortableHook.TXN_LIST_SIZE;
     }

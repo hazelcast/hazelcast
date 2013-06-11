@@ -56,10 +56,6 @@ public abstract class TxnMultiMapRequest extends CallableClientRequest implement
         name = reader.readUTF("n");
     }
 
-    public Object toObject(Data data){
-        return getClientEngine().toObject(data);
-    }
-
     public Data toData(Object obj){
         return getClientEngine().toData(obj);
     }

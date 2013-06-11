@@ -71,29 +71,29 @@ public class TxnMapRequest extends CallableClientRequest implements Portable {
         final TransactionalMap map = context.getMap(name);
         switch (requestType){
             case CONTAINS_KEY:
-                return map.containsKey(toObject(key));
+                return map.containsKey(key);
             case GET:
-                return map.get(toObject(key));
+                return map.get(key);
             case SIZE:
                 return map.size();
             case PUT:
-                return map.put(toObject(key), toObject(value));
+                return map.put(key, value);
             case PUT_IF_ABSENT:
-                return map.putIfAbsent(toObject(key), toObject(value));
+                return map.putIfAbsent(key, value);
             case REPLACE:
-                return map.replace(toObject(key), toObject(value));
+                return map.replace(key, value);
             case REPLACE_IS_SAME:
-                return map.replace(toObject(key), toObject(value), toObject(newValue));
+                return map.replace(key, value, newValue);
             case SET:
-                map.set(toObject(key), toObject(value));
+                map.set(key, value);
                 break;
             case REMOVE:
-                return map.remove(toObject(key));
+                return map.remove(key);
             case DELETE:
-                map.delete(toObject(key));
+                map.delete(key);
                 break;
             case REMOVE_IF_SAME:
-                return map.remove(toObject(key), toObject(value));
+                return map.remove(key, value);
 
         }
         return null;
@@ -109,10 +109,6 @@ public class TxnMapRequest extends CallableClientRequest implements Portable {
 
     public int getClassId() {
         return MapPortableHook.TXN_REQUEST;
-    }
-
-    private Object toObject(Data data){
-        return getClientEngine().getSerializationService().toObject(data);
     }
 
     public void writePortable(PortableWriter writer) throws IOException {

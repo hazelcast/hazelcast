@@ -58,7 +58,7 @@ public class TxnMultiMapRemoveRequest extends TxnMultiMapRequest {
         final TransactionContext context = getEndpoint().getTransactionContext();
         final TransactionalMultiMap<Object,Object> multiMap = context.getMultiMap(name);
         if (value == null){
-            final Collection<Object> objects = multiMap.remove(toObject(key));
+            final Collection<Object> objects = multiMap.remove(key);
             Collection<Data> coll = createCollection(objects.size());
             for (Object object : objects) {
                 final Data data = toData(object);
@@ -66,7 +66,7 @@ public class TxnMultiMapRemoveRequest extends TxnMultiMapRequest {
             }
             return new PortableCollection(coll);
         } else {
-            return multiMap.remove(toObject(key), toObject(value));
+            return multiMap.remove(key, value);
         }
     }
 

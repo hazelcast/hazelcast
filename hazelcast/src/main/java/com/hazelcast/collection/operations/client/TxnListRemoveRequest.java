@@ -34,7 +34,7 @@ public class TxnListRemoveRequest extends TxnCollectionRequest {
 
     public Object call() throws Exception {
         final TransactionContext context = getEndpoint().getTransactionContext();
-        return context.getList(name).remove(toObject(data));
+        return context.getList(name).remove(data);
     }
 
     public int getClassId() {

@@ -34,7 +34,7 @@ public class TxnSetAddRequest extends TxnCollectionRequest {
 
     public Object call() throws Exception {
         final TransactionContext context = getEndpoint().getTransactionContext();
-        return context.getSet(name).add(toObject(data));
+        return context.getSet(name).add(data);
     }
 
     public int getClassId() {
