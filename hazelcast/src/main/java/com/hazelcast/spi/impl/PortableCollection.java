@@ -26,6 +26,8 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
 
 /**
  * @ali 5/19/13
@@ -54,6 +56,7 @@ public final class PortableCollection implements Portable {
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
+        writer.writeBoolean("l", collection instanceof List);
         if (collection == null) {
             writer.writeInt("s", -1);
             return;
@@ -66,11 +69,16 @@ public final class PortableCollection implements Portable {
     }
 
     public void readPortable(PortableReader reader) throws IOException {
+        boolean list = reader.readBoolean("l");
         int size = reader.readInt("s");
         if (size == -1){
             return;
         }
-        collection = new ArrayList<Data>(size);
+        if (list){
+            collection = new ArrayList<Data>(size);
+        } else {
+            collection = new HashSet<Data>(size);
+        }
         final ObjectDataInput in = reader.getRawDataInput();
         for (int i=0; i<size; i++){
             Data data = new Data();

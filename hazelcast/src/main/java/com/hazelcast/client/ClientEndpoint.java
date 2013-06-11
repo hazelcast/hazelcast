@@ -21,6 +21,7 @@ import com.hazelcast.core.ClientType;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.TcpIpConnection;
 import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.transaction.TransactionException;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
@@ -87,6 +88,9 @@ public class ClientEndpoint implements Client {
     }
 
     public TransactionContext getTransactionContext() {
+        if (transactionContext == null){
+            throw new TransactionException("No transaction context!!!");
+        }
         return transactionContext;
     }
 

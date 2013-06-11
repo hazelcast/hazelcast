@@ -41,6 +41,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
     protected final CollectionProxyId proxyId;
     protected final Transaction tx;
     protected final MultiMapConfig config;
+    private long version = -1;
 
     private final Map<Data, Collection<CollectionRecord>> txMap = new HashMap<Data, Collection<CollectionRecord>>();
 
@@ -56,7 +57,6 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         throwExceptionIfNull(value);
         Collection<CollectionRecord> coll = txMap.get(key);
         long recordId = -1;
-        long version = -1;
         long timeout = tx.getTimeoutMillis();
         long ttl = timeout*3/2;
         if (coll == null){
@@ -95,7 +95,6 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         Collection<CollectionRecord> coll = txMap.get(key);
         long timeout = tx.getTimeoutMillis();
         long ttl = timeout*3/2;
-        long version = -1;
         if (coll == null){
             CollectionResponse response = lockAndGet(key, timeout, ttl);
             if (response == null){
@@ -135,7 +134,6 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         throwExceptionIfNull(key);
         long timeout = tx.getTimeoutMillis();
         long ttl = timeout*3/2;
-        long version = -1;
         Collection<CollectionRecord> coll = txMap.get(key);
         if (coll == null){
             CollectionResponse response = lockAndGet(key, timeout, ttl);

@@ -60,4 +60,8 @@ abstract class ClientTxnProxy {
     Data toData(Object obj){
         return proxy.getClient().getSerializationService().toData(obj);
     }
+
+    Object toObject(Data data){
+        return proxy.getClient().getSerializationService().toObject(data);
+    }
 }
