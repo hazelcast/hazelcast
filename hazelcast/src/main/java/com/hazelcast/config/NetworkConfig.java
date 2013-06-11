@@ -16,16 +16,10 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.util.ByteUtil;
-
-import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
 
-public class NetworkConfig implements DataSerializable {
+public class NetworkConfig {
 
     public static final int DEFAULT_PORT = 5701;
 
@@ -163,8 +157,9 @@ public class NetworkConfig implements DataSerializable {
 		return publicAddress;
 	}
     
-    public void setPublicAddress(String publicAddress) {
+    public NetworkConfig setPublicAddress(String publicAddress) {
 		this.publicAddress = publicAddress;
+        return this;
 	}
 
     public NetworkConfig setSocketInterceptorConfig(SocketInterceptorConfig socketInterceptorConfig) {
@@ -192,33 +187,6 @@ public class NetworkConfig implements DataSerializable {
     public NetworkConfig setSSLConfig(SSLConfig sslConfig) {
         this.sslConfig = sslConfig;
         return this;
-    }
-
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(port);
-        interfaces.writeData(out);
-        join.writeData(out);
-        boolean hasSymmetricEncryptionConfig = symmetricEncryptionConfig != null;
-        out.writeByte(ByteUtil.toByte(portAutoIncrement, reuseAddress, hasSymmetricEncryptionConfig));
-        if (hasSymmetricEncryptionConfig) {
-            symmetricEncryptionConfig.writeData(out);
-        }
-    }
-
-    public void readData(ObjectDataInput in) throws IOException {
-        port = in.readInt();
-        interfaces = new InterfacesConfig();
-        interfaces.readData(in);
-        join = new JoinConfig();
-        join.readData(in);
-        boolean[] b = ByteUtil.fromByte(in.readByte());
-        portAutoIncrement = b[0];
-        reuseAddress = b[1];
-        boolean hasSymmetricEncryptionConfig = b[2];
-        if (hasSymmetricEncryptionConfig) {
-            symmetricEncryptionConfig = new SymmetricEncryptionConfig();
-            symmetricEncryptionConfig.readData(in);
-        }
     }
 
     @Override

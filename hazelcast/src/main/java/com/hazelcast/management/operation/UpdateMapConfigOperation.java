@@ -17,7 +17,7 @@
 package com.hazelcast.management.operation;
 
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.management.MapConfigAdapter;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -73,12 +73,13 @@ public class UpdateMapConfigOperation extends Operation {
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeUTF(mapName);
-        mapConfig.writeData(out);
+        new MapConfigAdapter(mapConfig).writeData(out);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         mapName = in.readUTF();
-        mapConfig = new MapConfig();
-        mapConfig.readData(in);
+        MapConfigAdapter adapter = new MapConfigAdapter();
+        adapter.readData(in);
+        mapConfig = adapter.getMapConfig();
     }
 }

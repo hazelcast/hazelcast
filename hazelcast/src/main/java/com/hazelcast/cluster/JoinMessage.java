@@ -16,7 +16,6 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -34,18 +33,18 @@ public class JoinMessage implements DataSerializable {
     protected int buildNumber;
     protected Address address;
     protected String uuid;
-    protected Config config;
+    protected ConfigCheck configCheck;
     protected int memberCount;
 
     public JoinMessage() {
     }
 
-    public JoinMessage(byte packetVersion, int buildNumber, Address address, String uuid, Config config, int memberCount) {
+    public JoinMessage(byte packetVersion, int buildNumber, Address address, String uuid, ConfigCheck configCheck, int memberCount) {
         this.packetVersion = packetVersion;
         this.buildNumber = buildNumber;
         this.address = address;
         this.uuid = uuid;
-        this.config = config;
+        this.configCheck = configCheck;
         this.memberCount = memberCount;
     }
 
@@ -65,8 +64,8 @@ public class JoinMessage implements DataSerializable {
         return uuid;
     }
 
-    public Config getConfig() {
-        return config;
+    public ConfigCheck getConfigCheck() {
+        return configCheck;
     }
 
     public int getMemberCount() {
@@ -79,8 +78,8 @@ public class JoinMessage implements DataSerializable {
         address = new Address();
         address.readData(in);
         uuid = in.readUTF();
-        config = new Config();
-        config.readData(in);
+        configCheck = new ConfigCheck();
+        configCheck.readData(in);
         memberCount = in.readInt();
     }
 
@@ -89,7 +88,7 @@ public class JoinMessage implements DataSerializable {
         out.writeInt(buildNumber);
         address.writeData(out);
         out.writeUTF(uuid);
-        config.writeData(out);
+        configCheck.writeData(out);
         out.writeInt(memberCount);
     }
 

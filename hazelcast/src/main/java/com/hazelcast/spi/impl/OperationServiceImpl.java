@@ -537,10 +537,7 @@ final class OperationServiceImpl implements OperationService {
             throw new IllegalStateException("No backup record found for call -> " + callId);
         }
         try {
-            if (backupCount != 0) {
-                return lock.tryAcquire(backupCount, timeout, unit);
-            }
-            return true;
+            return backupCount == 0 || lock.tryAcquire(backupCount, timeout, unit);
         } finally {
             backupCalls.remove(callId);
         }

@@ -244,7 +244,6 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 try {
                     if (conn == null) {
                         conn = pickConnection();
-                        System.err.println("Connected: " + conn);
                     }
                     loadInitialMemberList();
                     listenMembershipEvents();
@@ -252,7 +251,6 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     if (client.getLifecycleService().isRunning()) {
                         e.printStackTrace();
                     }
-                    System.err.println(conn + " FAILED...");
                     IOUtil.closeResource(conn);
                     conn = null;
                 }
@@ -270,7 +268,6 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 addresses.addAll(getClusterAddresses());
             }
             addresses.addAll(getConfigAddresses());
-            System.err.println("Possible addresses: " + addresses);
             return connectToOne(addresses);
         }
 
@@ -288,7 +285,6 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             for (Data d : coll.getCollection()) {
                 members.add((MemberImpl) serializationService.toObject(d));
             }
-            System.err.println("members = " + members);
             updateMembersRef();
             final List<MembershipEvent> events = new LinkedList<MembershipEvent>();
             for (MemberImpl member : members) {
@@ -310,7 +306,6 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             while (!Thread.currentThread().isInterrupted()) {
                 final Data eventData = conn.read();
                 final ClientMembershipEvent event = (ClientMembershipEvent) serializationService.toObject(eventData);
-                System.err.println(event);
                 final MemberImpl member = (MemberImpl) event.getMember();
                 if (event.getEventType() == MembershipEvent.MEMBER_ADDED) {
                     members.add(member);
@@ -380,7 +375,6 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             for (InetSocketAddress isa : socketAddresses) {
                 try {
                     Address address = new Address(isa);
-                    System.err.println("Trying to connect: " + address);
                     return getConnectionManager().firstConnection(address, authenticator);
                 } catch (IOException ignored) {
                 }
@@ -445,7 +439,6 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         if (response instanceof GenericError) {
             throw new AuthenticationException(((GenericError) response).getMessage());
         }
-        System.err.println("principal = " + response);
         return response;
     }
 

@@ -104,22 +104,6 @@ public class MapConfigTest {
     }
 
     /**
-     * Test method for {@link com.hazelcast.config.MapConfig#getEvictionDelaySeconds()}.
-     */
-    @Test
-    public void testGetEvictionDelaySeconds() {
-        assertEquals(MapConfig.DEFAULT_EVICTION_DELAY_SECONDS, new MapConfig().getEvictionDelaySeconds());
-    }
-
-    /**
-     * Test method for {@link com.hazelcast.config.MapConfig#setEvictionDelaySeconds(int)}.
-     */
-    @Test
-    public void testSetEvictionDelaySeconds() {
-        assertEquals(1234, new MapConfig().setEvictionDelaySeconds(1234).getEvictionDelaySeconds());
-    }
-
-    /**
      * Test method for {@link com.hazelcast.config.MapConfig#getTimeToLiveSeconds()}.
      */
     @Test

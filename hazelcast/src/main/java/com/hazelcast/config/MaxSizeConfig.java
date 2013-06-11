@@ -16,28 +16,13 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+public class MaxSizeConfig {
 
-import java.io.IOException;
-
-public class MaxSizeConfig implements DataSerializable {
-    int size = MapConfig.DEFAULT_MAX_SIZE;
-    MaxSizePolicy maxSizePolicy = MaxSizePolicy.PER_NODE;
+    private int size = MapConfig.DEFAULT_MAX_SIZE;
+    private MaxSizePolicy maxSizePolicy = MaxSizePolicy.PER_NODE;
 
     public enum MaxSizePolicy {
         PER_NODE, PER_PARTITION, USED_HEAP_PERCENTAGE, USED_HEAP_SIZE
-    }
-
-    public void readData(ObjectDataInput in) throws IOException {
-        size = in.readInt();
-        maxSizePolicy = MaxSizePolicy.valueOf(in.readUTF());
-    }
-
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(size);
-        out.writeUTF(maxSizePolicy.name());
     }
 
     public int getSize() {

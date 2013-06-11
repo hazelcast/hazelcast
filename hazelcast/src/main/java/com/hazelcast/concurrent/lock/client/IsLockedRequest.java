@@ -33,6 +33,10 @@ public final class IsLockedRequest extends AbstractIsLockedRequest implements Re
         super(key);
     }
 
+    public IsLockedRequest(Data key, int threadId) {
+        super(key, threadId);
+    }
+
     @Override
     protected InternalLockNamespace getNamespace() {
         return new InternalLockNamespace();

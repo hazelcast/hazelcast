@@ -86,24 +86,29 @@ public class PermissionConfig {
         return actions;
     }
 
-    public void setType(PermissionType type) {
+    public PermissionConfig setType(PermissionType type) {
         this.type = type;
+        return this;
     }
 
-    public void setName(String name) {
+    public PermissionConfig setName(String name) {
         this.name = name;
+        return this;
     }
 
-    public void setPrincipal(String principal) {
+    public PermissionConfig setPrincipal(String principal) {
         this.principal = principal;
+        return this;
     }
 
-    public void setActions(Set<String> actions) {
+    public PermissionConfig setActions(Set<String> actions) {
         this.actions = actions;
+        return this;
     }
 
-    public void setEndpoints(Set<String> endpoints) {
+    public PermissionConfig setEndpoints(Set<String> endpoints) {
         this.endpoints = endpoints;
+        return this;
     }
 
     @Override

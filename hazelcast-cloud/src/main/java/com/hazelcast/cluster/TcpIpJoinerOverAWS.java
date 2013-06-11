@@ -60,5 +60,10 @@ public class TcpIpJoinerOverAWS extends TcpIpJoiner {
         AwsConfig awsConfig = node.getConfig().getNetworkConfig().getJoin().getAwsConfig();
         return awsConfig.getConnectionTimeoutSeconds();
     }
+
+    @Override
+    public String getType() {
+        return "aws";
+    }
 }
 

@@ -15,13 +15,7 @@
  */
 package com.hazelcast.config;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
-
-import java.io.IOException;
-
-public class SemaphoreConfig implements DataSerializable {
+public class SemaphoreConfig {
 
     public final static int DEFAULT_SYNC_BACKUP_COUNT = 1;
     public final static int DEFAULT_ASYNC_BACKUP_COUNT = 0;
@@ -42,25 +36,11 @@ public class SemaphoreConfig implements DataSerializable {
         this.asyncBackupCount = config.getAsyncBackupCount();
     }
 
-    public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
-        initialPermits = in.readInt();
-        syncBackupCount = in.readInt();
-        asyncBackupCount = in.readInt();
-    }
-
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
-        out.writeInt(initialPermits);
-        out.writeInt(syncBackupCount);
-        out.writeInt(asyncBackupCount);
-    }
-
     public String getName() {
         return name;
     }
 
-    SemaphoreConfig setName(String name) {
+    public SemaphoreConfig setName(String name) {
         this.name = name;
         return this;
     }

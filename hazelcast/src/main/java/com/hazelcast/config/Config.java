@@ -18,13 +18,8 @@ package com.hazelcast.config;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.util.ByteUtil;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 import java.util.Map.Entry;
@@ -33,13 +28,13 @@ import java.util.concurrent.ConcurrentMap;
 
 import static java.text.MessageFormat.format;
 
-public class Config implements DataSerializable {
+public class Config {
 
-    private transient URL configurationUrl;
+    private URL configurationUrl;
 
-    private transient File configurationFile;
+    private File configurationFile;
 
-    private transient ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+    private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
     private Properties properties = new Properties();
 
@@ -47,29 +42,27 @@ public class Config implements DataSerializable {
 
     private GroupConfig groupConfig = new GroupConfig();
 
-    private transient boolean checkCompatibility = true;
-
     private NetworkConfig networkConfig = new NetworkConfig();
 
-    private Map<String, MapConfig> mapConfigs = new HashMap<String, MapConfig>();
+    private final Map<String, MapConfig> mapConfigs = new ConcurrentHashMap<String, MapConfig>();
 
-    private Map<String, TopicConfig> topicConfigs = new HashMap<String, TopicConfig>();
+    private final Map<String, TopicConfig> topicConfigs = new ConcurrentHashMap<String, TopicConfig>();
 
-    private Map<String, QueueConfig> queueConfigs = new HashMap<String, QueueConfig>();
+    private final Map<String, QueueConfig> queueConfigs = new ConcurrentHashMap<String, QueueConfig>();
 
-    private Map<String, MultiMapConfig> multiMapConfigs = new HashMap<String, MultiMapConfig>();
+    private final Map<String, MultiMapConfig> multiMapConfigs = new ConcurrentHashMap<String, MultiMapConfig>();
 
-    private Map<String, ExecutorConfig> executorConfigs = new HashMap<String, ExecutorConfig>();
+    private final Map<String, ExecutorConfig> executorConfigs = new ConcurrentHashMap<String, ExecutorConfig>();
 
-    private Map<String, SemaphoreConfig> semaphoreConfigs = new HashMap<String, SemaphoreConfig>();
+    private final Map<String, SemaphoreConfig> semaphoreConfigs = new ConcurrentHashMap<String, SemaphoreConfig>();
 
-    private Map<String, WanReplicationConfig> wanReplicationConfigs = new HashMap<String, WanReplicationConfig>();
+    private final Map<String, WanReplicationConfig> wanReplicationConfigs = new ConcurrentHashMap<String, WanReplicationConfig>();
 
     private ServicesConfig servicesConfig = new ServicesConfig();
 
     private SecurityConfig securityConfig = new SecurityConfig();
 
-    private List<ListenerConfig> listenerConfigs = new LinkedList<ListenerConfig>();
+    private final List<ListenerConfig> listenerConfigs = new LinkedList<ListenerConfig>();
 
     private PartitionGroupConfig partitionGroupConfig = new PartitionGroupConfig();
 
@@ -77,11 +70,11 @@ public class Config implements DataSerializable {
 
     private SerializationConfig serializationConfig = new SerializationConfig();
 
-    private transient ManagedContext managedContext;
+    private ManagedContext managedContext;
 
-    private transient ConcurrentMap<String, Object> userContext = new ConcurrentHashMap<String, Object>();
+    private ConcurrentMap<String, Object> userContext = new ConcurrentHashMap<String, Object>();
 
-    private transient String licenseKey;
+    private String licenseKey;
 
     public Config() {
     }
@@ -172,7 +165,8 @@ public class Config implements DataSerializable {
      * @param mapConfigs the mapConfigs to set
      */
     public Config setMapConfigs(Map<String, MapConfig> mapConfigs) {
-        this.mapConfigs = mapConfigs;
+        this.mapConfigs.clear();
+        this.mapConfigs.putAll(mapConfigs);
         for (final Entry<String, MapConfig> entry : this.mapConfigs.entrySet()) {
             entry.getValue().setName(entry.getKey());
         }
@@ -207,7 +201,11 @@ public class Config implements DataSerializable {
     }
 
     public Config setQueueConfigs(Map<String, QueueConfig> queueConfigs) {
-        this.queueConfigs = queueConfigs;
+        this.queueConfigs.clear();
+        this.queueConfigs.putAll(queueConfigs);
+        for (Entry<String, QueueConfig> entry : queueConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
         return this;
     }
 
@@ -236,7 +234,8 @@ public class Config implements DataSerializable {
     }
 
     public Config setMultiMapConfigs(Map<String, MultiMapConfig> multiMapConfigs) {
-        this.multiMapConfigs = multiMapConfigs;
+        this.multiMapConfigs.clear();
+        this.multiMapConfigs.putAll(multiMapConfigs);
         for (final Entry<String, MultiMapConfig> entry : this.multiMapConfigs.entrySet()) {
             entry.getValue().setName(entry.getKey());
         }
@@ -276,7 +275,8 @@ public class Config implements DataSerializable {
      * @param mapTopicConfigs the topicConfigs to set
      */
     public Config setTopicConfigs(Map<String, TopicConfig> mapTopicConfigs) {
-        this.topicConfigs = mapTopicConfigs;
+        this.topicConfigs.clear();
+        this.topicConfigs.putAll(mapTopicConfigs);
         for (final Entry<String, TopicConfig> entry : this.topicConfigs.entrySet()) {
             entry.getValue().setName(entry.getKey());
         }
@@ -323,7 +323,11 @@ public class Config implements DataSerializable {
     }
 
     public Config setExecutorConfigs(Map<String, ExecutorConfig> executorConfigs) {
-        this.executorConfigs = executorConfigs;
+        this.executorConfigs.clear();
+        this.executorConfigs.putAll(executorConfigs);
+        for (Entry<String, ExecutorConfig> entry : executorConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
         return this;
     }
 
@@ -371,7 +375,8 @@ public class Config implements DataSerializable {
     }
 
     public Config setSemaphoreConfigs(Map<String, SemaphoreConfig> semaphoreConfigs) {
-        this.semaphoreConfigs = semaphoreConfigs;
+        this.semaphoreConfigs.clear();
+        this.semaphoreConfigs.putAll(semaphoreConfigs);
         for (final Entry<String, SemaphoreConfig> entry : this.semaphoreConfigs.entrySet()) {
             entry.getValue().setName(entry.getKey());
         }
@@ -393,7 +398,8 @@ public class Config implements DataSerializable {
     }
 
     public Config setWanReplicationConfigs(Map<String, WanReplicationConfig> wanReplicationConfigs) {
-        this.wanReplicationConfigs = wanReplicationConfigs;
+        this.wanReplicationConfigs.clear();
+        this.wanReplicationConfigs.putAll(wanReplicationConfigs);
         return this;
     }
 
@@ -434,7 +440,8 @@ public class Config implements DataSerializable {
     }
 
     public Config setListenerConfigs(List<ListenerConfig> listenerConfigs) {
-        this.listenerConfigs = listenerConfigs;
+        this.listenerConfigs.clear();
+        this.listenerConfigs.addAll(listenerConfigs);
         return this;
     }
 
@@ -504,15 +511,6 @@ public class Config implements DataSerializable {
         return this;
     }
 
-    public boolean isCheckCompatibility() {
-        return this.checkCompatibility;
-    }
-
-    public Config setCheckCompatibility(boolean checkCompatibility) {
-        this.checkCompatibility = checkCompatibility;
-        return this;
-    }
-
     public String getLicenseKey() {
         return licenseKey;
     }
@@ -567,11 +565,7 @@ public class Config implements DataSerializable {
         if (!this.groupConfig.getPassword().equals(config.getGroupConfig().getPassword())) {
             throw new HazelcastException("Incompatible group password");
         }
-        if (checkCompatibility) {
-            checkMapConfigCompatible(config);
-            checkQueueConfigCompatible(config);
-            checkTopicConfigCompatible(config);
-        }
+        checkMapConfigCompatible(config);
         return true;
     }
 
@@ -589,183 +583,11 @@ public class Config implements DataSerializable {
         }
     }
 
-    private void checkQueueConfigCompatible(final Config config) {
-        Set<String> queueConfigNames = new HashSet<String>(queueConfigs.keySet());
-        queueConfigNames.addAll(config.queueConfigs.keySet());
-        for (final String name : queueConfigNames) {
-            final QueueConfig thisQueueConfig = lookupByPattern(queueConfigs, name);
-            final QueueConfig thatQueueConfig = lookupByPattern(config.queueConfigs, name);
-            if (thisQueueConfig != null && thatQueueConfig != null &&
-                    !thisQueueConfig.isCompatible(thatQueueConfig)) {
-                throw new HazelcastException(format("Incompatible queue config this:\n{0}\nanother:\n{1}",
-                        thisQueueConfig, thatQueueConfig));
-            }
-        }
-    }
-
-    private void checkTopicConfigCompatible(final Config config) {
-        Set<String> topicConfigNames = new HashSet<String>(topicConfigs.keySet());
-        topicConfigNames.addAll(config.topicConfigs.keySet());
-        for (final String name : topicConfigNames) {
-            final TopicConfig thisTopicConfig = lookupByPattern(topicConfigs, name);
-            final TopicConfig thatTopicConfig = lookupByPattern(config.topicConfigs, name);
-            if (thisTopicConfig != null && thatTopicConfig != null &&
-                    !thisTopicConfig.equals(thatTopicConfig)) {
-                throw new HazelcastException(format("Incompatible topic config this:\n{0}\nanother:\n{1}",
-                        thisTopicConfig, thatTopicConfig));
-            }
-        }
-    }
-
-    public void readData(ObjectDataInput in) throws IOException {
-        groupConfig = new GroupConfig();
-        groupConfig.readData(in);
-        boolean[] b1 = ByteUtil.fromByte(in.readByte());
-        checkCompatibility = b1[0];
-        boolean[] b2 = ByteUtil.fromByte(in.readByte());
-        boolean hasMapConfigs = b2[0];
-        boolean hasExecutors = b2[1];
-        boolean hasTopicConfigs = b2[2];
-        boolean hasQueueConfigs = b2[3];
-        boolean hasSemaphoreConfigs = b2[4];
-        boolean hasProperties = b2[5];
-        networkConfig = new NetworkConfig();
-        networkConfig.readData(in);
-        if (hasMapConfigs) {
-            int size = in.readInt();
-            mapConfigs = new HashMap<String, MapConfig>(size);
-            for (int i = 0; i < size; i++) {
-                final MapConfig mapConfig = new MapConfig();
-                mapConfig.readData(in);
-                mapConfigs.put(mapConfig.getName(), mapConfig);
-            }
-        }
-        if (hasExecutors) {
-            int size = in.readInt();
-            executorConfigs = new HashMap<String, ExecutorConfig>(size);
-            for (int i = 0; i < size; i++) {
-                final ExecutorConfig executorConfig = new ExecutorConfig();
-                executorConfig.readData(in);
-                executorConfigs.put(executorConfig.getName(), executorConfig);
-            }
-        }
-        if (hasTopicConfigs) {
-            int size = in.readInt();
-            topicConfigs = new HashMap<String, TopicConfig>(size);
-            for (int i = 0; i < size; i++) {
-                final TopicConfig topicConfig = new TopicConfig();
-                topicConfig.readData(in);
-                topicConfigs.put(topicConfig.getName(), topicConfig);
-            }
-        }
-        if (hasQueueConfigs) {
-            int size = in.readInt();
-            queueConfigs = new HashMap<String, QueueConfig>(size);
-            for (int i = 0; i < size; i++) {
-                final QueueConfig queueConfig = new QueueConfig();
-                queueConfig.readData(in);
-                queueConfigs.put(queueConfig.getName(), queueConfig);
-            }
-        }
-        if (hasSemaphoreConfigs) {
-            int size = in.readInt();
-            semaphoreConfigs = new HashMap<String, SemaphoreConfig>(size);
-            for (int i = 0; i < size; i++) {
-                final SemaphoreConfig semaphoreConfig = new SemaphoreConfig();
-                semaphoreConfig.readData(in);
-                semaphoreConfigs.put(semaphoreConfig.getName(), semaphoreConfig);
-            }
-        }
-        if (hasProperties) {
-            int size = in.readInt();
-            properties = new Properties();
-            for (int i = 0; i < size; i++) {
-                final String name = in.readUTF();
-                final String value = in.readUTF();
-                properties.put(name, value);
-            }
-        }
-    }
-
-    public void writeData(ObjectDataOutput out) throws IOException {
-        getGroupConfig().writeData(out);
-        boolean hasMapConfigs = mapConfigs != null && !mapConfigs.isEmpty();
-        boolean hasExecutors = executorConfigs != null && !executorConfigs.isEmpty();
-        boolean hasTopicConfigs = topicConfigs != null && !topicConfigs.isEmpty();
-        boolean hasQueueConfigs = queueConfigs != null && !queueConfigs.isEmpty();
-        boolean hasSemaphoreConfigs = semaphoreConfigs != null && !semaphoreConfigs.isEmpty();
-        boolean hasProperties = properties != null && !properties.isEmpty();
-        out.writeByte(ByteUtil.toByte(checkCompatibility));
-        out.writeByte(ByteUtil.toByte(
-                hasMapConfigs,
-                hasExecutors,
-                hasTopicConfigs,
-                hasQueueConfigs,
-                hasSemaphoreConfigs,
-                hasProperties));
-        networkConfig.writeData(out);
-        if (hasMapConfigs) {
-            out.writeInt(mapConfigs.size());
-            for (final Entry<String, MapConfig> entry : mapConfigs.entrySet()) {
-                final String name = entry.getKey();
-                final MapConfig mapConfig = entry.getValue();
-                mapConfig.setName(name);
-                mapConfig.writeData(out);
-            }
-        }
-        if (hasExecutors) {
-            out.writeInt(executorConfigs.size());
-            for (final Entry<String, ExecutorConfig> entry : executorConfigs.entrySet()) {
-                final String name = entry.getKey();
-                final ExecutorConfig executorConfig = entry.getValue();
-                executorConfig.setName(name);
-                executorConfig.writeData(out);
-            }
-        }
-        if (hasTopicConfigs) {
-            out.writeInt(topicConfigs.size());
-            for (final Entry<String, TopicConfig> entry : topicConfigs.entrySet()) {
-                final String name = entry.getKey();
-                final TopicConfig topicConfig = entry.getValue();
-                topicConfig.setName(name);
-                topicConfig.writeData(out);
-            }
-        }
-        if (hasQueueConfigs) {
-            out.writeInt(queueConfigs.size());
-            for (final Entry<String, QueueConfig> entry : queueConfigs.entrySet()) {
-                final String name = entry.getKey();
-                final QueueConfig queueConfig = entry.getValue();
-                queueConfig.setName(name);
-                queueConfig.writeData(out);
-            }
-        }
-        if (hasSemaphoreConfigs) {
-            out.writeInt(semaphoreConfigs.size());
-            for (final Entry<String, SemaphoreConfig> entry : semaphoreConfigs.entrySet()) {
-                final String name = entry.getKey();
-                final SemaphoreConfig semaphoreConfig = entry.getValue();
-                semaphoreConfig.setName(name);
-                semaphoreConfig.writeData(out);
-            }
-        }
-        if (hasProperties) {
-            out.writeInt(properties.size());
-            for (final Entry<Object, Object> entry : properties.entrySet()) {
-                final String key = (String) entry.getKey();
-                final String value = (String) entry.getValue();
-                out.writeUTF(key);
-                out.writeUTF(value);
-            }
-        }
-    }
-
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         sb.append("Config");
         sb.append("{groupConfig=").append(groupConfig);
-        sb.append(", checkCompatibility=").append(checkCompatibility);
         sb.append(", properties=").append(properties);
         sb.append(", networkConfig=").append(networkConfig);
         sb.append(", mapConfigs=").append(mapConfigs);

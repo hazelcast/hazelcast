@@ -36,15 +36,17 @@ public class MapIndexConfig {
         return attribute;
     }
 
-    public void setAttribute(String attribute) {
+    public MapIndexConfig setAttribute(String attribute) {
         this.attribute = attribute;
+        return this;
     }
 
     public boolean isOrdered() {
         return ordered;
     }
 
-    public void setOrdered(boolean ordered) {
+    public MapIndexConfig setOrdered(boolean ordered) {
         this.ordered = ordered;
+        return this;
     }
 }

@@ -46,7 +46,7 @@ public class LockOperation extends BaseLockOperation implements WaitSupport, Bac
     }
 
     public boolean shouldBackup() {
-        return response;
+        return Boolean.TRUE.equals(response);
     }
 
     public final long getWaitTimeoutMillis() {

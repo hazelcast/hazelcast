@@ -14,23 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cluster;
+package com.hazelcast.concurrent.lock;
 
-import com.hazelcast.nio.Address;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.ObjectNamespace;
 
-import java.util.concurrent.atomic.AtomicBoolean;
+public class GetLockCountOperation extends BaseLockOperation {
 
-public interface Joiner {
+    public GetLockCountOperation() {
+    }
 
-    void join(AtomicBoolean joined);
+    public GetLockCountOperation(ObjectNamespace namespace, Data key) {
+        super(namespace, key, -1);
+    }
 
-    void searchForOtherClusters();
-
-    long getStartTime();
-
-    void setTargetAddress(Address targetAddress);
-
-    void reset();
-
-    String getType();
+    public void run() throws Exception {
+        response = getLockStore().getLockCount(key);
+    }
 }

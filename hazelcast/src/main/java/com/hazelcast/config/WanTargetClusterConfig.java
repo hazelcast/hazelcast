@@ -48,8 +48,9 @@ public class WanTargetClusterConfig {
         return endpoints;
     }
 
-    public void setEndpoints(List<String> list) {
+    public WanTargetClusterConfig setEndpoints(List<String> list) {
         endpoints = list;
+        return this;
     }
 
     public WanTargetClusterConfig addEndpoint(String address) {

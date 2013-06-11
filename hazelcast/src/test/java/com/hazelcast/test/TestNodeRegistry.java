@@ -266,6 +266,11 @@ final class TestNodeRegistry {
             public void searchForOtherClusters() {
             }
 
+            @Override
+            public String getType() {
+                return "mock";
+            }
+
             public String toString() {
                 return "MockJoiner";
             }

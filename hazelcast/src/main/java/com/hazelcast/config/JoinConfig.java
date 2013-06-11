@@ -16,13 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
-
-import java.io.IOException;
-
-public class JoinConfig implements DataSerializable {
+public class JoinConfig {
 
     private MulticastConfig multicastConfig = new MulticastConfig();
 
@@ -73,18 +67,6 @@ public class JoinConfig implements DataSerializable {
     public JoinConfig setAwsConfig(final AwsConfig awsConfig) {
         this.awsConfig = awsConfig;
         return this;
-    }
-
-    public void writeData(ObjectDataOutput out) throws IOException {
-        multicastConfig.writeData(out);
-        tcpIpConfig.writeData(out);
-    }
-
-    public void readData(ObjectDataInput in) throws IOException {
-        multicastConfig = new MulticastConfig();
-        multicastConfig.readData(in);
-        tcpIpConfig = new TcpIpConfig();
-        tcpIpConfig.readData(in);
     }
 
     @Override

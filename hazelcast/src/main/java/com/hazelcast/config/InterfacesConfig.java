@@ -18,7 +18,6 @@ package com.hazelcast.config;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.util.ByteUtil;
 
 import java.io.IOException;
@@ -27,7 +26,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-public class InterfacesConfig implements DataSerializable {
+public class InterfacesConfig {
 
     private boolean enabled = false;
 
@@ -83,30 +82,6 @@ public class InterfacesConfig implements DataSerializable {
         clear();
         this.interfaceSet.addAll(interfaces);
         return this;
-    }
-
-    public void writeData(ObjectDataOutput out) throws IOException {
-        boolean hasInterfaceSet = interfaceSet != null && !interfaceSet.isEmpty();
-        out.writeByte(ByteUtil.toByte(enabled, hasInterfaceSet));
-        if (hasInterfaceSet) {
-            out.writeInt(interfaceSet.size());
-            for (final String iface : interfaceSet) {
-                out.writeUTF(iface);
-            }
-        }
-    }
-
-    public void readData(ObjectDataInput in) throws IOException {
-        boolean b[] = ByteUtil.fromByte(in.readByte());
-        enabled = b[0];
-        boolean hasInterfaceSet = b[1];
-        if (hasInterfaceSet) {
-            interfaceSet.clear();
-            int size = in.readInt();
-            for (int i = 0; i < size; i++) {
-                interfaceSet.add(in.readUTF());
-            }
-        }
     }
 
     @Override

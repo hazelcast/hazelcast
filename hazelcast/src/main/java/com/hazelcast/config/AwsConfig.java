@@ -17,8 +17,8 @@
 package com.hazelcast.config;
 
 public class AwsConfig {
-    private boolean enabled = false;
 
+    private boolean enabled = false;
     private String accessKey;
     private String secretKey;
     private String region;
@@ -28,12 +28,14 @@ public class AwsConfig {
     private String hostHeader = "ec2.amazonaws.com";
     private int connectionTimeoutSeconds = 5;
 
-    public void setSecurityGroupName(String securityGroupName) {
+    public AwsConfig setSecurityGroupName(String securityGroupName) {
         this.securityGroupName = securityGroupName;
+        return this;
     }
 
-    public void setEnabled(boolean enabled) {
+    public AwsConfig setEnabled(boolean enabled) {
         this.enabled = enabled;
+        return this;
     }
 
     public String getAccessKey() {
@@ -58,16 +60,18 @@ public class AwsConfig {
         return region;
     }
 
-    public void setRegion(String region) {
+    public AwsConfig setRegion(String region) {
         this.region = region;
+        return this;
     }
 
     public String getHostHeader() {
         return hostHeader;
     }
 
-    public void setHostHeader(String hostHeader) {
+    public AwsConfig setHostHeader(String hostHeader) {
         this.hostHeader = hostHeader;
+        return this;
     }
 
     public boolean isEnabled() {
@@ -78,12 +82,14 @@ public class AwsConfig {
         return securityGroupName;
     }
 
-    public void setTagKey(String tagKey) {
+    public AwsConfig setTagKey(String tagKey) {
         this.tagKey = tagKey;
+        return this;
     }
 
-    public void setTagValue(String tagValue) {
+    public AwsConfig setTagValue(String tagValue) {
         this.tagValue = tagValue;
+        return this;
     }
 
     public String getTagKey() {

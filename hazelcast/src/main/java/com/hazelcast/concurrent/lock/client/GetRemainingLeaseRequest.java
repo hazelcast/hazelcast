@@ -17,15 +17,13 @@
 package com.hazelcast.concurrent.lock.client;
 
 import com.hazelcast.client.KeyBasedClientRequest;
-import com.hazelcast.concurrent.lock.LockService;
-import com.hazelcast.concurrent.lock.UnlockOperation;
+import com.hazelcast.concurrent.lock.*;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
@@ -33,56 +31,45 @@ import java.io.IOException;
 /**
  * @mdogan 5/3/13
  */
-public abstract class AbstractUnlockRequest extends KeyBasedClientRequest implements Portable  {
+public final class GetRemainingLeaseRequest extends KeyBasedClientRequest implements Portable {
 
     private Data key;
 
-    private int threadId;
-
-    private boolean force;
-
-    public AbstractUnlockRequest() {
+    public GetRemainingLeaseRequest() {
     }
 
-    public AbstractUnlockRequest(Data key, int threadId) {
+    public GetRemainingLeaseRequest(Data key) {
         this.key = key;
-        this.threadId = threadId;
     }
 
-    protected AbstractUnlockRequest(Data key, int threadId, boolean force) {
-        this.key = key;
-        this.threadId = threadId;
-        this.force = force;
+    protected final Operation prepareOperation() {
+        return new GetRemainingLeaseTimeOperation(new InternalLockNamespace(), key);
     }
 
     protected final Object getKey() {
         return key;
     }
 
-    protected final Operation prepareOperation() {
-        return new UnlockOperation(getNamespace(), key, threadId, force);
-    }
-
-    protected abstract ObjectNamespace getNamespace();
-
     public final String getServiceName() {
         return LockService.SERVICE_NAME;
     }
 
+    @Override
+    public int getFactoryId() {
+        return LockPortableHook.FACTORY_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return LockPortableHook.GET_REMAINING_LEASE;
+    }
+
     public void writePortable(PortableWriter writer) throws IOException {
-
-        writer.writeInt("tid", threadId);
-        writer.writeBoolean("force", force);
-
         ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
     }
 
     public void readPortable(PortableReader reader) throws IOException {
-
-        threadId = reader.readInt("tid");
-        force = reader.readBoolean("force");
-
         ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);

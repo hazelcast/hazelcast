@@ -35,8 +35,9 @@ public class WanReplicationRef {
         return mergePolicy;
     }
 
-    public void setMergePolicy(String mergePolicy) {
+    public WanReplicationRef setMergePolicy(String mergePolicy) {
         this.mergePolicy = mergePolicy;
+        return this;
     }
 
     @Override

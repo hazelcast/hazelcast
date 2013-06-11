@@ -16,13 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
-
-import java.io.IOException;
-
-public final class GroupConfig implements DataSerializable {
+public final class GroupConfig {
 
     public static final String DEFAULT_GROUP_PASSWORD = "dev-pass";
     public static final String DEFAULT_GROUP_NAME = "dev";
@@ -104,15 +98,5 @@ public final class GroupConfig implements DataSerializable {
         }
         builder.append("]");
         return builder.toString();
-    }
-
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
-        out.writeUTF(password);
-    }
-
-    public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
-        password = in.readUTF();
     }
 }

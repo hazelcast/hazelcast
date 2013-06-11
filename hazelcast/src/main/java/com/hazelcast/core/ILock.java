@@ -16,8 +16,6 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.monitor.LocalLockStats;
-
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 
@@ -29,10 +27,6 @@ public interface ILock extends Lock, DistributedObject {
      * @return lock object.
      */
     Object getKey();
-
-    LocalLockStats getLocalLockStats();
-
-    boolean isLocked();
 
     /**
      * Acquires the lock for the specified lease time.
@@ -55,4 +49,19 @@ public interface ILock extends Lock, DistributedObject {
     void forceUnlock();
 
     ICondition newCondition(String name);
+
+    boolean isLocked();
+
+    boolean isLockedByCurrentThread();
+
+    int getLockCount();
+
+    /**
+     * Returns remaining lease time in milliseconds.
+     * If the lock is not locked then -1 will be returned.
+     *
+     * @return remaining lease time in milliseconds.
+     */
+    long getRemainingLeaseTime();
+
 }

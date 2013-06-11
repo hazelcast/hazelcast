@@ -16,16 +16,10 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.core.ItemListener;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
-
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public final class QueueConfig implements DataSerializable {
+public final class QueueConfig {
 
     public final static int DEFAULT_MAX_SIZE = 0;
     public final static int DEFAULT_SYNC_BACKUP_COUNT = 1;
@@ -135,55 +129,5 @@ public final class QueueConfig implements DataSerializable {
     public QueueConfig setItemListenerConfigs(List<ItemListenerConfig> listenerConfigs) {
         this.listenerConfigs = listenerConfigs;
         return this;
-    }
-
-    public boolean isCompatible(final QueueConfig queueConfig) {
-        if (queueConfig == null) return false;
-        return (name != null ? name.equals(queueConfig.name) : queueConfig.name == null);
-    }
-
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
-        out.writeInt(backupCount);
-        out.writeInt(asyncBackupCount);
-        out.writeInt(maxSize);
-        if (queueStoreConfig != null){
-            out.writeBoolean(true);
-            queueStoreConfig.writeData(out);
-        } else {
-            out.writeBoolean(false);
-        }
-
-        out.writeInt(listenerConfigs == null ? -1 : listenerConfigs.size());
-        if (listenerConfigs != null){
-            for (ItemListenerConfig listenerConfig : listenerConfigs) {
-                out.writeUTF(listenerConfig.getClassName());
-                out.writeBoolean(listenerConfig.isIncludeValue());
-                out.writeObject(listenerConfig.getImplementation());
-            }
-        }
-    }
-
-    public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
-        backupCount = in.readInt();
-        asyncBackupCount = in.readInt();
-        maxSize = in.readInt();
-        if (in.readBoolean()){
-            queueStoreConfig = new QueueStoreConfig();
-            queueStoreConfig.readData(in);
-        }
-        int size = in.readInt();
-        if (size != -1){
-            listenerConfigs = new ArrayList<ItemListenerConfig>(size);
-            for (int i=0; i<size; i++){
-                final String className = in.readUTF();
-                final boolean include = in.readBoolean();
-                final ItemListener implementation = in.readObject();
-                final ItemListenerConfig itemListenerConfig = new ItemListenerConfig(className, include);
-                itemListenerConfig.setImplementation(implementation);
-                listenerConfigs.add(itemListenerConfig);
-            }
-        }
     }
 }

@@ -83,13 +83,6 @@
             get evicted.
         -->
         <eviction-percentage>25</eviction-percentage>
-       <!--
-            Specifies when eviction will be started. Default value is 3. 
-           So every 3 (+up to 5 for performance reasons) seconds 
-           eviction will be kicked of. Eviction is costly operation, setting 
-           this number too low, can decrease the performance. 
-       -->
-      <eviction-delay-seconds>3</eviction-delay-seconds>
     </map>
 </hazelcast>
 ]]></programlisting>

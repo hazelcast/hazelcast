@@ -58,16 +58,19 @@ public class LoginModuleConfig {
         return usage;
     }
 
-    public void setClassName(String className) {
+    public LoginModuleConfig setClassName(String className) {
         this.className = className;
+        return this;
     }
 
-    public void setUsage(LoginModuleUsage usage) {
+    public LoginModuleConfig setUsage(LoginModuleUsage usage) {
         this.usage = usage;
+        return this;
     }
 
-    public void setProperties(Properties properties) {
+    public LoginModuleConfig setProperties(Properties properties) {
         this.properties = properties;
+        return this;
     }
 
     @Override
