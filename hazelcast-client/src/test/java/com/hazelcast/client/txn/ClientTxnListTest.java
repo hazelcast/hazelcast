@@ -17,10 +17,7 @@
 package com.hazelcast.client.txn;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MultiMap;
-import com.hazelcast.core.TransactionalMultiMap;
+import com.hazelcast.core.*;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.SerialTest;
 import com.hazelcast.transaction.TransactionContext;
@@ -35,11 +32,11 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @ali 6/10/13
+ * @ali 6/11/13
  */
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(SerialTest.class)
-public class ClientTxnMultiMapTest {
+public class ClientTxnListTest {
 
     static final String name = "test";
     static HazelcastInstance hz;
@@ -60,20 +57,22 @@ public class ClientTxnMultiMapTest {
     }
 
     @Test
-    public void testPutGetRemove() throws Exception {
-        final MultiMap mm = hz.getMultiMap(name);
-        mm.put("key1", "value1");
+    public void testAddRemove() throws Exception {
+        final IList l = hz.getList(name);
+        l.add("item1");
 
         final TransactionContext context = hz.newTransactionContext();
         context.beginTransaction();
-        final TransactionalMultiMap multiMap = context.getMultiMap(name);
-        assertFalse(multiMap.put("key1", "value1"));
-        assertTrue(multiMap.put("key1", "value2"));
-        assertEquals(2, multiMap.size());
+        final TransactionalList<Object> list = context.getList(name);
+        assertTrue(list.add("item2"));
+        assertEquals(2, list.size());
+        assertEquals(1, l.size());
+        assertFalse(list.remove("item3"));
+        assertTrue(list.remove("item1"));
 
         context.commitTransaction();
 
-        assertEquals(2, mm.size());
+        assertEquals(1, l.size());
 
     }
 }

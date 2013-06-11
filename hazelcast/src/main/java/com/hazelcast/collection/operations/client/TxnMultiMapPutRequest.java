@@ -49,7 +49,7 @@ public class TxnMultiMapPutRequest extends TxnMultiMapRequest {
     }
 
     public int getClassId() {
-        return CollectionPortableHook.TXN_PUT;
+        return CollectionPortableHook.TXN_MM_PUT;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {

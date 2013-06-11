@@ -3,12 +3,12 @@ package com.hazelcast.client.txn;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.connection.Connection;
 import com.hazelcast.client.spi.ClientProxy;
-import com.hazelcast.client.txn.proxy.ClientTxnMapProxy;
-import com.hazelcast.client.txn.proxy.ClientTxnMultiMapProxy;
-import com.hazelcast.client.txn.proxy.ClientTxnQueueProxy;
+import com.hazelcast.client.txn.proxy.*;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionProxyType;
 import com.hazelcast.collection.CollectionService;
+import com.hazelcast.collection.list.ObjectListProxy;
+import com.hazelcast.collection.set.ObjectSetProxy;
 import com.hazelcast.core.*;
 import com.hazelcast.map.MapService;
 import com.hazelcast.queue.QueueService;
@@ -68,11 +68,11 @@ public class TransactionContextProxy implements TransactionContext {
     }
 
     public <E> TransactionalList<E> getList(String name) {
-        return null;
+        return getTransactionalObject(CollectionService.SERVICE_NAME, new CollectionProxyId(ObjectListProxy.COLLECTION_LIST_NAME, name, CollectionProxyType.LIST));
     }
 
     public <E> TransactionalSet<E> getSet(String name) {
-        return null;
+        return getTransactionalObject(CollectionService.SERVICE_NAME, new CollectionProxyId(ObjectSetProxy.COLLECTION_SET_NAME, name, CollectionProxyType.SET));
     }
 
     public <T extends TransactionalObject> T getTransactionalObject(String serviceName, Object id) {
@@ -91,6 +91,10 @@ public class TransactionContextProxy implements TransactionContext {
                 CollectionProxyId proxyId = (CollectionProxyId)id;
                 if (proxyId.getType().equals(CollectionProxyType.MULTI_MAP)){
                     obj = new ClientTxnMultiMapProxy(proxyId, this);
+                } else if (proxyId.getType().equals(CollectionProxyType.LIST)){
+                    obj = new ClientTxnListProxy(proxyId, this);
+                } else if (proxyId.getType().equals(CollectionProxyType.SET)){
+                    obj = new ClientTxnSetProxy(proxyId, this);
                 }
             } else {
                 throw new IllegalArgumentException("Service[" + serviceName + "] is not transactional!");

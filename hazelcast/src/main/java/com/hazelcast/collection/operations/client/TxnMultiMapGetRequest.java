@@ -57,7 +57,7 @@ public class TxnMultiMapGetRequest extends TxnMultiMapRequest {
     }
 
     public int getClassId() {
-        return CollectionPortableHook.TXN_GET;
+        return CollectionPortableHook.TXN_MM_GET;
     }
 
     private Collection<Data> createCollection(int size){

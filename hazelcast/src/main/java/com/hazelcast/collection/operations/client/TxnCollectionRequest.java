@@ -16,46 +16,56 @@
 
 package com.hazelcast.collection.operations.client;
 
+import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.collection.CollectionPortableHook;
+import com.hazelcast.collection.CollectionService;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.transaction.TransactionContext;
 
 import java.io.IOException;
 
 /**
- * @ali 6/10/13
+ * @ali 6/11/13
  */
-public class TxnMultiMapValueCountRequest extends TxnMultiMapRequest {
+public abstract class TxnCollectionRequest extends CallableClientRequest implements Portable {
 
-    Data key;
+    String name;
+    Data data;
 
-    public TxnMultiMapValueCountRequest() {
+    public TxnCollectionRequest() {
     }
 
-    public TxnMultiMapValueCountRequest(String name, Data key) {
-        super(name);
-        this.key = key;
+    public TxnCollectionRequest(String name) {
+        this.name = name;
     }
 
-    public Object call() throws Exception {
-        final TransactionContext context = getEndpoint().getTransactionContext();
-        return context.getMultiMap(name).valueCount(toObject(key));
+    public TxnCollectionRequest(String name, Data data) {
+        this(name);
+        this.data = data;
     }
 
-    public int getClassId() {
-        return CollectionPortableHook.TXN_MM_VALUE_COUNT;
+    public String getServiceName() {
+        return CollectionService.SERVICE_NAME;
+    }
+
+    public int getFactoryId() {
+        return CollectionPortableHook.F_ID;
+    }
+
+    Object toObject(Data data){
+        return getClientEngine().toObject(data);
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
-        super.writePortable(writer);
-        key.writeData(writer.getRawDataOutput());
+        writer.writeUTF("n",name);
+        IOUtil.writeNullableData(writer.getRawDataOutput(), data);
     }
 
     public void readPortable(PortableReader reader) throws IOException {
-        super.readPortable(reader);
-        key = new Data();
-        key.readData(reader.getRawDataInput());
+        name = reader.readUTF("n");
+        data = IOUtil.readNullableData(reader.getRawDataInput());
     }
 }

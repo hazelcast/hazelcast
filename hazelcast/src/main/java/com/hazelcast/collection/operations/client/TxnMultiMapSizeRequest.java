@@ -37,6 +37,6 @@ public class TxnMultiMapSizeRequest extends TxnMultiMapRequest {
     }
 
     public int getClassId() {
-        return CollectionPortableHook.TXN_SIZE;
+        return CollectionPortableHook.TXN_MM_SIZE;
     }
 }

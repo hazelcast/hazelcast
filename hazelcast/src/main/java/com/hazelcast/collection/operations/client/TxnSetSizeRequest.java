@@ -17,45 +17,27 @@
 package com.hazelcast.collection.operations.client;
 
 import com.hazelcast.collection.CollectionPortableHook;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.transaction.TransactionContext;
 
-import java.io.IOException;
-
 /**
- * @ali 6/10/13
+ * @ali 6/11/13
  */
-public class TxnMultiMapValueCountRequest extends TxnMultiMapRequest {
+public class TxnSetSizeRequest extends TxnCollectionRequest {
 
-    Data key;
-
-    public TxnMultiMapValueCountRequest() {
+    public TxnSetSizeRequest() {
     }
 
-    public TxnMultiMapValueCountRequest(String name, Data key) {
+    public TxnSetSizeRequest(String name) {
         super(name);
-        this.key = key;
     }
 
     public Object call() throws Exception {
         final TransactionContext context = getEndpoint().getTransactionContext();
-        return context.getMultiMap(name).valueCount(toObject(key));
+        return context.getSet(name).size();
     }
 
+    @Override
     public int getClassId() {
-        return CollectionPortableHook.TXN_MM_VALUE_COUNT;
-    }
-
-    public void writePortable(PortableWriter writer) throws IOException {
-        super.writePortable(writer);
-        key.writeData(writer.getRawDataOutput());
-    }
-
-    public void readPortable(PortableReader reader) throws IOException {
-        super.readPortable(reader);
-        key = new Data();
-        key.readData(reader.getRawDataInput());
+        return CollectionPortableHook.TXN_SET_SIZE;
     }
 }
