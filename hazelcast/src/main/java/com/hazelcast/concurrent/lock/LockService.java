@@ -110,12 +110,12 @@ public class LockService implements ManagedService, RemoteService, MembershipAwa
         }
     };
 
-    public void scheduleEviction(ObjectNamespace namespace, Data key, long delay) {
+    void scheduleEviction(ObjectNamespace namespace, Data key, long delay) {
         EntryTaskScheduler scheduler = ConcurrencyUtil.getOrPutSynchronized(evictionProcessors, namespace, evictionProcessors, schedulerConstructor);
         scheduler.schedule(delay, key, null);
     }
 
-    public void cancelEviction(ObjectNamespace namespace, Data key) {
+    void cancelEviction(ObjectNamespace namespace, Data key) {
         EntryTaskScheduler scheduler = ConcurrencyUtil.getOrPutSynchronized(evictionProcessors, namespace, evictionProcessors, schedulerConstructor);
         scheduler.cancel(key);
     }

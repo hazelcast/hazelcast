@@ -39,7 +39,7 @@ abstract class BaseLockOperation extends AbstractOperation implements PartitionA
 
     protected long timeout = -1;
 
-    protected transient boolean response;
+    protected transient Object response;
 
     private transient boolean asyncBackup = false;
 

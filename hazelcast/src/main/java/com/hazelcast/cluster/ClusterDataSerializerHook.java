@@ -35,6 +35,7 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
     public static final int ADDRESS = Address.ID;
     public static final int MEMBER = 2;
     public static final int HEARTBEAT = 3;
+    public static final int CONFIG_CHECK = 4;
 
     // client
     public static final int ADD_MS_LISTENER = 7;
@@ -68,6 +69,11 @@ public final class ClusterDataSerializerHook implements DataSerializerHook {
         ctors[HEARTBEAT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new HeartbeatOperation();
+            }
+        };
+        ctors[CONFIG_CHECK] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ConfigCheck();
             }
         };
 

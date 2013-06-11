@@ -21,8 +21,8 @@ import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
-import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.Packet;
 
 import java.io.EOFException;
@@ -35,9 +35,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
-import java.util.zip.DataFormatException;
-import java.util.zip.Deflater;
-import java.util.zip.Inflater;
 
 public class MulticastService implements Runnable {
 
@@ -48,16 +45,13 @@ public class MulticastService implements Runnable {
     private final DatagramPacket datagramPacketSend;
     private final DatagramPacket datagramPacketReceive;
     private final Object sendLock = new Object();
-    private volatile boolean running = true;
     private final CountDownLatch stopLatch = new CountDownLatch(1);
-    private List<MulticastListener> listeners = new CopyOnWriteArrayList<MulticastListener>();
+    private final List<MulticastListener> listeners = new CopyOnWriteArrayList<MulticastListener>();
     private final Node node;
 
-    private final Deflater deflater = new Deflater(Deflater.BEST_SPEED);
-    private final Inflater inflater = new Inflater();
-
     private final BufferObjectDataOutput sendOutput;
-    private final BufferObjectDataOutput receiveOutput;
+
+    private volatile boolean running = true;
 
     public MulticastService(Node node, MulticastSocket multicastSocket) throws Exception {
         this.node = node;
@@ -65,12 +59,10 @@ public class MulticastService implements Runnable {
         Config config = node.getConfig();
         this.multicastSocket = multicastSocket;
 
-        sendOutput = node.getSerializationService().createObjectDataOutput(DATAGRAM_BUFFER_SIZE);
-        receiveOutput = node.getSerializationService().createObjectDataOutput(DATAGRAM_BUFFER_SIZE);
-
-        this.datagramPacketReceive = new DatagramPacket(new byte[DATAGRAM_BUFFER_SIZE], DATAGRAM_BUFFER_SIZE);
+        sendOutput = node.getSerializationService().createObjectDataOutput(1024);
+        datagramPacketReceive = new DatagramPacket(new byte[DATAGRAM_BUFFER_SIZE], DATAGRAM_BUFFER_SIZE);
         final MulticastConfig multicastConfig = config.getNetworkConfig().getJoin().getMulticastConfig();
-        this.datagramPacketSend = new DatagramPacket(new byte[0], 0, InetAddress
+        datagramPacketSend = new DatagramPacket(new byte[0], 0, InetAddress
                 .getByName(multicastConfig.getMulticastGroup()), multicastConfig.getMulticastPort());
         running = true;
     }
@@ -105,7 +97,6 @@ public class MulticastService implements Runnable {
         running = false;
         try {
             sendOutput.close();
-            receiveOutput.close();
             datagramPacketReceive.setData(new byte[0]);
             datagramPacketSend.setData(new byte[0]);
         } catch (Throwable ignored) {
@@ -140,31 +131,32 @@ public class MulticastService implements Runnable {
     }
 
     private JoinMessage receive() {
-        final BufferObjectDataOutput out = receiveOutput;
         try {
-            out.reset();
-            inflater.reset();
             try {
                 multicastSocket.receive(datagramPacketReceive);
             } catch (IOException ignore) {
                 return null;
             }
             try {
-                inflater.setInput(datagramPacketReceive.getData(),
-                        datagramPacketReceive.getOffset(), datagramPacketReceive.getLength());
-                final int count = inflater.inflate(out.getBuffer());
-                out.position(count);
+                final byte[] data = datagramPacketReceive.getData();
+                final int offset = datagramPacketReceive.getOffset();
+                final int length = datagramPacketReceive.getLength();
+                final BufferObjectDataInput input = node.getSerializationService().createObjectDataInput(data);
+                input.position(offset);
 
-                ObjectDataInput input = node.getSerializationService().createObjectDataInput(out.toByteArray());
                 final byte packetVersion = input.readByte();
                 if (packetVersion != Packet.PACKET_VERSION) {
                     logger.log(Level.WARNING, "Received a JoinRequest with different packet version: "
                             + packetVersion);
                     return null;
                 }
-                return input.readObject();
+                try {
+                    return input.readObject();
+                } finally {
+                    input.close();
+                }
             } catch (Exception e) {
-                if (e instanceof EOFException || e instanceof DataFormatException) {
+                if (e instanceof EOFException) {
                     logger.log(Level.WARNING, "Received data format is invalid." +
                             " (An old version of Hazelcast may be running here.)", e);
                 } else {
@@ -182,17 +174,11 @@ public class MulticastService implements Runnable {
         final BufferObjectDataOutput out = sendOutput;
         synchronized (sendLock) {
             try {
-                out.reset();
-                deflater.reset();
                 out.writeByte(Packet.PACKET_VERSION);
                 out.writeObject(joinMessage);
-                deflater.setInput(out.toByteArray());
-                out.reset();
-                deflater.finish();
-                final int count = deflater.deflate(out.getBuffer());
-                out.position(count);
                 datagramPacketSend.setData(out.toByteArray());
                 multicastSocket.send(datagramPacketSend);
+                out.reset();
             } catch (IOException e) {
                 logger.log(Level.WARNING, "You probably have too long Hazelcast configuration!", e);
             }

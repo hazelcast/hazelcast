@@ -65,6 +65,16 @@ public final class LockStoreProxy implements LockStore {
     }
 
     @Override
+    public int getLockCount(Data key) {
+        return getLockStore().getLockCount(key);
+    }
+
+    @Override
+    public long getRemainingLeaseTime(Data key) {
+        return getLockStore().getRemainingLeaseTime(key);
+    }
+
+    @Override
     public boolean canAcquireLock(Data key, String caller, int threadId) {
         return getLockStore().canAcquireLock(key, caller, threadId);
     }

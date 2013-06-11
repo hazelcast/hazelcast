@@ -99,8 +99,9 @@ public final class SSLConfig {
         return properties;
     }
 
-    public void setProperties(Properties properties) {
+    public SSLConfig setProperties(Properties properties) {
         this.properties = properties;
+        return this;
     }
 
     @Override

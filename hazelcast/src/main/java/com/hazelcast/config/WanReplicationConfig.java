@@ -35,8 +35,9 @@ public class WanReplicationConfig {
         return this;
     }
 
-    public void setTargetClusterConfigs(List<WanTargetClusterConfig> list) {
+    public WanReplicationConfig setTargetClusterConfigs(List<WanTargetClusterConfig> list) {
         targetClusterConfigs = list;
+        return this;
     }
 
     public String getName() {

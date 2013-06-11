@@ -71,6 +71,8 @@ public class ClusterQueueTest extends HazelcastTestSupport {
         final HazelcastInstance[] instances = factory.newInstances(config);
         final HazelcastInstance h1 = instances[0];
         final HazelcastInstance h2 = instances[1];
+        warmUpPartitions(h1, h2);
+
         final IQueue q1 = h1.getQueue("default");
         final IQueue q2 = h2.getQueue("default");
         new Thread(new Runnable() {
@@ -83,19 +85,19 @@ public class ClusterQueueTest extends HazelcastTestSupport {
                 }
             }
         }).start();
-        final CountDownLatch shutdownLatch = new CountDownLatch(1);
-        new Thread(new Runnable() {
+        final Thread thread = new Thread(new Runnable() {
             public void run() {
                 try {
-                    Thread.sleep(3000);
+                    Thread.sleep(5000);
                     h2.getLifecycleService().kill();
-                    shutdownLatch.countDown();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
-        }).start();
-        assertTrue(shutdownLatch.await(100, TimeUnit.SECONDS));
+        });
+        thread.start();
+        thread.join(30 * 1000);
+
         q1.offer("item");
         assertEquals(1, q1.size());
         assertEquals("item", q1.poll());

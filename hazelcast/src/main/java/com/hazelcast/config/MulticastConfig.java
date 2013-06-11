@@ -16,15 +16,10 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
-
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-public class MulticastConfig implements DataSerializable {
+public class MulticastConfig {
 
     public final static boolean DEFAULT_ENABLED = true;
     public final static String DEFAULT_MULTICAST_GROUP = "224.2.2.3";
@@ -126,22 +121,6 @@ public class MulticastConfig implements DataSerializable {
     public MulticastConfig setMulticastTimeToLive(final int multicastTimeToLive) {
         this.multicastTimeToLive = multicastTimeToLive;
         return this;
-    }
-
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeBoolean(enabled);
-        out.writeUTF(multicastGroup);
-        out.writeInt(multicastPort);
-        out.writeInt(multicastTimeoutSeconds);
-        out.writeInt(multicastTimeToLive);
-    }
-
-    public void readData(ObjectDataInput in) throws IOException {
-        enabled = in.readBoolean();
-        multicastGroup = in.readUTF();
-        multicastPort = in.readInt();
-        multicastTimeoutSeconds = in.readInt();
-        multicastTimeToLive = in.readInt();
     }
 
     @Override

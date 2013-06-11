@@ -49,7 +49,6 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
 
     public void start() {
         getInitialPartitions();
-        System.err.println("partitionCount = " + partitionCount);
         client.getClientExecutionService().scheduleWithFixedDelay(new Runnable() {
             public void run() {
                 final ClientClusterService clusterService = client.getClientClusterService();

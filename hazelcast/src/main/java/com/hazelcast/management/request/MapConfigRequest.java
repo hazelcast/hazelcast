@@ -18,6 +18,7 @@ package com.hazelcast.management.request;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.management.ManagementCenterService;
+import com.hazelcast.management.MapConfigAdapter;
 import com.hazelcast.management.operation.GetMapConfigOperation;
 import com.hazelcast.management.operation.UpdateMapConfigOperation;
 import com.hazelcast.nio.Address;
@@ -72,7 +73,7 @@ public class MapConfigRequest implements ConsoleRequest {
             MapConfig cfg = (MapConfig) mcs.call(target, new GetMapConfigOperation(map));
             if (cfg != null) {
                 dos.writeBoolean(true);
-                cfg.writeData(dos);
+                new MapConfigAdapter(cfg).writeData(dos);
             } else {
                 dos.writeBoolean(false);
             }
@@ -84,9 +85,9 @@ public class MapConfigRequest implements ConsoleRequest {
 
         if (!update) {
             if (in.readBoolean()) {
-                MapConfig cfg = new MapConfig();
-                cfg.readData(in);
-                return cfg;
+                final MapConfigAdapter adapter = new MapConfigAdapter();
+                adapter.readData(in);
+                return adapter.getMapConfig();
             } else {
                 return null;
             }
@@ -98,7 +99,7 @@ public class MapConfigRequest implements ConsoleRequest {
         out.writeUTF(map);
         out.writeBoolean(update);
         if (update) {
-            config.writeData(out);
+            new MapConfigAdapter(config).writeData(out);
         } else {
             target.writeData(out);
         }
@@ -108,8 +109,9 @@ public class MapConfigRequest implements ConsoleRequest {
         map = in.readUTF();
         update = in.readBoolean();
         if (update) {
-            config = new MapConfig();
-            config.readData(in);
+            final MapConfigAdapter adapter = new MapConfigAdapter();
+            adapter.readData(in);
+            config = adapter.getMapConfig();
         } else {
             target = new Address();
             target.readData(in);

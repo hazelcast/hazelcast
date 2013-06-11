@@ -20,10 +20,7 @@ import com.hazelcast.ascii.TextCommandService;
 import com.hazelcast.ascii.TextCommandServiceImpl;
 import com.hazelcast.client.ClientEngineImpl;
 import com.hazelcast.cluster.*;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.JoinConfig;
-import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.MulticastConfig;
+import com.hazelcast.config.*;
 import com.hazelcast.core.*;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
@@ -489,8 +486,22 @@ public class Node {
     public JoinRequest createJoinRequest(boolean withCredentials) {
         final Credentials credentials = (withCredentials && securityContext != null)
                 ? securityContext.getCredentialsFactory().newCredentials() : null;
+
         return new JoinRequest(Packet.PACKET_VERSION, buildNumber, address,
-                localMember.getUuid(), config, credentials, clusterService.getSize(), 0);
+                localMember.getUuid(), createConfigCheck(), credentials, clusterService.getSize(), 0);
+    }
+
+    public ConfigCheck createConfigCheck() {
+        final ConfigCheck configCheck = new ConfigCheck();
+        final GroupConfig groupConfig = config.getGroupConfig();
+        final PartitionGroupConfig partitionGroupConfig = config.getPartitionGroupConfig();
+        final boolean partitionGroupEnabled = partitionGroupConfig != null && partitionGroupConfig.isEnabled();
+
+        configCheck.setGroupName(groupConfig.getName()).setGroupPassword(groupConfig.getPassword())
+                .setJoinerType(joiner != null ? joiner.getType() : "")
+                .setPartitionGroupEnabled(partitionGroupEnabled)
+                .setMemberGroupType(partitionGroupEnabled ? partitionGroupConfig.getGroupType() : null);
+        return configCheck;
     }
 
     public void rejoin() {

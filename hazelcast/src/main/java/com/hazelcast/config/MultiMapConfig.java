@@ -18,14 +18,12 @@ package com.hazelcast.config;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MultiMapConfig implements DataSerializable {
-
+public class MultiMapConfig {
 
     public final static int DEFAULT_SYNC_BACKUP_COUNT = 1;
     public final static int DEFAULT_ASYNC_BACKUP_COUNT = 0;
@@ -51,22 +49,6 @@ public class MultiMapConfig implements DataSerializable {
 
     public enum ValueCollectionType {
         SET, LIST
-    }
-
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
-        out.writeUTF(valueCollectionType);
-        out.writeBoolean(binary);
-        out.writeInt(syncBackupCount);
-        out.writeInt(asyncBackupCount);
-    }
-
-    public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
-        valueCollectionType = in.readUTF();
-        binary = in.readBoolean();
-        syncBackupCount = in.readInt();
-        asyncBackupCount = in.readInt();
     }
 
     public String getName() {
@@ -144,8 +126,9 @@ public class MultiMapConfig implements DataSerializable {
         return statisticsEnabled;
     }
 
-    public void setStatisticsEnabled(boolean statisticsEnabled) {
+    public MultiMapConfig setStatisticsEnabled(boolean statisticsEnabled) {
         this.statisticsEnabled = statisticsEnabled;
+        return this;
     }
 
     public String toString() {

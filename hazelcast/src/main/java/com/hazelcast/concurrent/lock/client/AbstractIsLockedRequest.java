@@ -37,15 +37,23 @@ public abstract class AbstractIsLockedRequest extends KeyBasedClientRequest impl
 
     private Data key;
 
+    private int threadId;
+
     public AbstractIsLockedRequest() {
     }
 
     public AbstractIsLockedRequest(Data key) {
         this.key = key;
+        this.threadId = -1;
+    }
+
+    protected AbstractIsLockedRequest(Data key, int threadId) {
+        this.key = key;
+        this.threadId = threadId;
     }
 
     protected final Operation prepareOperation() {
-        return new IsLockedOperation(getNamespace(), key);
+        return new IsLockedOperation(getNamespace(), key, threadId);
     }
 
     protected final Object getKey() {
@@ -59,11 +67,13 @@ public abstract class AbstractIsLockedRequest extends KeyBasedClientRequest impl
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
+        writer.writeInt("tid", threadId);
         ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
     }
 
     public void readPortable(PortableReader reader) throws IOException {
+        threadId = reader.readInt("tid");
         ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);

@@ -37,10 +37,13 @@ public interface LockStore {
 
     boolean isLockedBy(Data key, String caller, int threadId);
 
+    int getLockCount(Data key);
+
+    long getRemainingLeaseTime(Data key);
+
     boolean canAcquireLock(Data key, String caller, int threadId);
 
     Set<Data> getLockedKeys();
 
     boolean forceUnlock(Data dataKey);
-
 }

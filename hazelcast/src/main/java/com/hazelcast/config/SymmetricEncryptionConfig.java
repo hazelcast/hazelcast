@@ -18,12 +18,12 @@ package com.hazelcast.config;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.util.ByteUtil;
 
 import java.io.IOException;
 
-public class SymmetricEncryptionConfig implements DataSerializable {
+public class SymmetricEncryptionConfig {
+
     private boolean enabled = false;
     private String salt = "thesalt";
     private String password = "thepassword";
@@ -98,34 +98,4 @@ public class SymmetricEncryptionConfig implements DataSerializable {
         return sb.toString();
     }
 
-    public void writeData(ObjectDataOutput out) throws IOException {
-        boolean hasKey = key != null && key.length > 0;
-        out.writeByte(ByteUtil.toByte(enabled, hasKey));
-        if (enabled) {
-            out.writeUTF(salt);
-            out.writeUTF(password);
-            out.writeInt(iterationCount);
-            out.writeUTF(algorithm);
-            if (hasKey) {
-                out.writeInt(key.length);
-                out.write(key);
-            }
-        }
-    }
-
-    public void readData(ObjectDataInput in) throws IOException {
-        boolean[] b = ByteUtil.fromByte(in.readByte());
-        enabled = b[0];
-        if (enabled) {
-            salt = in.readUTF();
-            password = in.readUTF();
-            iterationCount = in.readInt();
-            algorithm = in.readUTF();
-            boolean hasKey = b[1];
-            if (hasKey) {
-                key = new byte[in.readInt()];
-                in.readFully(key);
-            }
-        }
-    }
 }

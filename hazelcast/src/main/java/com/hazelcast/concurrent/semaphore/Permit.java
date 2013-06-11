@@ -36,16 +36,19 @@ public class Permit implements DataSerializable {
 
     private Map<String, Integer> attachMap;
 
-    private SemaphoreConfig config;
+    private int backupCount;
+
+    private int asyncBackupCount;
 
     public Permit() {
     }
 
     public Permit(int partitionId, SemaphoreConfig config) {
         this.partitionId = partitionId;
-        this.config = config;
+        this.backupCount = config.getSyncBackupCount();
+        this.asyncBackupCount = config.getAsyncBackupCount();
         this.available = config.getInitialPermits();
-        attachMap = new HashMap<String, Integer>(10);
+        this.attachMap = new HashMap<String, Integer>(10);
     }
 
     private void attach(String caller, int permitCount) {
@@ -131,18 +134,19 @@ public class Permit implements DataSerializable {
         return partitionId;
     }
 
-    public SemaphoreConfig getConfig() {
-        return config;
+    public int getSyncBackupCount() {
+        return backupCount;
     }
 
-    public void setConfig(SemaphoreConfig config) {
-        this.config = config;
+    public int getAsyncBackupCount() {
+        return asyncBackupCount;
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(available);
         out.writeInt(partitionId);
-        config.writeData(out);
+        out.writeInt(backupCount);
+        out.writeInt(asyncBackupCount);
         out.writeInt(attachMap.size());
         for (Map.Entry<String, Integer> entry : attachMap.entrySet()) {
             out.writeUTF(entry.getKey());
@@ -153,8 +157,8 @@ public class Permit implements DataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         available = in.readInt();
         partitionId = in.readInt();
-        config = new SemaphoreConfig();
-        config.readData(in);
+        backupCount = in.readInt();
+        asyncBackupCount = in.readInt();
         int size = in.readInt();
         attachMap = new HashMap<String, Integer>(size);
         for (int i = 0; i < size; i++) {
@@ -169,6 +173,8 @@ public class Permit implements DataSerializable {
         sb.append("Permit");
         sb.append("{available=").append(available);
         sb.append(", partitionId=").append(partitionId);
+        sb.append(", backupCount=").append(backupCount);
+        sb.append(", asyncBackupCount=").append(asyncBackupCount);
         sb.append('}');
         sb.append("\n");
         for (Map.Entry<String, Integer> entry : attachMap.entrySet()) {
@@ -177,5 +183,9 @@ public class Permit implements DataSerializable {
             sb.append("} ");
         }
         return sb.toString();
+    }
+
+    public int getTotalBackupCount() {
+        return backupCount + asyncBackupCount;
     }
 }
