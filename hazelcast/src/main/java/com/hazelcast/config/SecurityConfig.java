@@ -39,62 +39,69 @@ public class SecurityConfig {
         return enabled;
     }
 
-    public void setEnabled(boolean enabled) {
+    public SecurityConfig setEnabled(boolean enabled) {
         this.enabled = enabled;
+        return this;
     }
 
-    public void addMemberLoginModuleConfig(LoginModuleConfig loginModuleConfig) {
+    public SecurityConfig addMemberLoginModuleConfig(LoginModuleConfig loginModuleConfig) {
         memberLoginModuleConfigs.add(loginModuleConfig);
+        return this;
     }
 
-    public void addClientLoginModuleConfig(LoginModuleConfig loginModuleConfig) {
+    public SecurityConfig addClientLoginModuleConfig(LoginModuleConfig loginModuleConfig) {
         clientLoginModuleConfigs.add(loginModuleConfig);
+        return this;
     }
 
-    public void addClientPermissionConfig(PermissionConfig permissionConfig) {
+    public SecurityConfig addClientPermissionConfig(PermissionConfig permissionConfig) {
         clientPermissionConfigs.add(permissionConfig);
+        return this;
     }
 
     public List<LoginModuleConfig> getClientLoginModuleConfigs() {
         return clientLoginModuleConfigs;
     }
 
-    public void setClientLoginModuleConfigs(List<LoginModuleConfig> loginModuleConfigs) {
+    public SecurityConfig setClientLoginModuleConfigs(List<LoginModuleConfig> loginModuleConfigs) {
         this.clientLoginModuleConfigs = loginModuleConfigs;
+        return this;
     }
 
     public List<LoginModuleConfig> getMemberLoginModuleConfigs() {
         return memberLoginModuleConfigs;
     }
 
-    public void setMemberLoginModuleConfigs(
-            List<LoginModuleConfig> memberLoginModuleConfigs) {
+    public SecurityConfig setMemberLoginModuleConfigs(List<LoginModuleConfig> memberLoginModuleConfigs) {
         this.memberLoginModuleConfigs = memberLoginModuleConfigs;
+        return this;
     }
 
     public PermissionPolicyConfig getClientPolicyConfig() {
         return clientPolicyConfig;
     }
 
-    public void setClientPolicyConfig(PermissionPolicyConfig policyConfig) {
+    public SecurityConfig setClientPolicyConfig(PermissionPolicyConfig policyConfig) {
         this.clientPolicyConfig = policyConfig;
+        return this;
     }
 
     public Set<PermissionConfig> getClientPermissionConfigs() {
         return clientPermissionConfigs;
     }
 
-    public void setClientPermissionConfigs(Set<PermissionConfig> permissions) {
+    public SecurityConfig setClientPermissionConfigs(Set<PermissionConfig> permissions) {
         this.clientPermissionConfigs = permissions;
+        return this;
     }
 
     public CredentialsFactoryConfig getMemberCredentialsConfig() {
         return memberCredentialsConfig;
     }
 
-    public void setMemberCredentialsConfig(
-            CredentialsFactoryConfig credentialsFactoryConfig) {
+    public SecurityConfig setMemberCredentialsConfig(CredentialsFactoryConfig credentialsFactoryConfig) {
         this.memberCredentialsConfig = credentialsFactoryConfig;
+        return this;
     }
 
     @Override

@@ -16,7 +16,6 @@
 
 package com.hazelcast.partition;
 
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
@@ -76,8 +75,7 @@ public class CheckReplicaVersion extends Operation implements PartitionAwareOper
     }
 
     public void logError(Throwable e) {
-        final ILogger logger = getLogger();
-        logger.log(Level.FINEST, e.getClass() + ": " + e.getMessage());
+        ReplicaErrorLogger.log(e, getLogger());
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

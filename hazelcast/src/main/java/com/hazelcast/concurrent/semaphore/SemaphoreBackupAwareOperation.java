@@ -31,11 +31,11 @@ public abstract class SemaphoreBackupAwareOperation extends SemaphoreOperation i
     }
 
     public int getAsyncBackupCount() {
-        return getPermit().getConfig().getAsyncBackupCount();
+        return getPermit().getAsyncBackupCount();
     }
 
     public int getSyncBackupCount() {
-        return getPermit().getConfig().getSyncBackupCount();
+        return getPermit().getSyncBackupCount();
     }
 
 }

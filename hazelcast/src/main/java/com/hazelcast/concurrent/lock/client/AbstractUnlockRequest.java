@@ -71,7 +71,7 @@ public abstract class AbstractUnlockRequest extends KeyBasedClientRequest implem
 
     public void writePortable(PortableWriter writer) throws IOException {
 
-        writer.writeInt("thread", threadId);
+        writer.writeInt("tid", threadId);
         writer.writeBoolean("force", force);
 
         ObjectDataOutput out = writer.getRawDataOutput();
@@ -80,7 +80,7 @@ public abstract class AbstractUnlockRequest extends KeyBasedClientRequest implem
 
     public void readPortable(PortableReader reader) throws IOException {
 
-        threadId = reader.readInt("thread");
+        threadId = reader.readInt("tid");
         force = reader.readBoolean("force");
 
         ObjectDataInput in = reader.getRawDataInput();

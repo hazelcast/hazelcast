@@ -447,4 +447,9 @@ public class TcpIpJoiner extends AbstractJoiner {
             }
         }
     }
+
+    @Override
+    public String getType() {
+        return "tcp-ip";
+    }
 }

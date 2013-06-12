@@ -21,11 +21,11 @@ import java.util.Map;
 
 /**
  * Hazelcast distributed map implementation is an in-memory data store but
- * it can be backed by any type of data store such as RDBMS, OODBMS, or simply
+ * it can be backed by any type of data store such as RDBMS, OODBMS, NOSQL or simply
  * a file based data store.
  * <p/>
  * IMap.put(key, value) normally stores the entry into JVM's memory. If MapStore
- * implementation is provided then Hazelcast can also call the MapStore
+ * implementation is provided then Hazelcast will also call the MapStore
  * implementation to store the entry into a user defined storage such as
  * RDBMS or some other external storage system. It is completely up to the user
  * how the key-value will be stored or deleted.

@@ -40,9 +40,13 @@ class TransactionContextImpl implements TransactionContext {
     private final TransactionImpl transaction;
     private final Map<TransactionalObjectKey, TransactionalObject> txnObjectMap = new HashMap<TransactionalObjectKey, TransactionalObject>(2);
 
-    public TransactionContextImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngineImpl nodeEngine, TransactionOptions options) {
+    TransactionContextImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngineImpl nodeEngine, TransactionOptions options, boolean client) {
         this.nodeEngine = nodeEngine;
-        this.transaction = new TransactionImpl(transactionManagerService, nodeEngine, options);
+        this.transaction = new TransactionImpl(transactionManagerService, nodeEngine, options, client);
+    }
+
+    public String getTxnId() {
+        return transaction.getTxnId();
     }
 
     public void beginTransaction() {
@@ -71,8 +75,8 @@ class TransactionContextImpl implements TransactionContext {
     }
 
     @SuppressWarnings("unchecked")
-    public <K,V> TransactionalMultiMap<K,V> getMultiMap(String name) {
-        return (TransactionalMultiMap<K,V>) getTransactionalObject(CollectionService.SERVICE_NAME, new CollectionProxyId(name, null, CollectionProxyType.MULTI_MAP));
+    public <K, V> TransactionalMultiMap<K, V> getMultiMap(String name) {
+        return (TransactionalMultiMap<K, V>) getTransactionalObject(CollectionService.SERVICE_NAME, new CollectionProxyId(name, null, CollectionProxyType.MULTI_MAP));
     }
 
     @SuppressWarnings("unchecked")

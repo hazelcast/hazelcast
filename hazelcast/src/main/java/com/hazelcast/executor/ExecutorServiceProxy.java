@@ -19,13 +19,13 @@ package com.hazelcast.executor;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.monitor.LocalExecutorStats;
+import com.hazelcast.nio.Address;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.executor.CompletedFuture;
-import com.hazelcast.util.executor.DelegatingFuture;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -84,8 +84,29 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
     }
 
     public <T> Future<T> submit(Runnable task, T result) {
+        if (task == null) throw new NullPointerException();
+        if (isShutdown()) {
+            throw new RejectedExecutionException(getRejectionMessage());
+        }
+
         Callable<T> callable = createRunnableAdapter(task);
-        return new DelegatingFuture<T>(submit(callable), getNodeEngine().getSerializationService(), result);
+        final NodeEngine nodeEngine = getNodeEngine();
+        final String uuid = UUID.randomUUID().toString();
+        final int partitionId = getTaskPartitionId(callable);
+
+        Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(DistributedExecutorService.SERVICE_NAME,
+                new CallableTaskOperation(name, uuid, callable), partitionId).build();
+
+        final Future future = inv.invoke();
+        final boolean sync = checkSync();
+        if (sync) {
+            try {
+                future.get();
+            } catch (Exception ignored) {
+            }
+            return new CompletedFuture<T>(nodeEngine.getSerializationService(), result);
+        }
+        return new CancellableDelegatingFuture<T>(future, result, nodeEngine, uuid, partitionId);
     }
 
     public <T> Future<T> submit(Callable<T> task) {
@@ -99,13 +120,10 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
             throw new RejectedExecutionException(getRejectionMessage());
         }
         final NodeEngine nodeEngine = getNodeEngine();
+        final String uuid = UUID.randomUUID().toString();
         Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(DistributedExecutorService.SERVICE_NAME,
-                new CallableTaskOperation<T>(name, task), partitionId).build();
-        return invoke(inv);
-    }
+                new CallableTaskOperation(name, uuid, task), partitionId).build();
 
-    private <T> Future<T> invoke(Invocation inv) {
-        final NodeEngine nodeEngine = getNodeEngine();
         final boolean sync = checkSync();
         final Future future = inv.invoke();
         if (sync) {
@@ -117,7 +135,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
             }
             return new CompletedFuture<T>(nodeEngine.getSerializationService(), response);
         }
-        return new DelegatingFuture<T>(future, nodeEngine.getSerializationService());
+        return new CancellableDelegatingFuture<T>(future, nodeEngine, uuid, partitionId);
     }
 
     private boolean checkSync() {
@@ -155,9 +173,23 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
             throw new RejectedExecutionException(getRejectionMessage());
         }
         final NodeEngine nodeEngine = getNodeEngine();
+        final String uuid = UUID.randomUUID().toString();
+        final Address target = ((MemberImpl) member).getAddress();
         Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(DistributedExecutorService.SERVICE_NAME,
-                new MemberCallableTaskOperation<T>(name, task), ((MemberImpl) member).getAddress()).build();
-        return invoke(inv);
+                new MemberCallableTaskOperation(name, uuid, task), target).build();
+
+        final boolean sync = checkSync();
+        final Future future = inv.invoke();
+        if (sync) {
+            Object response;
+            try {
+                response = future.get();
+            } catch (Exception e) {
+                response = e;
+            }
+            return new CompletedFuture<T>(nodeEngine.getSerializationService(), response);
+        }
+        return new CancellableDelegatingFuture<T>(future, nodeEngine, uuid, target);
     }
 
     public <T> Map<Member, Future<T>> submitToMembers(Callable<T> task, Collection<Member> members) {
@@ -204,7 +236,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
         }
         final NodeEngine nodeEngine = getNodeEngine();
         Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(DistributedExecutorService.SERVICE_NAME,
-                new CallableTaskOperation<T>(name, task), partitionId).setCallback(new ExecutionCallbackAdapter(callback)).build();
+                new CallableTaskOperation(name, null, task), partitionId).setCallback(new ExecutionCallbackAdapter(callback)).build();
         inv.invoke();
     }
 
@@ -224,7 +256,7 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
         }
         final NodeEngine nodeEngine = getNodeEngine();
         Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(DistributedExecutorService.SERVICE_NAME,
-                new MemberCallableTaskOperation<T>(name, task), ((MemberImpl) member).getAddress())
+                new MemberCallableTaskOperation(name, null, task), ((MemberImpl) member).getAddress())
                 .setCallback(new ExecutionCallbackAdapter(callback)).build();
         inv.invoke();
     }

@@ -85,8 +85,7 @@ public class LockStoreContainer {
     void put(LockStoreImpl ls) {
         Collection<DistributedLock> lockInfos = ls.getLocks().values();
         for (DistributedLock lockInfo : lockInfos) {
-            lockInfo.setLockService(lockService);
-            lockInfo.setNamespace(ls.getNamespace());
+            lockInfo.setLockStore(ls);
         }
         ls.setLockService(lockService);
         lockStores.put(ls.getNamespace(), ls);

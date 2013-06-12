@@ -51,4 +51,6 @@ public interface Connection extends Closeable {
      */
     void close() throws IOException;
 
+    void setEndpoint(Address address);
+
 }

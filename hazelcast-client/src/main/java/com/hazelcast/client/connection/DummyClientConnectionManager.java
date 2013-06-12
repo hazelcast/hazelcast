@@ -34,8 +34,9 @@ public class DummyClientConnectionManager extends SmartClientConnectionManager {
     }
 
     public Connection firstConnection(Address address, Authenticator authenticator) throws IOException {
-        this.address = address;
-        return newConnection(address, authenticator);
+        final Connection connection = newConnection(address, authenticator);
+        this.address = connection.getEndpoint();
+        return connection;
     }
 
     /**

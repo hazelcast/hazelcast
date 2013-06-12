@@ -49,31 +49,6 @@ public class ClusterJoinTest {
     }
 
     @Test(timeout = 120000)
-    public void testDifferentGroups() {
-        Config c1 = new Config();
-        c1.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
-        c1.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
-        c1.getNetworkConfig().getJoin().getTcpIpConfig().addMember("127.0.0.1");
-        c1.getNetworkConfig().getInterfaces().clear();
-        c1.getNetworkConfig().getInterfaces().addInterface("127.0.0.1");
-        c1.getNetworkConfig().getInterfaces().setEnabled(true);
-        Config c2 = new Config();
-        c2.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
-        c2.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
-        c2.getNetworkConfig().getJoin().getTcpIpConfig().addMember("127.0.0.1");
-        c2.getNetworkConfig().getInterfaces().clear();
-        c2.getNetworkConfig().getInterfaces().addInterface("127.0.0.1");
-        c2.getNetworkConfig().getInterfaces().setEnabled(true);
-        c1.getGroupConfig().setName("groupOne");
-        c2.getGroupConfig().setName("groupTwo");
-
-        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c1);
-        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c2);
-        assertEquals(1, h1.getCluster().getMembers().size());
-        assertEquals(1, h2.getCluster().getMembers().size());
-    }
-
-    @Test(timeout = 120000)
     public void testTcpIp1() throws Exception {
         Config c = new Config();
         c.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
@@ -230,12 +205,17 @@ public class ClusterJoinTest {
     }
 
     @Test
-    public void testJoinWithIncompatibleConfigs() throws Exception {
+    public void testMulticastJoinWithIncompatibleGroups() throws Exception {
         Config config1 = new Config();
-        Config config2 = new Config();
-        config1.getMapConfig("default");
-        config2.getMapConfig("default").setTimeToLiveSeconds(1);
+        config1.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(true);
+        config1.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
+        config1.getGroupConfig().setName("group1");
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config1);
+
+        Config config2 = new Config();
+        config2.getGroupConfig().setName("group2");
+        config2.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(true);
+        config2.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config2);
 
         final int s1 = h1.getCluster().getMembers().size();
@@ -245,19 +225,122 @@ public class ClusterJoinTest {
     }
 
     @Test
-    public void testJoinWithIncompatibleConfigsWithDisabledCheck() throws Exception {
+    public void testTcpIpJoinWithIncompatibleGroups() throws Exception {
         Config config1 = new Config();
-        Config config2 = new Config();
-        config1.setCheckCompatibility(false);
-        config2.setCheckCompatibility(false).getMapConfig("default").setTimeToLiveSeconds(1);
-
+        config1.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        config1.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true).addMember("127.0.0.1");
+        config1.getGroupConfig().setName("group1");
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config1);
+
+        Config config2 = new Config();
+        config2.getGroupConfig().setName("group2");
+        config2.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        config2.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true).addMember("127.0.0.1");
         HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config2);
+
         final int s1 = h1.getCluster().getMembers().size();
         final int s2 = h2.getCluster().getMembers().size();
-        assertEquals(2, s1);
-        assertEquals(2, s2);
+        assertEquals(1, s1);
+        assertEquals(1, s2);
     }
+
+    @Test
+    public void testMulticastJoinWithIncompatiblePasswords() throws Exception {
+        Config config1 = new Config();
+        config1.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(true);
+        config1.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
+        config1.getGroupConfig().setPassword("pass1");
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config1);
+
+        Config config2 = new Config();
+        config2.getGroupConfig().setPassword("pass2");
+        config2.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(true);
+        config2.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config2);
+
+        final int s1 = h1.getCluster().getMembers().size();
+        final int s2 = h2.getCluster().getMembers().size();
+        assertEquals(1, s1);
+        assertEquals(1, s2);
+    }
+
+    @Test
+    public void testTcpIpJoinWithIncompatiblePasswords() throws Exception {
+        Config config1 = new Config();
+        config1.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        config1.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true).addMember("127.0.0.1");
+        config1.getGroupConfig().setPassword("pass1");
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config1);
+
+        Config config2 = new Config();
+        config2.getGroupConfig().setPassword("pass2");
+        config2.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        config2.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true).addMember("127.0.0.1");
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config2);
+
+        final int s1 = h1.getCluster().getMembers().size();
+        final int s2 = h2.getCluster().getMembers().size();
+        assertEquals(1, s1);
+        assertEquals(1, s2);
+    }
+
+    @Test
+    public void testJoinWithIncompatibleJoiners() throws Exception {
+        Config config1 = new Config();
+        config1.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config1);
+
+        Config config2 = new Config();
+        config2.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        config2.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true).addMember("127.0.0.1");
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config2);
+
+        final int s1 = h1.getCluster().getMembers().size();
+        final int s2 = h2.getCluster().getMembers().size();
+        assertEquals(1, s1);
+        assertEquals(1, s2);
+    }
+
+    @Test
+    public void testMulticastJoinWithIncompatiblePartitionGroups() throws Exception {
+        Config config1 = new Config();
+        config1.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(true);
+        config1.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
+        config1.getPartitionGroupConfig().setEnabled(true).setGroupType(PartitionGroupConfig.MemberGroupType.HOST_AWARE);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config1);
+
+        Config config2 = new Config();
+        config2.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(true);
+        config2.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
+        config2.getPartitionGroupConfig().setEnabled(false);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config2);
+
+        final int s1 = h1.getCluster().getMembers().size();
+        final int s2 = h2.getCluster().getMembers().size();
+        assertEquals(1, s1);
+        assertEquals(1, s2);
+    }
+
+    @Test
+    public void testTcpIpJoinWithIncompatiblePartitionGroups() throws Exception {
+        Config config1 = new Config();
+        config1.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        config1.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true).addMember("127.0.0.1");
+        config1.getPartitionGroupConfig().setEnabled(true).setGroupType(PartitionGroupConfig.MemberGroupType.CUSTOM);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config1);
+
+        Config config2 = new Config();
+        config2.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        config2.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true).addMember("127.0.0.1");
+        config2.getPartitionGroupConfig().setEnabled(true).setGroupType(PartitionGroupConfig.MemberGroupType.HOST_AWARE);
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config2);
+
+        final int s1 = h1.getCluster().getMembers().size();
+        final int s2 = h2.getCluster().getMembers().size();
+        assertEquals(1, s1);
+        assertEquals(1, s2);
+    }
+
 
     @Test
     public void testTCPIPJoinWithManyNodes() throws UnknownHostException, InterruptedException {

@@ -20,15 +20,12 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 
 /**
  * @mdogan 1/18/13
  */
-public final class DelegatingFuture<V> implements Future<V> {
+public class DelegatingFuture<V> implements Future<V> {
 
     private final Future future;
     private final SerializationService serializationService;
@@ -52,7 +49,7 @@ public final class DelegatingFuture<V> implements Future<V> {
         this.hasDefaultValue = true;
     }
 
-    public V get() throws InterruptedException, ExecutionException {
+    public final V get() throws InterruptedException, ExecutionException {
         try {
             return get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
@@ -61,7 +58,7 @@ public final class DelegatingFuture<V> implements Future<V> {
         }
     }
 
-    public V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+    public final V get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         if (!done) {
             synchronized (this) {
                 if (!done) {
@@ -79,6 +76,9 @@ public final class DelegatingFuture<V> implements Future<V> {
         if (error != null) {
             if (error instanceof ExecutionException) {
                 throw (ExecutionException) error;
+            }
+            if (error instanceof CancellationException) {
+                throw (CancellationException) error;
             }
             if (error instanceof InterruptedException) {
                 throw (InterruptedException) error;
@@ -108,7 +108,15 @@ public final class DelegatingFuture<V> implements Future<V> {
         return false;
     }
 
-    public boolean isDone() {
+    public final boolean isDone() {
         return done;
+    }
+
+    protected void setError(Throwable error) {
+        this.error = error;
+    }
+
+    protected void setDone() {
+        this.done = true;
     }
 }

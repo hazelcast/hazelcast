@@ -116,7 +116,6 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
     }
 
     public String readUTF() throws IOException {
-//        return dataInput.readUTF();
         return UTFUtil.readUTF(this);
     }
 

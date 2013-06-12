@@ -44,6 +44,8 @@ import static org.junit.Assert.*;
 @Category(ParallelTest.class)
 public class MapTransactionTest extends HazelcastTestSupport {
 
+    TransactionOptions options = new TransactionOptions().setTransactionType(TransactionOptions.TransactionType.TWO_PHASE);
+
     @Test
     public void testCommitOrder() throws TransactionException {
         Config config = new Config();
@@ -53,7 +55,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         final HazelcastInstance h3 = factory.newHazelcastInstance(config);
         final HazelcastInstance h4 = factory.newHazelcastInstance(config);
 
-        boolean b = h1.executeTransaction(new TransactionalTask<Boolean>() {
+        boolean b = h1.executeTransaction(options, new TransactionalTask<Boolean>() {
             public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                 final TransactionalMap<Object, Object> txMap = context.getMap("default");
                 txMap.put("1", "value1");
@@ -62,6 +64,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
                 assertEquals("value3", txMap.put("1", "value4"));
                 assertEquals("value4", txMap.put("1", "value5"));
                 assertEquals("value5", txMap.put("1", "value6"));
+                assertEquals(1, txMap.size());
                 return true;
             }
         });
@@ -76,7 +79,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         final HazelcastInstance h2 = factory.newHazelcastInstance(config);
         final IMap map2 = h2.getMap("default");
 
-        boolean b = h1.executeTransaction(new TransactionalTask<Boolean>() {
+        boolean b = h1.executeTransaction(options, new TransactionalTask<Boolean>() {
             public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                 final TransactionalMap<Object, Object> txMap = context.getMap("default");
                 txMap.put("1", "value");
@@ -111,7 +114,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
                 try {
                     final int oneThird = size / 3;
                     final int threshold = new Random().nextInt(oneThird) + oneThird;
-                    h1.executeTransaction(new TransactionOptions().setDurability(1), new TransactionalTask<Boolean>() {
+                    h1.executeTransaction(options, new TransactionalTask<Boolean>() {
                         public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                             final TransactionalMap<Object, Object> txMap = context.getMap("default");
                             for (int i = 0; i < size; i++) {
@@ -158,7 +161,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         Runnable runnable = new Runnable() {
             public void run() {
                 try {
-                    boolean b = h1.executeTransaction(new TransactionalTask<Boolean>() {
+                    boolean b = h1.executeTransaction(options, new TransactionalTask<Boolean>() {
                         public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                             final TransactionalMap<Object, Object> txMap = context.getMap("default");
                             for (int i = 0; i < size; i++) {
@@ -201,7 +204,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         final HazelcastInstance h2 = factory.newHazelcastInstance(config);
         final IMap map2 = h2.getMap("default");
 
-        boolean b = h1.executeTransaction(new TransactionalTask<Boolean>() {
+        boolean b = h1.executeTransaction(options, new TransactionalTask<Boolean>() {
             public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                 final TransactionalMap<Object, Object> txMap = context.getMap("default");
                 txMap.set("1", "value");
@@ -209,6 +212,8 @@ public class MapTransactionTest extends HazelcastTestSupport {
                 assertEquals("value2", txMap.get("1"));
                 assertNull(map2.get("1"));
                 assertNull(map2.get("2"));
+                assertEquals(1, txMap.size());
+
                 return true;
             }
         });
@@ -229,7 +234,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         map2.put("1", "1");
         map2.put("2", "2");
 
-        boolean b = h1.executeTransaction(new TransactionalTask<Boolean>() {
+        boolean b = h1.executeTransaction(options, new TransactionalTask<Boolean>() {
             public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                 final TransactionalMap<Object, Object> txMap = context.getMap("default");
                 txMap.put("3", "3");
@@ -239,6 +244,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
                 assertEquals("1", map2.get("1"));
                 assertEquals(null, txMap.get("1"));
                 assertEquals(null, txMap.remove("2"));
+                assertEquals(2, txMap.size());
                 return true;
             }
         });
@@ -268,7 +274,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         map2.put("1", "1");
         map2.put("2", "2");
 
-        boolean b = h1.executeTransaction(new TransactionalTask<Boolean>() {
+        boolean b = h1.executeTransaction(options, new TransactionalTask<Boolean>() {
             public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                 final TransactionalMap<Object, Object> txMap = context.getMap("default");
                 txMap.put("3", "3");
@@ -280,6 +286,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
                 assertEquals(true, txMap.remove("2", "2"));
                 assertEquals(false, txMap.remove("3", null));
                 assertEquals(false, txMap.remove("5", "2"));
+                assertEquals(2, txMap.size());
                 return true;
             }
         });
@@ -309,7 +316,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         map2.put("1", "1");
         map2.put("2", "2");
 
-        boolean b = h1.executeTransaction(new TransactionalTask<Boolean>() {
+        boolean b = h1.executeTransaction(options, new TransactionalTask<Boolean>() {
             public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                 final TransactionalMap<Object, Object> txMap = context.getMap("default");
                 txMap.put("3", "3");
@@ -319,6 +326,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
                 assertEquals("1", map2.get("1"));
                 assertEquals(null, txMap.get("1"));
                 txMap.delete("2");
+                assertEquals(2, txMap.size());
                 return true;
             }
         });
@@ -346,7 +354,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         final HazelcastInstance h2 = factory.newHazelcastInstance(config);
         final IMap map2 = h2.getMap("default");
 
-        boolean b = h1.executeTransaction(new TransactionalTask<Boolean>() {
+        boolean b = h1.executeTransaction(options, new TransactionalTask<Boolean>() {
             public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                 final TransactionalMap<Object, Object> txMap = context.getMap("default");
                 txMap.putIfAbsent("1", "value");
@@ -372,7 +380,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         final HazelcastInstance h2 = factory.newHazelcastInstance(config);
         final IMap map2 = h2.getMap("default");
 
-        boolean b = h1.executeTransaction(new TransactionalTask<Boolean>() {
+        boolean b = h1.executeTransaction(options, new TransactionalTask<Boolean>() {
             public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                 final TransactionalMap<Object, Object> txMap = context.getMap("default");
                 assertNull(txMap.replace("1", "value"));
@@ -402,7 +410,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         map2.put("1", "1");
         map2.put("2", "2");
 
-        boolean b = h1.executeTransaction(new TransactionalTask<Boolean>() {
+        boolean b = h1.executeTransaction(options, new TransactionalTask<Boolean>() {
             public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                 final TransactionalMap<Object, Object> txMap = context.getMap("default");
                 assertEquals(true, txMap.replace("1", "1", "11"));
@@ -432,7 +440,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         final HazelcastInstance h2 = factory.newHazelcastInstance(config);
         final IMap map2 = h2.getMap("default");
         map2.put("1", "value2");
-        boolean b = h1.executeTransaction(new TransactionalTask<Boolean>() {
+        boolean b = h1.executeTransaction(options, new TransactionalTask<Boolean>() {
             public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                 final TransactionalMap<Object, Object> txMap = context.getMap("default");
                 assertEquals("value2", txMap.replace("1", "value3"));

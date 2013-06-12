@@ -174,15 +174,16 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
     public void issue391() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
 
-        final Collection<String> results = new ArrayList<String>(5);
+        final int total = 10;
+        final Collection<Integer> results = new ArrayList<Integer>(5);
         final HazelcastInstance hz1 = factory.newHazelcastInstance(new Config());
         final CountDownLatch latchOffer = new CountDownLatch(1);
         final CountDownLatch latchTake = new CountDownLatch(1);
         new Thread(new Runnable() {
             public void run() {
                 try {
-                    for (int i = 0; i < 5; i++) {
-                        results.add((String) hz1.getQueue("q").take());
+                    for (int i = 0; i < total; i++) {
+                        results.add((Integer) hz1.getQueue("q").take());
                     }
                     latchTake.countDown();
                 } catch (InterruptedException e) {
@@ -194,11 +195,9 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
         final HazelcastInstance hz2 = factory.newHazelcastInstance(new Config());
         new Thread(new Runnable() {
             public void run() {
-                for (int i = 0; i < 5; i++) {
-                    boolean offered = hz2.getQueue("q").offer(Integer.toString(i));
-                    System.err.println("offered: " + offered);
+                for (int i = 0; i < total; i++) {
+                    hz2.getQueue("q").offer(i);
                 }
-                System.err.println("done");
                 latchOffer.countDown();
             }
         }).start();
@@ -207,7 +206,12 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
         Assert.assertTrue(hz1.getQueue("q").isEmpty());
         hz1.getLifecycleService().shutdown();
         Assert.assertTrue(hz2.getQueue("q").isEmpty());
-        assertArrayEquals(new Object[]{"0", "1", "2", "3", "4"}, results.toArray());
+
+        final Object[] objects = new Object[total];
+        for (int i = 0; i < total; i++) {
+            objects[i] = i;
+        }
+        assertArrayEquals(objects, results.toArray());
     }
 
     @Test

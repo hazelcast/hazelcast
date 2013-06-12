@@ -18,7 +18,6 @@ package com.hazelcast.concurrent.lock;
 
 import com.hazelcast.core.ICondition;
 import com.hazelcast.core.ILock;
-import com.hazelcast.monitor.LocalLockStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.NodeEngine;
@@ -43,6 +42,18 @@ public class LockProxy extends AbstractDistributedObject<LockService> implements
 
     public boolean isLocked() {
         return lockSupport.isLocked(getNodeEngine(), key);
+    }
+
+    public boolean isLockedByCurrentThread() {
+        return lockSupport.isLockedByCurrentThread(getNodeEngine(), key);
+    }
+
+    public int getLockCount() {
+        return lockSupport.getLockCount(getNodeEngine(), key);
+    }
+
+    public long getRemainingLeaseTime() {
+        return lockSupport.getRemainingLeaseTime(getNodeEngine(), key);
     }
 
     public void lock() {
@@ -95,9 +106,5 @@ public class LockProxy extends AbstractDistributedObject<LockService> implements
 
     public Object getKey() {
         return getNodeEngine().toObject(key);
-    }
-
-    public LocalLockStats getLocalLockStats() {
-        return null;
     }
 }

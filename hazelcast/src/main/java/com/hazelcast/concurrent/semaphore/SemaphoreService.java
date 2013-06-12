@@ -91,10 +91,6 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
         }
     }
 
-    public String getServiceName() {
-        return SERVICE_NAME;
-    }
-
     public SemaphoreProxy createDistributedObject(Object objectId) {
         return new SemaphoreProxy((String)objectId, this, nodeEngine);
     }
@@ -111,7 +107,7 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
         for (Map.Entry<String, Permit> entry: permitMap.entrySet()){
             String name = entry.getKey();
             Permit permit = entry.getValue();
-            if (permit.getPartitionId() == event.getPartitionId() && permit.getConfig().getTotalBackupCount() >= event.getReplicaIndex()){
+            if (permit.getPartitionId() == event.getPartitionId() && permit.getTotalBackupCount() >= event.getReplicaIndex()){
                 migrationData.put(name, permit);
             }
         }

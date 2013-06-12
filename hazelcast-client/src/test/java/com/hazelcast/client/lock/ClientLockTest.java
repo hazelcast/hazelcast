@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -151,5 +152,36 @@ public class ClientLockTest {
         }.start();
         assertTrue(latch.await(100, TimeUnit.SECONDS));
         assertFalse(l.isLocked());
+    }
+
+    @Test
+    public void testStats() throws InterruptedException {
+        l.lock();
+        assertTrue(l.isLocked());
+        assertTrue(l.isLockedByCurrentThread());
+        assertEquals(1, l.getLockCount());
+
+        l.unlock();
+        assertFalse(l.isLocked());
+        assertEquals(0, l.getLockCount());
+        assertEquals(-1L, l.getRemainingLeaseTime());
+
+        l.lock(1, TimeUnit.MINUTES);
+        assertTrue(l.isLocked());
+        assertTrue(l.isLockedByCurrentThread());
+        assertEquals(1, l.getLockCount());
+        assertTrue(l.getRemainingLeaseTime() > 1000 * 30);
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        new Thread() {
+            public void run() {
+                assertTrue(l.isLocked());
+                assertFalse(l.isLockedByCurrentThread());
+                assertEquals(1, l.getLockCount());
+                assertTrue(l.getRemainingLeaseTime() > 1000 * 30);
+                latch.countDown();
+            }
+        }.start();
+        assertTrue(latch.await(1, TimeUnit.MINUTES));
     }
 }

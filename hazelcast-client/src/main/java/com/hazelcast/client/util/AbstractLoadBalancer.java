@@ -42,7 +42,6 @@ public abstract class AbstractLoadBalancer implements LoadBalancer, MembershipLi
         final Cluster cluster = clusterRef;
         if (cluster != null) {
             final Set<Member> memberSet = cluster.getMembers();
-            System.err.println("Updating LoadBalancer member list -> " + memberSet);
             Member[] members = new Member[memberSet.size()];
             int k = 0;
             for (Member member : memberSet) {

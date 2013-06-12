@@ -161,8 +161,9 @@ public final class MapStoreConfig {
         return properties;
     }
 
-    public void setProperties(Properties properties) {
+    public MapStoreConfig setProperties(Properties properties) {
         this.properties = properties;
+        return this;
     }
 
     @Override

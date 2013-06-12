@@ -14,26 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue;
+package com.hazelcast.concurrent.lock;
 
-import com.hazelcast.core.ItemEvent;
-import com.hazelcast.core.ItemListener;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.ObjectNamespace;
 
-import java.io.Serializable;
-import java.util.concurrent.CountDownLatch;
+public class GetLockCountOperation extends BaseLockOperation {
 
-public class DummyListener implements ItemListener, Serializable {
-
-    public static CountDownLatch latchForListenerTest = new CountDownLatch(2);
-
-    public DummyListener() {
+    public GetLockCountOperation() {
     }
 
-    public void itemAdded(ItemEvent item) {
-        latchForListenerTest.countDown();
+    public GetLockCountOperation(ObjectNamespace namespace, Data key) {
+        super(namespace, key, -1);
     }
 
-    public void itemRemoved(ItemEvent item) {
-        latchForListenerTest.countDown();
+    public void run() throws Exception {
+        response = getLockStore().getLockCount(key);
     }
 }

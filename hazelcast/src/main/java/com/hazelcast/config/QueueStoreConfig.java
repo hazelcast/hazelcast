@@ -17,18 +17,13 @@
 package com.hazelcast.config;
 
 import com.hazelcast.core.QueueStore;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.io.IOException;
 import java.util.Properties;
-import java.util.Set;
 
 /**
  * @ali 12/14/12
  */
-public class QueueStoreConfig implements DataSerializable {
+public class QueueStoreConfig {
 
     private boolean enabled = true;
     private String className = null;
@@ -100,29 +95,5 @@ public class QueueStoreConfig implements DataSerializable {
         sb.append(", properties=").append(properties);
         sb.append('}');
         return sb.toString();
-    }
-
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeBoolean(enabled);
-        out.writeUTF(className);
-        final Set<String> names = properties.stringPropertyNames();
-        out.writeInt(names.size());
-        for (String name : names) {
-            String value = properties.getProperty(name, "");
-            out.writeUTF(name);
-            out.writeUTF(value);
-        }
-        //TODO implementation
-    }
-
-    public void readData(ObjectDataInput in) throws IOException {
-        enabled = in.readBoolean();
-        className = in.readUTF();
-        int size = in.readInt();
-        for (int i=0; i<size; i++) {
-            final String name = in.readUTF();
-            final String value = in.readUTF();
-            properties.put(name, value);
-        }
     }
 }

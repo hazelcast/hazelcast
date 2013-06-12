@@ -59,7 +59,7 @@ class DefaultAddressPicker implements AddressPicker {
              * when the member is shutdown,
              * the serversocket port will be in TIME_WAIT state for the next
              * 2 minutes or so. If you start the member right after shutting it down
-             * you may not able able to bind to the same port because it is in TIME_WAIT
+             * you may not be able to bind to the same port because it is in TIME_WAIT
              * state. if you set reuseaddress=true then TIME_WAIT will be ignored and
              * you will be able to bind to the same port again.
              *

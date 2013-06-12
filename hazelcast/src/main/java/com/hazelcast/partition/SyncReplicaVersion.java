@@ -16,17 +16,14 @@
 
 package com.hazelcast.partition;
 
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
-import com.hazelcast.spi.exception.RetryableException;
 
 import java.io.IOException;
-import java.util.logging.Level;
 
 /**
  * @mdogan 4/11/13
@@ -82,12 +79,7 @@ public class SyncReplicaVersion extends Operation implements PartitionAwareOpera
     }
 
     public void logError(Throwable e) {
-        final ILogger logger = getLogger();
-        if (e instanceof RetryableException) {
-            logger.log(Level.FINEST, e.getClass() + ": " + e.getMessage());
-        } else {
-            logger.log(Level.WARNING, e.toString());
-        }
+        ReplicaErrorLogger.log(e, getLogger());
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

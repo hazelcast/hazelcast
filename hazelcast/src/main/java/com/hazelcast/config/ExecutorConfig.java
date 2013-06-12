@@ -18,11 +18,10 @@ package com.hazelcast.config;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 
-public class ExecutorConfig implements DataSerializable {
+public class ExecutorConfig {
 
     public final static int DEFAULT_POOL_SIZE = 8;
     public final static int DEFAULT_QUEUE_CAPACITY = Integer.MAX_VALUE;
@@ -87,20 +86,9 @@ public class ExecutorConfig implements DataSerializable {
         return statisticsEnabled;
     }
 
-    public void setStatisticsEnabled(boolean statisticsEnabled) {
+    public ExecutorConfig setStatisticsEnabled(boolean statisticsEnabled) {
         this.statisticsEnabled = statisticsEnabled;
-    }
-
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
-        out.writeInt(poolSize);
-        out.writeInt(queueCapacity);
-    }
-
-    public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
-        poolSize = in.readInt();
-        queueCapacity = in.readInt();
+        return this;
     }
 
     @Override

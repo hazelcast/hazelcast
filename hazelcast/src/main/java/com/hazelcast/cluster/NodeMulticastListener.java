@@ -51,7 +51,7 @@ public class NodeMulticastListener implements MulticastListener {
                             if (node.isMaster()) {
                                 JoinRequest request = (JoinRequest) joinMessage;
                                 final JoinMessage response = new JoinMessage(request.getPacketVersion(), request.getBuildNumber(),
-                                        node.getThisAddress(), request.getUuid(), request.getConfig(),
+                                        node.getThisAddress(), request.getUuid(), request.getConfigCheck(),
                                         node.getClusterService().getSize());
                                 node.multicastService.send(response);
 

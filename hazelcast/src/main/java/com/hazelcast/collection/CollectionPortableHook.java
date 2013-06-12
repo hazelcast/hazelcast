@@ -57,6 +57,21 @@ public class CollectionPortableHook implements PortableHook {
     public static final int ADD_ITEM_LISTENER = 25;
     public static final int DESTROY = 26;
 
+    public static final int TXN_MM_PUT = 27;
+    public static final int TXN_MM_GET = 28;
+    public static final int TXN_MM_REMOVE = 29;
+    public static final int TXN_MM_VALUE_COUNT = 30;
+    public static final int TXN_MM_SIZE = 31;
+
+    public static final int TXN_LIST_ADD = 32;
+    public static final int TXN_LIST_REMOVE = 33;
+    public static final int TXN_LIST_SIZE = 34;
+
+    public static final int TXN_SET_ADD = 35;
+    public static final int TXN_SET_REMOVE = 36;
+    public static final int TXN_SET_SIZE = 37;
+
+
 
 
     public int getFactoryId() {
@@ -64,7 +79,7 @@ public class CollectionPortableHook implements PortableHook {
     }
 
     public PortableFactory createFactory() {
-        ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[27];
+        ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[TXN_SET_SIZE +1];
         constructors[ADD_ALL] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
                 return new AddAllRequest();
@@ -193,6 +208,63 @@ public class CollectionPortableHook implements PortableHook {
         constructors[DESTROY] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
                 return new CollectionDestroyRequest();
+            }
+        };
+        constructors[TXN_MM_PUT] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new TxnMultiMapPutRequest();
+            }
+        };
+        constructors[TXN_MM_GET] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new TxnMultiMapGetRequest();
+            }
+        };
+        constructors[TXN_MM_REMOVE] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new TxnMultiMapRemoveRequest();
+            }
+        };
+        constructors[TXN_MM_VALUE_COUNT] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new TxnMultiMapValueCountRequest();
+            }
+        };
+        constructors[TXN_MM_SIZE] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new TxnMultiMapSizeRequest();
+            }
+        };
+
+        constructors[TXN_LIST_ADD] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new TxnListAddRequest();
+            }
+        };
+        constructors[TXN_LIST_REMOVE] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new TxnListRemoveRequest();
+            }
+        };
+        constructors[TXN_LIST_SIZE] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new TxnListSizeRequest();
+            }
+        };
+
+        constructors[TXN_SET_ADD] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new TxnSetAddRequest();
+            }
+        };
+        constructors[TXN_SET_REMOVE] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new TxnSetRemoveRequest();
+            }
+        };
+        constructors[TXN_SET_SIZE] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new TxnSetSizeRequest();
             }
         };
 

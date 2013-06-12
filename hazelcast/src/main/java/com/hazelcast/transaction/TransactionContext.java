@@ -23,4 +23,6 @@ public interface TransactionContext extends TransactionalTaskContext {
     void commitTransaction() throws TransactionException;
 
     void rollbackTransaction();
+
+    String getTxnId();
 }

@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.AbstractOperation;
 
 import java.io.IOException;
@@ -46,6 +47,11 @@ final class BackupResponse extends AbstractOperation implements IdentifiedDataSe
     @Override
     public boolean returnsResponse() {
         return false;
+    }
+
+    @Override
+    public void logError(Throwable e) {
+        ReplicaErrorLogger.log(e, getLogger());
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

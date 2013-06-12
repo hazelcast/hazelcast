@@ -66,6 +66,9 @@ public class MapPortableHook implements PortableHook {
     public static final int PUT_ALL = 40;
     public static final int DESTROY = 41;
 
+    public static final int TXN_REQUEST = 42;
+
+
 
 
     public int getFactoryId() {
@@ -74,7 +77,7 @@ public class MapPortableHook implements PortableHook {
 
     public PortableFactory createFactory() {
         return new PortableFactory() {
-            final ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[DESTROY+1];
+            final ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[TXN_REQUEST+1];
 
             {
                 constructors[GET] = new ConstructorFunction<Integer, Portable>() {
@@ -286,6 +289,13 @@ public class MapPortableHook implements PortableHook {
                         return new MapDestroyRequest();
                     }
                 };
+
+                constructors[TXN_REQUEST] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new TxnMapRequest();
+                    }
+                };
+
 
 
             }

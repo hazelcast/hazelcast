@@ -40,6 +40,12 @@ public class ClientDisconnectionOperation extends AbstractOperation {
     }
 
     public void run() throws Exception {
+        ClientEngineImpl engine = getService();
+        final ClientEndpoint endpoint = engine.getEndpoint(clientUuid);
+        if (endpoint != null) {
+            engine.removeEndpoint(endpoint.getConnection(), true);
+        }
+
         final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
         nodeEngine.onClientDisconnected(clientUuid);
         final Collection<ClientAwareService> services = nodeEngine.getServices(ClientAwareService.class);

@@ -23,6 +23,7 @@ import com.hazelcast.core.IQueue;
 import org.junit.Ignore;
 
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -39,15 +40,18 @@ public class ClientQueuePerformanceTest {
     static final byte[] VALUE = new byte[1000];
 
     static HazelcastInstance server;
+    static HazelcastInstance second;
     static HazelcastInstance client;
     static IQueue q;
 
     public static void main(String[] args) throws Exception {
         System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
         server = Hazelcast.newHazelcastInstance();
+        second = Hazelcast.newHazelcastInstance();
         client = HazelcastClient.newHazelcastClient(null);
         q = client.getQueue("test");
-        test1();
+//        test1();
+        test2();
     }
 
     public static void test1() throws Exception {
@@ -110,4 +114,26 @@ public class ClientQueuePerformanceTest {
         }
     }
 
+    public static void test2() throws Exception {
+
+        final CountDownLatch latch = new CountDownLatch(100);
+        final CountDownLatch latch1 = new CountDownLatch(1000);
+        new Thread(){
+            public void run() {
+                for (int i=0; i<1000; i++){
+                    q.offer("item"+i);
+                    latch.countDown();
+                    latch1.countDown();
+                }
+            }
+        }.start();
+
+        latch.await();
+
+        server.getLifecycleService().shutdown();
+
+        latch1.await();
+
+        System.err.println("size: " + q.size());
+    }
 }

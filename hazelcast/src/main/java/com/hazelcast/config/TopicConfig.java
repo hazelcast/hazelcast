@@ -16,17 +16,13 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
-
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public final class TopicConfig implements DataSerializable {
+public final class TopicConfig {
 
     public final static boolean DEFAULT_GLOBAL_ORDERING_ENABLED = true;
+
     private String name;
     private boolean globalOrderingEnabled = DEFAULT_GLOBAL_ORDERING_ENABLED;
     private boolean statisticsEnabled = true;
@@ -82,16 +78,18 @@ public final class TopicConfig implements DataSerializable {
         return listenerConfigs;
     }
 
-    public void setMessageListenerConfigs(List<ListenerConfig> listenerConfigs) {
+    public TopicConfig setMessageListenerConfigs(List<ListenerConfig> listenerConfigs) {
         this.listenerConfigs = listenerConfigs;
+        return this;
     }
 
     public boolean isStatisticsEnabled() {
         return statisticsEnabled;
     }
 
-    public void setStatisticsEnabled(boolean statisticsEnabled) {
+    public TopicConfig setStatisticsEnabled(boolean statisticsEnabled) {
         this.statisticsEnabled = statisticsEnabled;
+        return this;
     }
 
     public int hashCode() {
@@ -112,15 +110,5 @@ public final class TopicConfig implements DataSerializable {
 
     public String toString() {
         return "TopicConfig [name=" + name + ", globalOrderingEnabled=" + globalOrderingEnabled + "]";
-    }
-
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
-        out.writeBoolean(globalOrderingEnabled);
-    }
-
-    public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
-        globalOrderingEnabled = in.readBoolean();
     }
 }

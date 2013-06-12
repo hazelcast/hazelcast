@@ -17,13 +17,9 @@
 package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.spi.ClientProxy;
-import com.hazelcast.concurrent.lock.client.IsLockedRequest;
-import com.hazelcast.concurrent.lock.client.LockDestroyRequest;
-import com.hazelcast.concurrent.lock.client.LockRequest;
-import com.hazelcast.concurrent.lock.client.UnlockRequest;
+import com.hazelcast.concurrent.lock.client.*;
 import com.hazelcast.core.ICondition;
 import com.hazelcast.core.ILock;
-import com.hazelcast.monitor.LocalLockStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
@@ -46,14 +42,26 @@ public class ClientLockProxy extends ClientProxy implements ILock {
         return getId();
     }
 
-    public LocalLockStats getLocalLockStats() {
-        throw new UnsupportedOperationException("Locality is ambiguous for client!!!");
-    }
-
     public boolean isLocked() {
         IsLockedRequest request = new IsLockedRequest(getKeyData());
         Boolean result = invoke(request);
         return result;
+    }
+
+    public boolean isLockedByCurrentThread() {
+        IsLockedRequest request = new IsLockedRequest(getKeyData(), ThreadUtil.getThreadId());
+        Boolean result = invoke(request);
+        return result;
+    }
+
+    public int getLockCount() {
+        GetLockCountRequest request = new GetLockCountRequest(getKeyData());
+        return (Integer) invoke(request);
+    }
+
+    public long getRemainingLeaseTime() {
+        GetRemainingLeaseRequest request = new GetRemainingLeaseRequest(getKeyData());
+        return (Long) invoke(request);
     }
 
     public void lock(long leaseTime, TimeUnit timeUnit) {

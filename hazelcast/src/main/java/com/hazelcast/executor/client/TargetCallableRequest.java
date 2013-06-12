@@ -50,7 +50,7 @@ public final class TargetCallableRequest extends TargetClientRequest implements 
     @SuppressWarnings("unchecked")
     @Override
     protected Operation prepareOperation() {
-        return new CallableTaskOperation(name, callable);
+        return new CallableTaskOperation(name, null, callable);
     }
 
     @Override

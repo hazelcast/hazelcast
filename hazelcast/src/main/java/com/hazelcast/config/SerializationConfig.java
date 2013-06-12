@@ -50,8 +50,9 @@ public class SerializationConfig {
         return globalSerializer;
     }
 
-    public void setGlobalSerializer(GlobalSerializerConfig globalSerializer) {
+    public SerializationConfig setGlobalSerializer(GlobalSerializerConfig globalSerializer) {
         this.globalSerializer = globalSerializer;
+        return this;
     }
 
     public Collection<TypeSerializerConfig> getTypeSerializers() {

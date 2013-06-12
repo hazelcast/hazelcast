@@ -20,10 +20,7 @@ import com.hazelcast.ascii.TextCommandService;
 import com.hazelcast.ascii.TextCommandServiceImpl;
 import com.hazelcast.client.ClientEngineImpl;
 import com.hazelcast.cluster.*;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.JoinConfig;
-import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.config.MulticastConfig;
+import com.hazelcast.config.*;
 import com.hazelcast.core.*;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingServiceImpl;
@@ -294,7 +291,7 @@ public class Node {
 
     public void setMasterAddress(final Address master) {
         if (master != null) {
-            logger.log(Level.FINEST, "** setting master address to " + master.toString());
+            logger.log(Level.FINEST, "** setting master address to " + master);
         }
         masterAddress = master;
     }
@@ -349,17 +346,10 @@ public class Node {
         long start = Clock.currentTimeMillis();
         logger.log(Level.FINEST, "** we are being asked to shutdown when active = " + String.valueOf(active));
         if (!force && isActive()) {
-            partitionService.sendReplicaVersionCheckTasks();
             final int maxWaitSeconds = groupProperties.GRACEFUL_SHUTDOWN_MAX_WAIT.getInteger();
             int waitSeconds = 0;
             do {
-                // Although a node closes its connections to other nodes during shutdown,
-                // others will try to connect it to ensure that node is shutdown or terminated.
-                // This initial wait before active backup check is to make sure this node aware of all
-                // possible disconnecting nodes. Otherwise there may be a data race between
-                // syncForDead events and node shutdown.
-                // A better way of solving this issue is to make a node to inform others about its termination
-                // by sending shutting down message to all others.
+                partitionService.sendReplicaVersionCheckOperations();
                 try {
                     //noinspection BusyWait
                     Thread.sleep(500);
@@ -371,7 +361,9 @@ public class Node {
             }
         }
         if (isActive()) {
-            clusterService.sendShutdownMessage();
+            if (!force) {
+                clusterService.sendShutdownMessage();
+            }
             // set the joined=false first so that
             // threads do not process unnecessary
             // events, such as remove address
@@ -494,8 +486,22 @@ public class Node {
     public JoinRequest createJoinRequest(boolean withCredentials) {
         final Credentials credentials = (withCredentials && securityContext != null)
                 ? securityContext.getCredentialsFactory().newCredentials() : null;
+
         return new JoinRequest(Packet.PACKET_VERSION, buildNumber, address,
-                localMember.getUuid(), config, credentials, clusterService.getSize(), 0);
+                localMember.getUuid(), createConfigCheck(), credentials, clusterService.getSize(), 0);
+    }
+
+    public ConfigCheck createConfigCheck() {
+        final ConfigCheck configCheck = new ConfigCheck();
+        final GroupConfig groupConfig = config.getGroupConfig();
+        final PartitionGroupConfig partitionGroupConfig = config.getPartitionGroupConfig();
+        final boolean partitionGroupEnabled = partitionGroupConfig != null && partitionGroupConfig.isEnabled();
+
+        configCheck.setGroupName(groupConfig.getName()).setGroupPassword(groupConfig.getPassword())
+                .setJoinerType(joiner != null ? joiner.getType() : "")
+                .setPartitionGroupEnabled(partitionGroupEnabled)
+                .setMemberGroupType(partitionGroupEnabled ? partitionGroupConfig.getGroupType() : null);
+        return configCheck;
     }
 
     public void rejoin() {

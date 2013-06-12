@@ -46,7 +46,7 @@ public final class LocalTargetCallableRequest extends TargetClientRequest implem
     }
 
     protected Operation prepareOperation() {
-        return new CallableTaskOperation(name, callable);
+        return new CallableTaskOperation(name, null, callable);
     }
 
     public Address getTarget() {

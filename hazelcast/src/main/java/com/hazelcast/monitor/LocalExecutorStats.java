@@ -40,6 +40,13 @@ public interface LocalExecutorStats extends LocalInstanceStats {
     long getCompletedTaskCount();
 
     /**
+     * Returns the number of cancelled operations of the executor service
+     *
+     * @return the number of cancelled operations
+     */
+    long getCancelledTaskCount();
+
+    /**
      * Returns the total start latency of operations started
      *
      * @return the total start latency

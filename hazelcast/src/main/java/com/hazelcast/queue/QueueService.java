@@ -145,10 +145,6 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         getLocalQueueStatsImpl(event.name).incrementReceivedEvents();
     }
 
-    public String getServiceName() {
-        return SERVICE_NAME;
-    }
-
     public ObjectQueueProxy createDistributedObject(Object objectId) {
         return new ObjectQueueProxy(String.valueOf(objectId), this, nodeEngine);
     }

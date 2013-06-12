@@ -108,10 +108,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         node.connectionManager.addConnectionListener(this);
     }
 
-    public String getServiceName() {
-        return SERVICE_NAME;
-    }
-
     public void init(final NodeEngine nodeEngine, Properties properties) {
         long mergeFirstRunDelay = node.getGroupProperties().MERGE_FIRST_RUN_DELAY_SECONDS.getLong() * 1000;
         mergeFirstRunDelay = mergeFirstRunDelay <= 0 ? 100 : mergeFirstRunDelay; // milliseconds
@@ -171,10 +167,11 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         boolean valid = Packet.PACKET_VERSION == joinMessage.getPacketVersion();
         if (valid) {
             try {
-                valid = node.getConfig().isCompatible(joinMessage.getConfig());
+                valid = node.createConfigCheck().isCompatible(joinMessage.getConfigCheck());
             } catch (Exception e) {
-                logger.log(Level.WARNING, "Invalid join request, reason:" + e.getMessage());
-                node.getSystemLogService().logJoin("Invalid join request, reason:" + e.getMessage());
+                final String message = "Invalid join request from: " + joinMessage.getAddress() + ", reason:" + e.getMessage();
+                logger.log(Level.WARNING, message);
+                node.getSystemLogService().logJoin(message);
                 throw e;
             }
         }
@@ -183,23 +180,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private void logMissingConnection(Address address) {
         String msg = node.getLocalMember() + " has no connection to " + address;
-        logAtMaster(Level.WARNING, msg);
         logger.log(Level.WARNING, msg);
-    }
-
-    private void logAtMaster(Level level, String msg) {
-//        Address master = node.getMasterAddress();
-//        if (!node.isMaster() && master != null) {
-//            Connection connMaster = node.connectionManager.getOrConnect(node.getMasterAddress());
-//            if (connMaster != null) {
-//                Packet packet = new Packet();
-//                packet.set(level.toString(), null, toData(msg), ClusterOperation.LOG);
-//                packet.timeout = 0;
-//                send(packet, connMaster);
-//            }
-//        } else {
-//            logger.log(level, msg);
-//        }
     }
 
     public final void heartBeater() {
@@ -406,7 +387,6 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private void assignNewMaster() {
         final Address oldMasterAddress = node.getMasterAddress();
-        logger.log(Level.FINEST, "Master " + oldMasterAddress + " is dead...");
         if (node.joined()) {
             final Collection<MemberImpl> members = getMemberList();
             MemberImpl newMaster = null;
@@ -426,6 +406,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 logger.log(Level.WARNING, "Old master is dead and this node is not master " +
                         "but member list contains only " + size + " members! -> " + members);
             }
+            logger.log(Level.INFO, "Master " + oldMasterAddress + " left the cluster. Assigning new master " + newMaster);
             if (newMaster != null) {
                 node.setMasterAddress(newMaster.getAddress());
             } else {

@@ -16,12 +16,13 @@
 
 package com.hazelcast.concurrent.lock;
 
-import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.ThreadUtil;
 
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -47,6 +48,45 @@ public final class LockProxySupport {
                     .build();
             Future future = invocation.invoke();
             return (Boolean) future.get();
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
+    }
+
+    public boolean isLockedByCurrentThread(NodeEngine nodeEngine, Data key) {
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+        IsLockedOperation operation = new IsLockedOperation(namespace, key, ThreadUtil.getThreadId());
+        try {
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
+                    .build();
+            Future future = invocation.invoke();
+            return (Boolean) future.get();
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
+    }
+
+    public int getLockCount(NodeEngine nodeEngine, Data key) {
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+        Operation operation = new GetLockCountOperation(namespace, key);
+        try {
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
+                    .build();
+            Future future = invocation.invoke();
+            return ((Number) future.get()).intValue();
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
+    }
+
+    public long getRemainingLeaseTime(NodeEngine nodeEngine, Data key) {
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+        Operation operation = new GetRemainingLeaseTimeOperation(namespace, key);
+        try {
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
+                    .build();
+            Future future = invocation.invoke();
+            return ((Number) future.get()).longValue();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }

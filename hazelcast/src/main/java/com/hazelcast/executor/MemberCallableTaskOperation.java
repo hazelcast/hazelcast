@@ -25,13 +25,13 @@ import java.util.concurrent.Callable;
 /**
  * @mdogan 1/18/13
  */
-public final class MemberCallableTaskOperation<V> extends BaseCallableTaskOperation<V> implements IdentifiedDataSerializable {
+public final class MemberCallableTaskOperation extends BaseCallableTaskOperation implements IdentifiedDataSerializable {
 
     public MemberCallableTaskOperation() {
     }
 
-    public MemberCallableTaskOperation(String name, Callable<V> callable) {
-        super(name, callable);
+    public MemberCallableTaskOperation(String name, String uuid, Callable callable) {
+        super(name, uuid, callable);
     }
 
     @Override

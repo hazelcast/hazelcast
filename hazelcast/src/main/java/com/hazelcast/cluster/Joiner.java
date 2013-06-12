@@ -31,4 +31,6 @@ public interface Joiner {
     void setTargetAddress(Address targetAddress);
 
     void reset();
+
+    String getType();
 }

@@ -23,6 +23,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.partition.PartitionServiceImpl;
+import com.hazelcast.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.util.Clock;
@@ -127,8 +128,7 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
     }
 
     public void logError(Throwable e) {
-        final ILogger logger = getLogger();
-        logger.log(Level.WARNING, e.getClass() + ": " + e.getMessage());
+        ReplicaErrorLogger.log(e, getLogger());
     }
 
     @Override

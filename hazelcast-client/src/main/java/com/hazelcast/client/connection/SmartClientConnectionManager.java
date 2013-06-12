@@ -184,6 +184,10 @@ public class SmartClientConnectionManager implements ClientConnectionManager {
         public long getLastReadTime() {
             return connection.getLastReadTime();
         }
+
+        public void setEndpoint(Address address) {
+            connection.setEndpoint(address);
+        }
     }
 
     private void releaseConnection(ConnectionWrapper connection) {

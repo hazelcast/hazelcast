@@ -16,17 +16,11 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.util.ByteUtil;
-
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
 
-public class TcpIpConfig implements DataSerializable {
+public class TcpIpConfig {
 
     private int connectionTimeoutSeconds = 5;
 
@@ -124,40 +118,4 @@ public class TcpIpConfig implements DataSerializable {
                 + ", requiredMember=" + requiredMember
                 + "]";
     }
-
-    public void writeData(ObjectDataOutput out) throws IOException {
-        boolean hasMembers = members != null && !members.isEmpty();
-        boolean hasRequiredMember = requiredMember != null;
-        out.writeByte(ByteUtil.toByte(enabled, hasRequiredMember, hasMembers));
-        out.writeInt(connectionTimeoutSeconds);
-        if (hasRequiredMember) {
-            out.writeUTF(requiredMember);
-        }
-        if (hasMembers) {
-            out.writeInt(members.size());
-            for (final String member : members) {
-                out.writeUTF(member);
-            }
-        }
-    }
-
-    public void readData(ObjectDataInput in) throws IOException {
-        boolean[] b = ByteUtil.fromByte(in.readByte());
-        enabled = b[0];
-        boolean hasRequiredMember = b[1];
-        boolean hasMembers = b[2];
-        connectionTimeoutSeconds = in.readInt();
-        if (hasRequiredMember) {
-            requiredMember = in.readUTF();
-        }
-        if (hasMembers) {
-            int size = in.readInt();
-            members = new ArrayList<String>(size);
-            for (int i = 0; i < size; i++) {
-                members.add(in.readUTF());
-            }
-        }
-    }
-
-
 }

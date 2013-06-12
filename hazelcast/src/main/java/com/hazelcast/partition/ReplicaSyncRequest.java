@@ -49,13 +49,14 @@ public class ReplicaSyncRequest extends Operation implements PartitionAwareOpera
         final int replicaIndex = getReplicaIndex();
 
         try {
-            final Collection<MigrationAwareService> services = nodeEngine.getServices(MigrationAwareService.class);
+            final Collection<ServiceInfo> services = nodeEngine.getServiceInfos(MigrationAwareService.class);
             final PartitionReplicationEvent event = new PartitionReplicationEvent(partitionId, replicaIndex);
             final List<Operation> tasks = new LinkedList<Operation>();
-            for (MigrationAwareService service : services) {
+            for (ServiceInfo serviceInfo : services) {
+                MigrationAwareService service = (MigrationAwareService) serviceInfo.getService();
                 final Operation op = service.prepareReplicationOperation(event);
                 if (op != null) {
-                    op.setServiceName(service.getServiceName());
+                    op.setServiceName(serviceInfo.getName());
                     tasks.add(op);
                 }
             }
@@ -109,8 +110,7 @@ public class ReplicaSyncRequest extends Operation implements PartitionAwareOpera
     }
 
     public void logError(Throwable e) {
-        final ILogger logger = getLogger();
-        logger.log(Level.INFO, e.getClass() + ": " + e.getMessage());
+        ReplicaErrorLogger.log(e, getLogger());
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

@@ -124,7 +124,6 @@ final class TestNodeRegistry {
                                 clusterService.removeAddress(thisAddress);
                             }
                         });
-                        break;
                     }
                 }
             }
@@ -265,6 +264,11 @@ final class TestNodeRegistry {
             }
 
             public void searchForOtherClusters() {
+            }
+
+            @Override
+            public String getType() {
+                return "mock";
             }
 
             public String toString() {

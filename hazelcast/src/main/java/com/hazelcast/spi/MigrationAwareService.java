@@ -31,6 +31,4 @@ public interface MigrationAwareService {
 
     void clearPartitionReplica(int partitionId);
 
-    String getServiceName();
-
 }

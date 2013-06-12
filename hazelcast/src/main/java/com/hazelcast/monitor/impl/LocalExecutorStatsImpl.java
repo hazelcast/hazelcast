@@ -29,31 +29,17 @@ public class LocalExecutorStatsImpl implements LocalExecutorStats {
     private long creationTime;
     private final AtomicLong pending = new AtomicLong(0);
     private final AtomicLong started = new AtomicLong(0);
-    private final AtomicLong totalStartLatency = new AtomicLong(0);
     private final AtomicLong completed = new AtomicLong(0);
+    private final AtomicLong cancelled = new AtomicLong(0);
+    private final AtomicLong totalStartLatency = new AtomicLong(0);
     private final AtomicLong totalExecutionTime = new AtomicLong(0);
 
     public LocalExecutorStatsImpl() {
         creationTime = Clock.currentTimeMillis();
     }
 
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeLong(creationTime);
-        out.writeLong(pending.get());
-        out.writeLong(started.get());
-        out.writeLong(totalStartLatency.get());
-        out.writeLong(completed.get());
-        out.writeLong(totalExecutionTime.get());
-    }
-
-
-    public void readData(ObjectDataInput in) throws IOException {
-        creationTime = in.readLong();
-        pending.set(in.readLong());
-        started.set(in.readLong());
-        totalStartLatency.set(in.readLong());
-        completed.set(in.readLong());
-        totalExecutionTime.set(in.readLong());
+    public void startPending() {
+        pending.incrementAndGet();
     }
 
     public void startExecution(long elapsed) {
@@ -67,8 +53,8 @@ public class LocalExecutorStatsImpl implements LocalExecutorStats {
         completed.incrementAndGet();
     }
 
-    public void startPending() {
-        pending.incrementAndGet();
+    public void cancelExecution() {
+        cancelled.incrementAndGet();
     }
 
     public long getCreationTime() {
@@ -87,11 +73,33 @@ public class LocalExecutorStatsImpl implements LocalExecutorStats {
         return completed.get();
     }
 
+    public long getCancelledTaskCount() {
+        return cancelled.get();
+    }
+
     public long getTotalStartLatency() {
         return totalStartLatency.get();
     }
 
     public long getTotalExecutionLatency() {
         return totalExecutionTime.get();
+    }
+
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeLong(creationTime);
+        out.writeLong(pending.get());
+        out.writeLong(started.get());
+        out.writeLong(totalStartLatency.get());
+        out.writeLong(completed.get());
+        out.writeLong(totalExecutionTime.get());
+    }
+
+    public void readData(ObjectDataInput in) throws IOException {
+        creationTime = in.readLong();
+        pending.set(in.readLong());
+        started.set(in.readLong());
+        totalStartLatency.set(in.readLong());
+        completed.set(in.readLong());
+        totalExecutionTime.set(in.readLong());
     }
 }

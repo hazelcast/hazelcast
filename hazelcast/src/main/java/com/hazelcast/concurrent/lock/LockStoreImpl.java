@@ -35,7 +35,7 @@ public class LockStoreImpl implements DataSerializable, LockStore {
     private transient final ConstructorFunction<Data, DistributedLock> lockConstructor
             = new ConstructorFunction<Data, DistributedLock>() {
         public DistributedLock createNew(Data key) {
-            return new DistributedLock(key, lockService, namespace);
+            return new DistributedLock(key, LockStoreImpl.this);
         }
     };
 
@@ -86,6 +86,16 @@ public class LockStoreImpl implements DataSerializable, LockStore {
     public boolean isLockedBy(Data key, String caller, int threadId) {
         DistributedLock lock = locks.get(key);
         return lock != null && lock.isLockedBy(caller, threadId);
+    }
+
+    public int getLockCount(Data key) {
+        DistributedLock lock = locks.get(key);
+        return lock != null ? lock.getLockCount() : 0;
+    }
+
+    public long getRemainingLeaseTime(Data key) {
+        DistributedLock lock = locks.get(key);
+        return lock != null ? lock.getRemainingLeaseTime() : -1L;
     }
 
     public boolean canAcquireLock(Data key, String caller, int threadId) {
@@ -139,7 +149,15 @@ public class LockStoreImpl implements DataSerializable, LockStore {
         return keySet;
     }
 
-    public void setLockService(LockService lockService) {
+    void scheduleEviction(Data key, long ttl) {
+        lockService.scheduleEviction(namespace, key, ttl);
+    }
+
+    void cancelEviction(Data key) {
+        lockService.cancelEviction(namespace, key);
+    }
+
+    void setLockService(LockService lockService) {
         this.lockService = lockService;
     }
 
@@ -184,11 +202,15 @@ public class LockStoreImpl implements DataSerializable, LockStore {
     }
 
     ConditionKey getSignalKey(Data key) {
-        return getLock(key).getSignalKey();
+        final DistributedLock lock = locks.get(key);
+        return lock != null ? lock.getSignalKey() : null;
     }
 
     void removeSignalKey(ConditionKey conditionKey) {
-        getLock(conditionKey.getKey()).removeSignalKey(conditionKey);
+        final DistributedLock lock = locks.get(conditionKey.getKey());
+        if (lock != null) {
+            lock.removeSignalKey(conditionKey);
+        }
     }
 
     void registerExpiredAwaitOp(AwaitOperation awaitResponse) {
@@ -197,7 +219,8 @@ public class LockStoreImpl implements DataSerializable, LockStore {
     }
 
     AwaitOperation pollExpiredAwaitOp(Data key) {
-        return getLock(key).pollExpiredAwaitOp();
+        DistributedLock lock = locks.get(key);
+        return lock != null ? lock.pollExpiredAwaitOp() : null;
     }
 
     public String getLockOwnerString(Data dataKey) {

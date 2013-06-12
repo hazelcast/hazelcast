@@ -32,6 +32,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -55,14 +56,30 @@ public class BasicQueueTest extends HazelcastTestSupport {
         Config config = new Config();
         final String name = "l_queue";
         final QueueConfig queueConfig = config.getQueueConfig(name);
-        final ItemListenerConfig itemListenerConfig = new ItemListenerConfig(DummyListener.class.getName(), true);
+        final DummyListener dummyListener = new DummyListener();
+        final ItemListenerConfig itemListenerConfig = new ItemListenerConfig(dummyListener, true);
         queueConfig.addItemListenerConfig(itemListenerConfig);
         final HazelcastInstance instance = factory.newHazelcastInstance(config);
         final IQueue queue = instance.getQueue(name);
         queue.offer("item");
         queue.poll();
-        assertTrue(DummyListener.latchForListenerTest.await(10, TimeUnit.SECONDS));
+        assertTrue(dummyListener.latch.await(10, TimeUnit.SECONDS));
+    }
 
+    private static class DummyListener implements ItemListener, Serializable {
+
+        public final CountDownLatch latch = new CountDownLatch(2);
+
+        public DummyListener() {
+        }
+
+        public void itemAdded(ItemEvent item) {
+            latch.countDown();
+        }
+
+        public void itemRemoved(ItemEvent item) {
+            latch.countDown();
+        }
     }
 
     @Test

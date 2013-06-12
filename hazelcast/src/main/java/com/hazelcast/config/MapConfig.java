@@ -17,16 +17,11 @@
 package com.hazelcast.config;
 
 import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.util.ByteUtil;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MapConfig implements DataSerializable {
+public class MapConfig {
 
     public final static int MIN_BACKUP_COUNT = 0;
     public final static int DEFAULT_BACKUP_COUNT = 1;
@@ -36,7 +31,6 @@ public class MapConfig implements DataSerializable {
     public final static int DEFAULT_EVICTION_PERCENTAGE = 25;
     public final static int MAX_EVICTION_PERCENTAGE = 100;
 
-    public final static int DEFAULT_EVICTION_DELAY_SECONDS = 3;
     public final static int DEFAULT_TTL_SECONDS = 0;
     public final static int DEFAULT_MAX_IDLE_SECONDS = 0;
     public final static int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
@@ -55,8 +49,6 @@ public class MapConfig implements DataSerializable {
     private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
 
     private int maxIdleSeconds = DEFAULT_TTL_SECONDS;
-
-    private int evictionDelaySeconds = DEFAULT_EVICTION_DELAY_SECONDS;
 
     private MaxSizeConfig maxSizeConfig = new MaxSizeConfig();
 
@@ -107,7 +99,6 @@ public class MapConfig implements DataSerializable {
         this.evictionPercentage = config.evictionPercentage;
         this.timeToLiveSeconds = config.timeToLiveSeconds;
         this.maxIdleSeconds = config.maxIdleSeconds;
-        this.evictionDelaySeconds = config.evictionDelaySeconds;
         this.maxSizeConfig = config.maxSizeConfig;
         this.evictionPolicy = config.evictionPolicy;
         this.inMemoryFormat = config.inMemoryFormat;
@@ -170,7 +161,6 @@ public class MapConfig implements DataSerializable {
      *
      * @param backupCount the backupCount to set
      * @see #setAsyncBackupCount(int)
-     * @see #setBackupCounts(int, int)
      */
     public MapConfig setBackupCount(final int backupCount) {
         if (backupCount < MIN_BACKUP_COUNT) {
@@ -199,7 +189,6 @@ public class MapConfig implements DataSerializable {
      *
      * @param asyncBackupCount the asyncBackupCount to set
      * @see #setBackupCount(int)
-     * @see #setBackupCounts(int, int)
      */
     public MapConfig setAsyncBackupCount(final int asyncBackupCount) {
         if (asyncBackupCount < MIN_BACKUP_COUNT) {
@@ -210,29 +199,6 @@ public class MapConfig implements DataSerializable {
             throw new IllegalArgumentException("total (sync + async) map backup count must be less than "
                     + MAX_BACKUP_COUNT);
         }
-        this.asyncBackupCount = asyncBackupCount;
-        return this;
-    }
-
-    /**
-     * Number of sync and async backups.
-     * 0 means no backup.
-     *
-     * @param backupCount      the sync backup count to set
-     * @param asyncBackupCount the async backup count to set
-     * @see #setBackupCount(int)
-     * @see #setAsyncBackupCount(int)
-     */
-    public MapConfig setBackupCounts(final int backupCount, final int asyncBackupCount) {
-        if (backupCount < MIN_BACKUP_COUNT || asyncBackupCount < MIN_BACKUP_COUNT) {
-            throw new IllegalArgumentException("map backup count must be equal to or bigger than "
-                    + MIN_BACKUP_COUNT);
-        }
-        if ((backupCount + asyncBackupCount) > MAX_BACKUP_COUNT) {
-            throw new IllegalArgumentException("total (sync + async) map backup count must be less than "
-                    + MAX_BACKUP_COUNT);
-        }
-        this.backupCount = backupCount;
         this.asyncBackupCount = asyncBackupCount;
         return this;
     }
@@ -264,23 +230,6 @@ public class MapConfig implements DataSerializable {
             throw new IllegalArgumentException("eviction percentage must be smaller or equal than 100");
         }
         this.evictionPercentage = evictionPercentage;
-        return this;
-    }
-
-    /**
-     * @return the evictionDelaySeconds
-     * @deprecated
-     */
-    public int getEvictionDelaySeconds() {
-        return evictionDelaySeconds;
-    }
-
-    /**
-     * @param evictionDelaySeconds the evictionPercentage to set
-     * @deprecated
-     */
-    public MapConfig setEvictionDelaySeconds(int evictionDelaySeconds) {
-        this.evictionDelaySeconds = evictionDelaySeconds;
         return this;
     }
 
@@ -470,7 +419,6 @@ public class MapConfig implements DataSerializable {
                 (this.name != null ? this.name.equals(other.name) : other.name == null) &&
                 this.backupCount == other.backupCount &&
                 this.asyncBackupCount == other.asyncBackupCount &&
-                this.evictionDelaySeconds == other.evictionDelaySeconds &&
                 this.evictionPercentage == other.evictionPercentage &&
                 this.maxIdleSeconds == other.maxIdleSeconds &&
                 (this.maxSizeConfig.getSize() == other.maxSizeConfig.getSize() ||
@@ -486,7 +434,6 @@ public class MapConfig implements DataSerializable {
         int result = 1;
         result = prime * result + this.backupCount;
         result = prime * result + this.asyncBackupCount;
-        result = prime * result + this.evictionDelaySeconds;
         result = prime * result + this.evictionPercentage;
         result = prime
                 * result
@@ -526,7 +473,6 @@ public class MapConfig implements DataSerializable {
                 (this.name != null ? this.name.equals(other.name) : other.name == null) &&
                         this.backupCount == other.backupCount &&
                         this.asyncBackupCount == other.asyncBackupCount &&
-                        this.evictionDelaySeconds == other.evictionDelaySeconds &&
                         this.evictionPercentage == other.evictionPercentage &&
                         this.maxIdleSeconds == other.maxIdleSeconds &&
                         this.maxSizeConfig.getSize() == other.maxSizeConfig.getSize() &&
@@ -543,42 +489,6 @@ public class MapConfig implements DataSerializable {
                                 : other.nearCacheConfig == null);
     }
 
-    public void readData(ObjectDataInput in) throws IOException {
-        name = in.readUTF();
-        inMemoryFormat = InMemoryFormat.valueOf(in.readUTF());
-        backupCount = in.readInt();
-        asyncBackupCount = in.readInt();
-        evictionPercentage = in.readInt();
-        timeToLiveSeconds = in.readInt();
-        maxIdleSeconds = in.readInt();
-        evictionDelaySeconds = in.readInt();
-        maxSizeConfig.readData(in);
-        boolean[] b = ByteUtil.fromByte(in.readByte());
-        readBackupData = b[0];
-//        valueIndexed = b[1];
-        evictionPolicy = MapConfig.EvictionPolicy.valueOf(in.readUTF());
-//        mergePolicyConfig = new MapMergePolicyConfig();
-        // TODO: MapStoreConfig mapStoreConfig
-        // TODO: NearCacheConfig nearCacheConfig
-    }
-
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeUTF(name);
-        out.writeUTF(inMemoryFormat.toString());
-        out.writeInt(backupCount);
-        out.writeInt(asyncBackupCount);
-        out.writeInt(evictionPercentage);
-        out.writeInt(timeToLiveSeconds);
-        out.writeInt(maxIdleSeconds);
-        out.writeInt(evictionDelaySeconds);
-        maxSizeConfig.writeData(out);
-        out.writeByte(ByteUtil.toByte(readBackupData));
-        out.writeUTF(evictionPolicy.name());
-//        out.writeUTF(mergePolicyConfig);
-        // TODO: MapStoreConfig mapStoreConfig
-        // TODO: NearCacheConfig nearCacheConfig
-    }
-
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
@@ -591,7 +501,6 @@ public class MapConfig implements DataSerializable {
         sb.append(", maxIdleSeconds=").append(maxIdleSeconds);
         sb.append(", evictionPolicy='").append(evictionPolicy).append('\'');
         sb.append(", evictionPercentage=").append(evictionPercentage);
-        sb.append(", evictionDelaySeconds=").append(evictionDelaySeconds);
         sb.append(", maxSizeConfig=").append(maxSizeConfig);
         sb.append(", readBackupData=").append(readBackupData);
         sb.append(", nearCacheConfig=").append(nearCacheConfig);

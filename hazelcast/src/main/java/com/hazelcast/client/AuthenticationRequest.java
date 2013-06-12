@@ -58,6 +58,7 @@ public final class AuthenticationRequest extends CallableClientRequest implement
         ClientEngineImpl clientEngine = getService();
         Connection connection = endpoint.getConnection();
         ILogger logger = clientEngine.getILogger(getClass());
+        clientEngine.sendResponse(endpoint, clientEngine.getThisAddress());
         boolean authenticated;
         if (credentials == null) {
             authenticated = false;

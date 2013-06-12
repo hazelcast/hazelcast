@@ -129,6 +129,11 @@ public class MulticastJoiner extends AbstractJoiner {
         }
     }
 
+    @Override
+    public String getType() {
+        return "multicast";
+    }
+
     private boolean connectAndSendJoinRequest(Address masterAddress) {
         if (masterAddress == null || masterAddress.equals(node.getThisAddress())) {
             throw new IllegalArgumentException();

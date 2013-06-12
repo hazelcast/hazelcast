@@ -18,8 +18,8 @@ package com.hazelcast.concurrent.lock;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.*;
-import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
@@ -38,28 +38,19 @@ public class DistributedLock implements DataSerializable {
     private Map<String, ConditionInfo> conditions;
     private List<ConditionKey> signalKeys;
     private List<AwaitOperation> expiredAwaitOps;
-    private transient LockService lockService;
-    private transient ObjectNamespace namespace;
+
+    private transient LockStoreImpl lockStore;
 
     public DistributedLock() {
     }
 
-    public DistributedLock(Data key, LockService lockService, ObjectNamespace namespace) {
+    public DistributedLock(Data key, LockStoreImpl lockStore) {
         this.key = key;
-        this.lockService = lockService;
-        this.namespace = namespace;
+        this.lockStore= lockStore;
     }
 
     public Data getKey() {
         return key;
-    }
-
-    public void setLockService(LockService lockService) {
-        this.lockService = lockService;
-    }
-
-    public void setNamespace(ObjectNamespace namespace) {
-        this.namespace = namespace;
     }
 
     public boolean isLocked() {
@@ -97,7 +88,7 @@ public class DistributedLock implements DataSerializable {
         if (isLockedBy(caller, threadId)) {
             if (expirationTime < Long.MAX_VALUE) {
                 setExpirationTime(expirationTime - Clock.currentTimeMillis() + ttl);
-                lockService.scheduleEviction(namespace, key, ttl);
+                lockStore.scheduleEviction(key, ttl);
             }
             return true;
         }
@@ -112,7 +103,7 @@ public class DistributedLock implements DataSerializable {
             if (expirationTime < 0) {
                 expirationTime = Long.MAX_VALUE;
             } else {
-                lockService.scheduleEviction(namespace, key, ttl);
+                lockStore.scheduleEviction(key, ttl);
             }
         }
     }
@@ -216,7 +207,7 @@ public class DistributedLock implements DataSerializable {
         return null;
     }
 
-    public void clear() {
+    void clear() {
         threadId = -1;
         lockCount = 0;
         owner = null;
@@ -225,11 +216,11 @@ public class DistributedLock implements DataSerializable {
         cancelEviction();
     }
 
-    public void cancelEviction() {
-        lockService.cancelEviction(namespace, key);
+    void cancelEviction() {
+        lockStore.cancelEviction(key);
     }
 
-    public boolean isRemovable() {
+    boolean isRemovable() {
         return !isLocked()
                 && (conditions == null || conditions.isEmpty())
                 && (expiredAwaitOps == null || expiredAwaitOps.isEmpty());
@@ -239,11 +230,11 @@ public class DistributedLock implements DataSerializable {
         return owner;
     }
 
-    public boolean isTransactional() {
+    boolean isTransactional() {
         return transactional;
     }
 
-    public int getThreadId() {
+    int getThreadId() {
         return threadId;
     }
 
@@ -255,10 +246,14 @@ public class DistributedLock implements DataSerializable {
         return acquireTime;
     }
 
-    public long getRemainingTTL() {
+    long getRemainingLeaseTime() {
         long now = Clock.currentTimeMillis();
         if (now >= expirationTime) return 0;
         return expirationTime - now;
+    }
+
+    void setLockStore(LockStoreImpl lockStore) {
+        this.lockStore = lockStore;
     }
 
     @Override

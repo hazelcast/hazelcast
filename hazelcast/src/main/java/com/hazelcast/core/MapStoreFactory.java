@@ -26,7 +26,7 @@ public interface MapStoreFactory<K, V> {
     /**
      * Produces a MapLoader or a MapStore for the given map name and properties.
      *
-     * @param mapName    name of the map (or other instance) that the produced MapLoader or MapStore will serve
+     * @param mapName    name of the distributed map that the produced MapLoader or MapStore will serve
      * @param properties the properties of the MapStoreConfig for the produced MapLoader or MapStore
      */
     MapLoader<K, V> newMapStore(String mapName, Properties properties);
