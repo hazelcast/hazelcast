@@ -121,8 +121,8 @@ public class CallState implements CallStateAware {
         StringBuilder sb = new StringBuilder("CallState [");
         sb.append(callId);
         sb.append("] {");
-        sb.append("\n\tcaller: " + caller);
-        sb.append("\n\tthreadId: " + callerThreadId);
+        sb.append("\n\tcaller: ").append(caller);
+        sb.append("\n\tthreadId: ").append(callerThreadId);
         sb.append("\n");
         for (Object log : getLogs()) {
             SystemLog systemLog = (SystemLog) log;
