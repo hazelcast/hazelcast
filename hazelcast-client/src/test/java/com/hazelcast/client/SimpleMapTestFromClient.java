@@ -16,6 +16,8 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -28,17 +30,18 @@ import java.util.concurrent.atomic.AtomicLong;
 @Ignore("not a JUnit test")
 public class SimpleMapTestFromClient {
 
-    public static int THREAD_COUNT = 40;
+    public static int THREAD_COUNT = 4;
     public static int ENTRY_COUNT = 10 * 1000;
     public static int VALUE_SIZE = 1000;
     public static final int STATS_SECONDS = 10;
-    public static int GET_PERCENTAGE = 40;
-    public static int PUT_PERCENTAGE = 40;
+    public static int GET_PERCENTAGE = 0;
+    public static int PUT_PERCENTAGE = 100;
 
     public static void main(String[] args) {
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(null);
-        final HazelcastInstance hazelcast = HazelcastClient.newHazelcastClient(null);
-//        final HazelcastInstance hazelcast = HazelcastClient.newHazelcastClient("dev", "dev-pass", "192.168.1.4");
+        final ClientConfig clientConfig = new ClientConfig();
+        clientConfig.addAddress("192.168.2.22:5701") ;
+        clientConfig.getGroupConfig().setName("sancar").setPassword("dev-pass");
+        final HazelcastInstance hazelcast = HazelcastClient.newHazelcastClient(clientConfig);
         final Stats stats = new Stats();
         if (args != null && args.length > 0) {
             for (String arg : args) {

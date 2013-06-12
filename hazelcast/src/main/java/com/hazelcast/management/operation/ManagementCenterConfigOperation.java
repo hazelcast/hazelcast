@@ -61,7 +61,7 @@ public class ManagementCenterConfigOperation extends Operation {
     }
 
     public boolean returnsResponse() {
-        return false;
+        return true;
     }
 
     public Object getResponse() {
