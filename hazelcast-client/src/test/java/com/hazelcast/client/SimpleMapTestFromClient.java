@@ -39,8 +39,6 @@ public class SimpleMapTestFromClient {
 
     public static void main(String[] args) {
         final ClientConfig clientConfig = new ClientConfig();
-        clientConfig.addAddress("192.168.2.22:5701") ;
-        clientConfig.getGroupConfig().setName("sancar").setPassword("dev-pass");
         final HazelcastInstance hazelcast = HazelcastClient.newHazelcastClient(clientConfig);
         final Stats stats = new Stats();
         if (args != null && args.length > 0) {

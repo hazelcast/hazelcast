@@ -144,11 +144,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         final Data keyData = toData(key);
         final Data valueData = toData(value);
         MapPutRequest request = new MapPutRequest(name, keyData, valueData, ThreadUtil.getThreadId(), getTimeInMillis(ttl, timeunit));
-        final SerializationService serializationService = getContext().getSerializationService();
-        final Data data = serializationService.toData(request);
-        final Object o = serializationService.toObject(data);
-        return (V) o;
-//        return invoke(request, keyData);
+        return invoke(request, keyData);
     }
 
     public void putTransient(K key, V value, long ttl, TimeUnit timeunit) {
