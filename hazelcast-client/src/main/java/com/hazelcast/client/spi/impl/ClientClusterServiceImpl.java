@@ -30,6 +30,7 @@ import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.cluster.client.AddMembershipListenerRequest;
 import com.hazelcast.cluster.client.ClientMembershipEvent;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.MemberImpl;
@@ -159,9 +160,12 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     private Connection getConnection(Address address) throws IOException {
+        if (!client.getLifecycleService().isRunning()){
+            throw new HazelcastInstanceNotActiveException();
+        }
         Connection connection = null;
         int retryCount = RETRY_COUNT;
-        while (connection == null && retryCount > 0){
+        while (connection == null && retryCount > 0 ){
             if (address == null){
                 connection = client.getConnectionManager().getConnection(address);
             } else {
@@ -277,7 +281,12 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             while (!Thread.currentThread().isInterrupted()) {
                 try {
                     if (conn == null) {
-                        conn = pickConnection();
+                        try {
+                            conn = pickConnection();
+                        } catch (Exception e){
+                            client.getLifecycleService().shutdown();
+                            return;
+                        }
                     }
                     loadInitialMemberList();
                     listenMembershipEvents();
@@ -392,7 +401,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             final Connection c = conn;
             if (c != null) {
                 try {
-                    c.release();
+                    c.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

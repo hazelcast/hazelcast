@@ -19,6 +19,7 @@ package com.hazelcast.client;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IQueue;
 import org.junit.Ignore;
 
 /**
@@ -34,14 +35,14 @@ public class ClientConnectionTest {
 
     public static void main(String[] args) throws Exception {
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setConnectionAttemptLimit(30);
+//        clientConfig.setConnectionAttemptLimit(3);
         clientConfig.setRedoOperation(true);
-        clientConfig.setAttemptPeriod(4000);
 
         server1 = Hazelcast.newHazelcastInstance();
 
 
         final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        final IQueue<Object> queue = client.getQueue(name);
         System.err.println("c: " + client);
 
         Thread.sleep(2000);
@@ -52,16 +53,16 @@ public class ClientConnectionTest {
         System.err.println("--------------------------");
         server1.getLifecycleService().shutdown();
         System.err.println("shutdown");
-        Thread.sleep(20000);
+        Thread.sleep(10000);
 
 
 
         server1 = Hazelcast.newHazelcastInstance();
 
         System.err.println("offering");
-        client.getQueue(name).offer("item");
+        queue.offer("item");
         System.err.println("offered");
-        Object item = client.getQueue(name).poll();
+        Object item = queue.poll();
         System.err.println("item:" + item);
     }
 
