@@ -30,6 +30,7 @@ import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.cluster.client.AddMembershipListenerRequest;
 import com.hazelcast.cluster.client.ClientMembershipEvent;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.MemberImpl;
@@ -51,6 +52,9 @@ import java.util.concurrent.atomic.AtomicReference;
  * @mdogan 5/15/13
  */
 public final class ClientClusterServiceImpl implements ClientClusterService {
+
+    private static int RETRY_COUNT = 10;
+    private static int RETRY_WAIT_TIME = 100;
 
     private final HazelcastClient client;
     private final ClusterListenerThread clusterThread;
@@ -102,7 +106,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     <T> T sendAndReceive(Object obj) throws IOException {
-        final Connection conn = getConnectionManager().getRandomConnection();
+        final Connection conn = getRandomConnection();
         try {
             return sendAndReceive(conn, obj);
         } finally {
@@ -111,7 +115,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     <T> T sendAndReceive(Address address, Object obj) throws IOException {
-        final Connection conn = getConnectionManager().getConnection(address);
+        final Connection conn = getConnection(address);
         try {
             return sendAndReceive(conn, obj);
         } finally {
@@ -151,36 +155,70 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         return client.getConnectionManager();
     }
 
+    private Connection getRandomConnection() throws IOException {
+        return getConnection(null);
+    }
+
+    private Connection getConnection(Address address) throws IOException {
+        if (!client.getLifecycleService().isRunning()){
+            throw new HazelcastInstanceNotActiveException();
+        }
+        Connection connection = null;
+        int retryCount = RETRY_COUNT;
+        while (connection == null && retryCount > 0 ){
+            if (address == null){
+                connection = client.getConnectionManager().getConnection(address);
+            } else {
+                connection = client.getConnectionManager().getRandomConnection();
+            }
+            retryCount--;
+            try {
+                Thread.sleep(RETRY_WAIT_TIME);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        if (connection == null){
+            throw new HazelcastException("Unable to connect!!!");
+        }
+        return connection;
+    }
+
+
     void sendAndHandle(Address address, Object obj, ResponseHandler handler) throws IOException {
-        final Connection conn = getConnectionManager().getConnection(address);
+        final Connection conn = getConnection(address);
         sendAndHandle(conn, obj, handler);
     }
 
     void sendAndHandle(Object obj, ResponseHandler handler) throws IOException {
-        final Connection conn = getConnectionManager().getRandomConnection();
+        final Connection conn = getRandomConnection();
         sendAndHandle(conn, obj, handler);
     }
 
     private void sendAndHandle(Connection conn, Object obj, ResponseHandler handler) throws IOException {
+        ResponseStream stream;
         try {
             final SerializationService serializationService = getSerializationService();
             final Data request = serializationService.toData(obj);
             conn.write(request);
-            final ResponseStream stream = new ResponseStreamImpl(serializationService, conn);
-            try {
-                handler.handle(stream);
-            } catch (Exception e) {
-                throw new ClientException(e);
-            } finally {
-                stream.end();
-            }
+            stream = new ResponseStreamImpl(serializationService, conn);
         } catch (IOException e){
             ((ClientPartitionServiceImpl)client.getClientPartitionService()).refreshPartitions();
             if (redoOperation || obj instanceof RetryableRequest){
                 sendAndHandle(obj, handler);
+                return;
             }
             throw new HazelcastException(e);
         }
+
+        try {
+            handler.handle(stream);
+        } catch (Exception e) {
+            throw new ClientException(e);
+        } finally {
+            stream.end();
+        }
+
     }
 
     public Authenticator getAuthenticator() {
@@ -236,14 +274,19 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             super(group, name);
         }
 
-        private Connection conn;
+        private volatile Connection conn;
         private final List<MemberImpl> members = new LinkedList<MemberImpl>();
 
         public void run() {
             while (!Thread.currentThread().isInterrupted()) {
                 try {
                     if (conn == null) {
-                        conn = pickConnection();
+                        try {
+                            conn = pickConnection();
+                        } catch (Exception e){
+                            client.getLifecycleService().shutdown();
+                            return;
+                        }
                     }
                     loadInitialMemberList();
                     listenMembershipEvents();
@@ -358,7 +401,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             final Connection c = conn;
             if (c != null) {
                 try {
-                    c.release();
+                    c.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

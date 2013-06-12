@@ -92,25 +92,20 @@ public class SmartClientConnectionManager implements ClientConnectionManager {
             throw new IllegalArgumentException("Target address is required!");
         }
         final ObjectPool<ConnectionWrapper> pool = getConnectionPool(address);
+        if (pool == null){
+            return null;
+        }
         Connection connection = null;
         try {
-            connection = pool == null ? getRandomConnection() : pool.take();
+            connection = pool.take();
         } catch (Exception e) {
-            e.printStackTrace();
+//            e.printStackTrace();
         }
         // Could be that this address is dead and that's why pool is not able to create and give a connection.
         // We will call it again, and hopefully at some time LoadBalancer will give us the right target for the connection.
-        if (connection == null) {
-            checkLive();
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException ignored) {
-            }
-            return getRandomConnection();
-        }
-        if (!heartbeat.checkHeartBeat(connection)) {
+        if (connection != null && !heartbeat.checkHeartBeat(connection)) {
             connection.close();
-            return getRandomConnection();
+            connection = null;
         }
         return connection;
     }

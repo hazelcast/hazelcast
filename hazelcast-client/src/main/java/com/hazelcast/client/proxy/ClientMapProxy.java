@@ -23,6 +23,7 @@ import com.hazelcast.map.*;
 import com.hazelcast.map.client.*;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryResultEntry;
 import com.hazelcast.spi.impl.PortableEntryEvent;
@@ -275,10 +276,10 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         final Data keyData = toData(key);
         MapGetEntryViewRequest request = new MapGetEntryViewRequest(name, keyData);
         SimpleEntryView entryView = invoke(request, keyData);
-        if(entryView == null) {
+        if (entryView == null) {
             return null;
         }
-        final Data value = (Data)entryView.getValue();
+        final Data value = (Data) entryView.getValue();
         entryView.setKey(key);
         entryView.setValue(toObject(value));
         return entryView;
@@ -310,15 +311,13 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         }
         MapGetAllRequest request = new MapGetAllRequest(name, keySet);
         MapEntrySet mapEntrySet = invoke(request);
-        Map<K,V> result = new HashMap<K, V>();
+        Map<K, V> result = new HashMap<K, V>();
         Set<Entry<Data, Data>> entrySet = mapEntrySet.getEntrySet();
         for (Entry<Data, Data> dataEntry : entrySet) {
             result.put((K) toObject(dataEntry.getKey()), (V) toObject(dataEntry.getValue()));
         }
         return result;
     }
-
-
 
     public Collection<V> values() {
         MapValuesRequest request = new MapValuesRequest(name);
@@ -362,7 +361,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public Set<Entry<K, V>> entrySet(Predicate predicate) {
         MapQueryRequest request = new MapQueryRequest(name, predicate, IterationType.ENTRY);
         QueryDataResultStream result = invoke(request);
-        Set<Entry<K,V>> entrySet = new HashSet<Entry<K, V>>(result.size());
+        Set<Entry<K, V>> entrySet = new HashSet<Entry<K, V>>(result.size());
         for (QueryResultEntry queryResultEntry : result) {
             Data keyData = queryResultEntry.getKeyData();
             Data valueData = queryResultEntry.getValueData();
@@ -427,7 +426,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     public int size() {
         MapSizeRequest request = new MapSizeRequest(name);
-        Integer result =invoke(request);
+        Integer result = invoke(request);
         return result;
     }
 
@@ -438,7 +437,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public void putAll(Map<? extends K, ? extends V> m) {
         MapEntrySet entrySet = new MapEntrySet();
         for (Entry<? extends K, ? extends V> entry : m.entrySet()) {
-            entrySet.add(new AbstractMap.SimpleImmutableEntry<Data,Data>(toData(entry.getKey()), toData(entry.getValue())));
+            entrySet.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(toData(entry.getKey()), toData(entry.getValue())));
         }
         MapPutAllRequest request = new MapPutAllRequest(name, entrySet);
         invoke(request);
@@ -458,15 +457,15 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         return name;
     }
 
-    private Data toData(Object o){
+    private Data toData(Object o) {
         return getContext().getSerializationService().toData(o);
     }
 
-    private <T> T toObject(Data data){
+    private <T> T toObject(Data data) {
         return (T) getContext().getSerializationService().toObject(data);
     }
 
-    private <T> T invoke(Object req, Data keyData){
+    private <T> T invoke(Object req, Data keyData) {
         try {
             return getContext().getInvocationService().invokeOnKeyOwner(req, keyData);
         } catch (Exception e) {
@@ -474,7 +473,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         }
     }
 
-    private <T> T invoke(Object req){
+    private <T> T invoke(Object req) {
         try {
             return getContext().getInvocationService().invokeOnRandomTarget(req);
         } catch (Exception e) {
@@ -486,20 +485,20 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         return timeunit != null ? timeunit.toMillis(time) : time;
     }
 
-    private EventHandler<PortableEntryEvent> createHandler(final EntryListener<K,V> listener, final boolean includeValue){
+    private EventHandler<PortableEntryEvent> createHandler(final EntryListener<K, V> listener, final boolean includeValue) {
         return new EventHandler<PortableEntryEvent>() {
             public void handle(PortableEntryEvent event) {
                 V value = null;
                 V oldValue = null;
-                if (includeValue){
+                if (includeValue) {
                     value = toObject(event.getValue());
                     oldValue = toObject(event.getOldValue());
                 }
                 K key = toObject(event.getKey());
                 Member member = getContext().getClusterService().getMember(event.getUuid());
-                EntryEvent<K,V> entryEvent = new EntryEvent<K, V>(name, member,
+                EntryEvent<K, V> entryEvent = new EntryEvent<K, V>(name, member,
                         event.getEventType().getType(), key, oldValue, value);
-                switch (event.getEventType()){
+                switch (event.getEventType()) {
                     case ADDED:
                         listener.entryAdded(entryEvent);
                         break;

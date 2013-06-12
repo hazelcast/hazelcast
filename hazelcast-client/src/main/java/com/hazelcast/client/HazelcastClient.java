@@ -107,14 +107,14 @@ public final class HazelcastClient implements HazelcastInstance {
         } else {
             connectionManager = new DummyClientConnectionManager(this, clusterService.getAuthenticator(), loadBalancer);
         }
-        partitionService = new ClientPartitionServiceImpl(this);
         invocationService = new ClientInvocationServiceImpl(this);
         userContext = new ConcurrentHashMap<String, Object>();
         clusterService.start();
-        partitionService.start();
         loadBalancer.init(getCluster(), config);
         proxyManager.init(config.getProxyFactoryConfig());
         lifecycleService.setStarted();
+        partitionService = new ClientPartitionServiceImpl(this);
+        partitionService.start();
     }
 
     public static HazelcastInstance newHazelcastClient(ClientConfig config) {

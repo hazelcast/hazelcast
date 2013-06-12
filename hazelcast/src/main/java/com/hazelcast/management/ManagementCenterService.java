@@ -36,11 +36,13 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.ObjectDataInputStream;
 import com.hazelcast.nio.serialization.ObjectDataOutputStream;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.core.Partition;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.Operation;
 
-import java.io.*;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.management.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -60,11 +62,11 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     private final int updateIntervalMs;
     private final ManagementCenterConfig managementCenterConfig;
     private final SerializationService serializationService;
+    private final ManagementCenterIdentifier identifier;
     private AtomicBoolean running = new AtomicBoolean(false);
     private volatile String webServerUrl;
     private volatile boolean urlChanged = false;
     private boolean versionMismatch = false;
-    private final ManagementCenterIdentifier identifier;
 
     public ManagementCenterService(HazelcastInstanceImpl instance) {
         this.instance = instance;
@@ -86,7 +88,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         stateSender = new StateSender();
         serializationService = instance.node.getSerializationService();
         final Address address = instance.node.address;
-        identifier = new ManagementCenterIdentifier(instance.node.initializer.getVersion(),instance.getConfig().getGroupConfig().getName(), address.getHost() + ":" + address.getPort());
+        identifier = new ManagementCenterIdentifier(instance.node.initializer.getVersion(), instance.getConfig().getGroupConfig().getName(), address.getHost() + ":" + address.getPort());
     }
 
     public void start() {
@@ -128,7 +130,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             if (!(groupConfig.getName().equals(groupName) && groupConfig.getPassword().equals(groupPass)))
                 return HttpCommand.RES_403;
             ManagementCenterConfigOperation operation = new ManagementCenterConfigOperation(newUrl);
-            callOnAllMembers(operation);
+            sendToAllMembers(operation);
         } catch (Throwable throwable) {
             logger.log(Level.WARNING, "New web server url cannot be assigned.", throwable);
             return HttpCommand.RES_500;
@@ -362,6 +364,11 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         }
     }
 
+    public void send(Address address, Operation operation) {
+        Invocation invocation = instance.node.nodeEngine.getOperationService().createInvocationBuilder(MapService.SERVICE_NAME, operation, address).build();
+        invocation.invoke();
+    }
+
     public Collection callOnAddresses(Set<Address> addresses, Operation operation) {
         final ArrayList list = new ArrayList(addresses.size());
         for (Address address : addresses) {
@@ -371,17 +378,20 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     }
 
     public Collection callOnAllMembers(Operation operation) {
-        Set<Member> members = instance.getCluster().getMembers();
-        return callOnMembers(members, operation);
-    }
-
-    private Collection callOnMembers(Set<Member> members, Operation operation) {
+        Collection<MemberImpl> members = instance.node.clusterService.getMemberList();
         final ArrayList list = new ArrayList(members.size());
-        for (Member member : members) {
-            list.add(call(((MemberImpl) member).getAddress(), operation));
+        for (MemberImpl member : members) {
+            list.add(call(member.getAddress(), operation));
 
         }
         return list;
+    }
+
+    public void sendToAllMembers(Operation operation) {
+        Collection<MemberImpl> members = instance.node.clusterService.getMemberList();
+        for (MemberImpl member : members) {
+            send(member.getAddress(), operation);
+        }
     }
 
     private TimedMemberState getTimedMemberState() {

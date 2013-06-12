@@ -173,7 +173,7 @@ public final class HazelcastClientProxy implements HazelcastInstance {
 
     private HazelcastClient getClient() {
         final HazelcastClient c = client;
-        if (c == null) {
+        if (c == null || !c.getLifecycleService().isRunning()) {
             throw new HazelcastInstanceNotActiveException();
         }
         return c;

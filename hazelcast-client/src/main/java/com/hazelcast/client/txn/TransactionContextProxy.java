@@ -123,7 +123,9 @@ public class TransactionContextProxy implements TransactionContext {
             } catch (IOException e) {
                 continue;
             }
-            break;
+            if (conn != null){
+                break;
+            }
         }
         return conn;
     }
