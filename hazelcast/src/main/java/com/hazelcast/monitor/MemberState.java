@@ -26,8 +26,6 @@ public interface MemberState extends DataSerializable {
 
     Address getAddress();
 
-    MemberHealthStats getMemberHealthStats();
-
     Map<String, Long> getRuntimeProps();
 
     LocalMapStats getLocalMapStats(String mapName);

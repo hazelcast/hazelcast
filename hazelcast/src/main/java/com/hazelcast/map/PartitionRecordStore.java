@@ -16,8 +16,8 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
-import com.hazelcast.concurrent.lock.SharedLockService;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.serialization.Data;
@@ -49,7 +49,7 @@ public class PartitionRecordStore implements RecordStore {
         this.partitionContainer = partitionContainer;
         this.mapService = partitionContainer.getMapService();
         this.mapContainer = mapService.getMapContainer(name);
-        final SharedLockService lockService = mapService.getNodeEngine().getSharedService(SharedLockService.SERVICE_NAME);
+        final LockService lockService = mapService.getNodeEngine().getSharedService(LockService.SERVICE_NAME);
         this.lockStore = lockService == null ? null :
                 lockService.createLockStore(partitionContainer.partitionId, new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
     }
@@ -101,7 +101,7 @@ public class PartitionRecordStore implements RecordStore {
     }
 
     void clear() {
-        final SharedLockService lockService = mapService.getNodeEngine().getSharedService(SharedLockService.SERVICE_NAME);
+        final LockService lockService = mapService.getNodeEngine().getSharedService(LockService.SERVICE_NAME);
         if (lockService != null) {
             lockService.clearLockStore(partitionContainer.partitionId, new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
         }
@@ -136,7 +136,7 @@ public class PartitionRecordStore implements RecordStore {
     }
 
     public boolean extendLock(Data key, String caller, int threadId, long ttl) {
-        return lockStore != null && lockStore.extendTTL(key, caller, threadId, ttl);
+        return lockStore != null && lockStore.extendLeaseTime(key, caller, threadId, ttl);
     }
 
     public boolean unlock(Data key, String caller, int threadId) {

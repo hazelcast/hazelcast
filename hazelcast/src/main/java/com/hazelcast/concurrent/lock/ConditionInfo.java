@@ -27,7 +27,7 @@ import java.util.Map;
 /**
  * @mdogan 2/14/13
  */
-class ConditionInfo implements DataSerializable {
+final class ConditionInfo implements DataSerializable {
 
     private String conditionId;
     private Map<ConditionWaiter, ConditionWaiter> waiters = new HashMap<ConditionWaiter, ConditionWaiter>(2);
@@ -88,7 +88,7 @@ class ConditionInfo implements DataSerializable {
         }
     }
 
-    static class ConditionWaiter {
+    private static class ConditionWaiter {
         String caller;
         int threadId;
 

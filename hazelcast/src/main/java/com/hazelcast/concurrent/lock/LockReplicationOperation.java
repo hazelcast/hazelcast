@@ -37,9 +37,8 @@ public class LockReplicationOperation extends AbstractOperation {
 
     public LockReplicationOperation(LockStoreContainer container, int partitionId, int replicaIndex) {
         this.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
-        final Collection<LockStoreImpl> allLockStores = container.getLockStores();
-
-        for (LockStoreImpl ls : allLockStores) {
+        final Collection<LockStoreImpl> lockStores = container.getLockStores();
+        for (LockStoreImpl ls : lockStores) {
             if (ls.getTotalBackupCount() < replicaIndex) {
                 continue;
             }
@@ -48,7 +47,7 @@ public class LockReplicationOperation extends AbstractOperation {
     }
 
     public void run() {
-        LockService lockService = getService();
+        LockServiceImpl lockService = getService();
         LockStoreContainer container = lockService.getLockContainer(getPartitionId());
         for (LockStoreImpl ls : locks) {
             container.put(ls);
@@ -56,7 +55,7 @@ public class LockReplicationOperation extends AbstractOperation {
     }
 
     public String getServiceName() {
-        return LockService.SERVICE_NAME;
+        return LockServiceImpl.SERVICE_NAME;
     }
 
     protected void writeInternal(final ObjectDataOutput out) throws IOException {

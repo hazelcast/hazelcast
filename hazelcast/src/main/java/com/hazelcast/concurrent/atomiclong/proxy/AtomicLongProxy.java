@@ -18,7 +18,6 @@ package com.hazelcast.concurrent.atomiclong.proxy;
 
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.core.IAtomicLong;
-import com.hazelcast.monitor.LocalAtomicLongStats;
 import com.hazelcast.spi.NodeEngine;
 
 // author: sancar - 21.12.2012

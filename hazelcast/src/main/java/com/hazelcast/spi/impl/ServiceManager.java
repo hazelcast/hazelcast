@@ -23,6 +23,7 @@ import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockService;
+import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.config.ServicesConfig;
@@ -79,7 +80,7 @@ class ServiceManager {
             if (servicesConfigConfig.isEnableDefaults()) {
                 logger.log(Level.FINEST, "Registering default services...");
                 registerService(MapService.SERVICE_NAME, new MapService(nodeEngine));
-                registerService(LockService.SERVICE_NAME, new LockService(nodeEngine));
+                registerService(LockService.SERVICE_NAME, new LockServiceImpl(nodeEngine));
                 registerService(QueueService.SERVICE_NAME, new QueueService(nodeEngine));
                 registerService(TopicService.SERVICE_NAME, new TopicService());
                 registerService(CollectionService.SERVICE_NAME, new CollectionService(nodeEngine));

@@ -17,8 +17,6 @@
 package com.hazelcast.concurrent.countdownlatch;
 
 import com.hazelcast.core.ICountDownLatch;
-import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.monitor.LocalCountDownLatchStats;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
@@ -45,7 +43,7 @@ public class CountDownLatchProxy extends AbstractDistributedObject<CountDownLatc
         return name;
     }
 
-    public boolean await(long timeout, TimeUnit unit) throws MemberLeftException, InterruptedException {
+    public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
         final NodeEngine nodeEngine = getNodeEngine();
         Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(CountDownLatchService.SERVICE_NAME,
                 new AwaitOperation(name, getTimeInMillis(timeout, unit)), partitionId).build();
@@ -91,10 +89,6 @@ public class CountDownLatchProxy extends AbstractDistributedObject<CountDownLatc
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-    }
-
-    public LocalCountDownLatchStats getLocalCountDownLatchStats() {
-        return null;
     }
 
     public String getServiceName() {

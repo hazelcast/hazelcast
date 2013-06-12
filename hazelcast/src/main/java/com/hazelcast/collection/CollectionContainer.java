@@ -16,9 +16,9 @@
 
 package com.hazelcast.collection;
 
+import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.concurrent.lock.LockStore;
-import com.hazelcast.concurrent.lock.SharedLockService;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
@@ -63,7 +63,7 @@ public class CollectionContainer {
         this.config = new MultiMapConfig(nodeEngine.getConfig().getMultiMapConfig(proxyId.name));
 
         this.lockNamespace = new DefaultObjectNamespace(CollectionService.SERVICE_NAME, proxyId);
-        final SharedLockService lockService = nodeEngine.getSharedService(SharedLockService.SERVICE_NAME);
+        final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         this.lockStore = lockService == null ? null : lockService.createLockStore(partitionId, lockNamespace);
         creationTime = Clock.currentTimeMillis();
     }
@@ -89,7 +89,7 @@ public class CollectionContainer {
     }
 
     public boolean extendLock(Data key, String caller, int threadId, long ttl) {
-        return lockStore != null && lockStore.extendTTL(key, caller, threadId, ttl);
+        return lockStore != null && lockStore.extendLeaseTime(key, caller, threadId, ttl);
     }
 
     public long nextId() {
@@ -198,7 +198,7 @@ public class CollectionContainer {
     }
 
     public void destroy() {
-        final SharedLockService lockService = nodeEngine.getSharedService(SharedLockService.SERVICE_NAME);
+        final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         if (lockService != null) {
             lockService.clearLockStore(partitionId, lockNamespace);
         }

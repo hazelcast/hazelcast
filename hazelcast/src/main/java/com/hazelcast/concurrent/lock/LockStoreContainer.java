@@ -28,26 +28,25 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * @mdogan 2/12/13
  */
-public class LockStoreContainer {
+final class LockStoreContainer {
 
-    private final LockService lockService;
+    private final LockServiceImpl lockService;
     private final int partitionId;
     private final ConcurrentMap<ObjectNamespace, LockStoreImpl> lockStores = new ConcurrentHashMap<ObjectNamespace, LockStoreImpl>();
-    private final ConstructorFunction<ObjectNamespace, LockStoreImpl> lockStoreConstructor
-            = new ConstructorFunction<ObjectNamespace, LockStoreImpl>() {
-        public LockStoreImpl createNew(ObjectNamespace key) {
-            final ConstructorFunction<ObjectNamespace, LockStoreInfo> ctor = lockService.constructors.get(key.getServiceName());
+    private final ConstructorFunction<ObjectNamespace, LockStoreImpl> lockStoreConstructor = new ConstructorFunction<ObjectNamespace, LockStoreImpl>() {
+        public LockStoreImpl createNew(ObjectNamespace namespace) {
+            final ConstructorFunction<ObjectNamespace, LockStoreInfo> ctor = lockService.constructors.get(namespace.getServiceName());
             if (ctor != null) {
-                final LockStoreInfo info = ctor.createNew(key);
+                final LockStoreInfo info = ctor.createNew(namespace);
                 if (info != null) {
-                    return new LockStoreImpl(key, info.getBackupCount(), info.getAsyncBackupCount(), lockService);
+                    return new LockStoreImpl(lockService, namespace, info.getBackupCount(), info.getAsyncBackupCount());
                 }
             }
             throw new IllegalArgumentException("No LockStore constructor is registered!");
         }
     };
 
-    public LockStoreContainer(LockService lockService, int partitionId) {
+    public LockStoreContainer(LockServiceImpl lockService, int partitionId) {
         this.lockService = lockService;
         this.partitionId = partitionId;
     }
@@ -67,7 +66,7 @@ public class LockStoreContainer {
         return lockStores.get(namespace);
     }
 
-    public Collection<LockStoreImpl> getLockStores() {
+    Collection<LockStoreImpl> getLockStores() {
         return Collections.unmodifiableCollection(lockStores.values());
     }
 
@@ -83,10 +82,6 @@ public class LockStoreContainer {
     }
 
     void put(LockStoreImpl ls) {
-        Collection<DistributedLock> lockInfos = ls.getLocks().values();
-        for (DistributedLock lockInfo : lockInfos) {
-            lockInfo.setLockStore(ls);
-        }
         ls.setLockService(lockService);
         lockStores.put(ls.getNamespace(), ls);
     }

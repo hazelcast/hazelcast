@@ -39,7 +39,7 @@ public class SetCountOperation extends BackupAwareCountDownLatchOperation {
 
     public void run() throws Exception {
         CountDownLatchService service = getService();
-        response = service.setCount(name, count, getCallerUuid());
+        response = service.setCount(name, count);
     }
 
     @Override

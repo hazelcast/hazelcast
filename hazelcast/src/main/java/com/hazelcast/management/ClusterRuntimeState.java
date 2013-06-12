@@ -17,17 +17,17 @@
 package com.hazelcast.management;
 
 import com.hazelcast.cluster.MemberInfo;
-import com.hazelcast.concurrent.lock.DistributedLock;
+import com.hazelcast.concurrent.lock.LockResource;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.partition.MigrationInfo;
-import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.partition.PartitionRuntimeState;
-import com.hazelcast.nio.Connection;
+import com.hazelcast.partition.Partitions;
 
 import java.io.IOException;
 import java.util.*;
@@ -38,32 +38,35 @@ import java.util.*;
 public class ClusterRuntimeState extends PartitionRuntimeState implements DataSerializable {
 
     private static final int LOCK_MAX_SIZE = 100;
+
     private int localMemberIndex;
-    private Collection<ConnectionInfo> connectionInfos = new LinkedList<ConnectionInfo>();
-    private List<LockInfo> lockInfos = new ArrayList<LockInfo>();
+    private Collection<ConnectionInfo> connectionInfos;
+    private Collection<MigrationInfo> activeMigrations;
+    private List<LockInfo> lockInfos;
     private int lockTotalNum = 0;
 
     public ClusterRuntimeState() {
     }
 
     public ClusterRuntimeState(final Collection<Member> members, // !!! ordered !!!
-                               final PartitionInfo[] partitions,
-                               final MigrationInfo migrationInfo,  //TODO @msk ???
+                               final Partitions partitions,
+                               final Collection<MigrationInfo> activeMigrations,
                                final Map<Address, Connection> connections,
-                               final Collection<DistributedLock> distributedLocks) {
+                               final Collection<LockResource> locks) {
         super();
+        this.activeMigrations = activeMigrations != null ? activeMigrations : Collections.<MigrationInfo>emptySet();
+
+        connectionInfos = new LinkedList<ConnectionInfo>();
         final Map<Address, Integer> addressIndexes = new HashMap<Address, Integer>(members.size());
         int memberIndex = 0;
         for (Member member : members) {
             MemberImpl memberImpl = (MemberImpl) member;
-            addMemberInfo(new MemberInfo(memberImpl.getAddress(), member.getUuid()),
-                    addressIndexes, memberIndex);
+            addMemberInfo(new MemberInfo(memberImpl.getAddress(), member.getUuid()), addressIndexes, memberIndex);
             if (!member.localMember()) {
                 final Connection conn = connections.get(memberImpl.getAddress());
                 ConnectionInfo connectionInfo;
                 if (conn != null) {
-                    connectionInfo = new ConnectionInfo(memberIndex, conn.live(),
-                            conn.lastReadTime(), conn.lastWriteTime());
+                    connectionInfo = new ConnectionInfo(memberIndex, conn.live(), conn.lastReadTime(), conn.lastWriteTime());
                 } else {
                     connectionInfo = new ConnectionInfo(memberIndex, false, 0L, 0L);
                 }
@@ -74,32 +77,32 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
             memberIndex++;
         }
         setPartitions(partitions, addressIndexes);
-        setLocks(distributedLocks, addressIndexes, members);
+        setLocks(locks, addressIndexes, members);
     }
 
-    private void setLocks(final Collection<DistributedLock> distributedLocks, final Map<Address, Integer> addressIndexes, final Collection<Member> members) {
+    private void setLocks(final Collection<LockResource> locks, final Map<Address, Integer> addressIndexes, final Collection<Member> members) {
 //        final long now = Clock.currentTimeMillis();
         Map<String, Address> uuidToAddress = new HashMap<String, Address>(members.size());
         for (Member member : members) {
             uuidToAddress.put(member.getUuid(), ((MemberImpl) member).getAddress());
         }
 
-        for (DistributedLock distributedLock : distributedLocks) {
-            if (distributedLock.isLocked()) {
-                Integer index = addressIndexes.get(uuidToAddress.get(distributedLock.getOwner()));
+        for (LockResource lock : locks) {
+            if (lock.isLocked()) {
+                Integer index = addressIndexes.get(uuidToAddress.get(lock.getOwner()));
                 if (index == null) {
                     index = -1;
                 }
-                lockInfos.add(new LockInfo(distributedLock.getOwner(), String.valueOf(distributedLock.getKey()),
-                        distributedLock.getAcquireTime(), index, distributedLock.getLockCount()));
+                lockInfos.add(new LockInfo(lock.getOwner(), String.valueOf(lock.getKey()),
+                        lock.getAcquireTime(), index, lock.getLockCount()));
             }
         }
         lockTotalNum = lockInfos.size();
         Collections.sort(lockInfos, new Comparator<LockInfo>() {
             public int compare(LockInfo o1, LockInfo o2) {
-                int comp1 = Integer.valueOf(o2.getWaitingThreadCount()).compareTo(Integer.valueOf(o1.getWaitingThreadCount()));
+                int comp1 = Integer.valueOf(o2.getWaitingThreadCount()).compareTo(o1.getWaitingThreadCount());
                 if (comp1 == 0)
-                    return Long.valueOf(o1.getAcquireTime()).compareTo(Long.valueOf(o2.getAcquireTime()));
+                    return Long.valueOf(o1.getAcquireTime()).compareTo(o2.getAcquireTime());
                 else return comp1;
             }
         });
@@ -112,6 +115,10 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
 
     public Collection<ConnectionInfo> getConnectionInfos() {
         return connectionInfos;
+    }
+
+    public Collection<MigrationInfo> getActiveMigrations() {
+        return activeMigrations;
     }
 
     public MemberInfo getLocalMember() {
@@ -132,13 +139,24 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
         localMemberIndex = in.readInt();
         lockTotalNum = in.readInt();
 
-        final int connectionInfoSize = in.readInt();
+        int connectionInfoSize = in.readInt();
+        connectionInfos = new ArrayList<ConnectionInfo>(connectionInfoSize);
         for (int i = 0; i < connectionInfoSize; i++) {
             ConnectionInfo connectionInfo = new ConnectionInfo();
             connectionInfo.readData(in);
             connectionInfos.add(connectionInfo);
         }
+
+        int migrationsSize = in.readInt();
+        activeMigrations = new ArrayList<MigrationInfo>(migrationsSize);
+        for (int i = 0; i < migrationsSize; i++) {
+            MigrationInfo migrationInfo = new MigrationInfo();
+            migrationInfo.readData(in);
+            activeMigrations.add(migrationInfo);
+        }
+
         int lockSize = in.readInt();
+        lockInfos = new ArrayList<LockInfo>(lockSize);
         for (int i = 0; i < lockSize; i++) {
             LockInfo lockInfo = new LockInfo();
             lockInfo.readData(in);
@@ -151,14 +169,29 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
         super.writeData(out);
         out.writeInt(localMemberIndex);
         out.writeInt(lockTotalNum);
-        out.writeInt(connectionInfos.size());
-        for (ConnectionInfo info : connectionInfos) {
-            info.writeData(out);
+
+        int connectionInfoSize = connectionInfos != null ? connectionInfos.size() : 0;
+        out.writeInt(connectionInfoSize);
+        if (connectionInfoSize > 0) {
+            for (ConnectionInfo info : connectionInfos) {
+                info.writeData(out);
+            }
         }
-        int lockSize = lockInfos.size();
+
+        int migrationsSize = activeMigrations != null ? activeMigrations.size() : 0;
+        out.writeInt(migrationsSize);
+        if (migrationsSize > 0) {
+            for (MigrationInfo migrationInfo : activeMigrations) {
+                migrationInfo.writeData(out);
+            }
+        }
+
+        int lockSize = lockInfos != null ? lockInfos.size() : 0;
         out.writeInt(lockSize);
-        for (LockInfo lockInfo : lockInfos) {
-            lockInfo.writeData(out);
+        if (lockSize > 0) {
+            for (LockInfo lockInfo : lockInfos) {
+                lockInfo.writeData(out);
+            }
         }
     }
 
@@ -168,7 +201,7 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
         sb.append("ClusterRuntimeState");
         sb.append("{members=").append(members);
         sb.append(", localMember=").append(localMemberIndex);
-//        sb.append(", migrationInfo=").append(migrationInfo);
+        sb.append(", activeMigrations=").append(activeMigrations);
         sb.append(", waitingLockCount=").append(lockInfos.size());
         sb.append('}');
         return sb.toString();

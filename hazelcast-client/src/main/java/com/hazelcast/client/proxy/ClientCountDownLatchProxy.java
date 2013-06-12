@@ -19,8 +19,6 @@ package com.hazelcast.client.proxy;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.concurrent.countdownlatch.client.*;
 import com.hazelcast.core.ICountDownLatch;
-import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.monitor.LocalCountDownLatchStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -37,7 +35,7 @@ public class ClientCountDownLatchProxy extends ClientProxy implements ICountDown
         super(serviceName, objectId);
     }
 
-    public boolean await(long timeout, TimeUnit unit) throws MemberLeftException, InterruptedException {
+    public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
         AwaitRequest request = new AwaitRequest(getName(), getTimeInMillis(timeout, unit));
         Boolean result = invoke(request);
         return result;
@@ -58,10 +56,6 @@ public class ClientCountDownLatchProxy extends ClientProxy implements ICountDown
         SetCountRequest request = new SetCountRequest(getName(), count);
         Boolean result = invoke(request);
         return result;
-    }
-
-    public LocalCountDownLatchStats getLocalCountDownLatchStats() {
-        throw new UnsupportedOperationException("Locality is ambiguous for client!!!");
     }
 
     protected void onDestroy() {

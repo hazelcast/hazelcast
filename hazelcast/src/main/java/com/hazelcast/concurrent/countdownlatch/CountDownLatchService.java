@@ -38,7 +38,7 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
         return latch != null ? latch.getCount() : 0;
     }
 
-    public boolean setCount(String name, int count, String owner) {
+    public boolean setCount(String name, int count) {
         if (count <= 0) {
             latches.remove(name);
             return false;
@@ -48,11 +48,11 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
                 latch = new CountDownLatchInfo(name);
                 latches.put(name, latch);
             }
-            return latch.setCount(count, owner);
+            return latch.setCount(count);
         }
     }
 
-    public void setCountDirect(String name, int count, String owner) {
+    public void setCountDirect(String name, int count) {
         if (count <= 0) {
             latches.remove(name);
         } else {
@@ -61,7 +61,7 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
                 latch = new CountDownLatchInfo(name);
                 latches.put(name, latch);
             }
-            latch.setCountDirect(count, owner);
+            latch.setCountDirect(count);
         }
     }
 

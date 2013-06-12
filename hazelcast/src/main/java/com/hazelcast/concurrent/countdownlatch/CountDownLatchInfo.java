@@ -26,7 +26,6 @@ public class CountDownLatchInfo implements DataSerializable {
 
     private String name;
     private int count = 0;
-    private String owner;
 
     public CountDownLatchInfo() {
     }
@@ -46,26 +45,20 @@ public class CountDownLatchInfo implements DataSerializable {
         return count;
     }
 
-    public String getOwner() {
-        return owner;
-    }
-
     public String getName() {
         return name;
     }
 
-    public boolean setCount(int count, String owner) {
+    public boolean setCount(int count) {
         if (this.count > 0 || count <= 0) {
             return false;
         }
         this.count = count;
-        this.owner = owner;
         return true;
     }
 
-    public void setCountDirect(int count, String owner) {
+    public void setCountDirect(int count) {
         this.count = count;
-        this.owner = owner;
     }
 
     @Override
@@ -74,7 +67,6 @@ public class CountDownLatchInfo implements DataSerializable {
         sb.append("LocalCountDownLatch");
         sb.append("{name='").append(name).append('\'');
         sb.append(", count=").append(count);
-        sb.append(", owner=").append(owner);
         sb.append('}');
         return sb.toString();
     }
@@ -82,12 +74,10 @@ public class CountDownLatchInfo implements DataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeInt(count);
-        out.writeUTF(owner);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         count = in.readInt();
-        owner = in.readUTF();
     }
 }

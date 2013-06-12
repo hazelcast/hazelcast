@@ -16,7 +16,6 @@
 
 package com.hazelcast.concurrent.countdownlatch;
 
-import com.hazelcast.nio.Address;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 
@@ -36,8 +35,7 @@ abstract class BackupAwareCountDownLatchOperation extends BaseCountDownLatchOper
         CountDownLatchService service = getService();
         CountDownLatchInfo latch = service.getLatch(name);
         final int count = latch != null ? latch.getCount() : 0;
-        final String owner = latch != null ? latch.getOwner() : null;
-        return new CountDownLatchBackupOperation(name, count, owner);
+        return new CountDownLatchBackupOperation(name, count);
     }
 
     public int getSyncBackupCount() {

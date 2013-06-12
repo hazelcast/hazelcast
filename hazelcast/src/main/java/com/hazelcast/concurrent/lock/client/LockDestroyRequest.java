@@ -20,6 +20,7 @@ import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.concurrent.lock.LockPortableHook;
 import com.hazelcast.concurrent.lock.LockService;
+import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
@@ -42,9 +43,8 @@ public class LockDestroyRequest extends CallableClientRequest implements Portabl
     }
 
     public Object call() throws Exception {
-        final LockService service = getService();
-        Object key = getClientEngine().toObject(keyData);
-        service.destroyDistributedObject(key);
+        final LockServiceImpl service = getService();
+        service.destroyDistributedObject(keyData);
         return null;
     }
 

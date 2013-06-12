@@ -32,10 +32,12 @@ import java.util.*;
 public class PartitionRuntimeState implements DataSerializable {
 
     protected ArrayList<MemberInfo> members = new ArrayList<MemberInfo>(100);
-    protected Collection<ShortPartitionInfo> partitionInfos = new LinkedList<ShortPartitionInfo>();
+
+    private Collection<ShortPartitionInfo> partitionInfos = new LinkedList<ShortPartitionInfo>();
     private long masterTime = Clock.currentTimeMillis();
     private int version;
     private Collection<MigrationInfo> completedMigrations;
+
     private transient Address endpoint;
 
     public PartitionRuntimeState() {
@@ -43,7 +45,7 @@ public class PartitionRuntimeState implements DataSerializable {
     }
 
     public PartitionRuntimeState(final Collection<MemberInfo> memberInfos,
-                                 final PartitionInfo[] partitions,
+                                 final Partitions partitions,
                                  final Collection<MigrationInfo> migrationInfos,
                                  final long masterTime, int version) {
         this.masterTime = masterTime;
@@ -55,16 +57,7 @@ public class PartitionRuntimeState implements DataSerializable {
             memberIndex++;
         }
         setPartitions(partitions, addressIndexes);
-
         completedMigrations = migrationInfos != null ? migrationInfos : new ArrayList<MigrationInfo>(0);
-    }
-
-    private static String print(PartitionInfo[] partitions) {
-        StringBuilder s = new StringBuilder();
-        for (PartitionInfo partition : partitions) {
-            s.append(partition).append('\n');
-        }
-        return s.toString();
     }
 
     protected void addMemberInfo(MemberInfo memberInfo, Map<Address, Integer> addressIndexes, int memberIndex) {
@@ -72,7 +65,7 @@ public class PartitionRuntimeState implements DataSerializable {
         addressIndexes.put(memberInfo.getAddress(), memberIndex);
     }
 
-    protected void setPartitions(PartitionInfo[] partitions, Map<Address, Integer> addressIndexes) {
+    protected void setPartitions(Partitions partitions, Map<Address, Integer> addressIndexes) {
         for (PartitionInfo partition : partitions) {
             ShortPartitionInfo spi = new ShortPartitionInfo(partition.getPartitionId());
             for (int i = 0; i < PartitionInfo.MAX_REPLICA_COUNT; i++) {
@@ -106,7 +99,7 @@ public class PartitionRuntimeState implements DataSerializable {
         return partitions;
     }
 
-    public ArrayList<MemberInfo> getMembers() {
+    public List<MemberInfo> getMembers() {
         return members;
     }
 
@@ -118,12 +111,12 @@ public class PartitionRuntimeState implements DataSerializable {
         return endpoint;
     }
 
-    public void setEndpoint(final Address endpoint) {
+    void setEndpoint(final Address endpoint) {
         this.endpoint = endpoint;
     }
 
     public Collection<MigrationInfo> getCompletedMigrations() {
-        return completedMigrations;
+        return completedMigrations != null ? completedMigrations : Collections.<MigrationInfo>emptyList();
     }
 
     public void readData(ObjectDataInput in) throws IOException {
@@ -146,11 +139,13 @@ public class PartitionRuntimeState implements DataSerializable {
         }
 
         int k = in.readInt();
-        completedMigrations = new ArrayList<MigrationInfo>(k);
-        for (int i = 0; i < k; i++) {
-            MigrationInfo cm = new MigrationInfo();
-            cm.readData(in);
-            completedMigrations.add(cm);
+        if (k > 0) {
+            completedMigrations = new ArrayList<MigrationInfo>(k);
+            for (int i = 0; i < k; i++) {
+                MigrationInfo cm = new MigrationInfo();
+                cm.readData(in);
+                completedMigrations.add(cm);
+            }
         }
     }
 
@@ -159,8 +154,7 @@ public class PartitionRuntimeState implements DataSerializable {
         out.writeInt(version);
         int memberSize = members.size();
         out.writeInt(memberSize);
-        for (int i = 0; i < memberSize; i++) {
-            MemberInfo memberInfo = members.get(i);
+        for (MemberInfo memberInfo : members) {
             memberInfo.writeData(out);
         }
         out.writeInt(partitionInfos.size());
@@ -194,7 +188,7 @@ public class PartitionRuntimeState implements DataSerializable {
         return version;
     }
 
-    class ShortPartitionInfo implements DataSerializable {
+    private class ShortPartitionInfo implements DataSerializable {
 
         int partitionId;
         int[] addressIndexes = new int[PartitionInfo.MAX_REPLICA_COUNT];

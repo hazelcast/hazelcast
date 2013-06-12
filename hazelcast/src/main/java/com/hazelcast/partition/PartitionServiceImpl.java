@@ -326,7 +326,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         lock.lock();
         try {
             final long clusterTime = node.getClusterService().getClusterTime();
-            PartitionStateOperation op = new PartitionStateOperation(members, partitions,
+            PartitionStateOperation op = new PartitionStateOperation(members, getPartitions(),
                     new ArrayList<MigrationInfo>(completedMigrations), clusterTime, stateVersion.get());
 
             for (MemberImpl member : members) {
@@ -520,6 +520,10 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         return activeMigrations.remove(partitionId);
     }
 
+    public Collection<MigrationInfo> getActiveMigrations() {
+        return Collections.unmodifiableCollection(activeMigrations.values());
+    }
+
     private void addCompletedMigration(MigrationInfo migrationInfo) {
         lock.lock();
         try {
@@ -611,8 +615,9 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         }
     }
 
-    public PartitionInfo[] getPartitions() {
-        return partitions;
+    @PrivateApi
+    public Partitions getPartitions() {
+        return new Partitions(partitions);
     }
 
     MemberImpl getMember(Address address) {

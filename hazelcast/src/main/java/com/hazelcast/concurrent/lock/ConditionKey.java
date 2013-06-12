@@ -34,7 +34,7 @@ public final class ConditionKey implements WaitNotifyKey {
     }
 
     public String getServiceName() {
-        return LockService.SERVICE_NAME;
+        return LockServiceImpl.SERVICE_NAME;
     }
 
     public Object getDistributedObjectId() {

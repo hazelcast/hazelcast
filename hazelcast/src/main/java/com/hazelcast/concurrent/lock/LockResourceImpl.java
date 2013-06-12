@@ -25,7 +25,7 @@ import com.hazelcast.util.Clock;
 import java.io.IOException;
 import java.util.*;
 
-public class DistributedLock implements DataSerializable {
+final class LockResourceImpl implements DataSerializable, LockResource {
 
     private Data key;
     private String owner = null;
@@ -41,42 +41,45 @@ public class DistributedLock implements DataSerializable {
 
     private transient LockStoreImpl lockStore;
 
-    public DistributedLock() {
+    public LockResourceImpl() {
     }
 
-    public DistributedLock(Data key, LockStoreImpl lockStore) {
+    public LockResourceImpl(Data key, LockStoreImpl lockStore) {
         this.key = key;
         this.lockStore= lockStore;
     }
 
+    @Override
     public Data getKey() {
         return key;
     }
 
+    @Override
     public boolean isLocked() {
         return lockCount > 0;
     }
 
+    @Override
     public boolean isLockedBy(String owner, int threadId) {
         return (this.threadId == threadId && owner != null && owner.equals(this.owner));
     }
 
-    public boolean lock(String owner, int threadId, long ttl) {
-        return lock(owner, threadId, ttl, false);
+    boolean lock(String owner, int threadId, long leaseTime) {
+        return lock(owner, threadId, leaseTime, false);
     }
 
-    public boolean lock(String owner, int threadId, long ttl, boolean transactional) {
+    boolean lock(String owner, int threadId, long leaseTime, boolean transactional) {
         if (lockCount == 0) {
             this.owner = owner;
             this.threadId = threadId;
             lockCount++;
             acquireTime = Clock.currentTimeMillis();
-            setExpirationTime(ttl);
+            setExpirationTime(leaseTime);
             this.transactional = transactional;
             return true;
         } else if (isLockedBy(owner, threadId)) {
             lockCount++;
-            setExpirationTime(ttl);
+            setExpirationTime(leaseTime);
             this.transactional = transactional;
             return true;
         }
@@ -84,31 +87,31 @@ public class DistributedLock implements DataSerializable {
         return false;
     }
 
-    public boolean extendTTL(String caller, int threadId, long ttl) {
+    boolean extendLeaseTime(String caller, int threadId, long leaseTime) {
         if (isLockedBy(caller, threadId)) {
             if (expirationTime < Long.MAX_VALUE) {
-                setExpirationTime(expirationTime - Clock.currentTimeMillis() + ttl);
-                lockStore.scheduleEviction(key, ttl);
+                setExpirationTime(expirationTime - Clock.currentTimeMillis() + leaseTime);
+                lockStore.scheduleEviction(key, leaseTime);
             }
             return true;
         }
         return false;
     }
 
-    private void setExpirationTime(long ttl) {
-        if (ttl < 0) {
+    private void setExpirationTime(long leaseTime) {
+        if (leaseTime < 0) {
             expirationTime = Long.MAX_VALUE;
         } else {
-            expirationTime = Clock.currentTimeMillis() + ttl;
+            expirationTime = Clock.currentTimeMillis() + leaseTime;
             if (expirationTime < 0) {
                 expirationTime = Long.MAX_VALUE;
             } else {
-                lockStore.scheduleEviction(key, ttl);
+                lockStore.scheduleEviction(key, leaseTime);
             }
         }
     }
 
-    public boolean unlock(String owner, int threadId) {
+    boolean unlock(String owner, int threadId) {
         if (lockCount == 0) {
             return false;
         } else {
@@ -123,7 +126,7 @@ public class DistributedLock implements DataSerializable {
         return false;
     }
 
-    public boolean canAcquireLock(String caller, int threadId) {
+    boolean canAcquireLock(String caller, int threadId) {
         return lockCount == 0 || getThreadId() == threadId && getOwner().equals(caller);
     }
 
@@ -226,27 +229,33 @@ public class DistributedLock implements DataSerializable {
                 && (expiredAwaitOps == null || expiredAwaitOps.isEmpty());
     }
 
+    @Override
     public String getOwner() {
         return owner;
     }
 
-    boolean isTransactional() {
+    @Override
+    public boolean isTransactional() {
         return transactional;
     }
 
-    int getThreadId() {
+    @Override
+    public int getThreadId() {
         return threadId;
     }
 
+    @Override
     public int getLockCount() {
         return lockCount;
     }
 
+    @Override
     public long getAcquireTime() {
         return acquireTime;
     }
 
-    long getRemainingLeaseTime() {
+    @Override
+    public long getRemainingLeaseTime() {
         long now = Clock.currentTimeMillis();
         if (now >= expirationTime) return 0;
         return expirationTime - now;
@@ -260,7 +269,7 @@ public class DistributedLock implements DataSerializable {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        DistributedLock that = (DistributedLock) o;
+        LockResourceImpl that = (LockResourceImpl) o;
         if (threadId != that.threadId) return false;
         if (owner != null ? !owner.equals(that.owner) : that.owner != null) return false;
         return true;
@@ -348,7 +357,7 @@ public class DistributedLock implements DataSerializable {
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        sb.append("DistributedLock");
+        sb.append("LockResource");
         sb.append("{owner='").append(owner).append('\'');
         sb.append(", threadId=").append(threadId);
         sb.append(", lockCount=").append(lockCount);

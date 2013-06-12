@@ -100,8 +100,13 @@ public class MigrationInfo implements DataSerializable {
             source.writeData(out);
         }
         destination.writeData(out);
-        master.writeData(out);
+
         out.writeUTF(masterUuid);
+        final boolean b = master != null;
+        out.writeBoolean(b);
+        if (b) {
+            master.writeData(out);
+        }
     }
 
     public void readData(ObjectDataInput in) throws IOException {
@@ -113,9 +118,12 @@ public class MigrationInfo implements DataSerializable {
         }
         destination = new Address();
         destination.readData(in);
-        master = new Address();
-        master.readData(in);
+
         masterUuid = in.readUTF();
+        if (in.readBoolean()) {
+            master = new Address();
+            master.readData(in);
+        }
     }
 
     @Override

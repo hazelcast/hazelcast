@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.lock;
+package com.hazelcast.concurrent.lock.proxy;
 
+import com.hazelcast.concurrent.lock.*;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
@@ -27,7 +28,7 @@ import com.hazelcast.util.ThreadUtil;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.concurrent.lock.LockService.SERVICE_NAME;
+import static com.hazelcast.concurrent.lock.LockServiceImpl.SERVICE_NAME;
 
 /**
  * @mdogan 2/12/13

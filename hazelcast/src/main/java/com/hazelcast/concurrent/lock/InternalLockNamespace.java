@@ -28,7 +28,7 @@ import java.io.IOException;
 public final class InternalLockNamespace implements ObjectNamespace {
 
     public String getServiceName() {
-        return SharedLockService.SERVICE_NAME;
+        return LockService.SERVICE_NAME;
     }
 
     public Object getObjectId() {

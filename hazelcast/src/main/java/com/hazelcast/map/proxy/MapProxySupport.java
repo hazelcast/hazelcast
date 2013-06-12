@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.proxy;
 
-import com.hazelcast.concurrent.lock.LockProxySupport;
+import com.hazelcast.concurrent.lock.proxy.LockProxySupport;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryListener;

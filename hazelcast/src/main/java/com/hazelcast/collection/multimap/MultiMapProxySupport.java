@@ -20,7 +20,7 @@ import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.collection.operations.*;
 import com.hazelcast.collection.operations.MultiMapOperationFactory.OperationFactoryType;
-import com.hazelcast.concurrent.lock.LockProxySupport;
+import com.hazelcast.concurrent.lock.proxy.LockProxySupport;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.nio.serialization.Data;

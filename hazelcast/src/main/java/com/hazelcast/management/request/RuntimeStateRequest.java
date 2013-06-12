@@ -17,20 +17,20 @@
 package com.hazelcast.management.request;
 
 import com.hazelcast.cluster.ClusterServiceImpl;
-import com.hazelcast.concurrent.lock.DistributedLock;
+import com.hazelcast.concurrent.lock.LockResource;
 import com.hazelcast.concurrent.lock.LockService;
-import com.hazelcast.concurrent.lock.LockStoreContainer;
-import com.hazelcast.concurrent.lock.LockStoreImpl;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.management.ClusterRuntimeState;
 import com.hazelcast.management.ManagementCenterService;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.PartitionServiceImpl;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.LinkedList;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -44,26 +44,20 @@ public class RuntimeStateRequest implements ConsoleRequest {
         return ConsoleRequestConstants.REQUEST_TYPE_CLUSTER_STATE;
     }
 
-    private Collection<DistributedLock> collectLockState(final HazelcastInstanceImpl instance) {
-
-        final Collection<DistributedLock> lockedRecords = new LinkedList<DistributedLock>();
+    private Collection<LockResource> collectLockState(final HazelcastInstanceImpl instance) {
         final LockService lockService = instance.node.nodeEngine.getService(LockService.SERVICE_NAME);
-        for (LockStoreContainer lockStoreContainer : lockService.getLockContainers()) {
-            for (LockStoreImpl lockStore : lockStoreContainer.getLockStores()) {
-                lockedRecords.addAll(lockStore.getLocks().values());
-            }
-        }
-        return lockedRecords;
+        return lockService.getAllLocks();
     }
 
     public void writeResponse(final ManagementCenterService mcs, final ObjectDataOutput dos) throws Exception {
         final HazelcastInstanceImpl instance = mcs.getHazelcastInstance();
         final ClusterServiceImpl cluster = instance.node.getClusterService();
-        final PartitionServiceImpl pm = instance.node.partitionService;
-        final Collection<DistributedLock> lockedRecords = collectLockState(instance);
+        final PartitionServiceImpl partitionService = instance.node.partitionService;
+        final Collection<LockResource> lockedRecords = collectLockState(instance);
+        final Map<Address,Connection> connectionMap = instance.node.connectionManager.getReadonlyConnectionMap();
 
-        final ClusterRuntimeState clusterRuntimeState = new ClusterRuntimeState(cluster.getMembers(), pm.getPartitions(), null,
-                instance.node.connectionManager.getReadonlyConnectionMap(), lockedRecords);
+        final ClusterRuntimeState clusterRuntimeState = new ClusterRuntimeState(cluster.getMembers(), partitionService.getPartitions(),
+                partitionService.getActiveMigrations(), connectionMap, lockedRecords);
         clusterRuntimeState.writeData(dos);
     }
 

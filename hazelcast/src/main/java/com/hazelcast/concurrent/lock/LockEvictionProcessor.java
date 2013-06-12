@@ -29,7 +29,7 @@ import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
 import java.util.Collection;
 import java.util.concurrent.Future;
 
-import static com.hazelcast.concurrent.lock.LockService.SERVICE_NAME;
+import static com.hazelcast.concurrent.lock.LockServiceImpl.SERVICE_NAME;
 
 public class LockEvictionProcessor implements ScheduledEntryProcessor<Data, Object> {
 

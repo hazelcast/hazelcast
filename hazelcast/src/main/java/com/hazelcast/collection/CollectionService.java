@@ -23,8 +23,8 @@ import com.hazelcast.collection.multimap.ObjectMultiMapProxy;
 import com.hazelcast.collection.multimap.tx.TransactionalMultiMapProxy;
 import com.hazelcast.collection.set.ObjectSetProxy;
 import com.hazelcast.collection.set.tx.TransactionalSetProxy;
+import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStoreInfo;
-import com.hazelcast.concurrent.lock.SharedLockService;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.monitor.LocalMapStats;
@@ -72,7 +72,7 @@ public class CollectionService implements ManagedService, RemoteService,
         for (int i = 0; i < partitionCount; i++) {
             partitionContainers[i] = new CollectionPartitionContainer(this, i);
         }
-        final SharedLockService lockService = nodeEngine.getSharedService(SharedLockService.SERVICE_NAME);
+        final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         if (lockService != null) {
             lockService.registerLockStoreConstructor(SERVICE_NAME, new ConstructorFunction<ObjectNamespace, LockStoreInfo>() {
                 public LockStoreInfo createNew(final ObjectNamespace key) {
@@ -303,7 +303,7 @@ public class CollectionService implements ManagedService, RemoteService,
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException e) {
-                            ExceptionUtil.rethrow(e);
+                            throw ExceptionUtil.rethrow(e);
                         }
                         replicaAddress = partitionInfo.getReplicaAddress(j);
                     }

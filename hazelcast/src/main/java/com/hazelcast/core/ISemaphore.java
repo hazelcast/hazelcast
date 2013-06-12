@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * ISemaphore is a backed-up distributed implementation of {@link java.util.concurrent.Semaphore java.util.concurrent.Semaphore}.
  * <p/>
- * Hazelcast's ISemaphore is a cluster-wide counting semaphore.  Conceptually,
+ * ISemaphore is a cluster-wide counting semaphore.  Conceptually,
  * it maintains a set of permits.  Each {@link #acquire()} blocks if necessary until
  * a permit is available, and then takes it.  Each {@link #release()} adds a permit,
  * potentially releasing a blocking acquirer. However, no actual permit objects are
@@ -295,6 +295,4 @@ public interface ISemaphore extends DistributedObject {
      */
     public boolean tryAcquire(int permits, long timeout, TimeUnit unit) throws InterruptedException;
 
-
-//    LocalSemaphoreStats getLocalSemaphoreStats();
 }

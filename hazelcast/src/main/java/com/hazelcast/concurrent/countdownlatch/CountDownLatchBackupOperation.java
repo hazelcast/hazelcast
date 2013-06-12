@@ -28,20 +28,18 @@ import java.io.IOException;
 public class CountDownLatchBackupOperation extends BaseCountDownLatchOperation implements BackupOperation {
 
     private int count;
-    private String owner;
 
     public CountDownLatchBackupOperation() {
     }
 
-    public CountDownLatchBackupOperation(String name, int count, String owner) {
+    public CountDownLatchBackupOperation(String name, int count) {
         super(name);
         this.count = count;
-        this.owner = owner;
     }
 
     public void run() throws Exception {
         CountDownLatchService service = getService();
-        service.setCountDirect(name, count, owner);
+        service.setCountDirect(name, count);
     }
 
     @Override
@@ -58,13 +56,11 @@ public class CountDownLatchBackupOperation extends BaseCountDownLatchOperation i
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(count);
-        out.writeUTF(owner);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         count = in.readInt();
-        owner = in.readUTF();
     }
 }

@@ -72,7 +72,7 @@ abstract class BaseLockOperation extends AbstractOperation implements PartitionA
     }
 
     protected final LockStoreImpl getLockStore() {
-        final LockService service = getService();
+        final LockServiceImpl service = getService();
         return service.getLockStore(getPartitionId(), namespace);
     }
 
@@ -92,7 +92,7 @@ abstract class BaseLockOperation extends AbstractOperation implements PartitionA
 
     @Override
     public final String getServiceName() {
-        return LockService.SERVICE_NAME;
+        return LockServiceImpl.SERVICE_NAME;
     }
 
     public final Data getKey() {

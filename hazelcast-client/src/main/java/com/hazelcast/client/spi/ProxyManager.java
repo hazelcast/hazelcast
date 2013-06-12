@@ -25,7 +25,7 @@ import com.hazelcast.collection.CollectionService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
-import com.hazelcast.concurrent.lock.LockService;
+import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
@@ -106,7 +106,7 @@ public final class ProxyManager {
                 return new ClientExecutorServiceProxy(DistributedExecutorService.SERVICE_NAME, String.valueOf(id));
             }
         });
-        register(LockService.SERVICE_NAME, new ClientProxyFactory() {
+        register(LockServiceImpl.SERVICE_NAME, new ClientProxyFactory() {
             public ClientProxy create(Object id) {
                 return new ClientLockProxy(DistributedExecutorService.SERVICE_NAME, id);
             }

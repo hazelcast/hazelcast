@@ -14,23 +14,28 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.lock;
+package com.hazelcast.concurrent.lock.proxy;
 
+import com.hazelcast.concurrent.lock.AwaitOperation;
+import com.hazelcast.concurrent.lock.BeforeAwaitOperation;
+import com.hazelcast.concurrent.lock.SignalOperation;
 import com.hazelcast.core.ICondition;
-import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.ThreadUtil;
 
 import java.util.Date;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.concurrent.lock.LockService.SERVICE_NAME;
+
 /**
  * @mdogan 2/13/13
  */
-public class ConditionImpl implements ICondition {
+public final class ConditionImpl implements ICondition {
 
     private final LockProxy lockProxy;
     private final int partitionId;
@@ -66,7 +71,7 @@ public class ConditionImpl implements ICondition {
         final NodeEngine nodeEngine = lockProxy.getNodeEngine();
         final int threadId = ThreadUtil.getThreadId();
 
-        final Invocation inv1 = nodeEngine.getOperationService().createInvocationBuilder(LockService.SERVICE_NAME,
+        final Invocation inv1 = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME,
                 new BeforeAwaitOperation(lockProxy.namespace, lockProxy.key,
                         threadId, conditionId), partitionId).build();
         try {
@@ -75,7 +80,7 @@ public class ConditionImpl implements ICondition {
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
-        final Invocation inv2 = nodeEngine.getOperationService().createInvocationBuilder(LockService.SERVICE_NAME,
+        final Invocation inv2 = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME,
                 new AwaitOperation(lockProxy.namespace, lockProxy.key,
                         threadId, unit.toMillis(time), conditionId), partitionId).build();
         try {
@@ -97,7 +102,7 @@ public class ConditionImpl implements ICondition {
 
     private void signal(boolean all) {
         final NodeEngine nodeEngine = lockProxy.getNodeEngine();
-        final Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(LockService.SERVICE_NAME,
+        final Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME,
                 new SignalOperation(lockProxy.namespace, lockProxy.key,
                         ThreadUtil.getThreadId(), conditionId, all), partitionId).build();
         Future f = inv.invoke();

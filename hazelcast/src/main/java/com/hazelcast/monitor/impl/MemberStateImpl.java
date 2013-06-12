@@ -29,23 +29,19 @@ import java.util.List;
 import java.util.Map;
 
 public class MemberStateImpl implements MemberState {
-    /**
-     *
-     */
     private static final long serialVersionUID = -1817978625085375340L;
+
     Address address = new Address();
-    MemberHealthStatsImpl memberHealthStats = new MemberHealthStatsImpl();
     Map<String, Long> runtimeProps = new HashMap<String, Long>();
     Map<String, LocalMapStatsImpl> mapStats = new HashMap<String, LocalMapStatsImpl>();
     Map<String, LocalMultiMapStatsImpl> multiMapStats = new HashMap<String, LocalMultiMapStatsImpl>();
     Map<String, LocalQueueStatsImpl> queueStats = new HashMap<String, LocalQueueStatsImpl>();
     Map<String, LocalTopicStatsImpl> topicStats = new HashMap<String, LocalTopicStatsImpl>();
     Map<String, LocalExecutorStatsImpl> executorStats = new HashMap<String, LocalExecutorStatsImpl>();
-    List<Integer> lsPartitions = new ArrayList<Integer>(271);
+    List<Integer> partitions = new ArrayList<Integer>(271);
 
     public void writeData(ObjectDataOutput out) throws IOException {
         address.writeData(out);
-        memberHealthStats.writeData(out);
         out.writeInt(mapStats.size());
         for (Map.Entry<String, LocalMapStatsImpl> entry : mapStats.entrySet()) {
             out.writeUTF(entry.getKey());
@@ -77,15 +73,14 @@ public class MemberStateImpl implements MemberState {
             out.writeUTF(entry.getKey());
             out.writeLong(entry.getValue());
         }
-        out.writeInt(lsPartitions.size());
-        for (Integer lsPartition : lsPartitions) {
+        out.writeInt(partitions.size());
+        for (Integer lsPartition : partitions) {
             out.writeInt(lsPartition);
         }
     }
 
     public void readData(ObjectDataInput in) throws IOException {
         address.readData(in);
-        memberHealthStats.readData(in);
         DataSerializable impl;
         String name;
         for (int i = in.readInt(); i > 0; i--) {
@@ -118,37 +113,32 @@ public class MemberStateImpl implements MemberState {
             runtimeProps.put(name, in.readLong());
         }
         for (int i = in.readInt(); i > 0; i--) {
-            lsPartitions.add(in.readInt());
+            partitions.add(in.readInt());
         }
     }
 
     public void clearPartitions() {
-        lsPartitions.clear();
+        partitions.clear();
     }
 
     public void addPartition(int partitionId) {
-        lsPartitions.add(partitionId);
+        partitions.add(partitionId);
     }
 
     public List<Integer> getPartitions() {
-        return lsPartitions;
+        return partitions;
     }
 
     @Override
     public int hashCode() {
         int result = address != null ? address.hashCode() : 0;
-        result = 31 * result + (memberHealthStats != null ? memberHealthStats.hashCode() : 0);
         result = 31 * result + (mapStats != null ? mapStats.hashCode() : 0);
         result = 31 * result + (multiMapStats != null ? multiMapStats.hashCode() : 0);
         result = 31 * result + (queueStats != null ? queueStats.hashCode() : 0);
         result = 31 * result + (topicStats != null ? topicStats.hashCode() : 0);
         result = 31 * result + (executorStats != null ? executorStats.hashCode() : 0);
-        result = 31 * result + (lsPartitions != null ? lsPartitions.hashCode() : 0);
+        result = 31 * result + (partitions != null ? partitions.hashCode() : 0);
         return result;
-    }
-
-    public MemberHealthStatsImpl getMemberHealthStats() {
-        return memberHealthStats;
     }
 
     public Map<String, Long> getRuntimeProps() {
@@ -210,14 +200,13 @@ public class MemberStateImpl implements MemberState {
     public String toString() {
         return "MemberStateImpl{" +
                 "address=" + address +
-                ", memberHealthStats=" + memberHealthStats +
                 ", runtimeProps=" + runtimeProps +
                 ", mapStats=" + mapStats +
                 ", multiMapStats=" + multiMapStats +
                 ", queueStats=" + queueStats +
                 ", topicStats=" + topicStats +
                 ", executorStats=" + executorStats +
-                ", lsPartitions=" + lsPartitions +
+                ", partitions=" + partitions +
                 '}';
     }
 }
