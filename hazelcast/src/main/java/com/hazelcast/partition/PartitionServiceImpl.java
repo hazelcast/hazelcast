@@ -894,9 +894,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                         if (migratingPartitions.contains(partitionId)) {
                             backupTasks.put(partitionId, new BackupMigrationTask(partitionId, newPartition));
                         } else {
-                            for (int index = 1; index < PartitionInfo.MAX_REPLICA_COUNT; index++) {
-                                currentPartition.setReplicaAddress(index, newPartition.getReplicaAddress(index));
-                            }
+                            currentPartition.setPartitionInfo(newPartition);
                         }
                     }
                     sendPartitionRuntimeState();
