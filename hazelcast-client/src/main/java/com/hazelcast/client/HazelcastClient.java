@@ -111,8 +111,8 @@ public final class HazelcastClient implements HazelcastInstance {
         invocationService = new ClientInvocationServiceImpl(this);
         userContext = new ConcurrentHashMap<String, Object>();
         clusterService.start();
-        partitionService.start();
         loadBalancer.init(getCluster(), config);
+        partitionService.start();
         proxyManager.init(config.getProxyFactoryConfig());
         lifecycleService.setStarted();
     }

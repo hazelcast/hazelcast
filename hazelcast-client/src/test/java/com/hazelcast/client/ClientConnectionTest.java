@@ -16,13 +16,10 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IQueue;
-import com.hazelcast.instance.GroupProperties;
 import org.junit.Ignore;
-
-import java.util.concurrent.CountDownLatch;
 
 /**
  * @ali 5/21/13
@@ -30,58 +27,42 @@ import java.util.concurrent.CountDownLatch;
 @Ignore("not a JUnit test")
 public class ClientConnectionTest {
 
-    static {
-        System.setProperty("hazelcast.version.check.enabled", "false");
-        System.setProperty("hazelcast.socket.bind.any", "false");
-        System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
-        System.setProperty("java.net.preferIPv4Stack", "true");
-        System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
-//        System.setProperty("java.net.preferIPv6Addresses", "true");
-//        System.setProperty("hazelcast.prefer.ipv4.stack", "false");
-    }
-
     static HazelcastInstance server1;
     static HazelcastInstance server2;
     static HazelcastInstance client;
-    static IQueue<String> q;
     static final String name = "test";
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) throws Exception {
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setConnectionAttemptLimit(30);
+        clientConfig.setRedoOperation(true);
+        clientConfig.setAttemptPeriod(4000);
+
         server1 = Hazelcast.newHazelcastInstance();
-        server2 = Hazelcast.newHazelcastInstance();
-
-        client = HazelcastClient.newHazelcastClient(null);
-
-        q = client.getQueue(name);
-        final CountDownLatch latch = new CountDownLatch(1);
-        new Thread(){
-            public void run() {
-                for (int i=0; i<100; i++){
-                    if(q.offer("item"+i)){
-                        System.err.println("offered item" + i);
-                    }
-                    try {
-                        Thread.sleep(50);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-                latch.countDown();
-                System.err.println("-------------done");
-            }
-        }.start();
-        Thread.sleep(1000);
-        server2.getLifecycleService().shutdown();
-
-        latch.await();
-
-        q.offer("item");
 
 
-        System.err.println("size : " + q.size());
-        client.getLifecycleService().shutdown();
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        System.err.println("c: " + client);
 
-        Hazelcast.shutdownAll();
+        Thread.sleep(2000);
+
+        System.err.println("--------------------------");
+        System.err.println("--------------------------");
+        System.err.println("--------------------------");
+        System.err.println("--------------------------");
+        server1.getLifecycleService().shutdown();
+        System.err.println("shutdown");
+        Thread.sleep(20000);
+
+
+
+        server1 = Hazelcast.newHazelcastInstance();
+
+        System.err.println("offering");
+        client.getQueue(name).offer("item");
+        System.err.println("offered");
+        Object item = client.getQueue(name).poll();
+        System.err.println("item:" + item);
     }
 
 
