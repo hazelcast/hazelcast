@@ -24,13 +24,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public class IndexImpl implements Index {
+    public static final NullObject NULL = new NullObject();
+
     // indexKey -- indexValue
     private final ConcurrentMap<Data, Comparable> recordValues = new ConcurrentHashMap<Data, Comparable>(1000);
     private final IndexStore indexStore;
     private final String attribute;
     private final boolean ordered;
 
-    public static final NullObject NULL = new NullObject();
     private volatile AttributeType attributeType;
 
     public IndexImpl(String attribute, boolean ordered) {
@@ -75,7 +76,7 @@ public class IndexImpl implements Index {
         if (values.length == 1) {
             return indexStore.getRecords(convert(values[0]));
         } else {
-            Set<Comparable> convertedValues = new HashSet(values.length);
+            Set<Comparable> convertedValues = new HashSet<Comparable>(values.length);
             for (Comparable value : values) {
                 convertedValues.add(convert(value));
             }
@@ -101,7 +102,7 @@ public class IndexImpl implements Index {
         return results;
     }
 
-    public Comparable convert(Comparable value) {
+    private Comparable convert(Comparable value) {
         if (attributeType == null) return value;
         return attributeType.getConverter().convert(value);
     }

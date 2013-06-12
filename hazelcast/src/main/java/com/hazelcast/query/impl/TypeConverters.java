@@ -44,17 +44,17 @@ class TypeConverters {
 
     static class EnumConverter implements TypeConverter {
         public Comparable convert(Comparable value) {
-            String valueString = value.toString();
             try {
-                if (valueString.contains(".")) {
+                String enumString = value.toString();
+                if (enumString.contains(".")) {
                     // there is a dot  in the value specifier, keep part after last dot
-                    return valueString.substring(1 + valueString.lastIndexOf("."));
+                    enumString = enumString.substring(1 + enumString.lastIndexOf("."));
                 }
+                return enumString;
             } catch (IllegalArgumentException iae) {
                 // illegal enum value specification
                 throw new IllegalArgumentException("Illegal enum value specification: " + iae.getMessage());
             }
-            return valueString;
         }
     }
 
@@ -65,8 +65,11 @@ class TypeConverters {
             if (value instanceof String) {
                 return DateHelper.parseSqlDate((String) value);
             }
-            Number number = (Number) value;
-            return new java.sql.Date(number.longValue());
+            if (value instanceof Number) {
+                Number number = (Number) value;
+                return new java.sql.Date(number.longValue());
+            }
+            throw new IllegalArgumentException("Cannot convert [" + value + "] to java.sql.Date");
         }
     }
 
@@ -77,8 +80,11 @@ class TypeConverters {
             if (value instanceof String) {
                 return DateHelper.parseTimeStamp((String) value);
             }
-            Number number = (Number) value;
-            return new Timestamp(number.longValue());
+            if (value instanceof Number) {
+                Number number = (Number) value;
+                return new Timestamp(number.longValue());
+            }
+            throw new IllegalArgumentException("Cannot convert [" + value + "] to java.sql.Timestamp");
         }
     }
 
@@ -89,8 +95,11 @@ class TypeConverters {
             if (value instanceof String) {
                 return DateHelper.parseDate((String) value);
             }
-            Number number = (Number) value;
-            return new Date(number.longValue());
+            if (value instanceof Number) {
+                Number number = (Number) value;
+                return new Date(number.longValue());
+            }
+            throw new IllegalArgumentException("Cannot convert [" + value + "] to java.util.Date");
         }
     }
 
@@ -101,8 +110,11 @@ class TypeConverters {
             if (value instanceof String) {
                 return Double.parseDouble((String) value);
             }
-            Number number = (Number) value;
-            return number.doubleValue();
+            if (value instanceof Number) {
+                Number number = (Number) value;
+                return number.doubleValue();
+            }
+            throw new IllegalArgumentException("Cannot convert [" + value + "] to double");
         }
     }
 
@@ -113,8 +125,11 @@ class TypeConverters {
             if (value instanceof String) {
                 return Long.parseLong((String) value);
             }
-            Number number = (Number) value;
-            return number.longValue();
+            if (value instanceof Number) {
+                Number number = (Number) value;
+                return number.longValue();
+            }
+            throw new IllegalArgumentException("Cannot convert [" + value + "] to long");
         }
     }
 
@@ -142,8 +157,11 @@ class TypeConverters {
             if (value instanceof String) {
                 return Integer.parseInt((String) value);
             }
-            Number number = (Number) value;
-            return number.intValue();
+            if (value instanceof Number) {
+                Number number = (Number) value;
+                return number.intValue();
+            }
+            throw new IllegalArgumentException("Cannot convert [" + value + "] to integer");
         }
     }
 
@@ -163,8 +181,11 @@ class TypeConverters {
             if (value instanceof String) {
                 return Float.parseFloat((String) value);
             }
-            Number number = (Number) value;
-            return number.floatValue();
+            if (value instanceof Number) {
+                Number number = (Number) value;
+                return number.floatValue();
+            }
+            throw new IllegalArgumentException("Cannot convert [" + value + "] to float");
         }
     }
 
@@ -175,8 +196,11 @@ class TypeConverters {
             if (value instanceof String) {
                 return Short.parseShort((String) value);
             }
-            Number number = (Number) value;
-            return number.shortValue();
+            if (value instanceof Number) {
+                Number number = (Number) value;
+                return number.shortValue();
+            }
+            throw new IllegalArgumentException("Cannot convert [" + value + "] to short");
         }
     }
 
@@ -187,8 +211,11 @@ class TypeConverters {
             if (value instanceof String) {
                 return Boolean.parseBoolean((String) value);
             }
-            Number number = (Number) value;
-            return number.intValue() == 1 ? true : false;
+            if (value instanceof Number) {
+                Number number = (Number) value;
+                return number.intValue() != 0;
+            }
+            throw new IllegalArgumentException("Cannot convert [" + value + "] to boolean");
         }
     }
 
@@ -199,8 +226,11 @@ class TypeConverters {
             if (value instanceof String) {
                 return Byte.parseByte((String) value);
             }
-            Number number = (Number) value;
-            return number.byteValue();
+            if (value instanceof Number) {
+                Number number = (Number) value;
+                return number.byteValue();
+            }
+            throw new IllegalArgumentException("Cannot convert [" + value + "] to byte");
         }
     }
 
@@ -212,8 +242,11 @@ class TypeConverters {
             if (value instanceof String) {
                 return ((String) value).charAt(0);
             }
-            Number number = (Number) value;
-            return number.intValue();
+            if (value instanceof Number) {
+                Number number = (Number) value;
+                return number.intValue();
+            }
+            throw new IllegalArgumentException("Cannot convert [" + value + "] to char");
         }
     }
 }

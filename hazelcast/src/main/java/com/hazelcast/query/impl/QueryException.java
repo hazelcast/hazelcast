@@ -16,7 +16,9 @@
 
 package com.hazelcast.query.impl;
 
-public class QueryException extends RuntimeException {
+import com.hazelcast.core.HazelcastException;
+
+public class QueryException extends HazelcastException {
     public QueryException(Throwable cause) {
         super(cause);
     }

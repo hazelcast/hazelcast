@@ -61,7 +61,7 @@ public class ReflectionHelper {
         } else if (klass.isEnum()) {
             return AttributeType.ENUM;
         }
-        throw new RuntimeException("Unknown type " + klass);
+        return null;
     }
 
     public static void reset() {
@@ -93,7 +93,7 @@ public class ReflectionHelper {
                 } else {
                     for (String methodName : possibleMethodNames) {
                         try {
-                            final Method method = clazz.getMethod(methodName, null);
+                            final Method method = clazz.getMethod(methodName);
                             method.setAccessible(true);
                             localGetter = new MethodGetter(parent, method);
                             clazz = method.getReturnType();
@@ -125,7 +125,7 @@ public class ReflectionHelper {
                     }
                 }
                 if (localGetter == null) {
-                    throw new RuntimeException("There is no suitable accessor for '" + name + "'");
+                    throw new IllegalArgumentException("There is no suitable accessor for '" + name + "'");
                 }
                 parent = localGetter;
             }

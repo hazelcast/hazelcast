@@ -35,7 +35,7 @@ final class DateHelper {
         try {
             return getUtilDateFormat().parse(value);
         } catch (ParseException e) {
-            return throwRuntimeParseException(value, e);
+            return throwParseException(value, e);
         }
     }
 
@@ -43,7 +43,7 @@ final class DateHelper {
         try {
             return new Timestamp(getTimestampFormat().parse(value).getTime());
         } catch (ParseException e) {
-            return throwRuntimeParseException(value, e);
+            return throwParseException(value, e);
         }
     }
 
@@ -51,7 +51,7 @@ final class DateHelper {
         try {
             return new java.sql.Date(getSqlDateFormat().parse(value).getTime());
         } catch (ParseException e) {
-            return throwRuntimeParseException(value, e);
+            return throwParseException(value, e);
         }
     }
 
@@ -71,11 +71,11 @@ final class DateHelper {
         } catch (Exception ignored) {
         }
 
-        return throwRuntimeParseException(value, null);
+        return throwParseException(value, null);
     }
 
-    private static <T> T throwRuntimeParseException(String value, Exception e) {
-        throw new RuntimeException("Unable to parse date from value: '" + value
+    private static <T> T throwParseException(String value, Exception e) {
+        throw new QueryException("Unable to parse date from value: '" + value
                 + "' ! Valid formats are: '" + dateFormat + "', '" + timestampFormat
                 + "' and '" + sqlDateFormat + "'.", e);
     }

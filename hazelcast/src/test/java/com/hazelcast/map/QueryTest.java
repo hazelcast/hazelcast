@@ -36,6 +36,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -1047,6 +1048,89 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testPredicateCustomAttribute() {
+        Config cfg = new Config();
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(cfg);
+        IMap map = instance.getMap("testPredicateCustomAttribute");
+
+        final CustomAttribute attribute = new CustomAttribute(78, 145);
+        final CustomObject object = new CustomObject("name", UUID.randomUUID(), attribute);
+        map.put(1, object);
+
+        assertEquals(object, map.values(new PredicateBuilder().getEntryObject().get("uuid").equal(object.uuid)).iterator().next());
+        assertEquals(object, map.values(new PredicateBuilder().getEntryObject().get("attribute").equal(object.attribute)).iterator().next());
+    }
+
+    private static class CustomObject implements Serializable {
+        private String name;
+        private UUID uuid;
+        private CustomAttribute attribute;
+
+        private CustomObject(String name, UUID uuid, CustomAttribute attribute) {
+            this.name = name;
+            this.uuid = uuid;
+            this.attribute = attribute;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            CustomObject that = (CustomObject) o;
+
+            if (attribute != null ? !attribute.equals(that.attribute) : that.attribute != null) return false;
+            if (name != null ? !name.equals(that.name) : that.name != null) return false;
+            if (uuid != null ? !uuid.equals(that.uuid) : that.uuid != null) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = name != null ? name.hashCode() : 0;
+            result = 31 * result + (uuid != null ? uuid.hashCode() : 0);
+            result = 31 * result + (attribute != null ? attribute.hashCode() : 0);
+            return result;
+        }
+    }
+
+    private static class CustomAttribute implements Serializable, Comparable {
+        private int age;
+        private long height;
+
+        private CustomAttribute(int age, long height) {
+            this.age = age;
+            this.height = height;
+        }
+
+        public int compareTo(Object o) {
+            return 0;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            CustomAttribute that = (CustomAttribute) o;
+
+            if (age != that.age) return false;
+            if (height != that.height) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = age;
+            result = 31 * result + (int) (height ^ (height >>> 32));
+            return result;
+        }
+    }
+
+    @Test
     public void testPredicateNotEqualWithIndex() {
         Config cfg = new Config();
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
@@ -1068,7 +1152,7 @@ public class QueryTest extends HazelcastTestSupport {
         assertEquals(2, map.values(new PredicateBuilder().getEntryObject().get("index").notEqual(2)).size());
     }
 
-    public void doFunctionalSQLQueryTest(IMap imap) {
+    private void doFunctionalSQLQueryTest(IMap imap) {
         imap.put("1", new Employee("joe", 33, false, 14.56));
         imap.put("2", new Employee("ali", 23, true, 15.00));
         for (int i = 3; i < 103; i++) {

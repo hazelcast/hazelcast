@@ -42,7 +42,7 @@ public class PredicateBuilder implements IndexAwarePredicate, DataSerializable {
 
     public PredicateBuilder and(Predicate predicate) {
         if (predicate != PredicateBuilder.this) {
-            throw new RuntimeException("Illegal and statement expected: "
+            throw new QueryException("Illegal and statement expected: "
                     + PredicateBuilder.class.getSimpleName() + ", found: " +
                     ((predicate == null) ? "null" : predicate.getClass().getSimpleName()));
         }

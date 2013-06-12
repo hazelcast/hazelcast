@@ -94,12 +94,12 @@ public class QueryEntry implements QueryableEntry {
     }
 
     private AttributeType getAttributeTypeViaReflection(String attributeName) {
-        Class klass = null;
-        if ("__key".equals(attributeName)) {
+        Class klass;
+        if (KEY_ATTRIBUTE_NAME.equals(attributeName)) {
             klass = getKey().getClass();
         } else {
             Object value = getValue();
-            if ("this".equals(attributeName)) {
+            if (THIS_ATTRIBUTE_NAME.equals(attributeName)) {
                 klass = value.getClass();
             } else {
                 return ReflectionHelper.getAttributeType(this, attributeName);

@@ -20,6 +20,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.impl.*;
+import com.hazelcast.query.impl.QueryException;
 
 import java.io.IOException;
 import java.util.*;
@@ -42,16 +43,16 @@ public final class Predicates {
         }
 
         public boolean apply(Map.Entry entry) {
-            Comparable firstValue = readAttribute(entry);
-            if (firstValue == null) {
+            Comparable entryValue = readAttribute(entry);
+            if (entryValue == null) {
                 return false;
             }
-            Comparable fromConvertedValue = convert(entry, from);
-            Comparable toConvertedValue = convert(entry, to);
+            Comparable fromConvertedValue = convert(entry, entryValue, from);
+            Comparable toConvertedValue = convert(entry, entryValue, to);
             if (fromConvertedValue == null || toConvertedValue == null) {
                 return false;
             }
-            return firstValue.compareTo(fromConvertedValue) >= 0 && firstValue.compareTo(toConvertedValue) <= 0;
+            return entryValue.compareTo(fromConvertedValue) >= 0 && entryValue.compareTo(toConvertedValue) <= 0;
         }
 
         public Set<QueryableEntry> filter(QueryContext queryContext) {
@@ -104,8 +105,8 @@ public final class Predicates {
     }
 
     public static class InPredicate extends AbstractPredicate {
-        Comparable[] values = null;
-        Set convertedInValues = null;
+        Comparable[] values;
+        Set<Comparable> convertedInValues;
 
         public InPredicate() {
         }
@@ -115,23 +116,15 @@ public final class Predicates {
             this.values = values;
         }
 
-        private void checkInValues(Map.Entry entry) {
+        public boolean apply(Map.Entry entry) {
+            Comparable entryValue = readAttribute(entry);
             if (convertedInValues == null) {
-                convertedInValues = new HashSet(values.length);
+                convertedInValues = new HashSet<Comparable>(values.length);
                 for (Comparable value : values) {
-                    convertedInValues.add(convert(entry, value));
+                    convertedInValues.add(convert(entry, entryValue, value));
                 }
             }
-        }
-
-        public boolean apply(Map.Entry entry) {
-            checkInValues(entry);
-            Comparable entryValue = readAttribute(entry);
-            return entryValue != null && in(entryValue, convertedInValues);
-        }
-
-        private static boolean in(Object firstVal, Set values) {
-            return values.contains(firstVal);
+            return entryValue != null && convertedInValues.contains(entryValue);
         }
 
         public Set<QueryableEntry> filter(QueryContext queryContext) {
@@ -162,7 +155,7 @@ public final class Predicates {
 
         @Override
         public String toString() {
-            final StringBuffer sb = new StringBuffer();
+            final StringBuilder sb = new StringBuilder();
             sb.append(attribute);
             sb.append(" IN (");
             for (int i = 0; i < values.length; i++) {
@@ -333,7 +326,7 @@ public final class Predicates {
 
         @Override
         public String toString() {
-            final StringBuffer sb = new StringBuffer();
+            final StringBuilder sb = new StringBuilder();
             sb.append("(");
             int size = predicates.length;
             for (int i = 0; i < size; i++) {
@@ -349,8 +342,8 @@ public final class Predicates {
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeInt(predicates.length);
-            for (int i = 0; i < predicates.length; i++) {
-                out.writeObject(predicates[i]);
+            for (Predicate predicate : predicates) {
+                out.writeObject(predicate);
             }
         }
 
@@ -412,7 +405,7 @@ public final class Predicates {
 
         @Override
         public String toString() {
-            final StringBuffer sb = new StringBuffer();
+            final StringBuilder sb = new StringBuilder();
             sb.append("(");
             int size = predicates.length;
             for (int i = 0; i < size; i++) {
@@ -428,8 +421,8 @@ public final class Predicates {
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeInt(predicates.length);
-            for (int i = 0; i < predicates.length; i++) {
-                out.writeObject(predicates[i]);
+            for (Predicate predicate : predicates) {
+                out.writeObject(predicate);
             }
         }
 
@@ -457,7 +450,9 @@ public final class Predicates {
         }
 
         public boolean apply(Map.Entry mapEntry) {
-            final int result = readAttribute(mapEntry).compareTo(convert(mapEntry, value));
+            final Comparable entryValue = readAttribute(mapEntry);
+            final Comparable attributeValue = convert(mapEntry, entryValue, value);
+            final int result = entryValue.compareTo(attributeValue);
             return equal && result == 0 || (less ? (result < 0) : (result > 0));
         }
 
@@ -488,7 +483,7 @@ public final class Predicates {
 
         @Override
         public String toString() {
-            final StringBuffer sb = new StringBuffer();
+            final StringBuilder sb = new StringBuilder();
             sb.append(attribute);
             sb.append(less ? "<" : ">");
             if (equal) sb.append("=");
@@ -545,8 +540,8 @@ public final class Predicates {
             if (entryValue == null) {
                 return value == null || value == IndexImpl.NULL;
             }
-            value = convert(mapEntry, value);
-            return value != null && value.equals(entryValue);
+            value = convert(mapEntry, entryValue, value);
+            return entryValue.equals(value);
         }
 
         public void writeData(ObjectDataOutput out) throws IOException {
@@ -568,7 +563,7 @@ public final class Predicates {
     public static abstract class AbstractPredicate implements IndexAwarePredicate, DataSerializable {
 
         protected String attribute;
-        private AttributeType attributeType = null;
+        private transient AttributeType attributeType;
 
         protected AbstractPredicate() {
         }
@@ -577,16 +572,27 @@ public final class Predicates {
             this.attribute = attribute;
         }
 
-        protected Comparable convert(Map.Entry mapEntry, Comparable comparable) {
-            if (comparable == null) return null;
+        protected Comparable convert(Map.Entry mapEntry, Comparable entryValue, Comparable attributeValue) {
+            if (attributeValue == null) {
+                return null;
+            }
             if (attributeType == null) {
                 QueryableEntry queryableEntry = (QueryableEntry) mapEntry;
                 attributeType = queryableEntry.getAttributeType(attribute);
             }
-            if (attributeType != null) {
-                return attributeType.getConverter().convert(comparable);
+            if (attributeType == AttributeType.ENUM) {
+                // if attribute type is enum, convert given attribute to enum string
+                return attributeType.getConverter().convert(attributeValue);
+            } else {
+                // if given attribute value is already in expected type then there's no need for conversion.
+                if (entryValue != null && entryValue.getClass().isAssignableFrom(attributeValue.getClass())) {
+                    return attributeValue;
+                } else if (attributeType != null) {
+                   return attributeType.getConverter().convert(attributeValue);
+                } else {
+                    throw new QueryException("Unknown attribute type: " + attributeValue.getClass());
+                }
             }
-            return comparable;
         }
 
         public boolean isIndexed(QueryContext queryContext) {
@@ -599,8 +605,11 @@ public final class Predicates {
 
         protected Comparable readAttribute(Map.Entry entry) {
             QueryableEntry queryableEntry = (QueryableEntry) entry;
-            Comparable attValue = queryableEntry.getAttribute(attribute);
-            return convert(entry, attValue);
+            Comparable value = queryableEntry.getAttribute(attribute);
+            if (value != null && value.getClass().isEnum()) {
+                value = value.toString();
+            }
+            return value;
         }
 
         public void writeData(ObjectDataOutput out) throws IOException {
@@ -615,9 +624,10 @@ public final class Predicates {
     private static Comparable readAttribute(Map.Entry entry, String attribute) {
         QueryableEntry queryableEntry = (QueryableEntry) entry;
         Comparable value = queryableEntry.getAttribute(attribute);
-        if (value == null) return IndexImpl.NULL;
-        AttributeType attributeType = queryableEntry.getAttributeType(attribute);
-        return attributeType.getConverter().convert(value);
+        if (value == null) {
+            return IndexImpl.NULL;
+        }
+        return value;
     }
 
     public static Predicate and(Predicate x, Predicate y) {
