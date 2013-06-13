@@ -379,7 +379,7 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     public Record createRecord(String name, Data dataKey, Object value, long ttl, boolean shouldSchedule) {
-        Record record = null;
+        Record record;
         MapContainer mapContainer = getMapContainer(name);
         final MapConfig.InMemoryFormat inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
         boolean statisticsEnabled = mapContainer.getMapConfig().isStatisticsEnabled();
