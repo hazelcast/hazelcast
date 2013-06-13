@@ -23,7 +23,6 @@ import java.io.IOException;
 /**
  * @ali 5/27/13
  */
-//TODO recursive connection should be handled
 public interface ClientConnectionManager {
 
     public void shutdown();
