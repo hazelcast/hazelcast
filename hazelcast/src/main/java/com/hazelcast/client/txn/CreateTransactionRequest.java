@@ -30,7 +30,7 @@ public class CreateTransactionRequest extends CallableClientRequest implements P
         ClientEngineImpl clientEngine = getService();
         final ClientEndpoint endpoint = getEndpoint();
         final TransactionManagerService transactionManagerService = clientEngine.getTransactionManagerService();
-        final TransactionContext context = transactionManagerService.newClientTransactionContext(options);
+        final TransactionContext context = transactionManagerService.newClientTransactionContext(options, endpoint.getUuid());
         context.beginTransaction();
         endpoint.setTransactionContext(context);
         return context.getTxnId();

@@ -47,24 +47,27 @@ final class TransactionImpl implements Transaction {
     private final long timeoutMillis;
     private final int durability;
     private final TransactionType transactionType;
-    private final boolean client;
+    private final String txOwnerUuid;
+    private final boolean checkThreadAccess;
     private State state = NO_TXN;
     private long startTime = 0L;
     private Address[] backupAddresses;
 
-    public TransactionImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngine nodeEngine, TransactionOptions options, boolean client) {
+    public TransactionImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngine nodeEngine,
+                           TransactionOptions options, String txOwnerUuid) {
         this.transactionManagerService = transactionManagerService;
         this.nodeEngine = nodeEngine;
         this.txnId = UUID.randomUUID().toString();
         this.timeoutMillis = options.getTimeoutMillis();
         this.durability = options.getDurability();
         this.transactionType = options.getTransactionType();
-        this.client = client;
+        this.txOwnerUuid = txOwnerUuid == null ? nodeEngine.getLocalMember().getUuid() : txOwnerUuid;
+        this.checkThreadAccess = txOwnerUuid != null;
     }
 
     // used by tx backups
     TransactionImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngine nodeEngine,
-                    String txnId, List<TransactionLog> txLogs, long timeoutMillis, long startTime) {
+                    String txnId, List<TransactionLog> txLogs, long timeoutMillis, long startTime, String txOwnerUuid) {
         this.transactionManagerService = transactionManagerService;
         this.nodeEngine = nodeEngine;
         this.txnId = txnId;
@@ -74,7 +77,8 @@ final class TransactionImpl implements Transaction {
         this.transactionType = TransactionType.TWO_PHASE;
         this.txLogs.addAll(txLogs);
         this.state = PREPARED;
-        this.client = false;
+        this.txOwnerUuid = txOwnerUuid;
+        this.checkThreadAccess = false;
     }
 
     public String getTxnId() {
@@ -116,7 +120,7 @@ final class TransactionImpl implements Transaction {
     }
 
     private void checkThread() {
-        if (!client && threadId != Thread.currentThread().getId()) {
+        if (!checkThreadAccess && threadId != Thread.currentThread().getId()) {
             throw new IllegalStateException("Transaction cannot span multiple threads!");
         }
     }
@@ -136,7 +140,7 @@ final class TransactionImpl implements Transaction {
     }
 
     private void setThreadFlag(Boolean flag) {
-        if (!client) {
+        if (!checkThreadAccess) {
             threadFlag.set(flag);
         }
     }
@@ -164,7 +168,7 @@ final class TransactionImpl implements Transaction {
                 for (Address backupAddress : backupAddresses) {
                     if (nodeEngine.getClusterService().getMember(backupAddress) != null) {
                         final Invocation inv = operationService.createInvocationBuilder(TransactionManagerServiceImpl.SERVICE_NAME,
-                                new ReplicateTxOperation(txLogs, nodeEngine.getLocalMember().getUuid(), txnId, timeoutMillis, startTime),
+                                new ReplicateTxOperation(txLogs, txOwnerUuid, txnId, timeoutMillis, startTime),
                                 backupAddress).build();
                         futures.add(inv.invoke());
                     }

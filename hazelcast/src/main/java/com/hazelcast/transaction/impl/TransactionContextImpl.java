@@ -40,9 +40,10 @@ class TransactionContextImpl implements TransactionContext {
     private final TransactionImpl transaction;
     private final Map<TransactionalObjectKey, TransactionalObject> txnObjectMap = new HashMap<TransactionalObjectKey, TransactionalObject>(2);
 
-    TransactionContextImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngineImpl nodeEngine, TransactionOptions options, boolean client) {
+    TransactionContextImpl(TransactionManagerServiceImpl transactionManagerService, NodeEngineImpl nodeEngine,
+                           TransactionOptions options, String ownerUuid) {
         this.nodeEngine = nodeEngine;
-        this.transaction = new TransactionImpl(transactionManagerService, nodeEngine, options, client);
+        this.transaction = new TransactionImpl(transactionManagerService, nodeEngine, options, ownerUuid);
     }
 
     public String getTxnId() {

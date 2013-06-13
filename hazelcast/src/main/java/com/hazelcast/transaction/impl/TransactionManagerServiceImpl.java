@@ -52,7 +52,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
     }
 
     public <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException {
-        final TransactionContextImpl context = new TransactionContextImpl(this, nodeEngine, options, false);
+        final TransactionContextImpl context = new TransactionContextImpl(this, nodeEngine, options, null);
         context.beginTransaction();
         try {
             final T value = task.execute(context);
@@ -74,11 +74,11 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
     }
 
     public TransactionContext newTransactionContext(TransactionOptions options) {
-        return new TransactionContextImpl(this, nodeEngine, options, false);
+        return new TransactionContextImpl(this, nodeEngine, options, null);
     }
 
-    public TransactionContext newClientTransactionContext(TransactionOptions options) {
-        return new TransactionContextImpl(this, nodeEngine, options, true);
+    public TransactionContext newClientTransactionContext(TransactionOptions options, String clientUuid) {
+        return new TransactionContextImpl(this, nodeEngine, options, clientUuid);
     }
 
     public void init(NodeEngine nodeEngine, Properties properties) {
@@ -98,10 +98,15 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
     public void memberRemoved(MembershipServiceEvent event) {
         final MemberImpl member = event.getMember();
         String uuid = member.getUuid();
+        finalizeTransactionsOf(uuid);
+    }
+
+    private void finalizeTransactionsOf(String uuid) {
         if (!txBackupLogs.isEmpty()) {
             for (TxBackupLog log : txBackupLogs.values()) {
                 if (uuid.equals(log.callerUuid)) {
-                    TransactionImpl tx = new TransactionImpl(this, nodeEngine, log.txnId, log.txLogs, log.timeoutMillis, log.startTime);
+                    TransactionImpl tx = new TransactionImpl(this, nodeEngine, log.txnId, log.txLogs, log.timeoutMillis,
+                            log.startTime, log.callerUuid);
                     if (log.state == Transaction.State.COMMITTING) {
                         try {
                             tx.commit();
@@ -121,7 +126,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
     }
 
     public void clientDisconnected(String clientUuid) {
-        // TODO: !!!
+        finalizeTransactionsOf(clientUuid);
     }
 
     Address[] pickBackupAddresses(int durability) {
