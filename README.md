@@ -20,64 +20,56 @@ enterprise-ready and developer-friendly in-memory data grid solution.
 * Support for cluster info and membership events
 * Dynamic discovery, scaling, partitioning with backups and fail-over
 
-## Getting Started
+### Getting Started
 
 See [Getting Started Guide](http://hazelcast.com/docs/latest/manual/single_html/#GettingStarted)
 
-## Releases
+### Releases
 
 Download from [www.hazelcast.com](http://hazelcast.com/downloads.jsp)
 
 Or use Maven snippet:
 
 ````xml
-    <dependency>
-        <groupId>com.hazelcast</groupId>
-        <artifactId>hazelcast</artifactId>
-        <version>${hazelcast.version}</version>
-    </dependency>
+<dependency>
+    <groupId>com.hazelcast</groupId>
+    <artifactId>hazelcast</artifactId>
+    <version>${hazelcast.version}</version>
+</dependency>
 ````
 
-## Snapshot Releases
+### Snapshot Releases
 
 Maven snippet:
 
 ````xml
-    <dependency>
-        <groupId>com.hazelcast</groupId>
-        <artifactId>hazelcast</artifactId>
-        <version>${hazelcast.version}</version>
-    </dependency>
-    <repository>
-        <id>sonatype-snapshots</id>
-        <name>Sonatype Snapshot Repository</name>
-        <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        <releases>
-            <enabled>false</enabled>
-        </releases>
-        <snapshots>
-            <enabled>true</enabled>
-        </snapshots>
-    </repository>
+<dependency>
+    <groupId>com.hazelcast</groupId>
+    <artifactId>hazelcast</artifactId>
+    <version>${hazelcast.version}</version>
+</dependency>
+<repository>
+    <id>sonatype-snapshots</id>
+    <name>Sonatype Snapshot Repository</name>
+    <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    <releases>
+        <enabled>false</enabled>
+    </releases>
+    <snapshots>
+        <enabled>true</enabled>
+    </snapshots>
+</repository>
 ````
 
-## Documentation
+### Documentation
 
 See documentation at [www.hazelcast.com](http://hazelcast.com/docs.jsp)
 
+### Building From Source
 
-## Building From Source
+Pull latest from repo `git pull origin 3.0` and use Maven install (or package) to build `mvn clean install`.
 
-Pull latest from repo:
-
-`git pull origin 3.0`
-
-Use Maven install (or package) to build:
-
-`mvn clean install`
-
-
-## Testing
+### Testing
 
 Hazelcast has 3 testing profiles (default profile doesn't run any tests):
 
@@ -85,18 +77,17 @@ Hazelcast has 3 testing profiles (default profile doesn't run any tests):
 * Type `mvn test -P serial-test` to run tests those cannot be run in-parallel.
 * Type `mvn test -P all-tests` to run all test serially using network.
 
-
-## Mail Group
+### Mail Group
 
 Please join the mail group if you are interested in using or developing Hazelcast.
 
 [http://groups.google.com/group/hazelcast](http://groups.google.com/group/hazelcast)
 
-## License
+#### License
 
 Hazelcast is available under the Apache 2 License.
 
-## Copyright
+#### Copyright
 
 Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
 
