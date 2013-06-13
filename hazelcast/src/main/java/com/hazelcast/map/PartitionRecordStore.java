@@ -178,28 +178,6 @@ public class PartitionRecordStore implements RecordStore {
                 lockAwareOperation.getCallerUuid(), lockAwareOperation.getThreadId());
     }
 
-    public Object tryRemove(Data dataKey) {
-        Record record = records.get(dataKey);
-        boolean removed = false;
-        boolean evicted = false;
-        Object oldValue = null;
-        if (record == null) {
-            // already removed from map by eviction but still need to delete it
-            if (mapContainer.getStore() != null && mapContainer.getStore().load(mapService.toObject(dataKey)) != null) {
-                mapStoreDelete(null, dataKey);
-            }
-        } else {
-            accessRecord(record);
-            mapService.interceptRemove(name, record.getValue());
-            mapStoreDelete(record, dataKey);
-            Record removedRecord = records.remove(dataKey);
-            oldValue = removedRecord.getValue();
-            removed = true;
-        }
-
-        return oldValue;
-    }
-
     public Set<Map.Entry<Data, Object>> entrySetObject() {
         Map<Data, Object> temp = new HashMap<Data, Object>(records.size());
         for (Data key : records.keySet()) {
@@ -267,7 +245,6 @@ public class PartitionRecordStore implements RecordStore {
     public void reset() {
         records.clear();
     }
-
 
     public Object remove(Data dataKey) {
         Record record = records.get(dataKey);
