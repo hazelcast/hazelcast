@@ -1336,48 +1336,4 @@ public class QueryTest extends HazelcastTestSupport {
             ex.shutdownNow();
         }
     }
-
-    @Test
-    public void testUUIDOnQuery() throws InterruptedException {
-        final int n = 1;
-        final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(n);
-        final Config config = new Config();
-        HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
-        IMap<String, Student> map = instance.getMap("map");
-        UUID lastid = null;
-        for (int i = 0; i < 100; i++) {
-            lastid = UUID.randomUUID();
-            map.put("name" + i, new Student("name" + i, lastid));
-        }
-        Collection<Student> values = map.values(new SqlPredicate("id = " + lastid));
-        System.out.println(values.size());
-    }
-
-
-    static class Student implements Serializable {
-        String name;
-        UUID id;
-
-        Student(String name, UUID id) {
-            this.name = name;
-            this.id = id;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public UUID getId() {
-            return id;
-        }
-
-        public void setId(UUID id) {
-            this.id = id;
-        }
-    }
-
 }
