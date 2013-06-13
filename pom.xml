@@ -258,13 +258,13 @@
             </build>
             <modules>
                 <module>hazelcast-all</module>
-                <module>hazelcast-documentation</module>
             </modules>
         </profile>
 
         <profile>
             <id>zip</id>
             <modules>
+                <module>hazelcast-all</module>
                 <module>hazelcast-documentation</module>
             </modules>
         </profile>

@@ -11,14 +11,93 @@ enterprise-ready and developer-friendly in-memory data grid solution.
 * Distributed implementation of `java.util.concurrent.ExecutorService`
 * Distributed `MultiMap` for one-to-many relationships
 * Distributed `Topic` for publish/subscribe messaging
-* Transaction support and J2EE container integration via JCA
-* Socket level encryption support for secure clusters
 * Synchronous (write-through) and asynchronous (write-behind) persistence
+* Transaction support
+* Socket level encryption support for secure clusters
 * Second level cache provider for Hibernate
 * Monitoring and management of the cluster via JMX
 * Dynamic HTTP session clustering
 * Support for cluster info and membership events
 * Dynamic discovery, scaling, partitioning with backups and fail-over
 
+## Getting Started
+
+See [Getting Started Guide](http://hazelcast.com/docs/latest/manual/single_html/#GettingStarted)
+
+## Releases
+
+Download from [www.hazelcast.com](http://hazelcast.com/downloads.jsp)
+
+Or use Maven snippet:
+
+````xml
+    <dependency>
+        <groupId>com.hazelcast</groupId>
+        <artifactId>hazelcast</artifactId>
+        <version>${hazelcast.version}</version>
+    </dependency>
+````
+
+## Snapshot Releases
+
+Maven snippet:
+
+````xml
+    <dependency>
+        <groupId>com.hazelcast</groupId>
+        <artifactId>hazelcast</artifactId>
+        <version>${hazelcast.version}</version>
+    </dependency>
+    <repository>
+        <id>sonatype-snapshots</id>
+        <name>Sonatype Snapshot Repository</name>
+        <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        <releases>
+            <enabled>false</enabled>
+        </releases>
+        <snapshots>
+            <enabled>true</enabled>
+        </snapshots>
+    </repository>
+````
+
+## Documentation
+
+See documentation at [www.hazelcast.com](http://hazelcast.com/docs.jsp)
+
+
+## Building From Source
+
+Pull latest from repo:
+
+`git pull origin 3.0`
+
+Use Maven install (or package) to build:
+
+`mvn clean install`
+
+
+## Testing
+
+Hazelcast has 3 testing profiles (default profile doesn't run any tests):
+
+* Type `mvn test -P parallel-test` to run tests those can be run in-parallel without using network.
+* Type `mvn test -P serial-test` to run tests those cannot be run in-parallel.
+* Type `mvn test -P all-tests` to run all test serially using network.
+
+
+## Mail Group
+
+Please join the mail group if you are interested in using or developing Hazelcast.
+
+[http://groups.google.com/group/hazelcast](http://groups.google.com/group/hazelcast)
+
+## License
+
+Hazelcast is available under the Apache 2 License.
+
+## Copyright
+
+Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
 
 Visit [www.hazelcast.com](http://www.hazelcast.com/) for more info.
