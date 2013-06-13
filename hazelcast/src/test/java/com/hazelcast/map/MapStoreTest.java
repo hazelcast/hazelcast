@@ -21,13 +21,11 @@ import com.hazelcast.core.*;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.monitor.LocalMapStats;
-import com.hazelcast.query.SampleObjects;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.test.annotation.SerialTest;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -46,7 +44,6 @@ import static org.junit.Assert.*;
 public class MapStoreTest extends HazelcastTestSupport {
 
     @Test
-    // TODO: fails
     public void testMapInitialLoad() throws InterruptedException {
         int size = 100000;
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
@@ -265,7 +262,6 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     @Test
-    // TODO: fails
     @Category(SerialTest.class)
     public void testOneMemberWriteBehindWithEvictions() throws Exception {
         TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
@@ -563,9 +559,6 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertEquals(employee, map.get("1"));
         assertEquals(employee, testMapStore.getStore().get("1"));
         assertEquals(1, map.size());
-//        Collection values = map.values(new SqlPredicate("name = 'joe'"));
-//        assertEquals(1, values.size());
-//        assertEquals(employee, values.iterator().next());
         map.put("2", employee2);
         assertEquals(employee2, testMapStore.getStore().get("2"));
         assertEquals(2, testMapStore.getStore().size());
@@ -952,47 +945,6 @@ public class MapStoreTest extends HazelcastTestSupport {
             }
         }
     }
-
-    public static class MapStoreAdaptor<K, V> implements MapStore<K, V> {
-
-        public void delete(final K key) {
-        }
-
-        public void store(final K key, final V value) {
-        }
-
-        public void storeAll(final Map<K, V> map) {
-            for (Map.Entry<K, V> entry : map.entrySet()) {
-                store(entry.getKey(), entry.getValue());
-            }
-        }
-
-        public void deleteAll(final Collection<K> keys) {
-            for (K key : keys) {
-                delete(key);
-            }
-        }
-
-        public V load(final K key) {
-            return null;
-        }
-
-        public Map<K, V> loadAll(final Collection<K> keys) {
-            Map<K, V> result = new HashMap<K, V>();
-            for (K key : keys) {
-                V value = load(key);
-                if (value != null) {
-                    result.put(key, value);
-                }
-            }
-            return result;
-        }
-
-        public Set<K> loadAllKeys() {
-            return null;
-        }
-    }
-
 
     public static class TestMapStore extends MapStoreAdaptor implements MapLoaderLifecycleSupport, MapStore {
 

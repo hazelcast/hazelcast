@@ -44,7 +44,6 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
         this.version = version;
     }
 
-
     @Override
     public void run() {
         recordStore.unlock(dataKey, getCallerUuid(), getThreadId());

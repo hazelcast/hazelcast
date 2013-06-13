@@ -1055,11 +1055,17 @@ public class QueryTest extends HazelcastTestSupport {
         IMap map = instance.getMap("testPredicateCustomAttribute");
 
         final CustomAttribute attribute = new CustomAttribute(78, 145);
-        final CustomObject object = new CustomObject("name", UUID.randomUUID(), attribute);
+        final CustomObject object = new CustomObject("name1", UUID.randomUUID(), attribute);
         map.put(1, object);
 
+        final CustomObject object2 = new CustomObject("name2", UUID.randomUUID(), attribute);
+        map.put(2, object2);
+
         assertEquals(object, map.values(new PredicateBuilder().getEntryObject().get("uuid").equal(object.uuid)).iterator().next());
-        assertEquals(object, map.values(new PredicateBuilder().getEntryObject().get("attribute").equal(object.attribute)).iterator().next());
+        assertEquals(2, map.values(new PredicateBuilder().getEntryObject().get("attribute").equal(attribute)).size());
+
+        assertEquals(object2, map.values(new PredicateBuilder().getEntryObject().get("uuid").in(object2.uuid)).iterator().next());
+        assertEquals(2, map.values(new PredicateBuilder().getEntryObject().get("attribute").in(attribute)).size());
     }
 
     private static class CustomObject implements Serializable {

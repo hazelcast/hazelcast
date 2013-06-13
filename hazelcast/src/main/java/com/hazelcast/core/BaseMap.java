@@ -37,4 +37,6 @@ public interface BaseMap<K, V> extends DistributedObject {
     void delete(Object key);
 
     boolean remove(Object key, Object value);
+
+    int size();
 }

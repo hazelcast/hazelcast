@@ -27,11 +27,7 @@ import java.util.Set;
 
 public interface RecordStore {
 
-    Object tryRemove(Data dataKey);
-
     Object remove(Data dataKey);
-
-    void delete(Data dataKey);
 
     boolean remove(Data dataKey, Object testValue);
 

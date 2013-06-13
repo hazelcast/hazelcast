@@ -36,7 +36,7 @@ public class TryRemoveOperation extends BaseRemoveOperation {
     }
 
     public void run() {
-        dataOldValue = mapService.toData(recordStore.tryRemove(dataKey));
+        dataOldValue = mapService.toData(recordStore.remove(dataKey));
         successful = dataOldValue != null;
     }
 

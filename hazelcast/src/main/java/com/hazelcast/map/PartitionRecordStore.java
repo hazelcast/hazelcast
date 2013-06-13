@@ -28,7 +28,6 @@ import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryResultEntryImpl;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.DefaultObjectNamespace;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 
 import java.util.*;
@@ -147,7 +146,6 @@ public class PartitionRecordStore implements RecordStore {
         return lockStore != null && lockStore.forceUnlock(dataKey);
     }
 
-    @Override
     public QueryResult query(Predicate predicate) {
         QueryResult result = new QueryResult();
         SerializationService serializationService = mapService.getNodeEngine().getSerializationService();
@@ -176,28 +174,6 @@ public class PartitionRecordStore implements RecordStore {
     public boolean canRun(LockAwareOperation lockAwareOperation) {
         return lockStore == null || lockStore.canAcquireLock(lockAwareOperation.getKey(),
                 lockAwareOperation.getCallerUuid(), lockAwareOperation.getThreadId());
-    }
-
-    public Object tryRemove(Data dataKey) {
-        Record record = records.get(dataKey);
-        boolean removed = false;
-        boolean evicted = false;
-        Object oldValue = null;
-        if (record == null) {
-            // already removed from map by eviction but still need to delete it
-            if (mapContainer.getStore() != null && mapContainer.getStore().load(mapService.toObject(dataKey)) != null) {
-                mapStoreDelete(null, dataKey);
-            }
-        } else {
-            accessRecord(record);
-            mapService.interceptRemove(name, record.getValue());
-            mapStoreDelete(record, dataKey);
-            Record removedRecord = records.remove(dataKey);
-            oldValue = removedRecord.getValue();
-            removed = true;
-        }
-
-        return oldValue;
     }
 
     public Set<Map.Entry<Data, Object>> entrySetObject() {
@@ -268,7 +244,6 @@ public class PartitionRecordStore implements RecordStore {
         records.clear();
     }
 
-
     public Object remove(Data dataKey) {
         Record record = records.get(dataKey);
         Object oldValue = null;
@@ -290,26 +265,6 @@ public class PartitionRecordStore implements RecordStore {
         return oldValue;
     }
 
-    public void delete(Data dataKey) {
-        Record record = records.get(dataKey);
-        Object oldValue = null;
-        if (record == null) {
-            if (mapContainer.getStore() != null) {
-                oldValue = mapContainer.getStore().load(mapService.toObject(dataKey));
-                if (oldValue != null) {
-                    mapStoreDelete(null, dataKey);
-                }
-            }
-        } else {
-            oldValue = record.getValue();
-            oldValue = mapService.interceptRemove(name, oldValue);
-            if (oldValue != null) {
-                mapStoreDelete(record, dataKey);
-            }
-            records.remove(dataKey);
-        }
-    }
-
     private void removeIndex(Data key) {
         final IndexService indexService = mapContainer.getIndexService();
         if (indexService.hasIndex()) {
@@ -320,16 +275,12 @@ public class PartitionRecordStore implements RecordStore {
     public Object evict(Data dataKey) {
         Record record = records.get(dataKey);
         Object oldValue = null;
-        try {
-            if (record != null) {
-                flush(dataKey);
-                mapService.interceptRemove(name, record.getValue());
-                oldValue = record.getValue();
-                records.remove(dataKey);
-                removeIndex(dataKey);
-            }
-        } catch (Exception e) {
-            ExceptionUtil.rethrow(e);
+        if (record != null) {
+            flush(dataKey);
+            mapService.interceptRemove(name, record.getValue());
+            oldValue = record.getValue();
+            records.remove(dataKey);
+            removeIndex(dataKey);
         }
         return oldValue;
     }

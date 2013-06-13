@@ -17,10 +17,8 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.core.*;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -29,6 +27,7 @@ import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.transaction.TransactionalTaskContext;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -44,7 +43,7 @@ import static org.junit.Assert.*;
 @Category(ParallelTest.class)
 public class MapTransactionTest extends HazelcastTestSupport {
 
-    TransactionOptions options = new TransactionOptions().setTransactionType(TransactionOptions.TransactionType.TWO_PHASE);
+    private final TransactionOptions options = new TransactionOptions().setTransactionType(TransactionOptions.TransactionType.TWO_PHASE);
 
     @Test
     public void testCommitOrder() throws TransactionException {
@@ -456,4 +455,34 @@ public class MapTransactionTest extends HazelcastTestSupport {
         assertEquals("value3", map2.get("1"));
     }
 
+    @Ignore
+    @Test
+    // TODO: @mm - Review following case...
+    public void testFailingMapStore() throws TransactionException {
+        final String map = "map";
+        final String anotherMap = "anotherMap";
+        Config config = new Config();
+        config.getMapConfig(map).setMapStoreConfig(new MapStoreConfig()
+                .setEnabled(true).setImplementation(new MapStoreAdaptor() {
+                    public void store(Object key, Object value) {
+                        throw new IllegalStateException("Map store intentionally failed :) ");
+                    }
+                }));
+
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance h2 = factory.newHazelcastInstance(config);
+
+        boolean b = h1.executeTransaction(options, new TransactionalTask<Boolean>() {
+            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
+                assertNull(context.getMap(anotherMap).put("2", "value1"));
+                assertNull(context.getMap(map).put("1", "value1"));
+                return true;
+            }
+        });
+
+        assertTrue(b);
+        assertNull(h2.getMap(map).get("1"));
+        assertEquals("value1", h2.getMap(anotherMap).get("2"));
+    }
 }
