@@ -44,12 +44,14 @@ public class ClientExecutorServiceTest {
     static HazelcastInstance hz;
     static HazelcastInstance server;
     static HazelcastInstance second;
+    static HazelcastInstance third;
     static IExecutorService service;
 
     @BeforeClass
     public static void init(){
         server = Hazelcast.newHazelcastInstance();
         second = Hazelcast.newHazelcastInstance();
+        third = Hazelcast.newHazelcastInstance();
         hz = HazelcastClient.newHazelcastClient(null);
         service = hz.getExecutorService(name);
     }
@@ -63,6 +65,22 @@ public class ClientExecutorServiceTest {
     @Before
     @After
     public void clear() throws IOException {
+    }
+
+    @Test
+    public void testIsShutdown() throws Exception {
+
+//        CallableTask task = new CallableTask("naber");
+//
+//        while (true){
+//            final Map<Member, Future<String>> map = service.submitToAllMembers(task);
+//            for (Member member : map.keySet()) {
+//                final Future<String> future = map.get(member);
+//                final String s = future.get();
+//                System.err.println("m: " + member + "  s: " + s);
+//            }
+//        }
+
     }
 
     @Test

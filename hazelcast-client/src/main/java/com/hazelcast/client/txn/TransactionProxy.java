@@ -22,7 +22,6 @@ public class TransactionProxy implements Transaction {
 
     private static final ThreadLocal<Boolean> threadFlag = new ThreadLocal<Boolean>();
 
-    private final HazelcastClient client;
     private final TransactionOptions options;
     private final ClientClusterServiceImpl clusterService;
     private final long threadId = Thread.currentThread().getId();
@@ -33,7 +32,6 @@ public class TransactionProxy implements Transaction {
     private long startTime = 0L;
 
     public TransactionProxy(HazelcastClient client, TransactionOptions options, Connection connection) {
-        this.client = client;
         this.options = options;
         this.clusterService = (ClientClusterServiceImpl) client.getClientClusterService();
         this.connection = connection;
@@ -64,44 +62,61 @@ public class TransactionProxy implements Transaction {
     }
 
     void begin() {
-        if (state == ACTIVE) {
-            throw new IllegalStateException("Transaction is already active");
-        }
-        checkThread();
-        if (threadFlag.get() != null) {
-            throw new IllegalStateException("Nested transactions are not allowed!");
-        }
-        threadFlag.set(Boolean.TRUE);
-        startTime = Clock.currentTimeMillis();
+        try {
+            if (state == ACTIVE) {
+                throw new IllegalStateException("Transaction is already active");
+            }
+            checkThread();
+            if (threadFlag.get() != null) {
+                throw new IllegalStateException("Nested transactions are not allowed!");
+            }
+            threadFlag.set(Boolean.TRUE);
+            startTime = Clock.currentTimeMillis();
 
-        txnId = sendAndReceive(new CreateTransactionRequest(options));
-        state = ACTIVE;
-        // TODO: @mm - release/close connection if begin fails
+            txnId = sendAndReceive(new CreateTransactionRequest(options));
+            state = ACTIVE;
+        } catch (Exception e){
+            closeConnection();
+            ExceptionUtil.rethrow(e);
+        }
     }
 
     void commit() {
-        if (state != ACTIVE) {
-            throw new TransactionNotActiveException("Transaction is not active");
+        try {
+            if (state != ACTIVE) {
+                throw new TransactionNotActiveException("Transaction is not active");
+            }
+            checkThread();
+            checkTimeout();
+            sendAndReceive(new CommitTransactionRequest());
+            state = COMMITTED;
+        } finally {
+            closeConnection();
         }
-        checkThread();
-        checkTimeout();
-        sendAndReceive(new CommitTransactionRequest());
-        state = COMMITTED;//TODO
-        // TODO: @mm - release/close connection after commit (in finally block)
     }
 
     void rollback() {
-        if (state == NO_TXN || state == ROLLED_BACK) {
-            throw new IllegalStateException("Transaction is not active");
-        }
-        checkThread();
-        state = ROLLING_BACK;
         try {
-            sendAndReceive(new RollbackTransactionRequest());
-        } catch (Exception e) {
+            if (state == NO_TXN || state == ROLLED_BACK) {
+                throw new IllegalStateException("Transaction is not active");
+            }
+            checkThread();
+            try {
+                sendAndReceive(new RollbackTransactionRequest());
+            } catch (Exception e) {
+            }
+            state = ROLLED_BACK;
+        } finally {
+            closeConnection();
         }
-        state = ROLLED_BACK;
-        // TODO: @mm - release/close connection after rollback (in finally block)
+    }
+
+    private void closeConnection(){
+        try {
+            connection.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void checkThread() {

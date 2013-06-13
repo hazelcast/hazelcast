@@ -276,7 +276,7 @@ public class QueryTest extends HazelcastTestSupport {
         }
         long start = System.currentTimeMillis();
         Collection<Employee> values = imap.values(new SqlPredicate("active and name LIKE 'joe15%'"));
-        assertEquals("time:"+ (System.currentTimeMillis() - start) ,expectedCount, values.size());
+        assertEquals("time:" + (System.currentTimeMillis() - start), expectedCount, values.size());
         for (Employee employee : values) {
             assertTrue(employee.isActive());
         }
@@ -1342,5 +1342,4 @@ public class QueryTest extends HazelcastTestSupport {
             ex.shutdownNow();
         }
     }
-
 }
