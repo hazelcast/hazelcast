@@ -180,4 +180,21 @@ public class SerializationConfig {
         this.checkClassDefErrors = checkClassDefErrors;
         return this;
     }
+
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("SerializationConfig{");
+        sb.append("portableVersion=").append(portableVersion);
+        sb.append(", dataSerializableFactoryClasses=").append(dataSerializableFactoryClasses);
+        sb.append(", dataSerializableFactories=").append(dataSerializableFactories);
+        sb.append(", portableFactoryClasses=").append(portableFactoryClasses);
+        sb.append(", portableFactories=").append(portableFactories);
+        sb.append(", globalSerializer=").append(globalSerializer);
+        sb.append(", typeSerializers=").append(typeSerializers);
+        sb.append(", checkClassDefErrors=").append(checkClassDefErrors);
+        sb.append(", classDefinitions=").append(classDefinitions);
+        sb.append('}');
+        return sb.toString();
+    }
 }

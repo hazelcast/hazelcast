@@ -75,4 +75,16 @@ public class SemaphoreConfig {
     public int getTotalBackupCount(){
         return asyncBackupCount + syncBackupCount;
     }
+
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("SemaphoreConfig{");
+        sb.append("name='").append(name).append('\'');
+        sb.append(", initialPermits=").append(initialPermits);
+        sb.append(", syncBackupCount=").append(syncBackupCount);
+        sb.append(", asyncBackupCount=").append(asyncBackupCount);
+        sb.append('}');
+        return sb.toString();
+    }
 }

@@ -130,4 +130,19 @@ public final class QueueConfig {
         this.listenerConfigs = listenerConfigs;
         return this;
     }
+
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("QueueConfig{");
+        sb.append("name='").append(name).append('\'');
+        sb.append(", maxSize=").append(maxSize);
+        sb.append(", backupCount=").append(backupCount);
+        sb.append(", asyncBackupCount=").append(asyncBackupCount);
+        sb.append(", queueStoreConfig=").append(queueStoreConfig);
+        sb.append(", listenerConfigs=").append(listenerConfigs);
+        sb.append(", statisticsEnabled=").append(statisticsEnabled);
+        sb.append('}');
+        return sb.toString();
+    }
 }

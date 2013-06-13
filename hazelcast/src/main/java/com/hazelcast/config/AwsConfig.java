@@ -117,13 +117,15 @@ public class AwsConfig {
 
     @Override
     public String toString() {
-        return "AwsConfig{" +
-                "enabled=" + enabled +
-                ", accessKey='" + accessKey + '\'' +
-                ", secretKey='" + secretKey + '\'' +
-                ", region='" + region + '\'' +
-                ", hostHeader='" + hostHeader + '\'' +
-                ", securityGroupName=" + securityGroupName +
-                '}';
+        final StringBuilder sb = new StringBuilder("AwsConfig{");
+        sb.append("enabled=").append(enabled);
+        sb.append(", region='").append(region).append('\'');
+        sb.append(", securityGroupName='").append(securityGroupName).append('\'');
+        sb.append(", tagKey='").append(tagKey).append('\'');
+        sb.append(", tagValue='").append(tagValue).append('\'');
+        sb.append(", hostHeader='").append(hostHeader).append('\'');
+        sb.append(", connectionTimeoutSeconds=").append(connectionTimeoutSeconds);
+        sb.append('}');
+        return sb.toString();
     }
 }

@@ -49,4 +49,13 @@ public class MapIndexConfig {
         this.ordered = ordered;
         return this;
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("MapIndexConfig{");
+        sb.append("attribute='").append(attribute).append('\'');
+        sb.append(", ordered=").append(ordered);
+        sb.append('}');
+        return sb.toString();
+    }
 }

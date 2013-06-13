@@ -16,11 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.util.ByteUtil;
-
-import java.io.IOException;
+import java.util.Arrays;
 
 public class SymmetricEncryptionConfig {
 
@@ -87,13 +83,11 @@ public class SymmetricEncryptionConfig {
 
     @Override
     public String toString() {
-        final StringBuffer sb = new StringBuffer();
-        sb.append("SymmetricEncryptionConfig");
-        sb.append("{enabled=").append(enabled);
-        sb.append(", salt='").append(salt).append('\'');
-        sb.append(", password='").append(password).append('\'');
+        final StringBuilder sb = new StringBuilder("SymmetricEncryptionConfig{");
+        sb.append("enabled=").append(enabled);
         sb.append(", iterationCount=").append(iterationCount);
         sb.append(", algorithm='").append(algorithm).append('\'');
+        sb.append(", key=").append(Arrays.toString(key));
         sb.append('}');
         return sb.toString();
     }

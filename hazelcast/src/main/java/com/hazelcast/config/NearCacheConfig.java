@@ -106,4 +106,18 @@ public class NearCacheConfig {
         this.inMemoryFormat = MapConfig.InMemoryFormat.valueOf(inMemoryFormat);
         return this;
     }
+
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("NearCacheConfig{");
+        sb.append("timeToLiveSeconds=").append(timeToLiveSeconds);
+        sb.append(", maxSize=").append(maxSize);
+        sb.append(", evictionPolicy='").append(evictionPolicy).append('\'');
+        sb.append(", maxIdleSeconds=").append(maxIdleSeconds);
+        sb.append(", invalidateOnChange=").append(invalidateOnChange);
+        sb.append(", inMemoryFormat=").append(inMemoryFormat);
+        sb.append('}');
+        return sb.toString();
+    }
 }

@@ -67,4 +67,15 @@ public class TypeSerializerConfig {
         this.typeClassName = typeClassName;
         return this;
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("TypeSerializerConfig{");
+        sb.append("className='").append(className).append('\'');
+        sb.append(", implementation=").append(implementation);
+        sb.append(", typeClass=").append(typeClass);
+        sb.append(", typeClassName='").append(typeClassName).append('\'');
+        sb.append('}');
+        return sb.toString();
+    }
 }

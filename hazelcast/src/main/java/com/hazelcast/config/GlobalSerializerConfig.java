@@ -46,4 +46,12 @@ public class GlobalSerializerConfig {
         return this;
     }
 
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("GlobalSerializerConfig{");
+        sb.append("className='").append(className).append('\'');
+        sb.append(", implementation=").append(implementation);
+        sb.append('}');
+        return sb.toString();
+    }
 }

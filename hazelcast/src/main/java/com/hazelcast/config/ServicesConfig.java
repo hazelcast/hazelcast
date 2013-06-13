@@ -67,4 +67,13 @@ public class ServicesConfig {
     public ServiceConfig getServiceConfig(String name) {
         return services.get(name);
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("ServicesConfig{");
+        sb.append("enableDefaults=").append(enableDefaults);
+        sb.append(", services=").append(services);
+        sb.append('}');
+        return sb.toString();
+    }
 }
