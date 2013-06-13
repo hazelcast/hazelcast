@@ -106,7 +106,7 @@ public class ClientEndpoint implements Client {
         final TransactionContext context = transactionContext;
         if (context != null){
             transactionContext = null;
-            //TODO
+            //TODO: rollback transaction
 //            transactionContext.rollbackTransaction();
         }
         authenticated = false;

@@ -206,7 +206,6 @@ public abstract class AbstractJoiner implements Joiner {
     }
 
     protected void startClusterMerge(final Address targetAddress) {
-        // TODO: @mm - improve cluster merge process
         final OperationService operationService = node.nodeEngine.getOperationService();
         final Collection<MemberImpl> memberList = node.getClusterService().getMemberList();
         final Collection<Future> calls = new ArrayList<Future>();

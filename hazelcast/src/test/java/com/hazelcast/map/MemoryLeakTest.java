@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cluster;
+package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
@@ -22,13 +22,11 @@ import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
-import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.SerialTest;
-import org.junit.After;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -42,38 +40,22 @@ import static java.lang.Thread.sleep;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(SerialTest.class)
-public class MemoryLeakTest {
+public class MemoryLeakTest extends HazelcastTestSupport {
 
-    @BeforeClass
-    public static void init() throws Exception {
-        System.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "1");
-        System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
-        Hazelcast.shutdownAll();
-    }
-
-    @After
-    public void cleanup() throws Exception {
-        Hazelcast.shutdownAll();
+    @Before
+    public void gc() {
+        Runtime.getRuntime().gc();
     }
 
     @Test
     public void testShutdownAllMemoryLeak() throws Exception {
-        Runtime.getRuntime().gc();
         long usedMemoryInit = getUsedMemoryAsMB();
         Config config = new Config();
-        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance h4 = Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance[] instances = new HazelcastInstance[4];
-        instances[0] = h1;
-        instances[1] = h2;
-        instances[2] = h3;
-        instances[3] = h4;
-        IMap map1 = h1.getMap("default");
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(4);
+        final HazelcastInstance[] instances = factory.newInstances(config);
+        IMap map1 = instances[0].getMap("default");
         final int size = 10000;
         for (int i = 0; i < size; i++) {
             map1.put(i, new byte[10000]);
@@ -100,22 +82,14 @@ public class MemoryLeakTest {
 
     @Test
     public void testTTLAndMemoryLeak() throws Exception {
-        System.setProperty(GroupProperties.PROP_LOG_STATE, "true");
-        Runtime.getRuntime().gc();
         long usedMemoryInit = getUsedMemoryAsMB();
         Config config = new Config();
         MapConfig mapConfig = config.getMapConfig("default");
         mapConfig.setTimeToLiveSeconds(15);
-        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance h4 = Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance[] instances = new HazelcastInstance[4];
-        instances[0] = h1;
-        instances[1] = h2;
-        instances[2] = h3;
-        instances[3] = h4;
-        IMap map1 = h1.getMap("default");
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(4);
+        final HazelcastInstance[] instances = factory.newInstances(config);
+        IMap map1 = instances[0].getMap("default");
+
         final int size = 10000;
         for (int i = 0; i < size; i++) {
             map1.put(i, new byte[10000]);
@@ -138,47 +112,17 @@ public class MemoryLeakTest {
         assertTrue(latch.await(20, TimeUnit.SECONDS));
         es.shutdown();
         assertTrue(es.awaitTermination(5, TimeUnit.SECONDS));
-        assertTrue(waitForCleanup(200, instances));
         waitForGC(25 + usedMemoryInit, 200);
-        System.setProperty(GroupProperties.PROP_LOG_STATE, "false");
-    }
-
-    @Ignore
-    private boolean waitForCleanup(int seconds, HazelcastInstance... instances) throws InterruptedException {
-        Thread.sleep(3000);
-        return true;
-    }
-
-    @Ignore
-    private void waitForGC(long limit, int maxSeconds) throws InterruptedException {
-        if (getUsedMemoryAsMB() < limit) {
-            return;
-        }
-        for (int i = 0; i < maxSeconds; i++) {
-            sleep(1000);
-            Runtime.getRuntime().gc();
-            if (getUsedMemoryAsMB() < limit) {
-                return;
-            }
-        }
-        fail(String.format("UsedMemory now: %s but expected max: %s", getUsedMemoryAsMB(), limit));
     }
 
     @Test
     public void testTTLAndMemoryLeak2() throws Exception {
-        Runtime.getRuntime().gc();
         long usedMemoryInit = getUsedMemoryAsMB();
         Config config = new Config();
-        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance h4 = Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance[] instances = new HazelcastInstance[4];
-        instances[0] = h1;
-        instances[1] = h2;
-        instances[2] = h3;
-        instances[3] = h4;
-        IMap map1 = h1.getMap("default");
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(4);
+        final HazelcastInstance[] instances = factory.newInstances(config);
+        IMap map1 = instances[0].getMap("default");
+
         final int size = 10000;
         for (int i = 0; i < size; i++) {
             map1.put(i, new byte[10000], 15, TimeUnit.SECONDS);
@@ -201,7 +145,6 @@ public class MemoryLeakTest {
         assertTrue(latch.await(20, TimeUnit.SECONDS));
         es.shutdown();
         assertTrue(es.awaitTermination(5, TimeUnit.SECONDS));
-        assertTrue(waitForCleanup(200, instances));
         waitForGC(25 + usedMemoryInit, 200);
     }
 
@@ -212,16 +155,10 @@ public class MemoryLeakTest {
         Config config = new XmlConfigBuilder().build();
         MapConfig mapConfig = config.getMapConfig("default");
         mapConfig.setMaxIdleSeconds(15);
-        final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance h2 = Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance h3 = Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance h4 = Hazelcast.newHazelcastInstance(config);
-        final HazelcastInstance[] instances = new HazelcastInstance[4];
-        instances[0] = h1;
-        instances[1] = h2;
-        instances[2] = h3;
-        instances[3] = h4;
-        IMap map1 = h1.getMap("default");
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(4);
+        final HazelcastInstance[] instances = factory.newInstances(config);
+        IMap map1 = instances[0].getMap("default");
+
         final int size = 10000;
         for (int i = 0; i < size; i++) {
             map1.put(i, new byte[10000]);
@@ -244,13 +181,26 @@ public class MemoryLeakTest {
         assertTrue(latch.await(20, TimeUnit.SECONDS));
         es.shutdown();
         assertTrue(es.awaitTermination(5, TimeUnit.SECONDS));
-        assertTrue(waitForCleanup(200, instances));
         waitForGC(25 + usedMemoryInit, 200);
     }
 
-    long getUsedMemoryAsMB() {
+    private static long getUsedMemoryAsMB() {
         long total = Runtime.getRuntime().totalMemory();
         long free = Runtime.getRuntime().freeMemory();
         return (total - free) / 1024 / 1024;
+    }
+
+    private static void waitForGC(long limit, int maxSeconds) throws InterruptedException {
+        if (getUsedMemoryAsMB() < limit) {
+            return;
+        }
+        for (int i = 0; i < maxSeconds; i++) {
+            sleep(1000);
+            Runtime.getRuntime().gc();
+            if (getUsedMemoryAsMB() < limit) {
+                return;
+            }
+        }
+        fail(String.format("UsedMemory now: %s but expected max: %s", getUsedMemoryAsMB(), limit));
     }
 }

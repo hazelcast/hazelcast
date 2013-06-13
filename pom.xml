@@ -311,7 +311,7 @@
                         <version>${maven.surefire.plugin.version}</version>
                         <configuration combine.self="override">
                             <parallel>none</parallel>
-                            <argLine>-Xms128m -Xmx512m -XX:MaxPermSize=128M
+                            <argLine>-Xms128m -Xmx1G -XX:MaxPermSize=128M
                                 -Dhazelcast.version.check.enabled=false
                                 -Dhazelcast.mancenter.enabled=false
                                 -Dhazelcast.logging.type=none

@@ -263,24 +263,6 @@ public class MemberListTest {
         Config c4 = buildConfig(false);
         Config c5 = buildConfig(false);
 
-        c1.setProperty(GroupProperties.PROP_MASTER_CONFIRMATION_INTERVAL_SECONDS, "15");
-        c2.setProperty(GroupProperties.PROP_MASTER_CONFIRMATION_INTERVAL_SECONDS, "15");
-        c3.setProperty(GroupProperties.PROP_MASTER_CONFIRMATION_INTERVAL_SECONDS, "15");
-        c4.setProperty(GroupProperties.PROP_MASTER_CONFIRMATION_INTERVAL_SECONDS, "15");
-        c5.setProperty(GroupProperties.PROP_MASTER_CONFIRMATION_INTERVAL_SECONDS, "15");
-
-        c1.setProperty(GroupProperties.PROP_MAX_NO_MASTER_CONFIRMATION_SECONDS, "45");
-        c2.setProperty(GroupProperties.PROP_MAX_NO_MASTER_CONFIRMATION_SECONDS, "45");
-        c3.setProperty(GroupProperties.PROP_MAX_NO_MASTER_CONFIRMATION_SECONDS, "45");
-        c4.setProperty(GroupProperties.PROP_MAX_NO_MASTER_CONFIRMATION_SECONDS, "45");
-        c5.setProperty(GroupProperties.PROP_MAX_NO_MASTER_CONFIRMATION_SECONDS, "45");
-
-        c1.setProperty(GroupProperties.PROP_MEMBER_LIST_PUBLISH_INTERVAL_SECONDS, "120");
-        c2.setProperty(GroupProperties.PROP_MEMBER_LIST_PUBLISH_INTERVAL_SECONDS, "120");
-        c3.setProperty(GroupProperties.PROP_MEMBER_LIST_PUBLISH_INTERVAL_SECONDS, "120");
-        c4.setProperty(GroupProperties.PROP_MEMBER_LIST_PUBLISH_INTERVAL_SECONDS, "120");
-        c5.setProperty(GroupProperties.PROP_MEMBER_LIST_PUBLISH_INTERVAL_SECONDS, "120");
-
         c1.getNetworkConfig().setPort(55701);
         c2.getNetworkConfig().setPort(55702);
         c3.getNetworkConfig().setPort(55703);
@@ -307,18 +289,16 @@ public class MemberListTest {
         assertEquals(5, h5.getCluster().getMembers().size());
 
         // Need to wait for at least as long as PROP_MAX_NO_MASTER_CONFIRMATION_SECONDS
-        Thread.sleep(60 * 1000);
-
+        Thread.sleep(15 * 1000);
         h1.getLifecycleService().shutdown();
-
-        Thread.sleep(10 * 1000);
+        Thread.sleep(3 * 1000);
 
         assertEquals(4, h2.getCluster().getMembers().size());
         assertEquals(4, h3.getCluster().getMembers().size());
         assertEquals(4, h4.getCluster().getMembers().size());
         assertEquals(4, h5.getCluster().getMembers().size());
 
-        Thread.sleep(20 * 1000);
+        Thread.sleep(10 * 1000);
 
         assertEquals(4, h2.getCluster().getMembers().size());
         assertEquals(4, h3.getCluster().getMembers().size());

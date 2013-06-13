@@ -344,7 +344,7 @@ public class ClusterJoinTest {
 
     @Test
     public void testTCPIPJoinWithManyNodes() throws UnknownHostException, InterruptedException {
-        final int count = 30;
+        final int count = 20;
         final CountDownLatch latch = new CountDownLatch(count);
         final ConcurrentHashMap<Integer, HazelcastInstance> mapOfInstances = new ConcurrentHashMap<Integer, HazelcastInstance>();
         final Random random = new Random(Clock.currentTimeMillis());
@@ -387,7 +387,7 @@ public class ClusterJoinTest {
 
     @Test
     public void testTCPIPJoinWithManyNodesMultipleGroups() throws UnknownHostException, InterruptedException {
-        final int count = 30;
+        final int count = 20;
         final int groupCount = 3;
         final CountDownLatch latch = new CountDownLatch(count);
         final ConcurrentHashMap<Integer, HazelcastInstance> mapOfInstances = new ConcurrentHashMap<Integer, HazelcastInstance>();

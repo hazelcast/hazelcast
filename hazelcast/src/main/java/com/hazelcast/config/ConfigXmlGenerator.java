@@ -297,24 +297,12 @@ public class ConfigXmlGenerator {
             xml.append("</topic>");
         }
         final Collection<SemaphoreConfig> semaphoreCfgs = config.getSemaphoreConfigs();
-        //TODO semaphore
         for (SemaphoreConfig sc : semaphoreCfgs) {
             xml.append("<semaphore name=\"").append(sc.getName()).append("\">");
             xml.append("<initial-permits>").append(sc.getInitialPermits()).append("</initial-permits>");
-//            xml.append("<semaphore-factory enabled=\"").append(sc.isFactoryEnabled()).append("\">");
-//            xml.append("<class-name>").append(sc.getFactoryClassName()).append("</class-name>");
-//            xml.append("</semaphore-factory>");
+            xml.append("</semaphore-factory>");
             xml.append("</semaphore>");
         }
-//        final Collection<MapMergePolicyConfig> merges = config.getMergePolicyConfigs().values();
-//        xml.append("<merge-policies>");
-//        for (MapMergePolicyConfig mp : merges) {
-//            xml.append("<map-merge-policy name=\"").append(mp.getName()).append("\">");
-//            final String clazz = mp.getImplementation() != null ? mp.getImplementation().getClass().getName() : mp.getClassName();
-//            xml.append("<class-name>").append(clazz).append("</class-name>");
-//            xml.append("</map-merge-policy>");
-//        }
-//        xml.append("</merge-policies>");
         if (!config.getListenerConfigs().isEmpty()) {
             xml.append("<listeners>");
             for (ListenerConfig lc : config.getListenerConfigs()) {

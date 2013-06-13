@@ -27,6 +27,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.SerialTest;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -46,6 +47,11 @@ import static org.junit.Assert.assertTrue;
 public class BackupTest extends HazelcastTestSupport {
 
     private static final String MAP_NAME = "default";
+
+    @Before
+    public void gc() {
+        Runtime.getRuntime().gc();
+    }
 
     @Test
     public void testGracefulShutdown() throws Exception {
@@ -288,7 +294,7 @@ public class BackupTest extends HazelcastTestSupport {
             thread.join();
         }
 
-        final int trials = 10;
+        final int trials = 50;
         for (int i = 0; i < trials; i++) {
             long totalOwned = 0L;
             long totalBackup = 0L;
