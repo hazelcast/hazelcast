@@ -32,10 +32,10 @@ public class TransactionProxy implements Transaction {
     private State state = NO_TXN;
     private long startTime = 0L;
 
-    public TransactionProxy(HazelcastClient client, TransactionOptions options, Connection connection){
+    public TransactionProxy(HazelcastClient client, TransactionOptions options, Connection connection) {
         this.client = client;
         this.options = options;
-        this.clusterService = (ClientClusterServiceImpl)client.getClientClusterService();
+        this.clusterService = (ClientClusterServiceImpl) client.getClientClusterService();
         this.connection = connection;
     }
 
@@ -60,10 +60,10 @@ public class TransactionProxy implements Transaction {
     }
 
     public long getTimeoutMillis() {
-        return 0;
+        return options.getTimeoutMillis();
     }
 
-    void begin(){
+    void begin() {
         if (state == ACTIVE) {
             throw new IllegalStateException("Transaction is already active");
         }
@@ -76,9 +76,10 @@ public class TransactionProxy implements Transaction {
 
         txnId = sendAndReceive(new CreateTransactionRequest(options));
         state = ACTIVE;
+        // TODO: @mm - release/close connection if begin fails
     }
 
-    void commit(){
+    void commit() {
         if (state != ACTIVE) {
             throw new TransactionNotActiveException("Transaction is not active");
         }
@@ -86,9 +87,10 @@ public class TransactionProxy implements Transaction {
         checkTimeout();
         sendAndReceive(new CommitTransactionRequest());
         state = COMMITTED;//TODO
+        // TODO: @mm - release/close connection after commit (in finally block)
     }
 
-    void rollback(){
+    void rollback() {
         if (state == NO_TXN || state == ROLLED_BACK) {
             throw new IllegalStateException("Transaction is not active");
         }
@@ -96,9 +98,10 @@ public class TransactionProxy implements Transaction {
         state = ROLLING_BACK;
         try {
             sendAndReceive(new RollbackTransactionRequest());
-        } catch (Exception e){
+        } catch (Exception e) {
         }
         state = ROLLED_BACK;
+        // TODO: @mm - release/close connection after rollback (in finally block)
     }
 
     private void checkThread() {
@@ -117,8 +120,7 @@ public class TransactionProxy implements Transaction {
         try {
             return clusterService.sendAndReceiveFixedConnection(connection, request);
         } catch (IOException e) {
-            ExceptionUtil.rethrow(e);
+            throw ExceptionUtil.rethrow(e);
         }
-        return null;
     }
 }

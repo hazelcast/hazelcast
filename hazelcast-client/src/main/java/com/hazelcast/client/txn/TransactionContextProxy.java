@@ -2,6 +2,7 @@ package com.hazelcast.client.txn;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.connection.Connection;
+import com.hazelcast.client.exception.ClientException;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.txn.proxy.*;
 import com.hazelcast.collection.CollectionProxyId;
@@ -33,8 +34,8 @@ public class TransactionContextProxy implements TransactionContext {
     public TransactionContextProxy(HazelcastClient client, TransactionOptions options) {
         this.client = client;
         this.connection = connect();
-        if (connection == null){
-            throw new HazelcastException("Could not obtain Connection!!!");
+        if (connection == null) {
+            throw new ClientException("Could not obtain Connection!!!");
         }
         this.transaction = new TransactionProxy(client, options, connection);
     }
@@ -83,17 +84,17 @@ public class TransactionContextProxy implements TransactionContext {
         TransactionalObjectKey key = new TransactionalObjectKey(serviceName, id);
         TransactionalObject obj = txnObjectMap.get(key);
         if (obj == null) {
-            if (serviceName.equals(QueueService.SERVICE_NAME)){
+            if (serviceName.equals(QueueService.SERVICE_NAME)) {
                 obj = new ClientTxnQueueProxy(String.valueOf(id), this);
-            } else if (serviceName.equals(MapService.SERVICE_NAME)){
+            } else if (serviceName.equals(MapService.SERVICE_NAME)) {
                 obj = new ClientTxnMapProxy(String.valueOf(id), this);
-            } else if (serviceName.equals(CollectionService.SERVICE_NAME)){
-                CollectionProxyId proxyId = (CollectionProxyId)id;
-                if (proxyId.getType().equals(CollectionProxyType.MULTI_MAP)){
+            } else if (serviceName.equals(CollectionService.SERVICE_NAME)) {
+                CollectionProxyId proxyId = (CollectionProxyId) id;
+                if (proxyId.getType().equals(CollectionProxyType.MULTI_MAP)) {
                     obj = new ClientTxnMultiMapProxy(proxyId, this);
-                } else if (proxyId.getType().equals(CollectionProxyType.LIST)){
+                } else if (proxyId.getType().equals(CollectionProxyType.LIST)) {
                     obj = new ClientTxnListProxy(proxyId, this);
-                } else if (proxyId.getType().equals(CollectionProxyType.SET)){
+                } else if (proxyId.getType().equals(CollectionProxyType.SET)) {
                     obj = new ClientTxnSetProxy(proxyId, this);
                 }
             } else {
@@ -104,7 +105,7 @@ public class TransactionContextProxy implements TransactionContext {
         return (T) obj;
     }
 
-    public Connection getConnection(){
+    public Connection getConnection() {
         return connection;
     }
 
@@ -112,18 +113,18 @@ public class TransactionContextProxy implements TransactionContext {
         return client;
     }
 
-    private void initProxy(ClientProxy proxy){
+    private void initProxy(ClientProxy proxy) {
     }
 
     private Connection connect() {
         Connection conn = null;
-        for (int i=0; i<CONNECTION_TRY_COUNT; i++){
+        for (int i = 0; i < CONNECTION_TRY_COUNT; i++) {
             try {
                 conn = client.getConnectionManager().getRandomConnection();
             } catch (IOException e) {
                 continue;
             }
-            if (conn != null){
+            if (conn != null) {
                 break;
             }
         }

@@ -29,7 +29,6 @@ See [Getting Started Guide](http://hazelcast.com/docs/latest/manual/single_html/
 Download from [www.hazelcast.com](http://hazelcast.com/downloads.jsp)
 
 Or use Maven snippet:
-
 ````xml
 <dependency>
     <groupId>com.hazelcast</groupId>
@@ -41,7 +40,6 @@ Or use Maven snippet:
 ### Snapshot Releases
 
 Maven snippet:
-
 ````xml
 <dependency>
     <groupId>com.hazelcast</groupId>

@@ -69,9 +69,6 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
             if (e instanceof RuntimeException) {
                 throw (RuntimeException) e;
             }
-            if (e instanceof Error) {
-                throw (Error) e;
-            }
             throw new TransactionException(e);
         }
     }

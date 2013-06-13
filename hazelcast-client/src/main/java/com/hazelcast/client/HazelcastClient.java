@@ -186,12 +186,30 @@ public final class HazelcastClient implements HazelcastInstance {
 
     @Override
     public <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException {
-        throw new UnsupportedOperationException("Transactions not implemented yet!");
+        return executeTransaction(TransactionOptions.getDefault(), task);
     }
 
     @Override
     public <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException {
-        throw new UnsupportedOperationException("Transactions not implemented yet!");
+        final TransactionContext context = newTransactionContext(options);
+        context.beginTransaction();
+        try {
+            final T value = task.execute(context);
+            context.commitTransaction();
+            return value;
+        } catch (Throwable e) {
+            context.rollbackTransaction();
+            if (e instanceof TransactionException) {
+                throw (TransactionException) e;
+            }
+            if (e.getCause() instanceof TransactionException) {
+                throw (TransactionException) e.getCause();
+            }
+            if (e instanceof RuntimeException) {
+                throw (RuntimeException) e;
+            }
+            throw new TransactionException(e);
+        }
     }
 
     @Override
