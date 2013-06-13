@@ -55,7 +55,7 @@
                                     </xs:element>
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
-                                <xs:attribute name="max-size" use="required" type="xs:string"/>
+                                <xs:attribute name="max-size" use="optional" type="xs:string"/>
                                 <xs:attribute name="backup-count" use="optional" type="xs:string"/>
                                 <xs:attribute name="async-backup-count" use="optional" type="xs:string"/>
                             </xs:complexType>

@@ -24,6 +24,10 @@ enterprise-ready and developer-friendly in-memory data grid solution.
 
 See [Getting Started Guide](http://hazelcast.com/docs/latest/manual/single_html/#GettingStarted)
 
+### Documentation
+
+See documentation at [www.hazelcast.com](http://hazelcast.com/docs.jsp)
+
 ### Releases
 
 Download from [www.hazelcast.com](http://hazelcast.com/downloads.jsp)
@@ -59,9 +63,6 @@ Maven snippet:
 </repository>
 ````
 
-### Documentation
-
-See documentation at [www.hazelcast.com](http://hazelcast.com/docs.jsp)
 
 ### Building From Source
 

@@ -44,17 +44,15 @@ class TypeConverters {
 
     static class EnumConverter implements TypeConverter {
         public Comparable convert(Comparable value) {
-            try {
-                String enumString = value.toString();
-                if (enumString.contains(".")) {
-                    // there is a dot  in the value specifier, keep part after last dot
-                    enumString = enumString.substring(1 + enumString.lastIndexOf("."));
-                }
-                return enumString;
-            } catch (IllegalArgumentException iae) {
-                // illegal enum value specification
-                throw new IllegalArgumentException("Illegal enum value specification: " + iae.getMessage());
+            if (value == null) {
+                return null;
             }
+            String enumString = value.toString();
+            if (enumString.contains(".")) {
+                // there is a dot  in the value specifier, keep part after last dot
+                enumString = enumString.substring(1 + enumString.lastIndexOf("."));
+            }
+            return enumString;
         }
     }
 

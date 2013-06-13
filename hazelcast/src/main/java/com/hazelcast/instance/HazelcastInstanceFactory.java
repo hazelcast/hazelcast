@@ -102,8 +102,7 @@ public final class HazelcastInstanceFactory {
             final int initialMinClusterSize = node.groupProperties.INITIAL_MIN_CLUSTER_SIZE.getInteger();
             while (node.getClusterService().getSize() < initialMinClusterSize) {
                 try {
-                    hazelcastInstance.logger.log(Level.INFO, "HazelcastInstance waiting for cluster size of "
-                            + initialMinClusterSize);
+                    hazelcastInstance.logger.log(Level.INFO, "HazelcastInstance waiting for cluster size of " + initialMinClusterSize);
                     //noinspection BusyWait
                     Thread.sleep(1000);
                 } catch (InterruptedException ignored) {
@@ -115,8 +114,6 @@ public final class HazelcastInstanceFactory {
                 } else {
                     Thread.sleep(3 * 1000);
                 }
-//                hazelcastInstance.logger.log(Level.INFO, "HazelcastInstance starting after waiting for cluster size of "
-//                        + initialMinClusterSize);
             }
             hazelcastInstance.lifecycleService.fireLifecycleEvent(STARTED);
         } catch (Throwable t) {
