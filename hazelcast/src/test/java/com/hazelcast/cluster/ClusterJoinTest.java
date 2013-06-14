@@ -356,6 +356,7 @@ public class ClusterJoinTest {
                     try {
                         Thread.sleep(random.nextInt(10) * 1000);
                         final Config config = new Config();
+                        config.setProperty("hazelcast.wait.seconds.before.join", "5");
                         final NetworkConfig networkConfig = config.getNetworkConfig();
                         networkConfig.getJoin().getMulticastConfig().setEnabled(false);
                         TcpIpConfig tcpIpConfig = networkConfig.getJoin().getTcpIpConfig();
@@ -404,6 +405,7 @@ public class ClusterJoinTest {
                     try {
                         Thread.sleep(random.nextInt(10) * 1000);
                         final Config config = new Config();
+                        config.setProperty("hazelcast.wait.seconds.before.join", "5");
                         String name = "group" + random.nextInt(groupCount);
                         groups.get(name).incrementAndGet();
                         config.getGroupConfig().setName(name);
@@ -450,6 +452,7 @@ public class ClusterJoinTest {
 
     private void multicastJoin(int count, final boolean sleep) throws InterruptedException {
         final Config config = new Config();
+        config.setProperty("hazelcast.wait.seconds.before.join", "5");
         config.getNetworkConfig().getJoin().getMulticastConfig().setMulticastTimeoutSeconds(25);
         final ConcurrentMap<Integer, HazelcastInstance> map = new ConcurrentHashMap<Integer, HazelcastInstance>();
         final CountDownLatch latch = new CountDownLatch(count);
