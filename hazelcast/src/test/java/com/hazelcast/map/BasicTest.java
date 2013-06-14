@@ -668,15 +668,17 @@ public class BasicTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testGetAllPutAll() {
+    public void testGetAllPutAll() throws InterruptedException {
+        warmUpPartitions(instances);
         final IMap<Object, Object> map = getInstance().getMap("testGetAllPutAll");
         Map mm = new HashMap();
-        for (int i = 0; i < 100; i++) {
+        final int size = 100;
+        for (int i = 0; i < size; i++) {
             mm.put(i, i);
         }
         map.putAll(mm);
-        assertEquals(map.size(), 100);
-        for (int i = 0; i < 100; i++) {
+        assertEquals(size, map.size());
+        for (int i = 0; i < size; i++) {
             assertEquals(map.get(i), i);
         }
 

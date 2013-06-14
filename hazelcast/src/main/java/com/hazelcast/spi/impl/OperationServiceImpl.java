@@ -84,7 +84,6 @@ final class OperationServiceImpl implements OperationService {
             opExecutors[i] = Executors.newSingleThreadExecutor(new OperationThreadFactory(i));
         }
         systemExecutor = nodeEngine.getExecutionService().getExecutor(ExecutionService.SYSTEM_EXECUTOR);
-//        responseExecutor = nodeEngine.getExecutionService().getExecutor(ExecutionService.RESPONSE_EXECUTOR);
         responseExecutor = Executors.newSingleThreadExecutor(new SingleExecutorThreadFactory(node.threadGroup,
                 node.getConfigClassLoader(), node.getThreadNamePrefix("response")));
         executingCalls = Collections.newSetFromMap(new ConcurrentHashMap<RemoteCallKey, Boolean>(1000, 0.75f, concurrencyLevel));
@@ -325,7 +324,7 @@ final class OperationServiceImpl implements OperationService {
                     if (logger.isLoggable(Level.INFO)) {
                         logger.log(Level.INFO, "Scheduling -> " + backup);
                     }
-                    backupScheduler.schedule(250, key, new ScheduledBackup(backup, partitionId, replicaIndex));
+                    backupScheduler.schedule(500, key, new ScheduledBackup(backup, partitionId, replicaIndex));
                 }
             }
         }
@@ -342,7 +341,7 @@ final class OperationServiceImpl implements OperationService {
                     if (logger.isLoggable(Level.INFO)) {
                         logger.log(Level.INFO, "Re-scheduling[" + retries + "] -> " + backup);
                     }
-                    scheduler.schedule(entry.getScheduledDelayMillis() * retries, entry.getKey(), backup);
+                    scheduler.schedule(entry.getScheduledDelayMillis(), entry.getKey(), backup);
                 }
             }
         }
@@ -368,7 +367,7 @@ final class OperationServiceImpl implements OperationService {
                 send(backup, target);
                 return true;
             }
-            return ++retries >= 5; // if retried 5 times, give-up!
+            return ++retries >= 3; // if retried 3 times, give-up!
         }
     }
 
