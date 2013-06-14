@@ -45,7 +45,7 @@ public class Permit implements DataSerializable {
 
     public Permit(int partitionId, SemaphoreConfig config) {
         this.partitionId = partitionId;
-        this.backupCount = config.getSyncBackupCount();
+        this.backupCount = config.getBackupCount();
         this.asyncBackupCount = config.getAsyncBackupCount();
         this.available = config.getInitialPermits();
         this.attachMap = new HashMap<String, Integer>(10);

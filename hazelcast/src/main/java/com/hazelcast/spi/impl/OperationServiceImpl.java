@@ -325,7 +325,7 @@ final class OperationServiceImpl implements OperationService {
                     if (logger.isLoggable(Level.INFO)) {
                         logger.log(Level.INFO, "Scheduling -> " + backup);
                     }
-                    backupScheduler.schedule(500, key, new ScheduledBackup(backup, partitionId, replicaIndex));
+                    backupScheduler.schedule(250, key, new ScheduledBackup(backup, partitionId, replicaIndex));
                 }
             }
         }
@@ -338,10 +338,11 @@ final class OperationServiceImpl implements OperationService {
             for (ScheduledEntry<Object, ScheduledBackup> entry : scheduledEntries) {
                 final ScheduledBackup backup = entry.getValue();
                 if (!backup.backup()) {
+                    final int retries = backup.retries;
                     if (logger.isLoggable(Level.INFO)) {
-                        logger.log(Level.INFO, "Re-scheduling[" + backup.retries + "] -> " + backup);
+                        logger.log(Level.INFO, "Re-scheduling[" + retries + "] -> " + backup);
                     }
-                    scheduler.schedule(entry.getScheduledDelayMillis(), entry.getKey(), backup);
+                    scheduler.schedule(entry.getScheduledDelayMillis() * retries, entry.getKey(), backup);
                 }
             }
         }
@@ -367,7 +368,7 @@ final class OperationServiceImpl implements OperationService {
                 send(backup, target);
                 return true;
             }
-            return ++retries >= 3; // if retried 3 times, give-up!
+            return ++retries >= 5; // if retried 5 times, give-up!
         }
     }
 

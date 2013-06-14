@@ -22,7 +22,7 @@ public class SemaphoreConfig {
 
     private String name;
     private int initialPermits;
-    private int syncBackupCount = DEFAULT_SYNC_BACKUP_COUNT;
+    private int backupCount = DEFAULT_SYNC_BACKUP_COUNT;
     private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
 
 
@@ -32,7 +32,7 @@ public class SemaphoreConfig {
     public SemaphoreConfig(SemaphoreConfig config) {
         this.name = config.getName();
         this.initialPermits = config.getInitialPermits();
-        this.syncBackupCount = config.getSyncBackupCount();
+        this.backupCount = config.getBackupCount();
         this.asyncBackupCount = config.getAsyncBackupCount();
     }
 
@@ -54,12 +54,12 @@ public class SemaphoreConfig {
         return this;
     }
 
-    public int getSyncBackupCount() {
-        return syncBackupCount;
+    public int getBackupCount() {
+        return backupCount;
     }
 
-    public SemaphoreConfig setSyncBackupCount(int syncBackupCount) {
-        this.syncBackupCount = syncBackupCount;
+    public SemaphoreConfig setBackupCount(int backupCount) {
+        this.backupCount = backupCount;
         return this;
     }
 
@@ -73,7 +73,7 @@ public class SemaphoreConfig {
     }
 
     public int getTotalBackupCount(){
-        return asyncBackupCount + syncBackupCount;
+        return asyncBackupCount + backupCount;
     }
 
 
@@ -82,7 +82,7 @@ public class SemaphoreConfig {
         final StringBuilder sb = new StringBuilder("SemaphoreConfig{");
         sb.append("name='").append(name).append('\'');
         sb.append(", initialPermits=").append(initialPermits);
-        sb.append(", syncBackupCount=").append(syncBackupCount);
+        sb.append(", backupCount=").append(backupCount);
         sb.append(", asyncBackupCount=").append(asyncBackupCount);
         sb.append('}');
         return sb.toString();
