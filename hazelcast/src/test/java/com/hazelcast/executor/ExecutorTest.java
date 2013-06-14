@@ -618,7 +618,8 @@ public class ExecutorTest extends HazelcastTestSupport {
         }
         latch.await(2, TimeUnit.MINUTES);
 
-        final Future<Boolean> f = executorService.submit(new CancellationAwareTask(3000));
+        final Future<Boolean> f = executorService.submit(new CancellationAwareTask(10000));
+        Thread.sleep(1000);
         f.cancel(true);
         try {
             f.get();

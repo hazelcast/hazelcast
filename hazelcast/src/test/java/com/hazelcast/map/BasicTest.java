@@ -693,10 +693,12 @@ public class BasicTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPutAllBackup() {
+    public void testPutAllBackup() throws InterruptedException {
         HazelcastInstance instance1 = instances[0];
         HazelcastInstance instance2 = instances[1];
         final IMap<Object, Object> map = instance1.getMap("testGetAllPutAll");
+        warmUpPartitions(instances);
+
         Map mm = new HashMap();
         final int size = 100;
         for (int i = 0; i < size; i++) {
@@ -707,7 +709,9 @@ public class BasicTest extends HazelcastTestSupport {
         for (int i = 0; i < size; i++) {
             assertEquals(i, map.get(i));
         }
+
         instance2.getLifecycleService().shutdown();
+        assertEquals(map.size(), size);
         for (int i = 0; i < size; i++) {
             assertEquals(i, map.get(i));
         }
@@ -926,9 +930,17 @@ public class BasicTest extends HazelcastTestSupport {
     @Test
     public void testPutWithTtl() throws InterruptedException {
         IMap<String, String> map = getInstance().getMap("testPutWithTtl");
-        map.put("key", "value", 1, TimeUnit.SECONDS);
+        final CountDownLatch latch = new CountDownLatch(1);
+        map.addEntryListener(new EntryAdapter<String, String>() {
+            public void entryEvicted(EntryEvent<String, String> event) {
+                latch.countDown();
+            }
+        }, true);
+
+        map.put("key", "value", 3, TimeUnit.SECONDS);
         assertEquals("value", map.get("key"));
-        Thread.sleep(3000);
+
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
         assertNull(map.get("key"));
     }
 
