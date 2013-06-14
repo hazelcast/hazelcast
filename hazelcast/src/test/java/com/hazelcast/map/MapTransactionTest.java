@@ -185,7 +185,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         thread.start();
         Thread.sleep(200);
         h1.getLifecycleService().shutdown();
-        thread.join();
+        thread.join(30 * 1000);
 
         assertFalse(result.get());
         final IMap map2 = h2.getMap("default");

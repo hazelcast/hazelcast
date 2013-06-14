@@ -38,6 +38,7 @@ import com.hazelcast.spi.exception.WrongTargetException;
 import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.executor.AbstractExecutorThreadFactory;
+import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 import com.hazelcast.util.scheduler.ScheduledEntry;
@@ -83,7 +84,9 @@ final class OperationServiceImpl implements OperationService {
             opExecutors[i] = Executors.newSingleThreadExecutor(new OperationThreadFactory(i));
         }
         systemExecutor = nodeEngine.getExecutionService().getExecutor(ExecutionService.SYSTEM_EXECUTOR);
-        responseExecutor = nodeEngine.getExecutionService().getExecutor(ExecutionService.RESPONSE_EXECUTOR);
+//        responseExecutor = nodeEngine.getExecutionService().getExecutor(ExecutionService.RESPONSE_EXECUTOR);
+        responseExecutor = Executors.newSingleThreadExecutor(new SingleExecutorThreadFactory(node.threadGroup,
+                node.getConfigClassLoader(), node.getThreadNamePrefix("response")));
         executingCalls = Collections.newSetFromMap(new ConcurrentHashMap<RemoteCallKey, Boolean>(1000, 0.75f, concurrencyLevel));
         backupCalls = new ConcurrentHashMap<Long, Semaphore>(1000, 0.75f, concurrencyLevel);
         backupScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(),
