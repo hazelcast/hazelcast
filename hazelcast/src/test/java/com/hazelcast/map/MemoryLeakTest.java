@@ -25,7 +25,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.SerialTest;
+import com.hazelcast.test.annotation.StressTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -41,7 +41,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastJUnit4ClassRunner.class)
-@Category(SerialTest.class)
+@Category(StressTest.class)
 public class MemoryLeakTest extends HazelcastTestSupport {
 
     @Before

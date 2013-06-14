@@ -21,6 +21,7 @@ import com.hazelcast.core.*;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.SerialTest;
+import com.hazelcast.test.annotation.StressTest;
 import com.hazelcast.util.Clock;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
@@ -343,6 +344,7 @@ public class ClusterJoinTest {
 
 
     @Test
+    @Category(StressTest.class)
     public void testTCPIPJoinWithManyNodes() throws UnknownHostException, InterruptedException {
         final int count = 20;
         final CountDownLatch latch = new CountDownLatch(count);
@@ -387,6 +389,7 @@ public class ClusterJoinTest {
     }
 
     @Test
+    @Category(StressTest.class)
     public void testTCPIPJoinWithManyNodesMultipleGroups() throws UnknownHostException, InterruptedException {
         final int count = 20;
         final int groupCount = 3;
@@ -441,11 +444,13 @@ public class ClusterJoinTest {
     }
 
     @Test
+    @Category(StressTest.class)
     public void testMulticastJoinAtTheSameTime() throws InterruptedException {
         multicastJoin(10, false);
     }
 
     @Test
+    @Category(StressTest.class)
     public void testMulticastJoinWithRandomStartTime() throws InterruptedException {
         multicastJoin(10, true);
     }
