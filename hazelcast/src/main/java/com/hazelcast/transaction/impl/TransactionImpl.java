@@ -185,6 +185,7 @@ final class TransactionImpl implements Transaction {
     }
 
     void commit() throws TransactionException, IllegalStateException {
+        setThreadFlag(null);
         if (transactionType.equals(TransactionType.TWO_PHASE) && state != PREPARED) {
             throw new IllegalStateException("Transaction is not prepared");
         }
@@ -213,8 +214,6 @@ final class TransactionImpl implements Transaction {
         } catch (Throwable e) {
             state = COMMIT_FAILED;
             throw ExceptionUtil.rethrow(e, TransactionException.class);
-        } finally {
-            setThreadFlag(null);
         }
     }
 
@@ -225,6 +224,7 @@ final class TransactionImpl implements Transaction {
     }
 
     void rollback() throws IllegalStateException {
+        setThreadFlag(null);
         if (state == NO_TXN || state == ROLLED_BACK) {
             throw new IllegalStateException("Transaction is not active");
         }
@@ -271,7 +271,6 @@ final class TransactionImpl implements Transaction {
             throw ExceptionUtil.rethrow(e);
         } finally {
             state = ROLLED_BACK;
-            setThreadFlag(null);
         }
     }
 
