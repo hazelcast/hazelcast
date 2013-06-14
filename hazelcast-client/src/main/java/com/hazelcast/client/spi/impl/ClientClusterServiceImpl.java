@@ -166,19 +166,21 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         Connection connection = null;
         int retryCount = RETRY_COUNT;
         while (connection == null && retryCount > 0 ){
-            if (address == null){
+            if (address == null) {
                 connection = client.getConnectionManager().getConnection(address);
             } else {
                 connection = client.getConnectionManager().getRandomConnection();
             }
-            retryCount--;
-            try {
-                Thread.sleep(RETRY_WAIT_TIME);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+            if (connection == null) {
+                retryCount--;
+                try {
+                    Thread.sleep(RETRY_WAIT_TIME);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }
-        if (connection == null){
+        if (connection == null) {
             throw new HazelcastException("Unable to connect!!!");
         }
         return connection;
