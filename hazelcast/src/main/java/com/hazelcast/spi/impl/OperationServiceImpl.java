@@ -367,7 +367,7 @@ final class OperationServiceImpl implements OperationService {
                 send(backup, target);
                 return true;
             }
-            return ++retries >= 3; // if retried 3 times, give-up!
+            return ++retries >= 5; // if retried 5 times, give-up!
         }
     }
 
