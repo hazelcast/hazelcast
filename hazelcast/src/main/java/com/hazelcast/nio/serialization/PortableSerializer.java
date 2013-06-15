@@ -72,7 +72,7 @@ public class PortableSerializer implements TypeSerializer<Portable> {
         if (!(in instanceof BufferObjectDataInput)) {
             throw new IllegalArgumentException("ObjectDataInput must be instance of BufferObjectDataInput!");
         }
-        final ContextAwareDataInput ctxIn = (ContextAwareDataInput) in;
+        final DefaultObjectDataInput ctxIn = (DefaultObjectDataInput) in;
         final int factoryId = ctxIn.getFactoryId();
         final int dataClassId = ctxIn.getDataClassId();
         final int dataVersion = ctxIn.getDataVersion();

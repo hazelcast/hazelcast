@@ -52,7 +52,7 @@ public final class Data implements IdentifiedDataSerializable {
 
     /**
      * WARNING:
-     *
+     * <p/>
      * Should be in sync with {@link DataAdapter#readFrom(java.nio.ByteBuffer)}
      */
     public void readData(ObjectDataInput in) throws IOException {
@@ -82,9 +82,9 @@ public final class Data implements IdentifiedDataSerializable {
 
     /**
      * WARNING:
-     *
+     * <p/>
      * Should be in sync with {@link DataAdapter#writeTo(java.nio.ByteBuffer)}
-     *
+     * <p/>
      * {@link #totalSize()} should be updated whenever writeData method is changed.
      */
     public void writeData(ObjectDataOutput out) throws IOException {
@@ -113,9 +113,9 @@ public final class Data implements IdentifiedDataSerializable {
 
     /**
      * Calculates the size of the binary after the Data is serialized.
-     *
+     * <p/>
      * WARNING:
-     *
+     * <p/>
      * Should be in sync with {@link #writeData(com.hazelcast.nio.ObjectDataOutput)}
      */
     public int totalSize() {
@@ -216,7 +216,6 @@ public final class Data implements IdentifiedDataSerializable {
     public boolean isPortable() {
         return SerializationConstants.CONSTANT_TYPE_PORTABLE == type;
     }
-
 
     @Override
     public String toString() {

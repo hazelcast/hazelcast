@@ -24,25 +24,25 @@ import java.io.IOException;
  */
 public interface BufferObjectDataOutput extends ObjectDataOutput, Closeable {
 
-    void write(int index, int b);
+    void write(int position, int b);
 
-    void write(int index, byte b[], int off, int len);
+    void write(int position, byte b[], int off, int len);
 
-    void writeInt(int index, int v) throws IOException;
+    void writeInt(int position, int v) throws IOException;
 
-    void writeLong(int index, final long v) throws IOException;
+    void writeLong(int position, final long v) throws IOException;
 
-    void writeBoolean(int index, final boolean v) throws IOException;
+    void writeBoolean(int position, final boolean v) throws IOException;
 
-    void writeByte(int index, final int v) throws IOException;
+    void writeByte(int position, final int v) throws IOException;
 
-    void writeChar(int index, final int v) throws IOException;
+    void writeChar(int position, final int v) throws IOException;
 
-    void writeDouble(int index, final double v) throws IOException;
+    void writeDouble(int position, final double v) throws IOException;
 
-    void writeFloat(int index, final float v) throws IOException;
+    void writeFloat(int position, final float v) throws IOException;
 
-    void writeShort(int index, final int v) throws IOException;
+    void writeShort(int position, final int v) throws IOException;
 
     int position();
 

@@ -49,7 +49,7 @@ public final class SerializationServiceImpl implements SerializationService {
     private final ConcurrentMap<Integer, TypeSerializer> idMap = new ConcurrentHashMap<Integer, TypeSerializer>();
     private final AtomicReference<TypeSerializer> global = new AtomicReference<TypeSerializer>();
 
-    private final Queue<ContextAwareDataOutput> outputPool = new ConcurrentLinkedQueue<ContextAwareDataOutput>();
+    private final Queue<BufferObjectDataOutput> outputPool = new ConcurrentLinkedQueue<BufferObjectDataOutput>();
     private final DataSerializer dataSerializer;
     private final PortableSerializer portableSerializer;
     private final ClassLoader classLoader;
@@ -139,7 +139,7 @@ public final class SerializationServiceImpl implements SerializationService {
         if (obj instanceof Data) {
             return (Data) obj;
         }
-        final ContextAwareDataOutput out = pop();
+        final BufferObjectDataOutput out = pop();
         try {
             final TypeSerializer serializer = serializerFor(obj.getClass());
             if (serializer == null) {
@@ -169,15 +169,15 @@ public final class SerializationServiceImpl implements SerializationService {
         return null;
     }
 
-    private ContextAwareDataOutput pop() {
-        ContextAwareDataOutput out = outputPool.poll();
+    private BufferObjectDataOutput pop() {
+        BufferObjectDataOutput out = outputPool.poll();
         if (out == null) {
-            out = new ContextAwareDataOutput(OUTPUT_STREAM_BUFFER_SIZE, this);
+            out = new DefaultObjectDataOutput(OUTPUT_STREAM_BUFFER_SIZE, this);
         }
         return out;
     }
 
-    void push(ContextAwareDataOutput out) {
+    void push(BufferObjectDataOutput out) {
         out.reset();
         outputPool.offer(out);
     }
@@ -186,7 +186,7 @@ public final class SerializationServiceImpl implements SerializationService {
         if (data == null || data.bufferSize() == 0) {
             return null;
         }
-        ContextAwareDataInput in = null;
+        DefaultObjectDataInput in = null;
         try {
             final int typeId = data.type;
             final TypeSerializer serializer = serializerFor(typeId);
@@ -199,7 +199,7 @@ public final class SerializationServiceImpl implements SerializationService {
             if (data.type == SerializationConstants.CONSTANT_TYPE_PORTABLE) {
                 serializationContext.registerClassDefinition(data.classDefinition);
             }
-            in = new ContextAwareDataInput(data, this);
+            in = new DefaultObjectDataInput(data, this);
             Object obj = serializer.read(in);
             if (managedContext != null) {
                 obj = managedContext.initialize(obj);
@@ -271,7 +271,7 @@ public final class SerializationServiceImpl implements SerializationService {
     }
 
     public BufferObjectDataInput createObjectDataInput(byte[] data) {
-        return new ContextAwareDataInput(data, this);
+        return new DefaultObjectDataInput(data, this);
     }
 
     public BufferObjectDataInput createObjectDataInput(Data data) {
@@ -279,7 +279,7 @@ public final class SerializationServiceImpl implements SerializationService {
     }
 
     public BufferObjectDataOutput createObjectDataOutput(int size) {
-        return new ContextAwareDataOutput(size, this);
+        return new DefaultObjectDataOutput(size, this);
     }
 
     public ObjectDataOutputStream createObjectDataOutputStream(OutputStream out) {
@@ -415,8 +415,8 @@ public final class SerializationServiceImpl implements SerializationService {
         idMap.clear();
         global.set(null);
         constantTypesMap.clear();
-        for (ContextAwareDataOutput output : outputPool) {
-            output.close();
+        for (BufferObjectDataOutput output : outputPool) {
+            IOUtil.closeResource(output);
         }
         outputPool.clear();
     }
@@ -483,7 +483,7 @@ public final class SerializationServiceImpl implements SerializationService {
         }
 
         ClassDefinition createClassDefinition(byte[] compressedBinary) throws IOException {
-            final ContextAwareDataOutput out = pop();
+            final BufferObjectDataOutput out = pop();
             final byte[] binary;
             try {
                 decompress(compressedBinary, out);
@@ -492,7 +492,7 @@ public final class SerializationServiceImpl implements SerializationService {
                 push(out);
             }
             final ClassDefinitionImpl cd = new ClassDefinitionImpl();
-            cd.readData(new ContextAwareDataInput(binary, SerializationServiceImpl.this));
+            cd.readData(new DefaultObjectDataInput(binary, SerializationServiceImpl.this));
             cd.setBinary(compressedBinary);
             final ClassDefinitionImpl currentCD = versionedDefinitions.putIfAbsent(combineToLong(cd.classId,
                     serializationContext.getVersion()), cd);
@@ -515,7 +515,7 @@ public final class SerializationServiceImpl implements SerializationService {
             if (currentClassDef == null) {
                 serializationContext.registerNestedDefinitions(cdImpl);
                 if (cdImpl.getBinary() == null) {
-                    final ContextAwareDataOutput out = pop();
+                    final BufferObjectDataOutput out = pop();
                     try {
                         cdImpl.writeData(out);
                         final byte[] binary = out.toByteArray();
@@ -538,7 +538,7 @@ public final class SerializationServiceImpl implements SerializationService {
         return classLoader;
     }
 
-    private static void compress(byte[] input, OutputStream out) throws IOException {
+    private static void compress(byte[] input, DataOutput out) throws IOException {
         Deflater deflater = new Deflater();
         deflater.setLevel(Deflater.BEST_COMPRESSION);
         deflater.setInput(input);
@@ -551,7 +551,7 @@ public final class SerializationServiceImpl implements SerializationService {
         deflater.end();
     }
 
-    private static void decompress(byte[] compressedData, OutputStream out) throws IOException {
+    private static void decompress(byte[] compressedData, DataOutput out) throws IOException {
         Inflater inflater = new Inflater();
         inflater.setInput(compressedData);
         byte[] buf = new byte[1024];

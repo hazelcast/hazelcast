@@ -100,7 +100,7 @@ public class QueueStoreWrapper implements QueueStore<Data> {
             final Object actualValue;
             if (binary) {
                 // WARNING: we can't pass original Data to the user
-                BufferObjectDataOutput out = (BufferObjectDataOutput) serializationService.createObjectDataOutput(value.totalSize());
+                BufferObjectDataOutput out = serializationService.createObjectDataOutput(value.totalSize());
                 try {
                     value.writeData(out);
                 } catch (IOException e) {

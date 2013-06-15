@@ -26,7 +26,7 @@ import java.io.InputStream;
 /**
 * @mdogan 12/26/12
 */
-class ContextAwareDataInput extends InputStream implements BufferObjectDataInput, SerializationContextAware {
+class DefaultObjectDataInput extends InputStream implements BufferObjectDataInput, SerializationContextAware {
 
     private final byte buffer[];
 
@@ -48,11 +48,11 @@ class ContextAwareDataInput extends InputStream implements BufferObjectDataInput
 
     private int dataVersion;
 
-    public ContextAwareDataInput(byte[] buffer, SerializationService service) {
+    public DefaultObjectDataInput(byte[] buffer, SerializationService service) {
         this(buffer, 0, service);
     }
 
-    public ContextAwareDataInput(Data data, SerializationService service) {
+    public DefaultObjectDataInput(Data data, SerializationService service) {
         this(data.buffer, 0, service);
         final ClassDefinition cd = data.classDefinition;
         this.factoryId = cd != null ? cd.getFactoryId() : 0;
@@ -60,7 +60,7 @@ class ContextAwareDataInput extends InputStream implements BufferObjectDataInput
         this.dataVersion = cd != null ? cd.getVersion() : -1;
     }
 
-    private ContextAwareDataInput(byte buffer[], int offset, SerializationService service) {
+    private DefaultObjectDataInput(byte buffer[], int offset, SerializationService service) {
         super();
         this.buffer = buffer;
         this.size = buffer.length - offset;
@@ -73,8 +73,8 @@ class ContextAwareDataInput extends InputStream implements BufferObjectDataInput
         return (pos < size) ? (buffer[offset + pos++] & 0xff) : -1;
     }
 
-    public int read(int index) throws IOException {
-        return (index < size) ? (buffer[offset + index] & 0xff) : -1;
+    public int read(int position) throws IOException {
+        return (position < size) ? (buffer[offset + position] & 0xff) : -1;
     }
 
     @Override
@@ -84,23 +84,23 @@ class ContextAwareDataInput extends InputStream implements BufferObjectDataInput
         return read;
     }
 
-    public int read(int index, byte b[], int off, int len) throws IOException {
+    public int read(int position, byte b[], int off, int len) throws IOException {
         if (b == null) {
             throw new NullPointerException();
         } else if ((off < 0) || (off > b.length) || (len < 0) ||
                 ((off + len) > b.length) || ((off + len) < 0)) {
             throw new IndexOutOfBoundsException();
         }
-        if (index >= size) {
+        if (position >= size) {
             return -1;
         }
-        if (index + len > size) {
-            len = size - index;
+        if (position + len > size) {
+            len = size - position;
         }
         if (len <= 0) {
             return 0;
         }
-        System.arraycopy(buffer, offset + index, b, off, len);
+        System.arraycopy(buffer, offset + position, b, off, len);
         return len;
     }
 
@@ -111,8 +111,8 @@ class ContextAwareDataInput extends InputStream implements BufferObjectDataInput
         return (ch != 0);
     }
 
-    public boolean readBoolean(int index) throws IOException {
-        final int ch = read(index);
+    public boolean readBoolean(int position) throws IOException {
+        final int ch = read(position);
         if (ch < 0)
             throw new EOFException();
         return (ch != 0);
@@ -137,8 +137,8 @@ class ContextAwareDataInput extends InputStream implements BufferObjectDataInput
         return (byte) (ch);
     }
 
-    public byte readByte(int index) throws IOException {
-        final int ch = read(index);
+    public byte readByte(int position) throws IOException {
+        final int ch = read(position);
         if (ch < 0)
             throw new EOFException();
         return (byte) (ch);
@@ -162,9 +162,9 @@ class ContextAwareDataInput extends InputStream implements BufferObjectDataInput
         return c;
     }
 
-    public char readChar(int index) throws IOException {
-        final int ch1 = read(index);
-        final int ch2 = read(index + 1);
+    public char readChar(int position) throws IOException {
+        final int ch1 = read(position);
+        final int ch2 = read(position + 1);
         if ((ch1 | ch2) < 0)
             throw new EOFException();
         return (char) ((ch1 << 8) + (ch2 << 0));
@@ -188,8 +188,8 @@ class ContextAwareDataInput extends InputStream implements BufferObjectDataInput
         return Double.longBitsToDouble(readLong());
     }
 
-    public double readDouble(int index) throws IOException {
-        return Double.longBitsToDouble(readLong(index));
+    public double readDouble(int position) throws IOException {
+        return Double.longBitsToDouble(readLong(position));
     }
 
     /**
@@ -210,8 +210,8 @@ class ContextAwareDataInput extends InputStream implements BufferObjectDataInput
         return Float.intBitsToFloat(readInt());
     }
 
-    public float readFloat(int index) throws IOException {
-        return Float.intBitsToFloat(readInt(index));
+    public float readFloat(int position) throws IOException {
+        return Float.intBitsToFloat(readInt(position));
     }
 
     public void readFully(final byte b[]) throws IOException {
@@ -241,11 +241,11 @@ class ContextAwareDataInput extends InputStream implements BufferObjectDataInput
         return i;
     }
 
-    public int readInt(int index) throws IOException {
-        final int ch1 = read(index);
-        final int ch2 = read(index + 1);
-        final int ch3 = read(index + 2);
-        final int ch4 = read(index + 3);
+    public int readInt(int position) throws IOException {
+        final int ch1 = read(position);
+        final int ch2 = read(position + 1);
+        final int ch3 = read(position + 2);
+        final int ch4 = read(position + 3);
         if ((ch1 | ch2 | ch3 | ch4) < 0)
             throw new EOFException();
         return ((ch1 << 24) + (ch2 << 16) + (ch3 << 8) + (ch4 << 0));
@@ -292,8 +292,8 @@ class ContextAwareDataInput extends InputStream implements BufferObjectDataInput
         return l;
     }
 
-    public long readLong(int index) throws IOException {
-        read(index, longBuffer, 0, 8);
+    public long readLong(int position) throws IOException {
+        read(position, longBuffer, 0, 8);
         return (((long) longBuffer[0] << 56) + ((long) (longBuffer[1] & 255) << 48)
                 + ((long) (longBuffer[2] & 255) << 40) + ((long) (longBuffer[3] & 255) << 32)
                 + ((long) (longBuffer[4] & 255) << 24) + ((longBuffer[5] & 255) << 16)
@@ -321,9 +321,9 @@ class ContextAwareDataInput extends InputStream implements BufferObjectDataInput
         return (short) ((ch1 << 8) + (ch2 << 0));
     }
 
-    public short readShort(int index) throws IOException {
-        final int ch1 = read(index);
-        final int ch2 = read(index + 1);
+    public short readShort(int position) throws IOException {
+        final int ch1 = read(position);
+        final int ch2 = read(position + 1);
         if ((ch1 | ch2) < 0)
             throw new EOFException();
         return (short) ((ch1 << 8) + (ch2 << 0));
@@ -391,12 +391,12 @@ class ContextAwareDataInput extends InputStream implements BufferObjectDataInput
         return service.readObject(this);
     }
 
-    public ContextAwareDataInput duplicate() {
-        return new ContextAwareDataInput(buffer, 0, service);
+    public DefaultObjectDataInput duplicate() {
+        return new DefaultObjectDataInput(buffer, 0, service);
     }
 
-    public ContextAwareDataInput slice() {
-        return new ContextAwareDataInput(buffer, pos, service);
+    public DefaultObjectDataInput slice() {
+        return new DefaultObjectDataInput(buffer, pos, service);
     }
 
     @Override
@@ -497,7 +497,7 @@ class ContextAwareDataInput extends InputStream implements BufferObjectDataInput
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        sb.append("ContextAwareDataInput");
+        sb.append("DefaultObjectDataInput");
         sb.append("{size=").append(size);
         sb.append(", offset=").append(offset);
         sb.append(", pos=").append(pos);

@@ -234,7 +234,7 @@ public class DefaultPortableReader implements PortableReader {
             in.position(pos);
             final boolean NULL = in.readBoolean();
             if (!NULL) {
-                final ContextAwareDataInput ctxIn = (ContextAwareDataInput) in;
+                final DefaultObjectDataInput ctxIn = (DefaultObjectDataInput) in;
                 try {
                     ctxIn.setFactoryId(fd.getFactoryId());
                     ctxIn.setDataClassId(fd.getClassId());
@@ -268,7 +268,7 @@ public class DefaultPortableReader implements PortableReader {
             final Portable[] portables = new Portable[len];
             if (len > 0) {
                 final int offset = in.position();
-                final ContextAwareDataInput ctxIn = (ContextAwareDataInput) in;
+                final DefaultObjectDataInput ctxIn = (DefaultObjectDataInput) in;
                 try {
                     ctxIn.setFactoryId(fd.getFactoryId());
                     ctxIn.setDataClassId(fd.getClassId());
