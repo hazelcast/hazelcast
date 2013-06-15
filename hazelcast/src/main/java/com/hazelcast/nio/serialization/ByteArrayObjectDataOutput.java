@@ -21,48 +21,39 @@ import com.hazelcast.nio.UTFUtil;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.BufferOverflowException;
+import java.nio.ByteOrder;
 
 /**
-* @mdogan 12/26/12
-*/
-class DefaultObjectDataOutput extends OutputStream implements BufferObjectDataOutput, SerializationContextAware {
+ * @mdogan 12/26/12
+ */
+class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectDataOutput, SerializationContextAware {
 
-    private static final int DEFAULT_SIZE = 1024 * 4;
+    static final int DEFAULT_SIZE = 1024 * 4;
 
-    private byte buffer[];
+    byte buffer[];
 
-    private final int offset;
+    int pos = 0;
 
-    private int pos = 0;
+    final SerializationService service;
 
-    private final SerializationService service;
-
-    DefaultObjectDataOutput(SerializationService service) {
-        this(DEFAULT_SIZE, service);
+    ByteArrayObjectDataOutput(int size, SerializationService service) {
+        this(new byte[size], service);
     }
 
-    DefaultObjectDataOutput(int size, SerializationService service) {
-        this(new byte[size], 0, service);
-    }
-
-    private DefaultObjectDataOutput(byte[] buffer, int offset, SerializationService service) {
+    ByteArrayObjectDataOutput(byte[] buffer, SerializationService service) {
         this.buffer = buffer;
-        this.offset = offset;
         this.service = service;
     }
 
-    @Override
     public void write(int b) {
         ensureAvailable(1);
         writeDirect(b);
     }
 
     public void write(int position, int b) {
-        buffer[offset + position] = (byte) b;
+        buffer[position] = (byte) b;
     }
 
-    @Override
     public void write(byte b[], int off, int len) {
         if ((off < 0) || (off > b.length) || (len < 0) ||
                 ((off + len) > b.length) || ((off + len) < 0)) {
@@ -71,18 +62,8 @@ class DefaultObjectDataOutput extends OutputStream implements BufferObjectDataOu
             return;
         }
         ensureAvailable(len);
-        System.arraycopy(b, off, buffer, offset + pos, len);
+        System.arraycopy(b, off, buffer, pos, len);
         pos += len;
-    }
-
-    public void write(int position, byte b[], int off, int len) {
-        if ((off < 0) || (off > b.length) || (len < 0) ||
-                ((off + len) > b.length) || ((off + len) < 0)) {
-            throw new IndexOutOfBoundsException();
-        } else if (len == 0) {
-            return;
-        }
-        System.arraycopy(b, off, buffer, offset + position, len);
     }
 
     public void writeBoolean(final boolean v) throws IOException {
@@ -125,8 +106,8 @@ class DefaultObjectDataOutput extends OutputStream implements BufferObjectDataOu
         ensureAvailable(len * 2);
         for (int i = 0; i < len; i++) {
             final int v = s.charAt(i);
-            writeDirect((v >>> 8) & 0xFF);
-            writeDirect((v) & 0xFF);
+            writeChar(pos, v);
+            pos += 2;
         }
     }
 
@@ -200,14 +181,71 @@ class DefaultObjectDataOutput extends OutputStream implements BufferObjectDataOu
     }
 
     private void writeDirect(int b) {
-        buffer[offset + pos++] = (byte) b;
+        buffer[pos++] = (byte) b;
     }
 
-    private void ensureAvailable(int len) {
-        if (available() < len) {
-            if (offset > 0) {
-                throw new BufferOverflowException();
+    public void writeCharArray(char[] chars) throws IOException {
+        int len = chars != null ? chars.length : 0;
+        writeInt(len);
+        if (len > 0) {
+            for (char c : chars) {
+                writeChar(c);
             }
+        }
+    }
+
+    public void writeIntArray(int[] ints) throws IOException {
+        int len = ints != null ? ints.length : 0;
+        writeInt(len);
+        if (len > 0) {
+            for (int i : ints) {
+                writeInt(i);
+            }
+        }
+    }
+
+    public void writeLongArray(long[] longs) throws IOException {
+        int len = longs != null ? longs.length : 0;
+        writeInt(len);
+        if (len > 0) {
+            for (long l : longs) {
+                writeLong(l);
+            }
+        }
+    }
+
+    public void writeDoubleArray(double[] doubles) throws IOException {
+        int len = doubles != null ? doubles.length : 0;
+        writeInt(len);
+        if (len > 0) {
+            for (double d : doubles) {
+                writeDouble(d);
+            }
+        }
+    }
+
+    public void writeFloatArray(float[] floats) throws IOException {
+        int len = floats != null ? floats.length : 0;
+        writeInt(len);
+        if (len > 0) {
+            for (float f : floats) {
+                writeFloat(f);
+            }
+        }
+    }
+
+    public void writeShortArray(short[] shorts) throws IOException {
+        int len = shorts != null ? shorts.length : 0;
+        writeInt(len);
+        if (len > 0) {
+            for (short s : shorts) {
+                writeShort(s);
+            }
+        }
+    }
+
+    final void ensureAvailable(int len) {
+        if (available() < len) {
             if (buffer != null) {
                 int newCap = Math.max(buffer.length << 1, buffer.length + len);
                 byte newBuffer[] = new byte[newCap];
@@ -231,17 +269,13 @@ class DefaultObjectDataOutput extends OutputStream implements BufferObjectDataOu
     }
 
     public void position(int newPos) {
-        if ((offset + newPos > buffer.length) || (newPos < 0))
+        if ((newPos > buffer.length) || (newPos < 0))
             throw new IllegalArgumentException();
         pos = newPos;
     }
 
     public int available() {
-        return buffer != null ? buffer.length - pos - offset : 0;
-    }
-
-    public int size() {
-        return pos;
+        return buffer != null ? buffer.length - pos : 0;
     }
 
     public byte[] getBuffer() {
@@ -252,25 +286,17 @@ class DefaultObjectDataOutput extends OutputStream implements BufferObjectDataOu
         if (buffer == null) {
             return new byte[0];
         }
-        final byte newBuffer[] = new byte[size()];
-        System.arraycopy(buffer, offset, newBuffer, 0, size());
+        final byte newBuffer[] = new byte[pos];
+        System.arraycopy(buffer, 0, newBuffer, 0, pos);
         return newBuffer;
     }
 
-    public DefaultObjectDataOutput duplicate() {
-        return new DefaultObjectDataOutput(buffer, 0, service);
-    }
-
-    public DefaultObjectDataOutput slice() {
-        return new DefaultObjectDataOutput(buffer, pos, service);
-    }
-
-    public void reset() {
+    public void clear() {
         pos = 0;
     }
 
     public void close() {
-        reset();
+        clear();
         buffer = null;
     }
 
@@ -278,12 +304,15 @@ class DefaultObjectDataOutput extends OutputStream implements BufferObjectDataOu
         return service.getSerializationContext();
     }
 
+    public ByteOrder getByteOrder() {
+        return ByteOrder.BIG_ENDIAN;
+    }
+
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        sb.append("DefaultObjectDataOutput");
-        sb.append("{size=").append(buffer != null ? buffer.length : "NULL");
-        sb.append(", offset=").append(offset);
+        sb.append("ByteArrayObjectDataOutput");
+        sb.append("{size=").append(buffer != null ? buffer.length : 0);
         sb.append(", pos=").append(pos);
         sb.append('}');
         return sb.toString();

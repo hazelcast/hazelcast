@@ -20,6 +20,7 @@ import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
 
+import java.nio.ByteOrder;
 import java.util.*;
 
 public class SerializationConfig {
@@ -39,6 +40,10 @@ public class SerializationConfig {
     private Collection<TypeSerializerConfig> typeSerializers;
 
     private boolean checkClassDefErrors = true;
+
+    private boolean useNativeByteOrder = false;
+
+    private ByteOrder byteOrder = ByteOrder.BIG_ENDIAN;
 
     private Set<ClassDefinition> classDefinitions;
 
@@ -181,6 +186,23 @@ public class SerializationConfig {
         return this;
     }
 
+    public boolean isUseNativeByteOrder() {
+        return useNativeByteOrder;
+    }
+
+    public SerializationConfig setUseNativeByteOrder(boolean useNativeByteOrder) {
+        this.useNativeByteOrder = useNativeByteOrder;
+        return this;
+    }
+
+    public ByteOrder getByteOrder() {
+        return byteOrder;
+    }
+
+    public SerializationConfig setByteOrder(ByteOrder byteOrder) {
+        this.byteOrder = byteOrder;
+        return this;
+    }
 
     @Override
     public String toString() {
@@ -194,6 +216,8 @@ public class SerializationConfig {
         sb.append(", typeSerializers=").append(typeSerializers);
         sb.append(", checkClassDefErrors=").append(checkClassDefErrors);
         sb.append(", classDefinitions=").append(classDefinitions);
+        sb.append(", byteOrder=").append(byteOrder);
+        sb.append(", useNativeByteOrder=").append(useNativeByteOrder);
         sb.append('}');
         return sb.toString();
     }

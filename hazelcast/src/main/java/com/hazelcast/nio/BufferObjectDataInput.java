@@ -26,8 +26,6 @@ public interface BufferObjectDataInput extends ObjectDataInput, Closeable {
 
     int read(int position) throws IOException;
 
-    int read(int position, byte b[], int off, int len) throws IOException;
-
     int readInt(int position) throws IOException;
 
     long readLong(int position) throws IOException;
@@ -49,9 +47,4 @@ public interface BufferObjectDataInput extends ObjectDataInput, Closeable {
     void position(int newPos);
 
     void reset();
-
-    BufferObjectDataInput duplicate();
-
-    BufferObjectDataInput slice();
-
 }

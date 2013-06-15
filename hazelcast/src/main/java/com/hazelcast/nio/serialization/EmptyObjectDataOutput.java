@@ -19,11 +19,12 @@ package com.hazelcast.nio.serialization;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
+import java.nio.ByteOrder;
 
 /**
  * @mdogan 2/22/13
  */
-class EmptyObjectDataOutput implements ObjectDataOutput {
+final class EmptyObjectDataOutput implements ObjectDataOutput {
 
     public void writeObject(Object object) throws IOException {
     }
@@ -70,10 +71,32 @@ class EmptyObjectDataOutput implements ObjectDataOutput {
     public void writeUTF(String s) throws IOException {
     }
 
+    public void writeCharArray(char[] chars) throws IOException {
+    }
+
+    public void writeIntArray(int[] ints) throws IOException {
+    }
+
+    public void writeLongArray(long[] longs) throws IOException {
+    }
+
+    public void writeDoubleArray(double[] values) throws IOException {
+    }
+
+    public void writeFloatArray(float[] values) throws IOException {
+    }
+
+    public void writeShortArray(short[] values) throws IOException {
+    }
+
     public byte[] toByteArray() {
         throw new UnsupportedOperationException();
     }
 
     public void close() throws IOException {
+    }
+
+    public ByteOrder getByteOrder() {
+        return ByteOrder.BIG_ENDIAN;
     }
 }

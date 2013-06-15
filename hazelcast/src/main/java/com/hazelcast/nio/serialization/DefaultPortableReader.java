@@ -17,6 +17,7 @@
 package com.hazelcast.nio.serialization;
 
 import com.hazelcast.nio.BufferObjectDataInput;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 
 import java.io.IOException;
@@ -116,12 +117,7 @@ public class DefaultPortableReader implements PortableReader {
         try {
             int pos = getPosition(fieldName);
             in.position(pos);
-            final int len = in.readInt();
-            final byte[] values = new byte[len];
-            for (int i = 0; i < len; i++) {
-                values[i] = in.readByte();
-            }
-            return values;
+            return IOUtil.readByteArray(in);
         } finally {
             in.position(currentPos);
         }
@@ -132,12 +128,7 @@ public class DefaultPortableReader implements PortableReader {
         try {
             int pos = getPosition(fieldName);
             in.position(pos);
-            final int len = in.readInt();
-            final char[] values = new char[len];
-            for (int i = 0; i < len; i++) {
-                values[i] = in.readChar();
-            }
-            return values;
+            return in.readCharArray();
         } finally {
             in.position(currentPos);
         }
@@ -148,12 +139,7 @@ public class DefaultPortableReader implements PortableReader {
         try {
             int pos = getPosition(fieldName);
             in.position(pos);
-            final int len = in.readInt();
-            final int[] values = new int[len];
-            for (int i = 0; i < len; i++) {
-                values[i] = in.readInt();
-            }
-            return values;
+            return in.readIntArray();
         } finally {
             in.position(currentPos);
         }
@@ -164,12 +150,7 @@ public class DefaultPortableReader implements PortableReader {
         try {
             int pos = getPosition(fieldName);
             in.position(pos);
-            final int len = in.readInt();
-            final long[] values = new long[len];
-            for (int i = 0; i < len; i++) {
-                values[i] = in.readLong();
-            }
-            return values;
+            return in.readLongArray();
         } finally {
             in.position(currentPos);
         }
@@ -180,12 +161,7 @@ public class DefaultPortableReader implements PortableReader {
         try {
             int pos = getPosition(fieldName);
             in.position(pos);
-            final int len = in.readInt();
-            final double[] values = new double[len];
-            for (int i = 0; i < len; i++) {
-                values[i] = in.readDouble();
-            }
-            return values;
+            return in.readDoubleArray();
         } finally {
             in.position(currentPos);
         }
@@ -196,12 +172,7 @@ public class DefaultPortableReader implements PortableReader {
         try {
             int pos = getPosition(fieldName);
             in.position(pos);
-            final int len = in.readInt();
-            final float[] values = new float[len];
-            for (int i = 0; i < len; i++) {
-                values[i] = in.readFloat();
-            }
-            return values;
+            return in.readFloatArray();
         } finally {
             in.position(currentPos);
         }
@@ -212,12 +183,7 @@ public class DefaultPortableReader implements PortableReader {
         try {
             int pos = getPosition(fieldName);
             in.position(pos);
-            final int len = in.readInt();
-            final short[] values = new short[len];
-            for (int i = 0; i < len; i++) {
-                values[i] = in.readShort();
-            }
-            return values;
+            return in.readShortArray();
         } finally {
             in.position(currentPos);
         }
@@ -234,7 +200,7 @@ public class DefaultPortableReader implements PortableReader {
             in.position(pos);
             final boolean NULL = in.readBoolean();
             if (!NULL) {
-                final DefaultObjectDataInput ctxIn = (DefaultObjectDataInput) in;
+                final PortableContextAwareDataInput ctxIn = (PortableContextAwareDataInput) in;
                 try {
                     ctxIn.setFactoryId(fd.getFactoryId());
                     ctxIn.setDataClassId(fd.getClassId());
@@ -268,7 +234,7 @@ public class DefaultPortableReader implements PortableReader {
             final Portable[] portables = new Portable[len];
             if (len > 0) {
                 final int offset = in.position();
-                final DefaultObjectDataInput ctxIn = (DefaultObjectDataInput) in;
+                final PortableContextAwareDataInput ctxIn = (PortableContextAwareDataInput) in;
                 try {
                     ctxIn.setFactoryId(fd.getFactoryId());
                     ctxIn.setDataClassId(fd.getClassId());

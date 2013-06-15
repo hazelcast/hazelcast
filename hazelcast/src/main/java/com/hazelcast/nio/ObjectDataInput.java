@@ -18,14 +18,29 @@ package com.hazelcast.nio;
 
 import java.io.DataInput;
 import java.io.IOException;
+import java.nio.ByteOrder;
 
 /**
  * @mdogan 12/28/12
  */
 public interface ObjectDataInput extends DataInput {
 
+    char[] readCharArray() throws IOException;
+
+    int[] readIntArray() throws IOException;
+
+    long[] readLongArray() throws IOException;
+
+    double[] readDoubleArray() throws IOException;
+
+    float[] readFloatArray() throws IOException;
+
+    short[] readShortArray() throws IOException;
+
     <T> T readObject() throws IOException;
 
     ClassLoader getClassLoader();
+
+    ByteOrder getByteOrder();
 
 }

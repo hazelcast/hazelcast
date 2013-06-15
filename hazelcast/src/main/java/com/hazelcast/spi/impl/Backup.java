@@ -140,9 +140,7 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
         } else {
             out.writeBoolean(false);
         }
-        for (int i = 0; i < PartitionInfo.MAX_BACKUP_COUNT; i++) {
-            out.writeLong(replicaVersions[i]);
-        }
+        out.writeLongArray(replicaVersions);
         out.writeBoolean(sync);
     }
 
@@ -153,10 +151,7 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
             originalCaller = new Address();
             originalCaller.readData(in);
         }
-        replicaVersions = new long[PartitionInfo.MAX_BACKUP_COUNT];
-        for (int i = 0; i < PartitionInfo.MAX_BACKUP_COUNT; i++) {
-            replicaVersions[i] = in.readLong();
-        }
+        replicaVersions = in.readLongArray();
         sync = in.readBoolean();
     }
 

@@ -22,6 +22,7 @@ import com.hazelcast.config.TypeSerializerConfig;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.nio.ClassLoaderUtil;
 
+import java.nio.ByteOrder;
 import java.util.*;
 
 /**
@@ -45,6 +46,10 @@ public final class SerializationServiceBuilder {
 
     private ManagedContext managedContext;
 
+    private boolean useNativeByteOrder = false;
+
+    private ByteOrder byteOrder = ByteOrder.BIG_ENDIAN;
+
     public SerializationServiceBuilder setVersion(int version) {
         if (version < 0) {
             throw new IllegalArgumentException("Version cannot be negative!");
@@ -64,6 +69,8 @@ public final class SerializationServiceBuilder {
             version = config.getPortableVersion();
         }
         checkClassDefErrors = config.isCheckClassDefErrors();
+        useNativeByteOrder = config.isUseNativeByteOrder();
+        byteOrder = config.getByteOrder();
         return this;
     }
 
@@ -92,6 +99,16 @@ public final class SerializationServiceBuilder {
         return this;
     }
 
+    public SerializationServiceBuilder setUseNativeByteOrder(boolean useNativeByteOrder) {
+        this.useNativeByteOrder = useNativeByteOrder;
+        return this;
+    }
+
+    public SerializationServiceBuilder setByteOrder(ByteOrder byteOrder) {
+        this.byteOrder = byteOrder;
+        return this;
+    }
+
     public SerializationService build() {
         if (version < 0) {
             version = 0;
@@ -102,8 +119,9 @@ public final class SerializationServiceBuilder {
             classDefinitions.addAll(config.getClassDefinitions());
         }
 
-        final SerializationService ss = new SerializationServiceImpl(version, classLoader, dataSerializableFactories,
-                portableFactories, classDefinitions, checkClassDefErrors, managedContext);
+        final InputOutputFactory inputOutputFactory = createInputOutputFactory();
+        final SerializationService ss = new SerializationServiceImpl(inputOutputFactory, version, classLoader, dataSerializableFactories,
+                portableFactories, classDefinitions, checkClassDefErrors, managedContext, useNativeByteOrder);
 
         if (config != null) {
             if (config.getGlobalSerializer() != null) {
@@ -141,6 +159,22 @@ public final class SerializationServiceBuilder {
             }
         }
         return ss;
+    }
+
+    private InputOutputFactory createInputOutputFactory() {
+        if (byteOrder == null) {
+            byteOrder = ByteOrder.BIG_ENDIAN;
+        }
+        if (useNativeByteOrder) {
+            byteOrder = ByteOrder.nativeOrder();
+            if (UnsafeInputOutputFactory.unsafeAvailable()) {
+                return new UnsafeInputOutputFactory();
+            }
+        }
+        if (byteOrder == ByteOrder.BIG_ENDIAN) {
+            return new ByteArrayInputOutputFactory();
+        }
+        return new ByteBufferInputOutputFactory(byteOrder);
     }
 
     private static void addConfigDataSerializableFactories(final Map<Integer, DataSerializableFactory> dataSerializableFactories,

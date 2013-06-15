@@ -26,8 +26,6 @@ public interface BufferObjectDataOutput extends ObjectDataOutput, Closeable {
 
     void write(int position, int b);
 
-    void write(int position, byte b[], int off, int len);
-
     void writeInt(int position, int v) throws IOException;
 
     void writeLong(int position, final long v) throws IOException;
@@ -50,11 +48,7 @@ public interface BufferObjectDataOutput extends ObjectDataOutput, Closeable {
 
     byte[] getBuffer();
 
-    void reset();
-
-    BufferObjectDataOutput duplicate();
-
-    BufferObjectDataOutput slice();
+    void clear();
 
     byte[] toByteArray();
 

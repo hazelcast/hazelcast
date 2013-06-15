@@ -126,7 +126,7 @@ public class QueueStoreWrapper implements QueueStore<Data> {
                     for (Map.Entry<Long, Data> entry : map.entrySet()) {
                         entry.getValue().writeData(out);
                         objectMap.put(entry.getKey(), out.toByteArray());
-                        out.reset();
+                        out.clear();
                     }
                 } catch (IOException e) {
                     throw new HazelcastException(e);

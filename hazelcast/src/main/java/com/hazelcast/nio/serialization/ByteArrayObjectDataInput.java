@@ -21,84 +21,65 @@ import com.hazelcast.nio.UTFUtil;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.InputStream;
+import java.nio.ByteOrder;
 
 /**
 * @mdogan 12/26/12
 */
-class DefaultObjectDataInput extends InputStream implements BufferObjectDataInput, SerializationContextAware {
+class ByteArrayObjectDataInput extends PortableContextAwareDataInput implements BufferObjectDataInput, SerializationContextAware {
 
-    private final byte buffer[];
+    byte buffer[];
 
-    private final int size;
+    final int size;
 
-    private final int offset;
+    int pos = 0;
 
-    private int pos = 0;
+    int mark = 0;
 
-    private int mark = 0;
+    final SerializationService service;
 
-    private final SerializationService service;
+    ByteArrayObjectDataInput(Data data, SerializationService service) {
+        this(data.buffer, service);
 
-    private int factoryId;
-
-    private int dataClassId;
-
-    private int dataVersion;
-
-    public DefaultObjectDataInput(byte[] buffer, SerializationService service) {
-        this(buffer, 0, service);
-    }
-
-    public DefaultObjectDataInput(Data data, SerializationService service) {
-        this(data.buffer, 0, service);
         final ClassDefinition cd = data.classDefinition;
-        this.factoryId = cd != null ? cd.getFactoryId() : 0;
-        this.dataClassId = cd != null ? cd.getClassId() : -1;
-        this.dataVersion = cd != null ? cd.getVersion() : -1;
+        setFactoryId(cd != null ? cd.getFactoryId() : 0);
+        setDataClassId(cd != null ? cd.getClassId() : -1);
+        setDataVersion(cd != null ? cd.getVersion() : -1);
     }
 
-    private DefaultObjectDataInput(byte buffer[], int offset, SerializationService service) {
+    ByteArrayObjectDataInput(byte buffer[], SerializationService service) {
         super();
         this.buffer = buffer;
-        this.size = buffer.length - offset;
-        this.offset = offset;
+        this.size = buffer.length;
         this.service = service;
     }
 
-    @Override
     public int read() throws IOException {
-        return (pos < size) ? (buffer[offset + pos++] & 0xff) : -1;
+        return (pos < size) ? (buffer[pos++] & 0xff) : -1;
     }
 
     public int read(int position) throws IOException {
-        return (position < size) ? (buffer[offset + position] & 0xff) : -1;
+        return (position < size) ? (buffer[position] & 0xff) : -1;
     }
 
-    @Override
     public int read(byte b[], int off, int len) throws IOException {
-        final int read = read(pos, b, off, len);
-        pos += read;
-        return read;
-    }
-
-    public int read(int position, byte b[], int off, int len) throws IOException {
         if (b == null) {
             throw new NullPointerException();
         } else if ((off < 0) || (off > b.length) || (len < 0) ||
                 ((off + len) > b.length) || ((off + len) < 0)) {
             throw new IndexOutOfBoundsException();
         }
-        if (position >= size) {
-            return -1;
-        }
-        if (position + len > size) {
-            len = size - position;
-        }
         if (len <= 0) {
             return 0;
         }
-        System.arraycopy(buffer, offset + position, b, off, len);
+        if (pos >= size) {
+            return -1;
+        }
+        if (pos + len > size) {
+            len = size - pos;
+        }
+        System.arraycopy(buffer, pos, b, off, len);
+        pos += len;
         return len;
     }
 
@@ -326,6 +307,78 @@ class DefaultObjectDataInput extends InputStream implements BufferObjectDataInpu
         return (short) ((ch1 << 8) + (ch2 << 0));
     }
 
+    public char[] readCharArray() throws IOException {
+        int len = readInt();
+        if (len > 0) {
+            char[] values = new char[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = readChar();
+            }
+            return values;
+        }
+        return new char[0];
+    }
+
+    public int[] readIntArray() throws IOException {
+        int len = readInt();
+        if (len > 0) {
+            int[] values = new int[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = readInt();
+            }
+            return values;
+        }
+        return new int[0];
+    }
+
+    public long[] readLongArray() throws IOException {
+        int len = readInt();
+        if (len > 0) {
+            long[] values = new long[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = readLong();
+            }
+            return values;
+        }
+        return new long[0];
+    }
+
+    public double[] readDoubleArray() throws IOException {
+        int len = readInt();
+        if (len > 0) {
+            double[] values = new double[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = readDouble();
+            }
+            return values;
+        }
+        return new double[0];
+    }
+
+    public float[] readFloatArray() throws IOException {
+        int len = readInt();
+        if (len > 0) {
+            float[] values = new float[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = readFloat();
+            }
+            return values;
+        }
+        return new float[0];
+    }
+
+    public short[] readShortArray() throws IOException {
+        int len = readInt();
+        if (len > 0) {
+            short[] values = new short[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = readShort();
+            }
+            return values;
+        }
+        return new short[0];
+    }
+
     /**
      * See the general contract of the <code>readUnsignedByte</code> method of
      * <code>DataInput</code>.
@@ -339,10 +392,7 @@ class DefaultObjectDataInput extends InputStream implements BufferObjectDataInpu
      * @see java.io.FilterInputStream#in
      */
     public int readUnsignedByte() throws IOException {
-        final int ch = read();
-        if (ch < 0)
-            throw new EOFException();
-        return ch;
+        return readByte();
     }
 
     /**
@@ -359,11 +409,7 @@ class DefaultObjectDataInput extends InputStream implements BufferObjectDataInpu
      * @see java.io.FilterInputStream#in
      */
     public int readUnsignedShort() throws IOException {
-        final int ch1 = read();
-        final int ch2 = read();
-        if ((ch1 | ch2) < 0)
-            throw new EOFException();
-        return (ch1 << 8) + (ch2 << 0);
+        return readShort();
     }
 
     /**
@@ -388,33 +434,25 @@ class DefaultObjectDataInput extends InputStream implements BufferObjectDataInpu
         return service.readObject(this);
     }
 
-    public DefaultObjectDataInput duplicate() {
-        return new DefaultObjectDataInput(buffer, 0, service);
-    }
-
-    public DefaultObjectDataInput slice() {
-        return new DefaultObjectDataInput(buffer, pos, service);
-    }
-
     @Override
     public long skip(long n) {
-        if (pos + n > size) {
-            n = size - pos;
+        if (n <= 0 || n >= Integer.MAX_VALUE) {
+            return 0L;
         }
-        if (n < 0) {
-            return 0;
-        }
-        pos += n;
-        return n;
+        return skipBytes((int) n);
     }
 
-    public int skipBytes(final int n) throws IOException {
-        int total = 0;
-        int cur = 0;
-        while ((total < n) && ((cur = (int) skip(n - total)) > 0)) {
-            total += cur;
+    public int skipBytes(final int n) {
+        if (n <= 0) {
+            return 0;
         }
-        return total;
+        int skip = n;
+        final int pos = position();
+        if (pos + skip > size) {
+            skip = size - pos;
+        }
+        position(pos + skip);
+        return skip;
     }
 
     /**
@@ -432,7 +470,7 @@ class DefaultObjectDataInput extends InputStream implements BufferObjectDataInpu
     }
 
     @Override
-    public int available() {
+    public final int available() {
         return size - pos;
     }
 
@@ -453,37 +491,11 @@ class DefaultObjectDataInput extends InputStream implements BufferObjectDataInpu
 
     @Override
     public void close() {
-        factoryId = 0;
-        dataClassId = -1;
-        dataVersion = -1;
+        buffer = null;
     }
 
     public SerializationContext getSerializationContext() {
         return service.getSerializationContext();
-    }
-
-    int getFactoryId() {
-        return factoryId;
-    }
-
-    void setFactoryId(int factoryId) {
-        this.factoryId = factoryId;
-    }
-
-    int getDataClassId() {
-        return dataClassId;
-    }
-
-    void setDataClassId(int classId) {
-        this.dataClassId = classId;
-    }
-
-    int getDataVersion() {
-        return dataVersion;
-    }
-
-    void setDataVersion(int dataVersion) {
-        this.dataVersion = dataVersion;
     }
 
     @Override
@@ -491,12 +503,15 @@ class DefaultObjectDataInput extends InputStream implements BufferObjectDataInpu
         return service.getClassLoader();
     }
 
+    public ByteOrder getByteOrder() {
+        return ByteOrder.BIG_ENDIAN;
+    }
+
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        sb.append("DefaultObjectDataInput");
+        sb.append("ByteArrayObjectDataInput");
         sb.append("{size=").append(size);
-        sb.append(", offset=").append(offset);
         sb.append(", pos=").append(pos);
         sb.append(", mark=").append(mark);
         sb.append('}');

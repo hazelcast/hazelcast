@@ -32,6 +32,7 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Properties;
@@ -196,8 +197,6 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 handleTopic(node);
             } else if ("semaphore".equals(nodeName)) {
                 handleSemaphore(node);
-//            } else if ("merge-policies".equals(nodeName)) {
-//                handleMergePolicies(node);
             } else if ("listeners".equals(nodeName)) {
                 handleListeners(node);
             } else if ("partition-group".equals(nodeName)) {
@@ -918,8 +917,19 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
             final String name = cleanNodeName(child);
             if ("portable-version".equals(name)) {
-                String value = getTextContent(child);
+                String value = getValue(child);
                 serializationConfig.setPortableVersion(getIntegerValue(name, value, 0));
+            } else if ("use-native-byte-order".equals(name)) {
+                serializationConfig.setUseNativeByteOrder(checkTrue(getValue(child)));
+            } else if ("byte-order".equals(name)) {
+                String value = getValue(child);
+                ByteOrder byteOrder = null;
+                if (ByteOrder.BIG_ENDIAN.toString().equals(value)) {
+                    byteOrder = ByteOrder.BIG_ENDIAN;
+                } else if (ByteOrder.LITTLE_ENDIAN.toString().equals(value)) {
+                    byteOrder = ByteOrder.LITTLE_ENDIAN;
+                }
+                serializationConfig.setByteOrder(byteOrder != null ? byteOrder  : ByteOrder.BIG_ENDIAN);
             } else if ("data-serializable-factories".equals(name)) {
                 handleDataSerializableFactories(child, serializationConfig);
             } else if ("portable-factories".equals(name)) {

@@ -27,6 +27,7 @@ import com.hazelcast.nio.serialization.DefaultSerializers.*;
 import java.io.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.ByteOrder;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -38,7 +39,7 @@ import java.util.zip.Inflater;
 
 public final class SerializationServiceImpl implements SerializationService {
 
-    private static final int OUTPUT_STREAM_BUFFER_SIZE = 32 * 1024;
+    private static final int OUTPUT_BUFFER_SIZE = 32 * 1024;
     private static final int CONSTANT_SERIALIZERS_SIZE = SerializationConstants.CONSTANT_SERIALIZERS_LENGTH;
 
     private final IdentityHashMap<Class, TypeSerializer> constantTypesMap
@@ -49,6 +50,7 @@ public final class SerializationServiceImpl implements SerializationService {
     private final ConcurrentMap<Integer, TypeSerializer> idMap = new ConcurrentHashMap<Integer, TypeSerializer>();
     private final AtomicReference<TypeSerializer> global = new AtomicReference<TypeSerializer>();
 
+    private final InputOutputFactory inputOutputFactory;
     private final Queue<BufferObjectDataOutput> outputPool = new ConcurrentLinkedQueue<BufferObjectDataOutput>();
     private final DataSerializer dataSerializer;
     private final PortableSerializer portableSerializer;
@@ -58,12 +60,13 @@ public final class SerializationServiceImpl implements SerializationService {
 
     private volatile boolean active = true;
 
-    SerializationServiceImpl(int version, ClassLoader classLoader,
+    SerializationServiceImpl(InputOutputFactory inputOutputFactory, int version, ClassLoader classLoader,
                              Map<Integer, ? extends DataSerializableFactory> dataSerializableFactories,
                              Map<Integer, ? extends PortableFactory> portableFactories,
                              Collection<ClassDefinition> classDefinitions, boolean checkClassDefErrors,
-                             ManagedContext managedContext) {
+                             ManagedContext managedContext, boolean nativeByteOrder) {
 
+        this.inputOutputFactory = inputOutputFactory;
         this.classLoader = classLoader;
         this.managedContext = managedContext;
         PortableHookLoader loader = new PortableHookLoader(portableFactories);
@@ -172,13 +175,13 @@ public final class SerializationServiceImpl implements SerializationService {
     private BufferObjectDataOutput pop() {
         BufferObjectDataOutput out = outputPool.poll();
         if (out == null) {
-            out = new DefaultObjectDataOutput(OUTPUT_STREAM_BUFFER_SIZE, this);
+            out = inputOutputFactory.createOutput(OUTPUT_BUFFER_SIZE, this);
         }
         return out;
     }
 
-    void push(BufferObjectDataOutput out) {
-        out.reset();
+    private void push(BufferObjectDataOutput out) {
+        out.clear();
         outputPool.offer(out);
     }
 
@@ -186,7 +189,7 @@ public final class SerializationServiceImpl implements SerializationService {
         if (data == null || data.bufferSize() == 0) {
             return null;
         }
-        DefaultObjectDataInput in = null;
+        BufferObjectDataInput in = null;
         try {
             final int typeId = data.type;
             final TypeSerializer serializer = serializerFor(typeId);
@@ -199,7 +202,7 @@ public final class SerializationServiceImpl implements SerializationService {
             if (data.type == SerializationConstants.CONSTANT_TYPE_PORTABLE) {
                 serializationContext.registerClassDefinition(data.classDefinition);
             }
-            in = new DefaultObjectDataInput(data, this);
+            in = inputOutputFactory.createInput(data, this);
             Object obj = serializer.read(in);
             if (managedContext != null) {
                 obj = managedContext.initialize(obj);
@@ -271,15 +274,15 @@ public final class SerializationServiceImpl implements SerializationService {
     }
 
     public BufferObjectDataInput createObjectDataInput(byte[] data) {
-        return new DefaultObjectDataInput(data, this);
+        return inputOutputFactory.createInput(data, this);
     }
 
     public BufferObjectDataInput createObjectDataInput(Data data) {
-        return createObjectDataInput(data.buffer);
+        return inputOutputFactory.createInput(data, this);
     }
 
     public BufferObjectDataOutput createObjectDataOutput(int size) {
-        return new DefaultObjectDataOutput(size, this);
+        return inputOutputFactory.createOutput(size, this);
     }
 
     public ObjectDataOutputStream createObjectDataOutputStream(OutputStream out) {
@@ -287,7 +290,15 @@ public final class SerializationServiceImpl implements SerializationService {
     }
 
     public ObjectDataInputStream createObjectDataInputStream(InputStream in) {
-        return new ObjectDataInputStream(in, this, classLoader);
+        return new ObjectDataInputStream(in, this);
+    }
+
+    public ObjectDataOutputStream createObjectDataOutputStream(OutputStream out, ByteOrder order) {
+        return new ObjectDataOutputStream(out, this, order);
+    }
+
+    public ObjectDataInputStream createObjectDataInputStream(InputStream in, ByteOrder order) {
+        return new ObjectDataInputStream(in, this, order);
     }
 
     public void register(Class type, TypeSerializer serializer) {
@@ -492,7 +503,7 @@ public final class SerializationServiceImpl implements SerializationService {
                 push(out);
             }
             final ClassDefinitionImpl cd = new ClassDefinitionImpl();
-            cd.readData(new DefaultObjectDataInput(binary, SerializationServiceImpl.this));
+            cd.readData(inputOutputFactory.createInput(binary, SerializationServiceImpl.this));
             cd.setBinary(compressedBinary);
             final ClassDefinitionImpl currentCD = versionedDefinitions.putIfAbsent(combineToLong(cd.classId,
                     serializationContext.getVersion()), cd);
@@ -519,7 +530,7 @@ public final class SerializationServiceImpl implements SerializationService {
                     try {
                         cdImpl.writeData(out);
                         final byte[] binary = out.toByteArray();
-                        out.reset();
+                        out.clear();
                         compress(binary, out);
                         cdImpl.setBinary(out.toByteArray());
                     } catch (IOException e) {

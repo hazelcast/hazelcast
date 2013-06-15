@@ -31,6 +31,7 @@ import java.beans.XMLEncoder;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteOrder;
 
 import static junit.framework.Assert.assertEquals;
 
@@ -40,12 +41,27 @@ public class CustomSerializationTest {
 
     @Test
     public void testTypeSerializer() throws Exception {
+        testTypeSerializer(ByteOrder.BIG_ENDIAN);
+    }
+
+    @Test
+    public void testTypeSerializerLittleEndian() throws Exception {
+        testTypeSerializer(ByteOrder.LITTLE_ENDIAN);
+    }
+
+    @Test
+    public void testTypeSerializerNativeOrder() throws Exception {
+        testTypeSerializer(ByteOrder.nativeOrder());
+    }
+
+    private void testTypeSerializer(ByteOrder order) throws Exception {
         SerializationConfig config = new SerializationConfig();
         TypeSerializerConfig tsc = new TypeSerializerConfig().
                 setImplementation(new FooXmlSerializer()).
                 setTypeClass(Foo.class);
         config.addTypeSerializer(tsc);
-        SerializationService ss = new SerializationServiceBuilder().setConfig(config).build();
+        SerializationService ss = new SerializationServiceBuilder()
+                .setUseNativeByteOrder(false).setByteOrder(order).setConfig(config).build();
         Foo foo = new Foo();
         foo.setFoo("f");
         Data d = ss.toData(foo);

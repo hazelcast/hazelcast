@@ -72,10 +72,14 @@ public class PortableSerializer implements TypeSerializer<Portable> {
         if (!(in instanceof BufferObjectDataInput)) {
             throw new IllegalArgumentException("ObjectDataInput must be instance of BufferObjectDataInput!");
         }
-        final DefaultObjectDataInput ctxIn = (DefaultObjectDataInput) in;
+        if (!(in instanceof PortableContextAwareDataInput)) {
+            throw new IllegalArgumentException("ObjectDataInput must be instance of PortableContextAwareDataInput!");
+        }
+        final PortableContextAwareDataInput ctxIn = (PortableContextAwareDataInput) in;
         final int factoryId = ctxIn.getFactoryId();
         final int dataClassId = ctxIn.getDataClassId();
         final int dataVersion = ctxIn.getDataVersion();
+
         final PortableFactory portableFactory = factories.get(factoryId);
         if (portableFactory == null) {
             throw new HazelcastSerializationException("Could not find PortableFactory for factoryId: " + factoryId);
