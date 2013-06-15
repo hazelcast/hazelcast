@@ -30,8 +30,6 @@ class DefaultObjectDataOutput extends OutputStream implements BufferObjectDataOu
 
     private static final int DEFAULT_SIZE = 1024 * 4;
 
-    private final byte longBuffer[] = new byte[8];
-
     private byte buffer[];
 
     private final int offset;
@@ -164,24 +162,26 @@ class DefaultObjectDataOutput extends OutputStream implements BufferObjectDataOu
     }
 
     public void writeLong(final long v) throws IOException {
-        fillLongBuffer(v);
-        write(longBuffer, 0, 8);
+        ensureAvailable(8);
+        writeDirect((int) (v >>> 56));
+        writeDirect((int) (v >>> 48));
+        writeDirect((int) (v >>> 40));
+        writeDirect((int) (v >>> 32));
+        writeDirect((int) (v >>> 24));
+        writeDirect((int) (v >>> 16));
+        writeDirect((int) (v >>> 8));
+        writeDirect((int) (v));
     }
 
     public void writeLong(int position, final long v) throws IOException {
-        fillLongBuffer(v);
-        write(position, longBuffer, 0, 8);
-    }
-
-    private void fillLongBuffer(long v) {
-        longBuffer[0] = (byte) (v >>> 56);
-        longBuffer[1] = (byte) (v >>> 48);
-        longBuffer[2] = (byte) (v >>> 40);
-        longBuffer[3] = (byte) (v >>> 32);
-        longBuffer[4] = (byte) (v >>> 24);
-        longBuffer[5] = (byte) (v >>> 16);
-        longBuffer[6] = (byte) (v >>> 8);
-        longBuffer[7] = (byte) (v);
+        write(position, (int) (v >>> 56));
+        write(position + 1, (int) (v >>> 48));
+        write(position + 2, (int) (v >>> 40));
+        write(position + 3, (int) (v >>> 32));
+        write(position + 4, (int) (v >>> 24));
+        write(position + 5, (int) (v >>> 16));
+        write(position + 6, (int) (v >>> 8));
+        write(position + 7, (int) (v));
     }
 
     public void writeShort(final int v) throws IOException {

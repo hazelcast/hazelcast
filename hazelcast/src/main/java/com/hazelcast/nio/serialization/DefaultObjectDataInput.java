@@ -34,8 +34,6 @@ class DefaultObjectDataInput extends InputStream implements BufferObjectDataInpu
 
     private final int offset;
 
-    private final byte longBuffer[] = new byte[8];
-
     private int pos = 0;
 
     private int mark = 0;
@@ -293,11 +291,10 @@ class DefaultObjectDataInput extends InputStream implements BufferObjectDataInpu
     }
 
     public long readLong(int position) throws IOException {
-        read(position, longBuffer, 0, 8);
-        return (((long) longBuffer[0] << 56) + ((long) (longBuffer[1] & 255) << 48)
-                + ((long) (longBuffer[2] & 255) << 40) + ((long) (longBuffer[3] & 255) << 32)
-                + ((long) (longBuffer[4] & 255) << 24) + ((longBuffer[5] & 255) << 16)
-                + ((longBuffer[6] & 255) << 8) + ((longBuffer[7] & 255) << 0));
+        return (((long) buffer[position] << 56) + ((long) (buffer[position + 1] & 255) << 48)
+                + ((long) (buffer[position + 2] & 255) << 40) + ((long) (buffer[position + 3] & 255) << 32)
+                + ((long) (buffer[position + 4] & 255) << 24) + ((buffer[position + 5] & 255) << 16)
+                + ((buffer[position + 6] & 255) << 8) + ((buffer[position + 7] & 255) << 0));
     }
 
     /**
