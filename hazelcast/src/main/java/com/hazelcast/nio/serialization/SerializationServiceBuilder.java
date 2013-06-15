@@ -165,7 +165,7 @@ public final class SerializationServiceBuilder {
         if (byteOrder == null) {
             byteOrder = ByteOrder.BIG_ENDIAN;
         }
-        if (useNativeByteOrder) {
+        if (useNativeByteOrder || byteOrder == ByteOrder.nativeOrder()) {
             byteOrder = ByteOrder.nativeOrder();
             if (UnsafeInputOutputFactory.unsafeAvailable()) {
                 return new UnsafeInputOutputFactory();
