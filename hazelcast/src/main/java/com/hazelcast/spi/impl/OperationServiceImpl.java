@@ -26,7 +26,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.PartitionInfo;
+import com.hazelcast.partition.PartitionView;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.partition.PartitionServiceImpl;
 import com.hazelcast.spi.*;
@@ -179,8 +179,8 @@ final class OperationServiceImpl implements OperationService {
                 if (partitionId < 0) {
                     throw new IllegalArgumentException("Partition id cannot be negative! -> " + partitionId);
                 }
-                final PartitionInfo partitionInfo = nodeEngine.getPartitionService().getPartitionInfo(partitionId);
-                if (partitionInfo == null) {
+                final PartitionView partitionView = nodeEngine.getPartitionService().getPartitionView(partitionId);
+                if (partitionView == null) {
                     throw new PartitionMigratingException(node.getThisAddress(), partitionId,
                             op.getClass().getName(), op.getServiceName());
                 }
@@ -188,7 +188,7 @@ final class OperationServiceImpl implements OperationService {
                     throw new PartitionMigratingException(node.getThisAddress(), partitionId,
                         op.getClass().getName(), op.getServiceName());
                 }
-                final Address owner = partitionInfo.getReplicaAddress(op.getReplicaIndex());
+                final Address owner = partitionView.getReplicaAddress(op.getReplicaIndex());
                 if (op.validatesTarget() && !node.getThisAddress().equals(owner)) {
                     throw new WrongTargetException(node.getThisAddress(), owner, partitionId, op.getReplicaIndex(),
                             op.getClass().getName(), op.getServiceName());
@@ -281,7 +281,7 @@ final class OperationServiceImpl implements OperationService {
         final Operation op = (Operation) backupAwareOp;
         final boolean returnsResponse = op.returnsResponse();
         final PartitionServiceImpl partitionService = (PartitionServiceImpl) nodeEngine.getPartitionService();
-        final int maxBackups = Math.min(partitionService.getMemberGroupsSize() - 1, PartitionInfo.MAX_BACKUP_COUNT);
+        final int maxBackups = Math.min(partitionService.getMemberGroupsSize() - 1, PartitionView.MAX_BACKUP_COUNT);
 
         int syncBackupCount = backupAwareOp.getSyncBackupCount() > 0
                 ? Math.min(maxBackups, backupAwareOp.getSyncBackupCount()) : 0;
@@ -299,7 +299,7 @@ final class OperationServiceImpl implements OperationService {
             final String serviceName = op.getServiceName();
             final int partitionId = op.getPartitionId();
             final long[] replicaVersions = partitionService.incrementPartitionReplicaVersions(partitionId, totalBackupCount);
-            final PartitionInfo partitionInfo = partitionService.getPartitionInfo(partitionId);
+            final PartitionView partition = partitionService.getPartitionView(partitionId);
             for (int replicaIndex = 1; replicaIndex <= totalBackupCount; replicaIndex++) {
                 final Operation backupOp = backupAwareOp.getBackupOperation();
                 if (backupOp == null) {
@@ -312,7 +312,7 @@ final class OperationServiceImpl implements OperationService {
                         .setCallerUuid(nodeEngine.getLocalMember().getUuid());
                 OperationAccessor.setCallId(backup, op.getCallId());
 
-                final Address target = partitionInfo.getReplicaAddress(replicaIndex);
+                final Address target = partition.getReplicaAddress(replicaIndex);
                 if (target != null) {
                     if (target.equals(node.getThisAddress())) {
                         throw new IllegalStateException("Normally shouldn't happen!!");
@@ -361,8 +361,8 @@ final class OperationServiceImpl implements OperationService {
 
         public boolean backup() {
             final PartitionService partitionService = nodeEngine.getPartitionService();
-            final PartitionInfo partitionInfo = partitionService.getPartitionInfo(partitionId);
-            final Address target = partitionInfo.getReplicaAddress(replicaIndex);
+            final PartitionView partition = partitionService.getPartitionView(partitionId);
+            final Address target = partition.getReplicaAddress(replicaIndex);
             if (target != null) {
                 send(backup, target);
                 return true;
@@ -461,7 +461,7 @@ final class OperationServiceImpl implements OperationService {
     }
 
     public boolean send(final Operation op, final int partitionId, final int replicaIndex) {
-        Address target = nodeEngine.getPartitionService().getPartitionInfo(partitionId).getReplicaAddress(replicaIndex);
+        Address target = nodeEngine.getPartitionService().getPartitionView(partitionId).getReplicaAddress(replicaIndex);
         if (target == null) {
             logger.log(Level.WARNING, "No target available for partition: " + partitionId + " and replica: " + replicaIndex);
             return false;

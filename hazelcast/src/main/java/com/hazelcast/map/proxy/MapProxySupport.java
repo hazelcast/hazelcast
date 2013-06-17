@@ -24,8 +24,8 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.partition.PartitionInfo;
 import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.PartitionView;
 import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.map.*;
 import com.hazelcast.monitor.LocalMapStats;
@@ -100,8 +100,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
             PartitionService partitionService = mapService.getNodeEngine().getPartitionService();
             for (int i = 0; i <= backupCount; i++) {
                 int partitionId = partitionService.getPartitionId(key);
-                PartitionInfo partitionInfo = partitionService.getPartitionInfo(partitionId);
-                if ( partitionInfo.getReplicaAddress(i).equals(getNodeEngine().getThisAddress()) ) {
+                PartitionView partition = partitionService.getPartitionView(partitionId);
+                if ( partition.getReplicaAddress(i).equals(getNodeEngine().getThisAddress()) ) {
                     Object val = mapService.getPartitionContainer(partitionId).getRecordStore(name).get(key);
                     if(val != null){
                         mapService.interceptAfterGet(name, val);

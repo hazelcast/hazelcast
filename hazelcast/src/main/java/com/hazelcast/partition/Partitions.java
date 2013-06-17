@@ -6,15 +6,15 @@ import java.util.NoSuchElementException;
 /**
  * @mdogan 6/12/13
  */
-public final class Partitions implements Iterable<PartitionInfo> {
+public final class Partitions implements Iterable<PartitionView> {
 
-    private final PartitionInfo[] partitions;
+    private final PartitionImpl[] partitions;
 
-    Partitions(PartitionInfo[] partitions) {
+    Partitions(PartitionImpl[] partitions) {
         this.partitions = partitions;
     }
 
-    public PartitionInfo get(int partitionId) {
+    public PartitionView get(int partitionId) {
         if (partitionId < 0 || partitionId >= partitions.length) {
             throw new IllegalArgumentException();
         }
@@ -25,8 +25,8 @@ public final class Partitions implements Iterable<PartitionInfo> {
         return partitions.length;
     }
 
-    public Iterator<PartitionInfo> iterator() {
-        return new Iterator<PartitionInfo>() {
+    public Iterator<PartitionView> iterator() {
+        return new Iterator<PartitionView>() {
             final int max = partitions.length - 1; // always greater than zero
             int pos = -1;
 
@@ -34,7 +34,7 @@ public final class Partitions implements Iterable<PartitionInfo> {
                 return pos < max;
             }
 
-            public PartitionInfo next() {
+            public PartitionView next() {
                 if (pos == max) {
                     throw new NoSuchElementException();
                 }

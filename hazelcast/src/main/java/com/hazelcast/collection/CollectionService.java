@@ -33,7 +33,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.MigrationEndpoint;
-import com.hazelcast.partition.PartitionInfo;
+import com.hazelcast.partition.PartitionView;
 import com.hazelcast.spi.*;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
@@ -155,13 +155,13 @@ public class CollectionService implements ManagedService, RemoteService,
         ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();
         Address thisAddress = clusterService.getThisAddress();
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
-            PartitionInfo partitionInfo = nodeEngine.getPartitionService().getPartitionInfo(i);
+            PartitionView partition = nodeEngine.getPartitionService().getPartitionView(i);
             CollectionPartitionContainer partitionContainer = getPartitionContainer(i);
             CollectionContainer collectionContainer = partitionContainer.getCollectionContainer(proxyId);
             if (collectionContainer == null) {
                 continue;
             }
-            if (partitionInfo.getOwner().equals(thisAddress)) {
+            if (partition.getOwner().equals(thisAddress)) {
                 keySet.addAll(collectionContainer.keySet());
             }
         }
@@ -279,13 +279,13 @@ public class CollectionService implements ManagedService, RemoteService,
 
         Address thisAddress = clusterService.getThisAddress();
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
-            PartitionInfo partitionInfo = nodeEngine.getPartitionService().getPartitionInfo(i);
+            PartitionView partition = nodeEngine.getPartitionService().getPartitionView(i);
             CollectionPartitionContainer partitionContainer = getPartitionContainer(i);
             CollectionContainer collectionContainer = partitionContainer.getCollectionContainer(proxyId);
             if (collectionContainer == null) {
                 continue;
             }
-            if (partitionInfo.getOwner().equals(thisAddress)) {
+            if (partition.getOwner().equals(thisAddress)) {
                 lockedEntryCount += collectionContainer.getLockedCount();
                 for (CollectionWrapper wrapper : collectionContainer.collections.values()) {
                     hits += wrapper.getHits();
@@ -294,7 +294,7 @@ public class CollectionService implements ManagedService, RemoteService,
             } else {
                 int backupCount = collectionContainer.config.getTotalBackupCount();
                 for (int j = 1; j <= backupCount; j++) {
-                    Address replicaAddress = partitionInfo.getReplicaAddress(j);
+                    Address replicaAddress = partition.getReplicaAddress(j);
                     int memberSize = nodeEngine.getClusterService().getMembers().size();
 
                     int tryCount = 3;
@@ -305,7 +305,7 @@ public class CollectionService implements ManagedService, RemoteService,
                         } catch (InterruptedException e) {
                             throw ExceptionUtil.rethrow(e);
                         }
-                        replicaAddress = partitionInfo.getReplicaAddress(j);
+                        replicaAddress = partition.getReplicaAddress(j);
                     }
 
                     if (replicaAddress != null && replicaAddress.equals(thisAddress)) {

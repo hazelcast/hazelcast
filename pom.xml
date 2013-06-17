@@ -319,7 +319,6 @@
                                 -Dhazelcast.test.use.network=true
                             </argLine>
                             <groups>com.hazelcast.test.annotation.SerialTest</groups>
-                            <excludedGroups>com.hazelcast.test.annotation.StressTest</excludedGroups>
                         </configuration>
                     </plugin>
                 </plugins>
