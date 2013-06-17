@@ -17,6 +17,8 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.Partition;
+import com.hazelcast.core.PartitionService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceBuilder;
@@ -49,6 +51,17 @@ public final class TestUtil {
         final Node node = getNode(hz);
         node.getConnectionManager().shutdown();
         node.shutdown(true, true);
+    }
+
+    public static void warmUpPartitions(HazelcastInstance...instances) throws InterruptedException {
+        for (HazelcastInstance instance : instances) {
+            final PartitionService ps = instance.getPartitionService();
+            for (Partition partition : ps.getPartitions()) {
+                while (partition.getOwner() == null) {
+                    Thread.sleep(10);
+                }
+            }
+        }
     }
 }
 
