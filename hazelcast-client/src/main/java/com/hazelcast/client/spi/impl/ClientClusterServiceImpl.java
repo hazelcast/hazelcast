@@ -167,9 +167,9 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         int retryCount = RETRY_COUNT;
         while (connection == null && retryCount > 0 ){
             if (address == null) {
-                connection = client.getConnectionManager().getConnection(address);
-            } else {
                 connection = client.getConnectionManager().getRandomConnection();
+            } else {
+                connection = client.getConnectionManager().getConnection(address);
             }
             if (connection == null) {
                 retryCount--;
