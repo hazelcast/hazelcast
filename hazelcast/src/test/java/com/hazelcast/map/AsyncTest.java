@@ -100,7 +100,7 @@ public class AsyncTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRemoveAsyncWithNonExistantKey() throws Exception {
+    public void testRemoveAsyncWithNonExistentKey() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         IMap<String, String> map = factory.newHazelcastInstance(null).getMap("map:test:removeAsync:nonexistant");
         Future<String> f1 = map.removeAsync(key);
