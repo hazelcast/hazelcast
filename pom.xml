@@ -159,6 +159,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven.surefire.plugin.version}</version>
                 <configuration>
+                    <!--see testing profiles below-->
                     <skipTests>true</skipTests>
                 </configuration>
             </plugin>
@@ -277,7 +278,7 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <version>${maven.surefire.plugin.version}</version>
-                        <configuration>
+                        <configuration combine.self="override">
                             <!-- 1C means 1 process per cpu core -->
                             <forkCount>1C</forkCount>
                             <reuseForks>true</reuseForks>
