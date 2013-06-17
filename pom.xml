@@ -159,7 +159,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${maven.surefire.plugin.version}</version>
                 <configuration>
-                    <groups>com.hazelcast.test.annotation.NoTest</groups>
+                    <skipTests>true</skipTests>
                 </configuration>
             </plugin>
         </plugins>

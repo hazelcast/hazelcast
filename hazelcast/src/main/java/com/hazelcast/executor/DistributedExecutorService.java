@@ -19,7 +19,6 @@ package com.hazelcast.executor;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.monitor.impl.LocalExecutorStatsImpl;
 import com.hazelcast.spi.*;
-import com.hazelcast.spi.exception.ResponseAlreadySentException;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
@@ -28,6 +27,7 @@ import java.util.Collections;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
 /**
@@ -75,7 +75,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
     public boolean cancel(String uuid, boolean interrupt) {
         final CallableProcessor processor = submittedTasks.remove(uuid);
         if (processor != null && processor.cancel(interrupt)) {
-            processor.responseHandler.sendResponse(new CancellationException());
+            processor.sendResponse(new CancellationException());
             getLocalExecutorStats(processor.name).cancelExecution();
             return true;
         }
@@ -124,6 +124,7 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         final ResponseHandler responseHandler;
         final String callableToString;
         final long creationTime = Clock.currentTimeMillis();
+        final AtomicBoolean responseFlag = new AtomicBoolean(false);
 
         private CallableProcessor(String name, String uuid, Callable callable, ResponseHandler responseHandler) {
             super(callable);
@@ -148,18 +149,16 @@ public class DistributedExecutorService implements ManagedService, RemoteService
                 if (uuid != null) {
                     submittedTasks.remove(uuid);
                 }
-                final boolean cancelled = isCancelled();
-                try {
-                    responseHandler.sendResponse(result);
-                } catch (ResponseAlreadySentException e) {
-                    if (!cancelled) {
-                        final ILogger logger = getLogger();
-                        logger.log(Level.SEVERE, e.getMessage(), e);
-                    }
-                }
-                if (!cancelled) {
+                sendResponse(result);
+                if (!isCancelled()) {
                     finishExecution(name, Clock.currentTimeMillis() - start);
                 }
+            }
+        }
+
+        private void sendResponse(Object result) {
+            if (responseFlag.compareAndSet(false, true)) {
+                responseHandler.sendResponse(result);
             }
         }
     }
