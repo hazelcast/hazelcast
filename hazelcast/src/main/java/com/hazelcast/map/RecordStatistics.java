@@ -75,7 +75,7 @@ public class RecordStatistics implements DataSerializable {
 
     public void access() {
         lastAccessTime = Clock.currentTimeMillis();
-        hits ++;
+        hits++;
     }
 
     public void update() {

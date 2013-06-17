@@ -19,6 +19,7 @@ package com.hazelcast.client.config;
 import com.hazelcast.config.ConfigLoader;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.IOUtil;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -39,7 +40,7 @@ public class ClientConfigBuilder {
     public final static String GROUP_PASS = "hazelcast.client.group.pass";
     public final static String CONNECTION_TIMEOUT = "hazelcast.client.connection.timeout";
     public final static String CONNECTION_ATTEMPT_LIMIT = "hazelcast.client.connection.attempts.limit";
-    public final static String RECONNECTION_TIMEOUT = "hazelcast.client.reconnection.timeout";
+    public final static String CONNECTION_ATTEMPT_PERIOD = "hazelcast.client.connection.attempt.period";
     public final static String ADDRESSES = "hazelcast.client.addresses";
 
     private final Properties props = new Properties();
@@ -64,7 +65,12 @@ public class ClientConfigBuilder {
             throw new NullPointerException("File is null!");
         }
         this.resource = file.getAbsolutePath();
-        props.load(new FileInputStream(file));
+        final FileInputStream in = new FileInputStream(file);
+        try {
+            props.load(in);
+        } finally {
+            IOUtil.closeResource(in);
+        }
     }
 
     public ClientConfigBuilder(URL url) throws IOException {
@@ -98,8 +104,8 @@ public class ClientConfigBuilder {
         if (props.containsKey(CONNECTION_ATTEMPT_LIMIT)) {
             config.setConnectionAttemptLimit(Integer.parseInt(props.getProperty(CONNECTION_ATTEMPT_LIMIT)));
         }
-        if (props.containsKey(RECONNECTION_TIMEOUT)) {
-            config.setAttemptPeriod(Integer.parseInt(props.getProperty(RECONNECTION_TIMEOUT)));
+        if (props.containsKey(CONNECTION_ATTEMPT_PERIOD)) {
+            config.setConnectionAttemptPeriod(Integer.parseInt(props.getProperty(CONNECTION_ATTEMPT_PERIOD)));
         }
         if (props.containsKey(ADDRESSES)) {
             final String addressesProp = props.getProperty(ADDRESSES);

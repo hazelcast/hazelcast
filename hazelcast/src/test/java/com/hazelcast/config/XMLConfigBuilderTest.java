@@ -29,9 +29,8 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
-import java.net.URL;
+import java.io.InputStream;
 
 import static org.junit.Assert.*;
 
@@ -136,20 +135,17 @@ public class XMLConfigBuilderTest {
         testXSDConfigXML("hazelcast-fullconfig.xml");
     }
 
-    private void testXSDConfigXML(String xmlResource) throws SAXException, IOException {
+    private void testXSDConfigXML(String xmlFileName) throws SAXException, IOException {
         SchemaFactory factory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");
-        URL schemaUrl = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-config-3.0.xsd");
-        URL xmlURL = XMLConfigBuilderTest.class.getClassLoader().getResource(xmlResource);
-        File schemaFile = new File(schemaUrl.getFile());
-        File defaultXML = new File(xmlURL.getFile());
-        Schema schema = factory.newSchema(schemaFile);
+        final InputStream schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResourceAsStream("hazelcast-config-3.0.xsd");
+        final InputStream xmlResource = XMLConfigBuilderTest.class.getClassLoader().getResourceAsStream(xmlFileName);
+        Schema schema = factory.newSchema(new StreamSource(schemaResource));
+        Source source = new StreamSource(xmlResource);
         Validator validator = schema.newValidator();
-        Source source = new StreamSource(defaultXML);
         try {
             validator.validate(source);
         } catch (SAXException ex) {
-            fail(defaultXML + " is not valid because: " + ex.getMessage());
-            ex.printStackTrace();
+            fail(xmlFileName + " is not valid because: " + ex.toString());
         }
     }
 }

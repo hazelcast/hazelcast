@@ -16,10 +16,7 @@
 
 package com.hazelcast.test;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.Partition;
-import com.hazelcast.core.PartitionService;
+import com.hazelcast.core.*;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import org.junit.After;

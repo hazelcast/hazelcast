@@ -827,19 +827,21 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         } else if (iteratorStr.startsWith("l.")) {
             it = getList().iterator();
         }
-        boolean remove = false;
-        if (args.length > 1) {
-            String removeStr = args[1];
-            remove = removeStr.equals("remove");
-        }
-        int count = 1;
-        while (it.hasNext()) {
-            print(count++ + " " + it.next());
-            if (remove) {
-                it.remove();
-                print(" removed");
+        if (it != null) {
+            boolean remove = false;
+            if (args.length > 1) {
+                String removeStr = args[1];
+                remove = removeStr.equals("remove");
             }
-            println("");
+            int count = 1;
+            while (it.hasNext()) {
+                print(count++ + " " + it.next());
+                if (remove) {
+                    it.remove();
+                    print(" removed");
+                }
+                println("");
+            }
         }
     }
 
