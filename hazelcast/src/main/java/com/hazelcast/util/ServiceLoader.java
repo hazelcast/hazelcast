@@ -20,9 +20,9 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.nio.IOUtil;
 
 import java.io.BufferedReader;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.*;
@@ -88,9 +88,9 @@ public class ServiceLoader {
             final Set<String> names = new HashSet<String>();
             while (configs.hasMoreElements()) {
                 URL url = configs.nextElement();
-                InputStream in = url.openStream();
+                BufferedReader r = null;
                 try {
-                    BufferedReader r = new BufferedReader(new InputStreamReader(in, "UTF-8"));
+                    r = new BufferedReader(new InputStreamReader(url.openStream(), "UTF-8"));
                     while (true) {
                         String line = r.readLine();
                         if (line == null) {
@@ -107,7 +107,7 @@ public class ServiceLoader {
                         names.add(name);
                     }
                 } finally {
-                    in.close();
+                    IOUtil.closeResource(r);
                 }
             }
             return names;

@@ -543,7 +543,6 @@ public class QueryTest extends HazelcastTestSupport {
         assertTrue(tookWithIndex < (tookWithout / 2));
     }
 
-    // todo fails
     @Test
     public void testRangeIndexSQLPerformance() {
         Config cfg = new Config();

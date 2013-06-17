@@ -166,10 +166,10 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         Connection connection = null;
         int retryCount = RETRY_COUNT;
         while (connection == null && retryCount > 0 ){
-            if (address == null) {
-                connection = client.getConnectionManager().getRandomConnection();
-            } else {
+            if (address != null) {
                 connection = client.getConnectionManager().getConnection(address);
+            } else {
+                connection = client.getConnectionManager().getRandomConnection();
             }
             if (connection == null) {
                 retryCount--;
@@ -416,7 +416,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         final ManagerAuthenticator authenticator = new ManagerAuthenticator();
         int attempt = 0;
         while (true) {
-            final long nextTry = Clock.currentTimeMillis() + getClientConfig().getAttemptPeriod();
+            final long nextTry = Clock.currentTimeMillis() + getClientConfig().getConnectionAttemptPeriod();
             for (InetSocketAddress isa : socketAddresses) {
                 try {
                     Address address = new Address(isa);

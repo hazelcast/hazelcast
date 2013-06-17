@@ -35,7 +35,6 @@ public class ClientConfig {
 
     private GroupConfig groupConfig = new GroupConfig();
 
-
     /**
      * List of the initial set of addresses.
      * Client will use this list to find a running Member, connect to it.
@@ -92,7 +91,7 @@ public class ClientConfig {
     /**
      * Period for the next attempt to find a member to connect. (see {@link ClientConfig#connectionAttemptLimit}).
      */
-    private int attemptPeriod = 3000;
+    private int connectionAttemptPeriod = 3000;
 
 
     private final SocketOptions socketOptions = new SocketOptions();
@@ -135,12 +134,12 @@ public class ClientConfig {
         this.socketInterceptor = socketInterceptor;
     }
 
-    public int getAttemptPeriod() {
-        return attemptPeriod;
+    public int getConnectionAttemptPeriod() {
+        return connectionAttemptPeriod;
     }
 
-    public ClientConfig setAttemptPeriod(int attemptPeriod) {
-        this.attemptPeriod = attemptPeriod;
+    public ClientConfig setConnectionAttemptPeriod(int connectionAttemptPeriod) {
+        this.connectionAttemptPeriod = connectionAttemptPeriod;
         return this;
     }
 

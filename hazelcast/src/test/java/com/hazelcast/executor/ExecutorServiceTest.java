@@ -40,7 +40,7 @@ import static org.junit.Assert.*;
 
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
-public class ExecutorTest extends HazelcastTestSupport {
+public class ExecutorServiceTest extends HazelcastTestSupport {
 
     public static final int simpleTestNodeCount = 3;
     public static final int COUNT = 1000;
