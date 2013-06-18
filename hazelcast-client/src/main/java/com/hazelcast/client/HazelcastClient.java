@@ -47,7 +47,6 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceBuilder;
-import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.topic.TopicService;
@@ -80,7 +79,7 @@ public final class HazelcastClient implements HazelcastInstance {
     private final ClientConfig config;
     private final ThreadGroup threadGroup;
     private final LifecycleServiceImpl lifecycleService;
-    private final SerializationServiceImpl serializationService;
+    private final SerializationService serializationService;
     private final ClientConnectionManager connectionManager;
     private final ClientClusterServiceImpl clusterService;
     private final ClientPartitionServiceImpl partitionService;
@@ -98,13 +97,13 @@ public final class HazelcastClient implements HazelcastInstance {
         proxyManager = new ProxyManager(this);
         executionService = new ClientExecutionServiceImpl(name, threadGroup, Thread.currentThread().getContextClassLoader());
         clusterService = new ClientClusterServiceImpl(this);
-        serializationService = (SerializationServiceImpl) new SerializationServiceBuilder()
-            .setClassLoader( config.getClassLoader() ).setConfig( config.getSerializationConfig() ).build();
+        serializationService = new SerializationServiceBuilder()
+                .setClassLoader(config.getClassLoader()).setConfig(config.getSerializationConfig()).build();
         LoadBalancer loadBalancer = config.getLoadBalancer();
         if (loadBalancer == null) {
             loadBalancer = new RoundRobinLB();
         }
-        if (config.isSmart()){
+        if (config.isSmart()) {
             connectionManager = new SmartClientConnectionManager(this, clusterService.getAuthenticator(), loadBalancer);
         } else {
             connectionManager = new DummyClientConnectionManager(this, clusterService.getAuthenticator(), loadBalancer);

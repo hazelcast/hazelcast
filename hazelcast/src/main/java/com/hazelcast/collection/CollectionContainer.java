@@ -60,7 +60,7 @@ public class CollectionContainer {
         this.service = service;
         this.nodeEngine = service.getNodeEngine();
         this.partitionId = partitionId;
-        this.config = new MultiMapConfig(nodeEngine.getConfig().getMultiMapConfig(proxyId.name));
+        this.config = nodeEngine.getConfig().getMultiMapConfig(proxyId.name);
 
         this.lockNamespace = new DefaultObjectNamespace(CollectionService.SERVICE_NAME, proxyId);
         final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);

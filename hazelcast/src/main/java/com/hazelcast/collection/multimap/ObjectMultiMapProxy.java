@@ -23,6 +23,7 @@ import com.hazelcast.collection.operations.CollectionResponse;
 import com.hazelcast.collection.operations.EntrySetResponse;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -43,22 +44,25 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
 
         List<EntryListenerConfig> listenerConfigs = config.getEntryListenerConfigs();
         for (EntryListenerConfig listenerConfig : listenerConfigs) {
-            EntryListener entryListener = null;
+            EntryListener listener = null;
             if (listenerConfig.getImplementation() != null) {
-                entryListener = listenerConfig.getImplementation();
+                listener = listenerConfig.getImplementation();
             } else if (listenerConfig.getClassName() != null) {
                 try {
-                    entryListener = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), listenerConfig.getClassName());
+                    listener = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), listenerConfig.getClassName());
                 } catch (Exception e) {
                     throw ExceptionUtil.rethrow(e);
                 }
             }
 
-            if (entryListener != null) {
+            if (listener != null) {
+                if (listener instanceof HazelcastInstanceAware) {
+                    ((HazelcastInstanceAware) listener).setHazelcastInstance(nodeEngine.getHazelcastInstance());
+                }
                 if (listenerConfig.isLocal()) {
-                    addLocalEntryListener(entryListener);
+                    addLocalEntryListener(listener);
                 } else {
-                    addEntryListener(entryListener, listenerConfig.isIncludeValue());
+                    addEntryListener(listener, listenerConfig.isIncludeValue());
                 }
             }
         }

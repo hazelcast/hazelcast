@@ -18,6 +18,7 @@ package com.hazelcast.queue.proxy;
 
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.QueueConfig;
+import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
@@ -59,6 +60,9 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
                 }
             }
             if (listener != null) {
+                if (listener instanceof HazelcastInstanceAware) {
+                    ((HazelcastInstanceAware) listener).setHazelcastInstance(nodeEngine.getHazelcastInstance());
+                }
                 addItemListener(listener, itemListenerConfig.isIncludeValue());
             }
         }

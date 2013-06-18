@@ -108,6 +108,7 @@ public class MapConfig {
         this.statisticsEnabled = config.statisticsEnabled;
         this.mergePolicy = config.mergePolicy;
         this.wanReplicationRef = config.wanReplicationRef;
+        this.listenerConfigs = new ArrayList<EntryListenerConfig>(config.getEntryListenerConfigs());
     }
 
     /**

@@ -17,11 +17,9 @@
 package com.hazelcast.collection;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.MultiMap;
+import com.hazelcast.core.*;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -258,6 +256,22 @@ public class MultiMapTest extends HazelcastTestSupport {
         getMultiMap(instances, name).put("key7","val7");
         Thread.sleep(1500);
         assertEquals(1, keys.size());
+    }
+
+    @Test
+    public void testConfigListenerRegistration() throws InterruptedException {
+        Config config = new Config();
+        final String name = "default";
+        final CountDownLatch latch = new CountDownLatch(1);
+        config.getMultiMapConfig(name).addEntryListenerConfig(new EntryListenerConfig().setImplementation(new EntryAdapter() {
+            public void entryAdded(EntryEvent event) {
+                latch.countDown();
+            }
+        }));
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        final HazelcastInstance hz = factory.newHazelcastInstance(config);
+        hz.getMultiMap(name).put(1, 1);
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
     @Test

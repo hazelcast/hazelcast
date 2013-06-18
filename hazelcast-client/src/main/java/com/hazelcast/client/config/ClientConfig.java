@@ -207,7 +207,6 @@ public class ClientConfig {
         return this;
     }
 
-    // TODO: @mm - initialize all listeners before client starts up completely!
     public Collection<EventListener> getListeners() {
         return listeners;
     }

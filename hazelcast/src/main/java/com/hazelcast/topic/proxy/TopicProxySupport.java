@@ -18,6 +18,7 @@ package com.hazelcast.topic.proxy;
 
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.TopicConfig;
+import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -56,6 +57,9 @@ abstract class TopicProxySupport extends AbstractDistributedObject<TopicService>
                 throw ExceptionUtil.rethrow(e);
             }
             if (listener != null) {
+                if (listener instanceof HazelcastInstanceAware) {
+                    ((HazelcastInstanceAware) listener).setHazelcastInstance(nodeEngine.getHazelcastInstance());
+                }
                 addMessageListenerInternal(listener);
             }
         }

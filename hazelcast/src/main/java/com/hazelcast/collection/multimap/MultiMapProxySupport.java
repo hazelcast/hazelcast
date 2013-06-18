@@ -42,7 +42,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
     protected MultiMapProxySupport(CollectionService service, NodeEngine nodeEngine,
                                    MultiMapConfig config, CollectionProxyId proxyId) {
         super(nodeEngine, service);
-        this.config = new MultiMapConfig(config);
+        this.config = config;
         this.proxyId = proxyId;
         lockSupport = new LockProxySupport(new DefaultObjectNamespace(CollectionService.SERVICE_NAME, proxyId));
     }
