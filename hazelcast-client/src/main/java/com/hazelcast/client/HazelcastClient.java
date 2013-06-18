@@ -16,13 +16,25 @@
 
 package com.hazelcast.client;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.DummyClientConnectionManager;
 import com.hazelcast.client.connection.SmartClientConnectionManager;
 import com.hazelcast.client.proxy.ClientClusterProxy;
 import com.hazelcast.client.proxy.PartitionServiceProxy;
-import com.hazelcast.client.spi.*;
+import com.hazelcast.client.spi.ClientClusterService;
+import com.hazelcast.client.spi.ClientExecutionService;
+import com.hazelcast.client.spi.ClientInvocationService;
+import com.hazelcast.client.spi.ClientPartitionService;
+import com.hazelcast.client.spi.ClientProxy;
+import com.hazelcast.client.spi.ProxyManager;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.spi.impl.ClientExecutionServiceImpl;
 import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
@@ -41,12 +53,31 @@ import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.GroupConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.ClientService;
+import com.hazelcast.core.Cluster;
+import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.core.ICountDownLatch;
+import com.hazelcast.core.IExecutorService;
+import com.hazelcast.core.IList;
+import com.hazelcast.core.ILock;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.IQueue;
+import com.hazelcast.core.ISemaphore;
+import com.hazelcast.core.ISet;
+import com.hazelcast.core.ITopic;
+import com.hazelcast.core.IdGenerator;
+import com.hazelcast.core.LifecycleService;
+import com.hazelcast.core.MultiMap;
+import com.hazelcast.core.PartitionService;
 import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceBuilder;
+import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.topic.TopicService;
@@ -54,13 +85,7 @@ import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicInteger;
+import com.hazelcast.util.ExceptionUtil;
 
 /**
  * Hazelcast Client enables you to do all Hazelcast operations without
@@ -97,8 +122,14 @@ public final class HazelcastClient implements HazelcastInstance {
         proxyManager = new ProxyManager(this);
         executionService = new ClientExecutionServiceImpl(name, threadGroup, Thread.currentThread().getContextClassLoader());
         clusterService = new ClientClusterServiceImpl(this);
-        serializationService = new SerializationServiceBuilder()
+        SerializationService ss;
+        try {
+            ss = new SerializationServiceBuilder().setManagedContext(new HazelcastClientManagedContext(this, config.getManagedContext() ))
                 .setClassLoader(config.getClassLoader()).setConfig(config.getSerializationConfig()).build();
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+        serializationService = (SerializationServiceImpl) ss;
         LoadBalancer loadBalancer = config.getLoadBalancer();
         if (loadBalancer == null) {
             loadBalancer = new RoundRobinLB();
