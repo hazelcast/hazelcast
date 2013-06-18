@@ -17,9 +17,8 @@
 package com.hazelcast.queue;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.IQueue;
+import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.core.*;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -67,6 +66,16 @@ public class ClusterQueueTest extends HazelcastTestSupport {
     @Test
     public void testDeadTaker() throws Exception {
         Config config = new Config();
+        final CountDownLatch shutdownLatch = new CountDownLatch(1);
+        config.addListenerConfig(new ListenerConfig().setImplementation(new MembershipListener() {
+            public void memberAdded(MembershipEvent membershipEvent) {
+            }
+
+            public void memberRemoved(MembershipEvent membershipEvent) {
+                shutdownLatch.countDown();
+            }
+        }));
+
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance[] instances = factory.newInstances(config);
         final HazelcastInstance h1 = instances[0];
@@ -75,31 +84,37 @@ public class ClusterQueueTest extends HazelcastTestSupport {
 
         final IQueue q1 = h1.getQueue("default");
         final IQueue q2 = h2.getQueue("default");
+
+        final CountDownLatch startLatch = new CountDownLatch(1);
         new Thread(new Runnable() {
             public void run() {
                 try {
-                    q2.take();
-                } catch (HazelcastInstanceNotActiveException ignored) {
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
-        final Thread thread = new Thread(new Runnable() {
-            public void run() {
-                try {
+                    assertTrue(startLatch.await(10, TimeUnit.SECONDS)); // fail shutdown if await fails.
                     Thread.sleep(5000);
                     h2.getLifecycleService().kill();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
-        });
-        thread.start();
-        thread.join(30 * 1000);
+        }).start();
+
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    startLatch.countDown();
+                    final Object o = q2.take();
+                    fail("Should not be able to take: " + o);
+                } catch (HazelcastInstanceNotActiveException ignored) {
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
+
+        assertTrue(shutdownLatch.await(1, TimeUnit.MINUTES));
 
         q1.offer("item");
-        assertEquals(1, q1.size());
+        assertEquals(1, q1.size());   // 0
         assertEquals("item", q1.poll());
     }
 

@@ -17,14 +17,17 @@
 package com.hazelcast.topic;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.TopicConfig;
-import com.hazelcast.core.*;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ITopic;
+import com.hazelcast.core.Message;
+import com.hazelcast.core.MessageListener;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -357,7 +360,7 @@ public class TopicTest extends HazelcastTestSupport {
                 latch1.countDown();
             }
         });
-        final CountDownLatch latch2 = new CountDownLatch(2);
+        final CountDownLatch latch2 = new CountDownLatch(1000);
         topic.addMessageListener(new MessageListener<String>() {
             public void onMessage(Message msg) {
                 latch2.countDown();
@@ -368,8 +371,9 @@ public class TopicTest extends HazelcastTestSupport {
             topic.publish("sancar");
         }
 
-        latch1.await();
-        latch2.await();
+        assertTrue(latch1.await(1, TimeUnit.MINUTES));
+        assertTrue(latch2.await(1, TimeUnit.MINUTES));
+
         LocalTopicStatsImpl stats = (LocalTopicStatsImpl) topic.getLocalTopicStats();
         Assert.assertEquals(1000, stats.getPublishOperationCount());
         Assert.assertEquals(2000, stats.getReceiveOperationCount());
