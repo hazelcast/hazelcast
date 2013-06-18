@@ -80,7 +80,7 @@ public final class HazelcastClient implements HazelcastInstance {
     private final ClientConfig config;
     private final ThreadGroup threadGroup;
     private final LifecycleServiceImpl lifecycleService;
-    private final SerializationServiceImpl serializationService = (SerializationServiceImpl) new SerializationServiceBuilder().build();
+    private final SerializationServiceImpl serializationService;
     private final ClientConnectionManager connectionManager;
     private final ClientClusterServiceImpl clusterService;
     private final ClientPartitionServiceImpl partitionService;
@@ -98,6 +98,8 @@ public final class HazelcastClient implements HazelcastInstance {
         proxyManager = new ProxyManager(this);
         executionService = new ClientExecutionServiceImpl(name, threadGroup, Thread.currentThread().getContextClassLoader());
         clusterService = new ClientClusterServiceImpl(this);
+        serializationService = (SerializationServiceImpl) new SerializationServiceBuilder()
+            .setClassLoader( config.getClassLoader() ).setConfig( config.getSerializationConfig() ).build();
         LoadBalancer loadBalancer = config.getLoadBalancer();
         if (loadBalancer == null) {
             loadBalancer = new RoundRobinLB();
