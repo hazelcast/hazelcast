@@ -82,6 +82,7 @@ public final class HazelcastInstanceFactory {
         HazelcastInstanceProxy proxy;
         try {
             final HazelcastInstanceImpl hazelcastInstance = new HazelcastInstanceImpl(instanceName, config, nodeContext);
+            OutOfMemoryErrorDispatcher.register(hazelcastInstance);
             proxy = new HazelcastInstanceProxy(hazelcastInstance);
             INSTANCE_MAP.put(instanceName, proxy);
             final Node node = hazelcastInstance.node;
@@ -137,7 +138,8 @@ public final class HazelcastInstanceFactory {
         ManagementService.shutdownAll();
     }
 
-    static void remove(HazelcastInstance instance) {
+    static void remove(HazelcastInstanceImpl instance) {
+        OutOfMemoryErrorDispatcher.deregister(instance);
         final HazelcastInstanceProxy proxy = INSTANCE_MAP.remove(instance.getName());
         if (proxy != null) {
             proxy.original = null;
