@@ -39,10 +39,13 @@ public class ObjectListProxy<E> extends MultiMapProxySupport implements Collecti
     final Data key;
 
     public ObjectListProxy(CollectionService service, NodeEngine nodeEngine, CollectionProxyId proxyId) {
-        super(service, nodeEngine,
-                nodeEngine.getConfig().getMultiMapConfig(COLLECTION_LIST_NAME + proxyId.getKeyName()).setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST),
-                proxyId);
+        super(service, nodeEngine, createConfig(proxyId), proxyId);
         key = nodeEngine.toData(proxyId.getKeyName());
+    }
+
+    private static MultiMapConfig createConfig(CollectionProxyId proxyId) {
+        return new MultiMapConfig().setName(COLLECTION_LIST_NAME + proxyId.getKeyName())
+                .setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST);
     }
 
     public String getName() {

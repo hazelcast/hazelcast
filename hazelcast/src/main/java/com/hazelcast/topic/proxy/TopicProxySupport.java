@@ -16,20 +16,26 @@
 
 package com.hazelcast.topic.proxy;
 
+import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.monitor.LocalTopicStats;
+import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.topic.TopicEvent;
 import com.hazelcast.topic.TopicService;
+import com.hazelcast.util.ExceptionUtil;
+
+import java.util.List;
 
 /**
  * User: sancar
  * Date: 2/26/13
  * Time: 11:44 AM
  */
-public class TopicProxySupport extends AbstractDistributedObject<TopicService> {
+abstract class TopicProxySupport extends AbstractDistributedObject<TopicService> {
 
     private final String name;
 
@@ -37,6 +43,22 @@ public class TopicProxySupport extends AbstractDistributedObject<TopicService> {
         super(nodeEngine, service);
         this.name = name;
 
+        TopicConfig config = nodeEngine.getConfig().getTopicConfig(name);
+        final List<ListenerConfig> messageListenerConfigs = config.getMessageListenerConfigs();
+        for (ListenerConfig listenerConfig : messageListenerConfigs) {
+            MessageListener listener;
+            try {
+                listener = (MessageListener) listenerConfig.getImplementation();
+                if (listener == null && listenerConfig.getClassName() != null) {
+                    listener = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), listenerConfig.getClassName());
+                }
+            } catch (Exception e) {
+                throw ExceptionUtil.rethrow(e);
+            }
+            if (listener != null) {
+                addMessageListenerInternal(listener);
+            }
+        }
     }
 
     public LocalTopicStats getLocalTopicStatsInternal() {

@@ -21,11 +21,14 @@ import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.collection.operations.CollectionResponse;
 import com.hazelcast.collection.operations.EntrySetResponse;
+import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.monitor.LocalMultiMapStats;
+import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -37,6 +40,28 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
 
     public ObjectMultiMapProxy(CollectionService service, NodeEngine nodeEngine, CollectionProxyId proxyId) {
         super(service, nodeEngine, nodeEngine.getConfig().getMultiMapConfig(proxyId.getName()), proxyId);
+
+        List<EntryListenerConfig> listenerConfigs = config.getEntryListenerConfigs();
+        for (EntryListenerConfig listenerConfig : listenerConfigs) {
+            EntryListener entryListener = null;
+            if (listenerConfig.getImplementation() != null) {
+                entryListener = listenerConfig.getImplementation();
+            } else if (listenerConfig.getClassName() != null) {
+                try {
+                    entryListener = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), listenerConfig.getClassName());
+                } catch (Exception e) {
+                    throw ExceptionUtil.rethrow(e);
+                }
+            }
+
+            if (entryListener != null) {
+                if (listenerConfig.isLocal()) {
+                    addLocalEntryListener(entryListener);
+                } else {
+                    addEntryListener(entryListener, listenerConfig.isIncludeValue());
+                }
+            }
+        }
     }
 
     public boolean put(K key, V value) {
