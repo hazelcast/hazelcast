@@ -39,10 +39,13 @@ public class ObjectSetProxy<E> extends MultiMapProxySupport implements ISet<E>, 
     final Data key;
 
     public ObjectSetProxy(CollectionService service, NodeEngine nodeEngine, CollectionProxyId proxyId) {
-        super(service, nodeEngine,
-                nodeEngine.getConfig().getMultiMapConfig(COLLECTION_SET_NAME + proxyId.getKeyName()).setValueCollectionType(MultiMapConfig.ValueCollectionType.SET),
-                proxyId);
+        super(service, nodeEngine, createConfig(proxyId), proxyId);
         this.key = nodeEngine.toData(proxyId.getKeyName());
+    }
+
+    private static MultiMapConfig createConfig(CollectionProxyId proxyId) {
+        return new MultiMapConfig().setName(COLLECTION_SET_NAME + proxyId.getKeyName())
+                .setValueCollectionType(MultiMapConfig.ValueCollectionType.SET);
     }
 
     public String getName() {

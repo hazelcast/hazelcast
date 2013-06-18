@@ -18,6 +18,7 @@ package com.hazelcast.queue.proxy;
 
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.QueueConfig;
+import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
@@ -51,12 +52,17 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
         final List<ItemListenerConfig> itemListenerConfigs = config.getItemListenerConfigs();
         for (ItemListenerConfig itemListenerConfig : itemListenerConfigs) {
             ItemListener listener = itemListenerConfig.getImplementation();
-            try {
-                listener = listener == null ? (ItemListener) ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), itemListenerConfig.getClassName()) : listener;
-            } catch (Exception e) {
-                e.printStackTrace();
+            if (listener == null && itemListenerConfig.getClassName() != null) {
+                try {
+                    listener = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), itemListenerConfig.getClassName());
+                } catch (Exception e) {
+                    throw ExceptionUtil.rethrow(e);
+                }
             }
-            if (listener != null){
+            if (listener != null) {
+                if (listener instanceof HazelcastInstanceAware) {
+                    ((HazelcastInstanceAware) listener).setHazelcastInstance(nodeEngine.getHazelcastInstance());
+                }
                 addItemListener(listener, itemListenerConfig.isIncludeValue());
             }
         }
@@ -140,8 +146,8 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
         return partitionId;
     }
 
-    private void throwExceptionIfNull(Object o){
-        if (o == null){
+    private void throwExceptionIfNull(Object o) {
+        if (o == null) {
             throw new NullPointerException("Object is null");
         }
     }

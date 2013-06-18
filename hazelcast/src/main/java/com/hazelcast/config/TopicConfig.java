@@ -34,6 +34,7 @@ public final class TopicConfig {
     public TopicConfig(TopicConfig config) {
         this.name = config.name;
         this.globalOrderingEnabled = config.globalOrderingEnabled;
+        this.listenerConfigs = new ArrayList<ListenerConfig>(config.getMessageListenerConfigs());
     }
 
     /**

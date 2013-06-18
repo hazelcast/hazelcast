@@ -21,6 +21,7 @@ import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -60,24 +61,25 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         lockSupport = new LockProxySupport(new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
         List<EntryListenerConfig> listenerConfigs = mapConfig.getEntryListenerConfigs();
         for (EntryListenerConfig listenerConfig : listenerConfigs) {
-            EntryListener entryListener = null;
+            EntryListener listener = null;
             if(listenerConfig.getImplementation() != null) {
-                entryListener = listenerConfig.getImplementation();
-            }
-            else if(listenerConfig.getClassName() != null) {
+                listener = listenerConfig.getImplementation();
+            } else if(listenerConfig.getClassName() != null) {
                 try {
-                    entryListener = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), listenerConfig.getClassName());
+                    listener = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), listenerConfig.getClassName());
                 } catch (Exception e) {
                     throw ExceptionUtil.rethrow(e);
                 }
             }
-
-            if (entryListener != null ) {
+            if (listener != null ) {
+                if (listener instanceof HazelcastInstanceAware) {
+                    ((HazelcastInstanceAware) listener).setHazelcastInstance(nodeEngine.getHazelcastInstance());
+                }
                 if(listenerConfig.isLocal())  {
-                    addLocalEntryListener(entryListener);
+                    addLocalEntryListener(listener);
                 }
                 else {
-                    addEntryListenerInternal(entryListener, null, listenerConfig.isIncludeValue());
+                    addEntryListenerInternal(listener, null, listenerConfig.isIncludeValue());
                 }
             }
         }

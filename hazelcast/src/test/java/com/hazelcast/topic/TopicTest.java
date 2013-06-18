@@ -17,10 +17,8 @@
 package com.hazelcast.topic;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ITopic;
-import com.hazelcast.core.Message;
-import com.hazelcast.core.MessageListener;
+import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.core.*;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -180,6 +178,22 @@ public class TopicTest extends HazelcastTestSupport {
         });
         topic.publish(message);
         assertTrue(latch.await(10000, TimeUnit.MILLISECONDS));
+    }
+
+    @Test
+    public void testConfigListenerRegistration() throws InterruptedException {
+        Config config = new Config();
+        final String name = "default";
+        final CountDownLatch latch = new CountDownLatch(1);
+        config.getTopicConfig(name).addMessageListenerConfig(new ListenerConfig().setImplementation(new MessageListener() {
+            public void onMessage(Message message) {
+                latch.countDown();
+            }
+        }));
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        final HazelcastInstance hz = factory.newHazelcastInstance(config);
+        hz.getTopic(name).publish(1);
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
     @Test

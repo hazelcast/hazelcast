@@ -42,7 +42,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
     protected MultiMapProxySupport(CollectionService service, NodeEngine nodeEngine,
                                    MultiMapConfig config, CollectionProxyId proxyId) {
         super(nodeEngine, service);
-        this.config = new MultiMapConfig(config);
+        this.config = config;
         this.proxyId = proxyId;
         lockSupport = new LockProxySupport(new DefaultObjectNamespace(CollectionService.SERVICE_NAME, proxyId));
     }
@@ -288,21 +288,21 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(CollectionService.SERVICE_NAME, operation, partitionId).build();
             Future f;
             Object o;
-//            if (getNodeEngine().getConfig().getMapConfig(getName()).isStatisticsEnabled()) {
-            long time = System.currentTimeMillis();
-            f = invocation.invoke();
-            o = f.get();
-            if (operation instanceof PutOperation)
-                getService().getLocalMultiMapStatsImpl(proxyId).incrementPuts(System.currentTimeMillis() - time);
-            else if (operation instanceof RemoveOperation || operation instanceof RemoveAllOperation)
-                getService().getLocalMultiMapStatsImpl(proxyId).incrementRemoves(System.currentTimeMillis() - time);
-            else if (operation instanceof GetAllOperation)
-                getService().getLocalMultiMapStatsImpl(proxyId).incrementGets(System.currentTimeMillis() - time);
-
-//            } else {
-//                f = invocation.invoke();
-//                o = f.get();
-//            }
+            if (config.isStatisticsEnabled()) {
+                long time = System.currentTimeMillis();
+                f = invocation.invoke();
+                o = f.get();
+                if (operation instanceof PutOperation) {
+                    getService().getLocalMultiMapStatsImpl(proxyId).incrementPuts(System.currentTimeMillis() - time);
+                } else if (operation instanceof RemoveOperation || operation instanceof RemoveAllOperation) {
+                    getService().getLocalMultiMapStatsImpl(proxyId).incrementRemoves(System.currentTimeMillis() - time);
+                } else if (operation instanceof GetAllOperation) {
+                    getService().getLocalMultiMapStatsImpl(proxyId).incrementGets(System.currentTimeMillis() - time);
+                }
+            } else {
+                f = invocation.invoke();
+                o = f.get();
+            }
             return (T) nodeEngine.toObject(o);
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);

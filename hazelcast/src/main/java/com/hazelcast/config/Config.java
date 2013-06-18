@@ -297,8 +297,7 @@ public class Config {
 
         ExecutorConfig defaultConfig = executorConfigs.get("default");
         if (defaultConfig != null) {
-            ec = new ExecutorConfig(name,
-                    defaultConfig.getPoolSize());
+            ec = new ExecutorConfig(name, defaultConfig.getPoolSize());
         }
         if (ec == null) {
             ec = new ExecutorConfig(name);

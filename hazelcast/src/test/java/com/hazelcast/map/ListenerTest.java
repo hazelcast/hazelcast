@@ -17,6 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -26,7 +27,11 @@ import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
@@ -34,54 +39,59 @@ public class ListenerTest extends HazelcastTestSupport {
 
     private final String name = "fooMap";
 
-    private HazelcastInstance h1;
-    private HazelcastInstance h2;
-    private IMap<String, String> map1;
-    private IMap<String, String> map2;
-
-    private AtomicInteger globalCount = new AtomicInteger();
-    private AtomicInteger localCount = new AtomicInteger();
-    private AtomicInteger valueCount = new AtomicInteger();
+    private final AtomicInteger globalCount = new AtomicInteger();
+    private final AtomicInteger localCount = new AtomicInteger();
+    private final AtomicInteger valueCount = new AtomicInteger();
 
     @Before
     public void before() {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = new Config();
-        h1 = nodeFactory.newHazelcastInstance(cfg);
-        h2 = nodeFactory.newHazelcastInstance(cfg);
-        createMaps();
-    }
-
-    @After
-    public void after() {
-        destroyMaps();
-    }
-
-    private void createMaps() {
         globalCount.set(0);
         localCount.set(0);
         valueCount.set(0);
-        map1 = h1.getMap(name);
-        map2 = h2.getMap(name);
     }
 
-    private void destroyMaps() {
-        map1.destroy();
-        map2.destroy();
+    @Test
+    public void testConfigListenerRegistration() throws InterruptedException {
+        Config config = new Config();
+        final String name = "default";
+        final CountDownLatch latch = new CountDownLatch(1);
+        config.getMapConfig(name).addEntryListenerConfig(new EntryListenerConfig().setImplementation(new EntryAdapter() {
+            public void entryAdded(EntryEvent event) {
+                latch.countDown();
+            }
+        }));
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        final HazelcastInstance hz = factory.newHazelcastInstance(config);
+        hz.getMap(name).put(1, 1);
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
     @Test
     public void globalListenerTest() throws InterruptedException {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(cfg);
+        IMap<String, String> map1 = h1.getMap(name);
+        IMap<String, String> map2 = h2.getMap(name);
+
         map1.addEntryListener(createEntryListener(false), false);
         map1.addEntryListener(createEntryListener(false), true);
         map2.addEntryListener(createEntryListener(false), true);
         int k = 3;
-        putDummyData(k);
+        putDummyData(map1, k);
         checkCountWithExpected(k * 3, 0, k * 2);
     }
 
     @Test
     public void globalListenerRemoveTest() throws InterruptedException {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(cfg);
+        IMap<String, String> map1 = h1.getMap(name);
+        IMap<String, String> map2 = h2.getMap(name);
+
         String id1 = map1.addEntryListener(createEntryListener(false), false);
         String id2 = map1.addEntryListener(createEntryListener(false), true);
         String id3 = map2.addEntryListener(createEntryListener(false), true);
@@ -89,16 +99,23 @@ public class ListenerTest extends HazelcastTestSupport {
         map1.removeEntryListener(id1);
         map1.removeEntryListener(id2);
         map1.removeEntryListener(id3);
-        putDummyData(k);
+        putDummyData(map2, k);
         checkCountWithExpected(0, 0, 0);
     }
 
     @Test
     public void localListenerTest() throws InterruptedException {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(cfg);
+        IMap<String, String> map1 = h1.getMap(name);
+        IMap<String, String> map2 = h2.getMap(name);
+
         map1.addLocalEntryListener(createEntryListener(true));
         map2.addLocalEntryListener(createEntryListener(true));
         int k = 4;
-        putDummyData(k);
+        putDummyData(map1, k);
         checkCountWithExpected(0, k, k);
     }
 
@@ -107,13 +124,20 @@ public class ListenerTest extends HazelcastTestSupport {
      * Test for issue 584 and 756
      */
     public void globalAndLocalListenerTest() throws InterruptedException {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(cfg);
+        IMap<String, String> map1 = h1.getMap(name);
+        IMap<String, String> map2 = h2.getMap(name);
+
         map1.addLocalEntryListener(createEntryListener(true));
         map2.addLocalEntryListener(createEntryListener(true));
         map1.addEntryListener(createEntryListener(false), false);
         map2.addEntryListener(createEntryListener(false), false);
         map2.addEntryListener(createEntryListener(false), true);
         int k = 1;
-        putDummyData(k);
+        putDummyData(map2, k);
         checkCountWithExpected(k * 3, k, k * 2);
     }
 
@@ -122,6 +146,13 @@ public class ListenerTest extends HazelcastTestSupport {
      * Test for issue 584 and 756
      */
     public void globalAndLocalListenerTest2() throws InterruptedException {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(cfg);
+        IMap<String, String> map1 = h1.getMap(name);
+        IMap<String, String> map2 = h2.getMap(name);
+
         // changed listener order
         map1.addEntryListener(createEntryListener(false), false);
         map1.addLocalEntryListener(createEntryListener(true));
@@ -129,32 +160,13 @@ public class ListenerTest extends HazelcastTestSupport {
         map2.addLocalEntryListener(createEntryListener(true));
         map2.addEntryListener(createEntryListener(false), false);
         int k = 3;
-        putDummyData(k);
+        putDummyData(map1, k);
         checkCountWithExpected(k * 3, k, k * 2);
     }
 
-    @Test
-    /**
-     * Test for Issue 663
-     */
-    public void createAfterDestroyListenerTest() throws Exception {
-        createMaps();
-        localListenerTest();
-        destroyMaps();
-        createMaps();
-        localListenerTest();
-        destroyMaps();
-        createMaps();
-        globalListenerTest();
-        destroyMaps();
-        createMaps();
-        globalListenerTest();
-        destroyMaps();
-    }
-
-    private void putDummyData(int k) {
+    private static void putDummyData(IMap map, int k) {
         for (int i = 0; i < k; i++) {
-            map1.put("foo" + i, "bar");
+            map.put("foo" + i, "bar");
         }
     }
 
