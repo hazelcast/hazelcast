@@ -25,8 +25,7 @@ final class UnsafeInputOutputFactory implements InputOutputFactory {
 
     static boolean unsafeAvailable() {
         try {
-            final long l = UnsafeHelper.BYTE_ARRAY_BASE_OFFSET;
-            return l > -1;
+            return UnsafeHelper.UNSAFE != null;
         } catch (Throwable ignored) {
         }
         return false;

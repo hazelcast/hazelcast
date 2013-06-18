@@ -67,7 +67,6 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
             if (result == TestResult.FAIL) {
                 logger.log(Level.WARNING, "Error detected on partition arrangement! Try-count: " + tryCount);
                 stateInitializer.initialize(state);
-//                tryCount = 0;
             } else if (result == TestResult.RETRY) {
                 tryCount++;
                 logger.log(Level.FINEST, "Re-trying partition arrangement.. Count: " + tryCount);
