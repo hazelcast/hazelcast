@@ -126,9 +126,11 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
     }
 
     public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-        HazelcastInstanceImpl instance = (HazelcastInstanceImpl) hazelcastInstance;
-        localMember = instance.node.address.equals(address);
-        logger = instance.node.getLogger(this.getClass().getName());
+        if (hazelcastInstance instanceof HazelcastInstanceImpl) {
+            HazelcastInstanceImpl instance = (HazelcastInstanceImpl) hazelcastInstance;
+            localMember = instance.node.address.equals(address);
+            logger = instance.node.getLogger(this.getClass().getName());
+        }
     }
 
     public void readData(ObjectDataInput in) throws IOException {
