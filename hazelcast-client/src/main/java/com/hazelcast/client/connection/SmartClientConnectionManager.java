@@ -183,6 +183,10 @@ public class SmartClientConnectionManager implements ClientConnectionManager {
         public void setEndpoint(Address address) {
             connection.setEndpoint(address);
         }
+
+        public String toString() {
+            return connection.toString();
+        }
     }
 
     private void releaseConnection(ConnectionWrapper connection) {

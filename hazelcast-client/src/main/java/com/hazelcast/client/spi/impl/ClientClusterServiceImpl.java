@@ -356,9 +356,9 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     members.add(member);
                 } else {
                     members.remove(member);
+                    getConnectionManager().removeConnectionPool(member.getAddress());
                 }
                 updateMembersRef();
-                getConnectionManager().removeConnectionPool(member.getAddress());
                 fireMembershipEvent(event);
             }
         }
