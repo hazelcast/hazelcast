@@ -268,6 +268,6 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
 
     @Override
     public int getId() {
-        return MapDataSerializerHook.ENTRY_VIEW;
+        return MapDataSerializerHook.MAP_STATS;
     }
 }
