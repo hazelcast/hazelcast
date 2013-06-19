@@ -27,7 +27,7 @@ import static com.hazelcast.nio.serialization.SerializationConstants.*;
 /**
  * @mdogan 6/18/12
  */
-public class ConstantSerializers {
+public final class ConstantSerializers {
 
     public static final class ByteSerializer extends SingletonTypeSerializer<Byte> {
 
@@ -186,26 +186,11 @@ public class ConstantSerializers {
         }
 
         public char[] read(final ObjectDataInput in) throws IOException {
-            int size = in.readInt();
-            if (size == 0) {
-                return null;
-            } else {
-                char[] c = new char[size];
-                for (int i = 0; i < size; i++) {
-                    c[i] = in.readChar();
-                }
-                return c;
-            }
+           return in.readCharArray();
         }
 
         public void write(final ObjectDataOutput out, final char[] obj) throws IOException {
-            int size = (obj == null) ? 0 : obj.length;
-            out.writeInt(size);
-            if (size > 0) {
-                for (int i = 0; i < size; i++) {
-                    out.writeChar(obj[i]);
-                }
-            }
+            out.writeCharArray(obj);
         }
     }
 
@@ -216,26 +201,11 @@ public class ConstantSerializers {
         }
 
         public short[] read(final ObjectDataInput in) throws IOException {
-            int size = in.readInt();
-            if (size == 0) {
-                return null;
-            } else {
-                short[] s = new short[size];
-                for (int i = 0; i < size; i++) {
-                    s[i] = in.readShort();
-                }
-                return s;
-            }
+            return in.readShortArray();
         }
 
         public void write(final ObjectDataOutput out, final short[] obj) throws IOException {
-            int size = (obj == null) ? 0 : obj.length;
-            out.writeInt(size);
-            if (size > 0) {
-                for (int i = 0; i < size; i++) {
-                    out.writeShort(obj[i]);
-                }
-            }
+            out.writeShortArray(obj);
         }
     }
 
@@ -246,26 +216,11 @@ public class ConstantSerializers {
         }
 
         public int[] read(final ObjectDataInput in) throws IOException {
-            int size = in.readInt();
-            if (size == 0) {
-                return null;
-            } else {
-                int[] s = new int[size];
-                for (int i = 0; i < size; i++) {
-                    s[i] = in.readInt();
-                }
-                return s;
-            }
+           return in.readIntArray();
         }
 
         public void write(final ObjectDataOutput out, final int[] obj) throws IOException {
-            int size = (obj == null) ? 0 : obj.length;
-            out.writeInt(size);
-            if (size > 0) {
-                for (int i = 0; i < size; i++) {
-                    out.writeInt(obj[i]);
-                }
-            }
+            out.writeIntArray(obj);
         }
     }
 
@@ -276,26 +231,11 @@ public class ConstantSerializers {
         }
 
         public long[] read(final ObjectDataInput in) throws IOException {
-            int size = in.readInt();
-            if (size == 0) {
-                return null;
-            } else {
-                long[] l = new long[size];
-                for (int i = 0; i < size; i++) {
-                    l[i] = in.readLong();
-                }
-                return l;
-            }
+            return in.readLongArray();
         }
 
         public void write(final ObjectDataOutput out, final long[] obj) throws IOException {
-            int size = (obj == null) ? 0 : obj.length;
-            out.writeInt(size);
-            if (size > 0) {
-                for (int i = 0; i < size; i++) {
-                    out.writeLong(obj[i]);
-                }
-            }
+            out.writeLongArray(obj);
         }
     }
 
@@ -306,26 +246,11 @@ public class ConstantSerializers {
         }
 
         public float[] read(final ObjectDataInput in) throws IOException {
-            int size = in.readInt();
-            if (size == 0) {
-                return null;
-            } else {
-                float [] f = new float[size];
-                for (int i = 0; i < size; i++) {
-                    f[i] = in.readFloat();
-                }
-                return f;
-            }
+            return in.readFloatArray();
         }
 
         public void write(final ObjectDataOutput out, final float[] obj) throws IOException {
-            int size = (obj == null) ? 0 : obj.length;
-            out.writeInt(size);
-            if (size > 0) {
-                for (int i = 0; i < size; i++) {
-                    out.writeFloat(obj[i]);
-                }
-            }
+            out.writeFloatArray(obj);
         }
     }
 
@@ -336,26 +261,11 @@ public class ConstantSerializers {
         }
 
         public double[] read(final ObjectDataInput in) throws IOException {
-            int size = in.readInt();
-            if (size == 0) {
-                return null;
-            } else {
-                double [] d = new double[size];
-                for (int i = 0; i < size; i++) {
-                    d[i] = in.readDouble();
-                }
-                return d;
-            }
+            return in.readDoubleArray();
         }
 
         public void write(final ObjectDataOutput out, final double [] obj) throws IOException {
-            int size = (obj == null) ? 0 : obj.length;
-            out.writeInt(size);
-            if (size > 0) {
-                for (int i = 0; i < size; i++) {
-                    out.writeDouble(obj[i]);
-                }
-            }
+            out.writeDoubleArray(obj);
         }
     }
 
