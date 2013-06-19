@@ -890,8 +890,8 @@
             </xs:simpleContent>
         </xs:complexType>
     </xs:element>
-    <xs:element name="cache-value" type="xs:boolean" />
     <xs:element name="read-backup-data" type="xs:boolean" />
+    <xs:element name="check-class-def-errors" type="xs:boolean" />
     <xs:element name="serialization">
         <xs:complexType>
             <xs:sequence>
@@ -901,6 +901,7 @@
                 <xs:element ref="data-serializable-factories" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="portable-factories" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="serializers" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="check-class-def-errors" minOccurs="0" maxOccurs="1" />
             </xs:sequence>
         </xs:complexType>
     </xs:element>

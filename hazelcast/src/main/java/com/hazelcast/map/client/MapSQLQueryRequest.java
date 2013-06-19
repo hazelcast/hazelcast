@@ -17,43 +17,40 @@
 package com.hazelcast.map.client;
 
 import com.hazelcast.map.MapPortableHook;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.util.IterationType;
 
 import java.io.IOException;
 
-public final class MapQueryRequest extends AbstractMapQueryRequest {
+public final class MapSQLQueryRequest extends AbstractMapQueryRequest {
 
-    private Predicate predicate;
+    private String sql;
 
-    public MapQueryRequest() {
+    public MapSQLQueryRequest() {
     }
 
-    public MapQueryRequest(String name, Predicate predicate, IterationType iterationType) {
+    public MapSQLQueryRequest(String name, String sql, IterationType iterationType) {
         super(name, iterationType);
-        this.predicate = predicate;
+        this.sql = sql;
     }
 
     @Override
     protected Predicate getPredicate() {
-        return predicate;
+        return new SqlPredicate(sql);
     }
 
     public int getClassId() {
-        return MapPortableHook.QUERY;
+        return MapPortableHook.SQL_QUERY;
     }
 
     protected void writePortableInner(PortableWriter writer) throws IOException {
-        final ObjectDataOutput out = writer.getRawDataOutput();
-        out.writeObject(predicate);
+        writer.writeUTF("sql", sql);
     }
 
     protected void readPortableInner(PortableReader reader) throws IOException {
-        final ObjectDataInput in = reader.getRawDataInput();
-        predicate = in.readObject();
+        sql = reader.readUTF("sql");
     }
 }

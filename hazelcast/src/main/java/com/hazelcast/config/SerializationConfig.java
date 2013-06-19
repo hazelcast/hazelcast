@@ -51,6 +51,8 @@ public class SerializationConfig {
         super();
     }
 
+
+
     public GlobalSerializerConfig getGlobalSerializer() {
         return globalSerializer;
     }
@@ -113,7 +115,7 @@ public class SerializationConfig {
         return dataSerializableFactories;
     }
 
-    public SerializationConfig setDataSerializablePortableFactories(Map<Integer, DataSerializableFactory> dataSerializableFactories) {
+    public SerializationConfig setDataSerializableFactories(Map<Integer, DataSerializableFactory> dataSerializableFactories) {
         this.dataSerializableFactories = dataSerializableFactories;
         return this;
     }
