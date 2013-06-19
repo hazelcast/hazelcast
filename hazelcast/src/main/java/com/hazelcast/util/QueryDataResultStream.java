@@ -29,7 +29,7 @@ import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-public class QueryDataResultStream extends AbstractSet<QueryResultEntry> implements IdentifiedDataSerializable {
+public class QueryDataResultStream extends AbstractSet implements IdentifiedDataSerializable {
 
     private static final QueryResultEntry END = new QueryResultEntryImpl(null, null, null);
 
@@ -101,6 +101,7 @@ public class QueryDataResultStream extends AbstractSet<QueryResultEntry> impleme
         }
 
         public Object next() {
+            //TODO optimization both key and value data is coming to client independent of the IterationType!!!
             currentEntry = q.poll();
             if(currentEntry == null || currentEntry == END)
                 return null;
@@ -168,5 +169,6 @@ public class QueryDataResultStream extends AbstractSet<QueryResultEntry> impleme
         for (int i = 0; i < size; i++) {
             q.add((QueryResultEntry) in.readObject());
         }
+        started = true;
     }
 }
