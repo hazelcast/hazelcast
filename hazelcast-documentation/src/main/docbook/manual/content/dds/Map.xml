@@ -117,6 +117,7 @@ public boolean removeCustomer (Customer customer) {
     <xi:include href="map/MapNearCache.xml"/>
     <xi:include href="map/MapEntry.xml"/>
     <xi:include href="map/MapIndex.xml"/>
+    <xi:include href="map/MapInMemoryFormat.xml"/>
 
     <xi:include href="../WildcardConfigurationLink.xml"/>
 </sect1>

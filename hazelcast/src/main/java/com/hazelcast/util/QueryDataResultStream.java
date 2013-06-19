@@ -21,7 +21,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.impl.QueryResultEntry;
 import com.hazelcast.query.impl.QueryResultEntryImpl;
 
@@ -31,15 +30,20 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class QueryDataResultStream extends AbstractSet<QueryResultEntry> implements IdentifiedDataSerializable {
-    final BlockingQueue<QueryResultEntry> q = new LinkedBlockingQueue<QueryResultEntry>();
-    volatile int size = 0;
-    boolean ended = false; // guarded by endLock
-    final Object endLock = new Object();
+
     private static final QueryResultEntry END = new QueryResultEntryImpl(null, null, null);
 
+    private final BlockingQueue<QueryResultEntry> q = new LinkedBlockingQueue<QueryResultEntry>();
+    private final Object endLock = new Object();
+
+    private boolean ended = false; // guarded by endLock
     private boolean set;
     private Set<Object> keys;
     private IterationType iterationType;
+
+    // to make QueryDataResultStream debuggable (size blocks infinitely while constructing object in debug mode)
+    private volatile boolean started = false;
+    private volatile int size = 0;
 
     public QueryDataResultStream() {
     }
@@ -66,6 +70,9 @@ public class QueryDataResultStream extends AbstractSet<QueryResultEntry> impleme
     }
 
     public synchronized boolean add(QueryResultEntry entry) {
+        if (!started) {
+            started = true;
+        }
         if (!set || keys.add(entry.getIndexKey())) {
             q.offer(entry);
             size++;
@@ -117,6 +124,9 @@ public class QueryDataResultStream extends AbstractSet<QueryResultEntry> impleme
 
     @Override
     public int size() {
+        if (!started) {
+            return 0;
+        }
         synchronized (endLock) {
             while (!ended) {
                 try {

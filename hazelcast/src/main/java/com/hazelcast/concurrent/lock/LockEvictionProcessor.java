@@ -16,25 +16,29 @@
 
 package com.hazelcast.concurrent.lock;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.spi.Operation;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.logging.Level;
 
 import static com.hazelcast.concurrent.lock.LockServiceImpl.SERVICE_NAME;
 
 public class LockEvictionProcessor implements ScheduledEntryProcessor<Data, Object> {
 
-    NodeEngine nodeEngine;
-    ObjectNamespace namespace;
+    final NodeEngine nodeEngine;
+    final ObjectNamespace namespace;
 
     public LockEvictionProcessor(NodeEngine nodeEngine, ObjectNamespace namespace) {
         this.nodeEngine = nodeEngine;
@@ -42,6 +46,9 @@ public class LockEvictionProcessor implements ScheduledEntryProcessor<Data, Obje
     }
 
     public void process(EntryTaskScheduler<Data, Object> scheduler, Collection<ScheduledEntry<Data, Object>> entries) {
+        final Collection<Future> futures = new ArrayList<Future>(entries.size());
+        final ILogger logger = nodeEngine.getLogger(getClass());
+
         for (ScheduledEntry<Data, Object> entry : entries) {
             Data key = entry.getKey();
             Operation operation = new UnlockOperation(namespace, key, -1, true);
@@ -50,9 +57,19 @@ public class LockEvictionProcessor implements ScheduledEntryProcessor<Data, Obje
                 Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
                         .build();
                 Future f = invocation.invoke();
-                f.get();
+                futures.add(f);
             } catch (Throwable t) {
-                throw ExceptionUtil.rethrow(t);
+                logger.log(Level.WARNING, t.getMessage(), t);
+            }
+        }
+
+        for (Future future : futures) {
+            try {
+                future.get(30, TimeUnit.SECONDS);
+            } catch (TimeoutException e) {
+                logger.log(Level.FINEST, e.getMessage(), e);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, e.getMessage(), e);
             }
         }
     }
