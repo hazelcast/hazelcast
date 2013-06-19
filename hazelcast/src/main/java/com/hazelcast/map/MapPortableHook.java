@@ -59,16 +59,14 @@ public class MapPortableHook implements PortableHook {
     public static final int ENTRY_SET = 31;
     public static final int SIZE = 33;
     public static final int QUERY = 34;
-    public static final int CLEAR = 35;
+    public static final int SQL_QUERY = 35;
+    public static final int CLEAR = 36;
     public static final int GET_LOCAL_MAP_STATS = 37;
     public static final int EXECUTE_ON_KEY = 38;
     public static final int EXECUTE_ON_ALL_KEYS = 39;
     public static final int PUT_ALL = 40;
     public static final int DESTROY = 41;
-
     public static final int TXN_REQUEST = 42;
-
-
 
 
     public int getFactoryId() {
