@@ -32,7 +32,7 @@ public final class MapSQLQueryRequest extends AbstractMapQueryRequest {
     public MapSQLQueryRequest() {
     }
 
-    public MapSQLQueryRequest(String name, IterationType iterationType, String sql) {
+    public MapSQLQueryRequest(String name, String sql, IterationType iterationType) {
         super(name, iterationType);
         this.sql = sql;
     }

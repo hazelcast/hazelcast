@@ -33,7 +33,7 @@ public final class MapQueryRequest extends AbstractMapQueryRequest {
     public MapQueryRequest() {
     }
 
-    public MapQueryRequest(String name, IterationType iterationType, Predicate predicate) {
+    public MapQueryRequest(String name, Predicate predicate, IterationType iterationType) {
         super(name, iterationType);
         this.predicate = predicate;
     }
