@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 
 import static com.hazelcast.map.MapService.SERVICE_NAME;
@@ -48,6 +49,7 @@ public class EvictionProcessor implements ScheduledEntryProcessor<Data, Object>{
     public void process(EntryTaskScheduler<Data, Object> scheduler, Collection<ScheduledEntry<Data, Object>> entries) {
         final Collection<Future> futures = new ArrayList<Future>(entries.size());
         final ILogger logger = nodeEngine.getLogger(getClass());
+
         for (ScheduledEntry<Data, Object> entry : entries) {
             Data key = entry.getKey();
             Operation operation = new EvictOperation(mapName, key);
@@ -63,7 +65,9 @@ public class EvictionProcessor implements ScheduledEntryProcessor<Data, Object>{
         }
         for (Future future : futures) {
             try {
-                future.get(5, TimeUnit.SECONDS);
+                future.get(30, TimeUnit.SECONDS);
+            } catch (TimeoutException e) {
+                logger.log(Level.FINEST, e.getMessage(), e);
             } catch (Exception e) {
                 logger.log(Level.WARNING, e.getMessage(), e);
             }
