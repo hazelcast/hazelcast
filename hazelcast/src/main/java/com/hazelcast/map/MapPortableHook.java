@@ -264,6 +264,12 @@ public class MapPortableHook implements PortableHook {
                     }
                 };
 
+                constructors[SQL_QUERY] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapSQLQueryRequest();
+                    }
+                };
+
                 constructors[EXECUTE_ON_KEY] = new ConstructorFunction<Integer, Portable>() {
                     public Portable createNew(Integer arg) {
                         return new MapExecuteOnKeyRequest();
