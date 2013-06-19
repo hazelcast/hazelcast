@@ -225,18 +225,18 @@ public class QueueContainer implements DataSerializable {
     }
 
     public Map<Long, Data> addAll(Collection<Data> dataList) {
-        Map<Long, Data> dataMap = new HashMap<Long, Data>(dataList.size());
+        Map<Long, Data> map = new HashMap<Long, Data>(dataList.size());
         for (Data data : dataList) {
             QueueItem item = new QueueItem(this, nextId(), null);
             if (!store.isEnabled() || store.getMemoryLimit() > getItemQueue().size()) {
                 item.setData(data);
             }
             getItemQueue().offer(item);
-            dataMap.put(item.getItemId(), data);
+            map.put(item.getItemId(), data);
         }
         if (store.isEnabled()) {
             try {
-                store.storeAll(dataMap);
+                store.storeAll(map);
             } catch (Exception e) {
                 for (int i = 0; i < dataList.size(); i++) {
                     getItemQueue().poll();
@@ -244,7 +244,7 @@ public class QueueContainer implements DataSerializable {
                 throw new HazelcastException(e);
             }
         }
-        return dataMap;
+        return map;
     }
 
     public void addAllBackup(Map<Long, Data> dataMap) {
