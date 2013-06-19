@@ -1,0 +1,57 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+  ~ Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+
+<sect2 xml:id="MapInMemoryFormat" version="5.0" xmlns="http://docbook.org/ns/docbook"
+       xmlns:xi="http://www.w3.org/2001/XInclude"
+       xmlns:xlink="http://www.w3.org/1999/xlink"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
+        http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
+    <title>In Memory Format</title>
+    <para>
+        With version 3.0 a new configuration option has been added to distributed map.
+        Setting in-memory-format in map's configuration, you can decide how the data will be store in memory.
+        There are three options.
+    </para>
+    <para>
+        <itemizedlist>
+            <listitem>
+                <para>
+                    <emphasis role="bold">BINARY (default): </emphasis>This is the default option. The data will be stored in serialized binary format.
+                </para>
+            </listitem>
+
+            <listitem>
+                <para>
+                    <emphasis role="bold">OBJECT: </emphasis>The data will be stored in de-serialized form.
+                        This configuration is good for maps where entry processing and queries form the majority of all operations
+                        and the objects are complex ones so serialization cost is respectively high.
+                        By storing objects, entry processing will not contain the de-serialization cost.
+                </para>
+            </listitem>
+
+            <listitem>
+                <para>
+                    <emphasis role="bold">CACHED: </emphasis>This option is useful if your map's main use case is the queries.
+                        Internally data is in both binary and de-serialized form so queries do not handle serialization.
+                </para>
+            </listitem>
+
+        </itemizedlist>
+    </para>
+</sect2>
