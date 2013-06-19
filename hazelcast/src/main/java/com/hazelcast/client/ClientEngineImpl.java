@@ -227,6 +227,9 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
             final ClientEndpoint endpoint = endpoints.get(connection);
             if (endpoint != null && node.getLocalMember().getUuid().equals(endpoint.getPrincipal().getOwnerUuid())) {
                 removeEndpoint(connection, true);
+                if (!endpoint.isFirstConnection()){
+                    return;
+                }
                 NodeEngine nodeEngine = node.nodeEngine;
                 final Collection<MemberImpl> memberList = nodeEngine.getClusterService().getMemberList();
                 for (MemberImpl member : memberList) {

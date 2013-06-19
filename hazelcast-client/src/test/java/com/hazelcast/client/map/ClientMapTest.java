@@ -238,6 +238,7 @@ public class ClientMapTest {
         Thread.sleep(2000);
         assertNull(map.putIfAbsent("key1", "value3", 1, TimeUnit.SECONDS));
         assertEquals("value3", map.putIfAbsent("key1", "value4", 1, TimeUnit.SECONDS));
+        Thread.sleep(2000);
     }
 
     @Test

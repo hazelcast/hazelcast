@@ -193,7 +193,7 @@ public class ClientMultiMapTest {
         mm.put("key3", "value7");
         mm.put("key3", "value8");
 
-        mm.remove("key");
+        mm.remove("key3");
 
         assertTrue(latch1Add.await(20, TimeUnit.SECONDS));
         assertTrue(latch1Remove.await(20, TimeUnit.SECONDS));

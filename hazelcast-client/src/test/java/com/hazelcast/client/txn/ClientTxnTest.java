@@ -42,7 +42,6 @@ import static org.junit.Assert.*;
 @Category(SerialTest.class)
 public class ClientTxnTest {
 
-    static final String name = "test1";
     static HazelcastInstance hz;
     static HazelcastInstance server;
     static HazelcastInstance second;
@@ -68,7 +67,7 @@ public class ClientTxnTest {
         try {
             context.beginTransaction();
             assertNotNull(context.getTxnId());
-            final TransactionalQueue queue = context.getQueue("test");
+            final TransactionalQueue queue = context.getQueue("testTxnRollback");
             queue.offer("item");
 
             server.getLifecycleService().shutdown();
@@ -80,9 +79,10 @@ public class ClientTxnTest {
             latch.countDown();
         }
 
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
 
-        final IQueue<Object> q = hz.getQueue("test");
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+//
+        final IQueue<Object> q = hz.getQueue("testTxnRollback");
         assertNull(q.poll());
         assertEquals(0, q.size());
     }

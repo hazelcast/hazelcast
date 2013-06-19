@@ -16,11 +16,14 @@
 
 package com.hazelcast.client.spi;
 
+import com.hazelcast.client.exception.ClientException;
 import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @ali 5/20/13
@@ -34,6 +37,7 @@ public final class ListenerSupport  {
     private volatile boolean active = true;
     private volatile ResponseStream lastStream;
     private Data key;
+    final CountDownLatch latch = new CountDownLatch(1);
 
     public ListenerSupport(ClientContext context, Object registrationRequest, EventHandler handler) {
         this.context = context;
@@ -62,6 +66,12 @@ public final class ListenerSupport  {
                 }
             }
         });
+        try {
+            if(!latch.await(1, TimeUnit.MINUTES)){
+                throw new ClientException("Could not register listener!!!");
+            }
+        } catch (InterruptedException e) {
+        }
         return UUID.randomUUID().toString();
     }
 
@@ -84,6 +94,7 @@ public final class ListenerSupport  {
         public void handle(final ResponseStream stream) throws Exception {
             stream.read(); // initial ok response
             lastStream = stream;
+            latch.countDown();
 
             while (active && !Thread.currentThread().isInterrupted()) {
                 try {

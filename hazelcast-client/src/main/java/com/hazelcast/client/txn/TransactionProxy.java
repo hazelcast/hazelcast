@@ -106,6 +106,9 @@ public class TransactionProxy implements Transaction {
             checkTimeout();
             sendAndReceive(new CommitTransactionRequest());
             state = COMMITTED;
+        } catch (Exception e){
+            state = ROLLING_BACK;
+            ExceptionUtil.rethrow(e);
         } finally {
             closeConnection();
         }
@@ -115,6 +118,10 @@ public class TransactionProxy implements Transaction {
         try {
             if (state == NO_TXN || state == ROLLED_BACK) {
                 throw new IllegalStateException("Transaction is not active");
+            }
+            if (state == ROLLING_BACK){
+                state = ROLLED_BACK;
+                return;
             }
             checkThread();
             try {
@@ -128,6 +135,7 @@ public class TransactionProxy implements Transaction {
     }
 
     private void closeConnection(){
+        threadFlag.set(null);
         try {
             connection.close();
         } catch (IOException e) {
