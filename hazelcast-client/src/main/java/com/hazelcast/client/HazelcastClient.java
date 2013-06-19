@@ -17,6 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.DummyClientConnectionManager;
 import com.hazelcast.client.connection.SmartClientConnectionManager;
@@ -127,7 +128,7 @@ public final class HazelcastClient implements HazelcastInstance {
 
     public static HazelcastInstance newHazelcastClient(ClientConfig config) {
         if (config == null) {
-            config = new ClientConfig();
+            config = new XmlClientConfigBuilder().build();
         }
         final HazelcastClient client = new HazelcastClient(config);
         final HazelcastClientProxy proxy = new HazelcastClientProxy(client);
