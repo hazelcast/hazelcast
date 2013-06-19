@@ -35,6 +35,7 @@ public class ClientEndpoint implements Client {
     private LoginContext loginContext = null;
     private ClientPrincipal principal;
     private TransactionContext transactionContext;
+    private boolean firstConnection = false;
     private volatile boolean authenticated = false;
 
     ClientEndpoint(Connection conn, String uuid) {
@@ -62,9 +63,14 @@ public class ClientEndpoint implements Client {
         return loginContext != null ? loginContext.getSubject() : null;
     }
 
-    void authenticated(ClientPrincipal principal) {
+    public boolean isFirstConnection() {
+        return firstConnection;
+    }
+
+    void authenticated(ClientPrincipal principal, boolean firstConnection) {
         this.principal = principal;
         this.uuid = principal.getUuid();
+        this.firstConnection = firstConnection;
         authenticated = true;
     }
 
@@ -105,9 +111,12 @@ public class ClientEndpoint implements Client {
         }
         final TransactionContext context = transactionContext;
         if (context != null){
+            try {
+                context.rollbackTransaction();
+            } catch (Exception e){
+                e.printStackTrace();
+            }
             transactionContext = null;
-            //TODO: rollback transaction
-//            transactionContext.rollbackTransaction();
         }
         authenticated = false;
     }
@@ -117,6 +126,7 @@ public class ClientEndpoint implements Client {
         final StringBuilder sb = new StringBuilder("ClientEndpoint{");
         sb.append("conn=").append(conn);
         sb.append(", uuid='").append(uuid).append('\'');
+        sb.append(", firstConnection=").append(firstConnection);
         sb.append(", authenticated=").append(authenticated);
         sb.append('}');
         return sb.toString();

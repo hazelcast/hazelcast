@@ -50,8 +50,8 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public final class ClientClusterServiceImpl implements ClientClusterService {
 
-    private static int RETRY_COUNT = 10;
-    private static int RETRY_WAIT_TIME = 100;
+    private static int RETRY_COUNT = 20;
+    private static int RETRY_WAIT_TIME = 250;
 
     private final HazelcastClient client;
     private final ClusterListenerThread clusterThread;
@@ -185,6 +185,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     e.printStackTrace();
                 }
             }
+            address = null;
         }
         if (connection == null) {
             throw new HazelcastException("Unable to connect!!!");
@@ -292,6 +293,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                         try {
                             conn = pickConnection();
                         } catch (Exception e){
+                            e.printStackTrace();
                             client.getLifecycleService().shutdown();
                             return;
                         }
@@ -465,20 +467,21 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
 
     private class ManagerAuthenticator implements Authenticator {
         public void auth(Connection connection) throws AuthenticationException, IOException {
-            final Object response = authenticate(connection, credentials, principal, true);
+            final Object response = authenticate(connection, credentials, principal, true, true);
             principal = (ClientPrincipal) response;
         }
     }
 
     private class ClusterAuthenticator implements Authenticator {
         public void auth(Connection connection) throws AuthenticationException, IOException {
-            authenticate(connection, credentials, principal, false);
+            authenticate(connection, credentials, principal, false, false);
         }
     }
 
-    private Object authenticate(Connection connection, Credentials credentials, ClientPrincipal principal, boolean reAuth) throws IOException {
+    private Object authenticate(Connection connection, Credentials credentials, ClientPrincipal principal, boolean reAuth, boolean firstConnection) throws IOException {
         AuthenticationRequest auth = new AuthenticationRequest(credentials, principal);
         auth.setReAuth(reAuth);
+        auth.setFirstConnection(firstConnection);
         final SerializationService serializationService = getSerializationService();
         connection.write(serializationService.toData(auth));
         final Data addressData = connection.read();

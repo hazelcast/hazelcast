@@ -29,18 +29,21 @@ public class ClientReAuthOperation extends AbstractOperation {
 
     private String clientUuid;
 
+    private boolean firstConnection;
+
     public ClientReAuthOperation() {
     }
 
-    public ClientReAuthOperation(String clientUuid) {
+    public ClientReAuthOperation(String clientUuid, boolean firstConnection) {
         this.clientUuid = clientUuid;
+        this.firstConnection = firstConnection;
     }
 
     public void run() throws Exception {
         ClientEngineImpl service = getService();
         final ClientEndpoint endpoint = service.getEndpoint(clientUuid);
         if (endpoint != null) {
-            endpoint.authenticated(new ClientPrincipal(clientUuid, getCallerUuid()));
+            endpoint.authenticated(new ClientPrincipal(clientUuid, getCallerUuid()), firstConnection);
         }
     }
 
@@ -60,11 +63,13 @@ public class ClientReAuthOperation extends AbstractOperation {
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeUTF(clientUuid);
+        out.writeBoolean(firstConnection);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         clientUuid = in.readUTF();
+        firstConnection = in.readBoolean();
     }
 }

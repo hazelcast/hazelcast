@@ -42,6 +42,8 @@ public final class AuthenticationRequest extends CallableClientRequest implement
 
     private boolean reAuth;
 
+    private boolean firstConnection = false;
+
     public AuthenticationRequest() {
     }
 
@@ -103,7 +105,7 @@ public final class AuthenticationRequest extends CallableClientRequest implement
                         final Collection<MemberImpl> members = clientEngine.getClusterService().getMemberList();
                         for (MemberImpl member : members) {
                             if (!member.localMember()) {
-                                clientEngine.sendOperation(new ClientReAuthOperation(principal.getUuid()), member.getAddress());
+                                clientEngine.sendOperation(new ClientReAuthOperation(principal.getUuid(), firstConnection), member.getAddress());
                             }
                         }
                     }
@@ -115,7 +117,7 @@ public final class AuthenticationRequest extends CallableClientRequest implement
             if (principal == null) {
                 principal = new ClientPrincipal(endpoint.getUuid(), clientEngine.getLocalMember().getUuid());
             }
-            endpoint.authenticated(principal);
+            endpoint.authenticated(principal, firstConnection);
             clientEngine.bind(endpoint);
             return principal;
         } else {
@@ -142,6 +144,14 @@ public final class AuthenticationRequest extends CallableClientRequest implement
         this.reAuth = reAuth;
     }
 
+    public boolean isFirstConnection() {
+        return firstConnection;
+    }
+
+    public void setFirstConnection(boolean firstConnection) {
+        this.firstConnection = firstConnection;
+    }
+
     @Override
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writePortable("credentials", (Portable) credentials);
@@ -151,6 +161,7 @@ public final class AuthenticationRequest extends CallableClientRequest implement
             writer.writeNullPortable("principal", ClientPortableHook.ID, ClientPortableHook.PRINCIPAL);
         }
         writer.writeBoolean("reAuth", reAuth);
+        writer.writeBoolean("firstConnection", firstConnection);
     }
 
     @Override
@@ -158,5 +169,6 @@ public final class AuthenticationRequest extends CallableClientRequest implement
         credentials = (Credentials) reader.readPortable("credentials");
         principal = reader.readPortable("principal");
         reAuth = reader.readBoolean("reAuth");
+        firstConnection = reader.readBoolean("firstConnection");
     }
 }
