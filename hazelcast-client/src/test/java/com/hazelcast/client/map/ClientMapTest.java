@@ -19,6 +19,7 @@ package com.hazelcast.client.map;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
+import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.SerialTest;
 import org.junit.*;
@@ -178,7 +179,7 @@ public class ClientMapTest {
         }
         assertNull(o);
         o = f.get();
-        assertEquals("value4",o);
+        assertEquals("value4", o);
         assertEquals(9, map.size());
     }
 
@@ -227,8 +228,8 @@ public class ClientMapTest {
 
     @Test
     public void testPutIfAbsent() throws Exception {
-        assertNull(map.putIfAbsent("key1","value1"));
-        assertEquals("value1", map.putIfAbsent("key1","value3"));
+        assertNull(map.putIfAbsent("key1", "value1"));
+        assertEquals("value1", map.putIfAbsent("key1", "value3"));
     }
 
     @Test
@@ -372,6 +373,15 @@ public class ClientMapTest {
         }.start();
         assertTrue(latch.await(100, TimeUnit.SECONDS));
         assertFalse(map.isLocked("key1"));
+    }
+
+    @Test
+    public void testValues() {
+        fillMap();
+
+        final Collection values = map.values(new SqlPredicate("this == value1"));
+        assertEquals(1, values.size());
+        assertEquals("value1", values.iterator().next());
     }
 
     @Test

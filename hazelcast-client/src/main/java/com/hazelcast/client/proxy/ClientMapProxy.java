@@ -23,7 +23,6 @@ import com.hazelcast.map.*;
 import com.hazelcast.map.client.*;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryResultEntry;
 import com.hazelcast.spi.impl.PortableEntryEvent;
@@ -375,11 +374,13 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public Collection<V> values(Predicate predicate) {
         MapQueryRequest request = new MapQueryRequest(name, predicate, IterationType.VALUE);
         QueryDataResultStream result = invoke(request);
+        result.end();
         Collection<V> values = new ArrayList<V>(result.size());
-        for (QueryResultEntry queryResultEntry : result) {
-            Data valueData = queryResultEntry.getValueData();
-            V value = toObject(valueData);
-            values.add(value);
+        final Iterator iterator = result.iterator();
+        while (iterator.hasNext()){
+            final Object next = iterator.next();
+            final V o = toObject((Data) next);
+            values.add(o);
         }
         return values;
     }
