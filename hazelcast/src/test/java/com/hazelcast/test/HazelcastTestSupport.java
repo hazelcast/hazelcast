@@ -16,7 +16,9 @@
 
 package com.hazelcast.test;
 
-import com.hazelcast.core.*;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.Member;
+import com.hazelcast.core.PartitionService;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
 import org.junit.After;
@@ -51,15 +53,8 @@ public abstract class HazelcastTestSupport {
         return TestUtil.getNode(hz);
     }
 
-    protected static void warmUpPartitions(HazelcastInstance...instances) throws InterruptedException {
-        for (HazelcastInstance instance : instances) {
-            final PartitionService ps = instance.getPartitionService();
-            for (Partition partition : ps.getPartitions()) {
-                while (partition.getOwner() == null) {
-                    Thread.sleep(10);
-                }
-            }
-        }
+    protected static void warmUpPartitions(HazelcastInstance... instances) throws InterruptedException {
+        TestUtil.warmUpPartitions(instances);
     }
 
     protected static int generateKeyOwnedBy(HazelcastInstance instance) throws InterruptedException {

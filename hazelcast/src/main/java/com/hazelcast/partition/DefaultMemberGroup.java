@@ -68,7 +68,7 @@ public class DefaultMemberGroup implements MemberGroup {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((members == null) ? 0 : members.hashCode());
+        result = prime * result + (members.hashCode());
         return result;
     }
 
@@ -81,12 +81,7 @@ public class DefaultMemberGroup implements MemberGroup {
         if (getClass() != obj.getClass())
             return false;
         DefaultMemberGroup other = (DefaultMemberGroup) obj;
-        if (members == null) {
-            if (other.members != null)
-                return false;
-        } else if (!members.equals(other.members))
-            return false;
-        return true;
+        return members.equals(other.members);
     }
 
     @Override

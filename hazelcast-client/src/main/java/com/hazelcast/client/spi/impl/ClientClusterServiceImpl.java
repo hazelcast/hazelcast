@@ -29,10 +29,7 @@ import com.hazelcast.client.spi.ResponseStream;
 import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.cluster.client.AddMembershipListenerRequest;
 import com.hazelcast.cluster.client.ClientMembershipEvent;
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.core.MembershipListener;
+import com.hazelcast.core.*;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
@@ -68,8 +65,17 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     public ClientClusterServiceImpl(HazelcastClient client) {
         this.client = client;
         clusterThread = new ClusterListenerThread(client.getThreadGroup(), client.getName() + ".cluster-listener");
-        redoOperation = getClientConfig().isRedoOperation();
-        credentials = getClientConfig().getCredentials();
+        final ClientConfig clientConfig = getClientConfig();
+        redoOperation = clientConfig.isRedoOperation();
+        credentials = clientConfig.getCredentials();
+        final Collection<EventListener> listeners = client.getClientConfig().getListeners();
+        if (listeners != null && !listeners.isEmpty()) {
+            for (EventListener listener : listeners) {
+                if (listener instanceof MembershipListener) {
+                    addMembershipListener((MembershipListener) listener);
+                }
+            }
+        }
     }
 
     public MemberImpl getMember(Address address) {
@@ -356,9 +362,9 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     members.add(member);
                 } else {
                     members.remove(member);
+                    getConnectionManager().removeConnectionPool(member.getAddress());
                 }
                 updateMembersRef();
-                getConnectionManager().removeConnectionPool(member.getAddress());
                 fireMembershipEvent(event);
             }
         }

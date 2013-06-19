@@ -17,14 +17,15 @@
 package com.hazelcast.topic;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.TopicConfig;
+import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.*;
-import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -177,6 +178,22 @@ public class TopicTest extends HazelcastTestSupport {
         });
         topic.publish(message);
         assertTrue(latch.await(10000, TimeUnit.MILLISECONDS));
+    }
+
+    @Test
+    public void testConfigListenerRegistration() throws InterruptedException {
+        Config config = new Config();
+        final String name = "default";
+        final CountDownLatch latch = new CountDownLatch(1);
+        config.getTopicConfig(name).addMessageListenerConfig(new ListenerConfig().setImplementation(new MessageListener() {
+            public void onMessage(Message message) {
+                latch.countDown();
+            }
+        }));
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        final HazelcastInstance hz = factory.newHazelcastInstance(config);
+        hz.getTopic(name).publish(1);
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
     @Test
@@ -357,7 +374,7 @@ public class TopicTest extends HazelcastTestSupport {
                 latch1.countDown();
             }
         });
-        final CountDownLatch latch2 = new CountDownLatch(2);
+        final CountDownLatch latch2 = new CountDownLatch(1000);
         topic.addMessageListener(new MessageListener<String>() {
             public void onMessage(Message msg) {
                 latch2.countDown();
@@ -368,8 +385,9 @@ public class TopicTest extends HazelcastTestSupport {
             topic.publish("sancar");
         }
 
-        latch1.await();
-        latch2.await();
+        assertTrue(latch1.await(1, TimeUnit.MINUTES));
+        assertTrue(latch2.await(1, TimeUnit.MINUTES));
+
         LocalTopicStatsImpl stats = (LocalTopicStatsImpl) topic.getLocalTopicStats();
         Assert.assertEquals(1000, stats.getPublishOperationCount());
         Assert.assertEquals(2000, stats.getReceiveOperationCount());

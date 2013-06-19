@@ -364,9 +364,6 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         if (task == null) {
             throw new NullPointerException();
         }
-        if (isShutdown()) {
-            throw new RejectedExecutionException(getRejectionMessage());
-        }
     }
 
     private String getRejectionMessage() {

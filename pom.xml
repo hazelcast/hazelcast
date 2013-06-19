@@ -283,10 +283,10 @@
                             <forkCount>1C</forkCount>
                             <reuseForks>true</reuseForks>
 
-                            <threadCount>2</threadCount>
-                            <perCoreThreadCount>true</perCoreThreadCount>
-                            <!-- has no effect when thread count is 1 -->
-                            <parallel>methods</parallel>
+                            <!--<threadCount>2</threadCount>-->
+                            <!--<perCoreThreadCount>true</perCoreThreadCount>-->
+                            <!--&lt;!&ndash; has no effect when thread count is 1 &ndash;&gt;-->
+                            <!--<parallel>methods</parallel>-->
 
                             <argLine>-Xms128m -Xmx1G -XX:MaxPermSize=128M
                                 -Dhazelcast.version.check.enabled=false
@@ -319,7 +319,6 @@
                                 -Dhazelcast.test.use.network=true
                             </argLine>
                             <groups>com.hazelcast.test.annotation.SerialTest</groups>
-                            <excludedGroups>com.hazelcast.test.annotation.StressTest</excludedGroups>
                         </configuration>
                     </plugin>
                 </plugins>

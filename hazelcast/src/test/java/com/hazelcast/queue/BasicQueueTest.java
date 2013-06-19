@@ -51,10 +51,10 @@ import static org.junit.Assert.*;
 public class BasicQueueTest extends HazelcastTestSupport {
 
     @Test
-    public void testWithConfig() throws InterruptedException {
+    public void testConfigListenerRegistration() throws InterruptedException {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         Config config = new Config();
-        final String name = "l_queue";
+        final String name = "queue";
         final QueueConfig queueConfig = config.getQueueConfig(name);
         final DummyListener dummyListener = new DummyListener();
         final ItemListenerConfig itemListenerConfig = new ItemListenerConfig(dummyListener, true);

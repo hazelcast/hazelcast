@@ -45,6 +45,7 @@ public class HeartBeatChecker {
                 public void run() {
                     try {
                         connection.write(ping);
+                        connection.read();
                         latch.countDown();
                     } catch (IOException e) {
                         e.printStackTrace();

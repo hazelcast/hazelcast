@@ -20,28 +20,27 @@ import com.hazelcast.nio.Address;
 
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
-public final class PartitionInfo {
-
-    public static final int MAX_REPLICA_COUNT = 7;
-    public static final int MAX_BACKUP_COUNT = MAX_REPLICA_COUNT - 1;
+final class PartitionImpl implements PartitionView {
 
     private final int partitionId;
     private final AtomicReferenceArray<Address> addresses = new AtomicReferenceArray<Address>(MAX_REPLICA_COUNT);
     private final PartitionListener partitionListener;
 
-    PartitionInfo(int partitionId, PartitionListener partitionListener) {
+    PartitionImpl(int partitionId, PartitionListener partitionListener) {
         this.partitionId = partitionId;
         this.partitionListener = partitionListener;
     }
 
-    PartitionInfo(int partitionId) {
+    PartitionImpl(int partitionId) {
         this(partitionId, null);
     }
 
+    @Override
     public int getPartitionId() {
         return partitionId;
     }
 
+    @Override
     public Address getOwner() {
         return addresses.get(0);
     }
@@ -50,9 +49,9 @@ public final class PartitionInfo {
         setReplicaAddress(0, ownerAddress);
     }
 
+    @Override
     public Address getReplicaAddress(int index) {
-        return (addresses.length() > index)
-                ? addresses.get(index) : null;
+        return (addresses.length() > index) ? addresses.get(index) : null;
     }
 
     void setReplicaAddress(int index, Address address) {
@@ -84,12 +83,13 @@ public final class PartitionInfo {
         return false;
     }
 
-    void setPartitionInfo(PartitionInfo partitionInfo) {
+    void setPartitionInfo(PartitionView partition) {
         for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
-            setReplicaAddress(i, partitionInfo.getReplicaAddress(i));
+            setReplicaAddress(i, partition.getReplicaAddress(i));
         }
     }
 
+    @Override
     public boolean isBackup(Address address) {
         for (int i = 1; i < MAX_REPLICA_COUNT; i++) {
             if (address.equals(getReplicaAddress(i))) {
@@ -99,6 +99,7 @@ public final class PartitionInfo {
         return false;
     }
 
+    @Override
     public boolean isOwnerOrBackup(Address address) {
         for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
             if (address.equals(getReplicaAddress(i))) {
@@ -108,6 +109,7 @@ public final class PartitionInfo {
         return false;
     }
 
+    @Override
     public int getReplicaIndexOf(Address address) {
         for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
             if (address.equals(addresses.get(i))) {
@@ -121,7 +123,7 @@ public final class PartitionInfo {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        PartitionInfo that = (PartitionInfo) o;
+        PartitionImpl that = (PartitionImpl) o;
         if (partitionId != that.partitionId) return false;
         for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
             Address a1 = addresses.get(i);
@@ -149,8 +151,7 @@ public final class PartitionInfo {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("Partition [")
-                .append(partitionId).append("]{\n");
+        StringBuilder sb = new StringBuilder("Partition [").append(partitionId).append("]{\n");
         for (int i = 0; i < MAX_REPLICA_COUNT; i++) {
             Address address = addresses.get(i);
             if (address != null) {

@@ -36,7 +36,7 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.MigrationEndpoint;
-import com.hazelcast.partition.PartitionInfo;
+import com.hazelcast.partition.PartitionView;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
@@ -926,10 +926,10 @@ public class MapService implements ManagedService, MigrationAwareService,
         final com.hazelcast.partition.PartitionService partitionService = nodeEngine.getPartitionService();
 
         Address thisAddress = clusterService.getThisAddress();
-        for (int partition = 0; partition < partitionService.getPartitionCount(); partition++) {
-            PartitionInfo partitionInfo = partitionService.getPartitionInfo(partition);
-            if (partitionInfo.getOwner().equals(thisAddress)) {
-                PartitionContainer partitionContainer = getPartitionContainer(partition);
+        for (int partitionId = 0; partitionId < partitionService.getPartitionCount(); partitionId++) {
+            PartitionView partition = partitionService.getPartitionView(partitionId);
+            if (partition.getOwner().equals(thisAddress)) {
+                PartitionContainer partitionContainer = getPartitionContainer(partitionId);
                 RecordStore recordStore = partitionContainer.getRecordStore(mapName);
                 Map<Data, Record> records = recordStore.getRecords();
                 for (Record record : records.values()) {
@@ -945,7 +945,7 @@ public class MapService implements ManagedService, MigrationAwareService,
                 }
             } else {
                 for (int replica = 1; replica <= backupCount; replica++) {
-                    Address replicaAddress = partitionInfo.getReplicaAddress(replica);
+                    Address replicaAddress = partition.getReplicaAddress(replica);
                     int tryCount = 30;
                     // wait if the partition table is not updated yet
                     while (replicaAddress == null && clusterService.getSize() > backupCount && tryCount-- > 0) {
@@ -954,11 +954,11 @@ public class MapService implements ManagedService, MigrationAwareService,
                         } catch (InterruptedException e) {
                             throw ExceptionUtil.rethrow(e);
                         }
-                        replicaAddress = partitionInfo.getReplicaAddress(replica);
+                        replicaAddress = partition.getReplicaAddress(replica);
                     }
 
                     if (replicaAddress != null && replicaAddress.equals(thisAddress)) {
-                        PartitionContainer partitionContainer = getPartitionContainer(partition);
+                        PartitionContainer partitionContainer = getPartitionContainer(partitionId);
                         RecordStore recordStore = partitionContainer.getRecordStore(mapName);
                         Map<Data, Record> records = recordStore.getRecords();
                         for (Record record : records.values()) {

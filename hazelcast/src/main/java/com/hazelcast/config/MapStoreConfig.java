@@ -32,6 +32,9 @@ public final class MapStoreConfig {
     private Object factoryImplementation;
     private Properties properties = new Properties();
 
+    public MapStoreConfig() {
+    }
+
     /**
      * Returns the name of the MapStore implementation class
      *
