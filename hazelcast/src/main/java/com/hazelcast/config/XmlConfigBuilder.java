@@ -919,6 +919,9 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             if ("portable-version".equals(name)) {
                 String value = getValue(child);
                 serializationConfig.setPortableVersion(getIntegerValue(name, value, 0));
+            } else if ("check-class-def-errors".equals(name)) {
+                String value = getTextContent(child);
+                serializationConfig.setCheckClassDefErrors(checkTrue(value));
             } else if ("use-native-byte-order".equals(name)) {
                 serializationConfig.setUseNativeByteOrder(checkTrue(getValue(child)));
             } else if ("byte-order".equals(name)) {
