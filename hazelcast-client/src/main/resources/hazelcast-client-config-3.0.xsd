@@ -27,7 +27,7 @@
                 <xs:element ref="serialization" minOccurs="0" maxOccurs="unbounded" />
                 <xs:element ref="proxy-factories" minOccurs="0" maxOccurs="1" />
                 <xs:element ref="socket-interceptor" minOccurs="0" maxOccurs="1" />
-                <xs:element ref="loadbalancer" minOccurs="0" maxOccurs="unbounded" />
+                <xs:element ref="load-balancer" minOccurs="0" maxOccurs="unbounded" />
             </xs:sequence>
             <xs:attribute name="id" type="xs:string" use="optional" default="default" />
         </xs:complexType>
@@ -145,7 +145,7 @@
         <xs:complexType>
             <xs:sequence>
                 <xs:element ref="global-serializer" minOccurs="0" maxOccurs="1" />
-                <xs:element ref="type-serializer" minOccurs="0" maxOccurs="unbounded" />
+                <xs:element ref="serializer" minOccurs="0" maxOccurs="unbounded" />
             </xs:sequence>
         </xs:complexType>
     </xs:element>
@@ -154,7 +154,7 @@
             <xs:restriction base="xs:string" />
         </xs:simpleType>
     </xs:element>
-    <xs:element name="type-serializer">
+    <xs:element name="serializer">
         <xs:complexType>
             <xs:simpleContent>
                 <xs:extension base="xs:string">
@@ -210,7 +210,7 @@
             <xs:restriction base="xs:string" />
         </xs:simpleType>
     </xs:element>
-    <xs:element name="loadbalancer">
+    <xs:element name="load-balancer">
         <xs:complexType>
             <xs:attribute name="type" use="required">
                 <xs:simpleType>
@@ -228,10 +228,10 @@
                 <xs:element ref="cluster-members" minOccurs="0" maxOccurs="1" />
                 <xs:element ref="smart-routing" minOccurs="0" maxOccurs="1" />
                 <xs:element ref="redo-operation" minOccurs="0" maxOccurs="1" />
-                <xs:element ref="poolSize" minOccurs="0" maxOccurs="1" />
-                <xs:element ref="connectionTimeout" minOccurs="0" maxOccurs="1" />
-                <xs:element ref="connectionAttemptPeriod" minOccurs="0" maxOccurs="1" />
-                <xs:element ref="connectionAttemptLimit" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="pool-size" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="connection-timeout" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="connection-attempt-period" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="connection-attempt-limit" minOccurs="0" maxOccurs="1" />
                 <xs:element ref="socket-options" minOccurs="0" maxOccurs="1" />
             </xs:sequence>
         </xs:complexType>
@@ -287,7 +287,7 @@
             <xs:restriction base="xs:boolean" />
         </xs:simpleType>
     </xs:element>
-    <xs:element name="poolSize" default="10">
+    <xs:element name="pool-size" default="10">
         <xs:annotation>
             <xs:documentation>
                 Limit for the Pool size that is used to pool the connections to the members.
@@ -299,21 +299,21 @@
             </xs:restriction>
         </xs:simpleType>
     </xs:element>
-    <xs:element name="connectionTimeout" default="60000">
+    <xs:element name="connection-timeout" default="60000">
         <xs:simpleType>
             <xs:restriction base="xs:int">
                 <xs:minInclusive value="1" />
             </xs:restriction>
         </xs:simpleType>
     </xs:element>
-    <xs:element name="connectionAttemptPeriod" default="3000">
+    <xs:element name="connection-attempt-period" default="3000">
         <xs:simpleType>
             <xs:restriction base="xs:int">
                 <xs:minInclusive value="1" />
             </xs:restriction>
         </xs:simpleType>
     </xs:element>
-    <xs:element name="connectionAttemptLimit" default="2">
+    <xs:element name="connection-attempt-limit" default="2">
         <xs:simpleType>
             <xs:restriction base="xs:int">
                 <xs:minInclusive value="1" />
@@ -323,31 +323,31 @@
     <xs:element name="socket-options">
         <xs:complexType>
             <xs:sequence>
-                <xs:element ref="tcpNoDelay" minOccurs="0" maxOccurs="1" />
-                <xs:element ref="keepAlive" minOccurs="0" maxOccurs="1" />
-                <xs:element ref="reuseAddress" minOccurs="0" maxOccurs="1" />
-                <xs:element ref="lingerSeconds" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="tcp-no-delay" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="keep-alive" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="reuse-address" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="linger-seconds" minOccurs="0" maxOccurs="1" />
                 <xs:element ref="timeout" minOccurs="0" maxOccurs="1" />
-                <xs:element ref="bufferSize" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="buffer-size" minOccurs="0" maxOccurs="1" />
             </xs:sequence>
         </xs:complexType>
     </xs:element>
-    <xs:element name="tcpNoDelay" default="false">
+    <xs:element name="tcp-no-delay" default="false">
         <xs:simpleType>
             <xs:restriction base="xs:boolean" />
         </xs:simpleType>
     </xs:element>
-    <xs:element name="keepAlive" default="true">
+    <xs:element name="keep-alive" default="true">
         <xs:simpleType>
             <xs:restriction base="xs:boolean" />
         </xs:simpleType>
     </xs:element>
-    <xs:element name="reuseAddress" default="false">
+    <xs:element name="reuse-address" default="false">
         <xs:simpleType>
             <xs:restriction base="xs:boolean" />
         </xs:simpleType>
     </xs:element>
-    <xs:element name="lingerSeconds" default="3">
+    <xs:element name="linger-seconds" default="3">
         <xs:simpleType>
             <xs:restriction base="xs:int">
                 <xs:minInclusive value="0" />
@@ -359,7 +359,7 @@
             <xs:restriction base="xs:int" />
         </xs:simpleType>
     </xs:element>
-    <xs:element name="bufferSize" default="32">
+    <xs:element name="buffer-size" default="32">
         <xs:simpleType>
             <xs:restriction base="xs:int">
                 <xs:minInclusive value="1" />

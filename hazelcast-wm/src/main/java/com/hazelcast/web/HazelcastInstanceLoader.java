@@ -17,8 +17,8 @@
 package com.hazelcast.web;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.client.config.ClientConfigBuilder;
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigLoader;
 import com.hazelcast.config.UrlXmlConfig;
@@ -69,7 +69,7 @@ class HazelcastInstanceLoader {
                 clientConfig.setConnectionAttemptLimit(3);
             } else {
                 try {
-                    clientConfig = new ClientConfigBuilder(configUrl).build();
+                    clientConfig = new XmlClientConfigBuilder(configUrl).build();
                 } catch (IOException e) {
                     throw new ServletException(e);
                 }
