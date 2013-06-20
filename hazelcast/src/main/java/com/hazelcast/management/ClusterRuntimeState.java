@@ -55,7 +55,7 @@ public class ClusterRuntimeState extends PartitionRuntimeState implements DataSe
                                final Collection<LockResource> locks) {
         super();
         this.activeMigrations = activeMigrations != null ? activeMigrations : Collections.<MigrationInfo>emptySet();
-
+        lockInfos = new LinkedList<LockInfo>();
         connectionInfos = new LinkedList<ConnectionInfo>();
         final Map<Address, Integer> addressIndexes = new HashMap<Address, Integer>(members.size());
         int memberIndex = 0;
