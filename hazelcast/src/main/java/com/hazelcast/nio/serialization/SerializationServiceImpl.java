@@ -90,7 +90,7 @@ public final class SerializationServiceImpl implements SerializationService {
         registerConstant(Long.class, new LongSerializer());
         registerConstant(Float.class, new FloatSerializer());
         registerConstant(Double.class, new DoubleSerializer());
-        registerConstant(byte[].class, new ByteArraySerializer());
+        registerConstant(byte[].class, new TheByteArraySerializer());
         registerConstant(char[].class, new CharArraySerializer());
         registerConstant(short[].class, new ShortArraySerializer());
         registerConstant(int[].class, new IntegerArraySerializer());
@@ -321,10 +321,10 @@ public final class SerializationServiceImpl implements SerializationService {
         final SerializerAdapter s;
         if (serializer instanceof StreamSerializer) {
             s = new StreamSerializerAdapter(this, (StreamSerializer) serializer);
-        } else if (serializer instanceof PlainSerializer) {
-            s = new PlainSerializerAdapter((PlainSerializer) serializer);
+        } else if (serializer instanceof ByteArraySerializer) {
+            s = new ByteArraySerializerAdapter((ByteArraySerializer) serializer);
         } else {
-            throw new IllegalArgumentException("Serializer must be instance of either StreamSerializer or PlainSerializer!");
+            throw new IllegalArgumentException("Serializer must be instance of either StreamSerializer or ByteArraySerializer!");
         } return s;
     }
 

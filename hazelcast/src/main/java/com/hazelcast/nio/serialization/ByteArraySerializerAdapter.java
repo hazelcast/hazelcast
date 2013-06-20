@@ -22,11 +22,11 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
-final class PlainSerializerAdapter implements SerializerAdapter {
+final class ByteArraySerializerAdapter implements SerializerAdapter {
 
-    private final PlainSerializer serializer;
+    private final ByteArraySerializer serializer;
 
-    public PlainSerializerAdapter(PlainSerializer serializer) {
+    public ByteArraySerializerAdapter(ByteArraySerializer serializer) {
         this.serializer = serializer;
     }
 

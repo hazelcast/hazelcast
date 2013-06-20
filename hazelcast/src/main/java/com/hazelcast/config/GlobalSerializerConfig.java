@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.serialization.PlainSerializer;
+import com.hazelcast.nio.serialization.ByteArraySerializer;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.StreamSerializer;
 
@@ -43,7 +43,7 @@ public class GlobalSerializerConfig {
         return implementation;
     }
 
-    public GlobalSerializerConfig setImplementation(final PlainSerializer implementation) {
+    public GlobalSerializerConfig setImplementation(final ByteArraySerializer implementation) {
         this.implementation = implementation;
         return this;
     }
