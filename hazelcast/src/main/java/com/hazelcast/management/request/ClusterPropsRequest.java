@@ -60,7 +60,8 @@ public class ClusterPropsRequest implements ConsoleRequest {
         properties.put("memory.cl_freeMemory", Long.toString(runtime.freeMemory()));
         properties.put("memory.cl_totalMemory", Long.toString(runtime.totalMemory()));
         properties.put("memory.cl_maxMemory", Long.toString(runtime.maxMemory()));
-        properties.put("data.cl_immediateTasksCount", Long.toString(partitionService.getMigrationQueueSize()));
+        properties.put("return.hasOngoingMigration" , Boolean.toString(partitionService.hasOnGoingMigration()));
+        properties.put("data.cl_migrationTasksCount", Long.toString(partitionService.getMigrationQueueSize()));
 
         dos.writeInt(properties.size());
 
