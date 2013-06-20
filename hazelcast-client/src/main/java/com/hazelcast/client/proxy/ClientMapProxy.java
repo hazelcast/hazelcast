@@ -23,9 +23,7 @@ import com.hazelcast.map.*;
 import com.hazelcast.map.client.*;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.query.impl.QueryResultEntry;
 import com.hazelcast.spi.impl.PortableEntryEvent;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
@@ -349,10 +347,10 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public Set<K> keySet(Predicate predicate) {
         MapQueryRequest request = new MapQueryRequest(name, predicate, IterationType.KEY);
         QueryDataResultStream result = invoke(request);
+        result.end();
         Set<K> keySet = new HashSet<K>(result.size());
-        for (QueryResultEntry queryResultEntry : result) {
-            Data keyData = queryResultEntry.getKeyData();
-            K key = toObject(keyData);
+        for (Object data : result) {
+            K key = toObject((Data)data);
             keySet.add(key);
         }
         return keySet;
@@ -361,12 +359,12 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public Set<Entry<K, V>> entrySet(Predicate predicate) {
         MapQueryRequest request = new MapQueryRequest(name, predicate, IterationType.ENTRY);
         QueryDataResultStream result = invoke(request);
+        result.end();
         Set<Entry<K, V>> entrySet = new HashSet<Entry<K, V>>(result.size());
-        for (QueryResultEntry queryResultEntry : result) {
-            Data keyData = queryResultEntry.getKeyData();
-            Data valueData = queryResultEntry.getValueData();
-            K key = toObject(keyData);
-            V value = toObject(valueData);
+        for (Object data : result) {
+            AbstractMap.SimpleImmutableEntry<Data ,Data > dataEntry = (AbstractMap.SimpleImmutableEntry<Data ,Data >)data;
+            K key = toObject(dataEntry.getKey());
+            V value = toObject(dataEntry.getValue());
             entrySet.add(new AbstractMap.SimpleEntry<K, V>(key, value));
         }
         return entrySet;
@@ -375,10 +373,10 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public Collection<V> values(Predicate predicate) {
         MapQueryRequest request = new MapQueryRequest(name, predicate, IterationType.VALUE);
         QueryDataResultStream result = invoke(request);
+        result.end();
         Collection<V> values = new ArrayList<V>(result.size());
-        for (QueryResultEntry queryResultEntry : result) {
-            Data valueData = queryResultEntry.getValueData();
-            V value = toObject(valueData);
+        for (Object data : result) {
+            V value = toObject((Data)data);
             values.add(value);
         }
         return values;

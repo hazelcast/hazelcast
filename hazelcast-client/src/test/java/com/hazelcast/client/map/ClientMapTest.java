@@ -19,6 +19,7 @@ package com.hazelcast.client.map;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
+import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.SerialTest;
 import org.junit.*;
@@ -178,7 +179,7 @@ public class ClientMapTest {
         }
         assertNull(o);
         o = f.get();
-        assertEquals("value4",o);
+        assertEquals("value4", o);
         assertEquals(9, map.size());
     }
 
@@ -219,7 +220,7 @@ public class ClientMapTest {
 
     @Test
     public void testPutTtl() throws Exception {
-        map.put("key1","value1", 1, TimeUnit.SECONDS);
+        map.put("key1", "value1", 1, TimeUnit.SECONDS);
         assertNotNull(map.get("key1"));
         Thread.sleep(2000);
         assertNull(map.get("key1"));
@@ -227,8 +228,8 @@ public class ClientMapTest {
 
     @Test
     public void testPutIfAbsent() throws Exception {
-        assertNull(map.putIfAbsent("key1","value1"));
-        assertEquals("value1", map.putIfAbsent("key1","value3"));
+        assertNull(map.putIfAbsent("key1", "value1"));
+        assertEquals("value1", map.putIfAbsent("key1", "value3"));
     }
 
     @Test
@@ -243,10 +244,10 @@ public class ClientMapTest {
 
     @Test
     public void testSet() throws Exception {
-        map.set("key1","value1");
+        map.set("key1", "value1");
         assertEquals("value1", map.get("key1"));
 
-        map.set("key1","value2");
+        map.set("key1", "value2");
         assertEquals("value2", map.get("key1"));
 
         map.set("key1", "value3", 1, TimeUnit.SECONDS);
@@ -375,6 +376,15 @@ public class ClientMapTest {
     }
 
     @Test
+    public void testValues() {
+        fillMap();
+
+        final Collection values = map.values(new SqlPredicate("this == value1"));
+        assertEquals(1, values.size());
+        assertEquals("value1", values.iterator().next());
+    }
+
+    @Test
     public void testReplace() throws Exception {
         assertNull(map.replace("key1","value1"));
         map.put("key1","value1");
@@ -449,6 +459,18 @@ public class ClientMapTest {
 
         assertTrue(latch2Add.await(4, TimeUnit.SECONDS));
         assertTrue(latch2Remove.await(2, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testBasicPredicate(){
+        fillMap();
+        final Collection collection = map.values(new SqlPredicate("this == value1"));
+        assertEquals("value1", collection.iterator().next());
+        final Set set = map.keySet(new SqlPredicate("this == value1"));
+        assertEquals("key1", set.iterator().next());
+        final Set<Map.Entry<String, String>> set1 = map.entrySet(new SqlPredicate("this == value1"));
+        assertEquals("key1",set1.iterator().next().getKey());
+        assertEquals("value1",set1.iterator().next().getValue());
     }
 
     private void fillMap(){

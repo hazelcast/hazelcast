@@ -74,32 +74,31 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
                     }
                 }
             }
-            if (plist.size() == partitionCount) {
-                getClientEngine().sendResponse(endpoint, result);
-            }
-
-            List<Integer> missingList = new ArrayList<Integer>();
-            for (int i = 0; i < partitionCount; i++) {
-                if (!plist.contains(i)) {
-                    missingList.add(i);
+            if (plist.size() != partitionCount) {
+                List<Integer> missingList = new ArrayList<Integer>();
+                for (int i = 0; i < partitionCount; i++) {
+                    if (!plist.contains(i)) {
+                        missingList.add(i);
+                    }
                 }
-            }
-            List<Future> futures = new ArrayList<Future>(missingList.size());
-            for (Integer pid : missingList) {
-                QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(name, predicate);
-                queryPartitionOperation.setPartitionId(pid);
-                try {
-                    Future f = createInvocationBuilder(SERVICE_NAME, queryPartitionOperation, pid).build().invoke();
-                    futures.add(f);
-                } catch (Throwable t) {
-                    throw ExceptionUtil.rethrow(t);
+                List<Future> futures = new ArrayList<Future>(missingList.size());
+                for (Integer pid : missingList) {
+                    QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(name, predicate);
+                    queryPartitionOperation.setPartitionId(pid);
+                    try {
+                        Future f = createInvocationBuilder(SERVICE_NAME, queryPartitionOperation, pid).build().invoke();
+                        futures.add(f);
+                    } catch (Throwable t) {
+                        throw ExceptionUtil.rethrow(t);
+                    }
                 }
-            }
-            for (Future future : futures) {
-                QueryResult queryResult = (QueryResult) future.get();
-                result.addAll(queryResult.getResult());
+                for (Future future : futures) {
+                    QueryResult queryResult = (QueryResult) future.get();
+                    result.addAll(queryResult.getResult());
+                }
             }
         } catch (Throwable t) {
+            t.printStackTrace();
             throw ExceptionUtil.rethrow(t);
         } finally {
             result.end();
