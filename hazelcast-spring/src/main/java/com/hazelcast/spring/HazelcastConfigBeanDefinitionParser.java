@@ -422,7 +422,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     final BeanDefinitionBuilder targetClusterConfigBuilder = createBeanBuilder(
                             WanTargetClusterConfig.class);
                     final AbstractBeanDefinition childBeanDefinition = targetClusterConfigBuilder.getBeanDefinition();
-                    fillAttributeValues(n, targetClusterConfigBuilder, Collections.EMPTY_LIST);
+                    fillAttributeValues(n, targetClusterConfigBuilder, Collections.<String>emptyList());
                     for (Node childNode : new IterableNodeList(n.getChildNodes(), Node.ELEMENT_NODE)) {
                         final String childNodeName = cleanNodeName(childNode);
                         if ("replication-impl".equals(childNodeName)) {

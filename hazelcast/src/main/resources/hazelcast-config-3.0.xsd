@@ -968,7 +968,7 @@
         <xs:complexType>
             <xs:sequence>
                 <xs:element ref="global-serializer" minOccurs="0" maxOccurs="1"/>
-                <xs:element ref="type-serializer" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element ref="serializer" minOccurs="0" maxOccurs="unbounded"/>
             </xs:sequence>
         </xs:complexType>
     </xs:element>
@@ -977,7 +977,7 @@
             <xs:restriction base="xs:string"/>
         </xs:simpleType>
     </xs:element>
-    <xs:element name="type-serializer">
+    <xs:element name="serializer">
         <xs:complexType>
             <xs:simpleContent>
                 <xs:extension base="xs:string">

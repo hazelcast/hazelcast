@@ -34,7 +34,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.management.ThreadMonitoringService;
 import com.hazelcast.map.MapService;
-import com.hazelcast.nio.serialization.TypeSerializer;
+import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.annotation.PrivateApi;
@@ -208,14 +208,6 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
 
     public <S extends DistributedObject> S getDistributedObject(final String serviceName, Object id) {
         return (S) node.nodeEngine.getProxyService().getDistributedObject(serviceName, id);
-    }
-
-    public void registerSerializer(final Class type, final TypeSerializer serializer) {
-        node.getSerializationService().register(type, serializer);
-    }
-
-    public void registerGlobalSerializer(final TypeSerializer serializer) {
-        node.getSerializationService().registerGlobal(serializer);
     }
 
     public String addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {

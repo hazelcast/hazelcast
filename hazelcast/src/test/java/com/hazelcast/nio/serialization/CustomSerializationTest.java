@@ -17,7 +17,7 @@
 package com.hazelcast.nio.serialization;
 
 import com.hazelcast.config.SerializationConfig;
-import com.hazelcast.config.TypeSerializerConfig;
+import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
@@ -56,10 +56,10 @@ public class CustomSerializationTest {
 
     private void testTypeSerializer(ByteOrder order) throws Exception {
         SerializationConfig config = new SerializationConfig();
-        TypeSerializerConfig tsc = new TypeSerializerConfig().
+        SerializerConfig tsc = new SerializerConfig().
                 setImplementation(new FooXmlSerializer()).
                 setTypeClass(Foo.class);
-        config.addTypeSerializer(tsc);
+        config.addSerializerConfig(tsc);
         SerializationService ss = new SerializationServiceBuilder()
                 .setUseNativeByteOrder(false).setByteOrder(order).setConfig(config).build();
         Foo foo = new Foo();
@@ -82,7 +82,7 @@ public class CustomSerializationTest {
         }
     }
 
-    public static class FooXmlSerializer implements TypeSerializer<Foo> {
+    public static class FooXmlSerializer implements StreamSerializer<Foo> {
 
         @Override
         public int getTypeId() {

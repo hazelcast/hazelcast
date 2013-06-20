@@ -26,7 +26,7 @@ import java.nio.ByteOrder;
 /**
 * @mdogan 12/26/12
 */
-class ByteArrayObjectDataInput extends PortableContextAwareDataInput implements BufferObjectDataInput, SerializationContextAware {
+class ByteArrayObjectDataInput extends PortableContextAwareInputStream implements BufferObjectDataInput, SerializationContextAware {
 
     byte buffer[];
 
@@ -467,6 +467,10 @@ class ByteArrayObjectDataInput extends PortableContextAwareDataInput implements 
             throw new IllegalArgumentException();
         pos = newPos;
         if (mark > pos) mark = -1;
+    }
+
+    public byte[] getBuffer() {
+        return buffer;
     }
 
     @Override

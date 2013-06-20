@@ -44,11 +44,11 @@ public class Foo {
     Let's say our custom serialization will serialize
     <literal>Foo</literal>
     into XML. First we need to implement a
-    <literal>com.hazelcast.nio.serialization.TypeSerializer</literal>.
+    <literal>com.hazelcast.nio.serialization.StreamSerializer</literal>.
     A very simple one that uses XMLEncoder and XMLDecoder, would look like the following:
 
     <programlisting language="java"><![CDATA[
-public static class FooXmlSerializer implements TypeSerializer<Foo> {
+public static class FooXmlSerializer implements StreamSerializer<Foo> {
 
     @Override
     public int getTypeId() {
@@ -80,8 +80,8 @@ public static class FooXmlSerializer implements TypeSerializer<Foo> {
 
     Note that the
     <literal>typeId</literal>
-    must be unique as Hazelcast will use it to lookup the TypeSerializer while
-    it de-serializes the object. Now the last required step is to register the TypeSerializer to the Configuration
+    must be unique as Hazelcast will use it to lookup the StreamSerializer while
+    it de-serializes the object. Now the last required step is to register the StreamSerializer to the Configuration
 
     <para>Programmatic Configuration</para>
 
@@ -108,7 +108,7 @@ config.getSerializationConfig().addTypeSerializer(tsc);
     ]]></programlisting>
     
     From now on, Hazelcast will use <literal>FooXmlSerializer</literal> to serialize Foo objects. 
-    This way one can write an adapter (<literal>TypeSerializer</literal>) for any Serialization framework
+    This way one can write an adapter (<literal>StreamSerializer</literal>) for any Serialization framework
     and plug it into Hazelcast.
 
 </sect1>

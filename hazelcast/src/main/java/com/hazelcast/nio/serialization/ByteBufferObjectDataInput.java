@@ -27,7 +27,7 @@ import java.nio.ByteOrder;
 /**
 * @mdogan 06/15/13
 */
-final class ByteBufferObjectDataInput extends PortableContextAwareDataInput implements BufferObjectDataInput, SerializationContextAware {
+final class ByteBufferObjectDataInput extends PortableContextAwareInputStream implements BufferObjectDataInput, SerializationContextAware {
 
     private final DynamicByteBuffer buffer;
 
@@ -416,6 +416,10 @@ final class ByteBufferObjectDataInput extends PortableContextAwareDataInput impl
         }
         position(pos + skip);
         return skip;
+    }
+
+    public byte[] getBuffer() {
+        return buffer.array();
     }
 
     /**
