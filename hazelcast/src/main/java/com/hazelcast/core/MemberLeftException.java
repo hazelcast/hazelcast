@@ -49,7 +49,7 @@ public class MemberLeftException extends ExecutionException implements DataSeria
     }
 
     public void readData(ObjectDataInput in) throws IOException {
-        Member member = new MemberImpl();
+        member = new MemberImpl();
         member.readData(in);
     }
 }

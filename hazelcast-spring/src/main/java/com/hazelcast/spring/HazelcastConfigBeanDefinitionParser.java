@@ -18,7 +18,6 @@ package com.hazelcast.spring;
 
 import com.hazelcast.config.*;
 import com.hazelcast.config.PermissionConfig.PermissionType;
-import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.spring.context.SpringManagedContext;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.*;
@@ -329,23 +328,23 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                         globalSerializerConfigBuilder.addPropertyValue(xmlToJavaName(className), getValue(classNode));
                     }
                 }
-                if ("type-serializer".equals(name)) {
-                    BeanDefinitionBuilder typeSerializerConfigBuilder = createBeanBuilder(TypeSerializerConfig.class);
-                    fillAttributeValues(child, typeSerializerConfigBuilder);
+                if ("serializer".equals(name)) {
+                    BeanDefinitionBuilder serializerConfigBuilder = createBeanBuilder(SerializerConfig.class);
+                    fillAttributeValues(child, serializerConfigBuilder);
                     final NamedNodeMap attrs = child.getAttributes();
                     final Node implRef = attrs.getNamedItem(implementation);
                     final Node classNode = attrs.getNamedItem(className);
                     if(implRef != null) {
-                        typeSerializerConfigBuilder.addPropertyReference(xmlToJavaName(implementation), getValue(implRef));
+                        serializerConfigBuilder.addPropertyReference(xmlToJavaName(implementation), getValue(implRef));
                     }
                     if(classNode != null) {
-                        typeSerializerConfigBuilder.addPropertyValue(xmlToJavaName(className), getValue(classNode));
+                        serializerConfigBuilder.addPropertyValue(xmlToJavaName(className), getValue(classNode));
                     }
-                    typeSerializers.add(typeSerializerConfigBuilder.getBeanDefinition());
+                    typeSerializers.add(serializerConfigBuilder.getBeanDefinition());
                 }
             }
-            serializationConfigBuilder.addPropertyValue("globalSerializer", globalSerializerConfigBuilder.getBeanDefinition());
-            serializationConfigBuilder.addPropertyValue("typeSerializers", typeSerializers);
+            serializationConfigBuilder.addPropertyValue("globalSerializerConfig", globalSerializerConfigBuilder.getBeanDefinition());
+            serializationConfigBuilder.addPropertyValue("serializerConfigs", typeSerializers);
         }
 
 
@@ -509,7 +508,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     final BeanDefinitionBuilder targetClusterConfigBuilder = createBeanBuilder(
                             WanTargetClusterConfig.class);
                     final AbstractBeanDefinition childBeanDefinition = targetClusterConfigBuilder.getBeanDefinition();
-                    fillAttributeValues(n, targetClusterConfigBuilder, Collections.EMPTY_LIST);
+                    fillAttributeValues(n, targetClusterConfigBuilder, Collections.<String>emptyList());
                     for (Node childNode : new IterableNodeList(n.getChildNodes(), Node.ELEMENT_NODE)) {
                         final String childNodeName = cleanNodeName(childNode);
                         if ("replication-impl".equals(childNodeName)) {

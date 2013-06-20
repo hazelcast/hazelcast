@@ -18,7 +18,6 @@ package com.hazelcast.core;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
@@ -257,11 +256,8 @@ public interface HazelcastInstance {
      */
     LifecycleService getLifecycleService();
 
+
     <T extends DistributedObject> T getDistributedObject(String serviceName, Object id);
-
-    void registerSerializer(final Class type, final TypeSerializer serializer);
-
-    void registerGlobalSerializer(final TypeSerializer serializer);
 
     /**
      * Returns a ConcurrentMap that can be used to add user-context to the HazelcastInstance. This can be used

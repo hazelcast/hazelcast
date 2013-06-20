@@ -17,42 +17,13 @@
 package com.hazelcast.nio.serialization;
 
 import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
-import java.io.InputStream;
+import java.io.IOException;
 
-/**
- * @mdogan 06/15/13
- */
-abstract class PortableContextAwareDataInput extends InputStream implements ObjectDataInput {
+public interface StreamSerializer<T> extends Serializer {
 
-    private int factoryId;
+    void write(ObjectDataOutput out, T object) throws IOException;
 
-    private int dataClassId;
-
-    private int dataVersion;
-
-    final int getFactoryId() {
-        return factoryId;
-    }
-
-    final void setFactoryId(int factoryId) {
-        this.factoryId = factoryId;
-    }
-
-    final int getDataClassId() {
-        return dataClassId;
-    }
-
-    final void setDataClassId(int classId) {
-        this.dataClassId = classId;
-    }
-
-    final int getDataVersion() {
-        return dataVersion;
-    }
-
-    final void setDataVersion(int dataVersion) {
-        this.dataVersion = dataVersion;
-    }
-
+    T read(ObjectDataInput in) throws IOException;
 }

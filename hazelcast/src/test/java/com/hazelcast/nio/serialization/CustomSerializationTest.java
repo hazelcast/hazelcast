@@ -17,7 +17,7 @@
 package com.hazelcast.nio.serialization;
 
 import com.hazelcast.config.SerializationConfig;
-import com.hazelcast.config.TypeSerializerConfig;
+import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
@@ -40,26 +40,26 @@ import static junit.framework.Assert.assertEquals;
 public class CustomSerializationTest {
 
     @Test
-    public void testTypeSerializer() throws Exception {
-        testTypeSerializer(ByteOrder.BIG_ENDIAN);
+    public void testSerializer() throws Exception {
+        testSerializer(ByteOrder.BIG_ENDIAN);
     }
 
     @Test
-    public void testTypeSerializerLittleEndian() throws Exception {
-        testTypeSerializer(ByteOrder.LITTLE_ENDIAN);
+    public void testSerializerLittleEndian() throws Exception {
+        testSerializer(ByteOrder.LITTLE_ENDIAN);
     }
 
     @Test
-    public void testTypeSerializerNativeOrder() throws Exception {
-        testTypeSerializer(ByteOrder.nativeOrder());
+    public void testSerializerNativeOrder() throws Exception {
+        testSerializer(ByteOrder.nativeOrder());
     }
 
-    private void testTypeSerializer(ByteOrder order) throws Exception {
+    private void testSerializer(ByteOrder order) throws Exception {
         SerializationConfig config = new SerializationConfig();
-        TypeSerializerConfig tsc = new TypeSerializerConfig().
+        SerializerConfig sc = new SerializerConfig().
                 setImplementation(new FooXmlSerializer()).
                 setTypeClass(Foo.class);
-        config.addTypeSerializer(tsc);
+        config.addSerializerConfig(sc);
         SerializationService ss = new SerializationServiceBuilder()
                 .setUseNativeByteOrder(false).setByteOrder(order).setConfig(config).build();
         Foo foo = new Foo();
@@ -82,7 +82,7 @@ public class CustomSerializationTest {
         }
     }
 
-    public static class FooXmlSerializer implements TypeSerializer<Foo> {
+    public static class FooXmlSerializer implements StreamSerializer<Foo> {
 
         @Override
         public int getTypeId() {

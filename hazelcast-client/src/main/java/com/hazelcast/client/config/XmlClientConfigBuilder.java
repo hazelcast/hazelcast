@@ -16,34 +16,29 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.client.exception.ClientException;
+import com.hazelcast.client.spi.ClientProxyFactory;
+import com.hazelcast.client.util.RandomLB;
+import com.hazelcast.client.util.RoundRobinLB;
+import com.hazelcast.config.*;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.SocketInterceptor;
+import com.hazelcast.security.UsernamePasswordCredentials;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.ByteOrder;
 import java.util.EventListener;
 import java.util.logging.Level;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-
-import com.hazelcast.client.spi.ClientProxyFactory;
-import com.hazelcast.client.util.RandomLB;
-import com.hazelcast.client.util.RoundRobinLB;
-import com.hazelcast.config.AbstractXmlConfigHelper;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.GlobalSerializerConfig;
-import com.hazelcast.config.SerializationConfig;
-import com.hazelcast.config.TypeSerializerConfig;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.SocketInterceptor;
-import com.hazelcast.security.UsernamePasswordCredentials;
 
 public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
 
@@ -52,11 +47,27 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
     private boolean domLevel3 = true;
     private ClientConfig clientConfig;
     private InputStream in;
-    private File configurationFile;
-    private URL configurationUrl;
 
-    public XmlClientConfigBuilder(String xmlFileName) throws FileNotFoundException {
-        this(new FileInputStream(xmlFileName));
+    public XmlClientConfigBuilder(String resource) throws IOException {
+        URL url = ConfigLoader.locateConfig(resource);
+        if (url == null) {
+            throw new IllegalArgumentException("Could not load " + resource);
+        }
+        this.in = url.openStream();
+    }
+
+    public XmlClientConfigBuilder(File file) throws IOException {
+        if (file == null) {
+            throw new NullPointerException("File is null!");
+        }
+        in = new FileInputStream(file);
+    }
+
+    public XmlClientConfigBuilder(URL url) throws IOException {
+        if (url == null) {
+            throw new NullPointerException("URL is null!");
+        }
+        in = url.openStream();
     }
 
     public XmlClientConfigBuilder(InputStream in) {
@@ -66,6 +77,7 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
     public XmlClientConfigBuilder() {
         String configFile = System.getProperty("hazelcast.client.config");
         try {
+            File configurationFile = null;
             if (configFile != null) {
                 configurationFile = new File(configFile);
                 logger.log(Level.INFO, "Using configuration file at " + configurationFile.getAbsolutePath());
@@ -77,12 +89,13 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
                 }
             }
             if (configurationFile == null) {
-                configFile = "hazelcast-client.xml";
-                configurationFile = new File("hazelcast-client.xml");
+                configFile = "hazelcast-client-default.xml";
+                configurationFile = new File("hazelcast-client-default.xml");
                 if (!configurationFile.exists()) {
                     configurationFile = null;
                 }
             }
+            URL configurationUrl;
             if (configurationFile != null) {
                 logger.log(Level.INFO, "Using configuration file at " + configurationFile.getAbsolutePath());
                 try {
@@ -98,7 +111,7 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
             }
             if (in == null) {
                 logger.log(Level.INFO, "Looking for hazelcast-client.xml config file in classpath.");
-                configurationUrl = Config.class.getClassLoader().getResource("hazelcast-client.xml");
+                configurationUrl = Config.class.getClassLoader().getResource("hazelcast-client-default.xml");
                 if (configurationUrl == null) {
                     throw new IllegalStateException("Cannot find hazelcast-client.xml in classpath, giving up.");
                 }
@@ -120,30 +133,24 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
     public ClientConfig build(ClassLoader classLoader) {
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.setClassLoader(classLoader);
-        return build(clientConfig);
-    }
-
-    public ClientConfig build(ClientConfig clientConfig) {
         try {
-            parse(clientConfig, null);
+            parse(clientConfig);
+            return clientConfig;
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new ClientException(e);
         }
-        return clientConfig;
     }
 
-    private void parse(ClientConfig clientConfig, Element element) throws Exception {
+    private void parse(ClientConfig clientConfig) throws Exception {
         this.clientConfig = clientConfig;
-        if (element == null) {
-            final DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-            Document doc;
-            try {
-                doc = builder.parse(in);
-            } catch (final Exception e) {
-                throw new IllegalStateException("Could not parse configuration file, giving up.");
-            }
-            element = doc.getDocumentElement();
+        final DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+        Document doc;
+        try {
+            doc = builder.parse(in);
+        } catch (final Exception e) {
+            throw new IllegalStateException("Could not parse configuration file, giving up.");
         }
+        Element element = doc.getDocumentElement();
         try {
             element.getTextContent();
         } catch (final Throwable e) {
@@ -169,13 +176,13 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
                 handleListeners(node);
             } else if ("network".equals(nodeName)) {
                 handleNetwork(node);
-            } else if ("loadbalancer".equals(nodeName)) {
-                handleLoadbalancer(node);
+            } else if ("load-balancer".equals(nodeName)) {
+                handleLoadBalancer(node);
             }
         }
     }
 
-    private void handleLoadbalancer(Node node) {
+    private void handleLoadBalancer(Node node) {
         final String type = getAttribute(node, "type");
         if ("random".equals(type)) {
             clientConfig.setLoadBalancer(new RandomLB());
@@ -193,13 +200,13 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
                 clientConfig.setSmart(Boolean.parseBoolean(getValue(child)));
             } else if ("redo-operation".equals(nodeName)) {
                 clientConfig.setRedoOperation(Boolean.parseBoolean(getValue(child)));
-            } else if ("poolSize".equals(nodeName)) {
+            } else if ("pool-size".equals(nodeName)) {
                 clientConfig.setPoolSize(Integer.parseInt(getValue(child)));
-            } else if ("connectionTimeout".equals(nodeName)) {
+            } else if ("connection-timeout".equals(nodeName)) {
                 clientConfig.setConnectionTimeout(Integer.parseInt(getValue(child)));
-            } else if ("connectionAttemptPeriod".equals(nodeName)) {
+            } else if ("connection-attempt-period".equals(nodeName)) {
                 clientConfig.setConnectionAttemptPeriod(Integer.parseInt(getValue(child)));
-            } else if ("connectionAttemptLimit".equals(nodeName)) {
+            } else if ("connection-attempt-limit".equals(nodeName)) {
                 clientConfig.setConnectionAttemptLimit(Integer.parseInt(getValue(child)));
             } else if ("socket-options".equals(nodeName)) {
                 handleSocketOptions(child);
@@ -211,17 +218,17 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
         SocketOptions socketOptions = clientConfig.getSocketOptions();
         for (Node child : new IterableNodeList(node.getChildNodes())) {
             final String nodeName = cleanNodeName(child);
-            if ("tcpNoDelay".equals(nodeName)) {
+            if ("tcp-no-delay".equals(nodeName)) {
                 socketOptions.setSocketTcpNoDelay(Boolean.parseBoolean(getValue(child)));
-            } else if ("keepAlive".equals(nodeName)) {
+            } else if ("keep-alive".equals(nodeName)) {
                 socketOptions.setSocketKeepAlive(Boolean.parseBoolean(getValue(child)));
-            } else if ("reuseAddress".equals(nodeName)) {
+            } else if ("reuse-address".equals(nodeName)) {
                 socketOptions.setSocketReuseAddress(Boolean.parseBoolean(getValue(child)));
-            } else if ("lingerSeconds".equals(nodeName)) {
+            } else if ("linger-seconds".equals(nodeName)) {
                 socketOptions.setSocketLingerSeconds(Integer.parseInt(getValue(child)));
             } else if ("timeout".equals(nodeName)) {
                 socketOptions.setSocketTimeout(Integer.parseInt(getValue(child)));
-            } else if ("bufferSize".equals(nodeName)) {
+            } else if ("buffer-size".equals(nodeName)) {
                 socketOptions.setSocketBufferSize(Integer.parseInt(getValue(child)));
             }
         }
@@ -328,16 +335,16 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
         for (Node child : new IterableNodeList(node.getChildNodes())) {
             final String name = cleanNodeName(child);
             final String value = getValue(child);
-            if ("type-serializer".equals(name)) {
-                TypeSerializerConfig typeSerializerConfig = new TypeSerializerConfig();
-                typeSerializerConfig.setClassName(value);
+            if ("serializer".equals(name)) {
+                SerializerConfig serializerConfig = new SerializerConfig();
+                serializerConfig.setClassName(value);
                 final String typeClassName = getAttribute(child, "type-class");
-                typeSerializerConfig.setTypeClassName(typeClassName);
-                serializationConfig.addTypeSerializer(typeSerializerConfig);
+                serializerConfig.setTypeClassName(typeClassName);
+                serializationConfig.addSerializerConfig(serializerConfig);
             } else if ("global-serializer".equals(name)) {
                 GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
                 globalSerializerConfig.setClassName(value);
-                serializationConfig.setGlobalSerializer(globalSerializerConfig);
+                serializationConfig.setGlobalSerializerConfig(globalSerializerConfig);
             }
         }
     }

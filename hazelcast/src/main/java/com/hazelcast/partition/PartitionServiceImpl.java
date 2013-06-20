@@ -372,8 +372,8 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             }
 
             final Set<Address> unknownAddresses = new HashSet<Address>();
-            PartitionImpl[] newPartitions = partitionState.getPartitions();
-            for (PartitionImpl newPartition : newPartitions) {
+            PartitionView[] newPartitions = partitionState.getPartitions();
+            for (PartitionView newPartition : newPartitions) {
                 PartitionImpl currentPartition = partitions[newPartition.getPartitionId()];
                 for (int index = 0; index < PartitionImpl.MAX_REPLICA_COUNT; index++) {
                     Address address = newPartition.getReplicaAddress(index);
@@ -411,7 +411,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 rollbackActiveMigrationsFromPreviousMaster(masterMember.getUuid());
             }
 
-            for (PartitionImpl newPartition : newPartitions) {
+            for (PartitionView newPartition : newPartitions) {
                 PartitionImpl currentPartition = partitions[newPartition.getPartitionId()];
                 currentPartition.setPartitionInfo(newPartition);
             }

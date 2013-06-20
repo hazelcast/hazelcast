@@ -218,7 +218,8 @@
                                 <include>com/hazelcast/nio/serialization/DataSerializableFactory.java</include>
                                 <include>com/hazelcast/nio/serialization/Portable.java</include>
                                 <include>com/hazelcast/nio/serialization/PortableFactory.java</include>
-                                <include>com/hazelcast/nio/serialization/TypeSerializer.java</include>
+                                <include>com/hazelcast/nio/serialization/PlainSerializer.java</include>
+                                <include>com/hazelcast/nio/serialization/StreamSerializer.java</include>
 
                                 <include>com/hazelcast/client/HazelcastClient.java</include>
                                 <include>com/hazelcast/client/LoadBalancer.java</include>
@@ -283,10 +284,10 @@
                             <forkCount>1C</forkCount>
                             <reuseForks>true</reuseForks>
 
-                            <!--<threadCount>2</threadCount>-->
-                            <!--<perCoreThreadCount>true</perCoreThreadCount>-->
-                            <!--&lt;!&ndash; has no effect when thread count is 1 &ndash;&gt;-->
-                            <!--<parallel>methods</parallel>-->
+                            <threadCount>1</threadCount>
+                            <perCoreThreadCount>true</perCoreThreadCount>
+                            <!-- has no effect when thread count is 1 -->
+                            <parallel>methods</parallel>
 
                             <argLine>-Xms128m -Xmx1G -XX:MaxPermSize=128M
                                 -Dhazelcast.version.check.enabled=false

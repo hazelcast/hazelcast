@@ -68,9 +68,9 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         final ClientConfig clientConfig = getClientConfig();
         redoOperation = clientConfig.isRedoOperation();
         credentials = clientConfig.getCredentials();
-        final Collection<EventListener> listeners = client.getClientConfig().getListeners();
-        if (listeners != null && !listeners.isEmpty()) {
-            for (EventListener listener : listeners) {
+        final Collection<EventListener> listenersList = client.getClientConfig().getListeners();
+        if (listenersList != null && !listenersList.isEmpty()) {
+            for (EventListener listener : listenersList) {
                 if (listener instanceof MembershipListener) {
                     addMembershipListener((MembershipListener) listener);
                 }

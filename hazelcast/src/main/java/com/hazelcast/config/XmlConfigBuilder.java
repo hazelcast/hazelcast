@@ -20,6 +20,7 @@ import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
 import com.hazelcast.config.MapConfig.StorageType;
 import com.hazelcast.config.PartitionGroupConfig.MemberGroupType;
 import com.hazelcast.config.PermissionConfig.PermissionType;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import org.w3c.dom.*;
@@ -123,47 +124,35 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         return build(config);
     }
 
-    public Config build(Config config) {
-        return build(config, null);
-    }
-
-    public Config build(Element element) {
-        Config config = new Config();
-        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
-        return build(config, element);
-    }
-
-    Config build(Config config, Element element) {
+    Config build(Config config) {
         try {
-            parse(config, element);
+            parse(config);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new HazelcastException(e);
         }
         config.setConfigurationFile(configurationFile);
         config.setConfigurationUrl(configurationUrl);
         return config;
     }
 
-    private void parse(final Config config, Element element) throws Exception {
+    private void parse(final Config config) throws Exception {
         this.config = config;
-        if (element == null) {
-            final DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-            Document doc;
-            try {
-                doc = builder.parse(in);
-            } catch (final Exception e) {
-                String msgPart = "config file '" + config.getConfigurationFile() + "' set as a system property.";
-                if (!usingSystemConfig) {
-                    msgPart = "hazelcast-default.xml config file in the classpath.";
-                }
-                String msg = "Having problem parsing the " + msgPart;
-                msg += "\nException: " + e.getMessage();
-                msg += "\nHazelcast will start with default configuration.";
-                logger.log(Level.WARNING, msg);
-                return;
+        final DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+        Document doc;
+        try {
+            doc = builder.parse(in);
+        } catch (final Exception e) {
+            String msgPart = "config file '" + config.getConfigurationFile() + "' set as a system property.";
+            if (!usingSystemConfig) {
+                msgPart = "hazelcast-default.xml config file in the classpath.";
             }
-            element = doc.getDocumentElement();
+            String msg = "Having problem parsing the " + msgPart;
+            msg += "\nException: " + e.getMessage();
+            msg += "\nHazelcast will start with default configuration.";
+            logger.log(Level.WARNING, msg);
+            return;
         }
+        Element element = doc.getDocumentElement();
         try {
             element.getTextContent();
         } catch (final Throwable e) {
@@ -932,7 +921,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 } else if (ByteOrder.LITTLE_ENDIAN.toString().equals(value)) {
                     byteOrder = ByteOrder.LITTLE_ENDIAN;
                 }
-                serializationConfig.setByteOrder(byteOrder != null ? byteOrder  : ByteOrder.BIG_ENDIAN);
+                serializationConfig.setByteOrder(byteOrder != null ? byteOrder : ByteOrder.BIG_ENDIAN);
             } else if ("data-serializable-factories".equals(name)) {
                 handleDataSerializableFactories(child, serializationConfig);
             } else if ("portable-factories".equals(name)) {
@@ -977,16 +966,16 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
             final String name = cleanNodeName(child);
             final String value = getValue(child);
-            if ("type-serializer".equals(name)) {
-                TypeSerializerConfig typeSerializerConfig = new TypeSerializerConfig();
-                typeSerializerConfig.setClassName(value);
+            if ("serializer".equals(name)) {
+                SerializerConfig serializerConfig = new SerializerConfig();
+                serializerConfig.setClassName(value);
                 final String typeClassName = getAttribute(child, "type-class");
-                typeSerializerConfig.setTypeClassName(typeClassName);
-                serializationConfig.addTypeSerializer(typeSerializerConfig);
+                serializerConfig.setTypeClassName(typeClassName);
+                serializationConfig.addSerializerConfig(serializerConfig);
             } else if ("global-serializer".equals(name)) {
                 GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
                 globalSerializerConfig.setClassName(value);
-                serializationConfig.setGlobalSerializer(globalSerializerConfig);
+                serializationConfig.setGlobalSerializerConfig(globalSerializerConfig);
             }
         }
     }

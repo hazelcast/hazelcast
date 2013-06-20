@@ -16,19 +16,9 @@
 
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-
-import java.io.IOException;
-
-public interface TypeSerializer<T> {
+public interface Serializer {
 
     int getTypeId();
 
-    void write(ObjectDataOutput out, T object) throws IOException;
-
-    T read(ObjectDataInput in) throws IOException;
-
     void destroy();
-
 }
