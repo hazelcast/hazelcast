@@ -47,7 +47,7 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceBuilder;
-import com.hazelcast.nio.serialization.TypeSerializer;
+import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.topic.TopicService;
 import com.hazelcast.transaction.TransactionContext;
@@ -291,16 +291,6 @@ public final class HazelcastClient implements HazelcastInstance {
     @Override
     public <T extends DistributedObject> T getDistributedObject(String serviceName, Object id) {
         return (T) proxyManager.getProxy(serviceName, id);
-    }
-
-    @Override
-    public void registerSerializer(final Class type, final TypeSerializer serializer) {
-        serializationService.register(type, serializer);
-    }
-
-    @Override
-    public void registerGlobalSerializer(TypeSerializer serializer) {
-        serializationService.registerGlobal(serializer);
     }
 
     @Override

@@ -37,7 +37,7 @@ public class SerializationConfig {
 
     private GlobalSerializerConfig globalSerializer;
 
-    private Collection<TypeSerializerConfig> typeSerializers;
+    private Collection<SerializerConfig> serializerConfigs;
 
     private boolean checkClassDefErrors = true;
 
@@ -62,20 +62,20 @@ public class SerializationConfig {
         return this;
     }
 
-    public Collection<TypeSerializerConfig> getTypeSerializers() {
-        if (typeSerializers == null) {
-            typeSerializers = new LinkedList<TypeSerializerConfig>();
+    public Collection<SerializerConfig> getSerializerConfigs() {
+        if (serializerConfigs == null) {
+            serializerConfigs = new LinkedList<SerializerConfig>();
         }
-        return typeSerializers;
+        return serializerConfigs;
     }
 
-    public SerializationConfig addTypeSerializer(TypeSerializerConfig typeSerializerConfig) {
-        getTypeSerializers().add(typeSerializerConfig);
+    public SerializationConfig addSerializerConfig(SerializerConfig serializerConfig) {
+        getSerializerConfigs().add(serializerConfig);
         return this;
     }
 
-    public SerializationConfig setTypeSerializers(Collection<TypeSerializerConfig> typeSerializers) {
-        this.typeSerializers = typeSerializers;
+    public SerializationConfig setSerializerConfigs(Collection<SerializerConfig> serializerConfigs) {
+        this.serializerConfigs = serializerConfigs;
         return this;
     }
 
@@ -215,7 +215,7 @@ public class SerializationConfig {
         sb.append(", portableFactoryClasses=").append(portableFactoryClasses);
         sb.append(", portableFactories=").append(portableFactories);
         sb.append(", globalSerializer=").append(globalSerializer);
-        sb.append(", typeSerializers=").append(typeSerializers);
+        sb.append(", serializerConfigs=").append(serializerConfigs);
         sb.append(", checkClassDefErrors=").append(checkClassDefErrors);
         sb.append(", classDefinitions=").append(classDefinitions);
         sb.append(", byteOrder=").append(byteOrder);

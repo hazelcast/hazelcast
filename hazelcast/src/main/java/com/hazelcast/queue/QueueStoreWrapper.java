@@ -103,11 +103,13 @@ public class QueueStoreWrapper implements QueueStore<Data> {
                 BufferObjectDataOutput out = serializationService.createObjectDataOutput(value.totalSize());
                 try {
                     value.writeData(out);
+                    // buffer size is exactly equal to binary size, no need to copy array.
+                    actualValue = out.getBuffer();
                 } catch (IOException e) {
                     throw new HazelcastException(e);
+                } finally {
+                    IOUtil.closeResource(out);
                 }
-                // buffer size is exactly equal to binary size, no need to copy array. (also no need to close the out)
-                actualValue = out.getBuffer();
             } else {
                 actualValue = serializationService.toObject(value);
             }

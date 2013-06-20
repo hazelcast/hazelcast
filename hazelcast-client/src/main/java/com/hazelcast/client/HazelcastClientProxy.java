@@ -21,7 +21,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.TerminatedLifecycleService;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.nio.serialization.TypeSerializer;
+import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
@@ -148,14 +148,6 @@ public final class HazelcastClientProxy implements HazelcastInstance {
 
     public <T extends DistributedObject> T getDistributedObject(String serviceName, Object id) {
         return getClient().getDistributedObject(serviceName, id);
-    }
-
-    public void registerSerializer(Class type, TypeSerializer serializer) {
-        getClient().registerSerializer(type, serializer);
-    }
-
-    public void registerGlobalSerializer(TypeSerializer serializer) {
-        getClient().registerGlobalSerializer(serializer);
     }
 
     public ConcurrentMap<String, Object> getUserContext() {

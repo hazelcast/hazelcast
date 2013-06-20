@@ -16,19 +16,21 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.serialization.TypeSerializer;
+import com.hazelcast.nio.serialization.PlainSerializer;
+import com.hazelcast.nio.serialization.Serializer;
+import com.hazelcast.nio.serialization.StreamSerializer;
 
-public class TypeSerializerConfig {
+public class SerializerConfig {
 
     private String className;
 
-    private TypeSerializer implementation;
+    private Serializer implementation;
 
     private Class typeClass;
 
     private String typeClassName;
 
-    public TypeSerializerConfig() {
+    public SerializerConfig() {
         super();
     }
 
@@ -36,16 +38,21 @@ public class TypeSerializerConfig {
         return className;
     }
 
-    public TypeSerializerConfig setClassName(final String className) {
+    public SerializerConfig setClassName(final String className) {
         this.className = className;
         return this;
     }
 
-    public TypeSerializer getImplementation() {
+    public Serializer getImplementation() {
         return implementation;
     }
 
-    public TypeSerializerConfig setImplementation(final TypeSerializer implementation) {
+    public SerializerConfig setImplementation(final PlainSerializer implementation) {
+        this.implementation = implementation;
+        return this;
+    }
+
+    public SerializerConfig setImplementation(final StreamSerializer implementation) {
         this.implementation = implementation;
         return this;
     }
@@ -54,7 +61,7 @@ public class TypeSerializerConfig {
         return typeClass;
     }
 
-    public TypeSerializerConfig setTypeClass(final Class typeClass) {
+    public SerializerConfig setTypeClass(final Class typeClass) {
         this.typeClass = typeClass;
         return this;
     }
@@ -63,14 +70,14 @@ public class TypeSerializerConfig {
         return typeClassName;
     }
 
-    public TypeSerializerConfig setTypeClassName(final String typeClassName) {
+    public SerializerConfig setTypeClassName(final String typeClassName) {
         this.typeClassName = typeClassName;
         return this;
     }
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("TypeSerializerConfig{");
+        final StringBuilder sb = new StringBuilder("SerializerConfig{");
         sb.append("className='").append(className).append('\'');
         sb.append(", implementation=").append(implementation);
         sb.append(", typeClass=").append(typeClass);

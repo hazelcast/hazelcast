@@ -52,9 +52,9 @@ public interface SerializationService {
 
     ObjectDataInputStream createObjectDataInputStream(InputStream in, ByteOrder order);
 
-    void register(Class type, TypeSerializer serializer);
+    void register(Class type, Serializer serializer);
 
-    void registerGlobal(TypeSerializer serializer);
+    void registerGlobal(Serializer serializer);
 
     SerializationContext getSerializationContext();
 

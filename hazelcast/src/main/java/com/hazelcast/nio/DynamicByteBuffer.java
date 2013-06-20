@@ -312,7 +312,15 @@ public final class DynamicByteBuffer {
 
     public byte[] array() {
         check();
-        return buffer.array();
+        if (!buffer.isDirect()) {
+            return buffer.array();
+        } else {
+            final ByteBuffer duplicate = buffer.duplicate();
+            duplicate.flip();
+            final byte newBuffer[] = new byte[duplicate.limit()];
+            duplicate.get(newBuffer);
+            return newBuffer;
+        }
     }
 
     public ByteOrder order() {

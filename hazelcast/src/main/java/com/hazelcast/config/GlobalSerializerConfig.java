@@ -16,13 +16,15 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.serialization.TypeSerializer;
+import com.hazelcast.nio.serialization.PlainSerializer;
+import com.hazelcast.nio.serialization.Serializer;
+import com.hazelcast.nio.serialization.StreamSerializer;
 
 public class GlobalSerializerConfig {
 
     private String className;
 
-    private TypeSerializer implementation;
+    private Serializer implementation;
 
     public GlobalSerializerConfig() {
         super();
@@ -37,11 +39,16 @@ public class GlobalSerializerConfig {
         return this;
     }
 
-    public TypeSerializer getImplementation() {
+    public Serializer getImplementation() {
         return implementation;
     }
 
-    public GlobalSerializerConfig setImplementation(final TypeSerializer implementation) {
+    public GlobalSerializerConfig setImplementation(final PlainSerializer implementation) {
+        this.implementation = implementation;
+        return this;
+    }
+
+    public GlobalSerializerConfig setImplementation(final StreamSerializer implementation) {
         this.implementation = implementation;
         return this;
     }

@@ -19,7 +19,7 @@ package com.hazelcast.instance;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.nio.serialization.TypeSerializer;
+import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
@@ -140,14 +140,6 @@ public final class HazelcastInstanceProxy implements HazelcastInstance {
 
     public <S extends DistributedObject> S getDistributedObject(String serviceName, Object id) {
         return getOriginal().getDistributedObject(serviceName, id);
-    }
-
-    public void registerSerializer(final Class type, final TypeSerializer serializer){
-        getOriginal().registerSerializer(type, serializer);
-    }
-
-    public void registerGlobalSerializer(TypeSerializer serializer) {
-        getOriginal().registerGlobalSerializer(serializer);
     }
 
     public String addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {

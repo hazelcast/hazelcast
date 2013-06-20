@@ -218,7 +218,8 @@
                                 <include>com/hazelcast/nio/serialization/DataSerializableFactory.java</include>
                                 <include>com/hazelcast/nio/serialization/Portable.java</include>
                                 <include>com/hazelcast/nio/serialization/PortableFactory.java</include>
-                                <include>com/hazelcast/nio/serialization/TypeSerializer.java</include>
+                                <include>com/hazelcast/nio/serialization/PlainSerializer.java</include>
+                                <include>com/hazelcast/nio/serialization/StreamSerializer.java</include>
 
                                 <include>com/hazelcast/client/HazelcastClient.java</include>
                                 <include>com/hazelcast/client/LoadBalancer.java</include>

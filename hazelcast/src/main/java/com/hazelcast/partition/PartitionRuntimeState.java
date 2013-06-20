@@ -81,7 +81,7 @@ public class PartitionRuntimeState implements DataSerializable {
         }
     }
 
-    public PartitionImpl[] getPartitions() {
+    public PartitionView[] getPartitions() {
         int size = partitionInfos.size();
         PartitionImpl[] partitions = new PartitionImpl[size];
         for (ShortPartitionInfo spi : partitionInfos) {

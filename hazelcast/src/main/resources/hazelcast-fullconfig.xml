@@ -319,8 +319,8 @@
         </portable-factories>
         <serializers>
             <global-serializer>com.hazelcast.examples.GlobalSerializerFactory</global-serializer>
-            <type-serializer type-class="com.hazelcast.examples.DummyType">
-                com.hazelcast.examples.SerializerFactory</type-serializer>
+            <serializer type-class="com.hazelcast.examples.DummyType">
+                com.hazelcast.examples.SerializerFactory</serializer>
         </serializers>
         <check-class-def-errors>true</check-class-def-errors>
     </serialization>
