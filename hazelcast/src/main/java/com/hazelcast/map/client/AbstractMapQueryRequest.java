@@ -98,6 +98,7 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
                 }
             }
         } catch (Throwable t) {
+            t.printStackTrace();
             throw ExceptionUtil.rethrow(t);
         } finally {
             result.end();

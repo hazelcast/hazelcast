@@ -69,10 +69,11 @@ public class QueryDataResultStream extends AbstractSet implements IdentifiedData
         }
     }
 
-    public synchronized boolean add(QueryResultEntry entry) {
+    public synchronized boolean add(Object obj) {
         if (!started) {
             started = true;
         }
+        QueryResultEntry entry = (QueryResultEntry) obj;
         if (!set || keys.add(entry.getIndexKey())) {
             q.offer(entry);
             size++;

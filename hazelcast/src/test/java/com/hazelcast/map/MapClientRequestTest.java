@@ -277,7 +277,8 @@ public class MapClientRequestTest extends ClientTestSupport {
         MapQueryRequest request = new MapQueryRequest(mapName, new SqlPredicate("age < 10"), IterationType.VALUE);
         final SimpleClient client = getClient();
         client.send(request);
-        QueryDataResultStream result = (QueryDataResultStream) client.receive();
+        Object receive = client.receive();
+        QueryDataResultStream result = (QueryDataResultStream) receive;
         Iterator iterator = result.iterator();
         while(iterator.hasNext()) {
             Employee x = (Employee) TestUtil.toObject((Data) iterator.next());

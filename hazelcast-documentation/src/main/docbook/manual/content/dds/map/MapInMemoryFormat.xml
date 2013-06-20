@@ -32,13 +32,13 @@
         <itemizedlist>
             <listitem>
                 <para>
-                    <emphasis role="bold">BINARY (default): </emphasis>This is the default option. The data will be stored in serialized binary format.
+                    <emphasis role="bold">BINARY (default):</emphasis>This is the default option. The data will be stored in serialized binary format.
                 </para>
             </listitem>
 
             <listitem>
                 <para>
-                    <emphasis role="bold">OBJECT: </emphasis>The data will be stored in de-serialized form.
+                    <emphasis role="bold">OBJECT:</emphasis>The data will be stored in de-serialized form.
                         This configuration is good for maps where entry processing and queries form the majority of all operations
                         and the objects are complex ones so serialization cost is respectively high.
                         By storing objects, entry processing will not contain the de-serialization cost.
@@ -47,7 +47,7 @@
 
             <listitem>
                 <para>
-                    <emphasis role="bold">CACHED: </emphasis>This option is useful if your map's main use case is the queries.
+                    <emphasis role="bold">CACHED:</emphasis>This option is useful if your map's main use case is the queries.
                         Internally data is in both binary and de-serialized form so queries do not handle serialization.
                 </para>
             </listitem>
