@@ -52,7 +52,6 @@ public final class SerializationServiceImpl implements SerializationService {
 
     private final InputOutputFactory inputOutputFactory;
     private final Queue<BufferObjectDataOutput> outputPool = new ConcurrentLinkedQueue<BufferObjectDataOutput>();
-    private final DataSerializer dataSerializer;
     private final PortableSerializer portableSerializer;
     private final SerializerAdapter dataSerializerAdapter;
     private final SerializerAdapter portableSerializerAdapter;
@@ -77,8 +76,7 @@ public final class SerializationServiceImpl implements SerializationService {
             serializationContext.registerClassDefinition(cd);
         }
 
-        dataSerializer = new DataSerializer(dataSerializableFactories);
-        dataSerializerAdapter = new StreamSerializerAdapter(this, dataSerializer);
+        dataSerializerAdapter = new StreamSerializerAdapter(this, new DataSerializer(dataSerializableFactories));
         portableSerializer = new PortableSerializer(serializationContext, loader.getFactories());
         portableSerializerAdapter = new StreamSerializerAdapter(this, portableSerializer);
 
@@ -218,7 +216,7 @@ public final class SerializationServiceImpl implements SerializationService {
                 throw new HazelcastInstanceNotActiveException();
             }
             out.writeInt(serializer.getTypeId());
-            serializer.write((BufferObjectDataOutput) out, obj);
+            serializer.write(out, obj);
         } catch (Throwable e) {
             handleException(e);
         }
@@ -238,7 +236,7 @@ public final class SerializationServiceImpl implements SerializationService {
                 }
                 throw new HazelcastInstanceNotActiveException();
             }
-            Object obj = serializer.read((BufferObjectDataInput) in);
+            Object obj = serializer.read(in);
             if (managedContext != null) {
                 obj = managedContext.initialize(obj);
             }

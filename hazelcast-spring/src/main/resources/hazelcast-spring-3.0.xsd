@@ -208,7 +208,7 @@
         <xs:complexType>
             <xs:sequence>
                 <xs:element name="global-serializer" type="global-serializer" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="type-serializer" type="type-serializer" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="serializer" type="serializer" minOccurs="0" maxOccurs="unbounded"/>
             </xs:sequence>
         </xs:complexType>
     </xs:element>
@@ -230,7 +230,7 @@
         <xs:attribute name="implementation" type="xs:string" use="optional"/>
     </xs:complexType>
 
-    <xs:complexType name="type-serializer">
+    <xs:complexType name="serializer">
         <xs:attribute name="class-name" type="xs:string" use="optional"/>
         <xs:attribute name="implementation" type="xs:string" use="optional"/>
         <xs:attribute name="type-class" type="xs:string" use="required"/>

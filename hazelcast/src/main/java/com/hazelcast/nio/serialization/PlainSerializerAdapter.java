@@ -17,8 +17,8 @@
 package com.hazelcast.nio.serialization;
 
 
-import com.hazelcast.nio.BufferObjectDataInput;
-import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
 
@@ -31,23 +31,18 @@ final class PlainSerializerAdapter implements SerializerAdapter {
     }
 
     @SuppressWarnings("unchecked")
-    public void write(BufferObjectDataOutput out, Object object) throws IOException {
+    public void write(ObjectDataOutput out, Object object) throws IOException {
         final byte[] bytes = serializer.write(object);
         out.writeInt(bytes != null ? bytes.length : 0);
         out.write(bytes);
     }
 
-    public Object read(BufferObjectDataInput in) throws IOException {
+    public Object read(ObjectDataInput in) throws IOException {
         final int len = in.readInt();
         if (len > 0) {
-            int pos = in.position();
-            try {
-                final byte[] bytes = new byte[len];
-                in.readFully(bytes);
-                return serializer.read(bytes);
-            } finally {
-                in.position(pos + len);
-            }
+            final byte[] bytes = new byte[len];
+            in.readFully(bytes);
+            return serializer.read(bytes);
         }
         return null;
     }

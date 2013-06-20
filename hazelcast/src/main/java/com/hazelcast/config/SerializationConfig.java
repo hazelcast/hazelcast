@@ -35,7 +35,7 @@ public class SerializationConfig {
 
     private Map<Integer, PortableFactory> portableFactories;
 
-    private GlobalSerializerConfig globalSerializer;
+    private GlobalSerializerConfig globalSerializerConfig;
 
     private Collection<SerializerConfig> serializerConfigs;
 
@@ -51,14 +51,12 @@ public class SerializationConfig {
         super();
     }
 
-
-
-    public GlobalSerializerConfig getGlobalSerializer() {
-        return globalSerializer;
+    public GlobalSerializerConfig getGlobalSerializerConfig() {
+        return globalSerializerConfig;
     }
 
-    public SerializationConfig setGlobalSerializer(GlobalSerializerConfig globalSerializer) {
-        this.globalSerializer = globalSerializer;
+    public SerializationConfig setGlobalSerializerConfig(GlobalSerializerConfig globalSerializerConfig) {
+        this.globalSerializerConfig = globalSerializerConfig;
         return this;
     }
 
@@ -214,7 +212,7 @@ public class SerializationConfig {
         sb.append(", dataSerializableFactories=").append(dataSerializableFactories);
         sb.append(", portableFactoryClasses=").append(portableFactoryClasses);
         sb.append(", portableFactories=").append(portableFactories);
-        sb.append(", globalSerializer=").append(globalSerializer);
+        sb.append(", globalSerializerConfig=").append(globalSerializerConfig);
         sb.append(", serializerConfigs=").append(serializerConfigs);
         sb.append(", checkClassDefErrors=").append(checkClassDefErrors);
         sb.append(", classDefinitions=").append(classDefinitions);

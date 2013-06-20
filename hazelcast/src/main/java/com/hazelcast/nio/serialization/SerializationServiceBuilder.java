@@ -124,8 +124,8 @@ public final class SerializationServiceBuilder {
                 portableFactories, classDefinitions, checkClassDefErrors, managedContext);
 
         if (config != null) {
-            if (config.getGlobalSerializer() != null) {
-                GlobalSerializerConfig globalSerializerConfig = config.getGlobalSerializer();
+            if (config.getGlobalSerializerConfig() != null) {
+                GlobalSerializerConfig globalSerializerConfig = config.getGlobalSerializerConfig();
                 Serializer serializer = globalSerializerConfig.getImplementation();
                 if (serializer == null) {
                     try {

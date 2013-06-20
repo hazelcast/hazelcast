@@ -40,26 +40,26 @@ import static junit.framework.Assert.assertEquals;
 public class CustomSerializationTest {
 
     @Test
-    public void testTypeSerializer() throws Exception {
-        testTypeSerializer(ByteOrder.BIG_ENDIAN);
+    public void testSerializer() throws Exception {
+        testSerializer(ByteOrder.BIG_ENDIAN);
     }
 
     @Test
-    public void testTypeSerializerLittleEndian() throws Exception {
-        testTypeSerializer(ByteOrder.LITTLE_ENDIAN);
+    public void testSerializerLittleEndian() throws Exception {
+        testSerializer(ByteOrder.LITTLE_ENDIAN);
     }
 
     @Test
-    public void testTypeSerializerNativeOrder() throws Exception {
-        testTypeSerializer(ByteOrder.nativeOrder());
+    public void testSerializerNativeOrder() throws Exception {
+        testSerializer(ByteOrder.nativeOrder());
     }
 
-    private void testTypeSerializer(ByteOrder order) throws Exception {
+    private void testSerializer(ByteOrder order) throws Exception {
         SerializationConfig config = new SerializationConfig();
-        SerializerConfig tsc = new SerializerConfig().
+        SerializerConfig sc = new SerializerConfig().
                 setImplementation(new FooXmlSerializer()).
                 setTypeClass(Foo.class);
-        config.addSerializerConfig(tsc);
+        config.addSerializerConfig(sc);
         SerializationService ss = new SerializationServiceBuilder()
                 .setUseNativeByteOrder(false).setByteOrder(order).setConfig(config).build();
         Foo foo = new Foo();

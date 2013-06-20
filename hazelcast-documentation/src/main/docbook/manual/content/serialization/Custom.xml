@@ -86,11 +86,11 @@ public static class FooXmlSerializer implements StreamSerializer<Foo> {
     <para>Programmatic Configuration</para>
 
     <programlisting language="java"><![CDATA[
-TypeSerializerConfig tsc = new TypeSerializerConfig().
+SerializerConfig sc = new SerializerConfig().
         setImplementation(new FooXmlSerializer()).
         setTypeClass(Foo.class);
 Config config = new Config();
-config.getSerializationConfig().addTypeSerializer(tsc);
+config.getSerializationConfig().addSerializerConfig(sc);
             ]]></programlisting>
 
     <para>XML Configuration</para>
@@ -99,9 +99,7 @@ config.getSerializationConfig().addTypeSerializer(tsc);
 <hazelcast>
     <serialization>
         <serializers>
-            <type-serializer type-class="com.www.Foo">
-                com.www.FooXmlSerializer
-            </type-serializer>
+            <serializer type-class="com.www.Foo">com.www.FooXmlSerializer</serializer>
         </serializers>
     </serialization>
 </hazelcast>

@@ -32,11 +32,11 @@ final class StreamSerializerAdapter implements SerializerAdapter {
     }
 
     @SuppressWarnings("unchecked")
-    public void write(BufferObjectDataOutput out, Object object) throws IOException {
+    public void write(ObjectDataOutput out, Object object) throws IOException {
         serializer.write(out, object);
     }
 
-    public Object read(BufferObjectDataInput in) throws IOException {
+    public Object read(ObjectDataInput in) throws IOException {
         return serializer.read(in);
     }
 

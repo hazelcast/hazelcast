@@ -932,7 +932,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 } else if (ByteOrder.LITTLE_ENDIAN.toString().equals(value)) {
                     byteOrder = ByteOrder.LITTLE_ENDIAN;
                 }
-                serializationConfig.setByteOrder(byteOrder != null ? byteOrder  : ByteOrder.BIG_ENDIAN);
+                serializationConfig.setByteOrder(byteOrder != null ? byteOrder : ByteOrder.BIG_ENDIAN);
             } else if ("data-serializable-factories".equals(name)) {
                 handleDataSerializableFactories(child, serializationConfig);
             } else if ("portable-factories".equals(name)) {
@@ -986,7 +986,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             } else if ("global-serializer".equals(name)) {
                 GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
                 globalSerializerConfig.setClassName(value);
-                serializationConfig.setGlobalSerializer(globalSerializerConfig);
+                serializationConfig.setGlobalSerializerConfig(globalSerializerConfig);
             }
         }
     }
