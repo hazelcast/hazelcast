@@ -168,7 +168,7 @@ public class Node {
         clusterService = new ClusterService(this);
         clusterService.start();
         executorManager = new ExecutorManager(this);
-        connectionManager = new ConnectionManager(new NodeIOService(this), serverSocketChannel);
+        connectionManager = new ConnectionManager(this, new NodeIOService(this), serverSocketChannel);
         clusterManager = new ClusterManager(this);
         clientHandlerService = new ClientHandlerService(this);
         concurrentMapManager = new ConcurrentMapManager(this);

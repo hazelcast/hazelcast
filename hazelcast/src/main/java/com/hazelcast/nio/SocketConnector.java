@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.util.AddressUtil;
 
@@ -88,12 +89,23 @@ public class SocketConnector implements Runnable {
             connectionManager.failedConnection(address, e, silent);
         }
     }
+    
+    private boolean bindClientSocket(Config config) throws UnknownHostException {
+    	String bind = config.getProperty("hazelcast.local.bindClientSocket");
+    	
+    	if (bind != null && bind.trim().length() > 0)
+    		return Boolean.parseBoolean(bind);
+    	else
+    		return true;
+    }
 
     private void tryToConnect(final InetSocketAddress socketAddress, final int timeout)
             throws Exception {
         final SocketChannel socketChannel = SocketChannel.open();
         connectionManager.initSocket(socketChannel.socket());
-        bindSocket(socketChannel);
+        
+        if (bindClientSocket(connectionManager.getNode().getConfig()))
+        		bindSocket(socketChannel);
         final String message = "Connecting to " + socketAddress
                                + ", timeout: " + timeout
                                + ", bind-any: " + connectionManager.ioService.isSocketBindAny();
