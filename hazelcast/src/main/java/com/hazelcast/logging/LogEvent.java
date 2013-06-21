@@ -22,9 +22,9 @@ import java.util.EventObject;
 import java.util.logging.LogRecord;
 
 public class LogEvent extends EventObject {
-    LogRecord logRecord;
-    Member member;
-    String groupName;
+    final LogRecord logRecord;
+    final Member member;
+    final String groupName;
 
     public LogEvent(LogRecord logRecord, String groupName, Member member) {
         super(member);
@@ -37,15 +37,7 @@ public class LogEvent extends EventObject {
         return member;
     }
 
-    public void setMember(Member member) {
-        this.member = member;
-    }
-
     public LogRecord getLogRecord() {
         return logRecord;
-    }
-
-    public void setLogRecord(LogRecord logRecord) {
-        this.logRecord = logRecord;
     }
 }

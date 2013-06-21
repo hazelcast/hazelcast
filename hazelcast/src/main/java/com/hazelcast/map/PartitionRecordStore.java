@@ -171,11 +171,6 @@ public class PartitionRecordStore implements RecordStore {
         return lockStore == null || lockStore.canAcquireLock(key, caller, threadId);
     }
 
-    public boolean canRun(LockAwareOperation lockAwareOperation) {
-        return lockStore == null || lockStore.canAcquireLock(lockAwareOperation.getKey(),
-                lockAwareOperation.getCallerUuid(), lockAwareOperation.getThreadId());
-    }
-
     public Set<Map.Entry<Data, Object>> entrySetObject() {
         Map<Data, Object> temp = new HashMap<Data, Object>(records.size());
         for (Data key : records.keySet()) {

@@ -53,7 +53,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
     protected final ILogger logger;
 
     private volatile int invokeCount = 0;
-    private Address target; // set before invokeCount increment.
+    private volatile Address target;
     private boolean remote = false;
 
     InvocationImpl(NodeEngineImpl nodeEngine, String serviceName, Operation op, int partitionId,
@@ -120,20 +120,21 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             remote = false;
             throw new HazelcastInstanceNotActiveException();
         }
-        target = getTarget();
+        final Address invTarget = getTarget();
+        target = invTarget;
         invokeCount++;
         final Address thisAddress = nodeEngine.getThisAddress();
-        if (target == null) {
+        if (invTarget == null) {
             remote = false;
             if (nodeEngine.isActive()) {
-                notify(new WrongTargetException(thisAddress, target, partitionId, replicaIndex, op.getClass().getName(), serviceName));
+                notify(new WrongTargetException(thisAddress, invTarget, partitionId, replicaIndex, op.getClass().getName(), serviceName));
             } else {
                 notify(new HazelcastInstanceNotActiveException());
             }
         } else {
-            final MemberImpl member = nodeEngine.getClusterService().getMember(target);
+            final MemberImpl member = nodeEngine.getClusterService().getMember(invTarget);
             if (!OperationAccessor.isJoinOperation(op) && member == null) {
-                notify(new TargetNotMemberException(target, partitionId, op.getClass().getName(), serviceName));
+                notify(new TargetNotMemberException(invTarget, partitionId, op.getClass().getName(), serviceName));
             } else {
                 if (op.getPartitionId() != partitionId) {
                     notify(new IllegalStateException("Partition id of operation: " + op.getPartitionId() +
@@ -148,7 +149,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                 final OperationServiceImpl operationService = nodeEngine.operationService;
                 OperationAccessor.setInvocationTime(op, nodeEngine.getClusterTime());
 
-                if (thisAddress.equals(target)) {
+                if (thisAddress.equals(invTarget)) {
                     remote = false;
                     final long prevCallId = op.getCallId();
                     if (prevCallId != 0) {
@@ -167,15 +168,15 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                     }
                 } else {
                     remote = true;
-                    final RemoteCall call = member != null ? new RemoteCall(member, this) : new RemoteCall(target, this);
+                    final RemoteCall call = member != null ? new RemoteCall(member, this) : new RemoteCall(invTarget, this);
                     final long callId = operationService.registerRemoteCall(call);
                     if (op instanceof BackupAwareOperation) {
                         registerBackups((BackupAwareOperation) op, callId);
                     }
                     OperationAccessor.setCallId(op, callId);
-                    boolean sent = operationService.send(op, target);
+                    boolean sent = operationService.send(op, invTarget);
                     if (!sent) {
-                        notify(new RetryableIOException("Packet not sent to -> " + target));
+                        notify(new RetryableIOException("Packet not sent to -> " + invTarget));
                     }
                 }
             }

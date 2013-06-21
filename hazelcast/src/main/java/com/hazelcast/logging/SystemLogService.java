@@ -17,15 +17,8 @@
 package com.hazelcast.logging;
 
 import com.hazelcast.instance.Node;
-import com.hazelcast.nio.Address;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class SystemLogService {
@@ -58,15 +51,13 @@ public class SystemLogService {
         }
     }
 
-    private final ConcurrentMap<CallKey, CallState> mapCallStates = new ConcurrentHashMap<CallKey, CallState>(100, 0.75f, 32);
+    private final Queue<SystemLog> joinLogs = new LinkedBlockingQueue<SystemLog>(1000);
 
-    private final Queue<SystemLog> joinLogs = new LinkedBlockingQueue<SystemLog>(10000);
+    private final Queue<SystemLog> connectionLogs = new LinkedBlockingQueue<SystemLog>(1000);
 
-    private final Queue<SystemLog> connectionLogs = new LinkedBlockingQueue<SystemLog>(10000);
+    private final Queue<SystemLog> partitionLogs = new LinkedBlockingQueue<SystemLog>(1000);
 
-    private final Queue<SystemLog> partitionLogs = new LinkedBlockingQueue<SystemLog>(10000);
-
-    private final Queue<SystemLog> nodeLogs = new LinkedBlockingQueue<SystemLog>(10000);
+    private final Queue<SystemLog> nodeLogs = new LinkedBlockingQueue<SystemLog>(1000);
 
     private volatile Level currentLevel = Level.DEFAULT;
 
@@ -102,53 +93,10 @@ public class SystemLogService {
         for (SystemLog log : partitionLogs) {
             systemLogList.add(new SystemLogRecord(0L, node, log.getDate(), log.toString(), log.getType().toString()));
         }
-        for (CallState callState : mapCallStates.values()) {
-            for (Object log : callState.getLogs()) {
-                SystemLog systemLog = (SystemLog) log;
-                systemLogList.add(new SystemLogRecord(callState.getCallId(), node, systemLog.getDate(), systemLog.toString(), systemLog.getType().toString()));
-            }
-        }
         return systemLogList;
     }
 
-
-    public CallState getOrCreateCallState(long callId, Address callerAddress, int callerThreadId) {
-        if (!systemLogEnabled || currentLevel == Level.NONE || callerAddress == null) return null;
-        CallKey callKey = new CallKey(callerAddress, callerThreadId);
-        CallState callBefore = mapCallStates.get(callKey);
-        if (callBefore == null) {
-            CallState callStateNew = new CallState(callId, callerAddress, callerThreadId);
-            mapCallStates.put(callKey, callStateNew);
-            int callStatesCount = mapCallStates.size();
-            if (callStatesCount > 10000) {
-                String msg = " CallStates created! You might have too many threads accessing Hazelcast!";
-                logNode(callStatesCount + msg);
-            }
-            return callStateNew;
-        } else {
-            if (callBefore.getCallId() != callId) {
-                callBefore.reset(callId);
-            }
-            return callBefore;
-        }
-    }
-
-    public CallState getCallState(Address callerAddress, int callerThreadId) {
-        if (!systemLogEnabled || currentLevel == Level.NONE) return null;
-        return mapCallStates.get(new CallKey(callerAddress, callerThreadId));
-    }
-
-    public CallState getCallStateForCallId(long callId, Address callerAddress, int callerThreadId) {
-        if (!systemLogEnabled || currentLevel == Level.NONE) return null;
-        CallState callState = mapCallStates.get(new CallKey(callerAddress, callerThreadId));
-        if (callState != null && callState.getCallId() == callId) {
-            return callState;
-        }
-        return null;
-    }
-
     public void shutdown() {
-        mapCallStates.clear();
         connectionLogs.clear();
         nodeLogs.clear();
         joinLogs.clear();
@@ -176,26 +124,13 @@ public class SystemLogService {
             sb.append(systemLog.toString());
             sb.append("\n");
         }
-        for (CallState callState : mapCallStates.values()) {
-            sb.append(callState.toString());
-            sb.append("\n");
-        }
         sb.append(node.partitionService.toString());
         sb.append("\n");
         return sb.toString();
     }
 
-    private void dumpToFile(String log) throws IOException {
-        String fileName = "hazelcast-" + node.getThisAddress() + ".dump.txt";
-        File file = new File(fileName);
-        FileWriter fileWriter = new FileWriter(file);
-        BufferedWriter out = new BufferedWriter(fileWriter);
-        out.write(log);
-        out.close();
-    }
-
     public void logConnection(String str) {
-        if (systemLogEnabled && currentLevel != Level.NONE) {
+        if (systemLogEnabled) {
             SystemObjectLog systemLog = new SystemObjectLog(str);
             systemLog.setType(SystemLog.Type.CONNECTION);
             connectionLogs.offer(systemLog);
@@ -203,7 +138,7 @@ public class SystemLogService {
     }
 
     public void logPartition(String str) {
-        if (systemLogEnabled && currentLevel != Level.NONE) {
+        if (systemLogEnabled) {
             SystemObjectLog systemLog = new SystemObjectLog(str);
             systemLog.setType(SystemLog.Type.PARTITION);
             partitionLogs.offer(systemLog);
@@ -211,7 +146,7 @@ public class SystemLogService {
     }
 
     public void logNode(String str) {
-        if (systemLogEnabled && currentLevel != Level.NONE) {
+        if (systemLogEnabled) {
             SystemObjectLog systemLog = new SystemObjectLog(str);
             systemLog.setType(SystemLog.Type.NODE);
             nodeLogs.offer(systemLog);
@@ -219,77 +154,10 @@ public class SystemLogService {
     }
 
     public void logJoin(String str) {
-        if (systemLogEnabled && currentLevel != Level.NONE) {
+        if (systemLogEnabled) {
             SystemObjectLog systemLog = new SystemObjectLog(str);
             systemLog.setType(SystemLog.Type.JOIN);
             joinLogs.offer(systemLog);
         }
     }
-
-    public boolean shouldLog(Level level) {
-        return systemLogEnabled && currentLevel != Level.NONE && currentLevel.ordinal() >= level.ordinal();
-    }
-
-    public boolean shouldTrace() {
-        return systemLogEnabled && currentLevel != Level.NONE && currentLevel.ordinal() >= Level.TRACE.ordinal();
-    }
-
-    public boolean shouldInfo() {
-        return systemLogEnabled && currentLevel != Level.NONE && currentLevel.ordinal() >= Level.INFO.ordinal();
-    }
-
-    public void info(CallStateAware callStateAware, SystemLog callStateLog) {
-        logState(callStateAware, Level.INFO, callStateLog);
-    }
-
-    public void trace(CallStateAware callStateAware, SystemLog callStateLog) {
-        logState(callStateAware, Level.TRACE, callStateLog);
-    }
-
-    public void info(CallStateAware callStateAware, String msg) {
-        logObject(callStateAware, Level.INFO, msg);
-    }
-
-    public void trace(CallStateAware callStateAware, String msg) {
-        logObject(callStateAware, Level.TRACE, msg);
-    }
-
-    public void info(CallStateAware callStateAware, String msg, Object arg1) {
-        logState(callStateAware, Level.INFO, new SystemArgsLog(msg, arg1));
-    }
-
-    public void info(CallStateAware callStateAware, String msg, Object arg1, Object arg2) {
-        logState(callStateAware, Level.INFO, new SystemArgsLog(msg, arg1, arg2));
-    }
-
-    public void trace(CallStateAware callStateAware, String msg, Object arg1) {
-        logState(callStateAware, Level.TRACE, new SystemArgsLog(msg, arg1));
-    }
-
-    public void trace(CallStateAware callStateAware, String msg, Object arg1, Object arg2) {
-        logState(callStateAware, Level.TRACE, new SystemArgsLog(msg, arg1, arg2));
-    }
-
-    public void logObject(CallStateAware callStateAware, Level level, Object obj) {
-        if (systemLogEnabled && currentLevel.ordinal() >= level.ordinal()) {
-            if (callStateAware != null) {
-                CallState callState = callStateAware.getCallState();
-                if (callState != null) {
-                    callState.logObject(obj);
-                }
-            }
-        }
-    }
-
-    public void logState(CallStateAware callStateAware, Level level, SystemLog callStateLog) {
-        if (systemLogEnabled && currentLevel.ordinal() >= level.ordinal()) {
-            if (callStateAware != null) {
-                CallState callState = callStateAware.getCallState();
-                if (callState != null) {
-                    callState.log(callStateLog);
-                }
-            }
-        }
-    }
-
 }

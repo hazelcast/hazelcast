@@ -53,7 +53,7 @@ import java.util.logging.Level;
  */
 
 @PrivateApi
-class ServiceManager {
+final class ServiceManager {
 
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;

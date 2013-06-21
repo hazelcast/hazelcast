@@ -40,7 +40,7 @@ public abstract class LockAwareOperation extends KeyBasedMapOperation implements
     }
 
     public boolean shouldWait() {
-        return !recordStore.canRun(this);
+        return !recordStore.canAcquireLock(dataKey, getCallerUuid(), getThreadId());
     }
 
     public long getWaitTimeoutMillis() {
