@@ -76,25 +76,38 @@ public class MapTransactionTest extends HazelcastTestSupport {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance h1 = factory.newHazelcastInstance(config);
         final HazelcastInstance h2 = factory.newHazelcastInstance(config);
-        final IMap map2 = h2.getMap("default");
+        final String map1 = "map1";
+        final String map2 = "map2";
+        final String key = "1";
 
         boolean b = h1.executeTransaction(options, new TransactionalTask<Boolean>() {
             public Boolean execute(TransactionalTaskContext context) throws TransactionException {
-                final TransactionalMap<Object, Object> txMap = context.getMap("default");
-                txMap.put("1", "value");
-                assertEquals("value", txMap.put("1", "value2"));
-                assertEquals("value2", txMap.get("1"));
-                assertEquals(true, txMap.containsKey("1"));
-                assertNull(map2.get("1"));
-                assertNull(map2.get("2"));
+                final TransactionalMap<Object, Object> txMap1 = context.getMap(map1);
+                final TransactionalMap<Object, Object> txMap2 = context.getMap(map2);
+
+                txMap1.put(key, "value");
+                assertEquals("value", txMap1.put(key, "value1"));
+                assertEquals("value1", txMap1.get(key));
+
+                txMap2.put(key, "value");
+                assertEquals("value", txMap2.put(key, "value2"));
+                assertEquals("value2", txMap2.get(key));
+
+                assertEquals(true, txMap1.containsKey(key));
+                assertEquals(true, txMap2.containsKey(key));
+
+                assertNull(h2.getMap(map1).get(key));
+                assertNull(h2.getMap(map2).get(key));
                 return true;
             }
         });
         assertTrue(b);
 
-        IMap map1 = h1.getMap("default");
-        assertEquals("value2", map1.get("1"));
-        assertEquals("value2", map2.get("1"));
+        assertEquals("value1", h1.getMap(map1).get(key));
+        assertEquals("value1", h2.getMap(map1).get(key));
+
+        assertEquals("value2", h1.getMap(map2).get(key));
+        assertEquals("value2", h2.getMap(map2).get(key));
     }
 
     @Test
@@ -475,14 +488,14 @@ public class MapTransactionTest extends HazelcastTestSupport {
 
         boolean b = h1.executeTransaction(options, new TransactionalTask<Boolean>() {
             public Boolean execute(TransactionalTaskContext context) throws TransactionException {
-                assertNull(context.getMap(anotherMap).put("2", "value1"));
                 assertNull(context.getMap(map).put("1", "value1"));
+                assertNull(context.getMap(anotherMap).put("1", "value1"));
                 return true;
             }
         });
 
         assertTrue(b);
         assertNull(h2.getMap(map).get("1"));
-        assertEquals("value1", h2.getMap(anotherMap).get("2"));
+        assertEquals("value1", h2.getMap(anotherMap).get("1"));
     }
 }
