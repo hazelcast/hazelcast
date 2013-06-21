@@ -163,7 +163,7 @@ public final class ConstantSerializers {
         }
     }
 
-    public static final class ByteArraySerializer implements PlainSerializer<byte[]> {
+    public static final class TheByteArraySerializer implements ByteArraySerializer<byte[]> {
 
         public int getTypeId() {
             return CONSTANT_TYPE_BYTE_ARRAY;

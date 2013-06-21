@@ -18,7 +18,7 @@ package com.hazelcast.nio.serialization;
 
 import java.io.IOException;
 
-public interface PlainSerializer<T> extends Serializer {
+public interface ByteArraySerializer<T> extends Serializer {
 
     byte[] write(T object) throws IOException;
 
