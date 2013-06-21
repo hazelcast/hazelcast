@@ -99,7 +99,7 @@ public class SmartClientConnectionManager implements ClientConnectionManager {
         try {
             connection = pool.take();
         } catch (Exception e) {
-//            e.printStackTrace();
+            e.printStackTrace();
         }
         // Could be that this address is dead and that's why pool is not able to create and give a connection.
         // We will call it again, and hopefully at some time LoadBalancer will give us the right target for the connection.
@@ -182,6 +182,10 @@ public class SmartClientConnectionManager implements ClientConnectionManager {
 
         public void setEndpoint(Address address) {
             connection.setEndpoint(address);
+        }
+
+        public String toString() {
+            return connection.toString();
         }
     }
 

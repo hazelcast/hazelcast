@@ -71,15 +71,17 @@ final class ConnectionImpl implements Connection {
             socket.setSendBufferSize(bufferSize);
             socket.setReceiveBufferSize(bufferSize);
             socket.connect(isa, 3000);
+
+            this.socket = socket;
+            out = serializationService.createObjectDataOutputStream(
+                    new BufferedOutputStream(socket.getOutputStream(), bufferSize));
+            in = serializationService.createObjectDataInputStream(
+                    new BufferedInputStream(socket.getInputStream(), bufferSize));
+
         } catch (IOException e) {
             socket.close();
             throw e;
         }
-        this.socket = socket;
-        this.out = serializationService.createObjectDataOutputStream(
-                new BufferedOutputStream(socket.getOutputStream(), BUFFER_SIZE));
-        this.in = serializationService.createObjectDataInputStream(
-                new BufferedInputStream(socket.getInputStream(), BUFFER_SIZE));
     }
 
     Socket getSocket() {

@@ -71,7 +71,6 @@ public final class ExecutionServiceImpl implements ExecutionService {
         register(SYSTEM_EXECUTOR, coreSize * 2, Integer.MAX_VALUE);
         register(ASYNC_EXECUTOR, coreSize * 5, coreSize * 100000);
         register(CLIENT_EXECUTOR, coreSize * 10, coreSize * 100000);
-        register(RESPONSE_EXECUTOR, coreSize, Integer.MAX_VALUE);
         scheduledManagedExecutor = register(SCHEDULED_EXECUTOR, coreSize * 5, coreSize * 100000);
     }
 

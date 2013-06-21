@@ -30,7 +30,7 @@ public final class PartitionInvocationImpl extends InvocationImpl {
     }
 
     public final Address getTarget() {
-        return getPartitionInfo().getReplicaAddress(getReplicaIndex());
+        return getPartition().getReplicaAddress(getReplicaIndex());
     }
 
     final ExceptionAction onException(Throwable t) {

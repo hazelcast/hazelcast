@@ -43,7 +43,7 @@ public final class QueueConfig {
         this.asyncBackupCount = config.asyncBackupCount;
         this.maxSize = config.maxSize;
         this.queueStoreConfig = config.queueStoreConfig;
-        this.listenerConfigs = config.listenerConfigs;
+        this.listenerConfigs = new ArrayList<ItemListenerConfig>(config.getItemListenerConfigs());
     }
 
     public int getMaxSize() {

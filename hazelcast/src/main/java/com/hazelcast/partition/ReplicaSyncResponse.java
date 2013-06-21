@@ -124,17 +124,12 @@ public class ReplicaSyncResponse extends Operation implements PartitionAwareOper
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         IOUtil.writeByteArray(out, data);
-        for (int i = 0; i < PartitionInfo.MAX_BACKUP_COUNT; i++) {
-            out.writeLong(replicaVersions[i]);
-        }
+        out.writeLongArray(replicaVersions);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         data = IOUtil.readByteArray(in);
-        replicaVersions = new long[PartitionInfo.MAX_BACKUP_COUNT];
-        for (int i = 0; i < PartitionInfo.MAX_BACKUP_COUNT; i++) {
-            replicaVersions[i] = in.readLong();
-        }
+        replicaVersions = in.readLongArray();
     }
 
     @Override

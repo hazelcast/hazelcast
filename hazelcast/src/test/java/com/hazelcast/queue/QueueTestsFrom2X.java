@@ -405,12 +405,10 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
                     context.beginTransaction();
                     final Object polled = context.getQueue(name).poll(1, TimeUnit.DAYS);
                     sleep(1000);
-                    System.err.println("polled " + polled + " throwing now");
                     throw new RuntimeException();
                 } catch (InterruptedException e) {
                     fail(e.getMessage());
                 } catch (Exception e) {
-                    System.err.println("rollback");
                     context.rollbackTransaction();
                 }
             }
@@ -421,9 +419,7 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
                 final TransactionContext context = hz.newTransactionContext();
                 try {
                     context.beginTransaction();
-                    System.err.println("polling");
                     context.getQueue(name).poll(1, TimeUnit.DAYS);
-                    System.err.println("polled");
                     context.commitTransaction();
                     fail.set(false);
                 } catch (Exception e) {
@@ -479,6 +475,4 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
         Assert.assertTrue("Remaining offer listener count: " + offerLatch.getCount(), offerLatch.await(2, TimeUnit.SECONDS));
         Assert.assertTrue("Remaining poll listener count: " + pollLatch.getCount(), pollLatch.await(2, TimeUnit.SECONDS));
     }
-
-
 }

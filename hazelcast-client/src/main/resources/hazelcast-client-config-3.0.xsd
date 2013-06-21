@@ -1,0 +1,374 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+-->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://www.hazelcast.com/schema/client-config"
+    targetNamespace="http://www.hazelcast.com/schema/client-config">
+    <xs:element name="hazelcast-client">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="group" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="network" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="security" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="listeners" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="serialization" minOccurs="0" maxOccurs="unbounded" />
+                <xs:element ref="proxy-factories" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="socket-interceptor" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="load-balancer" minOccurs="0" maxOccurs="unbounded" />
+            </xs:sequence>
+            <xs:attribute name="id" type="xs:string" use="optional" default="default" />
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="proxy-factories">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="proxy-factory" minOccurs="0" maxOccurs="unbounded" />
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="proxy-factory">
+        <xs:complexType>
+            <xs:attribute name="service">
+                <xs:simpleType>
+                    <xs:restriction base="non-space-string" />
+                </xs:simpleType>
+            </xs:attribute>
+            <xs:attribute name="class-name">
+                <xs:simpleType>
+                    <xs:restriction base="non-space-string" />
+                </xs:simpleType>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="listeners">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="listener" minOccurs="0" maxOccurs="unbounded" />
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="listener">
+        <xs:complexType>
+            <xs:attribute name="class-name">
+                <xs:simpleType>
+                    <xs:restriction base="non-space-string" />
+                </xs:simpleType>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="serialization">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="portable-version" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="use-native-byte-order" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="byte-order" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="data-serializable-factories" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="portable-factories" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="serializers" minOccurs="0" maxOccurs="1" />
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="portable-version">
+        <xs:simpleType>
+            <xs:restriction base="xs:int">
+                <xs:minInclusive value="0" />
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:element>
+    <xs:element name="use-native-byte-order" type="xs:boolean" default="false" />
+    <xs:element name="byte-order" default="BIG_ENDIAN">
+        <xs:simpleType>
+            <xs:restriction base="non-space-string">
+                <xs:enumeration value="BIG_ENDIAN" />
+                <xs:enumeration value="LITTLE_ENDIAN" />
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:element>
+    <xs:element name="data-serializable-factories">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="data-serializable-factory" minOccurs="0" maxOccurs="unbounded" />
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="portable-factories">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="portable-factory" minOccurs="0" maxOccurs="unbounded" />
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="data-serializable-factory">
+        <xs:complexType>
+            <xs:simpleContent>
+                <xs:extension base="xs:string">
+                    <xs:attribute name="factory-id" use="required">
+                        <xs:simpleType>
+                            <xs:restriction base="xs:int">
+                                <xs:minExclusive value="0" />
+                            </xs:restriction>
+                        </xs:simpleType>
+                    </xs:attribute>
+                </xs:extension>
+            </xs:simpleContent>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="portable-factory">
+        <xs:complexType>
+            <xs:simpleContent>
+                <xs:extension base="xs:string">
+                    <xs:attribute name="factory-id" use="required">
+                        <xs:simpleType>
+                            <xs:restriction base="xs:int">
+                                <xs:minExclusive value="0" />
+                            </xs:restriction>
+                        </xs:simpleType>
+                    </xs:attribute>
+                </xs:extension>
+            </xs:simpleContent>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="serializers">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="global-serializer" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="serializer" minOccurs="0" maxOccurs="unbounded" />
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="global-serializer">
+        <xs:simpleType>
+            <xs:restriction base="xs:string" />
+        </xs:simpleType>
+    </xs:element>
+    <xs:element name="serializer">
+        <xs:complexType>
+            <xs:simpleContent>
+                <xs:extension base="xs:string">
+                    <xs:attribute name="type-class" type="xs:string" />
+                </xs:extension>
+            </xs:simpleContent>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="socket-interceptor">
+        <xs:complexType>
+            <xs:attribute name="class-name">
+                <xs:simpleType>
+                    <xs:restriction base="non-space-string" />
+                </xs:simpleType>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="security">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="login-credentials" minOccurs="0" maxOccurs="1" />
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="login-credentials">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="username" maxOccurs="1" />
+                <xs:element ref="password" minOccurs="0" maxOccurs="1" />
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="group">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="name" maxOccurs="1" />
+                <xs:element ref="password" minOccurs="0" maxOccurs="1" />
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="name">
+        <xs:simpleType>
+            <xs:restriction base="xs:string" />
+        </xs:simpleType>
+    </xs:element>
+    <xs:element name="username">
+        <xs:simpleType>
+            <xs:restriction base="xs:string" />
+        </xs:simpleType>
+    </xs:element>
+    <xs:element name="password">
+        <xs:simpleType>
+            <xs:restriction base="xs:string" />
+        </xs:simpleType>
+    </xs:element>
+    <xs:element name="load-balancer">
+        <xs:complexType>
+            <xs:attribute name="type" use="required">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:enumeration value="random" />
+                        <xs:enumeration value="round-robin" />
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="network">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="cluster-members" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="smart-routing" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="redo-operation" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="pool-size" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="connection-timeout" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="connection-attempt-period" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="connection-attempt-limit" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="socket-options" minOccurs="0" maxOccurs="1" />
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="cluster-members">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="address" minOccurs="1" maxOccurs="unbounded" />
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="address">
+        <xs:simpleType>
+            <xs:restriction base="xs:string" />
+        </xs:simpleType>
+    </xs:element>
+    <xs:element name="smart-routing" default="false">
+        <xs:annotation>
+            <xs:documentation>
+                If true, client will route the key based operations to owner of the key at
+                the best effort.
+                Note that it uses a cached version of
+                com.hazelcast.core.PartitionService#getPartitions() and doesn't
+                guarantee that the operation will always be executed on the
+                owner. The cached table is updated every
+                second.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:simpleType>
+            <xs:restriction base="xs:boolean" />
+        </xs:simpleType>
+    </xs:element>
+    <xs:element name="redo-operation" default="false">
+        <xs:annotation>
+            <xs:documentation>
+                If true, client will redo the operations that were executing on the server
+                and client lost
+                the connection. This can be because of network, or simply
+                because the member died.
+                However it is not
+                clear
+                whether the application is performed or not. For
+                idempotent operations this is harmless, but for
+                non
+                idempotent ones retrying
+                can cause to undesirable effects. Note that the redo can perform on any
+                member.
+                If false, the operation will throw a RuntimeException that is wrapping a
+                java.io.IOException.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:simpleType>
+            <xs:restriction base="xs:boolean" />
+        </xs:simpleType>
+    </xs:element>
+    <xs:element name="pool-size" default="10">
+        <xs:annotation>
+            <xs:documentation>
+                Limit for the Pool size that is used to pool the connections to the members.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:simpleType>
+            <xs:restriction base="xs:int">
+                <xs:minInclusive value="1" />
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:element>
+    <xs:element name="connection-timeout" default="60000">
+        <xs:simpleType>
+            <xs:restriction base="xs:int">
+                <xs:minInclusive value="1" />
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:element>
+    <xs:element name="connection-attempt-period" default="3000">
+        <xs:simpleType>
+            <xs:restriction base="xs:int">
+                <xs:minInclusive value="1" />
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:element>
+    <xs:element name="connection-attempt-limit" default="2">
+        <xs:simpleType>
+            <xs:restriction base="xs:int">
+                <xs:minInclusive value="1" />
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:element>
+    <xs:element name="socket-options">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="tcp-no-delay" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="keep-alive" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="reuse-address" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="linger-seconds" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="timeout" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="buffer-size" minOccurs="0" maxOccurs="1" />
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="tcp-no-delay" default="false">
+        <xs:simpleType>
+            <xs:restriction base="xs:boolean" />
+        </xs:simpleType>
+    </xs:element>
+    <xs:element name="keep-alive" default="true">
+        <xs:simpleType>
+            <xs:restriction base="xs:boolean" />
+        </xs:simpleType>
+    </xs:element>
+    <xs:element name="reuse-address" default="false">
+        <xs:simpleType>
+            <xs:restriction base="xs:boolean" />
+        </xs:simpleType>
+    </xs:element>
+    <xs:element name="linger-seconds" default="3">
+        <xs:simpleType>
+            <xs:restriction base="xs:int">
+                <xs:minInclusive value="0" />
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:element>
+    <xs:element name="timeout" default="-1">
+        <xs:simpleType>
+            <xs:restriction base="xs:int" />
+        </xs:simpleType>
+    </xs:element>
+    <xs:element name="buffer-size" default="32">
+        <xs:simpleType>
+            <xs:restriction base="xs:int">
+                <xs:minInclusive value="1" />
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:element>
+    <xs:simpleType name="non-space-string">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="\S.*" />
+        </xs:restriction>
+    </xs:simpleType>
+</xs:schema>

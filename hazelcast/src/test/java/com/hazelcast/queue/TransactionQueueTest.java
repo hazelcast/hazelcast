@@ -111,17 +111,16 @@ public class TransactionQueueTest extends HazelcastTestSupport {
         final HazelcastInstance[] instances = factory.newInstances(config);
         instances[0].getMap(mapName).lock("lock1");
 
+        final TransactionContext context = instances[1].newTransactionContext(new TransactionOptions().setTimeout(5, TimeUnit.SECONDS));
+        context.beginTransaction();
         try {
-            final TransactionContext context = instances[1].newTransactionContext(new TransactionOptions().setTimeout(5, TimeUnit.SECONDS));
-            context.beginTransaction();
-
             boolean offered = context.getQueue(queueName).offer("item1");
             assertTrue(offered);
             context.getMap(mapName).put("lock1", "value1");
             fail();
-
         } catch (TransactionException ex) {
             // expected
+            context.rollbackTransaction();
         }
         assertEquals(0, instances[0].getQueue(queueName).size());
         assertNull(instances[0].getMap(mapName).get("lock1"));

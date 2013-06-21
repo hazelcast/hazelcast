@@ -27,6 +27,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 
 /**
@@ -40,8 +41,22 @@ public class PortableTest {
 
     @Test
     public void testBasics() {
-        final SerializationService serializationService = createSerializationService(1);
-        final SerializationService serializationService2 = createSerializationService(2);
+        testBasics(ByteOrder.BIG_ENDIAN);
+    }
+
+    @Test
+    public void testBasicsLittleEndian() {
+        testBasics(ByteOrder.LITTLE_ENDIAN);
+    }
+
+    @Test
+    public void testBasicsNativeOrder() {
+        testBasics(ByteOrder.nativeOrder());
+    }
+
+    private void testBasics(ByteOrder order) {
+        final SerializationService serializationService = createSerializationService(1, order);
+        final SerializationService serializationService2 = createSerializationService(2, order);
         Data data;
 
         NamedPortable[] nn = new NamedPortable[5];
@@ -71,7 +86,13 @@ public class PortableTest {
     }
 
     private SerializationService createSerializationService(int version) {
-        return new SerializationServiceBuilder().setVersion(version).addPortableFactory(FACTORY_ID, new TestPortableFactory()).build();
+        return createSerializationService(version, ByteOrder.BIG_ENDIAN);
+    }
+
+    private SerializationService createSerializationService(int version, ByteOrder order) {
+        return new SerializationServiceBuilder()
+                .setUseNativeByteOrder(false).setByteOrder(order).setVersion(version)
+                .addPortableFactory(FACTORY_ID, new TestPortableFactory()).build();
     }
 
     @Test

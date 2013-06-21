@@ -366,7 +366,6 @@ public class TestFullApplicationContext {
         assertEquals("atomicLong", atomicLong.getName());
         assertEquals("countDownLatch", countDownLatch.getName());
         assertEquals("semaphore", semaphore.getName());
-//        assertEquals(new ProxyKey("lock", "lock"), lock.getId());
     }
 
     @Test
@@ -384,16 +383,6 @@ public class TestFullApplicationContext {
         assertEquals("10.2.1.2:5701", targetCfg.getEndpoints().get(1));
         assertEquals(wanReplication, wcfg.getTargetClusterConfigs().get(1).getReplicationImplObject());
     }
-
-//    @Test
-//    public void testMapMergePolicyConfig() {
-//        Map<String, MapMergePolicyConfig> merges = config.getMergePolicyConfigs();
-//        assertEquals(1, merges.size());
-//        MapMergePolicyConfig cfg = merges.values().iterator().next();
-//        assertEquals("hz.MERGE_POLICY_TEST", cfg.getName());
-//        assertEquals("com.hazelcast.spring.TestMapMergePolicy", cfg.getClassName());
-//        assertEquals(dummyMergePolicy, cfg.getImplementation());
-//    }
 
     @Test
     public void testConfigListeners() {

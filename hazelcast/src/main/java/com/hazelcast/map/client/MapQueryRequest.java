@@ -16,124 +16,43 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.InvocationClientRequest;
-import com.hazelcast.client.RetryableRequest;
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.map.*;
+import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.Invocation;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
-import com.hazelcast.util.QueryDataResultStream;
 
 import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.Future;
 
-import static com.hazelcast.map.MapService.SERVICE_NAME;
+public final class MapQueryRequest extends AbstractMapQueryRequest {
 
-public class MapQueryRequest extends InvocationClientRequest implements Portable, RetryableRequest {
-
-    private String name;
     private Predicate predicate;
-    private IterationType iterationType;
 
     public MapQueryRequest() {
     }
 
     public MapQueryRequest(String name, Predicate predicate, IterationType iterationType) {
-        this.name = name;
+        super(name, iterationType);
         this.predicate = predicate;
-        this.iterationType = iterationType;
     }
 
     @Override
-    protected void invoke() {
-        Collection<MemberImpl> members = getClientEngine().getClusterService().getMemberList();
-        int partitionCount = getClientEngine().getPartitionService().getPartitionCount();
-        Set<Integer> plist = new HashSet<Integer>(partitionCount);
-        final ClientEndpoint endpoint = getEndpoint();
-        QueryDataResultStream result = new QueryDataResultStream(iterationType, true);
-        try {
-            List<Future> flist = new ArrayList<Future>();
-            for (MemberImpl member : members) {
-                Invocation invocation = createInvocationBuilder(SERVICE_NAME, new QueryOperation(name, predicate), member.getAddress()).build();
-                Future future = invocation.invoke();
-                flist.add(future);
-            }
-            for (Future future : flist) {
-                QueryResult queryResult = (QueryResult) future.get();
-                if (queryResult != null) {
-                    final List<Integer> partitionIds = queryResult.getPartitionIds();
-                    if (partitionIds != null) {
-                        plist.addAll(partitionIds);
-                        result.addAll(queryResult.getResult());
-                    }
-                }
-            }
-            if (plist.size() == partitionCount) {
-                getClientEngine().sendResponse(endpoint, result);
-            }
-
-            List<Integer> missingList = new ArrayList<Integer>();
-            for (int i = 0; i < partitionCount; i++) {
-                if (!plist.contains(i)) {
-                    missingList.add(i);
-                }
-            }
-            List<Future> futures = new ArrayList<Future>(missingList.size());
-            for (Integer pid : missingList) {
-                QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(name, predicate);
-                queryPartitionOperation.setPartitionId(pid);
-                try {
-                    Future f = createInvocationBuilder(SERVICE_NAME, queryPartitionOperation, pid).build().invoke();
-                    futures.add(f);
-                } catch (Throwable t) {
-                    throw ExceptionUtil.rethrow(t);
-                }
-            }
-            for (Future future : futures) {
-                QueryResult queryResult = (QueryResult) future.get();
-                result.addAll(queryResult.getResult());
-            }
-        } catch (Throwable t) {
-            throw ExceptionUtil.rethrow(t);
-        } finally {
-            result.end();
-        }
-
-        getClientEngine().sendResponse(endpoint, result);
-    }
-
-    public String getServiceName() {
-        return MapService.SERVICE_NAME;
-    }
-
-    @Override
-    public int getFactoryId() {
-        return MapPortableHook.F_ID;
+    protected Predicate getPredicate() {
+        return predicate;
     }
 
     public int getClassId() {
         return MapPortableHook.QUERY;
     }
 
-    public void writePortable(PortableWriter writer) throws IOException {
-        writer.writeUTF("n", name);
-        writer.writeUTF("t", iterationType.name());
+    protected void writePortableInner(PortableWriter writer) throws IOException {
         final ObjectDataOutput out = writer.getRawDataOutput();
         out.writeObject(predicate);
     }
 
-    public void readPortable(PortableReader reader) throws IOException {
-        name = reader.readUTF("n");
-        iterationType = IterationType.valueOf(reader.readUTF("t"));
+    protected void readPortableInner(PortableReader reader) throws IOException {
         final ObjectDataInput in = reader.getRawDataInput();
         predicate = in.readObject();
     }

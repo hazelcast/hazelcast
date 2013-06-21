@@ -92,8 +92,8 @@ public class SerializationConcurrencyTest {
                             Assert.assertEquals(portablePerson, ss.toObject(dataPortablePerson));
                         }
                     } catch (Exception e) {
-                        error.set(true);
                         e.printStackTrace();
+                        error.set(true);
                     } finally {
                         latch.countDown();
                     }

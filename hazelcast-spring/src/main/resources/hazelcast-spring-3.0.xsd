@@ -170,12 +170,15 @@
                                 </xs:sequence>
                             </xs:complexType>
                         </xs:element>
-                        <xs:element name="serializers" minOccurs="0" maxOccurs="1">
+                        <xs:element name="serialization" minOccurs="0" maxOccurs="1">
                             <xs:complexType>
                                 <xs:sequence>
-                                    <xs:element name="serializer" type="serializer"
-                                                minOccurs="0" maxOccurs="unbounded"/>
+                                    <xs:element ref="data-serializable-factories" minOccurs="0" maxOccurs="1" />
+                                    <xs:element ref="portable-factories" minOccurs="0" maxOccurs="1" />
+                                    <xs:element ref="serializers" minOccurs="0" maxOccurs="1" />
                                 </xs:sequence>
+                                <xs:attribute name="portable-version" use="optional" type="xs:string"/>
+                                <xs:attribute name="check-class-def-errors" use="optional" type="xs:string"/>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="security" type="security" minOccurs="0" maxOccurs="1"/>
@@ -184,6 +187,54 @@
             </xs:complexContent>
         </xs:complexType>
     </xs:element>
+
+    <xs:element name="data-serializable-factories" >
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="data-serializable-factory" type="data-serializable-factory" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="portable-factories" >
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="portable-factory" type="portable-factory" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="serializers" >
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="global-serializer" type="global-serializer" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="serializer" type="serializer" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:complexType name="data-serializable-factory">
+        <xs:attribute name="factory-id" type="xs:string" use="required"/>
+        <xs:attribute name="class-name" type="xs:string" use="optional"/>
+        <xs:attribute name="implementation" type="xs:string" use="optional"/>
+    </xs:complexType>
+
+    <xs:complexType name="portable-factory">
+        <xs:attribute name="factory-id" type="xs:string" use="required"/>
+        <xs:attribute name="class-name" type="xs:string" use="optional"/>
+        <xs:attribute name="implementation" type="xs:string" use="optional"/>
+    </xs:complexType>
+
+    <xs:complexType name="global-serializer">
+        <xs:attribute name="class-name" type="xs:string" use="optional"/>
+        <xs:attribute name="implementation" type="xs:string" use="optional"/>
+    </xs:complexType>
+
+    <xs:complexType name="serializer">
+        <xs:attribute name="class-name" type="xs:string" use="optional"/>
+        <xs:attribute name="implementation" type="xs:string" use="optional"/>
+        <xs:attribute name="type-class" type="xs:string" use="required"/>
+    </xs:complexType>
 
     <xs:element name="hazelcast">
         <xs:complexType>
@@ -207,9 +258,9 @@
                     </xs:sequence>
                     <xs:attribute name="group-name" type="xs:string" use="optional"/>
                     <xs:attribute name="group-password" type="xs:string" use="optional"/>
-                    <xs:attribute name="connect-attempt-limit" type="xs:string" use="optional"/>
-                    <xs:attribute name="connect-timeout" type="xs:string" use="optional"/>
-                    <xs:attribute name="attempt-period" type="xs:string" use="optional"/>
+                    <xs:attribute name="connection-attempt-limit" type="xs:string" use="optional"/>
+                    <xs:attribute name="connection-timeout" type="xs:string" use="optional"/>
+                    <xs:attribute name="connection-attempt-period" type="xs:string" use="optional"/>
                     <xs:attribute name="credentials-ref" type="xs:string" use="optional"/>
                     <xs:attribute name="smart" type="xs:string" use="optional"/>
                     <xs:attribute name="redo-operation" type="xs:string" use="optional"/>
@@ -293,7 +344,7 @@
 
     <xs:complexType name="network">
         <xs:sequence>
-            <xs:element name="outbound-ports" type="outbound-ports" minOccurs="0" maxOccurs="1" />
+            <xs:element name="outbound-ports" type="outbound-ports" minOccurs="0" maxOccurs="1"/>
             <xs:element name="join" type="join" minOccurs="0" maxOccurs="1"/>
             <xs:element name="interfaces" type="interfaces" minOccurs="0" maxOccurs="1"/>
             <xs:element name="ssl" type="ssl" minOccurs="0" maxOccurs="1"/>
@@ -360,12 +411,12 @@
         <xs:sequence>
             <xs:element name="ports" minOccurs="0" maxOccurs="unbounded">
                 <xs:simpleType>
-                    <xs:restriction base="xs:string" />
+                    <xs:restriction base="xs:string"/>
                 </xs:simpleType>
             </xs:element>
         </xs:sequence>
     </xs:complexType>
-    
+
     <xs:complexType name="join">
         <xs:sequence>
             <xs:element name="multicast" type="multicast" minOccurs="0"/>
@@ -502,7 +553,7 @@
             <xs:extension base="hazelcast-bean">
                 <xs:attribute name="instance-ref" type="xs:string" use="required"/>
                 <!-- valid values are DISTRIBUTED and LOCAL -->
-                <xs:attribute name="mode" type="xs:string" use="optional" default="DISTRIBUTED" />
+                <xs:attribute name="mode" type="xs:string" use="optional" default="DISTRIBUTED"/>
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
@@ -603,13 +654,6 @@
                 <xs:attribute name="local" type="xs:string" use="optional" default="false"/>
             </xs:extension>
         </xs:complexContent>
-    </xs:complexType>
-
-    <xs:complexType name="serializer">
-        <xs:attribute name="class-name" type="xs:string" use="optional"/>
-        <xs:attribute name="implementation" type="xs:string" use="optional"/>
-        <xs:attribute name="global" type="xs:string" use="optional" />
-        <xs:attribute name="type-class" type="xs:string" use="optional" />
     </xs:complexType>
 
     <xs:complexType name="security">

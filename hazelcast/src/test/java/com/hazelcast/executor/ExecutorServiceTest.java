@@ -40,7 +40,7 @@ import static org.junit.Assert.*;
 
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
-public class ExecutorTest extends HazelcastTestSupport {
+public class ExecutorServiceTest extends HazelcastTestSupport {
 
     public static final int simpleTestNodeCount = 3;
     public static final int COUNT = 1000;
@@ -618,7 +618,8 @@ public class ExecutorTest extends HazelcastTestSupport {
         }
         latch.await(2, TimeUnit.MINUTES);
 
-        final Future<Boolean> f = executorService.submit(new CancellationAwareTask(3000));
+        final Future<Boolean> f = executorService.submit(new CancellationAwareTask(10000));
+        Thread.sleep(1000);
         f.cancel(true);
         try {
             f.get();

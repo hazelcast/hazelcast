@@ -21,15 +21,14 @@ import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
 public class QueryResultEntryImpl implements IdentifiedDataSerializable, QueryResultEntry {
-    Data indexKey;
-    Data keyData;
-    Data valueData;
+    private Data indexKey;
+    private Data keyData;
+    private Data valueData;
 
     public QueryResultEntryImpl() {
     }
@@ -56,14 +55,17 @@ public class QueryResultEntryImpl implements IdentifiedDataSerializable, QueryRe
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+
         QueryResultEntryImpl that = (QueryResultEntryImpl) o;
-        if (!indexKey.equals(that.indexKey)) return false;
+
+        if (indexKey != null ? !indexKey.equals(that.indexKey) : that.indexKey != null) return false;
+
         return true;
     }
 
     @Override
     public int hashCode() {
-        return indexKey.hashCode();
+        return indexKey != null ? indexKey.hashCode() : 0;
     }
 
     public Data getKeyData() {

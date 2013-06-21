@@ -20,6 +20,7 @@ import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
 
+import java.nio.ByteOrder;
 import java.util.*;
 
 public class SerializationConfig {
@@ -34,11 +35,15 @@ public class SerializationConfig {
 
     private Map<Integer, PortableFactory> portableFactories;
 
-    private GlobalSerializerConfig globalSerializer;
+    private GlobalSerializerConfig globalSerializerConfig;
 
-    private Collection<TypeSerializerConfig> typeSerializers;
+    private Collection<SerializerConfig> serializerConfigs;
 
     private boolean checkClassDefErrors = true;
+
+    private boolean useNativeByteOrder = false;
+
+    private ByteOrder byteOrder = ByteOrder.BIG_ENDIAN;
 
     private Set<ClassDefinition> classDefinitions;
 
@@ -46,29 +51,29 @@ public class SerializationConfig {
         super();
     }
 
-    public GlobalSerializerConfig getGlobalSerializer() {
-        return globalSerializer;
+    public GlobalSerializerConfig getGlobalSerializerConfig() {
+        return globalSerializerConfig;
     }
 
-    public SerializationConfig setGlobalSerializer(GlobalSerializerConfig globalSerializer) {
-        this.globalSerializer = globalSerializer;
+    public SerializationConfig setGlobalSerializerConfig(GlobalSerializerConfig globalSerializerConfig) {
+        this.globalSerializerConfig = globalSerializerConfig;
         return this;
     }
 
-    public Collection<TypeSerializerConfig> getTypeSerializers() {
-        if (typeSerializers == null) {
-            typeSerializers = new LinkedList<TypeSerializerConfig>();
+    public Collection<SerializerConfig> getSerializerConfigs() {
+        if (serializerConfigs == null) {
+            serializerConfigs = new LinkedList<SerializerConfig>();
         }
-        return typeSerializers;
+        return serializerConfigs;
     }
 
-    public SerializationConfig addTypeSerializer(TypeSerializerConfig typeSerializerConfig) {
-        getTypeSerializers().add(typeSerializerConfig);
+    public SerializationConfig addSerializerConfig(SerializerConfig serializerConfig) {
+        getSerializerConfigs().add(serializerConfig);
         return this;
     }
 
-    public SerializationConfig setTypeSerializers(Collection<TypeSerializerConfig> typeSerializers) {
-        this.typeSerializers = typeSerializers;
+    public SerializationConfig setSerializerConfigs(Collection<SerializerConfig> serializerConfigs) {
+        this.serializerConfigs = serializerConfigs;
         return this;
     }
 
@@ -108,7 +113,7 @@ public class SerializationConfig {
         return dataSerializableFactories;
     }
 
-    public SerializationConfig setDataSerializablePortableFactories(Map<Integer, DataSerializableFactory> dataSerializableFactories) {
+    public SerializationConfig setDataSerializableFactories(Map<Integer, DataSerializableFactory> dataSerializableFactories) {
         this.dataSerializableFactories = dataSerializableFactories;
         return this;
     }
@@ -181,6 +186,23 @@ public class SerializationConfig {
         return this;
     }
 
+    public boolean isUseNativeByteOrder() {
+        return useNativeByteOrder;
+    }
+
+    public SerializationConfig setUseNativeByteOrder(boolean useNativeByteOrder) {
+        this.useNativeByteOrder = useNativeByteOrder;
+        return this;
+    }
+
+    public ByteOrder getByteOrder() {
+        return byteOrder;
+    }
+
+    public SerializationConfig setByteOrder(ByteOrder byteOrder) {
+        this.byteOrder = byteOrder;
+        return this;
+    }
 
     @Override
     public String toString() {
@@ -190,10 +212,12 @@ public class SerializationConfig {
         sb.append(", dataSerializableFactories=").append(dataSerializableFactories);
         sb.append(", portableFactoryClasses=").append(portableFactoryClasses);
         sb.append(", portableFactories=").append(portableFactories);
-        sb.append(", globalSerializer=").append(globalSerializer);
-        sb.append(", typeSerializers=").append(typeSerializers);
+        sb.append(", globalSerializerConfig=").append(globalSerializerConfig);
+        sb.append(", serializerConfigs=").append(serializerConfigs);
         sb.append(", checkClassDefErrors=").append(checkClassDefErrors);
         sb.append(", classDefinitions=").append(classDefinitions);
+        sb.append(", byteOrder=").append(byteOrder);
+        sb.append(", useNativeByteOrder=").append(useNativeByteOrder);
         sb.append('}');
         return sb.toString();
     }

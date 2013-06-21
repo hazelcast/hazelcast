@@ -116,34 +116,31 @@ public class BasicTest extends HazelcastTestSupport {
     @Test
     public void testMapEvictAndListener() throws InterruptedException {
         IMap<String, String> map = getInstance().getMap("testMapEvictAndListener");
-        String a = "/home/data/file1.dat";
-        String b = "/home/data/file2.dat";
-        List<String> list = new CopyOnWriteArrayList<String>();
-        list.add(a);
-        list.add(b);
+        final String value1 = "/home/data/file1.dat";
+        final String value2 = "/home/data/file2.dat";
+
         final List<String> newList = new CopyOnWriteArrayList<String>();
-        final CountDownLatch latch = new CountDownLatch(list.size());
-        map.addEntryListener(new EntryListener<String, String>() {
-            public void entryAdded(EntryEvent<String, String> event) {
-            }
-
-            public void entryRemoved(EntryEvent<String, String> event) {
-            }
-
-            public void entryUpdated(EntryEvent<String, String> event) {
-            }
-
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        final CountDownLatch latch2 = new CountDownLatch(1);
+        map.addEntryListener(new EntryAdapter<String, String>() {
             public void entryEvicted(EntryEvent<String, String> event) {
+                if (value1.equals(event.getValue())) {
+                    latch1.countDown();
+                } else if (value2.equals(event.getValue())) {
+                    latch2.countDown();
+                }
                 newList.add(event.getValue());
-                latch.countDown();
             }
         }, true);
-        map.put("a", list.get(0), 1, TimeUnit.SECONDS);
-        Thread.sleep(1100);
-        map.put("a", list.get(1), 1, TimeUnit.SECONDS);
-        assertTrue(latch.await(20, TimeUnit.SECONDS));
-        assertEquals(list.get(0), newList.get(0));
-        assertEquals(list.get(1), newList.get(1));
+
+        map.put("key", value1, 1, TimeUnit.SECONDS);
+        assertTrue(latch1.await(10, TimeUnit.SECONDS));
+
+        map.put("key", value2, 1, TimeUnit.SECONDS);
+        assertTrue(latch2.await(10, TimeUnit.SECONDS));
+
+        assertEquals(value1, newList.get(0));
+        assertEquals(value2, newList.get(1));
     }
 
     @Test
@@ -671,15 +668,17 @@ public class BasicTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testGetAllPutAll() {
+    public void testGetAllPutAll() throws InterruptedException {
+        warmUpPartitions(instances);
         final IMap<Object, Object> map = getInstance().getMap("testGetAllPutAll");
         Map mm = new HashMap();
-        for (int i = 0; i < 100; i++) {
+        final int size = 100;
+        for (int i = 0; i < size; i++) {
             mm.put(i, i);
         }
         map.putAll(mm);
-        assertEquals(map.size(), 100);
-        for (int i = 0; i < 100; i++) {
+        assertEquals(size, map.size());
+        for (int i = 0; i < size; i++) {
             assertEquals(map.get(i), i);
         }
 
@@ -693,21 +692,25 @@ public class BasicTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPutAllBackup() {
+    public void testPutAllBackup() throws InterruptedException {
         HazelcastInstance instance1 = instances[0];
         HazelcastInstance instance2 = instances[1];
         final IMap<Object, Object> map = instance1.getMap("testGetAllPutAll");
+        warmUpPartitions(instances);
+
         Map mm = new HashMap();
         final int size = 100;
         for (int i = 0; i < size; i++) {
             mm.put(i, i);
         }
         map.putAll(mm);
-        assertEquals(map.size(), size);
+        assertEquals(size, map.size());
         for (int i = 0; i < size; i++) {
             assertEquals(i, map.get(i));
         }
+
         instance2.getLifecycleService().shutdown();
+        assertEquals(size, map.size());
         for (int i = 0; i < size; i++) {
             assertEquals(i, map.get(i));
         }
@@ -926,9 +929,17 @@ public class BasicTest extends HazelcastTestSupport {
     @Test
     public void testPutWithTtl() throws InterruptedException {
         IMap<String, String> map = getInstance().getMap("testPutWithTtl");
-        map.put("key", "value", 1, TimeUnit.SECONDS);
+        final CountDownLatch latch = new CountDownLatch(1);
+        map.addEntryListener(new EntryAdapter<String, String>() {
+            public void entryEvicted(EntryEvent<String, String> event) {
+                latch.countDown();
+            }
+        }, true);
+
+        map.put("key", "value", 3, TimeUnit.SECONDS);
         assertEquals("value", map.get("key"));
-        Thread.sleep(3000);
+
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
         assertNull(map.get("key"));
     }
 

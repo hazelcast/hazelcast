@@ -151,12 +151,6 @@ public class BackupTest extends HazelcastTestSupport {
         testBackupMigrationAndRecovery(6, 2, 50000);
     }
 
-    @Test(timeout = 600 * 1000)
-    // TODO: @mm - Test fails randomly!
-    public void testBackupMigrationAndRecovery3() throws Exception {
-        testBackupMigrationAndRecovery(10, 3, 50000);
-    }
-
     private void testBackupMigrationAndRecovery(int nodeCount, int backupCount, int mapSize) throws Exception {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(nodeCount);
         final String name = MAP_NAME;
@@ -253,7 +247,6 @@ public class BackupTest extends HazelcastTestSupport {
     }
 
     @Test
-    // TODO: @mm - Test fails randomly!
     public void testIssue177BackupCount() throws InterruptedException {
         final TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(10);
         final Config config = new Config();

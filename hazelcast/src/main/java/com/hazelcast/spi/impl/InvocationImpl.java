@@ -23,7 +23,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.partition.PartitionInfo;
+import com.hazelcast.partition.PartitionView;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.spi.exception.RetryableIOException;
@@ -478,8 +478,8 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         return serviceName;
     }
 
-    PartitionInfo getPartitionInfo() {
-        return nodeEngine.getPartitionService().getPartitionInfo(partitionId);
+    PartitionView getPartition() {
+        return nodeEngine.getPartitionService().getPartitionView(partitionId);
     }
 
     public int getReplicaIndex() {

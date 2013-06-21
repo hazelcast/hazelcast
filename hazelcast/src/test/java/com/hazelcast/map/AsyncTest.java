@@ -16,15 +16,12 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import junit.framework.TestCase;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -40,15 +37,10 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
 public class AsyncTest extends HazelcastTestSupport {
+
     private final String key = "key";
     private final String value1 = "value1";
     private final String value2 = "value2";
-
-    @BeforeClass
-    @AfterClass
-    public static void init() throws Exception {
-        Hazelcast.shutdownAll();
-    }
 
     @Test
     public void testGetAsync() throws Exception {
@@ -108,7 +100,7 @@ public class AsyncTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRemoveAsyncWithNonExistantKey() throws Exception {
+    public void testRemoveAsyncWithNonExistentKey() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         IMap<String, String> map = factory.newHazelcastInstance(null).getMap("map:test:removeAsync:nonexistant");
         Future<String> f1 = map.removeAsync(key);

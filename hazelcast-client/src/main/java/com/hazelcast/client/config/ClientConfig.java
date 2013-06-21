@@ -19,6 +19,8 @@ package com.hazelcast.client.config;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.SerializationConfig;
+import com.hazelcast.core.ManagedContext;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
@@ -34,7 +36,6 @@ public class ClientConfig {
      */
 
     private GroupConfig groupConfig = new GroupConfig();
-
 
     /**
      * List of the initial set of addresses.
@@ -92,12 +93,13 @@ public class ClientConfig {
     /**
      * Period for the next attempt to find a member to connect. (see {@link ClientConfig#connectionAttemptLimit}).
      */
-    private int attemptPeriod = 3000;
+    private int connectionAttemptPeriod = 3000;
 
 
     private final SocketOptions socketOptions = new SocketOptions();
 
-
+    private final SerializationConfig serializationConfig = new SerializationConfig();
+    
     private final ProxyFactoryConfig proxyFactoryConfig = new ProxyFactoryConfig();
 
     /**
@@ -105,6 +107,10 @@ public class ClientConfig {
      */
     private SocketInterceptor socketInterceptor = null;
 
+    private ManagedContext managedContext = null;
+    
+    private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+    
     /**
      * Can be used instead of {@link GroupConfig} in Hazelcast EE.
      */
@@ -135,12 +141,12 @@ public class ClientConfig {
         this.socketInterceptor = socketInterceptor;
     }
 
-    public int getAttemptPeriod() {
-        return attemptPeriod;
+    public int getConnectionAttemptPeriod() {
+        return connectionAttemptPeriod;
     }
 
-    public ClientConfig setAttemptPeriod(int attemptPeriod) {
-        this.attemptPeriod = attemptPeriod;
+    public ClientConfig setConnectionAttemptPeriod(int connectionAttemptPeriod) {
+        this.connectionAttemptPeriod = connectionAttemptPeriod;
         return this;
     }
 
@@ -240,7 +246,28 @@ public class ClientConfig {
         return socketOptions;
     }
 
+    public ClassLoader getClassLoader() {
+        return classLoader;
+    }
+
+    public void setClassLoader(ClassLoader classLoader) {
+        this.classLoader = classLoader;
+    }
+
+    public ManagedContext getManagedContext() {
+        return managedContext;
+    }
+
+    public void setManagedContext(ManagedContext managedContext) {
+        this.managedContext = managedContext;
+    }
+
     public ProxyFactoryConfig getProxyFactoryConfig() {
         return proxyFactoryConfig;
+    }
+
+    public SerializationConfig getSerializationConfig()
+    {
+        return serializationConfig;
     }
 }

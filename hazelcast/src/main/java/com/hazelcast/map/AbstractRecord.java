@@ -86,11 +86,6 @@ public abstract class AbstractRecord<V> implements Record<V>, DataSerializable {
         version++;
     }
 
-    public Record clone() {
-        // todo implement
-        return null;
-    }
-
     public void writeData(ObjectDataOutput out) throws IOException {
         key.writeData(out);
         if (statistics != null) {

@@ -17,6 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.DummyClientConnectionManager;
 import com.hazelcast.client.connection.SmartClientConnectionManager;
@@ -47,14 +48,13 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceBuilder;
-import com.hazelcast.nio.serialization.SerializationServiceImpl;
-import com.hazelcast.nio.serialization.TypeSerializer;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.topic.TopicService;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -80,7 +80,7 @@ public final class HazelcastClient implements HazelcastInstance {
     private final ClientConfig config;
     private final ThreadGroup threadGroup;
     private final LifecycleServiceImpl lifecycleService;
-    private final SerializationServiceImpl serializationService = (SerializationServiceImpl) new SerializationServiceBuilder().build();
+    private final SerializationService serializationService;
     private final ClientConnectionManager connectionManager;
     private final ClientClusterServiceImpl clusterService;
     private final ClientPartitionServiceImpl partitionService;
@@ -95,6 +95,14 @@ public final class HazelcastClient implements HazelcastInstance {
         name = "hz.client_" + id + (groupConfig != null ? "_" + groupConfig.getName() : "");
         threadGroup = new ThreadGroup(name);
         lifecycleService = new LifecycleServiceImpl(this);
+        SerializationService ss;
+        try {
+            ss = new SerializationServiceBuilder().setManagedContext(new HazelcastClientManagedContext(this, config.getManagedContext()))
+                    .setClassLoader(config.getClassLoader()).setConfig(config.getSerializationConfig()).build();
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
+        serializationService = ss;
         proxyManager = new ProxyManager(this);
         executionService = new ClientExecutionServiceImpl(name, threadGroup, Thread.currentThread().getContextClassLoader());
         clusterService = new ClientClusterServiceImpl(this);
@@ -102,7 +110,7 @@ public final class HazelcastClient implements HazelcastInstance {
         if (loadBalancer == null) {
             loadBalancer = new RoundRobinLB();
         }
-        if (config.isSmart()){
+        if (config.isSmart()) {
             connectionManager = new SmartClientConnectionManager(this, clusterService.getAuthenticator(), loadBalancer);
         } else {
             connectionManager = new DummyClientConnectionManager(this, clusterService.getAuthenticator(), loadBalancer);
@@ -117,9 +125,13 @@ public final class HazelcastClient implements HazelcastInstance {
         partitionService.start();
     }
 
+    public static HazelcastInstance newHazelcastClient() {
+         return newHazelcastClient(new XmlClientConfigBuilder().build());
+    }
+
     public static HazelcastInstance newHazelcastClient(ClientConfig config) {
         if (config == null) {
-            config = new ClientConfig();
+            config = new XmlClientConfigBuilder().build();
         }
         final HazelcastClient client = new HazelcastClient(config);
         final HazelcastClientProxy proxy = new HazelcastClientProxy(client);
@@ -283,16 +295,6 @@ public final class HazelcastClient implements HazelcastInstance {
     @Override
     public <T extends DistributedObject> T getDistributedObject(String serviceName, Object id) {
         return (T) proxyManager.getProxy(serviceName, id);
-    }
-
-    @Override
-    public void registerSerializer(final Class type, final TypeSerializer serializer) {
-        serializationService.register(type, serializer);
-    }
-
-    @Override
-    public void registerGlobalSerializer(TypeSerializer serializer) {
-        serializationService.registerGlobal(serializer);
     }
 
     @Override

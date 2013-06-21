@@ -14,11 +14,27 @@
  * limitations under the License.
  */
 
-package com.hazelcast.test.annotation;
+package com.hazelcast.nio.serialization;
 
-/**
- * @mdogan 5/24/13
- */
 
-public final class NoTest {
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+
+import java.io.IOException;
+
+interface SerializerAdapter {
+
+    void write(ObjectDataOutput out, Object object) throws IOException;
+
+    Object read(ObjectDataInput in) throws IOException;
+
+    byte[] write(Object object) throws IOException;
+
+    Object read(Data data) throws IOException;
+
+    int getTypeId();
+
+    void destroy();
+
+    Serializer getImpl();
 }

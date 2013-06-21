@@ -19,7 +19,11 @@ package com.hazelcast.nio.serialization;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.UTFUtil;
 
-import java.io.*;
+import java.io.Closeable;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteOrder;
 
 /**
  * @mdogan 1/23/13
@@ -28,12 +32,16 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
 
     private final SerializationService serializationService;
     private final DataInputStream dataInput;
-    private final ClassLoader classLoader;
+    private final ByteOrder byteOrder;
 
-    public ObjectDataInputStream(InputStream in, SerializationService serializationService, ClassLoader classLoader) {
+    public ObjectDataInputStream(InputStream in, SerializationService serializationService) {
+        this(in, serializationService, ByteOrder.BIG_ENDIAN);
+    }
+
+    public ObjectDataInputStream(InputStream in, SerializationService serializationService, ByteOrder order) {
         this.serializationService = serializationService;
-        this.classLoader = classLoader;
         this.dataInput = new DataInputStream(in);
+        this.byteOrder = order;
     }
 
     public int read() throws IOException {
@@ -83,31 +91,115 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
     }
 
     public short readShort() throws IOException {
-        return dataInput.readShort();
+        final short v = dataInput.readShort();
+        return bigEndian() ? v : Short.reverseBytes(v);
     }
 
     public int readUnsignedShort() throws IOException {
-        return dataInput.readUnsignedShort();
+        return readShort();
     }
 
     public char readChar() throws IOException {
-        return dataInput.readChar();
+        final char v = dataInput.readChar();
+        return bigEndian() ? v : Character.reverseBytes(v);
     }
 
     public int readInt() throws IOException {
-        return dataInput.readInt();
+        final int v = dataInput.readInt();
+        return bigEndian() ? v : Integer.reverseBytes(v);
     }
 
     public long readLong() throws IOException {
-        return dataInput.readLong();
+        final long v = dataInput.readLong();
+        return bigEndian() ? v : Long.reverseBytes(v);
     }
 
     public float readFloat() throws IOException {
-        return dataInput.readFloat();
+        if (bigEndian()) {
+            return dataInput.readFloat();
+        } else {
+            return Float.intBitsToFloat(readInt());
+        }
     }
 
     public double readDouble() throws IOException {
-        return dataInput.readDouble();
+        if (bigEndian()) {
+            return dataInput.readDouble();
+        } else {
+            return Double.longBitsToDouble(readLong());
+        }
+    }
+
+    public char[] readCharArray() throws IOException {
+        int len = readInt();
+        if (len > 0) {
+            char[] values = new char[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = readChar();
+            }
+            return values;
+        }
+        return new char[0];
+    }
+
+    public int[] readIntArray() throws IOException {
+        int len = readInt();
+        if (len > 0) {
+            int[] values = new int[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = readInt();
+            }
+            return values;
+        }
+        return new int[0];
+    }
+
+    public long[] readLongArray() throws IOException {
+        int len = readInt();
+        if (len > 0) {
+            long[] values = new long[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = readLong();
+            }
+            return values;
+        }
+        return new long[0];
+    }
+
+    public double[] readDoubleArray() throws IOException {
+        int len = readInt();
+        if (len > 0) {
+            double[] values = new double[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = readDouble();
+            }
+            return values;
+        }
+        return new double[0];
+    }
+
+    public float[] readFloatArray() throws IOException {
+        int len = readInt();
+        if (len > 0) {
+            float[] values = new float[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = readFloat();
+            }
+            return values;
+        }
+        return new float[0];
+    }
+
+    public short[] readShortArray() throws IOException {
+        int len = readInt();
+        if (len > 0) {
+            short[] values = new short[len];
+            for (int i = 0; i < len; i++) {
+                values[i] = readShort();
+            }
+            return values;
+        }
+        return new short[0];
     }
 
     @Deprecated
@@ -144,6 +236,14 @@ public class ObjectDataInputStream extends InputStream implements ObjectDataInpu
     }
 
     public ClassLoader getClassLoader() {
-        return classLoader;
+        return serializationService.getClassLoader();
+    }
+
+    public ByteOrder getByteOrder() {
+        return byteOrder;
+    }
+
+    private boolean bigEndian() {
+        return byteOrder == ByteOrder.BIG_ENDIAN;
     }
 }

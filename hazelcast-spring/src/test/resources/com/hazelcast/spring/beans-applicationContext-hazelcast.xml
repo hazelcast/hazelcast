@@ -42,8 +42,8 @@
     </hz:hazelcast>
 
     <hz:client id="client" depends-on="instance" scope="prototype"
-               connect-attempt-limit="3" connect-timeout="1000"
-               attempt-period="3000" pool-size="300"
+               connection-attempt-limit="3" connection-timeout="1000"
+               connection-attempt-period="3000" pool-size="300"
                redo-operation="true" smart="true">
         <hz:member>127.0.0.1:5701</hz:member>
     </hz:client>

@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.client.txn;
 
 import com.hazelcast.client.HazelcastClient;
@@ -90,6 +106,9 @@ public class TransactionProxy implements Transaction {
             checkTimeout();
             sendAndReceive(new CommitTransactionRequest());
             state = COMMITTED;
+        } catch (Exception e){
+            state = ROLLING_BACK;
+            ExceptionUtil.rethrow(e);
         } finally {
             closeConnection();
         }
@@ -99,6 +118,10 @@ public class TransactionProxy implements Transaction {
         try {
             if (state == NO_TXN || state == ROLLED_BACK) {
                 throw new IllegalStateException("Transaction is not active");
+            }
+            if (state == ROLLING_BACK){
+                state = ROLLED_BACK;
+                return;
             }
             checkThread();
             try {
@@ -112,6 +135,7 @@ public class TransactionProxy implements Transaction {
     }
 
     private void closeConnection(){
+        threadFlag.set(null);
         try {
             connection.close();
         } catch (IOException e) {

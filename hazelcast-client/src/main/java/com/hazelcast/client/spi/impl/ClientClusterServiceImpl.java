@@ -29,10 +29,7 @@ import com.hazelcast.client.spi.ResponseStream;
 import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.cluster.client.AddMembershipListenerRequest;
 import com.hazelcast.cluster.client.ClientMembershipEvent;
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.core.MembershipListener;
+import com.hazelcast.core.*;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
@@ -53,8 +50,8 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public final class ClientClusterServiceImpl implements ClientClusterService {
 
-    private static int RETRY_COUNT = 10;
-    private static int RETRY_WAIT_TIME = 100;
+    private static int RETRY_COUNT = 20;
+    private static int RETRY_WAIT_TIME = 250;
 
     private final HazelcastClient client;
     private final ClusterListenerThread clusterThread;
@@ -68,8 +65,17 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     public ClientClusterServiceImpl(HazelcastClient client) {
         this.client = client;
         clusterThread = new ClusterListenerThread(client.getThreadGroup(), client.getName() + ".cluster-listener");
-        redoOperation = getClientConfig().isRedoOperation();
-        credentials = getClientConfig().getCredentials();
+        final ClientConfig clientConfig = getClientConfig();
+        redoOperation = clientConfig.isRedoOperation();
+        credentials = clientConfig.getCredentials();
+        final Collection<EventListener> listenersList = client.getClientConfig().getListeners();
+        if (listenersList != null && !listenersList.isEmpty()) {
+            for (EventListener listener : listenersList) {
+                if (listener instanceof MembershipListener) {
+                    addMembershipListener((MembershipListener) listener);
+                }
+            }
+        }
     }
 
     public MemberImpl getMember(Address address) {
@@ -166,19 +172,22 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         Connection connection = null;
         int retryCount = RETRY_COUNT;
         while (connection == null && retryCount > 0 ){
-            if (address == null){
+            if (address != null) {
                 connection = client.getConnectionManager().getConnection(address);
             } else {
                 connection = client.getConnectionManager().getRandomConnection();
             }
-            retryCount--;
-            try {
-                Thread.sleep(RETRY_WAIT_TIME);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+            if (connection == null) {
+                retryCount--;
+                try {
+                    Thread.sleep(RETRY_WAIT_TIME);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
+            address = null;
         }
-        if (connection == null){
+        if (connection == null) {
             throw new HazelcastException("Unable to connect!!!");
         }
         return connection;
@@ -284,6 +293,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                         try {
                             conn = pickConnection();
                         } catch (Exception e){
+                            e.printStackTrace();
                             client.getLifecycleService().shutdown();
                             return;
                         }
@@ -354,9 +364,9 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     members.add(member);
                 } else {
                     members.remove(member);
+                    getConnectionManager().removeConnectionPool(member.getAddress());
                 }
                 updateMembersRef();
-                getConnectionManager().removeConnectionPool(member.getAddress());
                 fireMembershipEvent(event);
             }
         }
@@ -414,7 +424,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         final ManagerAuthenticator authenticator = new ManagerAuthenticator();
         int attempt = 0;
         while (true) {
-            final long nextTry = Clock.currentTimeMillis() + getClientConfig().getAttemptPeriod();
+            final long nextTry = Clock.currentTimeMillis() + getClientConfig().getConnectionAttemptPeriod();
             for (InetSocketAddress isa : socketAddresses) {
                 try {
                     Address address = new Address(isa);
@@ -457,20 +467,21 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
 
     private class ManagerAuthenticator implements Authenticator {
         public void auth(Connection connection) throws AuthenticationException, IOException {
-            final Object response = authenticate(connection, credentials, principal, true);
+            final Object response = authenticate(connection, credentials, principal, true, true);
             principal = (ClientPrincipal) response;
         }
     }
 
     private class ClusterAuthenticator implements Authenticator {
         public void auth(Connection connection) throws AuthenticationException, IOException {
-            authenticate(connection, credentials, principal, false);
+            authenticate(connection, credentials, principal, false, false);
         }
     }
 
-    private Object authenticate(Connection connection, Credentials credentials, ClientPrincipal principal, boolean reAuth) throws IOException {
+    private Object authenticate(Connection connection, Credentials credentials, ClientPrincipal principal, boolean reAuth, boolean firstConnection) throws IOException {
         AuthenticationRequest auth = new AuthenticationRequest(credentials, principal);
         auth.setReAuth(reAuth);
+        auth.setFirstConnection(firstConnection);
         final SerializationService serializationService = getSerializationService();
         connection.write(serializationService.toData(auth));
         final Data addressData = connection.read();

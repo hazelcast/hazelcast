@@ -26,7 +26,6 @@ public interface ExecutionService {
     static final String SYSTEM_EXECUTOR = "hz:system";
     static final String ASYNC_EXECUTOR = "hz:async-inv";
     static final String SCHEDULED_EXECUTOR = "hz:scheduled";
-    static final String RESPONSE_EXECUTOR = "hz:response";
     static final String CLIENT_EXECUTOR = "hz:client";
 
     void execute(String name, Runnable command);

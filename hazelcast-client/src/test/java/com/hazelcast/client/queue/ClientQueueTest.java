@@ -46,7 +46,6 @@ public class ClientQueueTest {
     static final String queueName = "test1";
     static HazelcastInstance hz;
     static HazelcastInstance server;
-    static HazelcastInstance second;
     static IQueue q;
 
     @BeforeClass
@@ -116,16 +115,17 @@ public class ClientQueueTest {
         }
         assertEquals(6, q.size());
 
-        new Thread(){
+        final Thread t1 = new Thread() {
             public void run() {
                 try {
-                    Thread.sleep(2*1000);
+                    Thread.sleep(2 * 1000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
                 q.poll();
             }
-        }.start();
+        };
+        t1.start();
 
         boolean result = q.offer("item",5, TimeUnit.SECONDS);
         assertTrue(result);
@@ -143,19 +143,22 @@ public class ClientQueueTest {
         assertEquals(0, q.size());
 
 
-        new Thread(){
+        final Thread t2 = new Thread() {
             public void run() {
                 try {
-                    Thread.sleep(2*1000);
+                    Thread.sleep(2 * 1000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
                 q.offer("item1");
             }
-        }.start();
+        };
+        t2.start();
 
         Object o = q.poll(5, TimeUnit.SECONDS);
         assertEquals("item1", o);
+        t1.join(10000);
+        t2.join(10000);
     }
 
     @Test

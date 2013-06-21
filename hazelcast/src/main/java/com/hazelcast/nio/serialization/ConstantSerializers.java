@@ -16,7 +16,6 @@
 
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
@@ -27,9 +26,9 @@ import static com.hazelcast.nio.serialization.SerializationConstants.*;
 /**
  * @mdogan 6/18/12
  */
-public class ConstantSerializers {
+public final class ConstantSerializers {
 
-    public static final class ByteSerializer extends SingletonTypeSerializer<Byte> {
+    public static final class ByteSerializer extends SingletonSerializer<Byte> {
 
         public int getTypeId() {
             return CONSTANT_TYPE_BYTE;
@@ -44,7 +43,7 @@ public class ConstantSerializers {
         }
     }
 
-    public static final class BooleanSerializer extends SingletonTypeSerializer<Boolean> {
+    public static final class BooleanSerializer extends SingletonSerializer<Boolean> {
 
         public int getTypeId() {
             return CONSTANT_TYPE_BOOLEAN;
@@ -59,7 +58,7 @@ public class ConstantSerializers {
         }
     }
 
-    public static final class CharSerializer extends SingletonTypeSerializer<Character> {
+    public static final class CharSerializer extends SingletonSerializer<Character> {
 
         public int getTypeId() {
             return CONSTANT_TYPE_CHAR;
@@ -74,7 +73,7 @@ public class ConstantSerializers {
         }
     }
 
-    public static final class ShortSerializer extends SingletonTypeSerializer<Short> {
+    public static final class ShortSerializer extends SingletonSerializer<Short> {
 
         public int getTypeId() {
             return CONSTANT_TYPE_SHORT;
@@ -89,7 +88,7 @@ public class ConstantSerializers {
         }
     }
 
-    public static final class IntegerSerializer extends SingletonTypeSerializer<Integer> {
+    public static final class IntegerSerializer extends SingletonSerializer<Integer> {
 
         public int getTypeId() {
             return CONSTANT_TYPE_INTEGER;
@@ -104,7 +103,7 @@ public class ConstantSerializers {
         }
     }
 
-    public static final class LongSerializer extends SingletonTypeSerializer<Long> {
+    public static final class LongSerializer extends SingletonSerializer<Long> {
 
         public int getTypeId() {
             return CONSTANT_TYPE_LONG;
@@ -119,7 +118,7 @@ public class ConstantSerializers {
         }
     }
 
-    public static final class FloatSerializer extends SingletonTypeSerializer<Float> {
+    public static final class FloatSerializer extends SingletonSerializer<Float> {
 
         public int getTypeId() {
             return CONSTANT_TYPE_FLOAT;
@@ -134,7 +133,7 @@ public class ConstantSerializers {
         }
     }
 
-    public static final class DoubleSerializer extends SingletonTypeSerializer<Double> {
+    public static final class DoubleSerializer extends SingletonSerializer<Double> {
 
         public int getTypeId() {
             return CONSTANT_TYPE_DOUBLE;
@@ -149,7 +148,7 @@ public class ConstantSerializers {
         }
     }
 
-    public static final class StringSerializer extends SingletonTypeSerializer<String> {
+    public static final class StringSerializer extends SingletonSerializer<String> {
 
         public int getTypeId() {
             return CONSTANT_TYPE_STRING;
@@ -164,202 +163,117 @@ public class ConstantSerializers {
         }
     }
 
-    public static final class ByteArraySerializer extends SingletonTypeSerializer<byte[]> {
+    public static final class TheByteArraySerializer implements ByteArraySerializer<byte[]> {
 
         public int getTypeId() {
             return CONSTANT_TYPE_BYTE_ARRAY;
         }
 
-        public byte[] read(final ObjectDataInput in) throws IOException {
-            return IOUtil.readByteArray(in);
+        @Override
+        public byte[] write(byte[] object) throws IOException {
+            return object;
         }
 
-        public void write(final ObjectDataOutput out, final byte[] obj) throws IOException {
-            IOUtil.writeByteArray(out, obj);
+        @Override
+        public byte[] read(byte[] buffer) throws IOException {
+            return buffer;
+        }
+
+        public void destroy() {
         }
     }
 
-    public static final class CharArraySerializer extends SingletonTypeSerializer<char[]> {
+    public static final class CharArraySerializer extends SingletonSerializer<char[]> {
 
         public int getTypeId() {
             return CONSTANT_TYPE_CHAR_ARRAY;
         }
 
         public char[] read(final ObjectDataInput in) throws IOException {
-            int size = in.readInt();
-            if (size == 0) {
-                return null;
-            } else {
-                char[] c = new char[size];
-                for (int i = 0; i < size; i++) {
-                    c[i] = in.readChar();
-                }
-                return c;
-            }
+           return in.readCharArray();
         }
 
         public void write(final ObjectDataOutput out, final char[] obj) throws IOException {
-            int size = (obj == null) ? 0 : obj.length;
-            out.writeInt(size);
-            if (size > 0) {
-                for (int i = 0; i < size; i++) {
-                    out.writeChar(obj[i]);
-                }
-            }
+            out.writeCharArray(obj);
         }
     }
 
-    public static final class ShortArraySerializer extends SingletonTypeSerializer<short[]> {
+    public static final class ShortArraySerializer extends SingletonSerializer<short[]> {
 
         public int getTypeId() {
             return CONSTANT_TYPE_SHORT_ARRAY;
         }
 
         public short[] read(final ObjectDataInput in) throws IOException {
-            int size = in.readInt();
-            if (size == 0) {
-                return null;
-            } else {
-                short[] s = new short[size];
-                for (int i = 0; i < size; i++) {
-                    s[i] = in.readShort();
-                }
-                return s;
-            }
+            return in.readShortArray();
         }
 
         public void write(final ObjectDataOutput out, final short[] obj) throws IOException {
-            int size = (obj == null) ? 0 : obj.length;
-            out.writeInt(size);
-            if (size > 0) {
-                for (int i = 0; i < size; i++) {
-                    out.writeShort(obj[i]);
-                }
-            }
+            out.writeShortArray(obj);
         }
     }
 
-    public static final class IntegerArraySerializer extends SingletonTypeSerializer<int[]> {
+    public static final class IntegerArraySerializer extends SingletonSerializer<int[]> {
 
         public int getTypeId() {
             return CONSTANT_TYPE_INTEGER_ARRAY;
         }
 
         public int[] read(final ObjectDataInput in) throws IOException {
-            int size = in.readInt();
-            if (size == 0) {
-                return null;
-            } else {
-                int[] s = new int[size];
-                for (int i = 0; i < size; i++) {
-                    s[i] = in.readInt();
-                }
-                return s;
-            }
+           return in.readIntArray();
         }
 
         public void write(final ObjectDataOutput out, final int[] obj) throws IOException {
-            int size = (obj == null) ? 0 : obj.length;
-            out.writeInt(size);
-            if (size > 0) {
-                for (int i = 0; i < size; i++) {
-                    out.writeInt(obj[i]);
-                }
-            }
+            out.writeIntArray(obj);
         }
     }
 
-    public static final class LongArraySerializer extends SingletonTypeSerializer<long[]> {
+    public static final class LongArraySerializer extends SingletonSerializer<long[]> {
 
         public int getTypeId() {
             return CONSTANT_TYPE_LONG_ARRAY;
         }
 
         public long[] read(final ObjectDataInput in) throws IOException {
-            int size = in.readInt();
-            if (size == 0) {
-                return null;
-            } else {
-                long[] l = new long[size];
-                for (int i = 0; i < size; i++) {
-                    l[i] = in.readLong();
-                }
-                return l;
-            }
+            return in.readLongArray();
         }
 
         public void write(final ObjectDataOutput out, final long[] obj) throws IOException {
-            int size = (obj == null) ? 0 : obj.length;
-            out.writeInt(size);
-            if (size > 0) {
-                for (int i = 0; i < size; i++) {
-                    out.writeLong(obj[i]);
-                }
-            }
+            out.writeLongArray(obj);
         }
     }
 
-    public static final class FloatArraySerializer extends SingletonTypeSerializer<float[]> {
+    public static final class FloatArraySerializer extends SingletonSerializer<float[]> {
 
         public int getTypeId() {
             return CONSTANT_TYPE_FLOAT_ARRAY;
         }
 
         public float[] read(final ObjectDataInput in) throws IOException {
-            int size = in.readInt();
-            if (size == 0) {
-                return null;
-            } else {
-                float [] f = new float[size];
-                for (int i = 0; i < size; i++) {
-                    f[i] = in.readFloat();
-                }
-                return f;
-            }
+            return in.readFloatArray();
         }
 
         public void write(final ObjectDataOutput out, final float[] obj) throws IOException {
-            int size = (obj == null) ? 0 : obj.length;
-            out.writeInt(size);
-            if (size > 0) {
-                for (int i = 0; i < size; i++) {
-                    out.writeFloat(obj[i]);
-                }
-            }
+            out.writeFloatArray(obj);
         }
     }
 
-    public static final class DoubleArraySerializer extends SingletonTypeSerializer<double[]> {
+    public static final class DoubleArraySerializer extends SingletonSerializer<double[]> {
 
         public int getTypeId() {
             return CONSTANT_TYPE_DOUBLE_ARRAY;
         }
 
         public double[] read(final ObjectDataInput in) throws IOException {
-            int size = in.readInt();
-            if (size == 0) {
-                return null;
-            } else {
-                double [] d = new double[size];
-                for (int i = 0; i < size; i++) {
-                    d[i] = in.readDouble();
-                }
-                return d;
-            }
+            return in.readDoubleArray();
         }
 
         public void write(final ObjectDataOutput out, final double [] obj) throws IOException {
-            int size = (obj == null) ? 0 : obj.length;
-            out.writeInt(size);
-            if (size > 0) {
-                for (int i = 0; i < size; i++) {
-                    out.writeDouble(obj[i]);
-                }
-            }
+            out.writeDoubleArray(obj);
         }
     }
 
-    private abstract static class SingletonTypeSerializer<T> implements TypeSerializer<T> {
+    private abstract static class SingletonSerializer<T> implements StreamSerializer<T> {
 
         public void destroy() {
         }

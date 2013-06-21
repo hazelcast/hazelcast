@@ -31,6 +31,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Arrays;
 
 /**
@@ -42,7 +43,9 @@ public class ObjectDataTest {
 
     @Test
     public void testDataWriter() throws IOException {
-        SerializationService ss = new SerializationServiceBuilder().build();
+        SerializationService ss = new SerializationServiceBuilder().
+                setUseNativeByteOrder(false).setByteOrder(ByteOrder.BIG_ENDIAN).build();
+
         final Person person = new Person(111, 123L, 89.56d, "test-person",
                 new Address("street", 987));
 
@@ -72,14 +75,29 @@ public class ObjectDataTest {
     }
 
     @Test
-    public void testDataStreams() throws IOException {
-        SerializationService ss = new SerializationServiceBuilder().build();
+    public void testDataStreamsBigEndian() throws IOException {
+        testDataStreams(ByteOrder.BIG_ENDIAN);
+    }
+
+    @Test
+    public void testDataStreamsLittleEndian() throws IOException {
+        testDataStreams(ByteOrder.LITTLE_ENDIAN);
+    }
+
+    @Test
+    public void testDataStreamsNativeOrder() throws IOException {
+        testDataStreams(ByteOrder.nativeOrder());
+    }
+
+    private void testDataStreams(ByteOrder byteOrder) throws IOException {
+        SerializationService ss = new SerializationServiceBuilder()
+                .setUseNativeByteOrder(false).setByteOrder(byteOrder).build();
 
         final Person person = new Person(111, 123L, 89.56d, "test-person",
                 new Address("street", 987));
 
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        ObjectDataOutput out = ss.createObjectDataOutputStream(bout);
+        ObjectDataOutput out = ss.createObjectDataOutputStream(bout, byteOrder);
         out.writeObject(person);
         byte[] data1 = bout.toByteArray();
 
@@ -91,7 +109,7 @@ public class ObjectDataTest {
         Assert.assertTrue(Arrays.equals(data1, data2));
 
         final ByteArrayInputStream bin = new ByteArrayInputStream(data2);
-        final ObjectDataInput in = ss.createObjectDataInputStream(bin);
+        final ObjectDataInput in = ss.createObjectDataInputStream(bin, byteOrder);
         final Person person1 = in.readObject();
 
         final ObjectDataInput in2 = ss.createObjectDataInput(data1);
@@ -99,6 +117,5 @@ public class ObjectDataTest {
 
         Assert.assertEquals(person, person1);
         Assert.assertEquals(person, person2);
-
     }
 }

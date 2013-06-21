@@ -99,7 +99,8 @@ class DefaultAddressPicker implements AddressPicker {
                 }
             }
             if (!serverSocket.isBound()) {
-                throw new HazelcastException("ServerSocket bind has failed. Hazelcast cannot start!", error);
+                throw new HazelcastException("ServerSocket bind has failed. Hazelcast cannot start! " +
+                        "config-port: " + networkConfig.getPort() + ", latest-port: " + port, error);
             }
             serverSocketChannel.configureBlocking(false);
             bindAddress = createAddress(bindAddressDef, port);

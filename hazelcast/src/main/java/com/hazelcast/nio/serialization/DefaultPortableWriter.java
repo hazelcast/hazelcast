@@ -17,6 +17,7 @@
 package com.hazelcast.nio.serialization;
 
 import com.hazelcast.nio.BufferObjectDataOutput;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
@@ -118,79 +119,37 @@ public class DefaultPortableWriter implements PortableWriter {
 
     public void writeByteArray(String fieldName, byte[] values) throws IOException {
         setPosition(fieldName);
-        final int len = values == null ? 0 : values.length;
-        out.writeInt(len);
-        if (len > 0) {
-            for (int i = 0; i < len; i++) {
-                out.writeByte(values[i]);
-            }
-        }
+        IOUtil.writeByteArray(out, values);
     }
 
     public void writeCharArray(String fieldName, char[] values) throws IOException {
         setPosition(fieldName);
-        final int len = values == null ? 0 : values.length;
-        out.writeInt(len);
-        if (len > 0) {
-            for (int i = 0; i < len; i++) {
-                out.writeChar(values[i]);
-            }
-        }
+        out.writeCharArray(values);
     }
 
     public void writeIntArray(String fieldName, int[] values) throws IOException {
         setPosition(fieldName);
-        final int len = values == null ? 0 : values.length;
-        out.writeInt(len);
-        if (len > 0) {
-            for (int i = 0; i < len; i++) {
-                out.writeInt(values[i]);
-            }
-        }
+        out.writeIntArray(values);
     }
 
     public void writeLongArray(String fieldName, long[] values) throws IOException {
         setPosition(fieldName);
-        final int len = values == null ? 0 : values.length;
-        out.writeInt(len);
-        if (len > 0) {
-            for (int i = 0; i < len; i++) {
-                out.writeLong(values[i]);
-            }
-        }
+        out.writeLongArray(values);
     }
 
     public void writeDoubleArray(String fieldName, double[] values) throws IOException {
         setPosition(fieldName);
-        final int len = values == null ? 0 : values.length;
-        out.writeInt(len);
-        if (len > 0) {
-            for (int i = 0; i < len; i++) {
-                out.writeDouble(values[i]);
-            }
-        }
+        out.writeDoubleArray(values);
     }
 
     public void writeFloatArray(String fieldName, float[] values) throws IOException {
         setPosition(fieldName);
-        final int len = values == null ? 0 : values.length;
-        out.writeInt(len);
-        if (len > 0) {
-            for (int i = 0; i < len; i++) {
-                out.writeFloat(values[i]);
-            }
-        }
+        out.writeFloatArray(values);
     }
 
     public void writeShortArray(String fieldName, short[] values) throws IOException {
         setPosition(fieldName);
-        final int len = values == null ? 0 : values.length;
-        out.writeInt(len);
-        if (len > 0) {
-            for (int i = 0; i < len; i++) {
-                out.writeShort(values[i]);
-            }
-        }
+        out.writeShortArray(values);
     }
 
     public void writePortableArray(String fieldName, Portable[] portables) throws IOException {

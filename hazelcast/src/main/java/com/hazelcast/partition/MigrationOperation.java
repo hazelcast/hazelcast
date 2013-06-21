@@ -141,9 +141,7 @@ public final class MigrationOperation extends BaseMigrationOperation {
         out.writeInt(taskCount);
         out.writeInt(zippedTaskData.length);
         out.write(zippedTaskData);
-        for (int i = 0; i < PartitionInfo.MAX_BACKUP_COUNT; i++) {
-            out.writeLong(replicaVersions[i]);
-        }
+        out.writeLongArray(replicaVersions);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
@@ -152,10 +150,7 @@ public final class MigrationOperation extends BaseMigrationOperation {
         int size = in.readInt();
         zippedTaskData = new byte[size];
         in.readFully(zippedTaskData);
-        replicaVersions = new long[PartitionInfo.MAX_BACKUP_COUNT];
-        for (int i = 0; i < PartitionInfo.MAX_BACKUP_COUNT; i++) {
-            replicaVersions[i] = in.readLong();
-        }
+        replicaVersions = in.readLongArray();
     }
 
     @Override

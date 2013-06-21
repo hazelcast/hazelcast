@@ -23,6 +23,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteOrder;
 
 /**
  * @mdogan 1/3/13
@@ -47,13 +48,18 @@ public interface SerializationService {
 
     ObjectDataInputStream createObjectDataInputStream(InputStream in);
 
-    void register(Class type, TypeSerializer serializer);
+    ObjectDataOutputStream createObjectDataOutputStream(OutputStream out, ByteOrder order);
 
-    void registerGlobal(TypeSerializer serializer);
+    ObjectDataInputStream createObjectDataInputStream(InputStream in, ByteOrder order);
+
+    void register(Class type, Serializer serializer);
+
+    void registerGlobal(Serializer serializer);
 
     SerializationContext getSerializationContext();
 
     PortableReader createPortableReader(Data data);
 
     ClassLoader getClassLoader();
+
 }

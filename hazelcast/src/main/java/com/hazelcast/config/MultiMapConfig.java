@@ -16,10 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,10 +37,12 @@ public class MultiMapConfig {
 
     public MultiMapConfig(MultiMapConfig defConfig) {
         this.name = defConfig.getName();
-        this.valueCollectionType = defConfig.getValueCollectionType().toString();
+        this.valueCollectionType = defConfig.valueCollectionType;
         this.binary = defConfig.binary;
         this.syncBackupCount = defConfig.syncBackupCount;
         this.asyncBackupCount = defConfig.asyncBackupCount;
+        this.statisticsEnabled = defConfig.statisticsEnabled;
+        this.listenerConfigs = new ArrayList<EntryListenerConfig>(defConfig.getEntryListenerConfigs());
     }
 
     public enum ValueCollectionType {

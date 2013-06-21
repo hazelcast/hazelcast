@@ -62,10 +62,9 @@ public final class UTFUtil {
             throw new UTFDataFormatException("encoded string too long:"
                     + utfLength + " bytes");
         }
-        final byte[] byteArray = new byte[utfLength + 2];
-        byteArray[count++] = (byte) ((utfLength >>> 8) & 0xFF);
-        byteArray[count++] = (byte) ((utfLength) & 0xFF);
+        out.writeShort(utfLength);
         int i;
+        final byte[] byteArray = new byte[utfLength];
         for (i = 0; i < stringLen; i++) {
             c = str.charAt(i);
             if (!((c >= 0x0001) && (c <= 0x007F)))
@@ -85,7 +84,7 @@ public final class UTFUtil {
                 byteArray[count++] = (byte) (0x80 | ((c) & 0x3F));
             }
         }
-        out.write(byteArray, 0, utfLength + 2);
+        out.write(byteArray, 0, utfLength);
     }
 
     public static String readUTF(final DataInput in) throws IOException {

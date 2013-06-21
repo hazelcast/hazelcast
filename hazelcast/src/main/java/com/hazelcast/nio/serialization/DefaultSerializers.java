@@ -36,7 +36,7 @@ import static com.hazelcast.nio.serialization.SerializationConstants.*;
  */
 public class DefaultSerializers {
 
-    public static final class BigIntegerSerializer extends SingletonTypeSerializer<BigInteger> {
+    public static final class BigIntegerSerializer extends SingletonSerializer<BigInteger> {
 
         public int getTypeId() {
             return DEFAULT_TYPE_BIG_INTEGER;
@@ -55,7 +55,7 @@ public class DefaultSerializers {
         }
     }
 
-    public static final class BigDecimalSerializer extends SingletonTypeSerializer<BigDecimal> {
+    public static final class BigDecimalSerializer extends SingletonSerializer<BigDecimal> {
 
         final BigIntegerSerializer bigIntegerSerializer = new BigIntegerSerializer();
 
@@ -77,7 +77,7 @@ public class DefaultSerializers {
         }
     }
 
-    public static final class DateSerializer extends SingletonTypeSerializer<Date> {
+    public static final class DateSerializer extends SingletonSerializer<Date> {
 
         public int getTypeId() {
             return DEFAULT_TYPE_DATE;
@@ -92,7 +92,7 @@ public class DefaultSerializers {
         }
     }
 
-    public static final class ClassSerializer extends SingletonTypeSerializer<Class> {
+    public static final class ClassSerializer extends SingletonSerializer<Class> {
 
         public int getTypeId() {
             return DEFAULT_TYPE_CLASS;
@@ -111,7 +111,7 @@ public class DefaultSerializers {
         }
     }
 
-    public static final class Externalizer extends SingletonTypeSerializer<Externalizable> {
+    public static final class Externalizer extends SingletonSerializer<Externalizable> {
 
         public int getTypeId() {
             return DEFAULT_TYPE_EXTERNALIZABLE;
@@ -136,7 +136,7 @@ public class DefaultSerializers {
         }
     }
 
-    public static final class ObjectSerializer extends SingletonTypeSerializer<Object> {
+    public static final class ObjectSerializer extends SingletonSerializer<Object> {
 
         private static final boolean shared = GroupProperties.SERIALIZER_SHARED.getBoolean();
         private static final boolean gzipEnabled = GroupProperties.SERIALIZER_GZIP_ENABLED.getBoolean();
@@ -184,7 +184,7 @@ public class DefaultSerializers {
         }
     }
 
-    private abstract static class SingletonTypeSerializer<T> implements TypeSerializer<T> {
+    private abstract static class SingletonSerializer<T> implements StreamSerializer<T> {
 
         public void destroy() {
         }

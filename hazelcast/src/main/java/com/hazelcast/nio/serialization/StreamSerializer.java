@@ -14,23 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.test;
+package com.hazelcast.nio.serialization;
 
-import com.hazelcast.test.annotation.NoTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 
-/**
- * @mdogan 5/29/13
- */
+import java.io.IOException;
 
-@RunWith(HazelcastJUnit4ClassRunner.class)
-@Category(NoTest.class)
-public class NoTestPlaceHolder {
+public interface StreamSerializer<T> extends Serializer {
 
-    @Test
-    public void test() {
-        System.out.println("Run tests using one of profiles; 'parallel-test', 'serial-test' or 'all-tests' !!!");
-    }
+    void write(ObjectDataOutput out, T object) throws IOException;
+
+    T read(ObjectDataInput in) throws IOException;
 }

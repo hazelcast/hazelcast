@@ -38,6 +38,7 @@ import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.topic.TopicService;
 
 import java.util.Collection;
+import java.util.EventListener;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -55,6 +56,15 @@ public final class ProxyManager {
 
     public ProxyManager(HazelcastClient client) {
         this.client = client;
+
+        final Collection<EventListener> listeners = client.getClientConfig().getListeners();
+        if (listeners != null && !listeners.isEmpty()) {
+            for (EventListener listener : listeners) {
+                if (listener instanceof DistributedObjectListener) {
+                    addDistributedObjectListener((DistributedObjectListener) listener);
+                }
+            }
+        }
     }
 
     public void init(ProxyFactoryConfig config) {

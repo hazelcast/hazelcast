@@ -890,15 +890,18 @@
             </xs:simpleContent>
         </xs:complexType>
     </xs:element>
-    <xs:element name="cache-value" type="xs:boolean" />
     <xs:element name="read-backup-data" type="xs:boolean" />
+    <xs:element name="check-class-def-errors" type="xs:boolean" />
     <xs:element name="serialization">
         <xs:complexType>
             <xs:sequence>
                 <xs:element ref="portable-version" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="use-native-byte-order" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="byte-order" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="data-serializable-factories" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="portable-factories" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="serializers" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="check-class-def-errors" minOccurs="0" maxOccurs="1" />
             </xs:sequence>
         </xs:complexType>
     </xs:element>
@@ -906,6 +909,15 @@
         <xs:simpleType>
             <xs:restriction base="xs:int">
                 <xs:minInclusive value="0" />
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:element>
+    <xs:element name="use-native-byte-order" type="xs:boolean" default="false" />
+    <xs:element name="byte-order" default="BIG_ENDIAN">
+        <xs:simpleType>
+            <xs:restriction base="non-space-string">
+                <xs:enumeration value="BIG_ENDIAN"/>
+                <xs:enumeration value="LITTLE_ENDIAN"/>
             </xs:restriction>
         </xs:simpleType>
     </xs:element>
@@ -957,7 +969,7 @@
         <xs:complexType>
             <xs:sequence>
                 <xs:element ref="global-serializer" minOccurs="0" maxOccurs="1"/>
-                <xs:element ref="type-serializer" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element ref="serializer" minOccurs="0" maxOccurs="unbounded"/>
             </xs:sequence>
         </xs:complexType>
     </xs:element>
@@ -966,7 +978,7 @@
             <xs:restriction base="xs:string"/>
         </xs:simpleType>
     </xs:element>
-    <xs:element name="type-serializer">
+    <xs:element name="serializer">
         <xs:complexType>
             <xs:simpleContent>
                 <xs:extension base="xs:string">

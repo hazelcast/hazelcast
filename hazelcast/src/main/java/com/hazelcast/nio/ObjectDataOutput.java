@@ -18,13 +18,28 @@ package com.hazelcast.nio;
 
 import java.io.DataOutput;
 import java.io.IOException;
+import java.nio.ByteOrder;
 
 /**
  * @mdogan 12/28/12
  */
 public interface ObjectDataOutput extends DataOutput {
 
+    void writeCharArray(char[] chars) throws IOException;
+
+    void writeIntArray(int[] ints) throws IOException;
+
+    void writeLongArray(long[] longs) throws IOException;
+
+    void writeDoubleArray(double[] values) throws IOException;
+
+    void writeFloatArray(float[] values) throws IOException;
+
+    void writeShortArray(short[] values) throws IOException;
+
     void writeObject(Object object) throws IOException;
 
     byte[] toByteArray();
+
+    ByteOrder getByteOrder();
 }

@@ -178,7 +178,7 @@ public class MulticastService implements Runnable {
                 out.writeObject(joinMessage);
                 datagramPacketSend.setData(out.toByteArray());
                 multicastSocket.send(datagramPacketSend);
-                out.reset();
+                out.clear();
             } catch (IOException e) {
                 logger.log(Level.WARNING, "You probably have too long Hazelcast configuration!", e);
             }

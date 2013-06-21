@@ -19,7 +19,6 @@ package com.hazelcast.client;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
-import com.hazelcast.core.MembershipListener;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -48,7 +47,7 @@ public final class LifecycleServiceImpl implements LifecycleService {
         final Collection<EventListener> listeners = client.getClientConfig().getListeners();
         if (listeners != null && !listeners.isEmpty()) {
             for (EventListener listener : listeners) {
-                if (listener instanceof MembershipListener) {
+                if (listener instanceof LifecycleListener) {
                     addLifecycleListener((LifecycleListener) listener);
                 }
             }

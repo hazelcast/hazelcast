@@ -560,7 +560,7 @@ public class EvictionTest extends HazelcastTestSupport {
         HazelcastInstance instance2 = factory.newHazelcastInstance(cfg);
         HazelcastInstance instance3 = factory.newHazelcastInstance(cfg);
 
-        Thread.sleep(maxIdleSeconds * 1000 + 5000);
+        Thread.sleep(maxIdleSeconds * 1000 + 10000);
         Assert.assertEquals(nsize, map.size());
 
         thread.interrupt();
@@ -589,7 +589,7 @@ public class EvictionTest extends HazelcastTestSupport {
                     public void run() {
                         final Long expectedEvictionTime = (Long) (event.getOldValue());
                         long timeDifference = System.currentTimeMillis() - expectedEvictionTime;
-                        if (timeDifference > 3000) {
+                        if (timeDifference > 5000) {
                             error.set(true);
                             times.add(timeDifference);
                         }

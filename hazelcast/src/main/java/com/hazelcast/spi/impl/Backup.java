@@ -21,7 +21,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.partition.PartitionInfo;
+import com.hazelcast.partition.PartitionView;
 import com.hazelcast.partition.PartitionServiceImpl;
 import com.hazelcast.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.*;
@@ -60,8 +60,8 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
     public void beforeRun() throws Exception {
         final NodeEngine nodeEngine = getNodeEngine();
         final int partitionId = getPartitionId();
-        final PartitionInfo partitionInfo = nodeEngine.getPartitionService().getPartitionInfo(partitionId);
-        final Address owner = partitionInfo.getReplicaAddress(getReplicaIndex());
+        final PartitionView partition = nodeEngine.getPartitionService().getPartitionView(partitionId);
+        final Address owner = partition.getReplicaAddress(getReplicaIndex());
         if (!nodeEngine.getThisAddress().equals(owner)) {
             valid = false;
             final ILogger logger = getLogger();
@@ -140,9 +140,7 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
         } else {
             out.writeBoolean(false);
         }
-        for (int i = 0; i < PartitionInfo.MAX_BACKUP_COUNT; i++) {
-            out.writeLong(replicaVersions[i]);
-        }
+        out.writeLongArray(replicaVersions);
         out.writeBoolean(sync);
     }
 
@@ -153,10 +151,7 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
             originalCaller = new Address();
             originalCaller.readData(in);
         }
-        replicaVersions = new long[PartitionInfo.MAX_BACKUP_COUNT];
-        for (int i = 0; i < PartitionInfo.MAX_BACKUP_COUNT; i++) {
-            replicaVersions[i] = in.readLong();
-        }
+        replicaVersions = in.readLongArray();
         sync = in.readBoolean();
     }
 

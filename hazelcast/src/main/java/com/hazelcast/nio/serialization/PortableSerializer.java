@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class PortableSerializer implements TypeSerializer<Portable> {
+public final class PortableSerializer implements StreamSerializer<Portable> {
 
     private final SerializationContext context;
     private final Map<Integer, PortableFactory> factories = new HashMap<Integer, PortableFactory>();
@@ -72,10 +72,14 @@ public class PortableSerializer implements TypeSerializer<Portable> {
         if (!(in instanceof BufferObjectDataInput)) {
             throw new IllegalArgumentException("ObjectDataInput must be instance of BufferObjectDataInput!");
         }
-        final ContextAwareDataInput ctxIn = (ContextAwareDataInput) in;
+        if (!(in instanceof PortableContextAwareInputStream)) {
+            throw new IllegalArgumentException("ObjectDataInput must be instance of PortableContextAwareInputStream!");
+        }
+        final PortableContextAwareInputStream ctxIn = (PortableContextAwareInputStream) in;
         final int factoryId = ctxIn.getFactoryId();
         final int dataClassId = ctxIn.getDataClassId();
         final int dataVersion = ctxIn.getDataVersion();
+
         final PortableFactory portableFactory = factories.get(factoryId);
         if (portableFactory == null) {
             throw new HazelcastSerializationException("Could not find PortableFactory for factoryId: " + factoryId);
