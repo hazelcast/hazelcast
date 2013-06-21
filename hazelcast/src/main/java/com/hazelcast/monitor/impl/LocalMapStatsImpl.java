@@ -196,6 +196,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
 
     public void incrementRemoves(long latency) {
         removeCount.incrementAndGet();
+        totalRemoveLatencies.addAndGet(latency);
         maxRemoveLatency.set(Math.max(maxRemoveLatency.get(), latency));
     }
 
