@@ -27,18 +27,18 @@ public final class NodeInitializerFactory {
     private static final ILogger logger = Logger.getLogger(NodeInitializerFactory.class.getName());
     private static final String FACTORY_ID = "com.hazelcast.NodeInitializer";
 
-    public static NodeInitializer create() {
+    public static NodeInitializer create(ClassLoader classLoader) {
         NodeInitializer initializer = null;
         try {
-            initializer = ServiceLoader.load(NodeInitializer.class, FACTORY_ID);
+            initializer = ServiceLoader.load(NodeInitializer.class, FACTORY_ID, classLoader);
         } catch (Exception e) {
             logger.log(Level.WARNING, "NodeInitializer could not be instantiated! => "
                                       + e.getClass().getName() + ": " + e.getMessage());
         }
-        return initializer != null ? initializer : createDefault();
+        return initializer != null ? initializer : createDefault(classLoader);
     }
 
-    public static NodeInitializer createDefault() {
+    public static NodeInitializer createDefault(ClassLoader classLoader) {
         return new DefaultNodeInitializer();
     }
 }

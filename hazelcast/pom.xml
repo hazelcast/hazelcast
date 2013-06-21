@@ -66,6 +66,9 @@
                         <artifactId>java16</artifactId>
                         <version>1.0</version>
                     </signature>
+                    <ignores>
+                        <ignore>sun.misc.Unsafe</ignore>
+                    </ignores>
                 </configuration>
                 <executions>
                     <execution>
@@ -105,12 +108,11 @@
                         </goals>
                         <configuration>
                             <instructions>
+                                <Export-Package>
+                                    com.hazelcast*
+                                </Export-Package>
                                 <Import-Package>
-                                    !junit.framework,
-                                    !org.junit,
-                                    !org.mockito,
-                                    org.apache.log4j;resolution:=optional,
-                                    org.apache.log4j.*;resolution:=optional,
+                                    !sun.misc,
                                     org.slf4j;resolution:=optional,
                                     *
                                 </Import-Package>
