@@ -19,7 +19,10 @@ package com.hazelcast.collection.multimap.tx;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.collection.CollectionService;
-import com.hazelcast.collection.operations.*;
+import com.hazelcast.collection.operations.CollectionResponse;
+import com.hazelcast.collection.operations.CountOperation;
+import com.hazelcast.collection.operations.GetAllOperation;
+import com.hazelcast.collection.operations.MultiMapOperationFactory;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;
@@ -76,7 +79,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
             }
             record.setRecordId(recordId);
             TxnPutOperation operation = new TxnPutOperation(proxyId, key, value, recordId);
-            MultiMapTransactionLog log = (MultiMapTransactionLog)tx.getTransactionLog(key);
+            MultiMapTransactionLog log = (MultiMapTransactionLog)tx.getTransactionLog(new TransactionLogKey(proxyId, key));
             if (log != null){
                 log.addOperation(operation);
             }
@@ -117,7 +120,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         }
         if (version != -1 || recordId != -1){
             TxnRemoveOperation operation = new TxnRemoveOperation(proxyId, key, recordId, value);
-            MultiMapTransactionLog log = (MultiMapTransactionLog)tx.getTransactionLog(key);
+            MultiMapTransactionLog log = (MultiMapTransactionLog)tx.getTransactionLog(new TransactionLogKey(proxyId, key));
             if (log != null){
                 log.addOperation(operation);
             }
@@ -146,7 +149,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         txMap.put(key, createCollection());
         TxnRemoveAllOperation operation = new TxnRemoveAllOperation(proxyId, key, coll);
 
-        MultiMapTransactionLog log = (MultiMapTransactionLog)tx.getTransactionLog(key);
+        MultiMapTransactionLog log = (MultiMapTransactionLog)tx.getTransactionLog(new TransactionLogKey(proxyId, key));
         if (log != null){
             log.addOperation(operation);
         }
@@ -208,7 +211,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
                 size += result;
             }
             for (Data key : txMap.keySet()) {
-                MultiMapTransactionLog log = (MultiMapTransactionLog)tx.getTransactionLog(key);
+                MultiMapTransactionLog log = (MultiMapTransactionLog)tx.getTransactionLog(new TransactionLogKey(proxyId, key));
                 if (log != null){
                     size += log.size();
                 }
