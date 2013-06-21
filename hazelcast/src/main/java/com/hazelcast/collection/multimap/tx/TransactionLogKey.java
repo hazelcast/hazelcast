@@ -21,30 +21,30 @@ import com.hazelcast.nio.serialization.Data;
 
 public class TransactionLogKey {
 
-        final CollectionProxyId proxyId;
+    final CollectionProxyId proxyId;
 
-        final Data key;
+    final Data key;
 
-        public TransactionLogKey(CollectionProxyId proxyId, Data key) {
-            this.proxyId = proxyId;
-            this.key = key;
-        }
-
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof TransactionLogKey)) return false;
-
-            TransactionLogKey that = (TransactionLogKey) o;
-
-            if (!key.equals(that.key)) return false;
-            if (!proxyId.equals(that.proxyId)) return false;
-
-            return true;
-        }
-
-        public int hashCode() {
-            int result = proxyId.hashCode();
-            result = 31 * result + key.hashCode();
-            return result;
-        }
+    public TransactionLogKey(CollectionProxyId proxyId, Data key) {
+        this.proxyId = proxyId;
+        this.key = key;
     }
+
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof TransactionLogKey)) return false;
+
+        TransactionLogKey that = (TransactionLogKey) o;
+
+        if (!key.equals(that.key)) return false;
+        if (!proxyId.equals(that.proxyId)) return false;
+
+        return true;
+    }
+
+    public int hashCode() {
+        int result = proxyId.hashCode();
+        result = 31 * result + key.hashCode();
+        return result;
+    }
+}
