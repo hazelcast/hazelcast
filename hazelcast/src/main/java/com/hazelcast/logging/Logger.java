@@ -18,9 +18,9 @@ package com.hazelcast.logging;
 
 import com.hazelcast.nio.ClassLoaderUtil;
 
-public class Logger {
-    static private volatile LoggerFactory loggerFactory = null;
-    static private final Object factoryLock = new Object();
+public final class Logger {
+    private static volatile LoggerFactory loggerFactory = null;
+    private static final Object factoryLock = new Object();
 
     public static ILogger getLogger(String name) {
         //noinspection DoubleCheckedLocking
@@ -41,7 +41,7 @@ public class Logger {
         String loggerClass = System.getProperty("hazelcast.logging.class");
         if (loggerClass != null) {
             try {
-                loggerFactory = (LoggerFactory) ClassLoaderUtil.loadClass(null, loggerClass).newInstance();
+                loggerFactory = ClassLoaderUtil.newInstance(null, loggerClass);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -50,13 +50,13 @@ public class Logger {
             if (loggerType != null) {
                 if ("log4j".equals(loggerType)) {
                     try {
-                        loggerFactory = (LoggerFactory) ClassLoaderUtil.loadClass(null, "com.hazelcast.logging.Log4jFactory").newInstance();
+                        loggerFactory = ClassLoaderUtil.newInstance(null, "com.hazelcast.logging.Log4jFactory");
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                 } else if ("slf4j".equals(loggerType)) {
                     try {
-                        loggerFactory = (LoggerFactory) ClassLoaderUtil.loadClass(null, "com.hazelcast.logging.Slf4jFactory").newInstance();
+                        loggerFactory = ClassLoaderUtil.newInstance(null, "com.hazelcast.logging.Slf4jFactory");
                     } catch (Exception e) {
                         e.printStackTrace();
                     }

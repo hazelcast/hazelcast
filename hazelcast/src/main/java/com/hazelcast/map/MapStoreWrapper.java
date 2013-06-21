@@ -16,25 +16,22 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MapLoader;
 import com.hazelcast.core.MapLoaderLifecycleSupport;
 import com.hazelcast.core.MapStore;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+@SuppressWarnings("unchecked")
 public class MapStoreWrapper implements MapStore {
 
     private final MapLoader mapLoader;
     private final MapStore mapStore;
     private final Object impl;
     private final String mapName;
-
-
     private final AtomicBoolean enabled = new AtomicBoolean(false);
 
     public MapStoreWrapper(Object impl, String mapName, boolean enabled) {
@@ -53,9 +50,12 @@ public class MapStoreWrapper implements MapStore {
         this.enabled.set(enabled);
     }
 
+    public void enable() {
+        enabled.set(true);
+    }
 
-    public void setEnabled(boolean enable) {
-        enabled.set(enable);
+    public void disable() {
+        enabled.set(false);
     }
 
     public boolean isEnabled() {
@@ -68,54 +68,54 @@ public class MapStoreWrapper implements MapStore {
         }
     }
 
-    public boolean isMapStore() {
+    private boolean isMapStore() {
         return (mapStore != null);
     }
 
-    public boolean isMapLoader() {
+    private boolean isMapLoader() {
         return (mapLoader != null);
     }
 
     public void delete(Object key) {
-        if (enabled.get()) {
+        if (isMapStore() && enabled.get()) {
             mapStore.delete(key);
         }
     }
 
     public void store(Object key, Object value) {
-        if (enabled.get()) {
+        if (isMapStore() && enabled.get()) {
             mapStore.store(key, value);
         }
     }
 
     public void storeAll(Map map) {
-        if (enabled.get()) {
+        if (isMapStore() && enabled.get()) {
             mapStore.storeAll(map);
         }
     }
 
     public void deleteAll(Collection keys) {
-        if (enabled.get()) {
+        if (isMapStore() && enabled.get()) {
             mapStore.deleteAll(keys);
         }
     }
 
     public Set loadAllKeys() {
-        if (enabled.get()) {
+        if (isMapLoader() && enabled.get()) {
             return mapLoader.loadAllKeys();
         }
         return null;
     }
 
     public Object load(Object key) {
-        if (enabled.get()) {
+        if (isMapLoader() && enabled.get()) {
             return mapLoader.load(key);
         }
         return null;
     }
 
     public Map loadAll(Collection keys) {
-        if (enabled.get()) {
+        if (isMapLoader() && enabled.get()) {
             return mapLoader.loadAll(keys);
         }
         return null;

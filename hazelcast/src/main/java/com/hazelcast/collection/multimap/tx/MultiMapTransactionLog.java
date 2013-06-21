@@ -121,7 +121,7 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
     }
 
     public Object getKey() {
-        return key;
+        return new TransactionLogKey(proxyId, key);
     }
 
     public void addOperation(Operation op){
@@ -173,4 +173,6 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
         }
         return size;
     }
+
+
 }

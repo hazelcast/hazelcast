@@ -16,7 +16,6 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionalObject;
 
 import java.util.Collection;
@@ -24,9 +23,9 @@ import java.util.Collection;
 /**
  * @ali 3/13/13
  */
-public interface TransactionalMultiMap<K, V> extends TransactionalObject {
+public interface TransactionalMultiMap<K, V> extends BaseMultiMap<K, V>, TransactionalObject {
 
-    boolean put(K key, V value) throws TransactionException;
+    boolean put(K key, V value);
 
     Collection<V> get(K key);
 

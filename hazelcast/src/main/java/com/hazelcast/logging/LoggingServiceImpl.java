@@ -31,9 +31,7 @@ public class LoggingServiceImpl implements LoggingService {
     private final MemberImpl thisMember;
     private final SystemLogService systemLogService;
     private final String groupName;
-    private final CopyOnWriteArrayList<LogListenerRegistration> lsListeners
-            = new CopyOnWriteArrayList<LogListenerRegistration>();
-
+    private final CopyOnWriteArrayList<LogListenerRegistration> listeners = new CopyOnWriteArrayList<LogListenerRegistration>();
     private final String thisAddressString;
 
     private final ConcurrentMap<String, ILogger> mapLoggers = new ConcurrentHashMap<String, ILogger>(100);
@@ -64,27 +62,27 @@ public class LoggingServiceImpl implements LoggingService {
     }
 
     public void addLogListener(Level level, LogListener logListener) {
-        lsListeners.add(new LogListenerRegistration(level, logListener));
+        listeners.add(new LogListenerRegistration(level, logListener));
         if (level.intValue() < minLevel.intValue()) {
             minLevel = level;
         }
     }
 
     public void removeLogListener(LogListener logListener) {
-        lsListeners.remove(new LogListenerRegistration(Level.ALL, logListener));
+        listeners.remove(new LogListenerRegistration(Level.ALL, logListener));
     }
 
     void handleLogEvent(LogEvent logEvent) {
-        for (LogListenerRegistration logListenerRegistration : lsListeners) {
+        for (LogListenerRegistration logListenerRegistration : listeners) {
             if (logEvent.getLogRecord().getLevel().intValue() >= logListenerRegistration.getLevel().intValue()) {
                 logListenerRegistration.getLogListener().log(logEvent);
             }
         }
     }
 
-    class LogListenerRegistration {
-        Level level;
-        LogListener logListener;
+    private class LogListenerRegistration {
+        final Level level;
+        final LogListener logListener;
 
         LogListenerRegistration(Level level, LogListener logListener) {
             this.level = level;
@@ -124,7 +122,7 @@ public class LoggingServiceImpl implements LoggingService {
         }
     }
 
-    class DefaultLogger implements ILogger {
+    private class DefaultLogger implements ILogger {
         final String name;
         final ILogger logger;
         final boolean addToLoggingService;
@@ -154,7 +152,7 @@ public class LoggingServiceImpl implements LoggingService {
                 if (loggable) {
                     logger.log(logEvent);
                 }
-                if (lsListeners.size() > 0) {
+                if (listeners.size() > 0) {
                     handleLogEvent(logEvent);
                 }
             }

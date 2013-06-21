@@ -30,8 +30,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.*;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -84,26 +83,36 @@ public class PartitionDistributionTest extends HazelcastTestSupport {
         for (int i = 0; i < nodeCount; i++) {
             instances[i] = factory.newHazelcastInstance(config);
         }
-        for (int j = 0; j < nodeCount; j++) {
-            final int instanceIndex = j;
-            new Thread(new Runnable() {
-                public void run() {
-                    final HazelcastInstance h = instances[instanceIndex];
-                    h.getMap("test").size(); // to start partition assignment
-                    counts.offer(getLocalPartitionsCount(h));
-                }
-            }).start();
-        }
 
-        final int average = (partitionCount / nodeCount);
-        int total = 0;
-        for (int i = 0; i < nodeCount; i++) {
-            final int c = counts.take();
-            assertTrue("Partition count of node[" + i + "] is : " + c
-                    + ", total partitions: " + partitionCount + ", nodes: " + nodeCount, c >= average);
-            total += c;
+        final ExecutorService ex = Executors.newCachedThreadPool();
+        try {
+            for (int j = 0; j < nodeCount; j++) {
+                final int instanceIndex = j;
+                new Thread(new Runnable() {
+                    public void run() {
+                        final HazelcastInstance h = instances[instanceIndex];
+                        try {
+                            warmUpPartitions(h);
+                            counts.offer(getLocalPartitionsCount(h));
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }).start();
+            }
+
+            final int average = (partitionCount / nodeCount);
+            int total = 0;
+            for (int i = 0; i < nodeCount; i++) {
+                final int c = counts.poll(1, TimeUnit.MINUTES);
+                assertTrue("Partition count is : " + c + ", total partitions: " + partitionCount
+                        + ", nodes: " + nodeCount, c >= average);
+                total += c;
+            }
+            assertEquals(partitionCount, total);
+        } finally {
+            ex.shutdownNow();
         }
-        assertEquals(partitionCount, total);
     }
 
     private int getLocalPartitionsCount(HazelcastInstance h) {

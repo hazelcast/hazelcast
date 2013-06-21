@@ -14,8 +14,25 @@
  * limitations under the License.
  */
 
-package com.hazelcast.logging;
+package com.hazelcast.core;
 
-public interface CallStateAware {
-    CallState getCallState();
+import java.util.Collection;
+
+/**
+ * @ali 3/13/13
+ */
+public interface BaseMultiMap<K, V> extends DistributedObject {
+
+    boolean put(K key, V value);
+
+    Collection<V> get(K key);
+
+    boolean remove(Object key, Object value);
+
+    Collection<V> remove(Object key);
+
+    int valueCount(K key);
+
+    int size();
+
 }

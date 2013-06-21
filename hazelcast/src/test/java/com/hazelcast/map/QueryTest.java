@@ -22,10 +22,7 @@ import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.query.EntryObject;
-import com.hazelcast.query.Predicate;
-import com.hazelcast.query.PredicateBuilder;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.*;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -177,6 +174,26 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testInPredicate() {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
+        final IMap<String, ValueType> map = instance.getMap("testIteratorContract");
+        map.put("1", new ValueType("one"));
+        map.put("2", new ValueType("two"));
+        map.put("3", new ValueType("three"));
+        map.put("4", new ValueType("four"));
+        map.put("5", new ValueType("five"));
+        map.put("6", new ValueType("six"));
+        map.put("7", new ValueType("seven"));
+        final Predicate predicate = new SqlPredicate("typeName in ('one','two')");
+        for (int i = 0; i < 10; i++) {
+            Collection<ValueType> values = map.values(predicate);
+            assertEquals(2, values.size());
+        }
+    }
+
+
+    @Test
     public void testIteratorContract() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
@@ -185,6 +202,9 @@ public class QueryTest extends HazelcastTestSupport {
         map.put("2", new ValueType("two"));
         map.put("3", new ValueType("three"));
         final Predicate predicate = new SqlPredicate("typeName in ('one','two')");
+        Collection<ValueType> values = map.values(predicate);
+        assertEquals(2, map.values(predicate).size());
+        assertEquals(2, map.keySet(predicate).size());
         testIterator(map.keySet().iterator(), 3);
         testIterator(map.keySet(predicate).iterator(), 2);
         testIterator(map.entrySet().iterator(), 3);
@@ -883,10 +903,15 @@ public class QueryTest extends HazelcastTestSupport {
         map.put("1", 11);
         map.put("2", 22);
         map.put("3", 33);
+        map.put("4", 44);
+        map.put("5", 55);
+        map.put("6", 66);
         Predicate predicate = new PredicateBuilder().getEntryObject().key().equal("1");
         assertEquals(1, map.values(predicate).size());
         predicate = new PredicateBuilder().getEntryObject().key().in("2", "3");
         assertEquals(2, map.keySet(predicate).size());
+        predicate = new PredicateBuilder().getEntryObject().key().in("2", "3", "5", "6", "7");
+        assertEquals(4, map.keySet(predicate).size());
     }
 
     /**

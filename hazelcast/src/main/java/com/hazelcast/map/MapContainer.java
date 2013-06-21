@@ -96,7 +96,7 @@ public class MapContainer {
 
         if (storeWrapper != null) {
             if (store instanceof MapLoaderLifecycleSupport) {
-                ((MapLoaderLifecycleSupport) store).init(nodeEngine.getHazelcastInstance(), mapConfig.getMapStoreConfig().getProperties(), name);
+                ((MapLoaderLifecycleSupport) store).init(nodeEngine.getHazelcastInstance(), mapStoreConfig.getProperties(), name);
             }
             // only master can initiate the loadAll. master will send other members to loadAll.
             // the members join later will not load from mapstore.
