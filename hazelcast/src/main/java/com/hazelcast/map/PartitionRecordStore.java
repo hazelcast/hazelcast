@@ -543,10 +543,11 @@ public class PartitionRecordStore implements RecordStore {
     }
 
     private void mapStoreWrite(Record record, Data key, Object value) {
-        if (mapContainer.getStore() != null) {
+        final MapStoreWrapper store = mapContainer.getStore();
+        if (store != null) {
             long writeDelayMillis = mapContainer.getWriteDelayMillis();
             if (writeDelayMillis <= 0) {
-                mapContainer.getStore().store(mapService.toObject(key), mapService.toObject(value));
+                store.store(mapService.toObject(key), mapService.toObject(value));
                 if (record != null)
                     record.onStore();
             } else {
@@ -557,10 +558,11 @@ public class PartitionRecordStore implements RecordStore {
 
     private void mapStoreDelete(Record record, Data key) {
         removeIndex(key);
-        if (mapContainer.getStore() != null) {
+        final MapStoreWrapper store = mapContainer.getStore();
+        if (store != null) {
             long writeDelayMillis = mapContainer.getWriteDelayMillis();
             if (writeDelayMillis == 0) {
-                mapContainer.getStore().delete(mapService.toObject(key));
+                store.delete(mapService.toObject(key));
                 if (record != null)
                     record.onStore();
             } else {
