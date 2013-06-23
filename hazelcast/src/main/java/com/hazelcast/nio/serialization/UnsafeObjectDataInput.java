@@ -102,7 +102,7 @@ final class UnsafeObjectDataInput extends ByteArrayObjectDataInput {
         int len = readInt();
         if (len > 0) {
             char[] values = new char[len];
-            unsafeMemCopy(values, UnsafeHelper.CHAR_ARRAY_BASE_OFFSET, len << 1);
+            unsafeMemCopy(values, UnsafeHelper.CHAR_ARRAY_BASE_OFFSET, len, UnsafeHelper.CHAR_ARRAY_INDEX_SCALE);
             return values;
         }
         return new char[0];
@@ -112,7 +112,7 @@ final class UnsafeObjectDataInput extends ByteArrayObjectDataInput {
         int len = readInt();
         if (len > 0) {
             int[] values = new int[len];
-            unsafeMemCopy(values, UnsafeHelper.INT_ARRAY_BASE_OFFSET, len << 2);
+            unsafeMemCopy(values, UnsafeHelper.INT_ARRAY_BASE_OFFSET, len, UnsafeHelper.INT_ARRAY_INDEX_SCALE);
             return values;
         }
         return new int[0];
@@ -122,7 +122,7 @@ final class UnsafeObjectDataInput extends ByteArrayObjectDataInput {
         int len = readInt();
         if (len > 0) {
             long[] values = new long[len];
-            unsafeMemCopy(values, UnsafeHelper.LONG_ARRAY_BASE_OFFSET, len << 3);
+            unsafeMemCopy(values, UnsafeHelper.LONG_ARRAY_BASE_OFFSET, len, UnsafeHelper.LONG_ARRAY_INDEX_SCALE);
             return values;
         }
         return new long[0];
@@ -132,7 +132,7 @@ final class UnsafeObjectDataInput extends ByteArrayObjectDataInput {
         int len = readInt();
         if (len > 0) {
             double[] values = new double[len];
-            unsafeMemCopy(values, UnsafeHelper.DOUBLE_ARRAY_BASE_OFFSET, len << 3);
+            unsafeMemCopy(values, UnsafeHelper.DOUBLE_ARRAY_BASE_OFFSET, len, UnsafeHelper.DOUBLE_ARRAY_INDEX_SCALE);
             return values;
         }
         return new double[0];
@@ -142,7 +142,7 @@ final class UnsafeObjectDataInput extends ByteArrayObjectDataInput {
         int len = readInt();
         if (len > 0) {
             float[] values = new float[len];
-            unsafeMemCopy(values, UnsafeHelper.FLOAT_ARRAY_BASE_OFFSET, len << 2);
+            unsafeMemCopy(values, UnsafeHelper.FLOAT_ARRAY_BASE_OFFSET, len, UnsafeHelper.FLOAT_ARRAY_INDEX_SCALE);
             return values;
         }
         return new float[0];
@@ -152,15 +152,22 @@ final class UnsafeObjectDataInput extends ByteArrayObjectDataInput {
         int len = readInt();
         if (len > 0) {
             short[] values = new short[len];
-            unsafeMemCopy(values, UnsafeHelper.SHORT_ARRAY_BASE_OFFSET, len << 1);
+            unsafeMemCopy(values, UnsafeHelper.SHORT_ARRAY_BASE_OFFSET, len, UnsafeHelper.SHORT_ARRAY_INDEX_SCALE);
             return values;
         }
         return new short[0];
     }
 
-    private void unsafeMemCopy(Object dest, long destArrayTypeOffset, int len) throws IOException {
+    private void unsafeMemCopy(final Object destArray, final long destArrayTypeOffset, final int destArrayLength, final int indexScale) throws IOException {
+        if (destArray == null) {
+            throw new IllegalArgumentException("Destination array is NULL!");
+        }
+        if (destArrayLength < 0) {
+            throw new NegativeArraySizeException("Destination array length is negative: " + destArrayLength);
+        }
+        final int len = destArrayLength * indexScale;
         checkAvailable(pos, len);
-        UnsafeHelper.UNSAFE.copyMemory(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + pos, dest, destArrayTypeOffset, len);
+        UnsafeHelper.UNSAFE.copyMemory(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + pos, destArray, destArrayTypeOffset, len);
         pos += len;
     }
 
