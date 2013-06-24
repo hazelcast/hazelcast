@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.concurrent.*;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -104,7 +105,8 @@ public class PartitionDistributionTest extends HazelcastTestSupport {
             final int average = (partitionCount / nodeCount);
             int total = 0;
             for (int i = 0; i < nodeCount; i++) {
-                final int c = counts.poll(1, TimeUnit.MINUTES);
+                final Integer c = counts.poll(1, TimeUnit.MINUTES);
+                assertNotNull(c);
                 assertTrue("Partition count is : " + c + ", total partitions: " + partitionCount
                         + ", nodes: " + nodeCount, c >= average);
                 total += c;

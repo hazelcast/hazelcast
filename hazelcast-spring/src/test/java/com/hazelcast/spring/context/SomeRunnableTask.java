@@ -24,7 +24,6 @@ import org.springframework.context.ApplicationContextAware;
 
 import java.io.Serializable;
 
-import static org.hamcrest.CoreMatchers.*;
 
 /**
  * @leimer 8/15/12
@@ -38,11 +37,11 @@ public class SomeRunnableTask implements Runnable, Serializable, ApplicationCont
     private transient SomeBean someBean;
 
     public void run() {
-        Assert.assertThat(someBean, is(notNullValue()));
-        Assert.assertThat(context, is(notNullValue()));
+        Assert.assertNotNull(someBean);
+        Assert.assertNotNull(context);
 
         SomeBean bean = (SomeBean) context.getBean("someBean");
-        Assert.assertThat(someBean, is(sameInstance(bean)));
+        Assert.assertEquals(someBean, bean);
     }
 
     public void setApplicationContext(final ApplicationContext applicationContext) throws BeansException {

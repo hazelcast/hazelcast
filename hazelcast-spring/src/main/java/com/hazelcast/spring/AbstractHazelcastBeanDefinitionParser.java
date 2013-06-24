@@ -35,7 +35,7 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             if (attributes != null) {
                 Node lazyInitAttr = attributes.getNamedItem("lazy-init");
                 if (lazyInitAttr != null) {
-                    builder.setLazyInit(Boolean.valueOf(getValue(lazyInitAttr)));
+                    builder.setLazyInit(Boolean.valueOf(getTextContent(lazyInitAttr)));
                 } else {
                     builder.setLazyInit(parserContext.isDefaultLazyInit());
                 }
@@ -45,13 +45,13 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                 } else {
                     Node scopeNode = attributes.getNamedItem("scope");
                     if (scopeNode != null) {
-                        builder.setScope(getValue(scopeNode));
+                        builder.setScope(getTextContent(scopeNode));
                     }
                 }
 
                 Node dependsOnNode = attributes.getNamedItem("depends-on");
                 if (dependsOnNode != null) {
-                    String[] dependsOn = getValue(dependsOnNode).split("[,;]");
+                    String[] dependsOn = getTextContent(dependsOnNode).split("[,;]");
                     for (String dep : dependsOn) {
                         builder.addDependsOn(dep.trim());
                     }
