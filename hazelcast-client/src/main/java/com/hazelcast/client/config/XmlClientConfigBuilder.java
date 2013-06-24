@@ -44,7 +44,6 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
 
     private final ILogger logger = Logger.getLogger(XmlClientConfigBuilder.class.getName());
 
-    private boolean domLevel3 = true;
     private ClientConfig clientConfig;
     private InputStream in;
 
@@ -197,17 +196,17 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
             if ("cluster-members".equals(nodeName)) {
                 handleClusterMembers(child);
             } else if ("smart-routing".equals(nodeName)) {
-                clientConfig.setSmart(Boolean.parseBoolean(getValue(child)));
+                clientConfig.setSmart(Boolean.parseBoolean(getTextContent(child)));
             } else if ("redo-operation".equals(nodeName)) {
-                clientConfig.setRedoOperation(Boolean.parseBoolean(getValue(child)));
+                clientConfig.setRedoOperation(Boolean.parseBoolean(getTextContent(child)));
             } else if ("pool-size".equals(nodeName)) {
-                clientConfig.setPoolSize(Integer.parseInt(getValue(child)));
+                clientConfig.setPoolSize(Integer.parseInt(getTextContent(child)));
             } else if ("connection-timeout".equals(nodeName)) {
-                clientConfig.setConnectionTimeout(Integer.parseInt(getValue(child)));
+                clientConfig.setConnectionTimeout(Integer.parseInt(getTextContent(child)));
             } else if ("connection-attempt-period".equals(nodeName)) {
-                clientConfig.setConnectionAttemptPeriod(Integer.parseInt(getValue(child)));
+                clientConfig.setConnectionAttemptPeriod(Integer.parseInt(getTextContent(child)));
             } else if ("connection-attempt-limit".equals(nodeName)) {
-                clientConfig.setConnectionAttemptLimit(Integer.parseInt(getValue(child)));
+                clientConfig.setConnectionAttemptLimit(Integer.parseInt(getTextContent(child)));
             } else if ("socket-options".equals(nodeName)) {
                 handleSocketOptions(child);
             }
@@ -219,17 +218,17 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
         for (Node child : new IterableNodeList(node.getChildNodes())) {
             final String nodeName = cleanNodeName(child);
             if ("tcp-no-delay".equals(nodeName)) {
-                socketOptions.setSocketTcpNoDelay(Boolean.parseBoolean(getValue(child)));
+                socketOptions.setSocketTcpNoDelay(Boolean.parseBoolean(getTextContent(child)));
             } else if ("keep-alive".equals(nodeName)) {
-                socketOptions.setSocketKeepAlive(Boolean.parseBoolean(getValue(child)));
+                socketOptions.setSocketKeepAlive(Boolean.parseBoolean(getTextContent(child)));
             } else if ("reuse-address".equals(nodeName)) {
-                socketOptions.setSocketReuseAddress(Boolean.parseBoolean(getValue(child)));
+                socketOptions.setSocketReuseAddress(Boolean.parseBoolean(getTextContent(child)));
             } else if ("linger-seconds".equals(nodeName)) {
-                socketOptions.setSocketLingerSeconds(Integer.parseInt(getValue(child)));
+                socketOptions.setSocketLingerSeconds(Integer.parseInt(getTextContent(child)));
             } else if ("timeout".equals(nodeName)) {
-                socketOptions.setSocketTimeout(Integer.parseInt(getValue(child)));
+                socketOptions.setSocketTimeout(Integer.parseInt(getTextContent(child)));
             } else if ("buffer-size".equals(nodeName)) {
-                socketOptions.setSocketBufferSize(Integer.parseInt(getValue(child)));
+                socketOptions.setSocketBufferSize(Integer.parseInt(getTextContent(child)));
             }
         }
     }
@@ -237,7 +236,7 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
     private void handleClusterMembers(Node node) {
         for (Node child : new IterableNodeList(node.getChildNodes())) {
             if ("address".equals(cleanNodeName(child))) {
-                clientConfig.addAddress(getValue(child));
+                clientConfig.addAddress(getTextContent(child));
             }
         }
     }
@@ -245,7 +244,7 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
     private void handleListeners(Node node) throws Exception {
         for (Node child : new IterableNodeList(node.getChildNodes())) {
             if ("listener".equals(cleanNodeName(child))) {
-                String className = getValue(child);
+                String className = getTextContent(child);
                 handleEventListenerInstantiation(className);
             }
         }
@@ -277,12 +276,15 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
         for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
             final String name = cleanNodeName(child);
             if ("portable-version".equals(name)) {
-                String value = getValue(child);
+                String value = getTextContent(child);
                 serializationConfig.setPortableVersion(getIntegerValue(name, value, 0));
+            } else if ("check-class-def-errors".equals(name)) {
+                String value = getTextContent(child);
+                serializationConfig.setCheckClassDefErrors(checkTrue(value));
             } else if ("use-native-byte-order".equals(name)) {
-                serializationConfig.setUseNativeByteOrder(checkTrue(getValue(child)));
+                serializationConfig.setUseNativeByteOrder(checkTrue(getTextContent(child)));
             } else if ("byte-order".equals(name)) {
-                String value = getValue(child);
+                String value = getTextContent(child);
                 ByteOrder byteOrder = null;
                 if (ByteOrder.BIG_ENDIAN.toString().equals(value)) {
                     byteOrder = ByteOrder.BIG_ENDIAN;
@@ -290,6 +292,12 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
                     byteOrder = ByteOrder.LITTLE_ENDIAN;
                 }
                 serializationConfig.setByteOrder(byteOrder != null ? byteOrder : ByteOrder.BIG_ENDIAN);
+            } else if ("enable-compression".equals(name)) {
+                serializationConfig.setEnableCompression(checkTrue(getTextContent(child)));
+            } else if ("enable-shared-object".equals(name)) {
+                serializationConfig.setEnableSharedObject(checkTrue(getTextContent(child)));
+            } else if ("allow-unsafe".equals(name)) {
+                serializationConfig.setAllowUnsafe(checkTrue(getTextContent(child)));
             } else if ("data-serializable-factories".equals(name)) {
                 handleDataSerializableFactories(child, serializationConfig);
             } else if ("portable-factories".equals(name)) {
@@ -304,13 +312,13 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
         for (Node child : new IterableNodeList(node.getChildNodes())) {
             final String name = cleanNodeName(child);
             if ("data-serializable-factory".equals(name)) {
-                final String value = getValue(child);
+                final String value = getTextContent(child);
                 final Node factoryIdNode = child.getAttributes().getNamedItem("factory-id");
                 if (factoryIdNode == null) {
                     throw new IllegalArgumentException(
                             "'factory-id' attribute of 'data-serializable-factory' is required!");
                 }
-                int factoryId = Integer.parseInt(getValue(factoryIdNode));
+                int factoryId = Integer.parseInt(getTextContent(factoryIdNode));
                 serializationConfig.addDataSerializableFactoryClass(factoryId, value);
             }
         }
@@ -320,12 +328,12 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
         for (Node child : new IterableNodeList(node.getChildNodes())) {
             final String name = cleanNodeName(child);
             if ("portable-factory".equals(name)) {
-                final String value = getValue(child);
+                final String value = getTextContent(child);
                 final Node factoryIdNode = child.getAttributes().getNamedItem("factory-id");
                 if (factoryIdNode == null) {
                     throw new IllegalArgumentException("'factory-id' attribute of 'portable-factory' is required!");
                 }
-                int factoryId = Integer.parseInt(getValue(factoryIdNode));
+                int factoryId = Integer.parseInt(getTextContent(factoryIdNode));
                 serializationConfig.addPortableFactoryClass(factoryId, value);
             }
         }
@@ -334,7 +342,7 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
     private void handleSerializers(Node node, SerializationConfig serializationConfig) {
         for (Node child : new IterableNodeList(node.getChildNodes())) {
             final String name = cleanNodeName(child);
-            final String value = getValue(child);
+            final String value = getTextContent(child);
             if ("serializer".equals(name)) {
                 SerializerConfig serializerConfig = new SerializerConfig();
                 serializerConfig.setClassName(value);
@@ -401,22 +409,22 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
         for (Node child : new IterableNodeList(node.getChildNodes())) {
             final String nodeName = cleanNodeName(child.getNodeName());
             if ("username".equals(nodeName)) {
-                credentials.setUsername(getValue(child));
+                credentials.setUsername(getTextContent(child));
             } else if ("password".equals(nodeName)) {
-                credentials.setPassword(getValue(child));
+                credentials.setPassword(getTextContent(child));
             }
         }
         clientConfig.setCredentials(credentials);
     }
 
-    protected String getAttribute(Node node, String attName) {
+    private String getAttribute(Node node, String attName) {
         final Node attNode = node.getAttributes().getNamedItem(attName);
         if (attNode == null)
             return null;
         return getTextContent(attNode);
     }
 
-    protected int getIntegerValue(String parameterName, String value, int defaultValue) {
+    private int getIntegerValue(String parameterName, String value, int defaultValue) {
         try {
             return Integer.parseInt(value);
         } catch (final Exception e) {
@@ -426,13 +434,4 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
             return defaultValue;
         }
     }
-
-    protected String getTextContent(Node node) {
-        if (domLevel3) {
-            return node.getTextContent();
-        } else {
-            return getTextContent2(node);
-        }
-    }
-
 }
