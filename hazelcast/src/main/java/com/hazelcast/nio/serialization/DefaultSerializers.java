@@ -129,7 +129,7 @@ public class DefaultSerializers {
                 final ObjectInputStream objectInputStream;
                 final InputStream inputStream = (InputStream) in;
                 if (gzipEnabled) {
-                    objectInputStream = newObjectInputStream(in.getClassLoader(), new BufferedInputStream(new GZIPInputStream(inputStream)));
+                    objectInputStream = newObjectInputStream(in.getClassLoader(), new GZIPInputStream(inputStream));
                 } else {
                     objectInputStream = newObjectInputStream(in.getClassLoader(), inputStream);
                 }
@@ -146,7 +146,7 @@ public class DefaultSerializers {
             final ObjectOutputStream objectOutputStream;
             final OutputStream outputStream = (OutputStream) out;
             if (gzipEnabled) {
-                objectOutputStream = new ObjectOutputStream(new BufferedOutputStream(new GZIPOutputStream(outputStream)));
+                objectOutputStream = new ObjectOutputStream(new GZIPOutputStream(outputStream));
             } else {
                 objectOutputStream = new ObjectOutputStream(outputStream);
             }
@@ -174,7 +174,7 @@ public class DefaultSerializers {
             final ObjectInputStream objectInputStream;
             final InputStream inputStream = (InputStream) in;
             if (gzipEnabled) {
-                objectInputStream = newObjectInputStream(in.getClassLoader(), new BufferedInputStream(new GZIPInputStream(inputStream)));
+                objectInputStream = newObjectInputStream(in.getClassLoader(), new GZIPInputStream(inputStream));
             } else {
                 objectInputStream = newObjectInputStream(in.getClassLoader(), inputStream);
             }
@@ -196,7 +196,7 @@ public class DefaultSerializers {
             final ObjectOutputStream objectOutputStream;
             final OutputStream outputStream = (OutputStream) out;
             if (gzipEnabled) {
-                objectOutputStream = new ObjectOutputStream(new BufferedOutputStream(new GZIPOutputStream(outputStream)));
+                objectOutputStream = new ObjectOutputStream(new GZIPOutputStream(outputStream));
             } else {
                 objectOutputStream = new ObjectOutputStream(outputStream);
             }
