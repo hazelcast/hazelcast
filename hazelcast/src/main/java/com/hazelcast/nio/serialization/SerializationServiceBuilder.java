@@ -50,6 +50,12 @@ public final class SerializationServiceBuilder {
 
     private ByteOrder byteOrder = ByteOrder.BIG_ENDIAN;
 
+    private boolean enableCompression = false;
+
+    private boolean enableSharedObject = false;
+
+    private boolean allowUnsafe = false;
+
     public SerializationServiceBuilder setVersion(int version) {
         if (version < 0) {
             throw new IllegalArgumentException("Version cannot be negative!");
@@ -71,6 +77,9 @@ public final class SerializationServiceBuilder {
         checkClassDefErrors = config.isCheckClassDefErrors();
         useNativeByteOrder = config.isUseNativeByteOrder();
         byteOrder = config.getByteOrder();
+        enableCompression = config.isEnableCompression();
+        enableSharedObject = config.isEnableSharedObject();
+        allowUnsafe = config.isAllowUnsafe();
         return this;
     }
 
@@ -109,6 +118,21 @@ public final class SerializationServiceBuilder {
         return this;
     }
 
+    public SerializationServiceBuilder setEnableCompression(boolean enableCompression) {
+        this.enableCompression = enableCompression;
+        return this;
+    }
+
+    public SerializationServiceBuilder setEnableSharedObject(boolean enableSharedObject) {
+        this.enableSharedObject = enableSharedObject;
+        return this;
+    }
+
+    public SerializationServiceBuilder setAllowUnsafe(boolean allowUnsafe) {
+        this.allowUnsafe = allowUnsafe;
+        return this;
+    }
+
     public SerializationService build() {
         if (version < 0) {
             version = 0;
@@ -121,7 +145,7 @@ public final class SerializationServiceBuilder {
 
         final InputOutputFactory inputOutputFactory = createInputOutputFactory();
         final SerializationService ss = new SerializationServiceImpl(inputOutputFactory, version, classLoader, dataSerializableFactories,
-                portableFactories, classDefinitions, checkClassDefErrors, managedContext);
+                portableFactories, classDefinitions, checkClassDefErrors, managedContext, enableCompression, enableSharedObject);
 
         if (config != null) {
             if (config.getGlobalSerializerConfig() != null) {
@@ -167,7 +191,7 @@ public final class SerializationServiceBuilder {
         }
         if (useNativeByteOrder || byteOrder == ByteOrder.nativeOrder()) {
             byteOrder = ByteOrder.nativeOrder();
-            if (UnsafeInputOutputFactory.unsafeAvailable()) {
+            if (allowUnsafe && UnsafeInputOutputFactory.unsafeAvailable()) {
                 return new UnsafeInputOutputFactory();
             }
         }

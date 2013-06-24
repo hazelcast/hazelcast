@@ -5,8 +5,19 @@ import sun.misc.Unsafe;
 import java.lang.reflect.Field;
 
 /**
-* @mdogan 6/14/13
-*/
+ * Unsafe accessor.
+ *
+ * Warning: Although both array base-offsets and array index-scales are
+ * constant over time currently,
+ * a later JVM implementation can change this behaviour
+ * to allow varying index-scales and base-offsets over time or per array instances.
+ * (For example; compressed primitive arrays or backwards growing arrays...)
+ *
+ * See Gil Tene's comment related to Unsafe usage;
+ * https://groups.google.com/d/msg/mechanical-sympathy/X-GtLuG0ETo/LMV1d_2IybQJ
+ *
+ * @mdogan 6/14/13
+ */
 final class UnsafeHelper {
 
     static final Unsafe UNSAFE;

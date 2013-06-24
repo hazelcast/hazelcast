@@ -65,7 +65,7 @@ public final class SerializationServiceImpl implements SerializationService {
                              Map<Integer, ? extends DataSerializableFactory> dataSerializableFactories,
                              Map<Integer, ? extends PortableFactory> portableFactories,
                              Collection<ClassDefinition> classDefinitions, boolean checkClassDefErrors,
-                             ManagedContext managedContext) {
+                             ManagedContext managedContext, boolean enableCompression, boolean enableSharedObject) {
 
         this.inputOutputFactory = inputOutputFactory;
         this.classLoader = classLoader;
@@ -101,8 +101,8 @@ public final class SerializationServiceImpl implements SerializationService {
         safeRegister(Date.class, new DateSerializer());
         safeRegister(BigInteger.class, new BigIntegerSerializer());
         safeRegister(BigDecimal.class, new BigDecimalSerializer());
-        safeRegister(Externalizable.class, new Externalizer());
-        safeRegister(Serializable.class, new ObjectSerializer());
+        safeRegister(Externalizable.class, new Externalizer(enableCompression));
+        safeRegister(Serializable.class, new ObjectSerializer(enableSharedObject, enableCompression));
         safeRegister(Class.class, new ClassSerializer());
 
         registerClassDefinitions(classDefinitions, checkClassDefErrors);
@@ -164,8 +164,7 @@ public final class SerializationServiceImpl implements SerializationService {
             if (obj instanceof PartitionAware) {
                 final Object pk = ((PartitionAware) obj).getPartitionKey();
                 final Data partitionKey = toData(pk);
-                final int partitionHash = (partitionKey == null) ? -1 : partitionKey.getPartitionHash();
-                data.setPartitionHash(partitionHash);
+                data.partitionHash = (partitionKey == null) ? -1 : partitionKey.getPartitionHash();
             }
             return data;
         } catch (Throwable e) {

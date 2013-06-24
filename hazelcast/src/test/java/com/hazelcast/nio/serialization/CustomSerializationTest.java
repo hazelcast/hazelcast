@@ -41,27 +41,32 @@ public class CustomSerializationTest {
 
     @Test
     public void testSerializer() throws Exception {
-        testSerializer(ByteOrder.BIG_ENDIAN);
+        testSerializer(ByteOrder.BIG_ENDIAN, false);
     }
 
     @Test
     public void testSerializerLittleEndian() throws Exception {
-        testSerializer(ByteOrder.LITTLE_ENDIAN);
+        testSerializer(ByteOrder.LITTLE_ENDIAN, false);
     }
 
     @Test
     public void testSerializerNativeOrder() throws Exception {
-        testSerializer(ByteOrder.nativeOrder());
+        testSerializer(ByteOrder.nativeOrder(), false);
     }
 
-    private void testSerializer(ByteOrder order) throws Exception {
+    @Test
+    public void testSerializerNativeOrderUsingUnsafe() throws Exception {
+        testSerializer(ByteOrder.nativeOrder(), true);
+    }
+
+    private void testSerializer(ByteOrder order, boolean allowUnsafe) throws Exception {
         SerializationConfig config = new SerializationConfig();
-        SerializerConfig sc = new SerializerConfig().
-                setImplementation(new FooXmlSerializer()).
-                setTypeClass(Foo.class);
+        config.setAllowUnsafe(allowUnsafe).setByteOrder(order).setUseNativeByteOrder(false);
+        SerializerConfig sc = new SerializerConfig()
+                .setImplementation(new FooXmlSerializer())
+                .setTypeClass(Foo.class);
         config.addSerializerConfig(sc);
-        SerializationService ss = new SerializationServiceBuilder()
-                .setUseNativeByteOrder(false).setByteOrder(order).setConfig(config).build();
+        SerializationService ss = new SerializationServiceBuilder().setConfig(config).build();
         Foo foo = new Foo();
         foo.setFoo("f");
         Data d = ss.toData(foo);

@@ -41,22 +41,27 @@ public class PortableTest {
 
     @Test
     public void testBasics() {
-        testBasics(ByteOrder.BIG_ENDIAN);
+        testBasics(ByteOrder.BIG_ENDIAN, false);
     }
 
     @Test
     public void testBasicsLittleEndian() {
-        testBasics(ByteOrder.LITTLE_ENDIAN);
+        testBasics(ByteOrder.LITTLE_ENDIAN, false);
     }
 
     @Test
     public void testBasicsNativeOrder() {
-        testBasics(ByteOrder.nativeOrder());
+        testBasics(ByteOrder.nativeOrder(), false);
     }
 
-    private void testBasics(ByteOrder order) {
-        final SerializationService serializationService = createSerializationService(1, order);
-        final SerializationService serializationService2 = createSerializationService(2, order);
+    @Test
+    public void testBasicsNativeOrderUsingUnsafe() {
+        testBasics(ByteOrder.nativeOrder(), true);
+    }
+
+    private void testBasics(ByteOrder order, boolean allowUnsafe) {
+        final SerializationService serializationService = createSerializationService(1, order, allowUnsafe);
+        final SerializationService serializationService2 = createSerializationService(2, order, allowUnsafe);
         Data data;
 
         NamedPortable[] nn = new NamedPortable[5];
@@ -86,12 +91,12 @@ public class PortableTest {
     }
 
     private SerializationService createSerializationService(int version) {
-        return createSerializationService(version, ByteOrder.BIG_ENDIAN);
+        return createSerializationService(version, ByteOrder.BIG_ENDIAN, false);
     }
 
-    private SerializationService createSerializationService(int version, ByteOrder order) {
+    private SerializationService createSerializationService(int version, ByteOrder order, boolean allowUnsafe) {
         return new SerializationServiceBuilder()
-                .setUseNativeByteOrder(false).setByteOrder(order).setVersion(version)
+                .setUseNativeByteOrder(false).setAllowUnsafe(allowUnsafe).setByteOrder(order).setVersion(version)
                 .addPortableFactory(FACTORY_ID, new TestPortableFactory()).build();
     }
 

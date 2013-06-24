@@ -76,22 +76,27 @@ public class ObjectDataTest {
 
     @Test
     public void testDataStreamsBigEndian() throws IOException {
-        testDataStreams(ByteOrder.BIG_ENDIAN);
+        testDataStreams(ByteOrder.BIG_ENDIAN, false);
     }
 
     @Test
     public void testDataStreamsLittleEndian() throws IOException {
-        testDataStreams(ByteOrder.LITTLE_ENDIAN);
+        testDataStreams(ByteOrder.LITTLE_ENDIAN, false);
     }
 
     @Test
     public void testDataStreamsNativeOrder() throws IOException {
-        testDataStreams(ByteOrder.nativeOrder());
+        testDataStreams(ByteOrder.nativeOrder(), false);
     }
 
-    private void testDataStreams(ByteOrder byteOrder) throws IOException {
+    @Test
+    public void testDataStreamsNativeOrderUsingUnsafe() throws IOException {
+        testDataStreams(ByteOrder.nativeOrder(), true);
+    }
+
+    private void testDataStreams(ByteOrder byteOrder, boolean allowUnsafe) throws IOException {
         SerializationService ss = new SerializationServiceBuilder()
-                .setUseNativeByteOrder(false).setByteOrder(byteOrder).build();
+                .setUseNativeByteOrder(false).setAllowUnsafe(allowUnsafe).setByteOrder(byteOrder).build();
 
         final Person person = new Person(111, 123L, 89.56d, "test-person",
                 new Address("street", 987));

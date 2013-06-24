@@ -16,7 +16,6 @@
 
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -113,6 +112,12 @@ public class DefaultSerializers {
 
     public static final class Externalizer extends SingletonSerializer<Externalizable> {
 
+        private final boolean gzipEnabled;
+
+        public Externalizer(boolean gzipEnabled) {
+            this.gzipEnabled = gzipEnabled;
+        }
+
         public int getTypeId() {
             return DEFAULT_TYPE_EXTERNALIZABLE;
         }
@@ -121,7 +126,14 @@ public class DefaultSerializers {
             final String className = in.readUTF();
             try {
                 final Externalizable ds = ClassLoaderUtil.newInstance(in.getClassLoader(), className);
-                ds.readExternal(newObjectInputStream(in.getClassLoader(), (InputStream) in));
+                final ObjectInputStream objectInputStream;
+                final InputStream inputStream = (InputStream) in;
+                if (gzipEnabled) {
+                    objectInputStream = newObjectInputStream(in.getClassLoader(), new BufferedInputStream(new GZIPInputStream(inputStream)));
+                } else {
+                    objectInputStream = newObjectInputStream(in.getClassLoader(), inputStream);
+                }
+                ds.readExternal(objectInputStream);
                 return ds;
             } catch (final Exception e) {
                 throw new HazelcastSerializationException("Problem while reading Externalizable class : "
@@ -131,15 +143,26 @@ public class DefaultSerializers {
 
         public void write(final ObjectDataOutput out, final Externalizable obj) throws IOException {
             out.writeUTF(obj.getClass().getName());
-            final ObjectOutputStream objectOutputStream = new ObjectOutputStream((OutputStream) out);
+            final ObjectOutputStream objectOutputStream;
+            final OutputStream outputStream = (OutputStream) out;
+            if (gzipEnabled) {
+                objectOutputStream = new ObjectOutputStream(new BufferedOutputStream(new GZIPOutputStream(outputStream)));
+            } else {
+                objectOutputStream = new ObjectOutputStream(outputStream);
+            }
             obj.writeExternal(objectOutputStream);
         }
     }
 
     public static final class ObjectSerializer extends SingletonSerializer<Object> {
 
-        private static final boolean shared = GroupProperties.SERIALIZER_SHARED.getBoolean();
-        private static final boolean gzipEnabled = GroupProperties.SERIALIZER_GZIP_ENABLED.getBoolean();
+        private final boolean shared;
+        private final boolean gzipEnabled;
+
+        public ObjectSerializer(boolean shared, boolean gzipEnabled) {
+            this.shared = shared;
+            this.gzipEnabled = gzipEnabled;
+        }
 
         public int getTypeId() {
             return DEFAULT_TYPE_OBJECT;
@@ -171,8 +194,7 @@ public class DefaultSerializers {
             final ObjectOutputStream objectOutputStream;
             final OutputStream outputStream = (OutputStream) out;
             if (gzipEnabled) {
-                objectOutputStream = new ObjectOutputStream(new BufferedOutputStream(
-                        new GZIPOutputStream(outputStream)));
+                objectOutputStream = new ObjectOutputStream(new BufferedOutputStream(new GZIPOutputStream(outputStream)));
             } else {
                 objectOutputStream = new ObjectOutputStream(outputStream);
             }

@@ -891,13 +891,15 @@
         </xs:complexType>
     </xs:element>
     <xs:element name="read-backup-data" type="xs:boolean" />
-    <xs:element name="check-class-def-errors" type="xs:boolean" />
     <xs:element name="serialization">
         <xs:complexType>
             <xs:sequence>
                 <xs:element ref="portable-version" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="use-native-byte-order" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="byte-order" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="enable-compression" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="enable-shared-object" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="allow-unsafe" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="data-serializable-factories" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="portable-factories" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="serializers" minOccurs="0" maxOccurs="1"/>
@@ -913,6 +915,9 @@
         </xs:simpleType>
     </xs:element>
     <xs:element name="use-native-byte-order" type="xs:boolean" default="false" />
+    <xs:element name="enable-compression" type="xs:boolean" default="false" />
+    <xs:element name="enable-shared-object" type="xs:boolean" default="false" />
+    <xs:element name="allow-unsafe" type="xs:boolean" default="true" />
     <xs:element name="byte-order" default="BIG_ENDIAN">
         <xs:simpleType>
             <xs:restriction base="non-space-string">
@@ -921,6 +926,7 @@
             </xs:restriction>
         </xs:simpleType>
     </xs:element>
+    <xs:element name="check-class-def-errors" type="xs:boolean" />
     <xs:element name="data-serializable-factories">
         <xs:complexType>
             <xs:sequence>
@@ -1001,8 +1007,17 @@
                 <xs:element ref="name" minOccurs="1" maxOccurs="1"/>
                 <xs:element ref="class-name" minOccurs="0" maxOccurs="1"/>
                 <xs:element ref="properties" minOccurs="0" maxOccurs="1"/>
+                <xs:element ref="service-config" minOccurs="0" maxOccurs="1" />
             </xs:sequence>
             <xs:attribute name="enabled" type="xs:boolean" default="true" />
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="service-config">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:any minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+            <xs:attribute name="parser" type="xs:string" use="required" />
         </xs:complexType>
     </xs:element>
     <xs:element name="security">
