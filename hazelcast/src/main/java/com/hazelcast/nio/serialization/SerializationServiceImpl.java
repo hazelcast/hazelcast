@@ -70,13 +70,13 @@ public final class SerializationServiceImpl implements SerializationService {
         this.inputOutputFactory = inputOutputFactory;
         this.classLoader = classLoader;
         this.managedContext = managedContext;
-        PortableHookLoader loader = new PortableHookLoader(portableFactories);
+        PortableHookLoader loader = new PortableHookLoader(portableFactories, classLoader);
         serializationContext = new SerializationContextImpl(loader.getFactories().keySet(), version);
         for (ClassDefinition cd : loader.getDefinitions()) {
             serializationContext.registerClassDefinition(cd);
         }
 
-        dataSerializerAdapter = new StreamSerializerAdapter(this, new DataSerializer(dataSerializableFactories));
+        dataSerializerAdapter = new StreamSerializerAdapter(this, new DataSerializer(dataSerializableFactories, classLoader));
         portableSerializer = new PortableSerializer(serializationContext, loader.getFactories());
         portableSerializerAdapter = new StreamSerializerAdapter(this, portableSerializer);
 

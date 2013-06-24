@@ -35,24 +35,25 @@ public class ServiceLoader {
 
     private static final ILogger logger = Logger.getLogger(ServiceLoader.class.getName());
 
-    public static <T> T load(Class<T> clazz) throws Exception {
-        return load(clazz, clazz.getName());
+    public static <T> T load(Class<T> clazz, ClassLoader classLoader) throws Exception {
+        logger.log(Level.INFO, clazz.getName());
+        return load(clazz, clazz.getName(), classLoader);
     }
 
-    public static <T> T load(Class<T> clazz, String factoryId) throws Exception {
-        final Iterator<T> iter = iterator(clazz, factoryId);
+    public static <T> T load(Class<T> clazz, String factoryId, ClassLoader classLoader) throws Exception {
+        final Iterator<T> iter = iterator(clazz, factoryId, classLoader);
         if (iter.hasNext()) {
             return iter.next();
         }
         return null;
     }
 
-    public static <T> Iterator<T> iterator(Class<T> clazz) throws Exception {
-        return iterator(clazz, clazz.getName());
+    public static <T> Iterator<T> iterator(Class<T> clazz, ClassLoader classLoader) throws Exception {
+        return iterator(clazz, clazz.getName(), classLoader);
     }
 
-    public static <T> Iterator<T> iterator(final Class<T> clazz, final String factoryId) throws Exception {
-        final Set<String> classNames = parse(factoryId);
+    public static <T> Iterator<T> iterator(final Class<T> clazz, final String factoryId, ClassLoader classLoader) throws Exception {
+        final Set<String> classNames = parse(factoryId, classLoader);
         return new Iterator<T>() {
             final Iterator<String> classIter = classNames.iterator();
 
@@ -75,8 +76,8 @@ public class ServiceLoader {
         };
     }
 
-    private static Set<String> parse(String factoryId) {
-        final ClassLoader cl = Thread.currentThread().getContextClassLoader();
+    private static Set<String> parse(String factoryId, ClassLoader classLoader) {
+        ClassLoader cl = (classLoader == null)?Thread.currentThread().getContextClassLoader():classLoader;
         final String resourceName = "META-INF/services/" + factoryId;
         try {
             final Enumeration<URL> configs;
