@@ -32,13 +32,13 @@ import static com.hazelcast.nio.serialization.SerializationConstants.CONSTANT_TY
 /**
  * @mdogan 6/19/12
  */
-public final class DataSerializer implements StreamSerializer<DataSerializable> {
+final class DataSerializer implements StreamSerializer<DataSerializable> {
 
     private static final String FACTORY_ID = "com.hazelcast.DataSerializerHook";
 
     private final Map<Integer, DataSerializableFactory> factories = new HashMap<Integer, DataSerializableFactory>();
 
-    public DataSerializer(Map<Integer, ? extends DataSerializableFactory> dataSerializableFactories, ClassLoader classLoader) {
+    DataSerializer(Map<Integer, ? extends DataSerializableFactory> dataSerializableFactories, ClassLoader classLoader) {
         try {
             final Iterator<DataSerializerHook> hooks = ServiceLoader.iterator(DataSerializerHook.class, FACTORY_ID, classLoader);
             while (hooks.hasNext()) {

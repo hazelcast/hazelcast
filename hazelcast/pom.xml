@@ -109,10 +109,12 @@
                         <configuration>
                             <instructions>
                                 <Export-Package>
-                                    com.hazelcast*
+                                    com.hazelcast.*
                                 </Export-Package>
                                 <Import-Package>
                                     !sun.misc,
+                                    !org.junit,
+                                    org.apache.log4j;resolution:=optional,
                                     org.slf4j;resolution:=optional,
                                     *
                                 </Import-Package>

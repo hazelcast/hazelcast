@@ -35,10 +35,10 @@ public final class NodeInitializerFactory {
             logger.log(Level.WARNING, "NodeInitializer could not be instantiated! => "
                                       + e.getClass().getName() + ": " + e.getMessage());
         }
-        return initializer != null ? initializer : createDefault(classLoader);
+        return initializer != null ? initializer : createDefault();
     }
 
-    public static NodeInitializer createDefault(ClassLoader classLoader) {
+    public static NodeInitializer createDefault() {
         return new DefaultNodeInitializer();
     }
 }

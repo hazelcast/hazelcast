@@ -25,12 +25,12 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public final class PortableSerializer implements StreamSerializer<Portable> {
+final class PortableSerializer implements StreamSerializer<Portable> {
 
     private final SerializationContext context;
     private final Map<Integer, PortableFactory> factories = new HashMap<Integer, PortableFactory>();
 
-    public PortableSerializer(SerializationContext context, Map<Integer, ? extends PortableFactory> portableFactories) {
+    PortableSerializer(SerializationContext context, Map<Integer, ? extends PortableFactory> portableFactories) {
         this.context = context;
         factories.putAll(portableFactories);
     }
