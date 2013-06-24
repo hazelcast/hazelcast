@@ -38,9 +38,9 @@ public final class DataSerializer implements StreamSerializer<DataSerializable> 
 
     private final Map<Integer, DataSerializableFactory> factories = new HashMap<Integer, DataSerializableFactory>();
 
-    public DataSerializer(Map<Integer, ? extends DataSerializableFactory> dataSerializableFactories) {
+    public DataSerializer(Map<Integer, ? extends DataSerializableFactory> dataSerializableFactories, ClassLoader classLoader) {
         try {
-            final Iterator<DataSerializerHook> hooks = ServiceLoader.iterator(DataSerializerHook.class, FACTORY_ID);
+            final Iterator<DataSerializerHook> hooks = ServiceLoader.iterator(DataSerializerHook.class, FACTORY_ID, classLoader);
             while (hooks.hasNext()) {
                 DataSerializerHook hook = hooks.next();
                 final DataSerializableFactory factory = hook.createFactory();
