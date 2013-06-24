@@ -151,6 +151,8 @@ public class DefaultSerializers {
                 objectOutputStream = new ObjectOutputStream(outputStream);
             }
             obj.writeExternal(objectOutputStream);
+            // Force flush if not yet written due to internal behavior if pos < 1024
+            objectOutputStream.flush();
         }
     }
 
@@ -203,6 +205,8 @@ public class DefaultSerializers {
             } else {
                 objectOutputStream.writeUnshared(obj);
             }
+            // Force flush if not yet written due to internal behavior if pos < 1024
+            objectOutputStream.flush();
         }
     }
 
