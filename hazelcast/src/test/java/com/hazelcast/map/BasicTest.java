@@ -692,6 +692,7 @@ public class BasicTest extends HazelcastTestSupport {
     }
 
     @Test
+    // todo fails in parallel
     public void testPutAllBackup() throws InterruptedException {
         HazelcastInstance instance1 = instances[0];
         HazelcastInstance instance2 = instances[1];
@@ -708,6 +709,8 @@ public class BasicTest extends HazelcastTestSupport {
         for (int i = 0; i < size; i++) {
             assertEquals(i, map.get(i));
         }
+
+
 
         instance2.getLifecycleService().shutdown();
         assertEquals(size, map.size());

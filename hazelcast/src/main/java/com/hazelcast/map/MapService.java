@@ -162,7 +162,7 @@ public class MapService implements ManagedService, MigrationAwareService,
     private void destroyMapStores() {
         for (MapContainer mapContainer : mapContainers.values()) {
             MapStoreWrapper store = mapContainer.getStore();
-            if (store != null ) {
+            if (store != null) {
                 store.destroy();
             }
         }
@@ -805,9 +805,9 @@ public class MapService implements ManagedService, MigrationAwareService,
                     if (nodeEngine.getThisAddress().equals(owner)) {
                         final PartitionContainer pc = partitionContainers[i];
                         final RecordStore recordStore = pc.getRecordStore(mapName);
-                        List<Record> sortedRecords = new ArrayList<Record>(recordStore.getRecords().values());
-                        Collections.sort(sortedRecords, comparator);
-                        int evictSize = 0;
+                        TreeSet<Record> sortedRecords = new TreeSet<Record>(comparator);
+                        sortedRecords.addAll(recordStore.getRecords().values());
+                        int evictSize;
                         if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_NODE || maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_PARTITION) {
                             evictSize = Math.max((sortedRecords.size() - targetSizePerPartition), (sortedRecords.size() * evictionPercentage / 100 + 1));
                         } else {
