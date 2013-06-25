@@ -43,6 +43,7 @@ import static org.junit.Assert.*;
 @Category(ParallelTest.class)
 public class MapStoreTest extends HazelcastTestSupport {
 
+    // todo fails in parallel
     @Test
     public void testMapInitialLoad() throws InterruptedException {
         int size = 100000;
@@ -239,11 +240,12 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertEquals(5, loadCount.get());
     }
 
+    // todo fails in parallel
     @Test
     public void testOneMemberWriteBehindWithMaxIdle() throws Exception {
         TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
-        Config config = newConfig(testMapStore, 1);
-        config.getMapConfig("default").setMaxIdleSeconds(4);
+        Config config = newConfig(testMapStore, 5);
+        config.getMapConfig("default").setMaxIdleSeconds(10);
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         IMap map = h1.getMap("default");
@@ -260,10 +262,11 @@ public class MapStoreTest extends HazelcastTestSupport {
 
         for (int i = 0; i < total; i++) {
             map.put(i, "value" + i);
-            assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD, testMapStore.waitForEvent(5));
+            // store_all
+            assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD, testMapStore.waitForEvent(3));
         }
         assertNotNull(testMapStore.waitForEvent(20));
-        latch.await(10, TimeUnit.SECONDS);
+        latch.await(30, TimeUnit.SECONDS);
         assertEquals(0, map.size());
         assertEquals(total, testMapStore.getStore().size());
     }
