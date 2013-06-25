@@ -68,13 +68,14 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
     public static final int TXN_ROLLBACK_BACKUP = 36;
     public static final int TXN_ROLLBACK = 37;
 
+    public static final int COLLECTION_PROXY_ID = 38;
 
     public int getFactoryId() {
         return F_ID;
     }
 
     public DataSerializableFactory createFactory() {
-        ConstructorFunction<Integer, IdentifiedDataSerializable> constructors[] = new ConstructorFunction[38];
+        ConstructorFunction<Integer, IdentifiedDataSerializable> constructors[] = new ConstructorFunction[39];
         constructors[ADD_ALL_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new AddAllBackupOperation();
@@ -268,7 +269,11 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
             }
         };
 
-        
+        constructors[COLLECTION_PROXY_ID] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CollectionProxyId();
+            }
+        };
         return new ArrayDataSerializableFactory(constructors);
     }
 }
