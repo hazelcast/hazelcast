@@ -16,6 +16,9 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.map.operation.*;
+import com.hazelcast.map.record.DataRecord;
+import com.hazelcast.map.record.ObjectRecord;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.*;
 import com.hazelcast.query.impl.QueryResultEntryImpl;

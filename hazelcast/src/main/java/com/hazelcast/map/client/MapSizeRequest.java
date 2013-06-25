@@ -20,7 +20,7 @@ import com.hazelcast.client.AllPartitionsClientRequest;
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
-import com.hazelcast.map.SizeOperationFactory;
+import com.hazelcast.map.operation.SizeOperationFactory;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;

@@ -26,7 +26,9 @@ import com.hazelcast.core.*;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.merge.*;
+import com.hazelcast.map.operation.*;
 import com.hazelcast.map.proxy.ObjectMapProxy;
+import com.hazelcast.map.record.*;
 import com.hazelcast.map.tx.TxnMapProxy;
 import com.hazelcast.map.wan.MapReplicationRemove;
 import com.hazelcast.map.wan.MapReplicationUpdate;
@@ -336,7 +338,7 @@ public class MapService implements ManagedService, MigrationAwareService,
 
     private void migrateIndex(PartitionMigrationEvent event) {
         final PartitionContainer container = partitionContainers[event.getPartitionId()];
-        for (PartitionRecordStore mapPartition : container.maps.values()) {
+        for (PartitionRecordStore mapPartition : container.getMaps().values()) {
             final MapContainer mapContainer = getMapContainer(mapPartition.name);
             final IndexService indexService = mapContainer.getIndexService();
             if (indexService.hasIndex()) {
@@ -363,10 +365,10 @@ public class MapService implements ManagedService, MigrationAwareService,
         logger.log(Level.FINEST, "Clearing partition data -> " + partitionId);
         final PartitionContainer container = partitionContainers[partitionId];
         if (container != null) {
-            for (PartitionRecordStore mapPartition : container.maps.values()) {
+            for (PartitionRecordStore mapPartition : container.getMaps().values()) {
                 mapPartition.clear();
             }
-            container.maps.clear();
+            container.getMaps().clear();
         }
     }
 

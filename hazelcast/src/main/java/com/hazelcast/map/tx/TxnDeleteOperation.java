@@ -16,9 +16,9 @@
 
 package com.hazelcast.map.tx;
 
-import com.hazelcast.map.BaseRemoveOperation;
-import com.hazelcast.map.Record;
-import com.hazelcast.map.RemoveBackupOperation;
+import com.hazelcast.map.operation.BaseRemoveOperation;
+import com.hazelcast.map.record.Record;
+import com.hazelcast.map.operation.RemoveBackupOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;

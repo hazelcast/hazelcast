@@ -17,7 +17,7 @@
 package com.hazelcast.map.client;
 
 import com.hazelcast.map.MapPortableHook;
-import com.hazelcast.map.TryPutOperation;
+import com.hazelcast.map.operation.TryPutOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;

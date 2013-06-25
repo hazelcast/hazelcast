@@ -16,8 +16,8 @@
 
 package com.hazelcast.map.tx;
 
-import com.hazelcast.map.LockAwareOperation;
-import com.hazelcast.map.Record;
+import com.hazelcast.map.operation.LockAwareOperation;
+import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;

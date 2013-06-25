@@ -21,7 +21,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
-import com.hazelcast.map.RemoveInterceptorOperationFactory;
+import com.hazelcast.map.operation.RemoveInterceptorOperationFactory;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;

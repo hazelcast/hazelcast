@@ -18,7 +18,7 @@ package com.hazelcast.map.tx;
 
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
-import com.hazelcast.map.KeyBasedMapOperation;
+import com.hazelcast.map.operation.KeyBasedMapOperation;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;

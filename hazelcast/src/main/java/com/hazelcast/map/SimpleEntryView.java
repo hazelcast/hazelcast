@@ -17,9 +17,10 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.EntryView;
+import com.hazelcast.map.record.Record;
+import com.hazelcast.map.record.RecordStatistics;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;

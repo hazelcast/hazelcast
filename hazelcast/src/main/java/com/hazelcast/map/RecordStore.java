@@ -18,6 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.merge.MapMergePolicy;
+import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 

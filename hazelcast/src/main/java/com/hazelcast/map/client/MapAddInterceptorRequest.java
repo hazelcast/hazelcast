@@ -18,7 +18,7 @@ package com.hazelcast.map.client;
 
 import com.hazelcast.client.MultiTargetClientRequest;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.map.AddInterceptorOperationFactory;
+import com.hazelcast.map.operation.AddInterceptorOperationFactory;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;

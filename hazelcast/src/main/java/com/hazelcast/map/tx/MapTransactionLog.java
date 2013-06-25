@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.tx;
 
-import com.hazelcast.map.MapKey;
+import com.hazelcast.map.MapRecordKey;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -124,6 +124,6 @@ public class MapTransactionLog implements KeyAwareTransactionLog {
 
     @Override
     public Object getKey() {
-        return new MapKey(name, key);
+        return new MapRecordKey(name, key);
     }
 }

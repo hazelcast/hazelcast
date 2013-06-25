@@ -17,6 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.operation.EvictOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
