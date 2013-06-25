@@ -524,6 +524,7 @@ public class EvictionTest extends HazelcastTestSupport {
         assertEquals(2, map.get(1));
     }
 
+    // todo fails in parallel
     @Test
     public void testMapRecordIdleEvictionOnMigration() throws InterruptedException {
         Config cfg = new Config();
@@ -560,7 +561,7 @@ public class EvictionTest extends HazelcastTestSupport {
         HazelcastInstance instance2 = factory.newHazelcastInstance(cfg);
         HazelcastInstance instance3 = factory.newHazelcastInstance(cfg);
 
-        Thread.sleep(maxIdleSeconds * 1000 + 10000);
+        Thread.sleep(maxIdleSeconds * 1000 + 20000);
         Assert.assertEquals(nsize, map.size());
 
         thread.interrupt();
