@@ -112,39 +112,7 @@ final class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
         int len = values != null ? values.length : 0;
         writeInt(len);
         if (len > 0) {
-            unsafeMemCopy(values, UnsafeHelper.CHAR_ARRAY_BASE_OFFSET, len << 1);
-        }
-    }
-
-    public void writeIntArray(int[] values) throws IOException {
-        int len = values != null ? values.length : 0;
-        writeInt(len);
-        if (len > 0) {
-            unsafeMemCopy(values, UnsafeHelper.INT_ARRAY_BASE_OFFSET, len << 2);
-        }
-    }
-
-    public void writeLongArray(long[] values) throws IOException {
-        int len = values != null ? values.length : 0;
-        writeInt(len);
-        if (len > 0) {
-            unsafeMemCopy(values, UnsafeHelper.LONG_ARRAY_BASE_OFFSET, len << 3);
-        }
-    }
-
-    public void writeDoubleArray(double[] values) throws IOException {
-        int len = values != null ? values.length : 0;
-        writeInt(len);
-        if (len > 0) {
-            unsafeMemCopy(values, UnsafeHelper.DOUBLE_ARRAY_BASE_OFFSET, len << 3);
-        }
-    }
-
-    public void writeFloatArray(float[] values) throws IOException {
-        int len = values != null ? values.length : 0;
-        writeInt(len);
-        if (len > 0) {
-            unsafeMemCopy(values, UnsafeHelper.FLOAT_ARRAY_BASE_OFFSET, len << 2);
+            unsafeMemCopy(values, UnsafeHelper.CHAR_ARRAY_BASE_OFFSET, len, UnsafeHelper.CHAR_ARRAY_INDEX_SCALE);
         }
     }
 
@@ -152,13 +120,52 @@ final class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
         int len = values != null ? values.length : 0;
         writeInt(len);
         if (len > 0) {
-            unsafeMemCopy(values, UnsafeHelper.SHORT_ARRAY_BASE_OFFSET, len << 1);
+            unsafeMemCopy(values, UnsafeHelper.SHORT_ARRAY_BASE_OFFSET, len, UnsafeHelper.SHORT_ARRAY_INDEX_SCALE);
         }
     }
 
-    private void unsafeMemCopy(Object src, long srcArrayTypeOffset, int len) {
+    public void writeIntArray(int[] values) throws IOException {
+        int len = values != null ? values.length : 0;
+        writeInt(len);
+        if (len > 0) {
+            unsafeMemCopy(values, UnsafeHelper.INT_ARRAY_BASE_OFFSET, len, UnsafeHelper.INT_ARRAY_INDEX_SCALE);
+        }
+    }
+
+    public void writeFloatArray(float[] values) throws IOException {
+        int len = values != null ? values.length : 0;
+        writeInt(len);
+        if (len > 0) {
+            unsafeMemCopy(values, UnsafeHelper.FLOAT_ARRAY_BASE_OFFSET, len, UnsafeHelper.FLOAT_ARRAY_INDEX_SCALE);
+        }
+    }
+
+    public void writeLongArray(long[] values) throws IOException {
+        int len = values != null ? values.length : 0;
+        writeInt(len);
+        if (len > 0) {
+            unsafeMemCopy(values, UnsafeHelper.LONG_ARRAY_BASE_OFFSET, len, UnsafeHelper.LONG_ARRAY_INDEX_SCALE);
+        }
+    }
+
+    public void writeDoubleArray(double[] values) throws IOException {
+        int len = values != null ? values.length : 0;
+        writeInt(len);
+        if (len > 0) {
+            unsafeMemCopy(values, UnsafeHelper.DOUBLE_ARRAY_BASE_OFFSET, len, UnsafeHelper.DOUBLE_ARRAY_INDEX_SCALE);
+        }
+    }
+
+    private void unsafeMemCopy(final Object srcArray, final long srcArrayTypeOffset, final int srcArrayLength, final int indexScale) {
+        if (srcArray == null) {
+            throw new IllegalArgumentException("Source array is NULL!");
+        }
+        if (srcArrayLength < 0) {
+            throw new NegativeArraySizeException("Source array length is negative: " + srcArrayLength);
+        }
+        final int len = indexScale * srcArrayLength;
         ensureAvailable(len);
-        UnsafeHelper.UNSAFE.copyMemory(src, srcArrayTypeOffset, buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + pos, len);
+        UnsafeHelper.UNSAFE.copyMemory(srcArray, srcArrayTypeOffset, buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + pos, len);
         pos += len;
     }
 

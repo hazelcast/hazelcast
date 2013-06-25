@@ -250,7 +250,7 @@ public class DataAdapter implements SocketWritable, SocketReadable {
             if (source.remaining() < 4) {
                 return false;
             }
-            data.setPartitionHash(source.getInt());
+            data.partitionHash = source.getInt();
             setStatus(stHash);
         }
         setStatus(stAll);

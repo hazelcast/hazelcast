@@ -14,27 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.config;
 
-import com.hazelcast.transaction.TransactionalObject;
-
-import java.util.Collection;
+import com.hazelcast.spi.ConfigurableService;
 
 /**
- * @ali 3/13/13
- */
-public interface TransactionalMultiMap<K, V> extends BaseMultiMap<K, V>, TransactionalObject {
+* @mdogan 6/24/13
+*/
+class MyService implements ConfigurableService<MyServiceConfig> {
 
-    boolean put(K key, V value);
+    MyServiceConfig config;
 
-    Collection<V> get(K key);
-
-    boolean remove(Object key, Object value);
-
-    Collection<V> remove(Object key);
-
-    int valueCount(K key);
-
-    int size();
-
+    @Override
+    public void configure(MyServiceConfig configObject) {
+        config = configObject;
+    }
 }

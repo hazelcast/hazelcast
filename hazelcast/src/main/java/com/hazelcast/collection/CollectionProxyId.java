@@ -18,19 +18,17 @@ package com.hazelcast.collection;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
 /**
  * @mdogan 1/14/13
  */
-public class CollectionProxyId implements DataSerializable {
+public class CollectionProxyId implements IdentifiedDataSerializable {
 
     String name;
-
     String keyName;
-
     CollectionProxyType type;
 
     public CollectionProxyId() {
@@ -40,6 +38,14 @@ public class CollectionProxyId implements DataSerializable {
         this.name = name;
         this.keyName = keyName;
         this.type = type;
+    }
+
+    public int getFactoryId() {
+        return CollectionDataSerializerHook.F_ID;
+    }
+
+    public int getId() {
+        return CollectionDataSerializerHook.COLLECTION_PROXY_ID;
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {

@@ -31,15 +31,17 @@ final class PortableHookLoader {
     private final Map<Integer, ? extends PortableFactory> configuredFactories;
     private final Map<Integer, PortableFactory> factories = new HashMap<Integer, PortableFactory>();
     private final Collection<ClassDefinition> definitions = new HashSet<ClassDefinition>();
-
-    PortableHookLoader(Map<Integer, ? extends PortableFactory> configuredFactories) {
+    private final ClassLoader classLoader;
+    
+    PortableHookLoader(Map<Integer, ? extends PortableFactory> configuredFactories, ClassLoader classLoader) {
         this.configuredFactories = configuredFactories;
+        this.classLoader = classLoader;
         load();
     }
 
     private void load() {
         try {
-            final Iterator<PortableHook> hooks = ServiceLoader.iterator(PortableHook.class, FACTORY_ID);
+            final Iterator<PortableHook> hooks = ServiceLoader.iterator(PortableHook.class, FACTORY_ID, classLoader);
             while (hooks.hasNext()) {
                 PortableHook hook = hooks.next();
                 final PortableFactory factory = hook.createFactory();

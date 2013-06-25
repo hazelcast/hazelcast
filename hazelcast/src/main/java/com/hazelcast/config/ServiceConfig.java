@@ -24,15 +24,17 @@ import java.util.Properties;
 
 public class ServiceConfig {
 
-    protected boolean enabled;
+    private boolean enabled;
 
-    protected String name;
+    private String name;
 
-    protected String className;
+    private String className;
 
-    protected Object serviceImpl;
+    private Object serviceImpl;
 
-    protected Properties properties = new Properties();
+    private Properties properties = new Properties();
+
+    private Object configObject;
 
     public ServiceConfig() {
     }
@@ -82,6 +84,14 @@ public class ServiceConfig {
         return this;
     }
 
+    public ServiceConfig setConfigObject(Object configObject) {
+        this.configObject = configObject;
+        return this;
+    }
+
+    public Object getConfigObject() {
+        return configObject;
+    }
 
     @Override
     public String toString() {

@@ -141,7 +141,7 @@ public class Node {
         String loggingType = groupProperties.LOGGING_TYPE.getString();
         loggingService = new LoggingServiceImpl(systemLogService, config.getGroupConfig().getName(), loggingType, localMember);
         logger = loggingService.getLogger(Node.class.getName());
-        initializer = NodeInitializerFactory.create();
+        initializer = NodeInitializerFactory.create(configClassLoader);
         try {
             initializer.beforeInitialize(this);
         } catch (Throwable e) {

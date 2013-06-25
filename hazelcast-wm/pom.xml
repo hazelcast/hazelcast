@@ -97,9 +97,7 @@
                         <configuration>
                             <instructions>
                                 <Import-Package>
-                                    !junit.framework,
                                     !org.junit,
-                                    !org.mockito,
                                     !org.apache.tomcat.*,
                                     !org.apache.catalina.*,
                                     !org.apache.juli.*,

@@ -21,6 +21,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.spring.CustomSpringJUnit4ClassRunner;
 import com.hazelcast.test.annotation.SerialTest;
+import com.hazelcast.util.ExceptionUtil;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -36,6 +37,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @mdogan 4/6/12
@@ -99,8 +101,26 @@ public class TestManagedContext {
 
     @Test
     public void testRunnableTask() throws ExecutionException, InterruptedException {
-        Future<?> future = instance1.getExecutorService("test").submit(new SomeRunnableTask());
-        future.get();
+        final CountDownLatch latch = new CountDownLatch(1);
+        final AtomicReference<Throwable> error = new AtomicReference<Throwable>();
+
+        instance1.getExecutorService("test").submitToMember(new SomeRunnableTask(),
+                instance2.getCluster().getLocalMember(), new ExecutionCallback() {
+            public void onResponse(Object response) {
+                latch.countDown();
+            }
+
+            public void onFailure(Throwable t) {
+                error.set(t);
+                latch.countDown();
+            }
+        });
+
+        Assert.assertTrue(latch.await(10, TimeUnit.SECONDS));
+        Throwable t = error.get();
+        if (t != null) {
+            ExceptionUtil.sneakyThrow(t);
+        }
     }
 
     @Test

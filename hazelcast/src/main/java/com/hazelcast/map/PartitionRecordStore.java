@@ -74,7 +74,7 @@ public class PartitionRecordStore implements RecordStore {
 
     private void flush(Data key) {
         EntryTaskScheduler writeScheduler = mapContainer.getMapStoreWriteScheduler();
-        Set<Data> keys = new HashSet<Data>();
+        Set<Data> keys = new HashSet<Data>(1);
         keys.add(key);
         if (writeScheduler != null) {
             Set<Data> processedKeys = writeScheduler.flush(keys);

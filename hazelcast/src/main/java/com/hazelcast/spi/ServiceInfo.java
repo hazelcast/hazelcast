@@ -45,6 +45,10 @@ public final class ServiceInfo {
         return service instanceof ManagedService;
     }
 
+    public boolean isConfigurableService() {
+        return service instanceof ConfigurableService;
+    }
+
     @SuppressWarnings("unchecked")
     public boolean isInstanceOf(Class type) {
         return type.isAssignableFrom(service.getClass());

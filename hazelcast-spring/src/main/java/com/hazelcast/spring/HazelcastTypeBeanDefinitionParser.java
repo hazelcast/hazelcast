@@ -67,7 +67,7 @@ public class HazelcastTypeBeanDefinitionParser extends AbstractHazelcastBeanDefi
                     throw new IllegalStateException("'instance-ref' attribute is required for creating" +
                                                     " Hazelcast " + type);
                 }
-                final String instanceRef = getValue(instanceRefNode);
+                final String instanceRef = getTextContent(instanceRefNode);
                 builder.getRawBeanDefinition().setFactoryBeanName(instanceRef);
                 builder.addDependsOn(instanceRef);
 
@@ -75,7 +75,7 @@ public class HazelcastTypeBeanDefinitionParser extends AbstractHazelcastBeanDefi
                 if (nameNode == null) {
                     nameNode = attrs.getNamedItem("id");
                 }
-                builder.addConstructorArgValue(getValue(nameNode));
+                builder.addConstructorArgValue(getTextContent(nameNode));
             }
         }
     }

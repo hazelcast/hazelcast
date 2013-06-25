@@ -5,31 +5,60 @@ import sun.misc.Unsafe;
 import java.lang.reflect.Field;
 
 /**
-* @mdogan 6/14/13
-*/
+ * Unsafe accessor.
+ *
+ * Warning: Although both array base-offsets and array index-scales are
+ * constant over time currently,
+ * a later JVM implementation can change this behaviour
+ * to allow varying index-scales and base-offsets over time or per array instances.
+ * (For example; compressed primitive arrays or backwards growing arrays...)
+ *
+ * See Gil Tene's comment related to Unsafe usage;
+ * https://groups.google.com/d/msg/mechanical-sympathy/X-GtLuG0ETo/LMV1d_2IybQJ
+ *
+ * @mdogan 6/14/13
+ */
 final class UnsafeHelper {
 
     static final Unsafe UNSAFE;
+
     static final long BYTE_ARRAY_BASE_OFFSET;
-    static final long FLOAT_ARRAY_BASE_OFFSET;
-    static final long DOUBLE_ARRAY_BASE_OFFSET;
-    static final long INT_ARRAY_BASE_OFFSET;
-    static final long LONG_ARRAY_BASE_OFFSET;
     static final long SHORT_ARRAY_BASE_OFFSET;
     static final long CHAR_ARRAY_BASE_OFFSET;
+    static final long INT_ARRAY_BASE_OFFSET;
+    static final long FLOAT_ARRAY_BASE_OFFSET;
+    static final long LONG_ARRAY_BASE_OFFSET;
+    static final long DOUBLE_ARRAY_BASE_OFFSET;
+
+    static final int BYTE_ARRAY_INDEX_SCALE;
+    static final int SHORT_ARRAY_INDEX_SCALE;
+    static final int CHAR_ARRAY_INDEX_SCALE;
+    static final int INT_ARRAY_INDEX_SCALE;
+    static final int FLOAT_ARRAY_INDEX_SCALE;
+    static final int LONG_ARRAY_INDEX_SCALE;
+    static final int DOUBLE_ARRAY_INDEX_SCALE;
 
     static {
         try {
             Field field = Unsafe.class.getDeclaredField("theUnsafe");
             field.setAccessible(true);
             Unsafe unsafe = (Unsafe) field.get(null);
+
             BYTE_ARRAY_BASE_OFFSET = unsafe.arrayBaseOffset(byte[].class);
-            CHAR_ARRAY_BASE_OFFSET = unsafe.arrayBaseOffset(char[].class);
             SHORT_ARRAY_BASE_OFFSET = unsafe.arrayBaseOffset(short[].class);
+            CHAR_ARRAY_BASE_OFFSET = unsafe.arrayBaseOffset(char[].class);
             INT_ARRAY_BASE_OFFSET = unsafe.arrayBaseOffset(int[].class);
             FLOAT_ARRAY_BASE_OFFSET = unsafe.arrayBaseOffset(float[].class);
             LONG_ARRAY_BASE_OFFSET = unsafe.arrayBaseOffset(long[].class);
             DOUBLE_ARRAY_BASE_OFFSET = unsafe.arrayBaseOffset(double[].class);
+
+            BYTE_ARRAY_INDEX_SCALE = unsafe.arrayIndexScale(byte[].class);
+            SHORT_ARRAY_INDEX_SCALE = unsafe.arrayIndexScale(short[].class);
+            CHAR_ARRAY_INDEX_SCALE = unsafe.arrayIndexScale(char[].class);
+            INT_ARRAY_INDEX_SCALE = unsafe.arrayIndexScale(int[].class);
+            FLOAT_ARRAY_INDEX_SCALE = unsafe.arrayIndexScale(float[].class);
+            LONG_ARRAY_INDEX_SCALE = unsafe.arrayIndexScale(long[].class);
+            DOUBLE_ARRAY_INDEX_SCALE = unsafe.arrayIndexScale(double[].class);
 
             // test if unsafe has required methods...
             byte[] buffer = new byte[8];
