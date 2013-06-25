@@ -611,28 +611,30 @@ public class BasicTest extends HazelcastTestSupport {
     @Test
     public void testMapTryPut() throws InterruptedException {
         final IMap<Object, Object> map = getInstance().getMap("testMapTryPut");
-        map.lock("key1");
+        final String key1 = "key1";
+        final String key2 = "key2";
+        map.lock(key1);
         final AtomicInteger counter = new AtomicInteger(6);
         final CountDownLatch latch = new CountDownLatch(1);
         Thread thread = new Thread(new Runnable() {
             public void run() {
                 try {
-                    if (map.tryPut("key1", "value1", 100, TimeUnit.MILLISECONDS) == false)
+                    if (map.tryPut(key1, "value1", 100, TimeUnit.MILLISECONDS) == false)
                         counter.decrementAndGet();
 
-                    if(map.get("key1") == null)
+                    if(map.get(key1) == null)
                         counter.decrementAndGet();
 
-                    if(map.tryPut("key", "value", 100, TimeUnit.MILLISECONDS))
+                    if(map.tryPut(key2, "value", 100, TimeUnit.MILLISECONDS))
                         counter.decrementAndGet();
 
-                    if(map.get("key").equals("value"))
+                    if(map.get(key2).equals("value"))
                         counter.decrementAndGet();
 
-                    if(map.tryPut("key1", "value1", 1, TimeUnit.SECONDS))
+                    if(map.tryPut(key1, "value1", 5, TimeUnit.SECONDS))
                         counter.decrementAndGet();
 
-                    if(map.get("key1").equals("value1"))
+                    if(map.get(key1).equals("value1"))
                         counter.decrementAndGet();
 
                     latch.countDown();
@@ -643,11 +645,11 @@ public class BasicTest extends HazelcastTestSupport {
             }
         });
         thread.start();
-        Thread.sleep(300);
+        Thread.sleep(1000);
         map.unlock("key1");
-        latch.await();
-        assertEquals(counter.get(), 0);
-        thread.join();
+        latch.await(10, TimeUnit.SECONDS);
+        assertEquals(0, counter.get());
+        thread.join(10000);
     }
 
     @Test
