@@ -45,6 +45,12 @@ public class SerializationConfig {
 
     private ByteOrder byteOrder = ByteOrder.BIG_ENDIAN;
 
+    private boolean enableCompression = false;
+
+    private boolean enableSharedObject = false;
+
+    private boolean allowUnsafe = true;
+
     private Set<ClassDefinition> classDefinitions;
 
     public SerializationConfig() {
@@ -201,6 +207,33 @@ public class SerializationConfig {
 
     public SerializationConfig setByteOrder(ByteOrder byteOrder) {
         this.byteOrder = byteOrder;
+        return this;
+    }
+
+    public boolean isEnableCompression() {
+        return enableCompression;
+    }
+
+    public SerializationConfig setEnableCompression(boolean enableCompression) {
+        this.enableCompression = enableCompression;
+        return this;
+    }
+
+    public boolean isEnableSharedObject() {
+        return enableSharedObject;
+    }
+
+    public SerializationConfig setEnableSharedObject(boolean enableSharedObject) {
+        this.enableSharedObject = enableSharedObject;
+        return this;
+    }
+
+    public boolean isAllowUnsafe() {
+        return allowUnsafe;
+    }
+
+    public SerializationConfig setAllowUnsafe(boolean allowUnsafe) {
+        this.allowUnsafe = allowUnsafe;
         return this;
     }
 

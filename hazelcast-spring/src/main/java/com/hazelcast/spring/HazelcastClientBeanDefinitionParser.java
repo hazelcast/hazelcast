@@ -92,7 +92,7 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             for (org.w3c.dom.Node node : new IterableNodeList(element, Node.ELEMENT_NODE)) {
                 final String nodeName = cleanNodeName(node.getNodeName());
                 if ("member".equals(nodeName)) {
-                    members.add(getValue(node));
+                    members.add(getTextContent(node));
                 }
             }
             configBuilder.addPropertyValue("addresses", members);

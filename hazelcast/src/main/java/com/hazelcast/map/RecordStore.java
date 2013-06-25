@@ -75,8 +75,6 @@ public interface RecordStore {
 
     boolean containsValue(Object testValue);
 
-    boolean canRun(LockAwareOperation lockAwareOperation);
-
     Object evict(Data key);
 
     Collection<Object> valuesObject();

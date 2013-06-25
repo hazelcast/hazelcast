@@ -35,6 +35,7 @@ import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.partition.PartitionServiceImpl;
 import com.hazelcast.queue.QueueService;
+import com.hazelcast.spi.ConfigurableService;
 import com.hazelcast.spi.ManagedService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.ServiceInfo;
@@ -53,7 +54,7 @@ import java.util.logging.Level;
  */
 
 @PrivateApi
-class ServiceManager {
+final class ServiceManager {
 
     private final NodeEngineImpl nodeEngine;
     private final ILogger logger;
@@ -74,10 +75,11 @@ class ServiceManager {
         registerService(TransactionManagerServiceImpl.SERVICE_NAME, nodeEngine.getTransactionManagerService());
         registerService(ClientEngineImpl.SERVICE_NAME, node.clientEngine);
 
-        final ServicesConfig servicesConfigConfig = node.getConfig().getServicesConfig();
+        final ServicesConfig servicesConfig = node.getConfig().getServicesConfig();
         final Map<String, Properties> serviceProps;
-        if (servicesConfigConfig != null) {
-            if (servicesConfigConfig.isEnableDefaults()) {
+        final Map<String, Object> serviceConfigObjects;
+        if (servicesConfig != null) {
+            if (servicesConfig.isEnableDefaults()) {
                 logger.log(Level.FINEST, "Registering default services...");
                 registerService(MapService.SERVICE_NAME, new MapService(nodeEngine));
                 registerService(LockService.SERVICE_NAME, new LockServiceImpl(nodeEngine));
@@ -92,7 +94,8 @@ class ServiceManager {
             }
 
             serviceProps = new HashMap<String, Properties>();
-            final Collection<ServiceConfig> serviceConfigs = servicesConfigConfig.getServiceConfigs();
+            serviceConfigObjects = new HashMap<String, Object>();
+            final Collection<ServiceConfig> serviceConfigs = servicesConfig.getServiceConfigs();
             for (ServiceConfig serviceConfig : serviceConfigs) {
                 if (serviceConfig.isEnabled()) {
                     Object service = serviceConfig.getServiceImpl();
@@ -102,15 +105,28 @@ class ServiceManager {
                     if (service != null) {
                         registerService(serviceConfig.getName(), service);
                         serviceProps.put(serviceConfig.getName(), serviceConfig.getProperties());
+                        if (serviceConfig.getConfigObject() != null) {
+                            serviceConfigObjects.put(serviceConfig.getName(), serviceConfig.getConfigObject());
+                        }
                     }
                 }
             }
         } else {
             serviceProps = Collections.emptyMap();
+            serviceConfigObjects = Collections.emptyMap();
         }
 
         for (ServiceInfo serviceInfo : services.values()) {
             final Object service = serviceInfo.getService();
+            if (serviceInfo.isConfigurableService()) {
+                try {
+                    logger.log(Level.FINEST, "Configuring service -> " + service);
+                    final Object configObject = serviceConfigObjects.get(serviceInfo.getName());
+                    ((ConfigurableService) service).configure(configObject);
+                } catch (Throwable t) {
+                    logger.log(Level.SEVERE, "Error while configuring service: " + t.getMessage(), t);
+                }
+            }
             if (serviceInfo.isManagedService()) {
                 try {
                     logger.log(Level.FINEST, "Initializing service -> " + service);

@@ -24,6 +24,8 @@ import java.util.NoSuchElementException;
 
 public abstract class AbstractXmlConfigHelper {
 
+    protected boolean domLevel3 = true;
+
     public static class IterableNodeList implements Iterable<Node> {
 
         private final NodeList parent;
@@ -90,13 +92,13 @@ public abstract class AbstractXmlConfigHelper {
         final char[] charArray = name.toCharArray();
         boolean dash = false;
         final StringBuilder token = new StringBuilder();
-        for (int i = 0; i < charArray.length; i++) {
-            if (charArray[i] == '-') {
+        for (char aCharArray : charArray) {
+            if (aCharArray == '-') {
                 appendToken(builder, token);
                 dash = true;
                 continue;
             }
-            token.append(dash ? Character.toUpperCase(charArray[i]) : charArray[i]);
+            token.append(dash ? Character.toUpperCase(aCharArray) : aCharArray);
             dash = false;
         }
         appendToken(builder, token);
@@ -113,42 +115,45 @@ public abstract class AbstractXmlConfigHelper {
     }
 
     protected String getTextContent(final Node node) {
-        return getTextContent2(node);
+        if (node != null) {
+            final String text;
+            if (domLevel3) {
+                text = node.getTextContent();
+            } else {
+                text = getTextContentOld(node);
+            }
+            return text != null ? text.trim() : "";
+        }
+        return "";
     }
 
-    protected String getTextContent2(final Node node) {
+    private String getTextContentOld(final Node node) {
         final Node child = node.getFirstChild();
         if (child != null) {
             final Node next = child.getNextSibling();
             if (next == null) {
                 return hasTextContent(child) ? child.getNodeValue() : "";
             }
-            final StringBuffer buf = new StringBuffer();
-            getTextContent2(node, buf);
+            final StringBuilder buf = new StringBuilder();
+            appendTextContents(node, buf);
             return buf.toString();
         }
         return "";
     }
 
-    protected void getTextContent2(final Node node, final StringBuffer buf) {
+    private void appendTextContents(final Node node, final StringBuilder buf) {
         Node child = node.getFirstChild();
         while (child != null) {
             if (hasTextContent(child)) {
-                getTextContent2(child, buf);
+                buf.append(child.getNodeValue());
             }
             child = child.getNextSibling();
         }
     }
 
-    protected String getValue(org.w3c.dom.Node node) {
-        return node != null ? getTextContent(node).trim() : "";
-    }
-
-    protected final boolean hasTextContent(final Node child) {
-        final short nodeType = child.getNodeType();
-        final boolean result = nodeType != Node.COMMENT_NODE &&
-                nodeType != Node.PROCESSING_INSTRUCTION_NODE;
-        return result;
+    protected final boolean hasTextContent(final Node node) {
+        final short nodeType = node.getNodeType();
+        return nodeType != Node.COMMENT_NODE && nodeType != Node.PROCESSING_INSTRUCTION_NODE;
     }
 
     public final String cleanNodeName(final Node node) {

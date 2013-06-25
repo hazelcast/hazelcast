@@ -236,13 +236,24 @@ final class TestNodeRegistry {
             }
 
             public void doJoin(AtomicBoolean joined) {
-                Address master = null;
+                NodeEngineImpl nodeEngine = null;
                 for (Address address : addresses) {
-                    final NodeEngineImpl nodeEngine = nodes.get(address);
-                    if (nodeEngine != null && nodeEngine.getNode().isActive()) {
-                        master = address;
+                    NodeEngineImpl ne = nodes.get(address);
+                    if (ne != null && ne.getNode().isActive() && ne.getNode().joined()) {
+                        nodeEngine = ne;
                         break;
                     }
+                }
+                Address master = null;
+                if (nodeEngine != null) {
+                    if (nodeEngine.getNode().isMaster()) {
+                        master = nodeEngine.getThisAddress();
+                    } else {
+                        master = nodeEngine.getMasterAddress();
+                    }
+                }
+                if (master == null) {
+                    master = node.getThisAddress();
                 }
                 node.setMasterAddress(master);
                 if (node.getMasterAddress().equals(node.getThisAddress())) {

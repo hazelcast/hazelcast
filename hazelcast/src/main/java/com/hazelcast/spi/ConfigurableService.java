@@ -14,8 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.logging;
+package com.hazelcast.spi;
 
-public interface CallStateAware {
-    CallState getCallState();
+/**
+ * @mdogan 6/24/13
+ */
+public interface ConfigurableService<T> {
+
+    public void configure(T configObject);
+
 }

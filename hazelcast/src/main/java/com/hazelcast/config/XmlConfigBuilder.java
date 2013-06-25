@@ -23,6 +23,9 @@ import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.spi.ServiceConfigurationParser;
+import com.hazelcast.util.ExceptionUtil;
 import org.w3c.dom.*;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -43,7 +46,6 @@ import java.util.logging.Level;
 public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigBuilder {
 
     private final ILogger logger = Logger.getLogger(XmlConfigBuilder.class.getName());
-    private boolean domLevel3 = true;
     private Config config;
     private InputStream in;
     private File configurationFile;
@@ -195,7 +197,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             } else if ("security".equals(nodeName)) {
                 handleSecurity(node);
             } else if ("license-key".equals(nodeName)) {
-                config.setLicenseKey(getValue(node));
+                config.setLicenseKey(getTextContent(node));
             } else if ("management-center".equals(nodeName)) {
                 handleManagementCenterConfig(node);
             }
@@ -226,6 +228,19 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                         serviceConfig.setClassName(className);
                     } else if ("properties".equals(value)) {
                         handleProperties(n, serviceConfig.getProperties());
+                    } else if ("configuration".equals(value)) {
+                        Node parserNode = n.getAttributes().getNamedItem("parser");
+                        String parserClass;
+                        if (parserNode == null || (parserClass = getTextContent(parserNode)) == null) {
+                            throw new IllegalArgumentException("Parser is required!");
+                        }
+                        try {
+                            ServiceConfigurationParser parser = ClassLoaderUtil.newInstance(config.getClassLoader(), parserClass);
+                            Object obj = parser.parse((Element) n);
+                            serviceConfig.setConfigObject(obj);
+                        } catch (Exception e) {
+                            ExceptionUtil.sneakyThrow(e);
+                        }
                     }
                 }
                 servicesConfig.addServiceConfig(serviceConfig);
@@ -278,7 +293,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             } else if ("outbound-ports".equals(nodeName)) {
                 handleOutboundPorts(child);
             } else if ("public-address".equals(nodeName)) {
-                final String address = getValue(child);
+                final String address = getTextContent(child);
                 config.getNetworkConfig().setPublicAddress(address);
             } else if ("join".equals(nodeName)) {
                 handleJoin(child);
@@ -302,14 +317,6 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                     + "], is not a proper integer. Default value, [" + defaultValue + "], will be used!");
             logger.log(Level.WARNING, e.getMessage(), e);
             return defaultValue;
-        }
-    }
-
-    protected String getTextContent(final Node node) {
-        if (domLevel3) {
-            return node.getTextContent();
-        } else {
-            return getTextContent2(node);
         }
     }
 
@@ -429,8 +436,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         StringBuilder sb = new StringBuilder();
         char[] chars = element.toCharArray();
         boolean upper = true;
-        for (int i = 0; i < chars.length; i++) {
-            char c = chars[i];
+        for (char c : chars) {
             if (c == '_' || c == '-' || c == '.') {
                 upper = true;
             } else {
@@ -569,7 +575,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         for (Node n : new IterableNodeList(child.getChildNodes())) {
             final String nodeName = cleanNodeName(n.getNodeName());
             if ("ports".equals(nodeName)) {
-                final String value = getValue(n);
+                final String value = getTextContent(n);
                 networkConfig.addOutboundPortDefinition(value);
             }
         }
@@ -593,8 +599,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 for (org.w3c.dom.Node listenerNode : new IterableNodeList(n.getChildNodes())) {
                     if ("item-listener".equals(cleanNodeName(listenerNode))) {
                         final NamedNodeMap attrs = listenerNode.getAttributes();
-                        boolean incValue = checkTrue(getValue(attrs.getNamedItem("include-value")));
-                        String listenerClass = getValue(listenerNode);
+                        boolean incValue = checkTrue(getTextContent(attrs.getNamedItem("include-value")));
+                        String listenerClass = getTextContent(listenerNode);
                         qConfig.addItemListenerConfig(new ItemListenerConfig(listenerClass, incValue));
                     }
                 }
@@ -629,9 +635,9 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 for (org.w3c.dom.Node listenerNode : new IterableNodeList(n.getChildNodes())) {
                     if ("entry-listener".equals(cleanNodeName(listenerNode))) {
                         final NamedNodeMap attrs = listenerNode.getAttributes();
-                        boolean incValue = checkTrue(getValue(attrs.getNamedItem("include-value")));
-                        boolean local = checkTrue(getValue(attrs.getNamedItem("local")));
-                        String listenerClass = getValue(listenerNode);
+                        boolean incValue = checkTrue(getTextContent(attrs.getNamedItem("include-value")));
+                        boolean local = checkTrue(getTextContent(attrs.getNamedItem("local")));
+                        String listenerClass = getTextContent(listenerNode);
                         multiMapConfig.addEntryListenerConfig(new EntryListenerConfig(listenerClass, local, incValue));
                     }
                 }
@@ -709,7 +715,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 wanReplicationRef.setName(wanName);
                 for (org.w3c.dom.Node wanChild : new IterableNodeList(n.getChildNodes())) {
                     final String wanChildName = cleanNodeName(wanChild.getNodeName());
-                    final String wanChildValue = getValue(n);
+                    final String wanChildValue = getTextContent(n);
                     if ("merge-policy".equals(wanChildName)) {
                         wanReplicationRef.setMergePolicy(wanChildValue);
                     }
@@ -719,8 +725,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 for (org.w3c.dom.Node indexNode : new IterableNodeList(n.getChildNodes())) {
                     if ("index".equals(cleanNodeName(indexNode))) {
                         final NamedNodeMap attrs = indexNode.getAttributes();
-                        boolean ordered = checkTrue(getValue(attrs.getNamedItem("ordered")));
-                        String attribute = getValue(indexNode);
+                        boolean ordered = checkTrue(getTextContent(attrs.getNamedItem("ordered")));
+                        String attribute = getTextContent(indexNode);
                         mapConfig.addMapIndexConfig(new MapIndexConfig(attribute, ordered));
                     }
                 }
@@ -728,9 +734,9 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 for (org.w3c.dom.Node listenerNode : new IterableNodeList(n.getChildNodes())) {
                     if ("entry-listener".equals(cleanNodeName(listenerNode))) {
                         final NamedNodeMap attrs = listenerNode.getAttributes();
-                        boolean incValue = checkTrue(getValue(attrs.getNamedItem("include-value")));
-                        boolean local = checkTrue(getValue(attrs.getNamedItem("local")));
-                        String listenerClass = getValue(listenerNode);
+                        boolean incValue = checkTrue(getTextContent(attrs.getNamedItem("include-value")));
+                        boolean local = checkTrue(getTextContent(attrs.getNamedItem("local")));
+                        String listenerClass = getTextContent(listenerNode);
                         mapConfig.addEntryListenerConfig(new EntryListenerConfig(listenerClass, local, incValue));
                     }
                 }
@@ -833,15 +839,15 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
             final String nodeName = cleanNodeName(n.getNodeName());
             if (nodeName.equals("global-ordering-enabled")) {
-                tConfig.setGlobalOrderingEnabled(checkTrue(getValue(n)));
+                tConfig.setGlobalOrderingEnabled(checkTrue(getTextContent(n)));
             } else if ("message-listeners".equals(nodeName)) {
                 for (org.w3c.dom.Node listenerNode : new IterableNodeList(n.getChildNodes())) {
                     if ("message-listener".equals(cleanNodeName(listenerNode))) {
-                        tConfig.addMessageListenerConfig(new ListenerConfig(getValue(listenerNode)));
+                        tConfig.addMessageListenerConfig(new ListenerConfig(getTextContent(listenerNode)));
                     }
                 }
             } else if ("statistics-enabled".equals(nodeName)) {
-                tConfig.setStatisticsEnabled(checkTrue(getValue(n)));
+                tConfig.setStatisticsEnabled(checkTrue(getTextContent(n)));
             }
         }
         config.addTopicConfig(tConfig);
@@ -869,7 +875,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     private void handleListeners(final org.w3c.dom.Node node) throws Exception {
         for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
             if ("listener".equals(cleanNodeName(child))) {
-                String listenerClass = getValue(child);
+                String listenerClass = getTextContent(child);
                 config.addListenerConfig(new ListenerConfig(listenerClass));
             }
         }
@@ -878,10 +884,10 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     private void handlePartitionGroup(Node node) {
         final NamedNodeMap atts = node.getAttributes();
         final Node enabledNode = atts.getNamedItem("enabled");
-        final boolean enabled = enabledNode != null ? checkTrue(getValue(enabledNode)) : false;
+        final boolean enabled = enabledNode != null ? checkTrue(getTextContent(enabledNode)) : false;
         config.getPartitionGroupConfig().setEnabled(enabled);
         final Node groupTypeNode = atts.getNamedItem("group-type");
-        final MemberGroupType groupType = groupTypeNode != null ? MemberGroupType.valueOf(getValue(groupTypeNode).toUpperCase()) : null;
+        final MemberGroupType groupType = groupTypeNode != null ? MemberGroupType.valueOf(getTextContent(groupTypeNode).toUpperCase()) : null;
         config.getPartitionGroupConfig().setGroupType(groupType);
         for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
             if ("member-group".equals(cleanNodeName(child))) {
@@ -894,7 +900,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         MemberGroupConfig memberGroupConfig = new MemberGroupConfig();
         for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
             if ("interface".equals(cleanNodeName(child))) {
-                String value = getValue(child);
+                String value = getTextContent(child);
                 memberGroupConfig.addInterface(value);
             }
         }
@@ -906,15 +912,15 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
             final String name = cleanNodeName(child);
             if ("portable-version".equals(name)) {
-                String value = getValue(child);
+                String value = getTextContent(child);
                 serializationConfig.setPortableVersion(getIntegerValue(name, value, 0));
             } else if ("check-class-def-errors".equals(name)) {
                 String value = getTextContent(child);
                 serializationConfig.setCheckClassDefErrors(checkTrue(value));
             } else if ("use-native-byte-order".equals(name)) {
-                serializationConfig.setUseNativeByteOrder(checkTrue(getValue(child)));
+                serializationConfig.setUseNativeByteOrder(checkTrue(getTextContent(child)));
             } else if ("byte-order".equals(name)) {
-                String value = getValue(child);
+                String value = getTextContent(child);
                 ByteOrder byteOrder = null;
                 if (ByteOrder.BIG_ENDIAN.toString().equals(value)) {
                     byteOrder = ByteOrder.BIG_ENDIAN;
@@ -922,6 +928,12 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                     byteOrder = ByteOrder.LITTLE_ENDIAN;
                 }
                 serializationConfig.setByteOrder(byteOrder != null ? byteOrder : ByteOrder.BIG_ENDIAN);
+            } else if ("enable-compression".equals(name)) {
+                serializationConfig.setEnableCompression(checkTrue(getTextContent(child)));
+            } else if ("enable-shared-object".equals(name)) {
+                serializationConfig.setEnableSharedObject(checkTrue(getTextContent(child)));
+            } else if ("allow-unsafe".equals(name)) {
+                serializationConfig.setAllowUnsafe(checkTrue(getTextContent(child)));
             } else if ("data-serializable-factories".equals(name)) {
                 handleDataSerializableFactories(child, serializationConfig);
             } else if ("portable-factories".equals(name)) {
@@ -936,12 +948,12 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
             final String name = cleanNodeName(child);
             if ("data-serializable-factory".equals(name)) {
-                final String value = getValue(child);
+                final String value = getTextContent(child);
                 final Node factoryIdNode = child.getAttributes().getNamedItem("factory-id");
                 if (factoryIdNode == null) {
                     throw new IllegalArgumentException("'factory-id' attribute of 'data-serializable-factory' is required!");
                 }
-                int factoryId = Integer.parseInt(getValue(factoryIdNode));
+                int factoryId = Integer.parseInt(getTextContent(factoryIdNode));
                 serializationConfig.addDataSerializableFactoryClass(factoryId, value);
             }
         }
@@ -951,12 +963,12 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
             final String name = cleanNodeName(child);
             if ("portable-factory".equals(name)) {
-                final String value = getValue(child);
+                final String value = getTextContent(child);
                 final Node factoryIdNode = child.getAttributes().getNamedItem("factory-id");
                 if (factoryIdNode == null) {
                     throw new IllegalArgumentException("'factory-id' attribute of 'portable-factory' is required!");
                 }
-                int factoryId = Integer.parseInt(getValue(factoryIdNode));
+                int factoryId = Integer.parseInt(getTextContent(factoryIdNode));
                 serializationConfig.addPortableFactoryClass(factoryId, value);
             }
         }
@@ -965,7 +977,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     private void handleSerializers(final Node node, SerializationConfig serializationConfig) {
         for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
             final String name = cleanNodeName(child);
-            final String value = getValue(child);
+            final String value = getTextContent(child);
             if ("serializer".equals(name)) {
                 SerializerConfig serializerConfig = new SerializerConfig();
                 serializerConfig.setClassName(value);
@@ -983,19 +995,19 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     private void handleManagementCenterConfig(final Node node) {
         NamedNodeMap attrs = node.getAttributes();
         final Node enabledNode = attrs.getNamedItem("enabled");
-        final boolean enabled = enabledNode != null && checkTrue(getValue(enabledNode));
+        final boolean enabled = enabledNode != null && checkTrue(getTextContent(enabledNode));
         final Node intervalNode = attrs.getNamedItem("update-interval");
         final int interval = intervalNode != null ? getIntegerValue("update-interval",
-                getValue(intervalNode), 3) : 3;
+                getTextContent(intervalNode), 3) : 3;
         config.getManagementCenterConfig().setEnabled(enabled);
         config.getManagementCenterConfig().setUpdateInterval(interval);
-        config.getManagementCenterConfig().setUrl(getValue(node));
+        config.getManagementCenterConfig().setUrl(getTextContent(node));
     }
 
     private void handleSecurity(final org.w3c.dom.Node node) throws Exception {
         final NamedNodeMap atts = node.getAttributes();
         final Node enabledNode = atts.getNamedItem("enabled");
-        final boolean enabled = enabledNode != null && checkTrue(getValue(enabledNode));
+        final boolean enabled = enabledNode != null && checkTrue(getTextContent(enabledNode));
         config.getSecurityConfig().setEnabled(enabled);
         for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
             final String nodeName = cleanNodeName(child.getNodeName());

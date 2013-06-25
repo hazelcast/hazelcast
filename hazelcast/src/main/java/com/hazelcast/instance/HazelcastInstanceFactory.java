@@ -42,7 +42,7 @@ public final class HazelcastInstanceFactory {
 
     private static final AtomicInteger factoryIdGen = new AtomicInteger();
 
-    private static final Object INIT_LOCK = new Object();
+    private static final Object INSTANCE_NAME_LOCK = new Object();
 
     public static Set<HazelcastInstance> getAllHazelcastInstances() {
         return new HashSet<HazelcastInstance>(INSTANCE_MAP.values());
@@ -61,7 +61,7 @@ public final class HazelcastInstanceFactory {
             name = createInstanceName(config);
             return newHazelcastInstance(config, name, new DefaultNodeContext());
         } else {
-            synchronized (INIT_LOCK) {
+            synchronized (INSTANCE_NAME_LOCK) {
                 if (INSTANCE_MAP.containsKey(name)) {
                     throw new DuplicateInstanceNameException("HazelcastInstance with name '" + name + "' already exists!");
                 }

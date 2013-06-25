@@ -25,12 +25,14 @@ public final class Data implements IdentifiedDataSerializable {
 
     public static final int FACTORY_ID = 0;
     public static final int ID = 0;
-    static final int NO_CLASS_ID = 0; // WARNING: Portable class-id cannot be zero.
+    public static final int NO_CLASS_ID = 0; // WARNING: Portable class-id cannot be zero.
 
     int type = SerializationConstants.CONSTANT_TYPE_DATA;
     ClassDefinition classDefinition = null;
     byte[] buffer = null;
-    int partitionHash = -1;
+    int partitionHash = 0;
+
+//    transient int hash;
 
     public Data() {
     }
@@ -139,7 +141,18 @@ public final class Data implements IdentifiedDataSerializable {
 
     @Override
     public int hashCode() {
-        if (buffer == null) return Integer.MIN_VALUE;
+//        int h = hash;
+//        if (h == 0 && bufferSize() > 0) {
+//            h = hash = calculateHash(buffer);
+//        }
+//        return h;
+        return calculateHash(buffer);
+    }
+
+    private static int calculateHash(final byte[] buffer) {
+        if (buffer == null) {
+            return 0;
+        }
         // FNV (Fowler/Noll/Vo) Hash "1a"
         final int prime = 0x01000193;
         int hash = 0x811c9dc5;
@@ -150,16 +163,11 @@ public final class Data implements IdentifiedDataSerializable {
     }
 
     public int getPartitionHash() {
-        if (partitionHash == -1) {
-            if (buffer != null) {
-                partitionHash = hashCode();
-            }
+        int ph = partitionHash;
+        if (ph == 0 && bufferSize() > 0) {
+            ph = partitionHash = hashCode();
         }
-        return partitionHash;
-    }
-
-    public void setPartitionHash(int partitionHash) {
-        this.partitionHash = partitionHash;
+        return ph;
     }
 
     public int getType() {

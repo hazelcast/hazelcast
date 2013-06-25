@@ -14,27 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
-
-import com.hazelcast.transaction.TransactionalObject;
-
-import java.util.Collection;
+package com.hazelcast.config;
 
 /**
- * @ali 3/13/13
- */
-public interface TransactionalMultiMap<K, V> extends BaseMultiMap<K, V>, TransactionalObject {
+* @mdogan 6/24/13
+*/
 
-    boolean put(K key, V value);
+class MyServiceConfig {
 
-    Collection<V> get(K key);
-
-    boolean remove(Object key, Object value);
-
-    Collection<V> remove(Object key);
-
-    int valueCount(K key);
-
-    int size();
-
+    String stringProp;
+    int intProp;
+    boolean boolProp;
 }

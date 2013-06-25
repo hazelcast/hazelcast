@@ -19,6 +19,7 @@ package com.hazelcast.client;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
@@ -83,13 +84,20 @@ public abstract class ClientTestSupport {
         Set<HazelcastInstance> instances = Hazelcast.getAllHazelcastInstances();
         for (HazelcastInstance hz : instances) {
             Node node = TestUtil.getNode(hz);
-            MemberImpl m = (MemberImpl) hz.getCluster().getLocalMember();
-            if (m.getAddress().equals(nodeAddress)) {
-                if (TestEnvironment.isMockNetwork()) {
-                    ClientEngineImpl engine = node.clientEngine;
-                    return new MockSimpleClient(engine);
-                } else {
-                    return new SocketSimpleClient(node);
+            if (node.isActive()) {
+                MemberImpl m;
+                try {
+                    m = (MemberImpl) hz.getCluster().getLocalMember();
+                } catch (HazelcastInstanceNotActiveException ignored) {
+                    continue;
+                }
+                if (m.getAddress().equals(nodeAddress)) {
+                    if (TestEnvironment.isMockNetwork()) {
+                        ClientEngineImpl engine = node.clientEngine;
+                        return new MockSimpleClient(engine);
+                    } else {
+                        return new SocketSimpleClient(node);
+                    }
                 }
             }
         }

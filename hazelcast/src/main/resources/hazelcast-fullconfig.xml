@@ -24,45 +24,6 @@
     </group>
     <license-key>HAZELCAST_ENTERPRISE_LICENSE_KEY</license-key>
     <management-center enabled="true" update-interval="5">http://mywebserver:8080</management-center>
-    <properties>
-        <property name="hazelcast.executor.client.thread.count">10</property>
-        <property name="hazelcast.executor.event.thread.count">10</property>
-        <property name="hazelcast.executor.migration.thread.count">10</property>
-        <property name="hazelcast.executor.query.thread.count">10</property>
-        <property name="hazelcast.executor.store.thread.count">10</property>
-        <property name="hazelcast.heartbeat.interval.seconds">60</property>
-        <property name="hazelcast.icmp.enabled">true</property>
-        <property name="hazelcast.in.thread.priority">7</property>
-        <property name="hazelcast.initial.min.cluster.size">1</property>
-        <property name="hazelcast.initial.wait.seconds">0</property>
-        <property name="hazelcast.jmx">false</property>
-        <property name="hazelcast.jmx.detailed">false</property>
-        <property name="hazelcast.log.state">false</property>
-        <property name="hazelcast.mancenter.enabled">true</property>
-        <property name="hazelcast.map.cleanup.delay.seconds">10</property>
-        <property name="hazelcast.map.load.chunk.size">1000</property>
-        <property name="hazelcast.map.max.backup.count">5</property>
-        <property name="hazelcast.map.partition.count">271</property>
-        <property name="hazelcast.map.remove.delay.seconds">5</property>
-        <property name="hazelcast.max.no.heartbeat.seconds">300</property>
-        <property name="hazelcast.max.wait.seconds.before.join">20</property>
-        <property name="hazelcast.memcache.enabled">true</property>
-        <property name="hazelcast.merge.first.run.delay.seconds">120</property>
-        <property name="hazelcast.merge.next.run.delay.seconds">300</property>
-        <property name="hazelcast.out.thread.priority">7</property>
-        <property name="hazelcast.redo.wait.millis">500</property>
-        <property name="hazelcast.restart.on.max.idle">false</property>
-        <property name="hazelcast.serializer.gzip.enabled">true</property>
-        <property name="hazelcast.service.thread.priority">7</property>
-        <property name="hazelcast.shutdownhook.enabled">true</property>
-        <property name="hazelcast.socket.bind.any">true</property>
-        <property name="hazelcast.socket.keep.alive">true</property>
-        <property name="hazelcast.socket.no.delay">true</property>
-        <property name="hazelcast.socket.receive.buffer.size">32</property>
-        <property name="hazelcast.socket.send.buffer.size">32</property>
-        <property name="hazelcast.version.check.enabled">true</property>
-        <property name="hazelcast.wait.seconds.before.join">5</property>
-    </properties>
     <wan-replication name="my-wan-cluster">
         <target-cluster group-name="tokyo" group-password="tokyo-pass">
             <replication-impl>com.hazelcast.wan.WanNoDelayReplication</replication-impl>

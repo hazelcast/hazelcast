@@ -71,28 +71,35 @@ public class MapStoreTest extends HazelcastTestSupport {
         }
     }
 
-    class SimpleMapLoader implements MapStore {
+    @Test
+    public void testMapLoader() throws InterruptedException {
+        int size = 100;
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
 
-        int size;
+        Config cfg = new Config();
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setImplementation(new SimpleMapLoader(size));
+        cfg.getMapConfig("default").setMapStoreConfig(mapStoreConfig);
+
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+        IMap map = instance1.getMap("default");
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(i, map.get(i));
+        }
+        assertNull(map.put(size, size));
+        assertEquals(size, map.remove(size));
+        assertNull(map.get(size));
+    }
+
+    private class SimpleMapLoader implements MapLoader {
+
+        final int size;
 
         SimpleMapLoader(int size) {
             this.size = size;
-        }
-
-        @Override
-        public void store(Object key, Object value) {
-        }
-
-        @Override
-        public void storeAll(Map map) {
-        }
-
-        @Override
-        public void delete(Object key) {
-        }
-
-        @Override
-        public void deleteAll(Collection keys) {
         }
 
         @Override

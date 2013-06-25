@@ -30,8 +30,8 @@ import java.util.regex.Pattern;
 public final class Predicates {
 
     public static class BetweenPredicate extends AbstractPredicate {
-        Comparable to = null;
-        Comparable from = null;
+        private Comparable to;
+        private Comparable from;
 
         public BetweenPredicate() {
         }
@@ -77,7 +77,7 @@ public final class Predicates {
     }
 
     public static class NotPredicate implements Predicate, DataSerializable {
-        Predicate predicate;
+        private Predicate predicate;
 
         public NotPredicate(Predicate predicate) {
             this.predicate = predicate;
@@ -95,7 +95,7 @@ public final class Predicates {
         }
 
         public void readData(ObjectDataInput in) throws IOException {
-            predicate = (Predicate) in.readObject();
+            predicate = in.readObject();
         }
 
         @Override
@@ -105,8 +105,8 @@ public final class Predicates {
     }
 
     public static class InPredicate extends AbstractPredicate {
-        Comparable[] values;
-        Set<Comparable> convertedInValues;
+        private Comparable[] values;
+        private volatile Set<Comparable> convertedInValues;
 
         public InPredicate() {
         }
@@ -118,13 +118,15 @@ public final class Predicates {
 
         public boolean apply(Map.Entry entry) {
             Comparable entryValue = readAttribute(entry);
-            if (convertedInValues == null) {
-                convertedInValues = new HashSet<Comparable>(values.length);
+            Set<Comparable> set = convertedInValues;
+            if (set == null) {
+                set = new HashSet<Comparable>(values.length);
                 for (Comparable value : values) {
-                    convertedInValues.add(convert(entry, entryValue, value));
+                    set.add(convert(entry, entryValue, value));
                 }
+                convertedInValues = set;
             }
-            return entryValue != null && convertedInValues.contains(entryValue);
+            return entryValue != null && set.contains(entryValue);
         }
 
         public Set<QueryableEntry> filter(QueryContext queryContext) {
@@ -168,9 +170,9 @@ public final class Predicates {
     }
 
     public static class RegexPredicate implements Predicate, DataSerializable {
-        String attribute;
-        String regex;
-        Pattern pattern = null;
+        private String attribute;
+        private String regex;
+        private volatile Pattern pattern;
 
         public RegexPredicate() {
         }
@@ -212,9 +214,9 @@ public final class Predicates {
     }
 
     public static class LikePredicate implements Predicate, DataSerializable {
-        String attribute;
-        String second;
-        Pattern pattern = null;
+        private String attribute;
+        private String second;
+        private volatile Pattern pattern;
 
         public LikePredicate() {
         }
@@ -563,7 +565,7 @@ public final class Predicates {
     public static abstract class AbstractPredicate implements IndexAwarePredicate, DataSerializable {
 
         protected String attribute;
-        private transient AttributeType attributeType;
+        private volatile transient AttributeType attributeType;
 
         protected AbstractPredicate() {
         }
@@ -576,19 +578,21 @@ public final class Predicates {
             if (attributeValue == null) {
                 return null;
             }
-            if (attributeType == null) {
+            AttributeType type = attributeType;
+            if (type == null) {
                 QueryableEntry queryableEntry = (QueryableEntry) mapEntry;
-                attributeType = queryableEntry.getAttributeType(attribute);
+                type = queryableEntry.getAttributeType(attribute);
+                attributeType = type;
             }
-            if (attributeType == AttributeType.ENUM) {
+            if (type == AttributeType.ENUM) {
                 // if attribute type is enum, convert given attribute to enum string
-                return attributeType.getConverter().convert(attributeValue);
+                return type.getConverter().convert(attributeValue);
             } else {
                 // if given attribute value is already in expected type then there's no need for conversion.
                 if (entryValue != null && entryValue.getClass().isAssignableFrom(attributeValue.getClass())) {
                     return attributeValue;
-                } else if (attributeType != null) {
-                   return attributeType.getConverter().convert(attributeValue);
+                } else if (type != null) {
+                   return type.getConverter().convert(attributeValue);
                 } else {
                     throw new QueryException("Unknown attribute type: " + attributeValue.getClass());
                 }

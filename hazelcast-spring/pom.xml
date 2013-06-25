@@ -99,9 +99,7 @@
                         <configuration>
                             <instructions>
                                 <Import-Package>
-                                    !junit.framework,
                                     !org.junit,
-                                    !org.mockito,
                                     org.apache.log4j;resolution:=optional,
                                     org.apache.log4j.*;resolution:=optional,
                                     org.slf4j;resolution:=optional,

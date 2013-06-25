@@ -16,14 +16,12 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.transaction.TransactionalObject;
-
 import java.util.Collection;
 
 /**
  * @ali 3/13/13
  */
-public interface TransactionalMultiMap<K, V> extends BaseMultiMap<K, V>, TransactionalObject {
+public interface BaseMultiMap<K, V> extends DistributedObject {
 
     boolean put(K key, V value);
 

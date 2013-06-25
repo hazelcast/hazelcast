@@ -526,8 +526,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 if (currentMaster != null && !currentMaster.equals(masterAddress)) {
                     final Connection conn = node.connectionManager.getConnection(currentMaster);
                     if (conn != null && conn.live()) {
-                        logger.log(Level.WARNING, "Ignoring master response " + this +
-                                " since node has an active master: " + currentMaster);
+                        logger.log(Level.WARNING, "Ignoring master response from " + masterAddress +
+                                ", since this node has an active master: " + currentMaster);
                         return;
                     }
                 }
