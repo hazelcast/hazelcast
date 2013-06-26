@@ -158,6 +158,7 @@ public class MigrationInfo implements DataSerializable {
         sb.append(", source=").append(source);
         sb.append(", destination=").append(destination);
         sb.append(", master=").append(master);
+        sb.append(", valid=").append(valid);
         sb.append(", processing=").append(processing.get());
         sb.append('}');
         return sb.toString();

@@ -164,7 +164,7 @@ public class LockTest extends HazelcastTestSupport {
             }
         });
         t.start();
-        assertTrue(latch.await(5, TimeUnit.SECONDS));
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
 
@@ -177,11 +177,10 @@ public class LockTest extends HazelcastTestSupport {
         final String name = "testLockEvictionWithMigration";
         final IMap map = instance1.getMap(name);
         for (int i = 0; i < 1000; i++) {
-            map.lock(i, 10, TimeUnit.SECONDS);
+            map.lock(i, 20, TimeUnit.SECONDS);
         }
         final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
         final HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(config);
-        Thread.sleep(3000);
         for (int i = 0; i < 1000; i++) {
             assertTrue(map.isLocked(i));
         }
@@ -195,7 +194,7 @@ public class LockTest extends HazelcastTestSupport {
             }
         });
         t.start();
-        assertTrue(latch.await(15, TimeUnit.SECONDS));
+        assertTrue(latch.await(60, TimeUnit.SECONDS));
     }
 
 

@@ -14,22 +14,34 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.partition;
+
+import com.hazelcast.spi.AbstractOperation;
 
 /**
- * LifecycleService allows you to shutdown, terminate and listen to {@link LifecycleEvent}'s
- * on HazelcastInstance.
+ * @mdogan 6/26/13
  */
-public interface LifecycleService {
+public final class HasOngoingMigration extends AbstractOperation {
 
-    boolean isRunning();
+    private Object response;
 
-    void shutdown();
+    public void run() throws Exception {
+        PartitionServiceImpl service = getService();
+        response = service.hasOnGoingMigrationLocal();
+    }
 
-    void terminate();
+    @Override
+    public boolean returnsResponse() {
+        return true;
+    }
 
-    String addLifecycleListener(LifecycleListener lifecycleListener);
+    @Override
+    public Object getResponse() {
+        return response;
+    }
 
-    boolean removeLifecycleListener(String registrationId);
-
+    @Override
+    public String getServiceName() {
+        return PartitionServiceImpl.SERVICE_NAME;
+    }
 }

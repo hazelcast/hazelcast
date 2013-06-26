@@ -97,7 +97,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
                     e = e.getCause() != null ? e.getCause() : e;
                 }
                 Level level = (e instanceof MemberLeftException || e instanceof InterruptedException)
-                        || !getNodeEngine().isActive() ? Level.FINEST : Level.WARNING;
+                        || !getNodeEngine().isActive() ? Level.INFO : Level.WARNING;
                 getLogger().log(level, e.getMessage(), e);
                 success = false;
             } finally {

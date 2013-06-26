@@ -589,6 +589,7 @@ final class OperationServiceImpl implements OperationService {
         for (ExecutorService executor : opExecutors) {
             executor.shutdown();
         }
+        responseExecutor.shutdown();
         final Object response = new HazelcastInstanceNotActiveException();
         for (RemoteCall call : remoteCalls.values()) {
             call.offerResponse(response);

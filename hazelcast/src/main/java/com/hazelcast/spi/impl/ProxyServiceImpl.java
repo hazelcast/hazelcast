@@ -145,7 +145,9 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
             final ProxyRegistry registry = ConcurrencyUtil.getOrPutIfAbsent(registries, serviceName, registryConstructor);
             nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
                 public void run() {
-                    registry.getProxy(event.getObjectId());
+                    try {
+                        registry.getProxy(event.getObjectId());
+                    } catch (HazelcastInstanceNotActiveException ignored) {}
                 }
             });
 

@@ -32,7 +32,7 @@ public final class TerminatedLifecycleService implements LifecycleService {
     public void shutdown() {
     }
 
-    public void kill() {
+    public void terminate() {
     }
 
     public String addLifecycleListener(LifecycleListener lifecycleListener) {

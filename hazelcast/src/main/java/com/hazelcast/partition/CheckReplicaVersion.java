@@ -27,15 +27,19 @@ import java.util.logging.Level;
 /**
  * @mdogan 4/11/13
  */
-public class CheckReplicaVersion extends Operation implements PartitionAwareOperation {
+public final class CheckReplicaVersion extends Operation implements PartitionAwareOperation, MigrationCycleOperation {
 
     private long version;
+    private boolean returnResponse;
+
+    private transient boolean response;
 
     public CheckReplicaVersion() {
     }
 
-    public CheckReplicaVersion(long version) {
+    public CheckReplicaVersion(long version, boolean returnResponse) {
         this.version = version;
+        this.returnResponse = returnResponse;
     }
 
     public void beforeRun() throws Exception {
@@ -52,6 +56,9 @@ public class CheckReplicaVersion extends Operation implements PartitionAwareOper
             getLogger().log(Level.INFO, "Backup partition version is not matching version of the owner " +
                     "-> " + currentVersion + " -vs- " + version);
             partitionService.syncPartitionReplica(partitionId, replicaIndex, false);
+            response = false;
+        } else {
+            response = true;
         }
     }
 
@@ -59,11 +66,11 @@ public class CheckReplicaVersion extends Operation implements PartitionAwareOper
     }
 
     public boolean returnsResponse() {
-        return false;
+        return returnResponse;
     }
 
     public Object getResponse() {
-        return Boolean.TRUE;
+        return response;
     }
 
     public boolean validatesTarget() {
@@ -80,10 +87,12 @@ public class CheckReplicaVersion extends Operation implements PartitionAwareOper
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeLong(version);
+        out.writeBoolean(returnResponse);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         version = in.readLong();
+        returnResponse = in.readBoolean();
     }
 
     @Override

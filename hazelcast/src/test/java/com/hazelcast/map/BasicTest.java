@@ -41,7 +41,6 @@ import static org.junit.Assert.*;
 @Category(ParallelTest.class)
 public class BasicTest extends HazelcastTestSupport {
 
-    private static final Config cfg = new Config();
     private static final int instanceCount = 3;
     private static final Random rand = new Random(Clock.currentTimeMillis());
 
@@ -50,7 +49,8 @@ public class BasicTest extends HazelcastTestSupport {
     @Before
     public void init() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(instanceCount);
-        instances = factory.newInstances(cfg);
+        Config config = new Config();
+        instances = factory.newInstances(config);
     }
 
     private HazelcastInstance getInstance() {

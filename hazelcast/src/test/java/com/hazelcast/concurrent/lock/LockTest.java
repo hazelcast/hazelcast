@@ -745,7 +745,7 @@ public class LockTest extends HazelcastTestSupport {
         thread.start();
         Thread.sleep(100);
         lock.unlock();
-        assertTrue(latch.await(3, TimeUnit.SECONDS));
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
     }
 
     @Test(timeout = 1000 * 100)
@@ -804,7 +804,7 @@ public class LockTest extends HazelcastTestSupport {
             e.printStackTrace();
         } finally {
             try {
-                hz.getLifecycleService().kill();
+                hz.getLifecycleService().terminate();
             } catch (Throwable ignored) {
             }
             executorService.shutdownNow();

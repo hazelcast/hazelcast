@@ -31,7 +31,7 @@ import java.util.logging.Level;
 /**
  * @mdogan 4/11/13
  */
-public class ReplicaSyncRequest extends Operation implements PartitionAwareOperation, MigrationCycleOperation {
+public final class ReplicaSyncRequest extends Operation implements PartitionAwareOperation, MigrationCycleOperation {
 
     public ReplicaSyncRequest() {
     }
@@ -74,9 +74,9 @@ public class ReplicaSyncRequest extends Operation implements PartitionAwareOpera
                     IOUtil.closeResource(out);
                 }
             } else {
-                final Level level = Level.FINEST;
+                final Level level = replicaIndex > 1 ? Level.FINEST : Level.INFO;
                 if (logger.isLoggable(level)) {
-                    logger.log(level, "No replica data is found for partition: " + partitionId + ", replica: " + replicaIndex);
+                    logger.log(level, "No replica data is found for partition: " + partitionId + ", replica: " + replicaIndex + "\n" + partitionService.getPartitionView(partitionId));
                 }
             }
 
@@ -85,7 +85,7 @@ public class ReplicaSyncRequest extends Operation implements PartitionAwareOpera
             syncResponse.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
             final Address target = getCallerAddress();
             if (logger.isLoggable(Level.FINEST)) {
-                logger.log(Level.FINEST, "Sending sync response to -> " + target + "; for partition: " + partitionId + ", replica: " + replicaIndex);
+                logger.log(Level.INFO, "Sending sync response to -> " + target + "; for partition: " + partitionId + ", replica: " + replicaIndex);
             }
             final OperationService operationService = nodeEngine.getOperationService();
             operationService.send(syncResponse, target);

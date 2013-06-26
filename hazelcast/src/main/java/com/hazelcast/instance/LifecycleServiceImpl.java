@@ -80,7 +80,7 @@ public class LifecycleServiceImpl implements LifecycleService {
         }
     }
 
-    public void kill() {
+    public void terminate() {
         synchronized (lifecycleLock) {
             fireLifecycleEvent(SHUTTING_DOWN);
             instance.managementService.destroy();

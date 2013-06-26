@@ -19,9 +19,7 @@ package com.hazelcast.partition;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.*;
 
 import java.io.IOException;
 
@@ -29,16 +27,16 @@ import java.io.IOException;
  * @mdogan 4/11/13
  */
 // runs locally
-public class SyncReplicaVersion extends Operation implements PartitionAwareOperation {
+final class SyncReplicaVersion extends Operation implements PartitionAwareOperation {
 
-    private int syncReplicaIndex;
+    private final int syncReplicaIndex;
+    private final Callback<Object> callback;
+    private final boolean sync;
 
-    public SyncReplicaVersion() {
-        this(1);
-    }
-
-    public SyncReplicaVersion(int syncReplicaIndex) {
+    public SyncReplicaVersion(int syncReplicaIndex, Callback<Object> callback) {
         this.syncReplicaIndex = syncReplicaIndex;
+        this.callback = callback;
+        this.sync = callback != null;
     }
 
     public void beforeRun() throws Exception {
@@ -53,9 +51,15 @@ public class SyncReplicaVersion extends Operation implements PartitionAwareOpera
         if (target != null) {
             final long[] currentVersions = partitionService.getPartitionReplicaVersions(partitionId);
             final NodeEngine nodeEngine = getNodeEngine();
-            CheckReplicaVersion op = new CheckReplicaVersion(currentVersions[replicaIndex]);
+            CheckReplicaVersion op = new CheckReplicaVersion(currentVersions[replicaIndex], sync);
             op.setPartitionId(partitionId).setReplicaIndex(replicaIndex).setServiceName(PartitionServiceImpl.SERVICE_NAME);
-            nodeEngine.getOperationService().send(op, target);
+            OperationService operationService = nodeEngine.getOperationService();
+            if (sync) {
+                operationService.createInvocationBuilder(PartitionServiceImpl.SERVICE_NAME, op, target)
+                        .setCallback(callback).setTryCount(10).setTryPauseMillis(250).build().invoke();
+            } else {
+                operationService.send(op, target);
+            }
         }
     }
 
