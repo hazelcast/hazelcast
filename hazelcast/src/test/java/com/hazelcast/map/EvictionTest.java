@@ -529,8 +529,8 @@ public class EvictionTest extends HazelcastTestSupport {
     public void testMapRecordIdleEvictionOnMigration() throws InterruptedException {
         Config cfg = new Config();
         MapConfig mc = cfg.getMapConfig("testMapRecordIdleEvictionOnMigration2");
-        int maxIdleSeconds = 5;
-        int size = 1000;
+        int maxIdleSeconds = 10;
+        int size = 100;
         final int nsize = size / 5;
         mc.setMaxIdleSeconds(maxIdleSeconds);
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);

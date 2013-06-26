@@ -52,7 +52,7 @@ public class MapEvictRequest extends KeyBasedClientRequest implements Portable {
 
     @Override
     protected Operation prepareOperation() {
-        EvictOperation operation = new EvictOperation(name, key);
+        EvictOperation operation = new EvictOperation(name, key, false);
         operation.setThreadId(threadId);
         return operation;
     }
