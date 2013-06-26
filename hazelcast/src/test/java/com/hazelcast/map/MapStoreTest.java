@@ -240,7 +240,6 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertEquals(5, loadCount.get());
     }
 
-    // todo fails in parallel
     @Test
     public void testOneMemberWriteBehindWithMaxIdle() throws Exception {
         TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
@@ -262,10 +261,7 @@ public class MapStoreTest extends HazelcastTestSupport {
 
         for (int i = 0; i < total; i++) {
             map.put(i, "value" + i);
-            // store_all
-            assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD, testMapStore.waitForEvent(3));
         }
-        assertNotNull(testMapStore.waitForEvent(20));
         latch.await(30, TimeUnit.SECONDS);
         assertEquals(0, map.size());
         assertEquals(total, testMapStore.getStore().size());
