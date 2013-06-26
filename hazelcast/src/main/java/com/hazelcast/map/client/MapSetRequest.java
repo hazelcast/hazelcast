@@ -17,7 +17,7 @@
 package com.hazelcast.map.client;
 
 import com.hazelcast.map.MapPortableHook;
-import com.hazelcast.map.SetOperation;
+import com.hazelcast.map.operation.SetOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 

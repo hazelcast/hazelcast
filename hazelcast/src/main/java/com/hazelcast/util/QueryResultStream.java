@@ -26,10 +26,9 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class QueryResultStream extends AbstractSet<QueryResultEntry> {
-    final BlockingQueue<QueryResultEntry> q = new LinkedBlockingQueue<QueryResultEntry>();
-    volatile int size = 0;
-    boolean ended = false; // guarded by endLock
-    final Object endLock = new Object();
+    private final BlockingQueue<QueryResultEntry> q = new LinkedBlockingQueue<QueryResultEntry>();
+    private boolean ended = false; // guarded by endLock
+    private final Object endLock = new Object();
     private static final QueryResultEntry END = new QueryResultEntryImpl(null, null, null);
 
     private final SerializationService serializationService;
@@ -37,6 +36,11 @@ public class QueryResultStream extends AbstractSet<QueryResultEntry> {
     private final Set<Object> keys;
     private final boolean data;
     private final IterationType iterationType;
+
+    // to make QueryDataResultStream debuggable (size blocks infinitely while constructing object in debug mode)
+    private volatile boolean started = false;
+    private volatile int size = 0;
+
 
     public QueryResultStream(SerializationService serializationService, IterationType iterationType, boolean data) {
         this(serializationService, iterationType, data, (iterationType != IterationType.VALUE));
@@ -62,6 +66,9 @@ public class QueryResultStream extends AbstractSet<QueryResultEntry> {
     }
 
     public synchronized boolean add(QueryResultEntry entry) {
+        if (!started) {
+            started = true;
+        }
         if (!set || keys.add(entry.getIndexKey())) {
             q.offer(entry);
             size++;
@@ -113,6 +120,10 @@ public class QueryResultStream extends AbstractSet<QueryResultEntry> {
 
     @Override
     public int size() {
+        if (!started) {
+            return 0;
+        }
+
         synchronized (endLock) {
             while (!ended) {
                 try {

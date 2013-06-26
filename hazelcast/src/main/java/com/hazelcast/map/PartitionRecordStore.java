@@ -20,6 +20,9 @@ import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.merge.MapMergePolicy;
+import com.hazelcast.map.record.DataRecord;
+import com.hazelcast.map.record.ObjectRecord;
+import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.Predicate;
@@ -50,7 +53,7 @@ public class PartitionRecordStore implements RecordStore {
         this.mapContainer = mapService.getMapContainer(name);
         final LockService lockService = mapService.getNodeEngine().getSharedService(LockService.SERVICE_NAME);
         this.lockStore = lockService == null ? null :
-                lockService.createLockStore(partitionContainer.partitionId, new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
+                lockService.createLockStore(partitionContainer.getPartitionId(), new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
     }
 
     public void flush() {
@@ -102,7 +105,7 @@ public class PartitionRecordStore implements RecordStore {
     void clear() {
         final LockService lockService = mapService.getNodeEngine().getSharedService(LockService.SERVICE_NAME);
         if (lockService != null) {
-            lockService.clearLockStore(partitionContainer.partitionId, new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
+            lockService.clearLockStore(partitionContainer.getPartitionId(), new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
         }
         records.clear();
     }

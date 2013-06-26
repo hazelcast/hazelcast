@@ -17,7 +17,7 @@
 package com.hazelcast.map.client;
 
 import com.hazelcast.client.KeyBasedClientRequest;
-import com.hazelcast.map.EntryOperation;
+import com.hazelcast.map.operation.EntryOperation;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;

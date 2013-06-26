@@ -24,16 +24,12 @@ import java.util.concurrent.ConcurrentMap;
 
 public class PartitionContainer {
     private final MapService mapService;
-    final int partitionId;
-    final ConcurrentMap<String, PartitionRecordStore> maps = new ConcurrentHashMap<String, PartitionRecordStore>(1000);
+    private final int partitionId;
+    private final ConcurrentMap<String, PartitionRecordStore> maps = new ConcurrentHashMap<String, PartitionRecordStore>(1000);
 
     public PartitionContainer(final MapService mapService, final int partitionId) {
         this.mapService = mapService;
         this.partitionId = partitionId;
-    }
-
-    public MapService getMapService() {
-        return mapService;
     }
 
     private final ConstructorFunction<String, PartitionRecordStore> recordStoreConstructor
@@ -42,6 +38,18 @@ public class PartitionContainer {
             return new PartitionRecordStore(name, PartitionContainer.this);
         }
     };
+
+    public ConcurrentMap<String, PartitionRecordStore> getMaps() {
+        return maps;
+    }
+
+    public int getPartitionId() {
+        return partitionId;
+    }
+
+    public MapService getMapService() {
+        return mapService;
+    }
 
     public RecordStore getRecordStore(String name) {
         return ConcurrencyUtil.getOrPutIfAbsent(maps, name, recordStoreConstructor);

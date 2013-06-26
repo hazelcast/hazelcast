@@ -17,7 +17,7 @@
 package com.hazelcast.map.client;
 
 import com.hazelcast.map.MapPortableHook;
-import com.hazelcast.map.ReplaceIfSameOperation;
+import com.hazelcast.map.operation.ReplaceIfSameOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;

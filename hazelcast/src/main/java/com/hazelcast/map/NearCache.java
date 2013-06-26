@@ -89,12 +89,13 @@ public class NearCache {
                 nodeEngine.getExecutionService().execute("hz:near-cache", new Runnable() {
                     public void run() {
                         try {
-                            // todo test adding a sorted set
-                            List<CacheRecord> values = new ArrayList<CacheRecord>(cache.values());
-                            Collections.sort(values);
-                            int evictSize = Math.min(values.size(), cache.size() * evictionPercentage / 100);
-                            for (int i = 0; i < evictSize; i++) {
-                                cache.remove(values.get(i).key);
+                            TreeSet<CacheRecord> records = new TreeSet<CacheRecord>(cache.values());
+                            int evictSize = cache.size() * evictionPercentage / 100;
+                            int i=0;
+                            for (CacheRecord record : records) {
+                                cache.remove(record.key);
+                                if (++i > evictSize)
+                                    break;
                             }
                         } finally {
                             canEvict.set(true);

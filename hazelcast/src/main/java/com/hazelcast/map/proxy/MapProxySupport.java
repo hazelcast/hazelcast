@@ -24,6 +24,7 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.map.operation.*;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.partition.PartitionView;

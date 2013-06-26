@@ -17,7 +17,7 @@
 package com.hazelcast.map.client;
 
 import com.hazelcast.client.AllPartitionsClientRequest;
-import com.hazelcast.map.MapFlushOperationFactory;
+import com.hazelcast.map.operation.MapFlushOperationFactory;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.serialization.Portable;

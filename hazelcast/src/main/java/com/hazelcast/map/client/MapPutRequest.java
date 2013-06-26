@@ -19,7 +19,7 @@ package com.hazelcast.map.client;
 import com.hazelcast.client.KeyBasedClientRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
-import com.hazelcast.map.PutOperation;
+import com.hazelcast.map.operation.PutOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;

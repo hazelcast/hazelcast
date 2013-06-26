@@ -18,7 +18,7 @@ package com.hazelcast.map.client;
 
 import com.hazelcast.client.KeyBasedClientRequest;
 import com.hazelcast.client.RetryableRequest;
-import com.hazelcast.map.GetOperation;
+import com.hazelcast.map.operation.GetOperation;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ObjectDataInput;

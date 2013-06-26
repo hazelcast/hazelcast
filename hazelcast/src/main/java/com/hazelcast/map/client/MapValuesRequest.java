@@ -21,7 +21,7 @@ import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.MapValueCollection;
-import com.hazelcast.map.MapValuesOperationFactory;
+import com.hazelcast.map.operation.MapValuesOperationFactory;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;

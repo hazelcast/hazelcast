@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.tx;
 
-import com.hazelcast.map.KeyBasedMapOperation;
+import com.hazelcast.map.operation.KeyBasedMapOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;

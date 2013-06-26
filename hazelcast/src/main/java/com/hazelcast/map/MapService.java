@@ -26,7 +26,9 @@ import com.hazelcast.core.*;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.merge.*;
+import com.hazelcast.map.operation.*;
 import com.hazelcast.map.proxy.ObjectMapProxy;
+import com.hazelcast.map.record.*;
 import com.hazelcast.map.tx.TxnMapProxy;
 import com.hazelcast.map.wan.MapReplicationRemove;
 import com.hazelcast.map.wan.MapReplicationUpdate;
@@ -162,7 +164,7 @@ public class MapService implements ManagedService, MigrationAwareService,
     private void destroyMapStores() {
         for (MapContainer mapContainer : mapContainers.values()) {
             MapStoreWrapper store = mapContainer.getStore();
-            if (store != null ) {
+            if (store != null) {
                 store.destroy();
             }
         }
@@ -336,7 +338,7 @@ public class MapService implements ManagedService, MigrationAwareService,
 
     private void migrateIndex(PartitionMigrationEvent event) {
         final PartitionContainer container = partitionContainers[event.getPartitionId()];
-        for (PartitionRecordStore mapPartition : container.maps.values()) {
+        for (PartitionRecordStore mapPartition : container.getMaps().values()) {
             final MapContainer mapContainer = getMapContainer(mapPartition.name);
             final IndexService indexService = mapContainer.getIndexService();
             if (indexService.hasIndex()) {
@@ -363,10 +365,10 @@ public class MapService implements ManagedService, MigrationAwareService,
         logger.log(Level.FINEST, "Clearing partition data -> " + partitionId);
         final PartitionContainer container = partitionContainers[partitionId];
         if (container != null) {
-            for (PartitionRecordStore mapPartition : container.maps.values()) {
+            for (PartitionRecordStore mapPartition : container.getMaps().values()) {
                 mapPartition.clear();
             }
-            container.maps.clear();
+            container.getMaps().clear();
         }
     }
 
@@ -805,9 +807,9 @@ public class MapService implements ManagedService, MigrationAwareService,
                     if (nodeEngine.getThisAddress().equals(owner)) {
                         final PartitionContainer pc = partitionContainers[i];
                         final RecordStore recordStore = pc.getRecordStore(mapName);
-                        List<Record> sortedRecords = new ArrayList<Record>(recordStore.getRecords().values());
-                        Collections.sort(sortedRecords, comparator);
-                        int evictSize = 0;
+                        TreeSet<Record> sortedRecords = new TreeSet<Record>(comparator);
+                        sortedRecords.addAll(recordStore.getRecords().values());
+                        int evictSize;
                         if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_NODE || maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_PARTITION) {
                             evictSize = Math.max((sortedRecords.size() - targetSizePerPartition), (sortedRecords.size() * evictionPercentage / 100 + 1));
                         } else {

@@ -17,7 +17,7 @@
 package com.hazelcast.map.client;
 
 import com.hazelcast.client.KeyBasedClientRequest;
-import com.hazelcast.map.DeleteOperation;
+import com.hazelcast.map.operation.DeleteOperation;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.ObjectDataInput;

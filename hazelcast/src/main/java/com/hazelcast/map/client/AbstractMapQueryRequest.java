@@ -21,6 +21,8 @@ import com.hazelcast.client.InvocationClientRequest;
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.*;
+import com.hazelcast.map.operation.QueryOperation;
+import com.hazelcast.map.operation.QueryPartitionOperation;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;

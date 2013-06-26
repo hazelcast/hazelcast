@@ -192,7 +192,6 @@ public class QueryTest extends HazelcastTestSupport {
         }
     }
 
-
     @Test
     public void testIteratorContract() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
@@ -202,7 +201,6 @@ public class QueryTest extends HazelcastTestSupport {
         map.put("2", new ValueType("two"));
         map.put("3", new ValueType("three"));
         final Predicate predicate = new SqlPredicate("typeName in ('one','two')");
-        Collection<ValueType> values = map.values(predicate);
         assertEquals(2, map.values(predicate).size());
         assertEquals(2, map.keySet(predicate).size());
         testIterator(map.keySet().iterator(), 3);

@@ -16,10 +16,10 @@
 
 package com.hazelcast.map.tx;
 
-import com.hazelcast.map.ContainsKeyOperation;
-import com.hazelcast.map.GetOperation;
+import com.hazelcast.map.operation.ContainsKeyOperation;
+import com.hazelcast.map.operation.GetOperation;
 import com.hazelcast.map.MapService;
-import com.hazelcast.map.SizeOperationFactory;
+import com.hazelcast.map.operation.SizeOperationFactory;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
