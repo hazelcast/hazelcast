@@ -531,7 +531,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 GroupConfig groupConfig = instance.getConfig().getGroupConfig();
                 while (running.get()) {
                     if (versionMismatch) {
-                        Thread.sleep(1000 * 5);
+                        Thread.sleep(1000 * 60);
                         versionMismatch = false;
                     }
                     try {
