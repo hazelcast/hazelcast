@@ -58,6 +58,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         IMap map = instance1.getMap("testMapInitialLoad");
+        Thread.sleep(10000);
 
         assertEquals(size, map.size());
 

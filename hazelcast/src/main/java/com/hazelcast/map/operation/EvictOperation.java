@@ -30,9 +30,11 @@ import java.io.IOException;
 public class EvictOperation extends LockAwareOperation implements BackupAwareOperation {
 
     boolean evicted = false;
+    boolean asyncBackup = false;
 
-    public EvictOperation(String name, Data dataKey) {
+    public EvictOperation(String name, Data dataKey, boolean asyncBackup) {
         super(name, dataKey);
+        this.asyncBackup = asyncBackup;
     }
 
     public EvictOperation() {
@@ -58,11 +60,21 @@ public class EvictOperation extends LockAwareOperation implements BackupAwareOpe
     }
 
     public int getAsyncBackupCount() {
-        return mapService.getMapContainer(name).getTotalBackupCount();
+        if(asyncBackup) {
+            return mapService.getMapContainer(name).getTotalBackupCount();
+        }
+        else {
+            return mapService.getMapContainer(name).getAsyncBackupCount();
+        }
     }
 
     public int getSyncBackupCount() {
-        return 0;
+        if(asyncBackup) {
+            return 0;
+        }
+        else {
+            return mapService.getMapContainer(name).getBackupCount();
+        }
     }
 
     public boolean shouldBackup() {
@@ -79,11 +91,13 @@ public class EvictOperation extends LockAwareOperation implements BackupAwareOpe
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
+        out.writeBoolean(asyncBackup);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
+        asyncBackup = in.readBoolean();
     }
 
     @Override

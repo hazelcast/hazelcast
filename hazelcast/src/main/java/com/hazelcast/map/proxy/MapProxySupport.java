@@ -218,7 +218,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
     }
 
     protected boolean evictInternal(final Data key) {
-        EvictOperation operation = new EvictOperation(name, key);
+        EvictOperation operation = new EvictOperation(name, key, false);
         return (Boolean) invokeOperation(key, operation);
     }
 
