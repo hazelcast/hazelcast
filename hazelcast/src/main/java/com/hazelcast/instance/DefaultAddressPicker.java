@@ -177,9 +177,13 @@ class DefaultAddressPicker implements AddressPicker {
                         addressDomainMap.put(s, null);
                     }
                 } else {
-                    final Collection<String> addresses = resolveDomainNames(s);
-                    for (String address : addresses) {
-                        addressDomainMap.put(address, s);
+                    try {
+                        final Collection<String> addresses = resolveDomainNames(s);
+                        for (String address : addresses) {
+                            addressDomainMap.put(address, s);
+                        }
+                    } catch (UnknownHostException e) {
+                        logger.log(Level.SEVERE, "Could not resolve address: " + s);
                     }
                 }
             }
