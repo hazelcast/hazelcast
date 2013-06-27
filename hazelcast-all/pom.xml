@@ -167,7 +167,8 @@
                             <descriptors>
                                 <descriptor>src/main/assemble/src.xml</descriptor>
                             </descriptors>
-                            <finalName>${project.artifactId}-${project.version}-sources</finalName>
+                            <finalName>${project.artifactId}-${project.version}</finalName>
+                            <appendAssemblyId>true</appendAssemblyId>
                         </configuration>
                     </execution>
                 </executions>
