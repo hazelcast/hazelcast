@@ -32,6 +32,22 @@ public class StreamUtil {
 
     final static ILogger logger = Logger.getLogger(StreamUtil.class.getName());
 
+    /**
+     * Closes the Closable quietly. So no exception will be thrown. Can also safely be called with a null value.
+     *
+     * @param in the Closeable to close.
+     */
+    public static void closeQuietly(final Closeable in) {
+        if (in == null) {
+            return;
+        }
+
+        try{
+            in.close();
+        } catch(IOException ignore){
+        }
+    }
+
     public static void copyStream(final InputStream in, final OutputStream out)
             throws IOException {
         final byte[] buffer = new byte[1024];
