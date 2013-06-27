@@ -194,6 +194,11 @@ public final class IOUtil {
         return bos.toByteArray();
     }
 
+    /**
+     * Closes the Closable quietly. So no exception will be thrown. Can also safely be called with a null value.
+     *
+     * @param closeable the Closeable to close.
+     */
     public static void closeResource(final Closeable closeable) {
         if (closeable != null) {
             try {

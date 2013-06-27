@@ -24,6 +24,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.ServiceConfigurationParser;
 import com.hazelcast.util.ExceptionUtil;
 import org.w3c.dom.*;
@@ -43,7 +44,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.logging.Level;
 
-import static com.hazelcast.util.StreamUtil.closeQuietly;
 
 public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigBuilder {
 
@@ -155,8 +155,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             msg += "\nHazelcast will start with default configuration.";
             logger.log(Level.WARNING, msg);
             return;
-        } finally{
-            closeQuietly(in);
+        } finally {
+            IOUtil.closeResource(in);
         }
         Element element = doc.getDocumentElement();
         try {

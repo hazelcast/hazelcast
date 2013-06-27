@@ -18,7 +18,6 @@ package com.hazelcast.aws.utility;
 
 import com.hazelcast.config.AbstractXmlConfigHelper;
 import com.hazelcast.config.AwsConfig;
-import com.hazelcast.util.StreamUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import org.w3c.dom.Document;
@@ -27,7 +26,6 @@ import org.w3c.dom.Node;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -64,18 +62,6 @@ public class CloudyUtility {
         try {
             builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
             Document doc = builder.parse(in);
-            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            StreamUtil.streamXML(doc, baos);
-            final byte[] bytes = baos.toByteArray();
-//            final ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-//            Reader reader = new BufferedReader(new InputStreamReader(bais));
-//            int n;
-//            char[] buffer = new char[1024];
-//            Writer writer = new StringWriter();
-//            while ((n = reader.read(buffer)) != -1) {
-//                writer.write(buffer, 0, n);
-//            }
-//            System.out.println(writer.toString());
             Element element = doc.getDocumentElement();
             NodeHolder elementNodeHolder = new NodeHolder(element);
             List<String> names = new ArrayList<String>();
