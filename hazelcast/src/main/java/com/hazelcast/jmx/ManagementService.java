@@ -20,7 +20,8 @@ import com.hazelcast.core.*;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.logging.ILogger;
 
-import javax.management.*;
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
 import java.util.Set;
 import java.util.logging.Level;
@@ -74,7 +75,7 @@ public class ManagementService implements DistributedObjectListener {
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         try {
             Set<ObjectName> entries = mbs.queryNames(new ObjectName(
-                    HazelcastMBean.DOMAIN + ":Cluster=" + instance.getName() + ",*"), null);
+                    HazelcastMBean.DOMAIN + ":instance=" + instance.getName() + ",*"), null);
             for (ObjectName name : entries) {
                 if (mbs.isRegistered(name)) {
                     mbs.unregisterMBean(name);
@@ -82,6 +83,21 @@ public class ManagementService implements DistributedObjectListener {
             }
         } catch (Exception e) {
             logger.log(Level.WARNING, "Error while un-registering MBeans", e);
+        }
+    }
+
+    public static void shutdownAll() {
+        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+        try {
+            Set<ObjectName> entries = mbs.queryNames(new ObjectName(HazelcastMBean.DOMAIN + ":*"), null);
+            for (ObjectName name : entries) {
+                if (mbs.isRegistered(name)) {
+                    mbs.unregisterMBean(name);
+                }
+            }
+        } catch (Exception e) {
+            Logger.getLogger(ManagementService.class.getName())
+                    .log(Level.WARNING, "Error while shutting down all jmx services...", e);
         }
     }
 
@@ -121,51 +137,39 @@ public class ManagementService implements DistributedObjectListener {
         }
     }
 
-    public static void shutdownAll() {
-        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-        try {
-            Set<ObjectName> entries = mbs.queryNames(new ObjectName(HazelcastMBean.DOMAIN + ":*"), null);
-            for (ObjectName name : entries) {
-                if (mbs.isRegistered(name)) {
-                    mbs.unregisterMBean(name);
-                }
-            }
-        } catch (Exception e) {
-            Logger.getLogger(ManagementService.class.getName())
-                    .log(Level.WARNING, "Error while shutting down all jmx services...", e);
-        }
-    }
-
     private HazelcastMBean createHazelcastBean(DistributedObject distributedObject){
-        if (distributedObject instanceof IList){
-            return new ListMBean((IList)distributedObject, this);
-        }
-        if (distributedObject instanceof IAtomicLong){
-            return new AtomicLongMBean((IAtomicLong)distributedObject, this);
-        }
-        if (distributedObject instanceof ICountDownLatch){
-            return new CountDownLatchMBean((ICountDownLatch)distributedObject, this);
-        }
-        if (distributedObject instanceof ILock){
-            return new LockMBean((ILock)distributedObject, this);
-        }
-        if (distributedObject instanceof IMap){
-            return new MapMBean((IMap)distributedObject, this);
-        }
-        if (distributedObject instanceof MultiMap){
-            return new MultiMapMBean((MultiMap)distributedObject, this);
-        }
-        if (distributedObject instanceof IQueue){
-            return new QueueMBean((IQueue)distributedObject, this);
-        }
-        if (distributedObject instanceof ISemaphore){
-            return new SemaphoreMBean((ISemaphore)distributedObject, this);
-        }
-        if (distributedObject instanceof ISet){
-            return new SetMBean((ISet)distributedObject, this);
-        }
-        if (distributedObject instanceof ITopic){
-            return new TopicMBean((ITopic)distributedObject, this);
+        try {
+            if (distributedObject instanceof IList){
+                return new ListMBean((IList)distributedObject, this);
+            }
+            if (distributedObject instanceof IAtomicLong){
+                return new AtomicLongMBean((IAtomicLong)distributedObject, this);
+            }
+            if (distributedObject instanceof ICountDownLatch){
+                return new CountDownLatchMBean((ICountDownLatch)distributedObject, this);
+            }
+            if (distributedObject instanceof ILock){
+                return new LockMBean((ILock)distributedObject, this);
+            }
+            if (distributedObject instanceof IMap){
+                return new MapMBean((IMap)distributedObject, this);
+            }
+            if (distributedObject instanceof MultiMap){
+                return new MultiMapMBean((MultiMap)distributedObject, this);
+            }
+            if (distributedObject instanceof IQueue){
+                return new QueueMBean((IQueue)distributedObject, this);
+            }
+            if (distributedObject instanceof ISemaphore){
+                return new SemaphoreMBean((ISemaphore)distributedObject, this);
+            }
+            if (distributedObject instanceof ISet){
+                return new SetMBean((ISet)distributedObject, this);
+            }
+            if (distributedObject instanceof ITopic){
+                return new TopicMBean((ITopic)distributedObject, this);
+            }
+        } catch (HazelcastInstanceNotActiveException ignored) {
         }
         return null;
     }
