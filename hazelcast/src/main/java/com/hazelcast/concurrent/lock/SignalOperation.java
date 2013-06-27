@@ -35,7 +35,7 @@ public class SignalOperation extends BaseSignalOperation implements BackupAwareO
 
     public void beforeRun() throws Exception {
         final LockStoreImpl lockStore = getLockStore();
-        boolean isLockOwner = lockStore.isLocked(key) && lockStore.canAcquireLock(key, getCallerUuid(), threadId);
+        boolean isLockOwner = lockStore.isLockedBy(key, getCallerUuid(), threadId);
         if (!isLockOwner) {
             throw new IllegalMonitorStateException("Current thread is not owner of the lock! " +
                     "-> Owner: " + lockStore.getLockOwnerString(key));

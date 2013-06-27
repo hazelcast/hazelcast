@@ -359,17 +359,14 @@ public class LockTest extends HazelcastTestSupport {
             public void run() {
                 try {
                     lock.lock();
-                    if (lock.isLocked() && lock.tryLock()) {
+                    if (lock.isLockedByCurrentThread()) {
                         count.incrementAndGet();
-                        lock.unlock();
                     }
                     condition.await();
-                    if (lock.isLocked() && lock.tryLock()) {
+                    if (lock.isLockedByCurrentThread()) {
                         count.incrementAndGet();
-                        lock.unlock();
                     }
-                } catch (InterruptedException e) {
-                    return;
+                } catch (InterruptedException ignored) {
                 } finally {
                     lock.unlock();
                 }
@@ -406,18 +403,15 @@ public class LockTest extends HazelcastTestSupport {
                 public void run() {
                     try {
                         lock.lock();
-                        if (lock.isLocked() && lock.tryLock()) {
+                        if (lock.isLockedByCurrentThread()) {
                             count.incrementAndGet();
-                            lock.unlock();
                         }
                         awaitLatch.countDown();
                         condition.await();
-                        if (lock.isLocked() && lock.tryLock()) {
+                        if (lock.isLockedByCurrentThread()) {
                             count.incrementAndGet();
-                            lock.unlock();
                         }
-                    } catch (InterruptedException e) {
-                        return;
+                    } catch (InterruptedException ignored) {
                     } finally {
                         lock.unlock();
                         finalLatch.countDown();
@@ -464,9 +458,8 @@ public class LockTest extends HazelcastTestSupport {
                         awaitLatch.countDown();
                         condition.await();
                         Thread.sleep(5);
-                        if (lock.isLocked() && lock.tryLock()) {
+                        if (lock.isLockedByCurrentThread()) {
                             count.incrementAndGet();
-                            lock.unlock();
                         }
                     } catch (InterruptedException ignored) {
                     } finally {
@@ -543,11 +536,12 @@ public class LockTest extends HazelcastTestSupport {
         final HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
         final ILock lock = instance.getLock("testDestroyLockWhenOtherWaitingOnConditionAwait");
         final ICondition condition = lock.newCondition("condition");
+        final CountDownLatch latch = new CountDownLatch(1);
 
         new Thread(new Runnable() {
             public void run() {
                 try {
-                    Thread.sleep(1000);
+                    latch.await(1, TimeUnit.MINUTES);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -557,6 +551,7 @@ public class LockTest extends HazelcastTestSupport {
 
         lock.lock();
         try {
+            latch.countDown();
             condition.await();
         } catch (InterruptedException e) {
         }
@@ -571,19 +566,22 @@ public class LockTest extends HazelcastTestSupport {
         final String name = "testShutDownNodeWhenOtherWaitingOnConditionAwait";
         final ILock lock = instance.getLock(name);
         final ICondition condition = lock.newCondition("s");
+        final CountDownLatch latch = new CountDownLatch(1);
 
         new Thread(new Runnable() {
             public void run() {
                 try {
-                    Thread.sleep(5000);
+                    latch.await(1, TimeUnit.MINUTES);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
                 instance.getLifecycleService().shutdown();
             }
         }).start();
+
         lock.lock();
         try {
+            latch.countDown();
             condition.await();
         } catch (InterruptedException e) {
         }

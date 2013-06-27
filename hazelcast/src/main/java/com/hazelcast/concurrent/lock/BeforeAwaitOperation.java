@@ -26,7 +26,6 @@ import java.io.IOException;
 public class BeforeAwaitOperation extends BaseLockOperation implements Notifier, BackupAwareOperation {
 
     private String conditionId;
-//    private transient boolean isLockOwner;
 
     public BeforeAwaitOperation() {
     }
@@ -38,7 +37,7 @@ public class BeforeAwaitOperation extends BaseLockOperation implements Notifier,
 
     public void beforeRun() throws Exception {
         final LockStoreImpl lockStore = getLockStore();
-        boolean isLockOwner = lockStore.isLocked(key) && lockStore.canAcquireLock(key, getCallerUuid(), threadId);
+        boolean isLockOwner = lockStore.isLockedBy(key, getCallerUuid(), threadId);
         if (!isLockOwner) {
             throw new IllegalMonitorStateException("Current thread is not owner of the lock! " +
                     "-> Owner: " + lockStore.getLockOwnerString(key));
