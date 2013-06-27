@@ -56,6 +56,7 @@
         <maven.javadoc.plugin.version>2.8</maven.javadoc.plugin.version>
         <maven.rar.plugin.version>2.2</maven.rar.plugin.version>
         <maven.bundle.plugin.version>2.3.6</maven.bundle.plugin.version>
+        <maven.dependency.plugin.version>2.6</maven.dependency.plugin.version>
         <findbugs.maven.plugin.version>2.0.1</findbugs.maven.plugin.version>
 
         <junit.version>4.10</junit.version>
