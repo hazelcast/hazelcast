@@ -201,7 +201,7 @@ public class HazelcastClient implements HazelcastInstance {
                 }
             }
         }
-        return mapProxies.get(o);
+        return proxy;
     }
 
     public com.hazelcast.core.Transaction getTransaction() {
