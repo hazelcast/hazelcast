@@ -165,7 +165,7 @@ class AddressPicker {
         return addressDef;
     }
 
-    private Collection<InterfaceDefinition> getInterfaces(final NetworkConfig networkConfig) throws UnknownHostException {
+    private Collection<InterfaceDefinition> getInterfaces(final NetworkConfig networkConfig)  {
         final Map<String, String> addressDomainMap ; // address -> domain
         final TcpIpConfig tcpIpConfig = networkConfig.getJoin().getTcpIpConfig();
         if (tcpIpConfig.isEnabled()) {
@@ -178,9 +178,13 @@ class AddressPicker {
                         addressDomainMap.put(s, null);
                     }
                 } else {
-                    final Collection<String> addresses = resolveDomainNames(s);
-                    for (String address : addresses) {
-                        addressDomainMap.put(address, s);
+                    try{
+                        final Collection<String> addresses = resolveDomainNames(s);
+                        for (String address : addresses) {
+                            addressDomainMap.put(address, s);
+                        }
+                    }catch(UnknownHostException e){
+                        logger.log(Level.SEVERE, "Could not resolve address: "+s);
                     }
                 }
             }
