@@ -541,7 +541,8 @@ public class LockTest extends HazelcastTestSupport {
         new Thread(new Runnable() {
             public void run() {
                 try {
-                    latch.await(1, TimeUnit.MINUTES);
+                    latch.await(30, TimeUnit.SECONDS);
+                    Thread.sleep(5000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -716,8 +717,9 @@ public class LockTest extends HazelcastTestSupport {
         final HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         final HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
         final HazelcastInstance h3 = nodeFactory.newHazelcastInstance(config);
-        final ILock lock = h1.getLock("testLockIsLocked");
-        final ILock lock2 = h2.getLock("testLockIsLocked");
+        final String key = "testLockIsLocked";
+        final ILock lock = h1.getLock(key);
+        final ILock lock2 = h2.getLock(key);
 
         assertFalse(lock.isLocked());
         assertFalse(lock2.isLocked());
@@ -726,11 +728,14 @@ public class LockTest extends HazelcastTestSupport {
         assertTrue(lock2.isLocked());
 
         final CountDownLatch latch = new CountDownLatch(1);
+        final CountDownLatch latch2 = new CountDownLatch(1);
+
         Thread thread = new Thread(new Runnable() {
             public void run() {
-                ILock lock3 = h3.getLock("testLockIsLocked");
+                ILock lock3 = h3.getLock(key);
                 assertTrue(lock3.isLocked());
                 try {
+                    latch2.countDown();
                     while (lock3.isLocked()) {
                         Thread.sleep(100);
                     }
@@ -741,7 +746,8 @@ public class LockTest extends HazelcastTestSupport {
             }
         });
         thread.start();
-        Thread.sleep(100);
+        latch2.await(3, TimeUnit.SECONDS);
+        Thread.sleep(500);
         lock.unlock();
         assertTrue(latch.await(5, TimeUnit.SECONDS));
     }

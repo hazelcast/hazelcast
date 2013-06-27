@@ -23,20 +23,22 @@ import com.hazelcast.map.SimpleEntryView;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
-import java.util.AbstractMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+// TODO - @mm: If entry set size is bigger than partitionCount * 3
+// then group entries per partition and send invocations for each partition
+// else invoke put operation for each entry.
 public class PutAllOperation extends AbstractMapOperation implements PartitionAwareOperation, BackupAwareOperation {
 
-    MapEntrySet entrySet;
-    MapEntrySet backupEntrySet;
+    private MapEntrySet entrySet;
+    private transient  MapEntrySet backupEntrySet;
 
     public PutAllOperation(String name, MapEntrySet entrySet) {
         super(name);
@@ -53,10 +55,11 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
         RecordStore recordStore = mapService.getRecordStore(partitionId, name);
         Set<Map.Entry<Data, Data>> entries = entrySet.getEntrySet();
 
+        PartitionService partitionService = getNodeEngine().getPartitionService();
         for (Map.Entry<Data, Data> entry : entries) {
             Data dataKey = entry.getKey();
             Data dataValue = entry.getValue();
-            if (partitionId == getNodeEngine().getPartitionService().getPartitionId(dataKey)) {
+            if (partitionId == partitionService.getPartitionId(dataKey)) {
                 Data dataOldValue = mapService.toData(recordStore.put(dataKey, dataValue, -1));
                 mapService.interceptAfterPut(name, dataValue);
                 int eventType = dataOldValue == null ? EntryEvent.TYPE_ADDED : EntryEvent.TYPE_UPDATED;
@@ -117,7 +120,6 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
 
     @Override
     public Operation getBackupOperation() {
-        PutAllBackupOperation putAllBackupOperation = new PutAllBackupOperation(name, backupEntrySet);
-        return putAllBackupOperation;
+        return new PutAllBackupOperation(name, backupEntrySet);
     }
 }

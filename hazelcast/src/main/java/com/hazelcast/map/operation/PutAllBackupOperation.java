@@ -16,15 +16,12 @@
 
 package com.hazelcast.map.operation;
 
-import com.hazelcast.core.EntryEvent;
 import com.hazelcast.map.MapEntrySet;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
@@ -33,7 +30,7 @@ import java.util.Set;
 
 public class PutAllBackupOperation extends AbstractMapOperation implements PartitionAwareOperation, BackupOperation {
 
-    MapEntrySet entrySet;
+    private MapEntrySet entrySet;
 
     public PutAllBackupOperation(String name, MapEntrySet entrySet) {
         super(name);
