@@ -43,6 +43,8 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.logging.Level;
 
+import static com.hazelcast.util.StreamUtil.closeQuietly;
+
 public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigBuilder {
 
     private final ILogger logger = Logger.getLogger(XmlConfigBuilder.class.getName());
@@ -153,6 +155,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             msg += "\nHazelcast will start with default configuration.";
             logger.log(Level.WARNING, msg);
             return;
+        } finally{
+            closeQuietly(in);
         }
         Element element = doc.getDocumentElement();
         try {
