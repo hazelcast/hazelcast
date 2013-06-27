@@ -463,7 +463,7 @@ public class EvictionTest extends HazelcastTestSupport {
         for (int i = 0; i < nsize; i++) {
             map.put(i, i, 1, TimeUnit.SECONDS);
         }
-        Thread.sleep(2000);
+        Thread.sleep(5000);
 
         assertEquals(nsize, map.size());
     }

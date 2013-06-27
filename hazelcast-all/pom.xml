@@ -35,7 +35,6 @@
             <resource><directory>../hazelcast/target/classes</directory></resource>
             <resource><directory>../hazelcast-client/target/classes</directory></resource>
             <resource><directory>../hazelcast-hibernate/hazelcast-hibernate3/target/classes</directory></resource>
-            <resource><directory>../hazelcast-hibernate/hazelcast-hibernate4/target/classes</directory></resource>
             <resource><directory>../hazelcast-spring/target/classes</directory></resource>
             <resource><directory>../hazelcast-cloud/target/classes</directory></resource>
             <resource><directory>../hazelcast-wm/target/classes</directory></resource>
