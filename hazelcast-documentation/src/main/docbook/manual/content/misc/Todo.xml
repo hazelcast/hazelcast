@@ -34,16 +34,10 @@
                 <para>Symmetric Encryption and SSL support for Java Client</para>
             </listitem>
             <listitem>
-                <para>Continuous query (events based on given criteria)</para>
-            </listitem>
-            <listitem>
                 <para>Distributed
                     <literal>java.util.concurrent.DelayQueue</literal>
                     implementation.
                 </para>
-            </listitem>
-            <listitem>
-                <para>Cluster-wide receive ordering for topics.</para>
             </listitem>
             <listitem>
                 <para>Distributed Tree implementation.</para>
@@ -52,13 +46,8 @@
                 <para>Distributed Tuple implementation.</para>
             </listitem>
             <listitem>
-                <para>Call interceptors for modifying the request or the response.</para>
-            </listitem>
-            <listitem>
                 <para>Built-in file based storage.</para>
             </listitem>
         </itemizedlist>
-        History of existing features is available at<link xlink:href="#ReleaseNotes"
-                >Release Notes</link>.
     </para>
 </sect1>

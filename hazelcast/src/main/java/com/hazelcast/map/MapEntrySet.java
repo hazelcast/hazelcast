@@ -30,32 +30,32 @@ import java.util.Set;
 
 public final class MapEntrySet implements IdentifiedDataSerializable {
 
-    private final Set<Map.Entry<Data,Data>> entrySet;
+    private final Set<Map.Entry<Data, Data>> entrySet;
 
     public MapEntrySet() {
         entrySet = new HashSet<Map.Entry<Data, Data>>();
     }
 
-    public MapEntrySet(Set<Map.Entry<Data,Data>> entrySet) {
+    public MapEntrySet(Set<Map.Entry<Data, Data>> entrySet) {
         this.entrySet = entrySet;
     }
 
-    public Set<Map.Entry<Data,Data>> getEntrySet() {
+    public Set<Map.Entry<Data, Data>> getEntrySet() {
         return entrySet;
     }
 
-    public void add(Map.Entry<Data,Data> entry) {
+    public void add(Map.Entry<Data, Data> entry) {
         entrySet.add(entry);
     }
 
     public void add(Data key, Data value) {
-        entrySet.add(new AbstractMap.SimpleImmutableEntry<Data,Data>(key, value));
+        entrySet.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(key, value));
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
         int size = entrySet.size();
         out.writeInt(size);
-        for (Map.Entry<Data,Data> o : entrySet) {
+        for (Map.Entry<Data, Data> o : entrySet) {
             o.getKey().writeData(out);
             o.getValue().writeData(out);
         }

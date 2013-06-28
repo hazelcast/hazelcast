@@ -38,6 +38,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
@@ -192,7 +194,7 @@ public class QueueClientRequestTest extends ClientTestSupport {
     }
 
     @Test
-    public void testOffer() throws IOException {
+    public void testOffer() throws IOException, InterruptedException {
         final IQueue q = getQueue();
 
         final SimpleClient client = getClient();
@@ -208,21 +210,25 @@ public class QueueClientRequestTest extends ClientTestSupport {
         q.offer("item5");
         q.offer("item6");
 
+        final CountDownLatch latch = new CountDownLatch(1);
         new Thread() {
             public void run() {
                 try {
-                    Thread.sleep(3000);
+                    latch.await(30, TimeUnit.SECONDS);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
                 q.poll();
             }
         }.start();
+
         client.send(new OfferRequest(queueName, 500, ss.toData("item7")));
         result = client.receive();
         assertFalse((Boolean) result);
 
         client.send(new OfferRequest(queueName, 10 * 1000, ss.toData("item7")));
+        Thread.sleep(1000);
+        latch.countDown();
         result = client.receive();
         assertTrue((Boolean) result);
     }

@@ -18,23 +18,102 @@ package com.hazelcast.core;
 
 public interface EntryView<K,V> {
 
+    /**
+     * Returns the key of the entry.
+     *
+     * @return key
+     */
     K getKey();
 
+    /**
+     * Returns the value of the entry.
+     *
+     * @return value
+     */
     V getValue();
 
+    /**
+     * Returns the cost (in bytes) of the entry.
+     *
+     * <p><b>Warning:</b></p>
+     * <p>ˆ                                                                                      ˆ
+     * This method returns -1 if statistics is not enabled.
+     * </p>
+     *
+     * @return cost in bytes
+     */
     long getCost();
 
+    /**
+     * Returns the creation time of the entry.
+     *
+     * <p><b>Warning:</b></p>
+     * <p>ˆ                                                                                      ˆ
+     * This method returns -1 if statistics is not enabled.
+     * </p>
+     *
+     * @return creation time
+     */
     long getCreationTime();
 
+    /**
+     * Returns the expiration time of the entry.
+     *
+     * @return expiration time
+     */
     long getExpirationTime();
 
+    /**
+     * Returns number of hits of the entry.
+     *
+     * <p><b>Warning:</b></p>
+     * <p>ˆ                                                                                      ˆ
+     * This method returns -1 if statistics is not enabled.
+     * </p>
+     *
+     * @return hits
+     */
     long getHits();
 
+    /**
+     * Returns the last access time to the entry.
+     *
+     * <p><b>Warning:</b></p>
+     * <p>ˆ                                                                                      ˆ
+     * This method returns -1 if statistics is not enabled.
+     * </p>
+     *
+     * @return last access time
+     */
     long getLastAccessTime();
 
+    /**
+     * Returns the last time value is flushed to mapstore.
+     *
+     * <p><b>Warning:</b></p>
+     * <p>ˆ                                                                                      ˆ
+     * This method returns -1 if statistics is not enabled.
+     * </p>
+     *
+     * @return last store time
+     */
     long getLastStoredTime();
 
+    /**
+     * Returns the last time value is updated.
+     *
+     * <p><b>Warning:</b></p>
+     * <p>ˆ                                                                                      ˆ
+     * This method returns -1 if statistics is not enabled.
+     * </p>
+     * @return last update time
+     */
     long getLastUpdateTime();
 
+    /**
+     * Returns the version of the entry
+     *
+     * @return version
+     */
     long getVersion();
 }

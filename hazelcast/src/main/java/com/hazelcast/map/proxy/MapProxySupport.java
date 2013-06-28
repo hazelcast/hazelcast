@@ -268,7 +268,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
             Future f = invocation.invoke();
             return (Boolean) getService().toObject(f.get());
         } catch (Throwable t) {
-            throw new RuntimeException(t);
+            throw ExceptionUtil.rethrow(t);
         }
     }
 
@@ -338,13 +338,10 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
                 }
             }
         } catch (Exception e) {
-            ExceptionUtil.rethrow(e);
+            throw ExceptionUtil.rethrow(e);
         }
 
         return result;
-    }
-
-    protected void putAllDataInternal(final Map<? extends Data, ? extends Data> m) {
     }
 
     protected void putAllObjectInternal(final Map<? extends Object, ? extends Object> entries) {
@@ -357,7 +354,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
             nodeEngine.getOperationService()
                     .invokeOnAllPartitions(SERVICE_NAME, new MapPutAllOperationFactory(name, mapEntrySet));
         } catch (Exception e) {
-            ExceptionUtil.rethrow(e);
+            throw ExceptionUtil.rethrow(e);
         }
     }
 

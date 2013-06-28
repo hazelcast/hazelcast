@@ -39,7 +39,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
-public class LockTest extends HazelcastTestSupport {
+public class MapLockTest extends HazelcastTestSupport {
 
     @Test
     public void testBackupDies() throws TransactionException {

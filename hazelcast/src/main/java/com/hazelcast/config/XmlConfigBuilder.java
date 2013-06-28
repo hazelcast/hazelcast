@@ -24,6 +24,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ClassLoaderUtil;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.spi.ServiceConfigurationParser;
 import com.hazelcast.util.ExceptionUtil;
 import org.w3c.dom.*;
@@ -42,6 +43,7 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 import java.util.logging.Level;
+
 
 public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigBuilder {
 
@@ -153,6 +155,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             msg += "\nHazelcast will start with default configuration.";
             logger.log(Level.WARNING, msg);
             return;
+        } finally {
+            IOUtil.closeResource(in);
         }
         Element element = doc.getDocumentElement();
         try {
@@ -659,6 +663,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 mapConfig.setBackupCount(getIntegerValue("backup-count", value, MapConfig.DEFAULT_BACKUP_COUNT));
             } else if ("in-memory-format".equals(nodeName)) {
                 mapConfig.setInMemoryFormat(MapConfig.InMemoryFormat.valueOf(value));
+            } else if ("statistics-enabled".equals(nodeName)) {
+                mapConfig.setStatisticsEnabled(Boolean.valueOf(value));
             } else if ("async-backup-count".equals(nodeName)) {
                 mapConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value, MapConfig.MIN_BACKUP_COUNT));
             } else if ("eviction-policy".equals(nodeName)) {
