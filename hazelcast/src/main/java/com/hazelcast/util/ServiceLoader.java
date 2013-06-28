@@ -44,17 +44,24 @@ public class ServiceLoader {
     }
 
     public static <T> Iterator<T> iterator(final Class<T> clazz, final String factoryId, final ClassLoader classLoader) throws Exception {
-        final Set<String> classNames = parse(factoryId, classLoader);
+        final Set<ServiceDefinition> classDefinitions = parse(factoryId, classLoader);
+        // If we are in a multi classloader environment like JEE we need to ask the hazelcast classloader for default services
+        if (ServiceLoader.class.getClassLoader() != classLoader)
+        {
+            classDefinitions.addAll(parse( factoryId, ServiceLoader.class.getClassLoader() ));
+        }
         return new Iterator<T>() {
-            final Iterator<String> classIter = classNames.iterator();
+            final Iterator<ServiceDefinition> classIter = classDefinitions.iterator();
 
             public boolean hasNext() {
                 return classIter.hasNext();
             }
 
             public T next() {
-                final String className = classIter.next();
+                final ServiceDefinition classDefinition = classIter.next();
                 try {
+                    String className = classDefinition.className;
+                    ClassLoader classLoader = classDefinition.classLoader;
                     return clazz.cast(ClassLoaderUtil.newInstance(classLoader, className));
                 } catch (Exception e) {
                     throw new HazelcastException(e);
@@ -67,7 +74,7 @@ public class ServiceLoader {
         };
     }
 
-    private static Set<String> parse(String factoryId, ClassLoader classLoader) {
+    private static Set<ServiceDefinition> parse(String factoryId, ClassLoader classLoader) {
         final ClassLoader cl = (classLoader == null) ? Thread.currentThread().getContextClassLoader() : classLoader;
         final String resourceName = "META-INF/services/" + factoryId;
         try {
@@ -77,7 +84,7 @@ public class ServiceLoader {
             } else {
                 configs = ClassLoader.getSystemResources(resourceName);
             }
-            final Set<String> names = new HashSet<String>();
+            final Set<ServiceDefinition> names = new HashSet<ServiceDefinition>();
             while (configs.hasMoreElements()) {
                 URL url = configs.nextElement();
                 BufferedReader r = null;
@@ -96,7 +103,7 @@ public class ServiceLoader {
                         if (name.length() == 0) {
                             continue;
                         }
-                        names.add(name);
+                        names.add(new ServiceDefinition(name, classLoader));
                     }
                 } finally {
                     IOUtil.closeResource(r);
@@ -108,4 +115,15 @@ public class ServiceLoader {
         }
         return Collections.emptySet();
     }
+    
+    private static class ServiceDefinition {
+        private final String className;
+        private final ClassLoader classLoader;
+        
+        private ServiceDefinition(String className, ClassLoader classLoader) {
+            this.className = className;
+            this.classLoader = classLoader;
+        }
+    }
+    
 }
