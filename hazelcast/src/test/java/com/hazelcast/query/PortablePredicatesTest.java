@@ -45,7 +45,7 @@ import com.hazelcast.test.annotation.ParallelTest;
 public class PortablePredicatesTest {
     
     private static final int FACTORY_ID = 1;
-    final SerializationService ss = new SerializationServiceBuilder().addPortableFactory(FACTORY_ID, new TestPortableFactory()).build();
+    private final SerializationService ss = new SerializationServiceBuilder().addPortableFactory(FACTORY_ID, new TestPortableFactory()).build();
 
     @Test
     public void testPortablePredicate() {  
