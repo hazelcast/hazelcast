@@ -31,6 +31,7 @@ import javax.xml.validation.Validator;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Properties;
 
 import static org.junit.Assert.*;
 
@@ -44,6 +45,32 @@ public class XMLConfigBuilderTest {
         assertEquals("nocolon", configBuilder.cleanNodeName("noColon"));
         assertEquals("after", configBuilder.cleanNodeName("Before:After"));
         assertNull(configBuilder.cleanNodeName((String) null));
+    }
+
+    @Test
+    public void readVariables() {
+        String xml =
+                "<hazelcast>\n" +
+                        "    <semaphore name=\"${name}\">\n" +
+                        "        <initial-permits>${initial.permits}</initial-permits>\n" +
+                        "        <backup-count>${backupcount.part1}${backupcount.part2}</backup-count>\n" +
+                        "        <async-backup-count>${notreplaced}</async-backup-count>\n" +
+                        "    </semaphore>" +
+                        "</hazelcast>";
+        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
+        Properties properties = new Properties();
+        properties.setProperty("name","s");
+        properties.setProperty("initial.permits","25");
+        properties.setProperty("backupcount.part1","1");
+        properties.setProperty("backupcount.part2","0");
+        configBuilder.setProperties(properties);
+
+        Config config = configBuilder.build();
+        SemaphoreConfig semaphoreConfig = config.getSemaphoreConfig("s");
+        assertEquals(25, semaphoreConfig.getInitialPermits());
+        assertEquals(10, semaphoreConfig.getBackupCount());
+        assertEquals(0, semaphoreConfig.getAsyncBackupCount());
     }
 
     @Test
