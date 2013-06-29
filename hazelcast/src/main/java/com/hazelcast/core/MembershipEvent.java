@@ -37,6 +37,8 @@ public class MembershipEvent implements DataSerializable {
 
     public static final int MEMBER_REMOVED = 3;
 
+    public static final int MEMBER_ATTRIBUTE_CHANGED = 5;
+    
     private Member member;
 
     private int eventType;

@@ -509,7 +509,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
             return localOnly;
         }
 
-        private boolean isLocal() {
+        public boolean isLocal() {
             return listener != null;
         }
 

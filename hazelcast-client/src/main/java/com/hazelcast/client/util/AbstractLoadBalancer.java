@@ -20,6 +20,7 @@ import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 
@@ -64,4 +65,8 @@ public abstract class AbstractLoadBalancer implements LoadBalancer, MembershipLi
     public final void memberRemoved(MembershipEvent membershipEvent) {
         setMembersRef();
     }
+
+	@Override
+	public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
+	}
 }

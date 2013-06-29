@@ -153,7 +153,10 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     public void memberRemoved(MembershipEvent membershipEvent) {
     }
 
-    public void changeWebServerUrl(String newUrl) {
+	public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
+	}
+
+	public void changeWebServerUrl(String newUrl) {
         if (newUrl == null)
             return;
         webServerUrl = newUrl.endsWith("/") ? newUrl : newUrl + "/";

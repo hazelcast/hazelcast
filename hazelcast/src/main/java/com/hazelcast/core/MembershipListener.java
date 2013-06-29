@@ -36,4 +36,11 @@ public interface MembershipListener extends EventListener {
      * @param membershipEvent membership event
      */
     void memberRemoved(MembershipEvent membershipEvent);
+    
+    /**
+     * Invoked when an attribute of a member was changed.
+     * 
+     * @param memberAttributeEvent member attribute event
+     */
+    void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent);
 }
