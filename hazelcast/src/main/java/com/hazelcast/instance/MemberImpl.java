@@ -63,20 +63,16 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
     }
 
     public MemberImpl(Address address, boolean localMember) {
-        this(address, localMember, null, null);
+        this(address, localMember, null, null, null);
     }
 
-    public MemberImpl(Address address, boolean localMember, String uuid, HazelcastInstance instance) {
+    public MemberImpl(Address address, boolean localMember, String uuid, HazelcastInstance instance, Map<String, Object> attributes) {
         this();
         this.localMember = localMember;
         this.address = address;
         this.lastRead = Clock.currentTimeMillis();
         this.uuid = uuid;
         this.instance = (HazelcastInstanceImpl) instance;
-    }
-
-    public MemberImpl(Address address, boolean localMember, String uuid, HazelcastInstance instance, Map<String, Object> attributes) {
-    	this(address, localMember, uuid, instance);
     	if (attributes != null) this.attributes.putAll(attributes);
     }
 

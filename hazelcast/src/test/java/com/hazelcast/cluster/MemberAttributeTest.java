@@ -25,6 +25,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MemberAttributeConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
@@ -43,6 +44,44 @@ public class MemberAttributeTest {
     @After
     public void cleanup() throws Exception {
         Hazelcast.shutdownAll();
+    }
+
+    @Test(timeout = 120000)
+    public void testConfigAttributes() throws Exception {
+        Config c = new Config();
+        c.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        c.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(true);
+        c.getNetworkConfig().getInterfaces().setEnabled(true);
+        c.getNetworkConfig().getJoin().getTcpIpConfig().addMember("127.0.0.1");
+        c.getNetworkConfig().getInterfaces().addInterface("127.0.0.1");
+
+        MemberAttributeConfig memberAttributeConfig = c.getMemberAttributeConfig();
+        memberAttributeConfig.setAttribute("Test", Integer.valueOf(123));
+        
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(c);
+        Member m1 = h1.getCluster().getLocalMember();
+    	assertEquals(123, m1.getAttribute("Test"));
+        
+        HazelcastInstance h2 = Hazelcast.newHazelcastInstance(c);
+        Member m2 = h2.getCluster().getLocalMember();
+    	assertEquals(123, m2.getAttribute("Test"));
+
+        assertEquals(2, h2.getCluster().getMembers().size());
+        
+        Member member = null;
+        for (Member m : h2.getCluster().getMembers()) {
+        	if (m == h2.getCluster().getLocalMember())
+        		continue;
+        	member = m;
+        }
+
+        assertNotNull(member);
+        assertEquals(m1, member);
+    	assertNotNull(member.getAttribute("Test"));
+    	assertEquals(123, member.getAttribute("Test"));
+        
+        h1.getLifecycleService().shutdown();
+        h2.getLifecycleService().shutdown();
     }
 
     @Test(timeout = 120000)
