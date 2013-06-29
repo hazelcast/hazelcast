@@ -438,9 +438,11 @@ public class ConnectionManager {
     }
 
     private synchronized void shutdownSocketAcceptor() {
-        log(Level.FINEST, "Shutting down SocketAcceptor thread.");
-        socketAcceptorThread.interrupt();
-        socketAcceptorThread = null;
+        if(socketAcceptorThread!=null){
+            log(Level.FINEST, "Shutting down SocketAcceptor thread.");
+            socketAcceptorThread.interrupt();
+            socketAcceptorThread = null;
+        }
     }
 
     public int getCurrentClientConnections() {
