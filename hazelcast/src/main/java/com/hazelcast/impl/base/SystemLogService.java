@@ -30,6 +30,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class SystemLogService {
 
+    private static final int MAX_LOG_ENTRIES = 10000;
+
     public enum Level {
         NONE("none"),
         DEFAULT("default"),
@@ -60,13 +62,13 @@ public class SystemLogService {
 
     private final ConcurrentMap<CallKey, CallState> mapCallStates = new ConcurrentHashMap<CallKey, CallState>(100, 0.75f, 32);
 
-    private final Queue<SystemLog> joinLogs = new LinkedBlockingQueue<SystemLog>(10000);
+    private final Queue<SystemLog> joinLogs = new LinkedBlockingQueue<SystemLog>(MAX_LOG_ENTRIES);
 
-    private final Queue<SystemLog> connectionLogs = new LinkedBlockingQueue<SystemLog>(10000);
+    private final Queue<SystemLog> connectionLogs = new LinkedBlockingQueue<SystemLog>(MAX_LOG_ENTRIES);
 
-    private final Queue<SystemLog> partitionLogs = new LinkedBlockingQueue<SystemLog>(10000);
+    private final Queue<SystemLog> partitionLogs = new LinkedBlockingQueue<SystemLog>(MAX_LOG_ENTRIES);
 
-    private final Queue<SystemLog> nodeLogs = new LinkedBlockingQueue<SystemLog>(10000);
+    private final Queue<SystemLog> nodeLogs = new LinkedBlockingQueue<SystemLog>(MAX_LOG_ENTRIES);
 
     private volatile Level currentLevel = Level.DEFAULT;
 
@@ -118,11 +120,14 @@ public class SystemLogService {
         CallState callBefore = mapCallStates.get(callKey);
         if (callBefore == null) {
             CallState callStateNew = new CallState(callId, callerAddress, callerThreadId);
-            mapCallStates.put(callKey, callStateNew);
-            int callStatesCount = mapCallStates.size();
-            if (callStatesCount > 10000) {
+            int size = mapCallStates.size();
+            if(size < MAX_LOG_ENTRIES){
+                //there is a potential race problem here, but it can only lead to have a bit more entries in the mapCallStates
+                //than MAX_LOG_ENTRIES.
+                mapCallStates.put(callKey, callStateNew);
+            } else{
                 String msg = " CallStates created! You might have too many threads accessing Hazelcast!";
-                logNode(callStatesCount + msg);
+                logNode(size + msg);
             }
             return callStateNew;
         } else {
@@ -255,19 +260,27 @@ public class SystemLogService {
     }
 
     public void info(CallStateAware callStateAware, String msg, Object arg1) {
-        logState(callStateAware, Level.INFO, new SystemArgsLog(msg, arg1));
+        if(shouldInfo()){
+            logState(callStateAware, Level.INFO, new SystemArgsLog(msg, arg1));
+        }
     }
 
     public void info(CallStateAware callStateAware, String msg, Object arg1, Object arg2) {
-        logState(callStateAware, Level.INFO, new SystemArgsLog(msg, arg1, arg2));
+        if(shouldInfo()){
+            logState(callStateAware, Level.INFO, new SystemArgsLog(msg, arg1, arg2));
+        }
     }
 
     public void trace(CallStateAware callStateAware, String msg, Object arg1) {
-        logState(callStateAware, Level.TRACE, new SystemArgsLog(msg, arg1));
+        if(shouldTrace()){
+            logState(callStateAware, Level.TRACE, new SystemArgsLog(msg, arg1));
+        }
     }
 
     public void trace(CallStateAware callStateAware, String msg, Object arg1, Object arg2) {
-        logState(callStateAware, Level.TRACE, new SystemArgsLog(msg, arg1, arg2));
+        if(shouldTrace()){
+            logState(callStateAware, Level.TRACE, new SystemArgsLog(msg, arg1, arg2));
+        }
     }
 
     public void logObject(CallStateAware callStateAware, Level level, Object obj) {
