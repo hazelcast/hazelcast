@@ -46,9 +46,8 @@ public class ServiceLoader {
     public static <T> Iterator<T> iterator(final Class<T> clazz, final String factoryId, final ClassLoader classLoader) throws Exception {
         final Set<ServiceDefinition> classDefinitions = parse(factoryId, classLoader);
         // If we are in a multi classloader environment like JEE we need to ask the hazelcast classloader for default services
-        if (ServiceLoader.class.getClassLoader() != classLoader)
-        {
-            classDefinitions.addAll(parse( factoryId, ServiceLoader.class.getClassLoader() ));
+        if (classLoader != null && ServiceLoader.class.getClassLoader() != classLoader) {
+            classDefinitions.addAll(parse(factoryId, ServiceLoader.class.getClassLoader()));
         }
         return new Iterator<T>() {
             final Iterator<ServiceDefinition> classIter = classDefinitions.iterator();
@@ -115,15 +114,15 @@ public class ServiceLoader {
         }
         return Collections.emptySet();
     }
-    
+
     private static class ServiceDefinition {
         private final String className;
         private final ClassLoader classLoader;
-        
+
         private ServiceDefinition(String className, ClassLoader classLoader) {
             this.className = className;
             this.classLoader = classLoader;
         }
     }
-    
+
 }
