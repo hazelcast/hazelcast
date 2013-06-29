@@ -17,6 +17,7 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.cluster.ClusterDataSerializerHook;
+import com.hazelcast.cluster.ClusterServiceImpl;
 import com.hazelcast.cluster.MemberAttributeChangedOperation;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
@@ -27,9 +28,11 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -60,15 +63,21 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
     }
 
     public MemberImpl(Address address, boolean localMember) {
-        this(address, localMember, null);
+        this(address, localMember, null, null);
     }
 
-    public MemberImpl(Address address, boolean localMember, String uuid) {
+    public MemberImpl(Address address, boolean localMember, String uuid, HazelcastInstance instance) {
         this();
         this.localMember = localMember;
         this.address = address;
         this.lastRead = Clock.currentTimeMillis();
         this.uuid = uuid;
+        this.instance = (HazelcastInstanceImpl) instance;
+    }
+
+    public MemberImpl(Address address, boolean localMember, String uuid, HazelcastInstance instance, Map<String, Object> attributes) {
+    	this(address, localMember, uuid, instance);
+    	if (attributes != null) this.attributes.putAll(attributes);
     }
 
     public Address getAddress() {
@@ -112,7 +121,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
 
 	public void setAttribute(String key, Object value) {
 		if (!localMember) throw new UnsupportedOperationException("Attributes on remote members must not be changed");
-		if (value == null) {
+		if (value != null) {
 			attributes.put(key, value);
 		} else {
 			attributes.remove(key);
@@ -121,13 +130,22 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
 			NodeEngineImpl nodeEngine = instance.node.nodeEngine;
 			OperationService os = nodeEngine.getOperationService();
 			MemberAttributeChangedOperation operation;
-			if (value == null) {
+			if (value != null) {
 				operation = new MemberAttributeChangedOperation(MapOperationType.PUT, key, value);
 			} else {
 				operation = new MemberAttributeChangedOperation(MapOperationType.REMOVE, key, null);
 			}
 			String uuid = nodeEngine.getLocalMember().getUuid();
-			os.executeOperation(operation.setCallerUuid(uuid).setNodeEngine(nodeEngine));
+			operation.setCallerUuid(uuid).setNodeEngine(nodeEngine);
+			try {
+				for (Member m : nodeEngine.getClusterService().getMembers()) {
+					MemberImpl member = (MemberImpl) m;
+					InvocationBuilder inv = os.createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME, operation, member.getAddress());
+					inv.build().invoke();
+				}
+			} catch (Throwable t) {
+	            throw ExceptionUtil.rethrow(t);
+			}
 		}
 	}
 
