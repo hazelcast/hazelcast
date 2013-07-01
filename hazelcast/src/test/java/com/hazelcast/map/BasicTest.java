@@ -673,6 +673,12 @@ public class BasicTest extends HazelcastTestSupport {
     public void testGetAllPutAll() throws InterruptedException {
         warmUpPartitions(instances);
         final IMap<Object, Object> map = getInstance().getMap("testGetAllPutAll");
+        Set ss = new HashSet();
+        ss.add(1);
+        ss.add(3);
+        map.getAll(ss);
+        assertTrue(map.isEmpty());
+
         Map mm = new HashMap();
         final int size = 100;
         for (int i = 0; i < size; i++) {
@@ -684,7 +690,7 @@ public class BasicTest extends HazelcastTestSupport {
             assertEquals(map.get(i), i);
         }
 
-        Set ss = new HashSet();
+        ss = new HashSet();
         ss.add(1);
         ss.add(3);
         Map m2 = map.getAll(ss);

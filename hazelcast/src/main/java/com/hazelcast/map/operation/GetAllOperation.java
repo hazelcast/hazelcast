@@ -48,7 +48,9 @@ public class GetAllOperation extends AbstractMapOperation implements PartitionAw
         for (Data key : keys) {
             if (partitionId == getNodeEngine().getPartitionService().getPartitionId(key)) {
                 Object value = recordStore.get(key);
-                entrySet.add(new AbstractMap.SimpleImmutableEntry(key, mapService.toData(value)));
+                if(value != null) {
+                    entrySet.add(new AbstractMap.SimpleImmutableEntry(key, mapService.toData(value)));
+                }
             }
         }
     }
