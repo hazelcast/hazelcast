@@ -84,6 +84,18 @@ public class BasicTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testMapGetNullIsNotAllowed() {
+        IMap<String, String> map = getInstance().getMap("testMapGetNullIsNotAllowed");
+        try {
+            map.get(null);
+            fail();
+        }
+        catch (Exception e) {
+            assertTrue(e instanceof NullPointerException);
+        }
+    }
+
+    @Test
     public void valuesToArray() {
         IMap<String, String> map = getInstance().getMap("valuesToArray");
         assertEquals(0, map.size());
