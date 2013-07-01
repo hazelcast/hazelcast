@@ -29,6 +29,7 @@ import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryResultEntryImpl;
 import com.hazelcast.query.impl.QueryableEntry;
+import com.hazelcast.spi.ExecutionService;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -77,7 +78,7 @@ public class QueryOperation extends AbstractMapOperation {
 
     private void runParallel(final List<Integer> initialPartitions) throws InterruptedException, ExecutionException {
         final SerializationService ss = getNodeEngine().getSerializationService();
-        final ExecutorService executor = getNodeEngine().getExecutionService().getExecutor("hz:query");
+        final ExecutorService executor = getNodeEngine().getExecutionService().getExecutor(ExecutionService.QUERY_EXECUTOR);
         final List<Future<ConcurrentMap<Object, QueryableEntry>>> lsFutures = new ArrayList<Future<ConcurrentMap<Object, QueryableEntry>>>(initialPartitions.size());
         for (final Integer partition : initialPartitions) {
             Future<ConcurrentMap<Object, QueryableEntry>> f = executor.submit(new Callable<ConcurrentMap<Object, QueryableEntry>>() {
