@@ -91,31 +91,31 @@
         <emphasis role="bold">Max-Size Policies</emphasis>
     </para>
     <para>
-        There are 5 defined policies can be used in max-size configuration.
+        There are 4 defined policies can be used in max-size configuration.
         <orderedlist>
 
             <listitem>
                 <para>
                     <emphasis role="bold">PER_NODE:</emphasis>  Max map size per instance.
-                    <programlisting language="xml"><![CDATA[<max-size policy="map_size_per_jvm">5000</max-size>]]></programlisting>
+                    <programlisting language="xml"><![CDATA[<max-size policy="PER_NODE">5000</max-size>]]></programlisting>
                 </para>
             </listitem>
             <listitem>
                 <para>
                     <emphasis role="bold">PER_PARTITION:</emphasis> Max map size per each partition.
-                    <programlisting language="xml"><![CDATA[<max-size policy="partitions_wide_map_size">27100</max-size>]]></programlisting>
+                    <programlisting language="xml"><![CDATA[<max-size policy="PER_PARTITION">27100</max-size>]]></programlisting>
                 </para>
             </listitem>
             <listitem>
                 <para>
                     <emphasis role="bold">USED_HEAP_SIZE:</emphasis> Max used heap size in MB (mega-bytes) per JVM.
-                    <programlisting language="xml"><![CDATA[<max-size policy="used_heap_size">4096</max-size>]]></programlisting>
+                    <programlisting language="xml"><![CDATA[<max-size policy="USED_HEAP_SIZE">4096</max-size>]]></programlisting>
                 </para>
             </listitem>
             <listitem>
                 <para>
                     <emphasis role="bold">USED_HEAP_PERCENTAGE:</emphasis> Max used heap size percentage per JVM.
-                    <programlisting language="xml"><![CDATA[<max-size policy="used_heap_percentage">75</max-size>]]></programlisting>
+                    <programlisting language="xml"><![CDATA[<max-size policy="USED_HEAP_PERCENTAGE">75</max-size>]]></programlisting>
                 </para>
             </listitem>
         </orderedlist>
