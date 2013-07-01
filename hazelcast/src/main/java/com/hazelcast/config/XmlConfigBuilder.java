@@ -52,6 +52,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     private InputStream in;
     private File configurationFile;
     private URL configurationUrl;
+    private Properties properties = System.getProperties();
     boolean usingSystemConfig = false;
 
     public XmlConfigBuilder(String xmlFileName) throws FileNotFoundException {
@@ -60,6 +61,14 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
 
     public XmlConfigBuilder(InputStream inputStream) {
         this.in = inputStream;
+    }
+
+    public Properties getProperties() {
+        return properties;
+    }
+
+    public void setProperties(Properties properties) {
+        this.properties = properties;
     }
 
     public XmlConfigBuilder() {
@@ -164,7 +173,58 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         } catch (final Throwable e) {
             domLevel3 = false;
         }
+        preprocess(element);
         handleConfig(element);
+    }
+
+    private void preprocess(Node root) {
+        NamedNodeMap attributes = root.getAttributes();
+        if (attributes != null) {
+            for (int k = 0; k < attributes.getLength(); k++) {
+                Node attribute = attributes.item(k);
+                replaceVariables(attribute);
+
+            }
+        }
+
+        if (root.getNodeValue() != null) {
+            replaceVariables(root);
+        }
+
+        final NodeList childNodes = root.getChildNodes();
+
+        for (int k = 0; k < childNodes.getLength(); k++) {
+            Node child = childNodes.item(k);
+            preprocess(child);
+        }
+    }
+
+    private void replaceVariables(Node node) {
+        String value = node.getNodeValue();
+        StringBuilder sb = new StringBuilder();
+        int endIndex = -1;
+        int startIndex = value.indexOf("${");
+        while (startIndex > -1) {
+            endIndex = value.indexOf("}", startIndex);
+            if (endIndex == -1) {
+                logger.log(Level.WARNING, "Bad variable syntax. Could not find a closing curly bracket '}' on node: " + node.getLocalName());
+                break;
+            }
+
+            String variable = value.substring(startIndex + 2, endIndex);
+            String variableReplacement = properties.getProperty(variable);
+            if (variableReplacement != null) {
+                sb.append(variableReplacement);
+            } else {
+                sb.append(value.substring(startIndex, endIndex + 1));
+                logger.log(Level.WARNING, "Could not find a value for property  '" + variable + "' on node: " + node.getLocalName());
+            }
+
+            startIndex = value.indexOf("${", endIndex);
+        }
+
+        sb.append(value.substring(endIndex + 1));
+        node.setNodeValue(sb.toString());
     }
 
     private void handleConfig(final Element docElement) throws Exception {
@@ -869,7 +929,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             final String value = getTextContent(n).trim();
             if ("initial-permits".equals(nodeName)) {
                 sConfig.setInitialPermits(getIntegerValue("initial-permits", value, 0));
-            }  else if ("backup-count".equals(nodeName)) {
+            } else if ("backup-count".equals(nodeName)) {
                 sConfig.setBackupCount(getIntegerValue("backup-count", value, SemaphoreConfig.DEFAULT_SYNC_BACKUP_COUNT));
             } else if ("async-backup-count".equals(nodeName)) {
                 sConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value, SemaphoreConfig.DEFAULT_ASYNC_BACKUP_COUNT));

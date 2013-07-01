@@ -30,7 +30,7 @@ import java.util.*;
  */
 public final class SerializationServiceBuilder {
 
-    private ClassLoader classLoader;
+    private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 
     private SerializationConfig config;
 
