@@ -72,7 +72,7 @@ public class QueryEntry implements QueryableEntry {
         if (valueData != null && valueData.isPortable()) {
             PortableReader reader = getOrCreatePortableReader();
             return extractor.extract(reader, attributeName, valueData.getClassDefinition().get(attributeName).getType().getId());
-        } 
+        }
         return extractViaReflection(attributeName);
     }
 
