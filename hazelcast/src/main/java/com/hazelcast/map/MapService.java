@@ -27,7 +27,7 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.merge.*;
 import com.hazelcast.map.operation.*;
-import com.hazelcast.map.proxy.ObjectMapProxy;
+import com.hazelcast.map.proxy.MapProxyImpl;
 import com.hazelcast.map.record.*;
 import com.hazelcast.map.tx.TxnMapProxy;
 import com.hazelcast.map.wan.MapReplicationRemove;
@@ -460,10 +460,10 @@ public class MapService implements ManagedService, MigrationAwareService,
         return nodeEngine;
     }
 
-    public ObjectMapProxy createDistributedObject(Object objectId) {
+    public MapProxyImpl createDistributedObject(Object objectId) {
         final String name = String.valueOf(objectId);
         initMap(name);
-        return new ObjectMapProxy(name, this, nodeEngine);
+        return new MapProxyImpl(name, this, nodeEngine);
     }
 
     public void destroyDistributedObject(Object objectId) {

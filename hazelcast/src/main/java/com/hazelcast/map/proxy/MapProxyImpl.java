@@ -36,9 +36,9 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.MapService.SERVICE_NAME;
 
-public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K, V> {
+public class MapProxyImpl<K, V> extends MapProxySupport implements MapProxy<K, V> {
 
-    public ObjectMapProxy(final String name, final MapService mapService, final NodeEngine nodeEngine) {
+    public MapProxyImpl(final String name, final MapService mapService, final NodeEngine nodeEngine) {
         super(name, mapService, nodeEngine);
     }
 
