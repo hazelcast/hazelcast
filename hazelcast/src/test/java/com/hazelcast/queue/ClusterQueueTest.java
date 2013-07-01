@@ -91,7 +91,7 @@ public class ClusterQueueTest extends HazelcastTestSupport {
                 try {
                     assertTrue(startLatch.await(10, TimeUnit.SECONDS)); // fail shutdown if await fails.
                     Thread.sleep(5000);
-                    h2.getLifecycleService().kill();
+                    h2.getLifecycleService().terminate();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }

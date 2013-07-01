@@ -35,7 +35,6 @@
             <resource><directory>../hazelcast/target/classes</directory></resource>
             <resource><directory>../hazelcast-client/target/classes</directory></resource>
             <resource><directory>../hazelcast-hibernate/hazelcast-hibernate3/target/classes</directory></resource>
-            <resource><directory>../hazelcast-hibernate/hazelcast-hibernate4/target/classes</directory></resource>
             <resource><directory>../hazelcast-spring/target/classes</directory></resource>
             <resource><directory>../hazelcast-cloud/target/classes</directory></resource>
             <resource><directory>../hazelcast-wm/target/classes</directory></resource>
@@ -101,30 +100,85 @@
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <version>${maven.source.plugin.version}</version>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>${maven.dependency.plugin.version}</version>
                 <executions>
                     <execution>
-                        <id>attach-sources</id>
+                        <id>unpack-sources</id>
                         <goals>
-                            <goal>jar</goal>
+                            <goal>unpack</goal>
                         </goals>
                         <configuration>
-                            <includes>
-                                <include>**/\*.java</include>
-                            </includes>
+                            <outputDirectory>${project.build.directory}/sources</outputDirectory>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>com.hazelcast</groupId>
+                                    <artifactId>hazelcast</artifactId>
+                                    <version>${project.version}</version>
+                                    <classifier>sources</classifier>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.hazelcast</groupId>
+                                    <artifactId>hazelcast-client</artifactId>
+                                    <version>${project.version}</version>
+                                    <classifier>sources</classifier>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.hazelcast</groupId>
+                                    <artifactId>hazelcast-cloud</artifactId>
+                                    <version>${project.version}</version>
+                                    <classifier>sources</classifier>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.hazelcast</groupId>
+                                    <artifactId>hazelcast-hibernate3</artifactId>
+                                    <version>${project.version}</version>
+                                    <classifier>sources</classifier>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.hazelcast</groupId>
+                                    <artifactId>hazelcast-spring</artifactId>
+                                    <version>${project.version}</version>
+                                    <classifier>sources</classifier>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.hazelcast</groupId>
+                                    <artifactId>hazelcast-wm</artifactId>
+                                    <version>${project.version}</version>
+                                    <classifier>sources</classifier>
+                                </artifactItem>
+                            </artifactItems>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
-
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>${maven.assembly.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>source-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>src/main/assemble/src.xml</descriptor>
+                            </descriptors>
+                            <finalName>${project.artifactId}-${project.version}</finalName>
+                            <appendAssemblyId>true</appendAssemblyId>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>${maven.javadoc.plugin.version}</version>
                 <configuration combine.self="override"/>
             </plugin>
-
         </plugins>
     </build>
 

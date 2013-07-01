@@ -51,6 +51,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
@@ -347,16 +348,7 @@ public class Node {
         logger.log(Level.FINEST, "** we are being asked to shutdown when active = " + String.valueOf(active));
         if (!force && isActive()) {
             final int maxWaitSeconds = groupProperties.GRACEFUL_SHUTDOWN_MAX_WAIT.getInteger();
-            int waitSeconds = 0;
-            do {
-                partitionService.sendReplicaVersionCheckOperations();
-                try {
-                    //noinspection BusyWait
-                    Thread.sleep(500);
-                } catch (InterruptedException ignored) {
-                }
-            } while (partitionService.hasOnGoingMigration() && ++waitSeconds < maxWaitSeconds);
-            if (waitSeconds >= maxWaitSeconds) {
+            if (!partitionService.prepareToSafeShutdown(maxWaitSeconds, TimeUnit.SECONDS)) {
                 logger.log(Level.WARNING, "Graceful shutdown could not be completed in " + maxWaitSeconds + " seconds!");
             }
         }

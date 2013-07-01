@@ -135,6 +135,68 @@ public class BackupTest extends HazelcastTestSupport {
         Assert.assertEquals(size, map6.size());
     }
 
+    @Test
+    public void testGracefulShutdown3() throws Exception {
+        Config config = new Config();
+        config.getMapConfig(MAP_NAME).setBackupCount(2).setStatisticsEnabled(true);
+        config.setProperty(GroupProperties.PROP_PARTITION_COUNT, "1111");
+
+        TestHazelcastInstanceFactory f = createHazelcastInstanceFactory(6);
+        final HazelcastInstance hz = f.newHazelcastInstance(config);
+
+        final IMap<Object, Object> map = hz.getMap(MAP_NAME);
+        final int size = 200000;
+        for (int i = 0; i < size; i++) {
+            map.put(i, i);
+        }
+
+        final HazelcastInstance hz2 = f.newHazelcastInstance(config);
+        final IMap<Object, Object> map2 = hz2.getMap(MAP_NAME);
+
+        final HazelcastInstance hz3 = f.newHazelcastInstance(config);
+        final IMap<Object, Object> map3 = hz3.getMap(MAP_NAME);
+
+        final HazelcastInstance hz4 = f.newHazelcastInstance(config);
+        final IMap<Object, Object> map4 = hz4.getMap(MAP_NAME);
+
+        final HazelcastInstance hz5 = f.newHazelcastInstance(config);
+        final IMap<Object, Object> map5 = hz5.getMap(MAP_NAME);
+
+        final HazelcastInstance hz6 = f.newHazelcastInstance(config);
+        final IMap<Object, Object> map6 = hz6.getMap(MAP_NAME);
+
+        Assert.assertEquals(size, map2.size());
+        Assert.assertEquals(size, map3.size());
+        Assert.assertEquals(size, map4.size());
+        Assert.assertEquals(size, map5.size());
+        Assert.assertEquals(size, map6.size());
+
+        hz6.getLifecycleService().shutdown();
+        Assert.assertEquals(size, map.size());
+        Assert.assertEquals(size, map2.size());
+        Assert.assertEquals(size, map3.size());
+        Assert.assertEquals(size, map4.size());
+        Assert.assertEquals(size, map5.size());
+
+        hz2.getLifecycleService().shutdown();
+        Assert.assertEquals(size, map.size());
+        Assert.assertEquals(size, map3.size());
+        Assert.assertEquals(size, map4.size());
+        Assert.assertEquals(size, map5.size());
+
+        hz5.getLifecycleService().shutdown();
+        Assert.assertEquals(size, map.size());
+        Assert.assertEquals(size, map3.size());
+        Assert.assertEquals(size, map4.size());
+
+        hz3.getLifecycleService().shutdown();
+        Assert.assertEquals(size, map.size());
+        Assert.assertEquals(size, map4.size());
+
+        hz4.getLifecycleService().shutdown();
+        Assert.assertEquals(size, map.size());
+    }
+
     /**
      * Fix for the issue 275.
      */

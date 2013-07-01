@@ -40,10 +40,6 @@ public abstract class BaseMigrationOperation extends AbstractOperation
         setPartitionId(migrationInfo.getPartitionId());
     }
 
-    public MigrationInfo getMigrationInfo() {
-        return migrationInfo;
-    }
-
     @Override
     public Object getResponse() {
         return success;
@@ -83,7 +79,6 @@ public abstract class BaseMigrationOperation extends AbstractOperation
         final StringBuilder sb = new StringBuilder();
         sb.append(getClass().getName());
         sb.append("{partitionId=").append(getPartitionId());
-        sb.append(", replicaIndex=").append(getReplicaIndex());
         sb.append(", migration=").append(migrationInfo);
         sb.append('}');
         return sb.toString();

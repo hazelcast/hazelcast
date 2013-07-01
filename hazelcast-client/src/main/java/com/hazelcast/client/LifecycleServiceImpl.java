@@ -95,7 +95,7 @@ public final class LifecycleServiceImpl implements LifecycleService {
         }
     }
 
-    public void kill() {
+    public void terminate() {
         shutdown();
     }
 }

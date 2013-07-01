@@ -41,7 +41,6 @@ import static org.junit.Assert.*;
 @Category(ParallelTest.class)
 public class BasicTest extends HazelcastTestSupport {
 
-    private static final Config cfg = new Config();
     private static final int instanceCount = 3;
     private static final Random rand = new Random(Clock.currentTimeMillis());
 
@@ -50,7 +49,8 @@ public class BasicTest extends HazelcastTestSupport {
     @Before
     public void init() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(instanceCount);
-        instances = factory.newInstances(cfg);
+        Config config = new Config();
+        instances = factory.newInstances(config);
     }
 
     private HazelcastInstance getInstance() {
@@ -698,7 +698,8 @@ public class BasicTest extends HazelcastTestSupport {
     public void testPutAllBackup() throws InterruptedException {
         HazelcastInstance instance1 = instances[0];
         HazelcastInstance instance2 = instances[1];
-        final IMap<Object, Object> map = instance1.getMap("testGetAllPutAll");
+        final IMap<Object, Object> map = instance1.getMap("testPutAllBackup");
+        final IMap<Object, Object> map2 = instance2.getMap("testPutAllBackup");
         warmUpPartitions(instances);
 
         Map mm = new HashMap();
@@ -711,8 +712,6 @@ public class BasicTest extends HazelcastTestSupport {
         for (int i = 0; i < size; i++) {
             assertEquals(i, map.get(i));
         }
-
-
 
         instance2.getLifecycleService().shutdown();
         assertEquals(size, map.size());

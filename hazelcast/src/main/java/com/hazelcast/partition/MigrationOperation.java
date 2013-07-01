@@ -158,7 +158,6 @@ public final class MigrationOperation extends BaseMigrationOperation {
         final StringBuilder sb = new StringBuilder();
         sb.append(getClass().getName());
         sb.append("{partitionId=").append(getPartitionId());
-        sb.append(", replicaIndex=").append(getReplicaIndex());
         sb.append(", migration=").append(migrationInfo);
         sb.append(", taskCount=").append(taskCount);
         sb.append('}');

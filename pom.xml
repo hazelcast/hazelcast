@@ -59,7 +59,7 @@
         <maven.rar.plugin.version>2.2</maven.rar.plugin.version>
         <maven.bundle.plugin.version>2.3.7</maven.bundle.plugin.version>
         <findbugs.maven.plugin.version>2.5.2</findbugs.maven.plugin.version>
-
+        <maven.dependency.plugin.version>2.6</maven.dependency.plugin.version>
         <junit.version>4.11</junit.version>
         <junit-benchmarks.version>0.7.0</junit-benchmarks.version>
         <h2.version>1.3.160</h2.version>
@@ -218,7 +218,7 @@
                                 <include>com/hazelcast/nio/serialization/DataSerializableFactory.java</include>
                                 <include>com/hazelcast/nio/serialization/Portable.java</include>
                                 <include>com/hazelcast/nio/serialization/PortableFactory.java</include>
-                                <include>com/hazelcast/nio/serialization/PlainSerializer.java</include>
+                                <include>com/hazelcast/nio/serialization/ByteArraySerializer.java</include>
                                 <include>com/hazelcast/nio/serialization/StreamSerializer.java</include>
 
                                 <include>com/hazelcast/client/HazelcastClient.java</include>
@@ -286,7 +286,6 @@
 
                             <threadCount>1</threadCount>
                             <perCoreThreadCount>true</perCoreThreadCount>
-                            <!-- has no effect when thread count is 1 -->
                             <parallel>methods</parallel>
 
                             <argLine>-Xms128m -Xmx1G -XX:MaxPermSize=128M
