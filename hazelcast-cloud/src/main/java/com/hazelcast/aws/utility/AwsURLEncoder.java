@@ -16,6 +16,8 @@
 
 package com.hazelcast.aws.utility;
 
+import com.hazelcast.core.HazelcastException;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
@@ -25,7 +27,7 @@ public class AwsURLEncoder {
         try {
             encoded = URLEncoder.encode(string, "UTF-8").replace("+", "%20");
         } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e);
+            throw new HazelcastException(e);
         }
         return encoded;
     }
