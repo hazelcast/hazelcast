@@ -47,6 +47,9 @@ public class QueryEntry implements QueryableEntry {
         this.serializationService = serializationService;
         if (value instanceof Data) {
             valueData = (Data) value;
+        } else if(value instanceof Portable) {
+            valueData = serializationService.toData(value); 
+            valueObject = value;
         } else {
             valueObject = value;
         }
