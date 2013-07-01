@@ -20,9 +20,9 @@ import com.hazelcast.aws.AWSClient;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 
@@ -30,7 +30,6 @@ public class TcpIpJoinerOverAWS extends TcpIpJoiner {
 
     final AWSClient aws;
     final ILogger logger;
-    final String groupName;
 
     public TcpIpJoinerOverAWS(Node node) {
         super(node);
@@ -40,18 +39,17 @@ public class TcpIpJoinerOverAWS extends TcpIpJoiner {
         if (awsConfig.getRegion() != null && awsConfig.getRegion().length() > 0) {
             aws.setEndpoint("ec2." + awsConfig.getRegion() + ".amazonaws.com");
         }
-        this.groupName = awsConfig.getSecurityGroupName();
     }
 
     @Override
     protected Collection<String> getMembers() {
         try {
-            List<String> list = aws.getPrivateIpAddresses(config.getNetworkConfig().getJoin().getAwsConfig());
+            List<String> list = aws.getPrivateIpAddresses();
             logger.log(Level.FINEST, "The list of possible members are: " + list);
             return list;
         } catch (Exception e) {
             logger.log(Level.WARNING, e.getMessage(), e);
-            return Collections.emptyList();
+            throw ExceptionUtil.rethrow(e);
         }
     }
 
