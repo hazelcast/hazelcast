@@ -21,18 +21,18 @@ import com.hazelcast.nio.serialization.*;
 import java.io.IOException;
 
 public class QueryEntry implements QueryableEntry {
-    static final String KEY_ATTRIBUTE_NAME = "__key";
-    static final String THIS_ATTRIBUTE_NAME = "this";
-    private static PortableExtractor extractor = new PortableExtractor();
+
+    private static final PortableExtractor extractor = new PortableExtractor();
+    private static final String KEY_ATTRIBUTE_NAME = "__key";
+    private static final String THIS_ATTRIBUTE_NAME = "this";
+
     private final SerializationService serializationService;
-    Data indexKey;
-    Data key;
-    Object keyObject;
-    Object valueObject;
-
-    Data valueData;
-
-    PortableReader reader = null;
+    private final Data indexKey;
+    private Data key;
+    private Object keyObject;
+    private Data value;
+    private Object valueObject;
+    private PortableReader reader;
 
     public QueryEntry(SerializationService serializationService, Data indexKey, Object key, Object value) {
         if (indexKey == null) throw new IllegalArgumentException("index keyData cannot be null");
@@ -46,34 +46,36 @@ public class QueryEntry implements QueryableEntry {
         }
         this.serializationService = serializationService;
         if (value instanceof Data) {
-            valueData = (Data) value;
+            this.value = (Data) value;
         } else {
             valueObject = value;
         }
     }
 
     public Object getValue() {
-        if (valueObject != null) return valueObject;
-        valueObject = serializationService.toObject(valueData);
+        if (valueObject == null && serializationService != null) {
+            valueObject = serializationService.toObject(value);
+        }
         return valueObject;
     }
 
     public Object getKey() {
-        if (keyObject == null) {
+        if (keyObject == null && serializationService != null) {
             keyObject = serializationService.toObject(key);
         }
         return keyObject;
     }
 
     public Comparable getAttribute(String attributeName) throws QueryException {
-        if (valueData != null && valueData.isPortable()) {
+        final Data data = getValueData();
+        if (data != null && data.isPortable()) {
             PortableReader reader = getOrCreatePortableReader();
-            return extractor.extract(reader, attributeName, valueData.getClassDefinition().get(attributeName).getType().getId());
+            return extractor.extract(reader, attributeName, data.getClassDefinition().get(attributeName).getType().getId());
         }
         return extractViaReflection(attributeName);
     }
 
-    final Comparable extractViaReflection(String attributeName) {
+    private Comparable extractViaReflection(String attributeName) {
         try {
             Object v = getValue();
             if (KEY_ATTRIBUTE_NAME.equals(attributeName)) return (Comparable) getKey();
@@ -85,8 +87,9 @@ public class QueryEntry implements QueryableEntry {
     }
 
     public AttributeType getAttributeType(String attributeName) {
-        if (valueData != null && valueData.isPortable()) {
-            FieldDefinition fd = valueData.getClassDefinition().get(attributeName);
+        final Data data = getValueData();
+        if (data != null && data.isPortable()) {
+            FieldDefinition fd = data.getClassDefinition().get(attributeName);
             if (fd == null) throw new QueryException("Unknown Attribute: " + attributeName);
             return AttributeType.getAttributeType(fd.getType().getId());
         }
@@ -123,37 +126,33 @@ public class QueryEntry implements QueryableEntry {
     }
 
     public Data getKeyData() {
+        if (key == null && serializationService != null) {
+            key = serializationService.toData(keyObject);
+        }
         return key;
     }
 
     public Data getValueData() {
-        if (valueData != null) return valueData;
-        valueData = serializationService.toData(valueObject);
-        return valueData;
+        if (value == null && serializationService != null) {
+            value = serializationService.toData(valueObject);
+        }
+        return value;
     }
 
     public Data getIndexKey() {
         return indexKey;
     }
 
-    public long getCreationTime() {
-        return 0;
-    }
-
-    public long getLastAccessTime() {
-        return 0;
-    }
-
     public Object setValue(Object value) {
         throw new UnsupportedOperationException();
     }
 
-    PortableReader getOrCreatePortableReader() {
+    private PortableReader getOrCreatePortableReader() {
         if (reader != null) return reader;
-        return reader = serializationService.createPortableReader(valueData);
+        return reader = serializationService.createPortableReader(value);
     }
 
-    static class PortableExtractor {
+    private static class PortableExtractor {
         PortableFieldExtractor[] extractors = new PortableFieldExtractor[FieldType.values().length];
 
         PortableExtractor() {
