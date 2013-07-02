@@ -68,6 +68,49 @@ public class ClientMapTest {
     }
 
     @Test
+    public void testIssue537() throws InterruptedException {
+        final CountDownLatch latch = new CountDownLatch(2);
+        final CountDownLatch nullLatch = new CountDownLatch(2);
+
+        final EntryListener listener = new EntryListener() {
+            public void entryAdded(EntryEvent event) {
+                latch.countDown();
+            }
+
+            public void entryRemoved(EntryEvent event) {
+            }
+
+            public void entryUpdated(EntryEvent event) {
+            }
+
+            public void entryEvicted(EntryEvent event) {
+                final Object value = event.getValue();
+                final Object oldValue = event.getOldValue();
+                if (value != null){
+                    nullLatch.countDown();
+                }
+                if (oldValue != null){
+                    nullLatch.countDown();
+                }
+                latch.countDown();
+            }
+        };
+        final String id = map.addEntryListener(listener, true);
+
+        map.put("key1", new GenericEvent("value1"), 2, TimeUnit.SECONDS);
+
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertTrue(nullLatch.await(1, TimeUnit.SECONDS));
+
+        map.removeEntryListener(id);
+
+        map.put("key2", new GenericEvent("value2"));
+
+        assertEquals(1, map.size());
+
+    }
+
+    @Test
     public void testContains() throws Exception {
 
         fillMap();

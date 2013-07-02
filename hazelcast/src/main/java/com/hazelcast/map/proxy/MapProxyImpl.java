@@ -27,6 +27,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.executor.DelegatingFuture;
 
@@ -36,13 +37,18 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.MapService.SERVICE_NAME;
 
-public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K, V> {
+public class MapProxyImpl<K, V> extends MapProxySupport implements MapProxy<K, V> {
 
-    public ObjectMapProxy(final String name, final MapService mapService, final NodeEngine nodeEngine) {
+    private String nullKeyMessage = "Null key is not allowed";
+
+    public MapProxyImpl(final String name, final MapService mapService, final NodeEngine nodeEngine) {
         super(name, mapService, nodeEngine);
     }
 
     public V get(Object k) {
+        if(k == null) {
+            ExceptionUtil.rethrow(new NullPointerException(nullKeyMessage));
+        }
         Data key = getService().toData(k);
         return (V) getService().toObject(getInternal(key));
     }
@@ -52,6 +58,9 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public V put(final K k, final V v, final long ttl, final TimeUnit timeunit) {
+        if(k == null) {
+            ExceptionUtil.rethrow(new NullPointerException(nullKeyMessage));
+        }
         final Data key = getService().toData(k);
         final Data value = getService().toData(v);
         final Data result = putInternal(key, value, ttl, timeunit);
@@ -59,6 +68,9 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public boolean tryPut(final K k, final V v, final long timeout, final TimeUnit timeunit) {
+        if(k == null) {
+            ExceptionUtil.rethrow(new NullPointerException(nullKeyMessage));
+        }
         final Data key = getService().toData(k);
         final Data value = getService().toData(v);
         return tryPutInternal(key, value, timeout, timeunit);
@@ -69,6 +81,9 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public V putIfAbsent(final K k, final V v, final long ttl, final TimeUnit timeunit) {
+        if(k == null) {
+            ExceptionUtil.rethrow(new NullPointerException(nullKeyMessage));
+        }
         final Data key = getService().toData(k);
         final Data value = getService().toData(v);
         final Data result = putIfAbsentInternal(key, value, ttl, timeunit);
@@ -76,12 +91,18 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public void putTransient(final K k, final V v, final long ttl, final TimeUnit timeunit) {
+        if(k == null) {
+            ExceptionUtil.rethrow(new NullPointerException(nullKeyMessage));
+        }
         final Data key = getService().toData(k);
         final Data value = getService().toData(v);
         putTransientInternal(key, value, ttl, timeunit);
     }
 
     public boolean replace(final K k, final V o, final V v) {
+        if(k == null) {
+            ExceptionUtil.rethrow(new NullPointerException(nullKeyMessage));
+        }
         final Data key = getService().toData(k);
         final Data oldValue = getService().toData(o);
         final Data value = getService().toData(v);
@@ -89,6 +110,9 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public V replace(final K k, final V v) {
+        if(k == null) {
+            ExceptionUtil.rethrow(new NullPointerException(nullKeyMessage));
+        }
         final Data key = getService().toData(k);
         final Data value = getService().toData(v);
         return (V) getService().toObject(replaceInternal(key, value));
@@ -99,29 +123,44 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public void set(final K k, final V v, final long ttl, final TimeUnit timeunit) {
+        if(k == null) {
+            ExceptionUtil.rethrow(new NullPointerException(nullKeyMessage));
+        }
         final Data key = getService().toData(k);
         final Data value = getService().toData(v);
         setInternal(key, value, ttl, timeunit);
     }
 
     public V remove(Object k) {
+        if(k == null) {
+            ExceptionUtil.rethrow(new NullPointerException(nullKeyMessage));
+        }
         final Data key = getService().toData(k);
         final Data result = removeInternal(key);
         return (V) getService().toObject(result);
     }
 
     public boolean remove(final Object k, final Object v) {
+        if(k == null) {
+            ExceptionUtil.rethrow(new NullPointerException(nullKeyMessage));
+        }
         final Data key = getService().toData(k);
         final Data value = getService().toData(v);
         return removeInternal(key, value);
     }
 
     public void delete(Object k) {
+        if(k == null) {
+            ExceptionUtil.rethrow(new NullPointerException(nullKeyMessage));
+        }
         final Data key = getService().toData(k);
         deleteInternal(key);
     }
 
     public boolean containsKey(Object k) {
+        if(k == null) {
+            ExceptionUtil.rethrow(new NullPointerException(nullKeyMessage));
+        }
         Data key = getService().toData(k);
         return containsKeyInternal(key);
     }
@@ -132,45 +171,69 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public void lock(final K key) {
+        if(key == null) {
+            ExceptionUtil.rethrow(new NullPointerException(nullKeyMessage));
+        }
         NodeEngine nodeEngine = getNodeEngine();
         Data k = getService().toData(key);
         lockSupport.lock(nodeEngine, k);
     }
 
     public void lock(final Object key, final long leaseTime, final TimeUnit timeUnit) {
+        if(key == null) {
+            ExceptionUtil.rethrow(new NullPointerException(nullKeyMessage));
+        }
         lockSupport.lock(getNodeEngine(), getService().toData(key), timeUnit.toMillis(leaseTime));
     }
 
     public void unlock(final K key) {
+        if(key == null) {
+            ExceptionUtil.rethrow(new NullPointerException(nullKeyMessage));
+        }
         NodeEngine nodeEngine = getNodeEngine();
         Data k = getService().toData(key);
         lockSupport.unlock(nodeEngine, k);
     }
 
     public boolean tryRemove(final K key, final long timeout, final TimeUnit timeunit) {
+        if(key == null) {
+            ExceptionUtil.rethrow(new NullPointerException(nullKeyMessage));
+        }
         Data k = getService().toData(key);
         return tryRemoveInternal(k, timeout, timeunit);
     }
 
     public Future<V> getAsync(final K k) {
+        if(k == null) {
+            ExceptionUtil.rethrow(new NullPointerException(nullKeyMessage));
+        }
         Data key = getService().toData(k);
         NodeEngine nodeEngine = getNodeEngine();
         return new DelegatingFuture<V>(getAsyncInternal(key), nodeEngine.getSerializationService());
     }
 
     public boolean isLocked(final K k) {
+        if(k == null) {
+            ExceptionUtil.rethrow(new NullPointerException(nullKeyMessage));
+        }
         Data key = getService().toData(k);
         NodeEngine nodeEngine = getNodeEngine();
         return lockSupport.isLocked(nodeEngine, key);
     }
 
     public Future putAsync(final K key, final V value) {
+        if(key == null) {
+            ExceptionUtil.rethrow(new NullPointerException(nullKeyMessage));
+        }
         Data k = getService().toData(key);
         Data v = getService().toData(value);
         return new DelegatingFuture<V>(putAsyncInternal(k, v), getNodeEngine().getSerializationService());
     }
 
     public Future removeAsync(final K key) {
+        if(key == null) {
+            ExceptionUtil.rethrow(new NullPointerException(nullKeyMessage));
+        }
         Data k = getService().toData(key);
         return new DelegatingFuture<V>(removeAsyncInternal(k), getNodeEngine().getSerializationService());
     }
@@ -178,6 +241,9 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     public Map<K, V> getAll(final Set<K> keys) {
         Set<Data> ks = new HashSet(keys.size());
         for (K key : keys) {
+            if(key == null) {
+                ExceptionUtil.rethrow(new NullPointerException(nullKeyMessage));
+            }
             Data k = getService().toData(key);
             ks.add(k);
         }
@@ -189,46 +255,79 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public boolean tryLock(final K key) {
+        if(key == null) {
+            ExceptionUtil.rethrow(new NullPointerException(nullKeyMessage));
+        }
         final NodeEngine nodeEngine = getNodeEngine();
         return lockSupport.tryLock(nodeEngine, getService().toData(key));
     }
 
     public boolean tryLock(final K key, final long time, final TimeUnit timeunit) throws InterruptedException {
+        if(key == null) {
+            ExceptionUtil.rethrow(new NullPointerException(nullKeyMessage));
+        }
         final NodeEngine nodeEngine = getNodeEngine();
         return lockSupport.tryLock(nodeEngine, getService().toData(key), time, timeunit);
     }
 
     public void forceUnlock(final K key) {
+        if(key == null) {
+            ExceptionUtil.rethrow(new NullPointerException(nullKeyMessage));
+        }
         final NodeEngine nodeEngine = getNodeEngine();
         Data k = getService().toData(key);
         lockSupport.forceUnlock(nodeEngine, k);
     }
 
     public String addInterceptor(MapInterceptor interceptor) {
+        if(interceptor == null) {
+            ExceptionUtil.rethrow(new NullPointerException("Interceptor should not be null."));
+        }
         return addMapInterceptorInternal(interceptor);
     }
 
     public void removeInterceptor(String id) {
+        if(id == null) {
+            ExceptionUtil.rethrow(new NullPointerException("Interceptor id should not be null."));
+        }
         removeMapInterceptorInternal(id);
     }
 
     public String addEntryListener(final EntryListener listener, final boolean includeValue) {
+        if(listener == null) {
+            ExceptionUtil.rethrow(new NullPointerException("Listener should not be null."));
+        }
         return addEntryListenerInternal(listener, null, includeValue);
     }
 
     public String addEntryListener(final EntryListener<K, V> listener, final K key, final boolean includeValue) {
+        if(listener == null) {
+            ExceptionUtil.rethrow(new NullPointerException("Listener should not be null."));
+        }
         return addEntryListenerInternal(listener, getService().toData(key), includeValue);
     }
 
     public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue) {
+        if(listener == null) {
+            ExceptionUtil.rethrow(new NullPointerException("Listener should not be null."));
+        }
+        if(predicate == null) {
+            ExceptionUtil.rethrow(new NullPointerException("Predicate should not be null."));
+        }
         return addEntryListenerInternal(listener, predicate, getService().toData(key), includeValue);
     }
 
     public boolean removeEntryListener(String id) {
+        if(id == null) {
+            ExceptionUtil.rethrow(new NullPointerException("Listener id should not be null."));
+        }
         return removeEntryListenerInternal(id);
     }
 
     public EntryView<K, V> getEntryView(K key) {
+        if(key == null) {
+            ExceptionUtil.rethrow(new NullPointerException(nullKeyMessage));
+        }
         SimpleEntryView<K, V> entryViewInternal = (SimpleEntryView) getEntryViewInternal(getService().toData(key));
         if(entryViewInternal == null) {
             return null;
@@ -240,6 +339,9 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public boolean evict(final Object key) {
+        if(key == null) {
+            ExceptionUtil.rethrow(new NullPointerException(nullKeyMessage));
+        }
         return evictInternal(getService().toData(key));
     }
 
@@ -277,14 +379,23 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public Set<K> keySet(final Predicate predicate) {
+        if(predicate == null) {
+            ExceptionUtil.rethrow(new NullPointerException("Predicate should not be null."));
+        }
         return query(predicate, IterationType.KEY, false);
     }
 
     public Set entrySet(final Predicate predicate) {
+        if(predicate == null) {
+            ExceptionUtil.rethrow(new NullPointerException("Predicate should not be null."));
+        }
         return query(predicate, IterationType.ENTRY, false);
     }
 
     public Collection<V> values(final Predicate predicate) {
+        if(predicate == null) {
+            ExceptionUtil.rethrow(new NullPointerException("Predicate should not be null."));
+        }
         return query(predicate, IterationType.VALUE, false);
     }
 
@@ -298,10 +409,16 @@ public class ObjectMapProxy<K, V> extends MapProxySupport implements MapProxy<K,
     }
 
     public Set<K> localKeySet(final Predicate predicate) {
+        if(predicate == null) {
+            ExceptionUtil.rethrow(new NullPointerException("Predicate should not be null."));
+        }
         return queryLocal(predicate, IterationType.KEY, false);
     }
 
     public Object executeOnKey(K key, EntryProcessor entryProcessor) {
+        if(key == null) {
+            ExceptionUtil.rethrow(new NullPointerException(nullKeyMessage));
+        }
         return getService().toObject(executeOnKeyInternal(getService().toData(key), entryProcessor));
     }
 

@@ -48,7 +48,6 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
     public PutAllOperation() {
     }
 
-
     public void run() {
         backupEntrySet = new MapEntrySet();
         int partitionId = getPartitionId();
