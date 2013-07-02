@@ -20,5 +20,42 @@ enterprise-ready and developer-friendly in-memory data grid solution.
 * Support for cluster info and membership events
 * Dynamic discovery, scaling, partitioning with backups and fail-over
 
+#### Hazelcast 3.0
+Switch to 3.0 branch to see upcoming [Hazelcast 3.0](https://github.com/hazelcast/hazelcast/tree/3.0)
+
+### Getting Started
+
+See [Getting Started Guide](http://hazelcast.com/docs/latest/manual/single_html/#GettingStarted)
+
+### Documentation
+
+See documentation at [www.hazelcast.com](http://hazelcast.com/docs.jsp)
+
+### Releases
+
+Download from [www.hazelcast.com](http://hazelcast.com/downloads.jsp)
+
+Or use Maven snippet:
+````xml
+<dependency>
+    <groupId>com.hazelcast</groupId>
+    <artifactId>hazelcast</artifactId>
+    <version>${hazelcast.version}</version>
+</dependency>
+````
+
+### Mail Group
+
+Please join the mail group if you are interested in using or developing Hazelcast.
+
+[http://groups.google.com/group/hazelcast](http://groups.google.com/group/hazelcast)
+
+#### License
+
+Hazelcast is available under the Apache 2 License.
+
+#### Copyright
+
+Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
 
 Visit [www.hazelcast.com](http://www.hazelcast.com/) for more info.

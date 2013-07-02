@@ -1001,7 +1001,7 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     void doPutAll(String name, Map entries) {
-        Pairs pairs = new Pairs(entries.size());
+         Pairs pairs = new Pairs(entries.size());
         for (Object key : entries.keySet()) {
             Object value = entries.get(key);
             pairs.addKeyValue(new KeyValue(toData(key), toData(value)));
@@ -1029,6 +1029,11 @@ public class ConcurrentMapManager extends BaseManager {
     }
 
     void doPutAll(String name, Pairs pairs) throws ExecutionException, InterruptedException {
+        List<KeyValue> keyValues = pairs.getKeyValues();
+        if(keyValues==null){
+            return;
+        }
+
         final Map<Member, Pairs> targetMembers = new HashMap<Member, Pairs>(10);
         for (KeyValue keyValue : pairs.getKeyValues()) {
             Member owner = partitionServiceImpl.getPartition(keyValue.getKeyData()).getOwner();
