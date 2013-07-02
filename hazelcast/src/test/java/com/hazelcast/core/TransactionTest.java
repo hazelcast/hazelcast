@@ -1186,8 +1186,24 @@ public class TransactionTest {
      * Github issue #161
      */
     @Test
-    public void issue161TestMapSizeAfterGet() throws InterruptedException {
+    public void issue161TestMapSizeAfterGetNonEmpty() throws InterruptedException {
         IMap<String, String> map = Hazelcast.getMap("issue161TestMapSizeAfterGet");
+        map.put("key","value");
+        Transaction txn = Hazelcast.getTransaction();
+        txn.begin();
+        map.get("key");
+        txn.commit();
+        assertFalse(map.isLocked("key"));
+        assertEquals(1, map.size());
+        assertEquals("value", map.get("key"));
+    }
+
+    /**
+     * Github issue #161
+     */
+    @Test
+    public void issue161TestMapSizeAfterGet() throws InterruptedException {
+        IMap<String, String> map = Hazelcast.getMap("issue161TestMapSizeAfterGetEmptyMap");
 
         Transaction txn = Hazelcast.getTransaction();
         txn.begin();
@@ -1195,7 +1211,7 @@ public class TransactionTest {
         txn.commit();
 
         assertFalse(map.isLocked("key"));
-        assertEquals(map.size(), 0);
+        assertEquals(0, map.size());
         assertNull(map.get("key"));
     }
 

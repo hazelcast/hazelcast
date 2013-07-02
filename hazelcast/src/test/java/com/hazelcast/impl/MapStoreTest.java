@@ -534,6 +534,33 @@ public class MapStoreTest extends TestUtil {
         assertEquals(0, testMapStore.getStore().size());
     }
 
+    /*
+    test for issue 506
+     */
+    @Test
+    public void testUnexpectedStoreCallOnTransactionalGet() throws Exception {
+        TestEventBasedMapStore testMapStore = new TestEventBasedMapStore();
+        testMapStore.setLoadAllKeys(false);
+        Config config = newConfig(testMapStore, 0);
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
+        IMap map = h1.getMap("default");
+        assertEquals(0, map.size());
+        map.put("1", "value1");
+        assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL_KEYS, testMapStore.waitForEvent(2));
+        assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD, testMapStore.waitForEvent(2));
+        assertEquals(TestEventBasedMapStore.STORE_EVENTS.STORE, testMapStore.waitForEvent(2));
+        assertEquals(1, map.size());
+        assertEquals(1, testMapStore.getStore().size());
+        Transaction txn = h1.getTransaction();
+        txn.begin();
+        map.get("1");
+        txn.commit();
+        assertEquals(null, testMapStore.waitForEvent(2));
+        assertEquals(1, map.size());
+        assertEquals(1, testMapStore.getStore().size());
+    }
+
+
     @Test
     public void testOneMemberWriteBehind() throws Exception {
         TestMapStore testMapStore = new TestMapStore(1, 1, 1);

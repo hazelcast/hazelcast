@@ -1075,15 +1075,15 @@ public class ConcurrentMapManager extends BaseManager {
                     if (!locked) {
                         throwTxTimeoutException(key);
                     }
-                    Object oldObject = null;
-                    Data oldValue = mlock.oldValue;
-                    if (oldValue != null) {
-                        oldObject = tc.isClient() ? oldValue : tc.toObject(oldValue);
-                        txn.attachPutOp(name, key, oldValue, false);
+                    Object o = null;
+                    Data value = mlock.oldValue;
+                    if (value != null) {
+                        o = tc.isClient() ? value : tc.toObject(value);
+                        txn.attachGetOp(name, key, value);
                     } else {
-                        txn.attachPutOp(name, key, null, false);
+                        txn.attachGetOp(name, key, null);
                     }
-                    return oldObject;
+                    return o;
                 }
             }
             final CMap cMap = maps.get(name);
@@ -3938,7 +3938,7 @@ public class ConcurrentMapManager extends BaseManager {
                     if (record.valueCount() == 0 && record.isEvictable()) {
                         cmap.markAsEvicted(record);
                     }
-                    if(record.isRemoved()) {
+                    if (record.isRemoved()) {
                         record.setActive(false);
                     }
                     cmap.fireScheduledActions(record);

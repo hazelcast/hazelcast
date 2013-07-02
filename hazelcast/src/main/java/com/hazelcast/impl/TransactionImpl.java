@@ -83,6 +83,18 @@ public class TransactionImpl implements Transaction {
         }
     }
 
+    public void attachGetOp(String name, Object key, Data value) {
+        Instance.InstanceType instanceType = ConcurrentMapManager.getInstanceType(name);
+        TransactionRecord rec = findTransactionRecord(name, key);
+        if (rec == null) {
+            rec = new TransactionRecord(name, key, value);
+            transactionRecords.add(rec);
+        } else {
+            rec.value = value;
+        }
+    }
+
+
     public Data attachRemoveOp(String name, Object key, Data value, boolean newRecord) {
         return attachRemoveOp(name, key, value, newRecord, 1);
     }
@@ -375,6 +387,8 @@ public class TransactionImpl implements Transaction {
 
         public boolean newRecord = false;
 
+        public boolean getRecord = false;
+
         public Instance.InstanceType instanceType = null;
 
         public long lastAccess = -1;
@@ -386,6 +400,14 @@ public class TransactionImpl implements Transaction {
         public long ttl = -1;
 
         public int index = -1;
+
+        public TransactionRecord(String name, Object key, Data value) {
+            this.name = name;
+            this.key = key;
+            this.value = value;
+            this.getRecord = true;
+            instanceType = ConcurrentMapManager.getInstanceType(name);
+        }
 
         public TransactionRecord(String name, Object key, Data value, boolean newRecord) {
             this.name = name;
@@ -433,7 +455,9 @@ public class TransactionImpl implements Transaction {
                 if (instanceType.isMultiMap()) {
                     factory.node.concurrentMapManager.new MPutMulti().put(name, key, value);
                 } else {
-                    if (value != null) {
+                    if(getRecord) {
+                        factory.node.concurrentMapManager.new MLock().unlock(name, key, -1);
+                    } else if (value != null) {
                         factory.node.concurrentMapManager.new MPut().putAfterCommit(name, key, value, ttl, id);
                     } else {
                         factory.node.concurrentMapManager.new MLock().unlock(name, key, -1);
