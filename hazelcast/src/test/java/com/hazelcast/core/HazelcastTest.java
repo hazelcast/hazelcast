@@ -215,6 +215,23 @@ public class HazelcastTest {
         map.set("1", "value", 1, TimeUnit.SECONDS);
     }
 
+	@Test
+	public void testSetOverloaded() {
+		IMap<String, String> map = Hazelcast.getMap("testSetOverloaded");
+		map.set("1", "value", 0, TimeUnit.SECONDS);
+
+		MapEntry one = map.getMapEntry("1");
+		assertEquals("1", one.getKey());
+		assertEquals("value", one.getValue());
+
+		map.remove("1");
+
+		map.set("1", "value");
+		MapEntry overloaded = map.getMapEntry("1");
+		assertEquals(overloaded.getKey(), one.getKey());
+		assertEquals(overloaded.getValue(), one.getValue());
+	}
+
     @Test
     public void testAtomicLong() {
         AtomicNumber an = Hazelcast.getAtomicNumber("testAtomicLong");
