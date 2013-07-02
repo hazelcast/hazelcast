@@ -62,6 +62,22 @@ public class IMapAsyncTest {
     }
 
     @Test
+    public void testPutAsyncWithTTL() throws Exception {
+        IMap<String, String> map = Hazelcast.getMap("map:test:putAsyncTTL");
+        Future<String> f1 = map.putAsync(key, value1);
+        String f1Val = f1.get();
+        TestCase.assertNull(f1Val);
+        Future<String> f2 = map.putAsync(key, value2, 100, TimeUnit.MILLISECONDS);
+        String f2Val = f2.get();
+        TestCase.assertEquals(value1, f2Val);
+        String val = map.get(key);
+        TestCase.assertEquals(value2, val);
+        Thread.sleep(200);
+        val = map.get(key);
+        TestCase.assertNull(val);
+    }
+
+    @Test
     public void testRemoveAsync() throws Exception {
         IMap<String, String> map = Hazelcast.getMap("map:test:removeAsync");
         // populate map

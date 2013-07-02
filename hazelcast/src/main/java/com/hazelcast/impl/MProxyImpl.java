@@ -153,6 +153,21 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         return call;
     }
 
+    public Future putAsync(Object key, Object value, final long ttl, final TimeUnit timeunit) {
+        beforeCall();
+        final MProxyImpl mProxy = MProxyImpl.this;
+        final Data dataKey = toData(key);
+        final Data dataValue = toData(value);
+        AsyncCall call = new AsyncCall() {
+            @Override
+            protected void call() {
+                setResult(mProxy.put(dataKey, dataValue, ttl, timeunit));
+            }
+        };
+        factory.node.executorManager.executeAsync(call);
+        return call;
+    }
+
     public Future removeAsync(Object key) {
         beforeCall();
         final MProxyImpl mProxy = MProxyImpl.this;
@@ -240,6 +255,10 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
 
     public boolean tryPut(Object key, Object value, long time, TimeUnit timeunit) {
         return dynamicProxy.tryPut(key, value, time, timeunit);
+    }
+
+    public boolean tryPut(Object key, Object value, long ttl, TimeUnit ttlTimeunit, long time, TimeUnit timeunit) {
+        return dynamicProxy.tryPut(key, value, ttl, ttlTimeunit, time, timeunit);
     }
 
     public void set(Object key, Object value, long time, TimeUnit timeunit) {
@@ -594,6 +613,10 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             throw new UnsupportedOperationException();
         }
 
+        public Future putAsync(Object key, Object value, long ttl, TimeUnit timeunit) {
+            throw new UnsupportedOperationException();
+        }
+
         public Future removeAsync(Object key) {
             throw new UnsupportedOperationException();
         }
@@ -667,6 +690,26 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             Boolean result = mput.tryPut(name, key, value, timeout, -1);
             mput.clearRequest();
             mapOperationCounter.incrementPuts(Clock.currentTimeMillis() - begin);
+            return result;
+        }
+
+        public boolean tryPut(Object key, Object value, long ttl, TimeUnit ttlTimeunit, long timeout, TimeUnit timeunit) {
+            long begin = System.currentTimeMillis();
+            if (timeout < 0) {
+                throw new IllegalArgumentException("timeout value cannot be negative. " + timeout);
+            }
+            timeout = toMillis(timeout, timeunit);
+            if (ttl == 0) {
+                ttl = -1;
+            } else {
+                ttl = toMillis(ttl, ttlTimeunit);
+            }
+            check(key);
+            check(value);
+            MPut mput = ThreadContext.get().getCallCache(factory).getMPut();
+            Boolean result = mput.tryPut(name, key, value, timeout, ttl);
+            mput.clearRequest();
+            mapOperationCounter.incrementPuts(System.currentTimeMillis() - begin);
             return result;
         }
 

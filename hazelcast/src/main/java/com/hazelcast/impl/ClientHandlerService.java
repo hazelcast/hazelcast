@@ -61,7 +61,6 @@ public class ClientHandlerService implements ConnectionListener {
         this.logger = node.getLogger(this.getClass().getName());
         node.getClusterImpl().addMembershipListener(new ClientServiceMembershipListener());
         registerHandler(CONCURRENT_MAP_PUT.getValue(), new MapPutHandler());
-        registerHandler(CONCURRENT_MAP_PUT.getValue(), new MapPutHandler());
         registerHandler(CONCURRENT_MAP_PUT_AND_UNLOCK.getValue(), new MapPutAndUnlockHandler());
         registerHandler(CONCURRENT_MAP_PUT_ALL.getValue(), new MapPutAllHandler());
         registerHandler(CONCURRENT_MAP_PUT_MULTI.getValue(), new MapPutMultiHandler());
@@ -952,15 +951,15 @@ public class ClientHandlerService implements ConnectionListener {
         }
     }
 
-    private class MapTryPutHandler extends ClientMapOperationHandlerWithTTL {
+    private class MapTryPutHandler extends ClientMapOperationHandlerWithTTLAndTimeout {
         @Override
-        protected Data processMapOp(IMap<Object, Object> map, Data key, Data value, long ttl) {
+        protected Data processMapOp(IMap<Object, Object> map, Data key, Data value, long ttl, long timeout) {
             MProxy mproxy = (MProxy) map;
             Object v = value;
             if (node.concurrentMapManager.isMapIndexed(mproxy.getLongName())) {
                 v = toObject(value);
             }
-            return toData(map.tryPut(key, v, ttl, TimeUnit.MILLISECONDS));
+            return toData(map.tryPut(key, v, ttl, TimeUnit.MILLISECONDS, timeout, TimeUnit.MILLISECONDS));
         }
     }
 
@@ -977,29 +976,30 @@ public class ClientHandlerService implements ConnectionListener {
         }
     }
 
-    private class MapTryRemoveHandler extends ClientMapOperationHandlerWithTTL {
+    private class MapTryRemoveHandler extends ClientMapOperationHandlerWithTimeout {
         @Override
-        protected Data processMapOp(IMap<Object, Object> map, Data key, Data value, long ttl) {
+        protected Data processMapOp(IMap<Object, Object> map, Data key, Data value, long timeout) {
             try {
-                return toData(map.tryRemove(key, ttl, TimeUnit.MILLISECONDS));
+                return toData(map.tryRemove(key, timeout, TimeUnit.MILLISECONDS));
             } catch (TimeoutException e) {
                 return toData(new DistributedTimeoutException());
             }
         }
     }
 
-    private class MapTryLockAndGetHandler extends ClientMapOperationHandlerWithTTL {
+    private class MapTryLockAndGetHandler extends ClientMapOperationHandlerWithTimeout {
         @Override
-        protected Data processMapOp(IMap<Object, Object> map, Data key, Data value, long ttl) {
+        protected Data processMapOp(IMap<Object, Object> map, Data key, Data value, long timeout) {
             try {
-                return toData(map.tryLockAndGet(key, ttl, TimeUnit.MILLISECONDS));
+                return toData(map.tryLockAndGet(key, timeout, TimeUnit.MILLISECONDS));
             } catch (TimeoutException e) {
                 return toData(new DistributedTimeoutException());
             }
         }
     }
 
-    private class MapPutIfAbsentHandler extends ClientOperationHandler {
+    private class MapPutIfAbsentHandler extends ClientMapOperationHandlerWithTTL {
+        @Override
         public Data processMapOp(IMap<Object, Object> map, Data key, Data value, long ttl) {
             MProxy mproxy = (MProxy) map;
             Object v = value;
@@ -1011,14 +1011,6 @@ public class ClientHandlerService implements ConnectionListener {
             } else {
                 return (Data) map.putIfAbsent(key, v, ttl, TimeUnit.MILLISECONDS);
             }
-        }
-
-        public void processCall(Node node, Packet packet) {
-            IMap<Object, Object> map = (IMap) factory.getOrCreateProxyByName(packet.name);
-            long ttl = packet.timeout;
-            Data value = processMapOp(map, packet.getKeyData(), packet.getValueData(), ttl);
-            packet.clearForResponse();
-            packet.setValue(value);
         }
     }
 
@@ -1618,13 +1610,37 @@ public class ClientHandlerService implements ConnectionListener {
     private abstract class ClientMapOperationHandlerWithTTL extends ClientOperationHandler {
         public void processCall(Node node, final Packet packet) {
             final IMap<Object, Object> map = (IMap) factory.getOrCreateProxyByName(packet.name);
-            final long ttl = packet.timeout;
+            final long ttl = packet.ttl;
             Data value = processMapOp(map, packet.getKeyData(), packet.getValueData(), ttl);
             packet.clearForResponse();
             packet.setValue(value);
         }
 
         protected abstract Data processMapOp(IMap<Object, Object> map, Data keyData, Data valueData, long ttl);
+    }
+
+
+    private abstract class ClientMapOperationHandlerWithTimeout extends ClientOperationHandler {
+        public void processCall(Node node, final Packet packet) {
+            final IMap<Object, Object> map = (IMap) factory.getOrCreateProxyByName(packet.name);
+            final long timeout = packet.timeout;
+            Data value = processMapOp(map, packet.getKeyData(), packet.getValueData(), timeout);
+            packet.clearForResponse();
+            packet.setValue(value);
+        }
+
+        protected abstract Data processMapOp(IMap<Object, Object> map, Data keyData, Data valueData, long timeout);
+    }
+
+    private abstract class ClientMapOperationHandlerWithTTLAndTimeout extends ClientOperationHandler {
+        public void processCall(Node node, final Packet packet) {
+            final IMap<Object, Object> map = (IMap) factory.getOrCreateProxyByName(packet.name);
+            Data value = processMapOp(map, packet.getKeyData(), packet.getValueData(), packet.ttl, packet.timeout);
+            packet.clearForResponse();
+            packet.setValue(value);
+        }
+
+        protected abstract Data processMapOp(IMap<Object, Object> map, Data keyData, Data valueData, long ttl, long timeout);
     }
 
     private abstract class ClientQueueOperationHandler extends ClientOperationHandler {

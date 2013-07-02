@@ -21,6 +21,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 /**
  * @mdogan 4/26/12
@@ -89,7 +90,7 @@ final class DateHelper {
     }
 
     private static DateFormat getUtilDateFormat() {
-        return new SimpleDateFormat(dateFormat);
+        return new SimpleDateFormat(dateFormat, Locale.US);
     }
 
     private DateHelper() {}

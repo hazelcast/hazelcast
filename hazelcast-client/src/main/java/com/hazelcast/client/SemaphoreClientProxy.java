@@ -44,7 +44,7 @@ public class SemaphoreClientProxy implements ISemaphore {
     public void acquire(int permits) throws InstanceDestroyedException, InterruptedException {
         if (Thread.currentThread().isInterrupted())
             throw new InterruptedException();
-        proxyHelper.doOp(SEMAPHORE_TRY_ACQUIRE, false, permits, -1, TimeUnit.MILLISECONDS);
+        proxyHelper.doOp(SEMAPHORE_TRY_ACQUIRE, false, permits);
     }
 
     public Future acquireAsync() {
@@ -60,7 +60,7 @@ public class SemaphoreClientProxy implements ISemaphore {
     }
 
     public void acquireAttach(int permits) throws InstanceDestroyedException, InterruptedException {
-        proxyHelper.doOp(SEMAPHORE_TRY_ACQUIRE, true, permits, -1, TimeUnit.MILLISECONDS);
+        proxyHelper.doOp(SEMAPHORE_TRY_ACQUIRE, true, permits);
     }
 
     public Future acquireAttachAsync() {
@@ -136,7 +136,7 @@ public class SemaphoreClientProxy implements ISemaphore {
     }
 
     public boolean tryAcquire(int permits, long timeout, TimeUnit unit) throws InstanceDestroyedException, InterruptedException {
-        return (Boolean) proxyHelper.doOp(SEMAPHORE_TRY_ACQUIRE, false, permits, timeout, unit);
+        return (Boolean) proxyHelper.doOpTimeout(SEMAPHORE_TRY_ACQUIRE, false, permits, timeout, unit);
     }
 
     public boolean tryAcquireAttach() {
@@ -156,7 +156,7 @@ public class SemaphoreClientProxy implements ISemaphore {
     }
 
     public boolean tryAcquireAttach(int permits, long timeout, TimeUnit unit) throws InstanceDestroyedException, InterruptedException {
-        return (Boolean) proxyHelper.doOp(SEMAPHORE_TRY_ACQUIRE, true, permits, timeout, unit);
+        return (Boolean) proxyHelper.doOpTimeout(SEMAPHORE_TRY_ACQUIRE, true, permits, timeout, unit);
     }
 
     public InstanceType getInstanceType() {
