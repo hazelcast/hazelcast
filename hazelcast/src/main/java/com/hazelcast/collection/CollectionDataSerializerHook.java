@@ -22,7 +22,7 @@ import com.hazelcast.nio.serialization.*;
 import com.hazelcast.util.ConstructorFunction;
 
 /**
- * @ali 1/7/13
+ * @author ali 1/7/13
  */
 public class CollectionDataSerializerHook implements DataSerializerHook {
 

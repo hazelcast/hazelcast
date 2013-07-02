@@ -30,7 +30,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * @ali 1/2/13
+ * @author ali 1/2/13
  */
 public class CollectionContainer {
 

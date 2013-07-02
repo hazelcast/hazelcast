@@ -28,7 +28,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @ali 1/18/13
+ * @author ali 1/18/13
  */
 public class CollectionMigrationOperation extends AbstractOperation {
 

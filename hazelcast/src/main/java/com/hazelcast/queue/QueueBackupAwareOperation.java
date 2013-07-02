@@ -19,7 +19,7 @@ package com.hazelcast.queue;
 import com.hazelcast.spi.BackupAwareOperation;
 
 /**
- * @ali 12/11/12
+ * @author ali 12/11/12
  */
 public abstract class QueueBackupAwareOperation extends QueueOperation implements BackupAwareOperation {
 

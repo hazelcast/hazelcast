@@ -23,7 +23,7 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 
 /**
- * @mdogan 6/7/13
+ * @author mdogan 6/7/13
  */
 public final class CancellationOperation extends Operation {
 

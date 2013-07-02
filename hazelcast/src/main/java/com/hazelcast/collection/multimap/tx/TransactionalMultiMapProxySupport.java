@@ -37,7 +37,7 @@ import java.util.*;
 import java.util.concurrent.Future;
 
 /**
- * @ali 3/29/13
+ * @author ali 3/29/13
  */
 public abstract class TransactionalMultiMapProxySupport extends AbstractDistributedObject<CollectionService> implements TransactionalObject {
 

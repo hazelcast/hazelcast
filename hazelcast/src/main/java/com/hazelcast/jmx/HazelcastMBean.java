@@ -23,7 +23,7 @@ import java.util.Hashtable;
 import java.util.regex.Pattern;
 
 /**
- * @ali 1/30/13
+ * @author ali 1/30/13
  */
 public abstract class HazelcastMBean<T> implements DynamicMBean, MBeanRegistration {
 

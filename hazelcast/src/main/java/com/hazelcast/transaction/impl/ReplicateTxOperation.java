@@ -27,7 +27,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * @mdogan 3/25/13
+ * @author mdogan 3/25/13
  */
 public final class ReplicateTxOperation extends Operation {
 

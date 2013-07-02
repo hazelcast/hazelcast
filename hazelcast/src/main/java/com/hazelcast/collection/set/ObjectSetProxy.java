@@ -30,7 +30,7 @@ import com.hazelcast.spi.NodeEngine;
 import java.util.*;
 
 /**
- * @ali 1/21/13
+ * @author ali 1/21/13
  */
 public class ObjectSetProxy<E> extends MultiMapProxySupport implements ISet<E>, CollectionProxy {
 

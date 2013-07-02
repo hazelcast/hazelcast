@@ -23,7 +23,7 @@ import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 import java.util.concurrent.*;
 
 /**
- * @mdogan 5/16/13
+ * @author mdogan 5/16/13
  */
 public final class ClientExecutionServiceImpl implements ClientExecutionService {
 

@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * @mdogan 1/10/13
+ * @author mdogan 1/10/13
  */
 public class CountDownLatchService implements ManagedService, RemoteService, MigrationAwareService {
 

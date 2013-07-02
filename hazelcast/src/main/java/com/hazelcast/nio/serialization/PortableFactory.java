@@ -17,7 +17,7 @@
 package com.hazelcast.nio.serialization;
 
 /**
- * @mdogan 12/26/12
+ * @author mdogan 12/26/12
  */
 
 // TODO: return null if type id isn't known by factory

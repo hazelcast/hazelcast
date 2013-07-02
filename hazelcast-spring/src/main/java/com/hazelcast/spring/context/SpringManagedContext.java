@@ -24,7 +24,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 /**
- * @mdogan 4/6/12
+ * @author mdogan 4/6/12
  */
 public class SpringManagedContext implements ManagedContext, ApplicationContextAware {
 

@@ -25,7 +25,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 
 /**
- * @mdogan 4/6/12
+ * @author mdogan 4/6/12
  */
 public final class AddressHelper {
 

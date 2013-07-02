@@ -25,7 +25,7 @@ import com.hazelcast.spi.OperationFactory;
 import java.util.Map;
 
 /**
- * @ali 5/10/13
+ * @author ali 5/10/13
  */
 public class ClearRequest extends CollectionAllPartitionRequest implements RetryableRequest{
 

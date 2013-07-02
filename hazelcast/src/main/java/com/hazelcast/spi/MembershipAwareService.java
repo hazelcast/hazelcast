@@ -17,7 +17,7 @@
 package com.hazelcast.spi;
 
 /**
-* @mdogan 9/5/12
+* @author mdogan 9/5/12
 */
 public interface MembershipAwareService {
 

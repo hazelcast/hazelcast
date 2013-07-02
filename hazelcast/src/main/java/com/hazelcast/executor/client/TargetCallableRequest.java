@@ -30,7 +30,7 @@ import java.io.IOException;
 import java.util.concurrent.Callable;
 
 /**
- * @mdogan 5/13/13
+ * @author mdogan 5/13/13
  */
 public final class TargetCallableRequest extends TargetClientRequest implements IdentifiedDataSerializable {
 

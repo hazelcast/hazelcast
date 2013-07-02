@@ -46,7 +46,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * @mdogan 5/15/13
+ * @author mdogan 5/15/13
  */
 public final class ClientClusterServiceImpl implements ClientClusterService {
 

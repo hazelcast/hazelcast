@@ -20,7 +20,7 @@ import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 
 /**
- * @mdogan 7/11/12
+ * @author mdogan 7/11/12
  */
 public class DummyMessageListener implements MessageListener {
 

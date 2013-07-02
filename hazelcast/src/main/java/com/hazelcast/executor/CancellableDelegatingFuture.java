@@ -27,7 +27,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.Future;
 
 /**
- * @mdogan 6/7/13
+ * @author mdogan 6/7/13
  */
 final class CancellableDelegatingFuture<V> extends DelegatingFuture<V> {
 

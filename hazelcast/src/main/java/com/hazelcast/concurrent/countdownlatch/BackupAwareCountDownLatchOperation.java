@@ -20,7 +20,7 @@ import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 
 /**
- * @mdogan 1/10/13
+ * @author mdogan 1/10/13
  */
 abstract class BackupAwareCountDownLatchOperation extends BaseCountDownLatchOperation implements BackupAwareOperation {
 

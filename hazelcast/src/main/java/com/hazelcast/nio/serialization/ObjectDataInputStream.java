@@ -26,7 +26,7 @@ import java.io.InputStream;
 import java.nio.ByteOrder;
 
 /**
- * @mdogan 1/23/13
+ * @author mdogan 1/23/13
  */
 public class ObjectDataInputStream extends InputStream implements ObjectDataInput, Closeable, SerializationContextAware {
 

@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.logging.Level;
 
 /**
- * @mdogan 4/11/13
+ * @author mdogan 4/11/13
  */
 public final class ReplicaSyncRequest extends Operation implements PartitionAwareOperation, MigrationCycleOperation {
 

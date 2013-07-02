@@ -41,7 +41,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 /**
- * @mdogan 12/14/12
+ * @author mdogan 12/14/12
  */
 
 public class EventServiceImpl implements EventService, PostJoinAwareService {

@@ -21,7 +21,7 @@ import org.hibernate.cache.access.SoftLock;
 import java.util.Map;
 
 /**
- * @mdogan 11/9/12
+ * @author mdogan 11/9/12
  */
 public interface RegionCache {
 

@@ -17,7 +17,7 @@
 package com.hazelcast.spi;
 
 /**
- * @mdogan 7/23/12
+ * @author mdogan 7/23/12
  */
 public interface MigrationAwareService {
 

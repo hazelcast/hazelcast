@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.util.logging.Level;
 
 /**
- * @mdogan 4/11/13
+ * @author mdogan 4/11/13
  */
 public final class CheckReplicaVersion extends Operation implements PartitionAwareOperation, MigrationCycleOperation {
 

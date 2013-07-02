@@ -19,7 +19,7 @@ package com.hazelcast.client.spi;
 import com.hazelcast.nio.serialization.SerializationService;
 
 /**
- * @mdogan 5/20/13
+ * @author mdogan 5/20/13
  */
 public final class ClientContext {
 

@@ -26,7 +26,7 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.QueryDataResultStream;
 
 /**
- * @mdogan 8/24/12
+ * @author mdogan 8/24/12
  */
 public final class MapDataSerializerHook implements DataSerializerHook {
 

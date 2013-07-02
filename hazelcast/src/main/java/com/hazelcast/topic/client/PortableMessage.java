@@ -25,7 +25,7 @@ import com.hazelcast.topic.TopicPortableHook;
 import java.io.IOException;
 
 /**
- * @ali 5/24/13
+ * @author ali 5/24/13
  */
 public class PortableMessage implements Portable {
 

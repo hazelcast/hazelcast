@@ -32,7 +32,7 @@ import java.util.*;
 import java.util.Map.Entry;
 
 /**
- * @mdogan 7/24/12
+ * @author mdogan 7/24/12
  */
 public class MapReplicationOperation extends AbstractOperation {
 

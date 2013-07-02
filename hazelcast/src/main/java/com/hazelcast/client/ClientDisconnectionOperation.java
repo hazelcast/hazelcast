@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.util.Collection;
 
 /**
- * @mdogan 2/11/13
+ * @author mdogan 2/11/13
  */
 public class ClientDisconnectionOperation extends AbstractOperation {
 

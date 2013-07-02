@@ -34,7 +34,7 @@ import java.net.InetAddress;
 import java.util.*;
 
 /**
- * @mdogan 4/17/13
+ * @author mdogan 4/17/13
  */
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)

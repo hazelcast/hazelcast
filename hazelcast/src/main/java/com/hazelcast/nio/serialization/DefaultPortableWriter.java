@@ -25,7 +25,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * @mdogan 12/26/12
+ * @author mdogan 12/26/12
  */
 public class DefaultPortableWriter implements PortableWriter {
 

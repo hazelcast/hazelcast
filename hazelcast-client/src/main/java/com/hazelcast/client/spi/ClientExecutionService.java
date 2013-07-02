@@ -22,7 +22,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @mdogan 5/16/13
+ * @author mdogan 5/16/13
  */
 public interface ClientExecutionService {
 

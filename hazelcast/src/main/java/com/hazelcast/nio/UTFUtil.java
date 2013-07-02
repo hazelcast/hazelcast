@@ -22,7 +22,7 @@ import java.io.IOException;
 import java.io.UTFDataFormatException;
 
 /**
- * @mdogan 1/23/13
+ * @author mdogan 1/23/13
  */
 public final class UTFUtil {
 

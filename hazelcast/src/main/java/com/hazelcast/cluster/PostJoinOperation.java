@@ -24,7 +24,7 @@ import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import java.io.IOException;
 
 /**
- * @mdogan 12/24/12
+ * @author mdogan 12/24/12
  */
 public class PostJoinOperation extends AbstractOperation {
 

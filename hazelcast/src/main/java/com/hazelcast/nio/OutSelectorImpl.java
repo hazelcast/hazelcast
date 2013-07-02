@@ -19,7 +19,7 @@ package com.hazelcast.nio;
 import java.nio.channels.SelectionKey;
 
 /**
- * @mdogan 5/10/13
+ * @author mdogan 5/10/13
  */
 final class OutSelectorImpl extends AbstractIOSelector {
 

@@ -23,7 +23,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * @mdogan 1/10/13
+ * @author mdogan 1/10/13
  */
 public final class PoolExecutorThreadFactory extends AbstractExecutorThreadFactory {
 

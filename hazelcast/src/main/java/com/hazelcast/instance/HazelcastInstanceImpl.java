@@ -51,7 +51,7 @@ import java.util.concurrent.ConcurrentMap;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTING;
 
 /**
- * @mdogan 7/31/12
+ * @author mdogan 7/31/12
  */
 
 @SuppressWarnings("unchecked")

@@ -17,7 +17,7 @@
 package com.hazelcast.collection.operations;
 
 /**
- * @ali 1/17/13
+ * @author ali 1/17/13
  */
 public interface ListOperations {
 }

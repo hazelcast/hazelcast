@@ -17,7 +17,7 @@
 package com.hazelcast.collection.multimap.tx;
 
 /**
- * @ali 4/4/13
+ * @author ali 4/4/13
  */
 public interface TxnMultiMapOperation {
 

@@ -26,7 +26,7 @@ import java.nio.ByteOrder;
 import java.util.*;
 
 /**
- * @mdogan 6/4/13
+ * @author mdogan 6/4/13
  */
 public final class SerializationServiceBuilder {
 

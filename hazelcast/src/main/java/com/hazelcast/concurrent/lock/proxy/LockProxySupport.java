@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.concurrent.lock.LockServiceImpl.SERVICE_NAME;
 
 /**
- * @mdogan 2/12/13
+ * @author mdogan 2/12/13
  */
 public final class LockProxySupport {
 

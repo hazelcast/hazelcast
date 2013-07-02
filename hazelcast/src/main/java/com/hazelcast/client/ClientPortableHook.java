@@ -22,7 +22,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 /**
- * @mdogan 4/30/13
+ * @author mdogan 4/30/13
  */
 public class ClientPortableHook implements PortableHook {
 

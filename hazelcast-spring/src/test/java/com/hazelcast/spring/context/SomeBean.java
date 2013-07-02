@@ -22,7 +22,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 
 /**
- * @mdogan 4/6/12
+ * @author mdogan 4/6/12
  */
 
 @Component("someBean")

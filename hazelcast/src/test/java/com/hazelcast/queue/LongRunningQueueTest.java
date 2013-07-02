@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * @ali 4/29/13
+ * @author ali 4/29/13
  */
 @Ignore("not a JUnit test")
 public class LongRunningQueueTest {

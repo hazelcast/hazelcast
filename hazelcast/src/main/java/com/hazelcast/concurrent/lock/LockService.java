@@ -23,7 +23,7 @@ import com.hazelcast.util.ConstructorFunction;
 import java.util.Collection;
 
 /**
- * @mdogan 2/12/13
+ * @author mdogan 2/12/13
  */
 public interface LockService extends SharedService {
 

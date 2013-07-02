@@ -23,7 +23,7 @@ import com.hazelcast.nio.Address;
 import java.io.IOException;
 
 /**
- * @ali 5/27/13
+ * @author ali 5/27/13
  */
 public class DummyClientConnectionManager extends SmartClientConnectionManager {
 

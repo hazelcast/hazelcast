@@ -42,7 +42,7 @@ import static com.hazelcast.core.DistributedObjectEvent.EventType.CREATED;
 import static com.hazelcast.core.DistributedObjectEvent.EventType.DESTROYED;
 
 /**
- * @mdogan 1/11/13
+ * @author mdogan 1/11/13
  */
 public class ProxyServiceImpl implements ProxyService, EventPublishingService<DistributedObjectEvent, Object> {
 

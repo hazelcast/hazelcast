@@ -23,7 +23,7 @@ import com.hazelcast.core.ClientService;
 import java.util.Collection;
 
 /**
- * @mdogan 5/14/13
+ * @author mdogan 5/14/13
  */
 final class ClientServiceProxy implements ClientService {
 

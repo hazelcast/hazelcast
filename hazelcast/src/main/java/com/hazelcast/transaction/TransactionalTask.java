@@ -17,7 +17,7 @@
 package com.hazelcast.transaction;
 
 /**
- * @mdogan 3/6/13
+ * @author mdogan 3/6/13
  */
 public interface TransactionalTask<T> {
 

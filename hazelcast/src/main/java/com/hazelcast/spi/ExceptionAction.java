@@ -17,7 +17,7 @@
 package com.hazelcast.spi;
 
 /**
- * @mdogan 1/18/13
+ * @author mdogan 1/18/13
  */
 public enum ExceptionAction {
 

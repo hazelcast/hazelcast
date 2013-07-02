@@ -21,7 +21,7 @@ import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.ObjectNamespace;
 
 /**
- * @mdogan 2/13/13
+ * @author mdogan 2/13/13
  */
 public class SignalBackupOperation extends BaseSignalOperation implements BackupOperation {
 

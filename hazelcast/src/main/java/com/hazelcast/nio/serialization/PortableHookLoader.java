@@ -22,7 +22,7 @@ import com.hazelcast.util.ServiceLoader;
 import java.util.*;
 
 /**
- * @mdogan 5/8/13
+ * @author mdogan 5/8/13
  */
 final class PortableHookLoader {
 

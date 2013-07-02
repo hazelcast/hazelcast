@@ -19,7 +19,7 @@ package com.hazelcast.partition;
 import com.hazelcast.spi.AbstractOperation;
 
 /**
- * @mdogan 6/26/13
+ * @author mdogan 6/26/13
  */
 public final class HasOngoingMigration extends AbstractOperation {
 

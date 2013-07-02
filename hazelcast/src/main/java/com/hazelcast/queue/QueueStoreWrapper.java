@@ -30,7 +30,7 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * @ali 12/14/12
+ * @author ali 12/14/12
  */
 @SuppressWarnings("unchecked")
 public class QueueStoreWrapper implements QueueStore<Data> {

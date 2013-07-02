@@ -25,7 +25,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 /**
- * @mdogan 5/28/13
+ * @author mdogan 5/28/13
  */
 
 @Ignore

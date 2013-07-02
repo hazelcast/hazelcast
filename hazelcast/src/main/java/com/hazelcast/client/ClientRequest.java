@@ -20,7 +20,7 @@ import com.hazelcast.nio.serialization.Portable;
 
 /**
  *
- * @mdogan 4/29/13
+ * @author mdogan 4/29/13
  */
 abstract class ClientRequest {
 

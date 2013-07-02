@@ -17,7 +17,7 @@
 package com.hazelcast.nio;
 
 /**
- * @mdogan 3/11/13
+ * @author mdogan 3/11/13
  */
 public final class Protocols {
 

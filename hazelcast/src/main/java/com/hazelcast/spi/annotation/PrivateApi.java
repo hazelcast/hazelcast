@@ -19,7 +19,7 @@ package com.hazelcast.spi.annotation;
 import java.lang.annotation.*;
 
 /**
- * @mdogan 9/14/12
+ * @author mdogan 9/14/12
  */
 
 @Target({ElementType.TYPE, ElementType.METHOD})

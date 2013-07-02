@@ -17,7 +17,7 @@
 package com.hazelcast.spi;
 
 /**
- * @mdogan 1/15/13
+ * @author mdogan 1/15/13
  */
 public interface WaitNotifyKey {
 

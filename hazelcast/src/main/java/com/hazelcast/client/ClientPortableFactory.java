@@ -20,7 +20,7 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
 
 /**
- * @mdogan 3/11/13
+ * @author mdogan 3/11/13
  */
 public class ClientPortableFactory implements PortableFactory {
 

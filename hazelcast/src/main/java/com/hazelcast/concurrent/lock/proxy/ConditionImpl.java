@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.concurrent.lock.LockService.SERVICE_NAME;
 
 /**
- * @mdogan 2/13/13
+ * @author mdogan 2/13/13
  */
 final class ConditionImpl implements ICondition {
 

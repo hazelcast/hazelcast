@@ -23,7 +23,7 @@ import com.hazelcast.spi.InvocationBuilder;
 import com.hazelcast.spi.Operation;
 
 /**
- * @mdogan 5/3/13
+ * @author mdogan 5/3/13
  */
 public abstract class TargetClientRequest extends ClientRequest {
 

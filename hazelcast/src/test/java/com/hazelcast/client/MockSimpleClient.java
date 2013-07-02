@@ -35,7 +35,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * @ali 5/14/13
+ * @author ali 5/14/13
  */
 public class MockSimpleClient implements SimpleClient {
 

@@ -17,7 +17,7 @@
 package com.hazelcast.transaction.impl;
 
 /**
- * @ali 4/12/13
+ * @author ali 4/12/13
  */
 public interface KeyAwareTransactionLog extends TransactionLog {
 

@@ -19,7 +19,7 @@ package com.hazelcast.util.executor;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 
 /**
- * @mdogan 1/10/13
+ * @author mdogan 1/10/13
  */
 public final class SingleExecutorThreadFactory extends AbstractExecutorThreadFactory {
 

@@ -24,7 +24,7 @@ import com.hazelcast.nio.serialization.SerializationService;
 import java.io.IOException;
 
 /**
- * @mdogan 5/17/13
+ * @author mdogan 5/17/13
  */
 final class ResponseStreamImpl implements ResponseStream {
 

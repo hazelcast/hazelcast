@@ -22,7 +22,7 @@ import com.hazelcast.security.UsernamePasswordCredentials;
 import java.util.Collection;
 
 /**
- * @mdogan 4/30/13
+ * @author mdogan 4/30/13
  */
 public final class SpiPortableHook implements PortableHook {
 

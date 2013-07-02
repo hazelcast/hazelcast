@@ -24,7 +24,7 @@ import com.hazelcast.spi.OperationFactory;
 import java.io.IOException;
 
 /**
- * @mdogan 5/6/13
+ * @author mdogan 5/6/13
  */
 public final class OperationFactoryWrapper implements OperationFactory {
 

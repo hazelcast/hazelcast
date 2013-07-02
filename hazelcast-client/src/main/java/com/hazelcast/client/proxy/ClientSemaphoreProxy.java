@@ -25,7 +25,7 @@ import com.hazelcast.util.ExceptionUtil;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @ali 5/23/13
+ * @author ali 5/23/13
  */
 public class ClientSemaphoreProxy extends ClientProxy implements ISemaphore {
 

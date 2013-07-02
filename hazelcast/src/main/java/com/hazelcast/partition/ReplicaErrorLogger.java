@@ -25,7 +25,7 @@ import com.hazelcast.spi.exception.WrongTargetException;
 import java.util.logging.Level;
 
 /**
- * @mdogan 6/6/13
+ * @author mdogan 6/6/13
  */
 public final class ReplicaErrorLogger {
 

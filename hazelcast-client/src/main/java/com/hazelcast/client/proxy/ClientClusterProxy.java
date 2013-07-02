@@ -28,7 +28,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
- * @mdogan 5/15/13
+ * @author mdogan 5/15/13
  */
 public class ClientClusterProxy implements Cluster {
 

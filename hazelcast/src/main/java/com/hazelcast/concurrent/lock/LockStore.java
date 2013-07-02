@@ -21,7 +21,7 @@ import com.hazelcast.nio.serialization.Data;
 import java.util.Set;
 
 /**
- * @mdogan 2/12/13
+ * @author mdogan 2/12/13
  */
 public interface LockStore {
 

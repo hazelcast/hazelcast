@@ -26,7 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @ali 1/22/13
+ * @author ali 1/22/13
  */
 public class Permit implements DataSerializable {
 

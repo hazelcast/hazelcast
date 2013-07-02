@@ -35,7 +35,7 @@ import java.util.concurrent.TimeoutException;
 import static org.junit.Assert.*;
 
 /**
- * @ali 5/22/13
+ * @author ali 5/22/13
  */
 
 @RunWith(HazelcastJUnit4ClassRunner.class)

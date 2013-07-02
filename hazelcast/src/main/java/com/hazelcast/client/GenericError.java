@@ -23,7 +23,7 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import java.io.IOException;
 
 /**
- * @mdogan 4/29/13
+ * @author mdogan 4/29/13
  */
 public class GenericError implements Portable {
 

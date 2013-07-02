@@ -50,7 +50,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 /**
- * @mdogan 2/20/13
+ * @author mdogan 2/20/13
  */
 public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreService,
         ManagedService, MembershipAwareService, EventPublishingService<ClientEndpoint, ClientListener> {

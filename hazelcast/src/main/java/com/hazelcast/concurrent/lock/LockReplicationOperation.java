@@ -25,7 +25,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 
 /**
- * @mdogan 02/12/13
+ * @author mdogan 02/12/13
  */
 
 public class LockReplicationOperation extends AbstractOperation {

@@ -25,7 +25,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * @ali 12/20/12
+ * @author ali 12/20/12
  */
 public class CompareAndRemoveBackupOperation extends QueueOperation implements BackupOperation {
 

@@ -24,7 +24,7 @@ import com.hazelcast.collection.operations.client.TxnSetSizeRequest;
 import com.hazelcast.core.TransactionalSet;
 
 /**
- * @ali 6/11/13
+ * @author ali 6/11/13
  */
 public class ClientTxnSetProxy<E> extends ClientTxnProxy implements TransactionalSet<E> {
 

@@ -20,7 +20,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * @ali 1/31/13
+ * @author ali 1/31/13
  */
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ManagedDescription {

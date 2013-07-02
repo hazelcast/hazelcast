@@ -28,7 +28,7 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import java.io.IOException;
 
 /**
- * @ali 5/23/13
+ * @author ali 5/23/13
  */
 public class PortableEntryEvent implements Portable {
 

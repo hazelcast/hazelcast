@@ -24,7 +24,7 @@ import java.io.IOException;
 import java.util.concurrent.Callable;
 
 /**
- * @ali 5/27/13
+ * @author ali 5/27/13
  */
 public class CallableTask implements Callable<String>, DataSerializable {
 

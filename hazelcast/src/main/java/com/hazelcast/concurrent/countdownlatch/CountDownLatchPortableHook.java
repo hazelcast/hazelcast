@@ -22,7 +22,7 @@ import com.hazelcast.nio.serialization.*;
 import java.util.Collection;
 
 /**
- * @mdogan 5/14/13
+ * @author mdogan 5/14/13
  */
 public final class CountDownLatchPortableHook implements PortableHook {
 

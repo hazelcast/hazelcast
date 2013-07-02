@@ -22,7 +22,7 @@ import java.sql.Timestamp;
 import java.util.Date;
 
 /**
- * @mdogan 6/6/13
+ * @author mdogan 6/6/13
  */
 public final class SampleObjects {
 

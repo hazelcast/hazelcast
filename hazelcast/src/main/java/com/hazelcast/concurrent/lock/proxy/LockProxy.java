@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 
 /**
- * @mdogan 2/12/13
+ * @author mdogan 2/12/13
  */
 public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implements ILock {
 

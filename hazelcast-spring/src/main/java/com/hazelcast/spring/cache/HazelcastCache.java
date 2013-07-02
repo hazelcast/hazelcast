@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @mdogan 4/3/12
+ * @author mdogan 4/3/12
  */
 public class HazelcastCache implements Cache {
 

@@ -19,7 +19,7 @@ package com.hazelcast.concurrent.semaphore;
 import com.hazelcast.spi.AbstractWaitNotifyKey;
 
 /**
- * @ali 1/22/13
+ * @author ali 1/22/13
  */
 public class SemaphoreWaitNotifyKey extends AbstractWaitNotifyKey {
 

@@ -25,7 +25,7 @@ import com.hazelcast.transaction.impl.Transaction;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @ali 3/25/13
+ * @author ali 3/25/13
  */
 public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport implements TransactionalQueue<E> {
 

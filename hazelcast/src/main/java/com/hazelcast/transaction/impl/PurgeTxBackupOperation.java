@@ -25,7 +25,7 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 
 /**
- * @mdogan 3/25/13
+ * @author mdogan 3/25/13
  */
 public final class PurgeTxBackupOperation extends Operation {
 

@@ -19,7 +19,7 @@ package com.hazelcast.spi.exception;
 import com.hazelcast.nio.Address;
 
 /**
- * @mdogan 1/18/13
+ * @author mdogan 1/18/13
  */
 public class TargetDisconnectedException extends RetryableHazelcastException {
 

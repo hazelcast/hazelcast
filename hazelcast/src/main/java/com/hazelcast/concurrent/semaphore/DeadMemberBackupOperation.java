@@ -17,7 +17,7 @@
 package com.hazelcast.concurrent.semaphore;
 
 /**
- * @ali 1/23/13
+ * @author ali 1/23/13
  */
 public class DeadMemberBackupOperation extends SemaphoreBackupOperation {
 

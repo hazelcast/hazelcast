@@ -22,7 +22,7 @@ import com.hazelcast.nio.Address;
 import java.util.Collection;
 
 /**
- * @mdogan 5/16/13
+ * @author mdogan 5/16/13
  */
 public interface ClientClusterService {
 

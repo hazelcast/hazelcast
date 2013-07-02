@@ -21,7 +21,7 @@ import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
 
 /**
-* @mdogan 5/22/13
+* @author mdogan 5/22/13
 */
 public final class TerminatedLifecycleService implements LifecycleService {
 

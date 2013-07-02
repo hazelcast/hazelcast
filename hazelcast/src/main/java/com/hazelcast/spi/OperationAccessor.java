@@ -23,7 +23,7 @@ import com.hazelcast.partition.MigrationCycleOperation;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 /**
- * @mdogan 12/21/12
+ * @author mdogan 12/21/12
  */
 
 @PrivateApi

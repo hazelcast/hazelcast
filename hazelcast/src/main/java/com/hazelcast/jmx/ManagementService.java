@@ -28,7 +28,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * @ali 1/31/13
+ * @author ali 1/31/13
  */
 public class ManagementService implements DistributedObjectListener {
 

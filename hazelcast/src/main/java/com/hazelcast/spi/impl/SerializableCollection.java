@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- * @ali 1/4/13
+ * @author ali 1/4/13
  */
 public final class SerializableCollection implements IdentifiedDataSerializable {
 

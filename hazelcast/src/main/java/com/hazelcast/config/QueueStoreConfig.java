@@ -21,7 +21,7 @@ import com.hazelcast.core.QueueStore;
 import java.util.Properties;
 
 /**
- * @ali 12/14/12
+ * @author ali 12/14/12
  */
 public class QueueStoreConfig {
 

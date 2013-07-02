@@ -26,7 +26,7 @@ import java.io.OutputStream;
 import java.nio.ByteOrder;
 
 /**
- * @mdogan 1/3/13
+ * @author mdogan 1/3/13
  */
 public interface SerializationService {
 

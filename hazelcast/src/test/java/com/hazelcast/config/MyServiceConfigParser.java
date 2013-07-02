@@ -20,7 +20,7 @@ import com.hazelcast.spi.ServiceConfigurationParser;
 import org.w3c.dom.Element;
 
 /**
- * @mdogan 6/24/13
+ * @author mdogan 6/24/13
  */
 public class MyServiceConfigParser extends AbstractXmlConfigHelper implements ServiceConfigurationParser<MyServiceConfig> {
 

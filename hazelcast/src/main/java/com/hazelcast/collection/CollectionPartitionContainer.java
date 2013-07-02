@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * @ali 1/2/13
+ * @author ali 1/2/13
  */
 public class CollectionPartitionContainer {
 

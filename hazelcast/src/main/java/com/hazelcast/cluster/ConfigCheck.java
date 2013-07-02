@@ -25,7 +25,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 
 /**
- * @mdogan 6/11/13
+ * @author mdogan 6/11/13
  */
 public final class ConfigCheck implements IdentifiedDataSerializable {
 

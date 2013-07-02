@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.nio.ByteOrder;
 
 /**
- * @mdogan 12/28/12
+ * @author mdogan 12/28/12
  */
 public interface ObjectDataInput extends DataInput {
 

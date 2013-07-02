@@ -23,7 +23,7 @@ import java.io.Closeable;
 import java.io.IOException;
 
 /**
- * @mdogan 5/15/13
+ * @author mdogan 5/15/13
  */
 public interface Connection extends Closeable {
 

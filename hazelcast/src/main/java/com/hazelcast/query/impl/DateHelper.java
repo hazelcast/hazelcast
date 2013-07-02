@@ -23,7 +23,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
- * @mdogan 4/26/12
+ * @author mdogan 4/26/12
  */
 final class DateHelper {
 

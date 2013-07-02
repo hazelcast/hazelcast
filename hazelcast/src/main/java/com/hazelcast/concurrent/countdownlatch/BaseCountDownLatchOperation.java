@@ -21,7 +21,7 @@ import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 /**
- * @mdogan 1/10/13
+ * @author mdogan 1/10/13
  */
 abstract class BaseCountDownLatchOperation extends AbstractNamedOperation implements PartitionAwareOperation {
 

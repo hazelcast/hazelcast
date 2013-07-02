@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * @ali 1/23/13
+ * @author ali 1/23/13
  */
 public class IdGeneratorProxy implements IdGenerator {
 

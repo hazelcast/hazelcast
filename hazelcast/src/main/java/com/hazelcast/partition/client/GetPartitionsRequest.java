@@ -34,7 +34,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @mdogan 5/13/13
+ * @author mdogan 5/13/13
  */
 public final class GetPartitionsRequest extends CallableClientRequest implements IdentifiedDataSerializable, RetryableRequest {
 

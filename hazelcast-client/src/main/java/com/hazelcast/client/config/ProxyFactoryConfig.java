@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @mdogan 5/17/13
+ * @author mdogan 5/17/13
  */
 public class ProxyFactoryConfig {
 

@@ -26,7 +26,7 @@ import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.impl.Transaction;
 
 /**
- * @ali 4/16/13
+ * @author ali 4/16/13
  */
 public class TransactionalSetProxy<E> extends TransactionalMultiMapProxySupport implements TransactionalSet<E> {
 

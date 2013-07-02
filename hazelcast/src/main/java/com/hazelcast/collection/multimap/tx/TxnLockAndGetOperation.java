@@ -31,7 +31,7 @@ import com.hazelcast.transaction.TransactionException;
 import java.io.IOException;
 
 /**
- * @ali 4/4/13
+ * @author ali 4/4/13
  */
 public class TxnLockAndGetOperation extends CollectionKeyBasedOperation implements WaitSupport, TxnMultiMapOperation {
 

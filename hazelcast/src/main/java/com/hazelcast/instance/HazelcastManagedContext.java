@@ -21,7 +21,7 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ManagedContext;
 
 /**
- * @mdogan 4/6/12
+ * @author mdogan 4/6/12
  */
 public final class HazelcastManagedContext implements ManagedContext {
 

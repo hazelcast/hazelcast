@@ -17,7 +17,7 @@
 package com.hazelcast.spi;
 
 /**
- * @mdogan 6/8/13
+ * @author mdogan 6/8/13
  */
 public final class ServiceInfo {
 

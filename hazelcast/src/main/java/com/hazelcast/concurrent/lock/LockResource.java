@@ -3,7 +3,7 @@ package com.hazelcast.concurrent.lock;
 import com.hazelcast.nio.serialization.Data;
 
 /**
- * @mdogan 6/12/13
+ * @author mdogan 6/12/13
  */
 public interface LockResource {
 
