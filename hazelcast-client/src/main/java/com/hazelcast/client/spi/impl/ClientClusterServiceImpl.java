@@ -27,9 +27,13 @@ import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ResponseHandler;
 import com.hazelcast.client.spi.ResponseStream;
 import com.hazelcast.client.util.AddressHelper;
+import com.hazelcast.client.util.ErrorHandler;
 import com.hazelcast.cluster.client.AddMembershipListenerRequest;
 import com.hazelcast.cluster.client.ClientMembershipEvent;
-import com.hazelcast.core.*;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
@@ -135,7 +139,8 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             final Data request = serializationService.toData(obj);
             conn.write(request);
             final Data response = conn.read();
-            return (T) serializationService.toObject(response);
+            final Object result = serializationService.toObject(response);
+            return ErrorHandler.returnResultOrThrowException(result);
         } catch (IOException e){
             ((ClientPartitionServiceImpl)client.getClientPartitionService()).refreshPartitions();
             if (redoOperation || obj instanceof RetryableRequest){
@@ -150,8 +155,11 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         final Data request = serializationService.toData(obj);
         conn.write(request);
         final Data response = conn.read();
-        return (T) serializationService.toObject(response);
+        final Object result = serializationService.toObject(response);
+        return ErrorHandler.returnResultOrThrowException(result) ;
     }
+
+
 
     private SerializationService getSerializationService() {
         return client.getSerializationService();
