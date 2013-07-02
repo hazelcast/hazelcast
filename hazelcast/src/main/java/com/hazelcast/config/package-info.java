@@ -14,13 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.transaction;
-
-import com.hazelcast.core.DistributedObject;
-
 /**
- * Marker interface for all transactional distributed objects.
+ * Provides classes for configuring HazelcastInstance.
  */
-public interface TransactionalObject extends DistributedObject {
-
-}
+package com.hazelcast.config;

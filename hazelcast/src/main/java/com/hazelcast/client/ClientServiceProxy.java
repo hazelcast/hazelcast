@@ -34,7 +34,7 @@ final class ClientServiceProxy implements ClientService {
     }
 
     public Collection<Client> getConnectedClients() {
-        return null;
+        return clientEngine.getEndpoints();
     }
 
     public String addClientListener(ClientListener clientListener) {

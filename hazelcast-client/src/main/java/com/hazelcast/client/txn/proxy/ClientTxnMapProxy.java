@@ -46,6 +46,10 @@ public class ClientTxnMapProxy<K,V> extends ClientTxnProxy implements Transactio
         return result;
     }
 
+    public boolean isEmpty() {
+        return size() == 0;
+    }
+
     public V put(K key, V value) {
         TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.PUT, toData(key), toData(value));
         return invoke(request);

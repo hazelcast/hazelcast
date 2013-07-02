@@ -14,13 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.transaction;
-
-import com.hazelcast.core.DistributedObject;
-
 /**
- * Marker interface for all transactional distributed objects.
+ * Contains interfaces/classes related to serialization;
+ * such as serializer interfaces, input/output streams.
  */
-public interface TransactionalObject extends DistributedObject {
-
-}
+package com.hazelcast.nio.serialization;

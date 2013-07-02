@@ -72,8 +72,6 @@ public class CollectionPortableHook implements PortableHook {
     public static final int TXN_SET_SIZE = 37;
 
 
-
-
     public int getFactoryId() {
         return F_ID;
     }

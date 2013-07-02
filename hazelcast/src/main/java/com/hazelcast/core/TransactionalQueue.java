@@ -18,6 +18,40 @@ package com.hazelcast.core;
 
 import com.hazelcast.transaction.TransactionalObject;
 
+import java.util.concurrent.TimeUnit;
+
+/**
+ * Transactional implementation of {@link BaseQueue}.
+ *
+ * @see BaseQueue
+ * @see IQueue
+ * @param <E>
+ */
 public interface TransactionalQueue<E> extends TransactionalObject, BaseQueue<E> {
+
+    /**
+     * {@inheritDoc}
+     */
+    boolean offer(E e);
+
+    /**
+     * {@inheritDoc}
+     */
+    boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException;
+
+    /**
+     * {@inheritDoc}
+     */
+    E poll();
+
+    /**
+     * {@inheritDoc}
+     */
+    E poll(long timeout, TimeUnit unit) throws InterruptedException;
+
+    /**
+     * {@inheritDoc}
+     */
+    int size();
 
 }

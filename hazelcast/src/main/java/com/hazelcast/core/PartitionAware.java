@@ -16,6 +16,15 @@
 
 package com.hazelcast.core;
 
+/**
+ * PartitionAware allows implementing keys to be located on the same member
+ * or implementing tasks to be executed on {@link #getPartitionKey()}'s owner member.
+ * This makes related data to be stored in the same location. (See data-affinity.)
+ *
+ * @param <T> key type
+ */
 public interface PartitionAware<T> {
+
     T getPartitionKey();
+
 }

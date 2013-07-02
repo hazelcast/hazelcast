@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.operation;
 
-import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.MapEntrySet;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.SimpleEntryView;
@@ -62,7 +62,7 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
             if (partitionId == partitionService.getPartitionId(dataKey)) {
                 Data dataOldValue = mapService.toData(recordStore.put(dataKey, dataValue, -1));
                 mapService.interceptAfterPut(name, dataValue);
-                int eventType = dataOldValue == null ? EntryEvent.TYPE_ADDED : EntryEvent.TYPE_UPDATED;
+                EntryEventType eventType = dataOldValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
                 mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, dataValue);
                 invalidateNearCaches(dataKey);
                 if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {

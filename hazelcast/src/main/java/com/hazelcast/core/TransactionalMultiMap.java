@@ -21,20 +21,44 @@ import com.hazelcast.transaction.TransactionalObject;
 import java.util.Collection;
 
 /**
- * @ali 3/13/13
+ *
+ * Transactional implementation of {@link BaseMultiMap}.
+ *
+ * @see BaseMultiMap
+ * @see MultiMap
+ * @param <K> key
+ * @param <V> value
  */
 public interface TransactionalMultiMap<K, V> extends BaseMultiMap<K, V>, TransactionalObject {
 
+    /**
+     * {@inheritDoc}
+     */
     boolean put(K key, V value);
 
+    /**
+     * {@inheritDoc}
+     */
     Collection<V> get(K key);
 
+    /**
+     * {@inheritDoc}
+     */
     boolean remove(Object key, Object value);
 
+    /**
+     * {@inheritDoc}
+     */
     Collection<V> remove(Object key);
 
+    /**
+     * {@inheritDoc}
+     */
     int valueCount(K key);
 
+    /**
+     * {@inheritDoc}
+     */
     int size();
 
 }

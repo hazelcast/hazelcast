@@ -16,6 +16,12 @@
 
 package com.hazelcast.core;
 
+/**
+ * EntryView represents a readonly view of a map entry.
+ *
+ * @param <K> key
+ * @param <V> value
+ */
 public interface EntryView<K,V> {
 
     /**
@@ -36,7 +42,7 @@ public interface EntryView<K,V> {
      * Returns the cost (in bytes) of the entry.
      *
      * <p><b>Warning:</b></p>
-     * <p>ˆ                                                                                      ˆ
+     * <p>                                                                                      ˆ
      * This method returns -1 if statistics is not enabled.
      * </p>
      *
@@ -48,7 +54,7 @@ public interface EntryView<K,V> {
      * Returns the creation time of the entry.
      *
      * <p><b>Warning:</b></p>
-     * <p>ˆ                                                                                      ˆ
+     * <p>                                                                                      ˆ
      * This method returns -1 if statistics is not enabled.
      * </p>
      *
@@ -67,7 +73,7 @@ public interface EntryView<K,V> {
      * Returns number of hits of the entry.
      *
      * <p><b>Warning:</b></p>
-     * <p>ˆ                                                                                      ˆ
+     * <p>                                                                                      ˆ
      * This method returns -1 if statistics is not enabled.
      * </p>
      *
@@ -79,7 +85,7 @@ public interface EntryView<K,V> {
      * Returns the last access time to the entry.
      *
      * <p><b>Warning:</b></p>
-     * <p>ˆ                                                                                      ˆ
+     * <p>                                                                                      ˆ
      * This method returns -1 if statistics is not enabled.
      * </p>
      *
@@ -91,7 +97,7 @@ public interface EntryView<K,V> {
      * Returns the last time value is flushed to mapstore.
      *
      * <p><b>Warning:</b></p>
-     * <p>ˆ                                                                                      ˆ
+     * <p>                                                                                      ˆ
      * This method returns -1 if statistics is not enabled.
      * </p>
      *
@@ -103,7 +109,7 @@ public interface EntryView<K,V> {
      * Returns the last time value is updated.
      *
      * <p><b>Warning:</b></p>
-     * <p>ˆ                                                                                      ˆ
+     * <p>                                                                                      ˆ
      * This method returns -1 if statistics is not enabled.
      * </p>
      * @return last update time

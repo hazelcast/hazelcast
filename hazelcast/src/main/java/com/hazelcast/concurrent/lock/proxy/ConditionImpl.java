@@ -35,7 +35,7 @@ import static com.hazelcast.concurrent.lock.LockService.SERVICE_NAME;
 /**
  * @mdogan 2/13/13
  */
-public final class ConditionImpl implements ICondition {
+final class ConditionImpl implements ICondition {
 
     private final LockProxy lockProxy;
     private final int partitionId;

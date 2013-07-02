@@ -33,7 +33,6 @@ import java.util.Collection;
  */
 public class TransactionalMultiMapProxy<K,V> extends TransactionalMultiMapProxySupport implements TransactionalMultiMap<K, V> {
 
-
     public TransactionalMultiMapProxy(NodeEngine nodeEngine, CollectionService service, CollectionProxyId proxyId, Transaction tx) {
         super(nodeEngine, service, proxyId, tx, nodeEngine.getConfig().getMultiMapConfig(proxyId.getName()));
     }
@@ -74,7 +73,4 @@ public class TransactionalMultiMapProxy<K,V> extends TransactionalMultiMapProxyS
         Data dataKey = getNodeEngine().toData(key);
         return valueCountInternal(dataKey);
     }
-
-
-
 }

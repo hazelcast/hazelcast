@@ -18,6 +18,11 @@ package com.hazelcast.core;
 
 import java.util.EventObject;
 
+/**
+ * Message for {@link ITopic}.
+ *
+ * @param <E> message type
+ */
 public class Message<E> extends EventObject {
 
     private final E messageObject;

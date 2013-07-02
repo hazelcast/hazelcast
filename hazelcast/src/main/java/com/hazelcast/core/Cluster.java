@@ -67,7 +67,7 @@ public interface Cluster {
      * Cluster-wide time is -almost- the same on all members
      * of the cluster.
      *
-     * @return
+     * @return cluster-wide time
      */
     long getClusterTime();
 }

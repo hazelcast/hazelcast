@@ -29,7 +29,6 @@ import java.util.concurrent.TimeUnit;
  */
 public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport implements TransactionalQueue<E> {
 
-
     public TransactionalQueueProxy(NodeEngine nodeEngine, QueueService service, String name, Transaction tx) {
         super(nodeEngine, service, name, tx);
     }
@@ -59,5 +58,4 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport i
         Data data = pollInternal(unit.toMillis(timeout));
         return getNodeEngine().toObject(data);
     }
-
 }

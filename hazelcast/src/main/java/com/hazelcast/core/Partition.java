@@ -16,9 +16,21 @@
 
 package com.hazelcast.core;
 
+/**
+ * Virtual partition instance.
+ * Each partition belongs to a member and this ownership may change when a member joins to or leaves the cluster.
+ */
 public interface Partition {
 
+    /**
+     * Returns id of the partition.
+     * @return id of the partition
+     */
     int getPartitionId();
 
+    /**
+     * Returns owner member of the partition.
+     * @return owner member of the partition
+     */
     Member getOwner();
 }

@@ -30,7 +30,6 @@ import java.util.concurrent.TimeUnit;
  */
 public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements TransactionalQueue<E>{
 
-
     public ClientTxnQueueProxy(String name, TransactionContextProxy proxy) {
         super(name, proxy);
     }
@@ -72,7 +71,6 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
     public String getName() {
         return (String)getId();
     }
-
 
     void onDestroy() {
         //TODO

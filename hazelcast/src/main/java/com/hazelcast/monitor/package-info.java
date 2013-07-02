@@ -14,13 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.transaction;
-
-import com.hazelcast.core.DistributedObject;
-
 /**
- * Marker interface for all transactional distributed objects.
+ * Contains Hazelcast statistics interfaces related to map, queue, topic, multimap, executor service etc.
  */
-public interface TransactionalObject extends DistributedObject {
-
-}
+package com.hazelcast.monitor;

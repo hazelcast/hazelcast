@@ -18,13 +18,17 @@ package com.hazelcast.client;
 
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.Config;
+import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientListener;
 import com.hazelcast.core.ClientService;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.*;
-import com.hazelcast.nio.serialization.*;
+import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataAdapter;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.*;
@@ -38,11 +42,11 @@ import com.hazelcast.util.UuidUtil;
 import javax.security.auth.login.LoginException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.*;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 /**
@@ -305,6 +309,10 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
 
     public ClientService getClientService() {
         return new ClientServiceProxy(this);
+    }
+
+    public Collection<Client> getEndpoints() {
+        return new HashSet<Client>(endpoints.values());
     }
 
     private class ClientPacketProcessor implements Runnable {

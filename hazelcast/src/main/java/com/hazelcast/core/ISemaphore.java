@@ -45,7 +45,6 @@ import java.util.concurrent.TimeUnit;
  * <li>Correct usage of a semaphore is established by programming convention in the application.
  * </ul>
  *
- * @since 1.9.3
  */
 
 public interface ISemaphore extends DistributedObject {

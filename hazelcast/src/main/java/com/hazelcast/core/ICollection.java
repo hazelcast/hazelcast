@@ -23,7 +23,7 @@ import java.util.Collection;
  *
  * @param <E> item
  */
-public interface ICollection<E> extends DistributedObject, Collection<E> {
+public interface ICollection<E> extends Collection<E>, DistributedObject {
     /**
      * Returns the name of this collection
      *
@@ -45,8 +45,6 @@ public interface ICollection<E> extends DistributedObject, Collection<E> {
     /**
      * Removes the specified item listener.
      * Returns silently if the specified listener is not added before.
-     *
-     *
      *
      * @param registrationId Id of listener registration.
      *

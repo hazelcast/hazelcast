@@ -30,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Concurrent, distributed, observable and queryable map.
+ *
  * <p/>
  * <p><b>This class is <i>not</i> a general-purpose <tt>ConcurrentMap</tt> implementation! While this class implements
  * the <tt>Map</tt> interface, it intentionally violates <tt>Map's</tt> general contract, which mandates the
@@ -63,7 +64,6 @@ import java.util.concurrent.TimeUnit;
  * @param <K> key
  * @param <V> value
  * @see java.util.concurrent.ConcurrentMap
- * @see java.util.IdentityHashMap
  */
 public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
 
@@ -71,7 +71,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * {@inheritDoc}
      * <p/>
      * <p><b>Warning:</b></p>
-     * <p>ˆ                                                                                      ˆ
+     * <p>                                                                                      ˆ
      * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in <tt>key</tt>'s class.
@@ -155,9 +155,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * Removes the mapping for a key from this map if it is present
      * (optional operation).
      *
-     * <p>Differently from remove(Object key); this operation does not return
-     * removed value. So it does not have the serialization/deserialization of
-     * value to be returned. If the removed value will not be used, delete operation
+     * <p>Differently from {@link #remove(Object)}; this operation does not return
+     * removed value to avoid serialization cost of returned value.
+     *
+     * If the removed value will not be used, delete operation
      * should be preferred over remove operation for a better performance.
      *
      * <p>The map will not contain a mapping for the specified key once the
@@ -425,6 +426,21 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * </p>
      */
     V replace(K key, V value);
+
+    /**
+     * Puts an entry into this map with a given ttl (time to live) value.
+     * Similar to put operation except that set
+     * doesn't return the old value which is more efficient.
+     * <p/>
+     * <p><b>Warning:</b></p>
+     * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
+     * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
+     * defined in <tt>key</tt>'s class.
+     *
+     * @param key      key of the entry
+     * @param value    value of the entry
+     */
+    void set(K key, V value);
 
     /**
      * Puts an entry into this map with a given ttl (time to live) value.

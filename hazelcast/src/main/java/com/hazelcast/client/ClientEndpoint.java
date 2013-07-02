@@ -28,7 +28,7 @@ import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.net.SocketAddress;
 
-public class ClientEndpoint implements Client {
+public final class ClientEndpoint implements Client {
 
     private final Connection conn;
     private String uuid;

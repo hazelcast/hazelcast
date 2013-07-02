@@ -1,88 +1,43 @@
-/*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.hazelcast.core;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
+/**
+ * DistributedObjectEvent is fired when a {@link DistributedObject}
+ * is created or destroyed cluster-wide.
+ *
+ * @see DistributedObject
+ * @see DistributedObjectListener
+ */
+public interface DistributedObjectEvent {
 
-import java.io.IOException;
+    /**
+     * Returns service name of related DistributedObject
+     *
+     * @return service name of DistributedObject
+     */
+    String getServiceName();
 
-public class DistributedObjectEvent implements DataSerializable, HazelcastInstanceAware {
+    /**
+     * Returns type of this event; one of {@link EventType#CREATED} or {@link EventType#DESTROYED}
+     *
+     * @return eventType
+     */
+    EventType getEventType();
+
+    /**
+     * Returns identifier of related DistributedObject
+     *
+     * @return identifier of DistributedObject
+     */
+    Object getObjectId();
+
+    /**
+     * Returns DistributedObject instance
+     *
+     * @return DistributedObject
+     */
+    DistributedObject getDistributedObject();
 
     public enum EventType {
         CREATED, DESTROYED
-    }
-
-    private EventType eventType;
-    private String serviceName;
-    private Object objectId;
-    private transient HazelcastInstance hazelcastInstance;
-
-    public DistributedObjectEvent() {
-    }
-
-    public DistributedObjectEvent(EventType eventType, String serviceName, Object objectId) {
-        this.eventType = eventType;
-        this.serviceName = serviceName;
-        this.objectId = objectId;
-    }
-
-    public String getServiceName() {
-        return serviceName;
-    }
-
-    public EventType getEventType() {
-        return eventType;
-    }
-
-    public Object getObjectId() {
-        return objectId;
-    }
-
-    public DistributedObject getDistributedObject() {
-        return hazelcastInstance != null ? hazelcastInstance.getDistributedObject(serviceName, objectId) : null;
-    }
-
-    public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-        this.hazelcastInstance = hazelcastInstance;
-    }
-
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeBoolean(eventType == EventType.CREATED);
-        out.writeUTF(serviceName);
-        out.writeObject(objectId);
-    }
-
-    public void readData(ObjectDataInput in) throws IOException {
-        eventType = in.readBoolean() ? EventType.CREATED : EventType.DESTROYED;
-        serviceName = in.readUTF();
-        objectId = in.readObject();
-    }
-
-
-    @Override
-    public String toString() {
-        final StringBuilder sb = new StringBuilder();
-        sb.append("DistributedObjectEvent");
-        sb.append("{eventType=").append(eventType);
-        sb.append(", serviceName='").append(serviceName).append('\'');
-        sb.append(", objectId=").append(objectId);
-        sb.append('}');
-        return sb.toString();
     }
 }
