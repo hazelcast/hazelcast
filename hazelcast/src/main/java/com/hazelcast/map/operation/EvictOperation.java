@@ -60,19 +60,17 @@ public class EvictOperation extends LockAwareOperation implements BackupAwareOpe
     }
 
     public int getAsyncBackupCount() {
-        if(asyncBackup) {
+        if (asyncBackup) {
             return mapService.getMapContainer(name).getTotalBackupCount();
-        }
-        else {
+        } else {
             return mapService.getMapContainer(name).getAsyncBackupCount();
         }
     }
 
     public int getSyncBackupCount() {
-        if(asyncBackup) {
+        if (asyncBackup) {
             return 0;
-        }
-        else {
+        } else {
             return mapService.getMapContainer(name).getBackupCount();
         }
     }
@@ -82,10 +80,12 @@ public class EvictOperation extends LockAwareOperation implements BackupAwareOpe
     }
 
     public void afterRun() {
-        mapService.interceptAfterRemove(name, dataValue);
-        int eventType = EntryEvent.TYPE_EVICTED;
-        mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataValue, null);
-        invalidateNearCaches();
+        if (evicted) {
+            mapService.interceptAfterRemove(name, dataValue);
+            int eventType = EntryEvent.TYPE_EVICTED;
+            mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataValue, null);
+            invalidateNearCaches();
+        }
     }
 
     @Override

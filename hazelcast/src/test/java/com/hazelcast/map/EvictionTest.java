@@ -634,4 +634,30 @@ public class EvictionTest extends HazelcastTestSupport {
             ex.shutdownNow();
         }
     }
+
+    /**
+     * Test for the issue 537.
+     * Eviction event is fired for an object already removed
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testEvictionAfterRemove() throws InterruptedException {
+        Config cfg = new Config();
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        HazelcastInstance instance = factory.newHazelcastInstance(cfg);
+        IMap<Object, Object> map = instance.getMap("map");
+        final AtomicInteger count = new AtomicInteger(0);
+        map.addEntryListener(new EntryAdapter<Object, Object>(){
+            @Override
+            public void entryEvicted(EntryEvent<Object, Object> event) {
+                 count.incrementAndGet();
+            }
+        },true);
+        map.put(1,1,1, TimeUnit.SECONDS);
+        map.put(2,2,1, TimeUnit.SECONDS);
+        map.remove(1);
+        Thread.sleep(2000);
+        assertEquals(1, count.get());
+    }
 }
