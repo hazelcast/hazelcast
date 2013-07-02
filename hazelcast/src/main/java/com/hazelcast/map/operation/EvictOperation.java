@@ -16,9 +16,7 @@
 
 package com.hazelcast.map.operation;
 
-import com.hazelcast.core.EntryEvent;
-import com.hazelcast.map.operation.LockAwareOperation;
-import com.hazelcast.map.operation.RemoveBackupOperation;
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -82,7 +80,7 @@ public class EvictOperation extends LockAwareOperation implements BackupAwareOpe
     public void afterRun() {
         if (evicted) {
             mapService.interceptAfterRemove(name, dataValue);
-            int eventType = EntryEvent.TYPE_EVICTED;
+            EntryEventType eventType = EntryEventType.EVICTED;
             mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataValue, null);
             invalidateNearCaches();
         }
