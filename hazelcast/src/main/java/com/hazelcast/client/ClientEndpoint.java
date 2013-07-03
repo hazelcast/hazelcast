@@ -90,7 +90,22 @@ public final class ClientEndpoint implements Client {
     }
 
     public ClientType getClientType() {
-        return ClientType.Native;
+        switch (conn.getType()) {
+            case JAVA_CLIENT:
+                return ClientType.JAVA;
+            case CSHARP_CLIENT:
+                return ClientType.CSHARP;
+            case CPP_CLIENT:
+                return ClientType.CPP;
+            case PYTHON_CLIENT:
+                return ClientType.PYTHON;
+            case RUBY_CLIENT:
+                return ClientType.RUBY;
+            case BINARY_CLIENT:
+                return ClientType.OTHER;
+            default:
+                throw new IllegalArgumentException("Invalid connection type: " + conn.getType());
+        }
     }
 
     public TransactionContext getTransactionContext() {

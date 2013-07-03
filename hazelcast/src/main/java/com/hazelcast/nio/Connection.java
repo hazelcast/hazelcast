@@ -33,6 +33,8 @@ public interface Connection {
 
     void close();
 
+    ConnectionType getType();
+
     boolean isClient();
 
     InetAddress getInetAddress();
@@ -40,4 +42,5 @@ public interface Connection {
     InetSocketAddress getRemoteSocketAddress();
 
     int getPort();
+
 }

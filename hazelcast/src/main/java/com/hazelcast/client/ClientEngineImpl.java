@@ -40,8 +40,6 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.UuidUtil;
 
 import javax.security.auth.login.LoginException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -122,10 +120,7 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
 
     public void sendResponse(ClientEndpoint endpoint, Object response) {
         if (response instanceof Throwable) {
-            Throwable t = (Throwable) response;
-            StringWriter s = new StringWriter();
-            t.printStackTrace(new PrintWriter(s));
-            response = new GenericError(s.toString(), 0);
+            response = ClientExceptionConverters.get(endpoint.getClientType()).convert((Throwable) response);
         }
         final Data resultData = response != null ? serializationService.toData(response) : NULL;
         Connection conn = endpoint.getConnection();
@@ -342,7 +337,7 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
                 } else {
                     String message = "Client " + conn + " must authenticate before any operation.";
                     logger.log(Level.SEVERE, message);
-                    sendResponse(endpoint, new GenericError(message, 0));
+                    sendResponse(endpoint, new AuthenticationException(message));
                     removeEndpoint(conn);
                 }
             } catch (Throwable e) {

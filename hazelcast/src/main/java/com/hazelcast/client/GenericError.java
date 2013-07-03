@@ -25,7 +25,7 @@ import java.io.IOException;
 /**
  * @author mdogan 4/29/13
  */
-public class GenericError implements Portable {
+public final class GenericError implements Portable {
 
     private String message;
 

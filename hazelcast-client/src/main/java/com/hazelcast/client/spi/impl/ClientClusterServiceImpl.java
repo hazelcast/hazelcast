@@ -21,7 +21,6 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.connection.Authenticator;
 import com.hazelcast.client.connection.ClientConnectionManager;
 import com.hazelcast.client.connection.Connection;
-import com.hazelcast.client.exception.AuthenticationException;
 import com.hazelcast.client.exception.ClientException;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ResponseHandler;
@@ -257,7 +256,13 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         try {
             final Connection connection = f.get(30, TimeUnit.SECONDS);
             clusterThread.setInitialConn(connection);
-        } catch (Exception e) {
+        } catch (Throwable e) {
+            if (e instanceof ExecutionException && e.getCause() != null) {
+                e = e.getCause();
+            }
+            if (e instanceof RuntimeException) {
+                throw (RuntimeException) e;
+            }
             throw new ClientException(e);
         }
         clusterThread.start();
@@ -497,11 +502,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         connection.setEndpoint(address);
 
         final Data data = connection.read();
-        Object response = serializationService.toObject(data);
-        if (response instanceof GenericError) {
-            throw new AuthenticationException(((GenericError) response).getMessage());
-        }
-        return response;
+        return ErrorHandler.returnResultOrThrowException(serializationService.toObject(data));
     }
 
 }

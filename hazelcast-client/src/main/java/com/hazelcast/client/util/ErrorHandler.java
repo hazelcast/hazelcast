@@ -16,8 +16,6 @@
 
 package com.hazelcast.client.util;
 
-import com.hazelcast.client.GenericError;
-import com.hazelcast.client.exception.HazelcastInstanceException;
 import com.hazelcast.util.ExceptionUtil;
 
 /**
@@ -25,11 +23,10 @@ import com.hazelcast.util.ExceptionUtil;
  */
 public class ErrorHandler {
 
-    public static  <T> T returnResultOrThrowException(Object result) {
-        if (result instanceof GenericError){
-            final GenericError genericError = (GenericError) result;
-            ExceptionUtil.rethrow(new HazelcastInstanceException(genericError.getMessage()));
-            return null;
+    public static <T> T returnResultOrThrowException(Object result) {
+        if (result instanceof Throwable) {
+          ExceptionUtil.sneakyThrow((Throwable) result);
+          return null; // not accessible!
         } else {
             return (T) result;
         }

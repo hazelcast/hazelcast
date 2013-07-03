@@ -27,6 +27,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -146,6 +147,15 @@ public class ClientExecutorServiceTest {
     }
 
 
-
+    @Test(expected = IllegalStateException.class)
+    public void submitFailingCallable() {
+        final Future<String> f = service.submit(new FailingTask());
+        try {
+            f.get();
+        } catch (InterruptedException e) {
+        } catch (ExecutionException e) {
+            throw (RuntimeException) e.getCause();
+        }
+    }
 
 }

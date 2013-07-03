@@ -194,6 +194,11 @@ final class TestNodeRegistry {
                     return false;
                 }
 
+                @Override
+                public ConnectionType getType() {
+                    return ConnectionType.MEMBER;
+                }
+
                 public InetAddress getInetAddress() {
                     try {
                         return thisAddress.getInetAddress();

@@ -99,7 +99,7 @@ public final class AuthenticationRequest extends CallableClientRequest implement
                 final ClusterService clusterService = clientEngine.getClusterService();
                 if (reAuth) {
                     if (clusterService.getMember(principal.getOwnerUuid()) != null) {
-                        return new GenericError("Owner member is already member of this cluster, cannot re-auth!", 0);
+                        return new AuthenticationException("Owner member is already member of this cluster, cannot re-auth!");
                     } else {
                         principal = new ClientPrincipal(principal.getUuid(), clientEngine.getLocalMember().getUuid());
                         final Collection<MemberImpl> members = clientEngine.getClusterService().getMemberList();
@@ -111,7 +111,7 @@ public final class AuthenticationRequest extends CallableClientRequest implement
                     }
                 } else if (clusterService.getMember(principal.getOwnerUuid()) == null) {
                     clientEngine.removeEndpoint(connection);
-                    return new GenericError("Owner member is not member of this cluster!", 0);
+                    return new AuthenticationException("Owner member is not member of this cluster!");
                 }
             }
             if (principal == null) {
@@ -122,7 +122,7 @@ public final class AuthenticationRequest extends CallableClientRequest implement
             return principal;
         } else {
             clientEngine.removeEndpoint(connection);
-            return new GenericError("Invalid credentials!", 0);
+            return new AuthenticationException("Invalid credentials!");
         }
     }
 

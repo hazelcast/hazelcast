@@ -45,6 +45,7 @@ public class SocketSimpleClient implements SimpleClient {
         socket.connect(node.address.getInetSocketAddress());
         OutputStream outputStream = socket.getOutputStream();
         outputStream.write(Protocols.CLIENT_BINARY.getBytes());
+        outputStream.write(ClientTypes.JAVA.getBytes());
         outputStream.flush();
         SerializationService ss = getSerializationService();
         in = ss.createObjectDataInputStream(new BufferedInputStream(socket.getInputStream()));

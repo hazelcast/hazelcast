@@ -17,10 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ClientPacket;
-import com.hazelcast.nio.Connection;
-import com.hazelcast.nio.SocketWritable;
+import com.hazelcast.nio.*;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataAdapter;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -127,6 +124,11 @@ public class MockSimpleClient implements SimpleClient {
         @Override
         public boolean isClient() {
             return true;
+        }
+
+        @Override
+        public ConnectionType getType() {
+            return ConnectionType.BINARY_CLIENT;
         }
 
         @Override

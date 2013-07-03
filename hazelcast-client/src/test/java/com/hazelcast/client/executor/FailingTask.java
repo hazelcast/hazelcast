@@ -14,17 +14,27 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.connection;
+package com.hazelcast.client.executor;
 
-import com.hazelcast.client.AuthenticationException;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
+import java.util.concurrent.Callable;
 
-/**
- * @author mdogan 5/15/13
- */
-public interface Authenticator {
+public class FailingTask implements Callable<String>, DataSerializable {
 
-    void auth(Connection connection) throws AuthenticationException, IOException;
+    public FailingTask() {
+    }
 
+    public String call() throws Exception {
+        throw new IllegalStateException();
+    }
+
+    public void writeData(ObjectDataOutput out) throws IOException {
+    }
+
+    public void readData(ObjectDataInput in) throws IOException {
+    }
 }
