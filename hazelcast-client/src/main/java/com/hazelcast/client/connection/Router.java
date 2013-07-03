@@ -23,7 +23,6 @@ import com.hazelcast.nio.Address;
 /**
  * @author mdogan 5/15/13
  */
-//TODO port malfunctioning
 class Router {
 
     private final LoadBalancer loadBalancer;
