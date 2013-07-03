@@ -181,6 +181,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         while (connection == null && retryCount > 0 ){
             if (address != null) {
                 connection = client.getConnectionManager().getConnection(address);
+                address = null;
             } else {
                 connection = client.getConnectionManager().getRandomConnection();
             }
@@ -192,7 +193,6 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     e.printStackTrace();
                 }
             }
-            address = null;
         }
         if (connection == null) {
             throw new HazelcastException("Unable to connect!!!");

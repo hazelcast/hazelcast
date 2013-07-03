@@ -98,9 +98,11 @@ public final class AuthenticationRequest extends CallableClientRequest implement
             if (principal != null) {
                 final ClusterService clusterService = clientEngine.getClusterService();
                 if (reAuth) {
-                    if (clusterService.getMember(principal.getOwnerUuid()) != null) {
-                        return new AuthenticationException("Owner member is already member of this cluster, cannot re-auth!");
-                    } else {
+                    //TODO @ali check reAuth
+
+//                    if (clusterService.getMember(principal.getOwnerUuid()) != null) {
+//                        return new AuthenticationException("Owner member is already member of this cluster, cannot re-auth!");
+//                    } else {
                         principal = new ClientPrincipal(principal.getUuid(), clientEngine.getLocalMember().getUuid());
                         final Collection<MemberImpl> members = clientEngine.getClusterService().getMemberList();
                         for (MemberImpl member : members) {
@@ -108,7 +110,7 @@ public final class AuthenticationRequest extends CallableClientRequest implement
                                 clientEngine.sendOperation(new ClientReAuthOperation(principal.getUuid(), firstConnection), member.getAddress());
                             }
                         }
-                    }
+//                    }
                 } else if (clusterService.getMember(principal.getOwnerUuid()) == null) {
                     clientEngine.removeEndpoint(connection);
                     return new AuthenticationException("Owner member is not member of this cluster!");
