@@ -28,7 +28,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 /**
- * @ali 1/3/13
+ * @author ali 1/3/13
  */
 public class CollectionResponse implements DataSerializable {
 

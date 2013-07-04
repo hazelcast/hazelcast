@@ -28,7 +28,7 @@ import com.hazelcast.queue.QueueService;
 import java.io.IOException;
 
 /**
- * @ali 5/23/13
+ * @author ali 5/23/13
  */
 public class RemainingCapacityRequest extends CallableClientRequest implements Portable, RetryableRequest {
 

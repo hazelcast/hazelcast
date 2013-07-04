@@ -70,14 +70,14 @@ public class IndexServiceTest {
         indexService.addOrGetIndex("name", false);
         indexService.addOrGetIndex("age", true);
         indexService.addOrGetIndex("salary", true);
-        for (int i = 0; i < 20000; i++) {
-            Employee employee = new Employee(i + "Name", i % 80, (i % 2 == 0), 100 + (i % 1000));
+        for (int i = 0; i < 2000; i++) {
+            Employee employee = new Employee(i + "Name", i % 80, (i % 2 == 0), 100 + (i % 100));
             indexService.saveEntryIndex(new QueryEntry(null, toData(i), i, employee));
         }
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 10; i++) {
             SqlPredicate predicate = new SqlPredicate("salary=161 and age >20 and age <23");
             Set<QueryableEntry> results = new HashSet<QueryableEntry>(indexService.query(predicate));
-            assertEquals(10, results.size());
+            assertEquals(5, results.size());
         }
     }
 

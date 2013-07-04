@@ -27,7 +27,7 @@ import com.hazelcast.spi.WaitNotifyKey;
 import java.io.IOException;
 
 /**
- * @ali 3/27/13
+ * @author ali 3/27/13
  */
 public class TxnRollbackOperation extends QueueBackupAwareOperation implements Notifier {
 

@@ -19,7 +19,7 @@ package com.hazelcast.cluster;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 /**
- * @mdogan 1/15/13
+ * @author mdogan 1/15/13
  */
 public interface Endpoint extends DataSerializable {
 

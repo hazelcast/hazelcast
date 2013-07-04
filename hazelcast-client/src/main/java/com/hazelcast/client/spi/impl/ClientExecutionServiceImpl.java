@@ -23,7 +23,7 @@ import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 import java.util.concurrent.*;
 
 /**
- * @mdogan 5/16/13
+ * @author mdogan 5/16/13
  */
 public final class ClientExecutionServiceImpl implements ClientExecutionService {
 
@@ -32,7 +32,9 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
 
     public ClientExecutionServiceImpl(String name, ThreadGroup threadGroup, ClassLoader classLoader) {
         final int cores = Runtime.getRuntime().availableProcessors();
-        executor = Executors.newFixedThreadPool(cores * 5, new PoolExecutorThreadFactory(threadGroup, name + ".cached-", classLoader));
+//        executor = Executors.newFixedThreadPool(cores * 5, new PoolExecutorThreadFactory(threadGroup, name + ".cached-", classLoader));
+        executor = Executors.newCachedThreadPool(new PoolExecutorThreadFactory(threadGroup, name + ".cached-", classLoader));
+
         scheduledExecutor = Executors.newSingleThreadScheduledExecutor(new SingleExecutorThreadFactory(threadGroup, classLoader, name + ".scheduled"));
     }
 

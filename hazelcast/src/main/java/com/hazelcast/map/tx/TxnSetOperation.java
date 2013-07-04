@@ -29,7 +29,7 @@ import com.hazelcast.spi.WaitNotifyKey;
 import java.io.IOException;
 
 /**
- * @mdogan 3/25/13
+ * @author mdogan 3/25/13
  */
 public class TxnSetOperation extends BasePutOperation implements MapTxnOperation {
 

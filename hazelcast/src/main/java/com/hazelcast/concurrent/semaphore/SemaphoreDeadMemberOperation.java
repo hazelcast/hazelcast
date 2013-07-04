@@ -25,7 +25,7 @@ import com.hazelcast.spi.WaitNotifyKey;
 import java.io.IOException;
 
 /**
- * @ali 1/23/13
+ * @author ali 1/23/13
  */
 public class SemaphoreDeadMemberOperation extends SemaphoreBackupAwareOperation implements Notifier {
 

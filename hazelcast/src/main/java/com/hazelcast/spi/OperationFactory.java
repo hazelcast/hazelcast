@@ -19,7 +19,7 @@ package com.hazelcast.spi;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 /**
- * @mdogan 1/17/13
+ * @author mdogan 1/17/13
  */
 public interface OperationFactory extends DataSerializable {
 

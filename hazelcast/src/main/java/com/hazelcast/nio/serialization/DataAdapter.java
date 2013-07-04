@@ -23,7 +23,7 @@ import com.hazelcast.nio.SocketWritable;
 import java.nio.ByteBuffer;
 
 /**
- * @mdogan 1/23/13
+ * @author mdogan 1/23/13
  */
 public class DataAdapter implements SocketWritable, SocketReadable {
 

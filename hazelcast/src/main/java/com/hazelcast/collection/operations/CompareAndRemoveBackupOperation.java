@@ -31,7 +31,7 @@ import java.util.Iterator;
 import java.util.Set;
 
 /**
- * @ali 1/21/13
+ * @author ali 1/21/13
  */
 public class CompareAndRemoveBackupOperation extends CollectionKeyBasedOperation implements BackupOperation {
 

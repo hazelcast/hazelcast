@@ -31,7 +31,7 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @ali 6/5/13
+ * @author ali 6/5/13
  */
 public class TxnOfferRequest extends CallableClientRequest implements Portable{
 

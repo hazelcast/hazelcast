@@ -32,11 +32,17 @@ import static com.hazelcast.aws.impl.Constants.*;
 import static com.hazelcast.aws.utility.CloudyUtility.unmarshalTheResponse;
 
 public class DescribeInstances {
-    private static final int FIVE_MINUTES = 5 * 60 * 1000;
+
     private final EC2RequestSigner rs;
-    private AwsConfig awsConfig;
+    private final AwsConfig awsConfig;
 
     public DescribeInstances(AwsConfig awsConfig) {
+        if (awsConfig == null) {
+            throw new IllegalArgumentException("AwsConfig is required!");
+        }
+        if (awsConfig.getAccessKey() == null) {
+            throw new IllegalArgumentException("AWS access key is required!");
+        }
         rs = new EC2RequestSigner(awsConfig.getSecretKey());
         attributes.put("Action", this.getClass().getSimpleName());
         attributes.put("Version", DOC_VERSION);
@@ -51,8 +57,7 @@ public class DescribeInstances {
      * Formats date as ISO 8601 timestamp
      */
     private String getFormattedTimestamp() {
-        SimpleDateFormat df = new SimpleDateFormat(
-                "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
         df.setTimeZone(TimeZone.getTimeZone("UTC"));
         return df.format(new Date());
     }

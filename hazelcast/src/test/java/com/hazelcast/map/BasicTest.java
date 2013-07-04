@@ -84,6 +84,18 @@ public class BasicTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testMapGetNullIsNotAllowed() {
+        IMap<String, String> map = getInstance().getMap("testMapGetNullIsNotAllowed");
+        try {
+            map.get(null);
+            fail();
+        }
+        catch (Exception e) {
+            assertTrue(e instanceof NullPointerException);
+        }
+    }
+
+    @Test
     public void valuesToArray() {
         IMap<String, String> map = getInstance().getMap("valuesToArray");
         assertEquals(0, map.size());
@@ -673,8 +685,14 @@ public class BasicTest extends HazelcastTestSupport {
     public void testGetAllPutAll() throws InterruptedException {
         warmUpPartitions(instances);
         final IMap<Object, Object> map = getInstance().getMap("testGetAllPutAll");
+        Set ss = new HashSet();
+        ss.add(1);
+        ss.add(3);
+        map.getAll(ss);
+        assertTrue(map.isEmpty());
+
         Map mm = new HashMap();
-        final int size = 100;
+        int size = 100;
         for (int i = 0; i < size; i++) {
             mm.put(i, i);
         }
@@ -684,7 +702,17 @@ public class BasicTest extends HazelcastTestSupport {
             assertEquals(map.get(i), i);
         }
 
-        Set ss = new HashSet();
+        size = 10000;
+        for (int i = 0; i < size; i++) {
+            mm.put(i, i);
+        }
+        map.putAll(mm);
+        assertEquals(size, map.size());
+        for (int i = 0; i < size; i++) {
+            assertEquals(map.get(i), i);
+        }
+
+        ss = new HashSet();
         ss.add(1);
         ss.add(3);
         Map m2 = map.getAll(ss);

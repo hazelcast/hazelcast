@@ -17,7 +17,7 @@
 package com.hazelcast.nio.serialization;
 
 /**
- * @mdogan 1/1/13
+ * @author mdogan 1/1/13
  */
 public interface FieldDefinition extends DataSerializable {
 

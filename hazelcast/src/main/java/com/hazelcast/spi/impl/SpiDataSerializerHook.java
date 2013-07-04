@@ -22,7 +22,7 @@ import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
 import com.hazelcast.util.ConstructorFunction;
 
 /**
- * @mdogan 8/24/12
+ * @author mdogan 8/24/12
  */
 public final class SpiDataSerializerHook implements DataSerializerHook {
 

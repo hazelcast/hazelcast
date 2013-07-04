@@ -31,7 +31,7 @@ import static com.hazelcast.nio.IOUtil.newObjectInputStream;
 import static com.hazelcast.nio.serialization.SerializationConstants.*;
 
 /**
- * @mdogan 6/18/12
+ * @author mdogan 6/18/12
  */
 public class DefaultSerializers {
 

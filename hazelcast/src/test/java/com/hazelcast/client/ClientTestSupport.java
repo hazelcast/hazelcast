@@ -35,7 +35,7 @@ import java.io.IOException;
 import java.util.Set;
 
 /**
- * @mdogan 5/14/13
+ * @author mdogan 5/14/13
  */
 @RunWith(HazelcastJUnit4ClassRunner.class)
 public abstract class ClientTestSupport {

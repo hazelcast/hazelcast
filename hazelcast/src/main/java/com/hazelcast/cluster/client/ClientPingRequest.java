@@ -25,7 +25,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 
 /**
- * @mdogan 5/17/13
+ * @author mdogan 5/17/13
  */
 public final class ClientPingRequest extends CallableClientRequest implements IdentifiedDataSerializable {
 

@@ -16,14 +16,17 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.client.ClientTypes;
+
 import java.nio.ByteBuffer;
+import java.util.logging.Level;
 
 class SocketClientDataReader implements SocketReader {
 
-    private ClientPacket packet = null;
-
     final TcpIpConnection connection;
     final IOService ioService;
+    ClientPacket packet;
+    boolean connectionTypeSet = false;
 
     public SocketClientDataReader(TcpIpConnection connection) {
         this.connection = connection;
@@ -32,18 +35,47 @@ class SocketClientDataReader implements SocketReader {
 
     public void read(ByteBuffer inBuffer) throws Exception {
         while (inBuffer.hasRemaining()) {
+            if (!connectionTypeSet) {
+                if (!setConnectionType(inBuffer)) {
+                    return;
+                }
+                connectionTypeSet = true;
+            }
             if (packet == null) {
                 packet = new ClientPacket(ioService.getSerializationContext());
             }
             boolean complete = packet.readFrom(inBuffer);
             if (complete) {
                 packet.setConn(connection);
-                connection.setType(TcpIpConnection.Type.BINARY_CLIENT);
                 ioService.handleClientPacket(packet);
                 packet = null;
             } else {
                 break;
             }
         }
+    }
+
+    private boolean setConnectionType(ByteBuffer inBuffer) {
+        if (inBuffer.remaining() >= 3) {
+            byte[] typeBytes = new byte[3];
+            inBuffer.get(typeBytes);
+            String type = new String(typeBytes);
+            if (ClientTypes.JAVA.equals(type)) {
+                connection.setType(ConnectionType.JAVA_CLIENT);
+            } else if (ClientTypes.CSHARP.equals(type)) {
+                connection.setType(ConnectionType.CSHARP_CLIENT);
+            } else if (ClientTypes.CPP.equals(type)) {
+                connection.setType(ConnectionType.CPP_CLIENT);
+            } else if (ClientTypes.PYTHON.equals(type)) {
+                connection.setType(ConnectionType.PYTHON_CLIENT);
+            } else if (ClientTypes.RUBY.equals(type)) {
+                connection.setType(ConnectionType.RUBY_CLIENT);
+            } else {
+                ioService.getLogger(getClass().getName()).log(Level.INFO, "Unknown client type: " + type);
+                connection.setType(ConnectionType.BINARY_CLIENT);
+            }
+            return true;
+        }
+        return false;
     }
 }

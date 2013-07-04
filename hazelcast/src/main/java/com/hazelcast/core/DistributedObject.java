@@ -16,6 +16,19 @@
 
 package com.hazelcast.core;
 
+/**
+ * Base interface for all distributed objects.
+ *
+ * @see IMap
+ * @see IQueue
+ * @see MultiMap
+ * @see ITopic
+ * @see ILock
+ * @see IExecutorService
+ * @see TransactionalMap
+ * @see TransactionalQueue
+ * @see TransactionalMultiMap
+ */
 public interface DistributedObject {
 
     /**

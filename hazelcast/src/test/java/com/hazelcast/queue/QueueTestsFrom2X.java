@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.junit.Assert.*;
 
 /**
- * @ali 6/3/13
+ * @author ali 6/3/13
  */
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)

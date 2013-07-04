@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @mdogan 6/17/13
+ * @author mdogan 6/17/13
  */
 
 @Ignore()

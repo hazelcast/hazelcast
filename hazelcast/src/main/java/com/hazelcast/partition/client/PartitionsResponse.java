@@ -25,7 +25,7 @@ import com.hazelcast.partition.PartitionDataSerializerHook;
 import java.io.IOException;
 
 /**
- * @mdogan 5/16/13
+ * @author mdogan 5/16/13
  */
 public final class PartitionsResponse implements IdentifiedDataSerializable {
 

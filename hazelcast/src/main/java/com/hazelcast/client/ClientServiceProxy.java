@@ -23,7 +23,7 @@ import com.hazelcast.core.ClientService;
 import java.util.Collection;
 
 /**
- * @mdogan 5/14/13
+ * @author mdogan 5/14/13
  */
 final class ClientServiceProxy implements ClientService {
 
@@ -34,7 +34,7 @@ final class ClientServiceProxy implements ClientService {
     }
 
     public Collection<Client> getConnectedClients() {
-        return null;
+        return clientEngine.getEndpoints();
     }
 
     public String addClientListener(ClientListener clientListener) {

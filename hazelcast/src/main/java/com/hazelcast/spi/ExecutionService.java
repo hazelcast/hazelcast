@@ -19,7 +19,7 @@ package com.hazelcast.spi;
 import java.util.concurrent.*;
 
 /**
- * @mdogan 12/14/12
+ * @author mdogan 12/14/12
  */
 public interface ExecutionService {
 
@@ -27,6 +27,7 @@ public interface ExecutionService {
     static final String ASYNC_EXECUTOR = "hz:async-inv";
     static final String SCHEDULED_EXECUTOR = "hz:scheduled";
     static final String CLIENT_EXECUTOR = "hz:client";
+    static final String QUERY_EXECUTOR = "hz:query";
 
     void execute(String name, Runnable command);
 

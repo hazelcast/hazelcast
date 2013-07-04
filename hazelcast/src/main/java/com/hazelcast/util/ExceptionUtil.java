@@ -22,7 +22,7 @@ import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import java.util.concurrent.ExecutionException;
 
 /**
- * @mdogan 2/11/13
+ * @author mdogan 2/11/13
  */
 public final class ExceptionUtil {
 

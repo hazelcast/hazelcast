@@ -23,7 +23,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 
 /**
- * @mdogan 1/14/13
+ * @author mdogan 1/14/13
  */
 public class CollectionProxyId implements IdentifiedDataSerializable {
 

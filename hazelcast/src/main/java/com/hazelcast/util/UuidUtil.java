@@ -21,7 +21,7 @@ import com.hazelcast.nio.Address;
 import java.util.UUID;
 
 /**
- * @mdogan 2/1/13
+ * @author mdogan 2/1/13
  */
 public class UuidUtil {
 

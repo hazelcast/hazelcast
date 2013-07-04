@@ -20,7 +20,7 @@ import com.hazelcast.collection.*;
 import com.hazelcast.nio.serialization.Data;
 
 /**
- * @ali 1/16/13
+ * @author ali 1/16/13
  */
 public class CountOperation extends CollectionKeyBasedOperation {
 

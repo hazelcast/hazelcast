@@ -22,7 +22,7 @@ import com.hazelcast.nio.serialization.SerializationService;
 import java.util.Iterator;
 
 /**
- * @ali 12/18/12
+ * @author ali 12/18/12
  */
 public class QueueIterator<E> implements Iterator<E> {
 

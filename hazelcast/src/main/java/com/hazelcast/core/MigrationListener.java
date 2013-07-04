@@ -18,11 +18,32 @@ package com.hazelcast.core;
 
 import java.util.EventListener;
 
+/**
+ * MigrationListener allows to listen partition migration events.
+ *
+ * @see Partition
+ * @see PartitionService
+ */
 public interface MigrationListener extends EventListener {
 
+    /**
+     * Invoked when a partition migration is started.
+     *
+     * @param migrationEvent event
+     */
     void migrationStarted(MigrationEvent migrationEvent);
 
+    /**
+     * Invoked when a partition migration is completed.
+     *
+     * @param migrationEvent event
+     */
     void migrationCompleted(MigrationEvent migrationEvent);
 
+    /**
+     * Invoked when a partition migration is failed.
+     *
+     * @param migrationEvent event
+     */
     void migrationFailed(MigrationEvent migrationEvent);
 }

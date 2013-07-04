@@ -27,6 +27,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -34,7 +35,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @ali 5/27/13
+ * @author ali 5/27/13
  */
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(SerialTest.class)
@@ -145,7 +146,30 @@ public class ClientExecutorServiceTest {
         assertTrue(latch.await(5, TimeUnit.SECONDS));
     }
 
+    @Test
+    @Ignore
+    public void testThreadPoolSize() throws Exception {
+        final Thread thread = new Thread() {
+            public void run() {
+                while (true) {
+                    service.submit(new CallableTask("asd"));
+                }
+            }
+        };
+        thread.start();
+        thread.join();
+    }
 
 
+    @Test(expected = IllegalStateException.class)
+    public void submitFailingCallable() {
+        final Future<String> f = service.submit(new FailingTask());
+        try {
+            f.get();
+        } catch (InterruptedException e) {
+        } catch (ExecutionException e) {
+            throw (RuntimeException) e.getCause();
+        }
+    }
 
 }

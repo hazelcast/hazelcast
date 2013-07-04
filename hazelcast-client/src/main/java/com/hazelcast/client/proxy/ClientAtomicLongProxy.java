@@ -23,7 +23,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ExceptionUtil;
 
 /**
- * @ali 5/24/13
+ * @author ali 5/24/13
  */
 public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
 

@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @ali 5/10/13
+ * @author ali 5/10/13
  */
 public class CompareAndRemoveRequest extends CollectionKeyBasedRequest {
 

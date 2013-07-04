@@ -19,7 +19,7 @@ package com.hazelcast.spi;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 /**
- * @mdogan 2/13/13
+ * @author mdogan 2/13/13
  */
 public interface ObjectNamespace extends DataSerializable {
 

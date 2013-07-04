@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
 /**
- * @mdogan 8/2/12
+ * @author mdogan 8/2/12
  */
 public final class ResponseHandlerFactory {
 

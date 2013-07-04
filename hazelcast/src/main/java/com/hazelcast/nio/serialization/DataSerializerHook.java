@@ -17,7 +17,7 @@
 package com.hazelcast.nio.serialization;
 
 /**
- * @mdogan 10/2/12
+ * @author mdogan 10/2/12
  */
 
 public interface DataSerializerHook {

@@ -19,7 +19,7 @@ package com.hazelcast.queue;
 import com.hazelcast.spi.AbstractWaitNotifyKey;
 
 /**
- * @mdogan 1/15/13
+ * @author mdogan 1/15/13
  */
 public class QueueWaitNotifyKey extends AbstractWaitNotifyKey {
 

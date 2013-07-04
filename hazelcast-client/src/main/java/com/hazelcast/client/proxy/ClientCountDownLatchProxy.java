@@ -25,7 +25,7 @@ import com.hazelcast.util.ExceptionUtil;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @ali 5/28/13
+ * @author ali 5/28/13
  */
 public class ClientCountDownLatchProxy extends ClientProxy implements ICountDownLatch{
 

@@ -23,7 +23,7 @@ import com.hazelcast.util.ConstructorFunction;
 import java.util.Collection;
 
 /**
- * @ali 5/8/13
+ * @author ali 5/8/13
  */
 public class QueuePortableHook implements PortableHook {
 

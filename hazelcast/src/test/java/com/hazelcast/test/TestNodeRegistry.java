@@ -194,6 +194,11 @@ final class TestNodeRegistry {
                     return false;
                 }
 
+                @Override
+                public ConnectionType getType() {
+                    return ConnectionType.MEMBER;
+                }
+
                 public InetAddress getInetAddress() {
                     try {
                         return thisAddress.getInetAddress();
@@ -268,8 +273,7 @@ final class TestNodeRegistry {
                         }
                     }
                     if (!node.joined()) {
-                        throw new AssertionError("Node[" + thisAddress + "] should have been joined to "
-                                + node.getMasterAddress());
+                        throw new AssertionError("Node[" + thisAddress + "] should have been joined to " + node.getMasterAddress());
                     }
                 }
             }

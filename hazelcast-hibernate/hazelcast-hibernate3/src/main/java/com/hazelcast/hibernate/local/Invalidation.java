@@ -23,7 +23,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import java.io.IOException;
 
 /**
- * @mdogan 11/12/12
+ * @author mdogan 11/12/12
  */
 public class Invalidation implements DataSerializable {
 

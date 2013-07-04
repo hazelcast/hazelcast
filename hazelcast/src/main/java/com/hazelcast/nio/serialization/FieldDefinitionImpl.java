@@ -22,7 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 
 /**
- * @mdogan 12/26/12
+ * @author mdogan 12/26/12
  */
 class FieldDefinitionImpl implements DataSerializable, FieldDefinition {
 

@@ -35,7 +35,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 /**
- * @mdogan 11/9/12
+ * @author mdogan 11/9/12
  */
 public class IMapRegionCache implements RegionCache {
 

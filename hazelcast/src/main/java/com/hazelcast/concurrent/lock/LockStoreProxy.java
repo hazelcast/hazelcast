@@ -22,7 +22,7 @@ import com.hazelcast.spi.ObjectNamespace;
 import java.util.Set;
 
 /**
- * @mdogan 3/14/13
+ * @author mdogan 3/14/13
  */
 public final class LockStoreProxy implements LockStore {
 

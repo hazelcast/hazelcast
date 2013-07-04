@@ -17,20 +17,26 @@
 package com.hazelcast.map.tx;
 
 import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.map.MapRecordKey;
 import com.hazelcast.map.MapService;
+import com.hazelcast.map.operation.ClearOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.BinaryOperationFactory;
 import com.hazelcast.transaction.impl.Transaction;
+import com.hazelcast.util.ExceptionUtil;
 
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashMap;
+import java.util.Map;
+
+import static com.hazelcast.map.MapService.SERVICE_NAME;
 
 /**
- * @mdogan 2/26/13
+ * @author mdogan 2/26/13
  */
 public class TxnMapProxy extends TxnMapProxySupport implements TransactionalMap {
 
-
-    private final ConcurrentHashMap<Object, TxnValueWrapper> txMap = new ConcurrentHashMap<Object, TxnValueWrapper>();
+    private final Map<Object, TxnValueWrapper> txMap = new HashMap<Object, TxnValueWrapper>();
 
     public TxnMapProxy(String name, MapService mapService, NodeEngine nodeEngine, Transaction transaction) {
         super(name, mapService, nodeEngine, transaction);
@@ -52,13 +58,16 @@ public class TxnMapProxy extends TxnMapProxySupport implements TransactionalMap 
         return currentSize;
     }
 
+    public boolean isEmpty() {
+        return size() == 0;
+    }
+
     public Object get(Object key) {
         TxnValueWrapper currentValue = txMap.get(key);
         if (currentValue != null) {
             return checkIfRemoved(currentValue);
         }
-        final Object value = getService().toObject(getInternal(getService().toData(key)));
-        return value;
+        return getService().toObject(getInternal(getService().toData(key)));
     }
 
     private Object checkIfRemoved(TxnValueWrapper wrapper) {

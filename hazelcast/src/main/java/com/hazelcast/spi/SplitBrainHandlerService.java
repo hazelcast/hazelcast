@@ -17,7 +17,7 @@
 package com.hazelcast.spi;
 
 /**
- * @mdogan 1/31/13
+ * @author mdogan 1/31/13
  */
 public interface SplitBrainHandlerService {
 

@@ -27,7 +27,7 @@ import com.hazelcast.queue.QueueService;
 import java.io.IOException;
 
 /**
- * @ali 5/24/13
+ * @author ali 5/24/13
  */
 public class QueueDestroyRequest extends CallableClientRequest implements Portable, RetryableRequest {
 

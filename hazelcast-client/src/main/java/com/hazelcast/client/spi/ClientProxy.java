@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * @mdogan 5/16/13
+ * @author mdogan 5/16/13
  */
 public abstract class ClientProxy implements DistributedObject {
 

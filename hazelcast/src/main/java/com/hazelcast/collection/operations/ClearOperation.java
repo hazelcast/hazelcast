@@ -30,7 +30,7 @@ import java.util.Collection;
 import java.util.Map;
 
 /**
- * @ali 1/9/13
+ * @author ali 1/9/13
  */
 public class ClearOperation extends CollectionOperation implements BackupAwareOperation, PartitionAwareOperation {
 

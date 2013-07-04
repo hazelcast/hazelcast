@@ -21,7 +21,7 @@ import com.hazelcast.util.ExceptionUtil;
 import java.util.concurrent.Executor;
 
 /**
- * @mdogan 4/9/13
+ * @author mdogan 4/9/13
  */
 public final class ScheduledTaskRunner implements Runnable {
 

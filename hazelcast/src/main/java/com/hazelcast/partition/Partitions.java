@@ -4,7 +4,7 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
- * @mdogan 6/12/13
+ * @author mdogan 6/12/13
  */
 public final class Partitions implements Iterable<PartitionView> {
 

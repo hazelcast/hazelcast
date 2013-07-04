@@ -31,7 +31,7 @@ import java.util.*;
 import java.util.concurrent.Future;
 
 /**
- * @ali 1/2/13
+ * @author ali 1/2/13
  */
 public abstract class MultiMapProxySupport extends AbstractDistributedObject<CollectionService> {
 

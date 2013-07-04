@@ -17,7 +17,7 @@
 package com.hazelcast.concurrent.countdownlatch;
 
 /**
- * @mdogan 1/10/13
+ * @author mdogan 1/10/13
  */
 public class GetCountOperation extends BaseCountDownLatchOperation {
 

@@ -30,7 +30,7 @@ import org.hibernate.cache.spi.access.EntityRegionAccessStrategy;
 import java.util.Properties;
 
 /**
- * @mdogan 11/9/12
+ * @author mdogan 11/9/12
  */
 public final class HazelcastEntityRegion<Cache extends RegionCache>
         extends AbstractTransactionalDataRegion<Cache> implements EntityRegion {

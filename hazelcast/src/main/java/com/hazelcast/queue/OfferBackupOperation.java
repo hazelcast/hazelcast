@@ -26,7 +26,7 @@ import com.hazelcast.spi.BackupOperation;
 import java.io.IOException;
 
 /**
- * @ali 12/11/12
+ * @author ali 12/11/12
  */
 public final class OfferBackupOperation extends QueueOperation implements BackupOperation, IdentifiedDataSerializable {
 

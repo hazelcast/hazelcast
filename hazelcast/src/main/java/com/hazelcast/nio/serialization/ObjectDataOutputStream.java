@@ -26,7 +26,7 @@ import java.io.OutputStream;
 import java.nio.ByteOrder;
 
 /**
- * @mdogan 01/23/13
+ * @author mdogan 01/23/13
  */
 public class ObjectDataOutputStream extends OutputStream implements ObjectDataOutput, Closeable, SerializationContextAware {
 

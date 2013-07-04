@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.connection;
 
+import com.hazelcast.client.ClientTypes;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
@@ -70,6 +71,7 @@ public class SmartClientConnectionManager implements ClientConnectionManager {
         checkLive();
         final ConnectionImpl connection = new ConnectionImpl(address, socketOptions, client.getSerializationService());
         connection.write(Protocols.CLIENT_BINARY.getBytes());
+        connection.write(ClientTypes.JAVA.getBytes());
         if (socketInterceptor != null) {
             socketInterceptor.onConnect(connection.getSocket());
         }

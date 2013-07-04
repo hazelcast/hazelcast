@@ -24,7 +24,7 @@ import com.hazelcast.spi.CoreService;
 import java.util.Collection;
 
 /**
- * @mdogan 1/24/13
+ * @author mdogan 1/24/13
  */
 public interface ClusterService extends CoreService {
 

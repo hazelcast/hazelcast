@@ -41,7 +41,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 /**
- * @mdogan 12/14/12
+ * @author mdogan 12/14/12
  */
 
 public class EventServiceImpl implements EventService, PostJoinAwareService {
@@ -466,7 +466,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         service.dispatchEvent(event, listener);
         final long end = Clock.currentTimeMillis();
         if ((end - start) > 50) {
-            logger.log(Level.WARNING, "Caution: Off-load event processing to your own thread-pool, don't use event thread!");
+            logger.log(Level.WARNING, "Caution: Off-load event processing to your own thread-pool, don't use event thread! Listener: " + listener);
         }
     }
 

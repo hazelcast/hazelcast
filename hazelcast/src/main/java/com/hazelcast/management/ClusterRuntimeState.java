@@ -33,7 +33,7 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * @mdogan 5/8/12
+ * @author mdogan 5/8/12
  */
 public class ClusterRuntimeState extends PartitionRuntimeState implements DataSerializable {
 

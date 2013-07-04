@@ -25,7 +25,7 @@ import org.junit.After;
 import org.junit.runner.RunWith;
 
 /**
- * @mdogan 5/24/13
+ * @author mdogan 5/24/13
  */
 
 @RunWith(HazelcastJUnit4ClassRunner.class)

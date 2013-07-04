@@ -22,7 +22,7 @@ import com.hazelcast.nio.serialization.*;
 import java.util.Collection;
 
 /**
- * @mdogan 5/3/13
+ * @author mdogan 5/3/13
  */
 public class LockPortableHook implements PortableHook {
 

@@ -27,7 +27,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 
 /**
- * @ali 5/27/13
+ * @author ali 5/27/13
  */
 public class IsShutdownRequest extends CallableClientRequest implements IdentifiedDataSerializable, RetryableRequest {
 

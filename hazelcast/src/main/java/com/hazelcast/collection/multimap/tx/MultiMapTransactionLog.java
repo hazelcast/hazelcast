@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.concurrent.Future;
 
 /**
- * @ali 3/29/13
+ * @author ali 3/29/13
  */
 public class MultiMapTransactionLog implements KeyAwareTransactionLog {
 

@@ -58,7 +58,8 @@ abstract class AbstractSelectionHandler implements SelectionHandler {
             sk.cancel();
         }
         connection.close(e);
-        if (connection.getType().isClient() && !connection.getType().isBinary()) {
+        final ConnectionType connectionType = connection.getType();
+        if (connectionType.isClient() && !connectionType.isBinary()) {
             return;
         }
         StringBuilder sb = new StringBuilder();

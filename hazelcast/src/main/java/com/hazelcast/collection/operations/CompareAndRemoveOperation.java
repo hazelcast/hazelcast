@@ -30,7 +30,7 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * @ali 1/21/13
+ * @author ali 1/21/13
  */
 public class CompareAndRemoveOperation extends CollectionBackupAwareOperation {
 

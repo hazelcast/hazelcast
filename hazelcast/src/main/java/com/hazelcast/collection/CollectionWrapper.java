@@ -19,7 +19,7 @@ package com.hazelcast.collection;
 import java.util.Collection;
 
 /**
- * @ali 3/1/13
+ * @author ali 3/1/13
  */
 public class CollectionWrapper {
 

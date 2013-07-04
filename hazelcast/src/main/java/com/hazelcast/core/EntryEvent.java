@@ -30,14 +30,6 @@ public class EntryEvent<K, V> extends EventObject {
 
     private static final long serialVersionUID = -2296203982913729851L;
 
-    public static final int TYPE_ADDED = EntryEventType.ADDED.getType();
-
-    public static final int TYPE_REMOVED = EntryEventType.REMOVED.getType();
-
-    public static final int TYPE_UPDATED = EntryEventType.UPDATED.getType();
-
-    public static final int TYPE_EVICTED = EntryEventType.EVICTED.getType();
-
     protected final EntryEventType entryEventType;
 
     protected K key;

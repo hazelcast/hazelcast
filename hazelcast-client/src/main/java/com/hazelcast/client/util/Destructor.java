@@ -17,7 +17,7 @@
 package com.hazelcast.client.util;
 
 /**
- * @mdogan 5/17/13
+ * @author mdogan 5/17/13
  */
 public interface Destructor<E> {
 

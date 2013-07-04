@@ -19,7 +19,7 @@ package com.hazelcast.spi;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 /**
- * @mdogan 1/31/13
+ * @author mdogan 1/31/13
  */
 @PrivateApi
 public class DistributedObjectAccessor {

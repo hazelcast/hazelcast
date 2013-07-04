@@ -17,7 +17,7 @@
 package com.hazelcast.nio.serialization;
 
 /**
- * @mdogan 5/17/12
+ * @author mdogan 5/17/12
  */
 public final class SerializationConstants {
 

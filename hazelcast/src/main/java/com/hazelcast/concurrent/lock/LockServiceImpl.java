@@ -35,7 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * @mdogan 2/12/13
+ * @author mdogan 2/12/13
  */
 public final class LockServiceImpl implements ManagedService, RemoteService, MembershipAwareService,
         MigrationAwareService, LockService, ClientAwareService {

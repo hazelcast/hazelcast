@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @mdogan 4/12/12
+ * @author mdogan 4/12/12
  */
 public final class ClassLoaderUtil {
 

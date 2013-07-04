@@ -19,7 +19,7 @@ package com.hazelcast.spi;
 import java.util.Collection;
 
 /**
- * @mdogan 12/14/12
+ * @author mdogan 12/14/12
  */
 public interface EventService {
 

@@ -25,7 +25,7 @@ import com.hazelcast.util.ExceptionUtil;
 import java.io.IOException;
 
 /**
- * @ali 6/10/13
+ * @author ali 6/10/13
  */
 abstract class ClientTxnProxy {
 

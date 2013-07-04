@@ -50,7 +50,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 /**
- * @mdogan 12/14/12
+ * @author mdogan 12/14/12
  */
 final class OperationServiceImpl implements OperationService {
 

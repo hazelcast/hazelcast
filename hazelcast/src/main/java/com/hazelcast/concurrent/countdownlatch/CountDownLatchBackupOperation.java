@@ -23,7 +23,7 @@ import com.hazelcast.spi.BackupOperation;
 import java.io.IOException;
 
 /**
- * @mdogan 1/16/13
+ * @author mdogan 1/16/13
  */
 public class CountDownLatchBackupOperation extends BaseCountDownLatchOperation implements BackupOperation {
 

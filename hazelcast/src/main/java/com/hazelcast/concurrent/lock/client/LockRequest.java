@@ -25,7 +25,7 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import java.io.IOException;
 
 /**
- * @mdogan 5/3/13
+ * @author mdogan 5/3/13
  */
 public final class LockRequest extends AbstractLockRequest {
 

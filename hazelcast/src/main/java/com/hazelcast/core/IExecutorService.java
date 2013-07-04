@@ -24,43 +24,186 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+/**
+ * Distributed implementation of {@link ExecutorService}.
+ * IExecutorService provides additional methods like executing tasks
+ * on a specific member, on a member who is owner of a specific key,
+ * executing a tasks on multiple members and listening execution result using a callback.
+ *
+ * @see ExecutorService
+ * @see ExecutionCallback
+ * @see MultiExecutionCallback
+ */
 public interface IExecutorService extends ExecutorService, DistributedObject {
 
+    /**
+     * Executes task on owner of the specified key
+     *
+     * @param command task
+     * @param key key
+     */
     void executeOnKeyOwner(Runnable command, Object key);
 
+    /**
+     * Executes task on the specified member
+     *
+     * @param command task
+     * @param member member
+     */
     void executeOnMember(Runnable command, Member member);
 
+    /**
+     * Executes task on each of the specified members
+     *
+     * @param command task
+     * @param members members
+     */
     void executeOnMembers(Runnable command, Collection<Member> members);
 
+    /**
+     * Executes task on all of known cluster members
+     *
+     * @param command task
+     */
     void executeOnAllMembers(Runnable command);
 
+    /**
+     * Submits task to owner of the specified key and returns a Future
+     * representing that task.
+     *
+     * @param task task
+     * @param key key
+     * @return a Future representing pending completion of the task
+     */
     <T> Future<T> submitToKeyOwner(Callable<T> task, Object key);
 
+    /**
+     * Submits task to specified member and returns a Future
+     * representing that task.
+     *
+     * @param task task
+     * @param member member
+     * @return a Future representing pending completion of the task
+     */
     <T> Future<T> submitToMember(Callable<T> task, Member member);
 
+    /**
+     * Submits task to given members and returns
+     * map of Member-Future pairs representing pending completion of the task on each member
+     *
+     * @param task task
+     * @param members members
+     * @return map of Member-Future pairs representing pending completion of the task on each member
+     */
     <T> Map<Member, Future<T>> submitToMembers(Callable<T> task, Collection<Member> members);
 
+    /**
+     * Submits task to all cluster members and returns
+     * map of Member-Future pairs representing pending completion of the task on each member
+     *
+     * @param task task
+     * @return map of Member-Future pairs representing pending completion of the task on each member
+     */
     <T> Map<Member, Future<T>> submitToAllMembers(Callable<T> task);
 
+    /**
+     * Submits task to a random member. Caller will be notified for the result of the task by
+     * {@link ExecutionCallback#onResponse(Object)} or {@link ExecutionCallback#onFailure(Throwable)}.
+     *
+     * @param task task
+     * @param callback callback
+     */
     void submit(Runnable task, ExecutionCallback callback);
 
+    /**
+     * Submits task to owner of the specified key. Caller will be notified for the result of the task by
+     * {@link ExecutionCallback#onResponse(Object)} or {@link ExecutionCallback#onFailure(Throwable)}.
+     *
+     * @param task task
+     * @param callback callback
+     */
     void submitToKeyOwner(Runnable task, Object key, ExecutionCallback callback);
 
+    /**
+     * Submits task to the specified member. Caller will be notified for the result of the task by
+     * {@link ExecutionCallback#onResponse(Object)} or {@link ExecutionCallback#onFailure(Throwable)}.
+     *
+     * @param task task
+     * @param callback callback
+     */
     void submitToMember(Runnable task, Member member, ExecutionCallback callback);
 
+    /**
+     * Submits task to the specified members. Caller will be notified for the result of the each task by
+     * {@link MultiExecutionCallback#onResponse(Member, Object)} and when all tasks are completed
+     * {@link MultiExecutionCallback#onResponse(Member, Object)} will be called.
+     *
+     * @param task task
+     * @param callback callback
+     */
     void submitToMembers(Runnable task, Collection<Member> members, MultiExecutionCallback callback);
 
+    /**
+     * Submits task to the all cluster members. Caller will be notified for the result of the each task by
+     * {@link MultiExecutionCallback#onResponse(Member, Object)} and when all tasks are completed
+     * {@link MultiExecutionCallback#onResponse(Member, Object)} will be called.
+     *
+     * @param task task
+     * @param callback callback
+     */
     void submitToAllMembers(Runnable task, MultiExecutionCallback callback);
 
+    /**
+     * Submits task to a random member. Caller will be notified for the result of the task by
+     * {@link ExecutionCallback#onResponse(Object)} or {@link ExecutionCallback#onFailure(Throwable)}.
+     *
+     * @param task task
+     * @param callback callback
+     */
     <T> void submit(Callable<T> task, ExecutionCallback<T> callback);
 
+    /**
+     * Submits task to owner of the specified key. Caller will be notified for the result of the task by
+     * {@link ExecutionCallback#onResponse(Object)} or {@link ExecutionCallback#onFailure(Throwable)}.
+     *
+     * @param task task
+     * @param callback callback
+     */
     <T> void submitToKeyOwner(Callable<T> task, Object key, ExecutionCallback<T> callback);
 
+    /**
+     * Submits task to the specified member. Caller will be notified for the result of the task by
+     * {@link ExecutionCallback#onResponse(Object)} or {@link ExecutionCallback#onFailure(Throwable)}.
+     *
+     * @param task task
+     * @param callback callback
+     */
     <T> void submitToMember(Callable<T> task, Member member, ExecutionCallback<T> callback);
 
+    /**
+     * Submits task to the specified members. Caller will be notified for the result of the each task by
+     * {@link MultiExecutionCallback#onResponse(Member, Object)} and when all tasks are completed
+     * {@link MultiExecutionCallback#onResponse(Member, Object)} will be called.
+     *
+     * @param task task
+     * @param callback callback
+     */
     <T> void submitToMembers(Callable<T> task, Collection<Member> members, MultiExecutionCallback callback);
 
+    /**
+     * Submits task to the all cluster members. Caller will be notified for the result of the each task by
+     * {@link MultiExecutionCallback#onResponse(Member, Object)} and when all tasks are completed
+     * {@link MultiExecutionCallback#onResponse(Member, Object)} will be called.
+     *
+     * @param task task
+     * @param callback callback
+     */
     <T> void submitToAllMembers(Callable<T> task, MultiExecutionCallback callback);
 
+    /**
+     * Returns local statistics related to this executor service.
+     *
+     * @return local statistics related to this executor service.
+     */
     LocalExecutorStats getLocalExecutorStats();
 }

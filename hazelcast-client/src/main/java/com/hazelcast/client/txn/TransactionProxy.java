@@ -32,7 +32,7 @@ import java.io.IOException;
 import static com.hazelcast.transaction.impl.Transaction.State.*;
 
 /**
- * @ali 6/6/13
+ * @author ali 6/6/13
  */
 public class TransactionProxy implements Transaction {
 

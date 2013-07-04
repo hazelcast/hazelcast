@@ -19,7 +19,7 @@ package com.hazelcast.spi;
 import com.hazelcast.core.DistributedObject;
 
 /**
- * @mdogan 10/31/12
+ * @author mdogan 10/31/12
  */
 public interface RemoteService {
 

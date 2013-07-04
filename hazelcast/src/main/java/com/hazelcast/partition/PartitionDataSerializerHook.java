@@ -25,7 +25,7 @@ import com.hazelcast.partition.client.GetPartitionsRequest;
 import com.hazelcast.partition.client.PartitionsResponse;
 
 /**
- * @mdogan 5/13/13
+ * @author mdogan 5/13/13
  */
 public final class PartitionDataSerializerHook implements DataSerializerHook {
 

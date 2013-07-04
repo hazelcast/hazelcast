@@ -19,7 +19,7 @@ package com.hazelcast.concurrent.countdownlatch;
 import com.hazelcast.spi.AbstractWaitNotifyKey;
 
 /**
- * @mdogan 1/16/13
+ * @author mdogan 1/16/13
  */
 public class LatchKey extends AbstractWaitNotifyKey {
 

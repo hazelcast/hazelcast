@@ -45,11 +45,15 @@ public final class HazelcastInstanceFactory {
     private static final Object INSTANCE_NAME_LOCK = new Object();
 
     public static Set<HazelcastInstance> getAllHazelcastInstances() {
-        return new HashSet<HazelcastInstance>(INSTANCE_MAP.values());
+        synchronized (INSTANCE_NAME_LOCK) {
+            return new HashSet<HazelcastInstance>(INSTANCE_MAP.values());
+        }
     }
 
     public static HazelcastInstance getHazelcastInstance(String instanceName) {
-        return INSTANCE_MAP.get(instanceName);
+        synchronized (INSTANCE_NAME_LOCK) {
+            return INSTANCE_MAP.get(instanceName);
+        }
     }
 
     public static HazelcastInstance newHazelcastInstance(Config config) {

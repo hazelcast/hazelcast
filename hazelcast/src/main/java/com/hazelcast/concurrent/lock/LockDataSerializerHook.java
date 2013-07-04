@@ -21,7 +21,7 @@ import com.hazelcast.nio.serialization.DataSerializerHook;
 import com.hazelcast.nio.serialization.FactoryIdHelper;
 
 /**
- * @mdogan 5/14/13
+ * @author mdogan 5/14/13
  */
 public final class LockDataSerializerHook implements DataSerializerHook {
 

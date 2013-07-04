@@ -28,7 +28,6 @@ import com.hazelcast.monitor.LocalTopicStats;
  * m1, m2, m3...mn to a topic T, then Hazelcast makes sure that all of the subscribers of topic T will receive
  * and process m1, m2, m3...mn in order.
  *
- * @since ??
  */
 public interface ITopic<E> extends DistributedObject {
 

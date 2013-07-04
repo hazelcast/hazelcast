@@ -26,10 +26,9 @@ import com.hazelcast.queue.client.TxnSizeRequest;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @ali 6/7/13
+ * @author ali 6/7/13
  */
 public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements TransactionalQueue<E>{
-
 
     public ClientTxnQueueProxy(String name, TransactionContextProxy proxy) {
         super(name, proxy);
@@ -72,7 +71,6 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
     public String getName() {
         return (String)getId();
     }
-
 
     void onDestroy() {
         //TODO

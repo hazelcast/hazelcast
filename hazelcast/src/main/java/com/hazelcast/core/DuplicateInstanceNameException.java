@@ -16,6 +16,9 @@
 
 package com.hazelcast.core;
 
+/**
+ * Thrown when a duplicate instance name is detected.
+ */
 public class DuplicateInstanceNameException extends HazelcastException {
 
     public DuplicateInstanceNameException() {

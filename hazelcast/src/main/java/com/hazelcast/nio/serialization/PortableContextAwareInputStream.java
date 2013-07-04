@@ -19,7 +19,7 @@ package com.hazelcast.nio.serialization;
 import java.io.InputStream;
 
 /**
- * @mdogan 06/15/13
+ * @author mdogan 06/15/13
  */
 abstract class PortableContextAwareInputStream extends InputStream {
 

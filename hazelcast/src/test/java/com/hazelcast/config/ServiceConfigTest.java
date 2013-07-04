@@ -27,7 +27,7 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.*;
 
 /**
- * @mdogan 6/24/13
+ * @author mdogan 6/24/13
  */
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)

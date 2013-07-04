@@ -25,6 +25,9 @@ import com.hazelcast.spi.exception.RetryableException;
 import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 
+/**
+ * Thrown when a member left during an invocation or execution.
+ */
 public class MemberLeftException extends ExecutionException implements DataSerializable, RetryableException {
 
     private Member member;

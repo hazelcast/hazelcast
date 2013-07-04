@@ -17,7 +17,7 @@
 package com.hazelcast;
 
 /**
- * @mdogan 6/5/13
+ * @author mdogan 6/5/13
  */
 public class PlaceHolder {
 }

@@ -19,7 +19,7 @@ package com.hazelcast.client.spi;
 import java.io.IOException;
 
 /**
- * @mdogan 5/15/13
+ * @author mdogan 5/15/13
  */
 public interface ResponseStream {
 

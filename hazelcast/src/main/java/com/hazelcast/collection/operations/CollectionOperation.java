@@ -28,7 +28,7 @@ import java.io.IOException;
 import java.util.Collection;
 
 /**
- * @ali 1/8/13
+ * @author ali 1/8/13
  */
 public abstract class CollectionOperation extends Operation implements PartitionAwareOperation, IdentifiedDataSerializable{
 

@@ -41,7 +41,7 @@ import java.util.*;
 import static org.junit.Assert.*;
 
 /**
- * @ali 5/10/13
+ * @author ali 5/10/13
  */
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)

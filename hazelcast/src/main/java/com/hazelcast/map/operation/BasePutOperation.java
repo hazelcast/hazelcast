@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.operation;
 
-import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.SimpleEntryView;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
@@ -40,7 +40,7 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
 
     public void afterRun() {
         mapService.interceptAfterPut(name, dataValue);
-        int eventType = dataOldValue == null ? EntryEvent.TYPE_ADDED : EntryEvent.TYPE_UPDATED;
+        EntryEventType eventType = dataOldValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
         mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, dataValue);
         invalidateNearCaches();
         if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {

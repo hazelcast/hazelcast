@@ -30,7 +30,7 @@ import java.util.ArrayList;
 import java.util.Map;
 
 /**
- * @ali 12/19/12
+ * @author ali 12/19/12
  */
 public class DrainOperation extends QueueBackupAwareOperation implements Notifier {
 

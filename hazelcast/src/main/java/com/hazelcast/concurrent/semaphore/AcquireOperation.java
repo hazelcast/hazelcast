@@ -25,7 +25,7 @@ import com.hazelcast.spi.WaitSupport;
 import java.io.IOException;
 
 /**
- * @ali 1/22/13
+ * @author ali 1/22/13
  */
 public class AcquireOperation extends SemaphoreBackupAwareOperation implements WaitSupport {
 

@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl;
 
+import java.sql.Time;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -23,19 +24,20 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 /**
- * @mdogan 4/26/12
+ * @author mdogan 4/26/12
  */
 final class DateHelper {
 
-    static final String timestampFormat = "yyyy-MM-dd hh:mm:ss.SSS";
+    static final String timestampFormat = "yyyy-MM-dd HH:mm:ss.SSS";
     static final String dateFormat = "EEE MMM dd HH:mm:ss zzz yyyy";
-    static final String sqlDateFormat = "yyyy-mm-dd";
+    static final String sqlDateFormat = "yyyy-MM-dd";
+    static final String sqlTimeFormat = "HH:mm:ss";
 
     static Date parseDate(final String value) {
         try {
             return getUtilDateFormat().parse(value);
         } catch (ParseException e) {
-            return throwParseException(value, e);
+            return throwRuntimeParseException(value, e);
         }
     }
 
@@ -43,7 +45,7 @@ final class DateHelper {
         try {
             return new Timestamp(getTimestampFormat().parse(value).getTime());
         } catch (ParseException e) {
-            return throwParseException(value, e);
+            return throwRuntimeParseException(value, e);
         }
     }
 
@@ -51,7 +53,15 @@ final class DateHelper {
         try {
             return new java.sql.Date(getSqlDateFormat().parse(value).getTime());
         } catch (ParseException e) {
-            return throwParseException(value, e);
+            return throwRuntimeParseException(value, e);
+        }
+    }
+
+    static java.sql.Time parseSqlTime(final String value) {
+        try {
+            return new Time(getSqlTimeFormat().parse(value).getTime());
+        } catch (ParseException e) {
+            return throwRuntimeParseException(value, e);
         }
     }
 
@@ -71,11 +81,11 @@ final class DateHelper {
         } catch (Exception ignored) {
         }
 
-        return throwParseException(value, null);
+        return throwRuntimeParseException(value, null);
     }
 
-    private static <T> T throwParseException(String value, Exception e) {
-        throw new QueryException("Unable to parse date from value: '" + value
+    private static <T> T throwRuntimeParseException(String value, Exception e) {
+        throw new RuntimeException("Unable to parse date from value: '" + value
                 + "' ! Valid formats are: '" + dateFormat + "', '" + timestampFormat
                 + "' and '" + sqlDateFormat + "'.", e);
     }
@@ -90,6 +100,10 @@ final class DateHelper {
 
     private static DateFormat getUtilDateFormat() {
         return new SimpleDateFormat(dateFormat);
+    }
+
+    private static DateFormat getSqlTimeFormat() {
+        return new SimpleDateFormat(sqlTimeFormat);
     }
 
     private DateHelper() {}

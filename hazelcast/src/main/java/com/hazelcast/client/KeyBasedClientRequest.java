@@ -17,7 +17,7 @@
 package com.hazelcast.client;
 
 /**
- * @mdogan 5/3/13
+ * @author mdogan 5/3/13
  */
 public abstract class KeyBasedClientRequest extends PartitionClientRequest {
 

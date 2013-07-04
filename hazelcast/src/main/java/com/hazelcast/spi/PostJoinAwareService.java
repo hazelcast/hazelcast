@@ -17,7 +17,7 @@
 package com.hazelcast.spi;
 
 /**
- * @mdogan 1/11/13
+ * @author mdogan 1/11/13
  */
 public interface PostJoinAwareService {
 

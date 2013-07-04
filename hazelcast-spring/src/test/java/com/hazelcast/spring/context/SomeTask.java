@@ -31,7 +31,7 @@ import java.io.IOException;
 import java.util.concurrent.Callable;
 
 /**
- * @mdogan 4/6/12
+ * @author mdogan 4/6/12
  */
 @SpringAware(beanName = "someTask")
 @Component("someTask")

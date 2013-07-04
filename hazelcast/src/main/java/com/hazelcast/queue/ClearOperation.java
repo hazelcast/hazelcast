@@ -25,7 +25,7 @@ import com.hazelcast.spi.WaitNotifyKey;
 import java.util.Map;
 
 /**
- * @ali 12/6/12
+ * @author ali 12/6/12
  */
 public class ClearOperation extends QueueBackupAwareOperation implements Notifier {
 

@@ -23,7 +23,7 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * @mdogan 12/26/12
+ * @author mdogan 12/26/12
  */
 public class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefinition {
 

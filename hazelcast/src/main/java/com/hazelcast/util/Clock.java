@@ -17,7 +17,7 @@
 package com.hazelcast.util;
 
 /**
- * @mdogan 4/10/12
+ * @author mdogan 4/10/12
  */
 public final class Clock {
 

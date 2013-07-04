@@ -21,9 +21,8 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 
 /**
- * @mdogan 5/15/13
+ * @author mdogan 5/15/13
  */
-//TODO port malfunctioning
 class Router {
 
     private final LoadBalancer loadBalancer;

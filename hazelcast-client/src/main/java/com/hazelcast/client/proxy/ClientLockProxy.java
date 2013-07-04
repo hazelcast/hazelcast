@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 
 /**
- * @ali 5/28/13
+ * @author ali 5/28/13
  */
 public class ClientLockProxy extends ClientProxy implements ILock {
 

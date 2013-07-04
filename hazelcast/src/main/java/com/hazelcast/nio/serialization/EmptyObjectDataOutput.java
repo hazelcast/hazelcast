@@ -22,7 +22,7 @@ import java.io.IOException;
 import java.nio.ByteOrder;
 
 /**
- * @mdogan 2/22/13
+ * @author mdogan 2/22/13
  */
 final class EmptyObjectDataOutput implements ObjectDataOutput {
 

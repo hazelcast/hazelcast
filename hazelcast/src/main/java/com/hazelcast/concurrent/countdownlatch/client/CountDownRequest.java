@@ -28,7 +28,7 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 
 /**
- * @mdogan 5/14/13
+ * @author mdogan 5/14/13
  */
 
 public final class CountDownRequest extends KeyBasedClientRequest implements Portable {

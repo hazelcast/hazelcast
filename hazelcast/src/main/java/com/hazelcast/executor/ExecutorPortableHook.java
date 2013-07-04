@@ -21,7 +21,7 @@ import com.hazelcast.nio.serialization.*;
 import java.util.Collection;
 
 /**
- * @mdogan 5/13/13
+ * @author mdogan 5/13/13
  */
 public final class ExecutorPortableHook implements PortableHook {
 

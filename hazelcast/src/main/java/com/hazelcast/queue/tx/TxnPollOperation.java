@@ -29,7 +29,7 @@ import com.hazelcast.spi.WaitNotifyKey;
 import java.io.IOException;
 
 /**
- * @ali 3/25/13
+ * @author ali 3/25/13
  */
 public class TxnPollOperation extends QueueBackupAwareOperation implements Notifier {
 

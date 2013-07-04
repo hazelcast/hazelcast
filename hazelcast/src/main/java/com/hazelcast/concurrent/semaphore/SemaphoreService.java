@@ -32,7 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * @ali 1/21/13
+ * @author ali 1/21/13
  */
 public class SemaphoreService implements ManagedService, MigrationAwareService, MembershipAwareService,
         RemoteService, ClientAwareService {

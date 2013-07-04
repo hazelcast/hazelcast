@@ -20,7 +20,7 @@ import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.spi.Callback;
 
 /**
- * @mdogan 4/10/13
+ * @author mdogan 4/10/13
  */
 final class ExecutionCallbackAdapter implements Callback<Object> {
 

@@ -23,7 +23,7 @@ import com.hazelcast.util.ExceptionUtil;
 import java.util.concurrent.*;
 
 /**
- * @mdogan 1/18/13
+ * @author mdogan 1/18/13
  */
 public class DelegatingFuture<V> implements Future<V> {
 

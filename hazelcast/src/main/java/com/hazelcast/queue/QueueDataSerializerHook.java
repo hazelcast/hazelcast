@@ -21,7 +21,7 @@ import com.hazelcast.queue.tx.*;
 import com.hazelcast.util.ConstructorFunction;
 
 /**
- * @mdogan 8/24/12
+ * @author mdogan 8/24/12
  */
 public final class QueueDataSerializerHook implements DataSerializerHook {
 

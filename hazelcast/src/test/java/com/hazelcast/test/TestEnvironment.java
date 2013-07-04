@@ -17,7 +17,7 @@
 package com.hazelcast.test;
 
 /**
- * @mdogan 5/29/13
+ * @author mdogan 5/29/13
  */
 public final class TestEnvironment {
 

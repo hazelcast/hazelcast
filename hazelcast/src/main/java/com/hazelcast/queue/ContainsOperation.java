@@ -26,7 +26,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- * @ali 12/12/12
+ * @author ali 12/12/12
  */
 public class ContainsOperation extends QueueOperation {
 

@@ -20,11 +20,18 @@ import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.partition.MigrationStatus;
 
+import java.io.DataInput;
+import java.io.DataOutput;
 import java.io.IOException;
 
-
+/**
+ * An event fired when a partition migration starts, completes or fails.
+ *
+ * @see Partition
+ * @see PartitionService
+ * @see MigrationListener
+ */
 public class MigrationEvent implements DataSerializable {
 
     private int partitionId;
@@ -81,5 +88,35 @@ public class MigrationEvent implements DataSerializable {
                 ", oldOwner=" + oldOwner +
                 ", newOwner=" + newOwner +
                 '}';
+    }
+
+    public static enum MigrationStatus {
+
+        STARTED(0),
+        COMPLETED(1),
+        FAILED(-1);
+
+        private final byte code;
+
+        private MigrationStatus(final int code) {
+            this.code = (byte) code;
+        }
+
+        public static void writeTo(MigrationStatus status, DataOutput out) throws IOException {
+            out.writeByte(status.code);
+        }
+
+        public static MigrationStatus readFrom(DataInput in) throws IOException {
+            final byte code = in.readByte();
+            switch (code) {
+                case 0:
+                    return STARTED;
+                case 1:
+                    return COMPLETED;
+                case -1:
+                    return FAILED;
+            }
+            return null;
+        }
     }
 }

@@ -22,7 +22,7 @@ import java.io.IOException;
 import java.util.Set;
 
 /**
- * @mdogan 12/28/12
+ * @author mdogan 12/28/12
  */
 public interface PortableReader {
 

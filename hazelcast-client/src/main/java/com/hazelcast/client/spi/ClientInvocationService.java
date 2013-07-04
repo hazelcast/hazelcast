@@ -19,7 +19,7 @@ package com.hazelcast.client.spi;
 import com.hazelcast.nio.Address;
 
 /**
- * @mdogan 5/16/13
+ * @author mdogan 5/16/13
  */
 public interface ClientInvocationService {
 

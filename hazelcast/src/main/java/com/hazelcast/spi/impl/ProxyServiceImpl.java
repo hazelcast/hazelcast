@@ -16,10 +16,7 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.DistributedObjectEvent;
-import com.hazelcast.core.DistributedObjectListener;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.*;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
@@ -45,7 +42,7 @@ import static com.hazelcast.core.DistributedObjectEvent.EventType.CREATED;
 import static com.hazelcast.core.DistributedObjectEvent.EventType.DESTROYED;
 
 /**
- * @mdogan 1/11/13
+ * @author mdogan 1/11/13
  */
 public class ProxyServiceImpl implements ProxyService, EventPublishingService<DistributedObjectEvent, Object> {
 
@@ -227,8 +224,8 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
             eventService.publishEvent(SERVICE_NAME, registrations, event);
         }
 
-        private DistributedObjectEvent createEvent(Object objectId, DistributedObjectEvent.EventType type) {
-            final DistributedObjectEvent event = new DistributedObjectEvent(type, serviceName, objectId);
+        private DistributedObjectEvent createEvent(Object objectId, DistributedObjectEventImpl.EventType type) {
+            final DistributedObjectEventImpl event = new DistributedObjectEventImpl(type, serviceName, objectId);
             event.setHazelcastInstance(nodeEngine.getNode().hazelcastInstance);
             return event;
         }

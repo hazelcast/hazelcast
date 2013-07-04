@@ -26,7 +26,7 @@ import com.hazelcast.util.Clock;
 import java.io.IOException;
 
 /**
- * @ali 12/12/12
+ * @author ali 12/12/12
  */
 public class QueueItem implements IdentifiedDataSerializable, Comparable<QueueItem> {
 

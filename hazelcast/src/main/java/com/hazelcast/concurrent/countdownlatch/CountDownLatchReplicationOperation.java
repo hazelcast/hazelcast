@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- * @mdogan 1/17/13
+ * @author mdogan 1/17/13
  */
 public class CountDownLatchReplicationOperation extends AbstractOperation {
 

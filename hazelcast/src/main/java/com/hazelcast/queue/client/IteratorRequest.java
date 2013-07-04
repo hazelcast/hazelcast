@@ -27,7 +27,7 @@ import com.hazelcast.spi.Operation;
 import java.util.Collection;
 
 /**
- * @ali 5/8/13
+ * @author ali 5/8/13
  */
 public class IteratorRequest extends QueueRequest implements RetryableRequest {
 

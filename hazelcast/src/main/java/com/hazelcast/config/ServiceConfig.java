@@ -19,7 +19,7 @@ package com.hazelcast.config;
 import java.util.Properties;
 
 /**
- * @mdogan 9/18/12
+ * @author mdogan 9/18/12
  */
 
 public class ServiceConfig {

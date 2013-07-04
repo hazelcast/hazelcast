@@ -17,7 +17,7 @@
 package com.hazelcast.client.spi;
 
 /**
- * @mdogan 5/20/13
+ * @author mdogan 5/20/13
  */
 public interface ResponseHandler {
 

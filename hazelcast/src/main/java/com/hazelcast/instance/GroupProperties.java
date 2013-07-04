@@ -31,7 +31,6 @@ public class GroupProperties {
     public static final String PROP_MERGE_FIRST_RUN_DELAY_SECONDS = "hazelcast.merge.first.run.delay.seconds";
     public static final String PROP_MERGE_NEXT_RUN_DELAY_SECONDS = "hazelcast.merge.next.run.delay.seconds";
     public static final String PROP_OPERATION_CALL_TIMEOUT_MILLIS = "hazelcast.operation.call.timeout.millis";
-    public static final String PROP_OPERATION_EXECUTOR_TYPE = "hazelcast.operation.executor.type";
     public static final String PROP_SOCKET_BIND_ANY = "hazelcast.socket.bind.any";
     public static final String PROP_SOCKET_SERVER_BIND_ANY = "hazelcast.socket.server.bind.any";
     public static final String PROP_SOCKET_CLIENT_BIND_ANY = "hazelcast.socket.client.bind.any";
@@ -56,10 +55,7 @@ public class GroupProperties {
     public static final String PROP_INITIAL_MIN_CLUSTER_SIZE = "hazelcast.initial.min.cluster.size";
     public static final String PROP_INITIAL_WAIT_SECONDS = "hazelcast.initial.wait.seconds";
     public static final String PROP_PARTITION_COUNT = "hazelcast.partition.count";
-    public static final String PROP_EXECUTOR_QUERY_THREAD_COUNT = "hazelcast.executor.query.thread.count";
-    public static final String PROP_EXECUTOR_CLIENT_THREAD_COUNT = "hazelcast.executor.client.thread.count";
     public static final String PROP_LOGGING_TYPE = "hazelcast.logging.type";
-    public static final String PROP_LOG_STATE = "hazelcast.log.state";
     public static final String PROP_ENABLE_JMX = "hazelcast.jmx";
     public static final String PROP_ENABLE_JMX_DETAILED = "hazelcast.jmx.detailed";
     public static final String PROP_MC_MAX_VISIBLE_INSTANCE_COUNT = "hazelcast.mc.max.visible.instance.count";
@@ -98,8 +94,6 @@ public class GroupProperties {
     public final GroupProperty MERGE_NEXT_RUN_DELAY_SECONDS;
 
     public final GroupProperty OPERATION_CALL_TIMEOUT_MILLIS;
-
-    public final GroupProperty OPERATION_EXECUTOR_TYPE;
 
     public final GroupProperty SOCKET_SERVER_BIND_ANY;
 
@@ -147,12 +141,6 @@ public class GroupProperties {
 
     public final GroupProperty PARTITION_COUNT;
 
-    public final GroupProperty EXECUTOR_QUERY_THREAD_COUNT;
-
-    public final GroupProperty EXECUTOR_CLIENT_THREAD_COUNT;
-
-    public final GroupProperty LOG_STATE;
-
     public final GroupProperty LOGGING_TYPE;
 
     public final GroupProperty ENABLE_JMX;
@@ -199,7 +187,6 @@ public class GroupProperties {
         MERGE_FIRST_RUN_DELAY_SECONDS = new GroupProperty(config, PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "300");
         MERGE_NEXT_RUN_DELAY_SECONDS = new GroupProperty(config, PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "120");
         OPERATION_CALL_TIMEOUT_MILLIS = new GroupProperty(config, PROP_OPERATION_CALL_TIMEOUT_MILLIS, "60000");
-        OPERATION_EXECUTOR_TYPE = new GroupProperty(config, PROP_OPERATION_EXECUTOR_TYPE, "default");
         final GroupProperty SOCKET_BIND_ANY = new GroupProperty(config, PROP_SOCKET_BIND_ANY, "true");
         SOCKET_SERVER_BIND_ANY = new GroupProperty(config, PROP_SOCKET_SERVER_BIND_ANY, SOCKET_BIND_ANY);
         SOCKET_CLIENT_BIND_ANY = new GroupProperty(config, PROP_SOCKET_CLIENT_BIND_ANY, SOCKET_BIND_ANY);
@@ -224,9 +211,6 @@ public class GroupProperties {
         INITIAL_MIN_CLUSTER_SIZE = new GroupProperty(config, PROP_INITIAL_MIN_CLUSTER_SIZE, "0");
         INITIAL_WAIT_SECONDS = new GroupProperty(config, PROP_INITIAL_WAIT_SECONDS, "0");
         PARTITION_COUNT = new GroupProperty(config, PROP_PARTITION_COUNT, "271");
-        EXECUTOR_QUERY_THREAD_COUNT = new GroupProperty(config, PROP_EXECUTOR_QUERY_THREAD_COUNT, "8");
-        EXECUTOR_CLIENT_THREAD_COUNT = new GroupProperty(config, PROP_EXECUTOR_CLIENT_THREAD_COUNT, "40");
-        LOG_STATE = new GroupProperty(config, PROP_LOG_STATE, "false");
         LOGGING_TYPE = new GroupProperty(config, PROP_LOGGING_TYPE, "jdk");
         ENABLE_JMX = new GroupProperty(config, PROP_ENABLE_JMX, "false");
         ENABLE_JMX_DETAILED = new GroupProperty(config, PROP_ENABLE_JMX_DETAILED, "false");

@@ -539,14 +539,14 @@ public class Node {
             systemLogService.logJoin("Creating TcpIpJoiner");
             return new TcpIpJoiner(this);
         } else if (join.getAwsConfig().isEnabled()) {
+            Class clazz;
             try {
-                Class clazz = Class.forName("com.hazelcast.impl.cluster.TcpIpJoinerOverAWS");
+                clazz = Class.forName("com.hazelcast.cluster.TcpIpJoinerOverAWS");
                 Constructor constructor = clazz.getConstructor(Node.class);
                 systemLogService.logJoin("Creating AWSJoiner");
                 return (Joiner) constructor.newInstance(this);
             } catch (Exception e) {
-                logger.log(Level.WARNING, e.getMessage());
-                return null;
+                logger.log(Level.SEVERE, "Error while creating AWSJoiner!", e);
             }
         }
         return null;

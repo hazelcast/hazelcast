@@ -31,7 +31,7 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 
 /**
- * @mdogan 1/4/13
+ * @author mdogan 1/4/13
  */
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)

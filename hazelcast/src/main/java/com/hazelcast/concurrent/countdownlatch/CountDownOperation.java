@@ -20,7 +20,7 @@ import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.WaitNotifyKey;
 
 /**
- * @mdogan 1/10/13
+ * @author mdogan 1/10/13
  */
 public class CountDownOperation extends BackupAwareCountDownLatchOperation implements Notifier {
 

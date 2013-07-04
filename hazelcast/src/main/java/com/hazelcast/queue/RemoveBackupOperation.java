@@ -23,7 +23,7 @@ import com.hazelcast.spi.BackupOperation;
 import java.io.IOException;
 
 /**
- * @ali 12/11/12
+ * @author ali 12/11/12
  */
 public class RemoveBackupOperation extends QueueOperation implements BackupOperation {
 

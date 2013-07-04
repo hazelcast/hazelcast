@@ -17,7 +17,7 @@
 package com.hazelcast.spi;
 
 /**
- * @mdogan 2/12/13
+ * @author mdogan 2/12/13
  */
 public interface SharedService {
 
