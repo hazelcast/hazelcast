@@ -104,7 +104,7 @@ public final class HazelcastClient implements HazelcastInstance {
         }
         serializationService = ss;
         proxyManager = new ProxyManager(this);
-        executionService = new ClientExecutionServiceImpl(name, threadGroup, Thread.currentThread().getContextClassLoader());
+        executionService = new ClientExecutionServiceImpl(name, threadGroup, Thread.currentThread().getContextClassLoader(), config.getExecutorPoolSize());
         clusterService = new ClientClusterServiceImpl(this);
         LoadBalancer loadBalancer = config.getLoadBalancer();
         if (loadBalancer == null) {
