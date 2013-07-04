@@ -174,6 +174,9 @@ public class NodeEngineImpl implements NodeEngine {
         return connection.write(packet);
     }
 
+    /**
+     * Retries sending packet maximum 5 times until connection to target becomes available.
+     */
     public boolean send(Packet packet, Address target) {
         return send(packet, target, null);
     }
