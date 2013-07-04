@@ -290,7 +290,6 @@ public class EvictionTest extends HazelcastTestSupport {
     public void testEvictionPerPartition() throws InterruptedException {
         final int k = 2;
         final int size = 10;
-        final CountDownLatch latch = new CountDownLatch(k);
         final String mapName = "testEvictionPerPartition";
         Config cfg = new Config();
         final MapConfig mc = cfg.getMapConfig(mapName);
@@ -459,7 +458,7 @@ public class EvictionTest extends HazelcastTestSupport {
         for (int i = 0; i < size; i++) {
             map.put(i, i);
         }
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertTrue(latch.await(30, TimeUnit.SECONDS));
         assertEquals(0, map.size());
     }
 
@@ -519,7 +518,7 @@ public class EvictionTest extends HazelcastTestSupport {
         HazelcastInstance instance = factory.newHazelcastInstance(cfg);
         IMap<Object, Object> map = instance.getMap("testZeroResetsTTL");
         final CountDownLatch latch = new CountDownLatch(1);
-        map.addEntryListener(new EntryAdapter(){
+        map.addEntryListener(new EntryAdapter<Object, Object>(){
             public void entryEvicted(EntryEvent event) {
                 latch.countDown();
             }
@@ -536,7 +535,8 @@ public class EvictionTest extends HazelcastTestSupport {
     @Test
     public void testMapRecordIdleEvictionOnMigration() throws InterruptedException {
         Config cfg = new Config();
-        MapConfig mc = cfg.getMapConfig("testMapRecordIdleEvictionOnMigration2");
+        final String name = "testMapRecordIdleEvictionOnMigration";
+        MapConfig mc = cfg.getMapConfig(name);
         int maxIdleSeconds = 10;
         int size = 100;
         final int nsize = size / 5;
@@ -544,7 +544,7 @@ public class EvictionTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
 
         HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
-        final IMap map = instance1.getMap("testMapRecordIdleEvictionOnMigration2");
+        final IMap map = instance1.getMap(name);
         final CountDownLatch latch = new CountDownLatch(size - nsize);
         map.addEntryListener(new EntryAdapter(){
             public void entryEvicted(EntryEvent event) {
@@ -575,7 +575,7 @@ public class EvictionTest extends HazelcastTestSupport {
         HazelcastInstance instance2 = factory.newHazelcastInstance(cfg);
         HazelcastInstance instance3 = factory.newHazelcastInstance(cfg);
 
-        latch.await(10, TimeUnit.SECONDS);
+        latch.await(30, TimeUnit.SECONDS);
         Assert.assertEquals(nsize, map.size());
 
         thread.interrupt();
