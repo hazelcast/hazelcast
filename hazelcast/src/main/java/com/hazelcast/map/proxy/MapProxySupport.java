@@ -63,23 +63,22 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         List<EntryListenerConfig> listenerConfigs = mapConfig.getEntryListenerConfigs();
         for (EntryListenerConfig listenerConfig : listenerConfigs) {
             EntryListener listener = null;
-            if(listenerConfig.getImplementation() != null) {
+            if (listenerConfig.getImplementation() != null) {
                 listener = listenerConfig.getImplementation();
-            } else if(listenerConfig.getClassName() != null) {
+            } else if (listenerConfig.getClassName() != null) {
                 try {
                     listener = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), listenerConfig.getClassName());
                 } catch (Exception e) {
                     throw ExceptionUtil.rethrow(e);
                 }
             }
-            if (listener != null ) {
+            if (listener != null) {
                 if (listener instanceof HazelcastInstanceAware) {
                     ((HazelcastInstanceAware) listener).setHazelcastInstance(nodeEngine.getHazelcastInstance());
                 }
-                if(listenerConfig.isLocal())  {
+                if (listenerConfig.isLocal()) {
                     addLocalEntryListener(listener);
-                }
-                else {
+                } else {
                     addEntryListenerInternal(listener, null, listenerConfig.isIncludeValue());
                 }
             }
@@ -98,15 +97,15 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
             }
         }
         // todo action for read-backup true is not well tested.
-        if(mapConfig.isReadBackupData()) {
+        if (mapConfig.isReadBackupData()) {
             int backupCount = mapConfig.getTotalBackupCount();
             PartitionService partitionService = mapService.getNodeEngine().getPartitionService();
             for (int i = 0; i <= backupCount; i++) {
                 int partitionId = partitionService.getPartitionId(key);
                 PartitionView partition = partitionService.getPartitionView(partitionId);
-                if ( partition.getReplicaAddress(i).equals(getNodeEngine().getThisAddress()) ) {
+                if (partition.getReplicaAddress(i).equals(getNodeEngine().getThisAddress())) {
                     Object val = mapService.getPartitionContainer(partitionId).getRecordStore(name).get(key);
-                    if(val != null){
+                    if (val != null) {
                         mapService.interceptAfterGet(name, val);
                         return val;
                     }
@@ -344,15 +343,42 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         return result;
     }
 
-    protected void putAllObjectInternal(final Map<? extends Object, ? extends Object> entries) {
+    protected void putAllInternal(final Map<? extends Object, ? extends Object> entries) {
         final NodeEngine nodeEngine = getNodeEngine();
+        final MapService mapService = getService();
+        int factor = 3;
+        PartitionService partitionService = nodeEngine.getPartitionService();
+        OperationService operationService = nodeEngine.getOperationService();
+        int partitionCount = partitionService.getPartitionCount();
+        boolean tooManyEntries = entries.size() > (partitionCount * factor);
         try {
-            MapEntrySet mapEntrySet = new MapEntrySet();
-            for (Entry entry : entries.entrySet()) {
-                mapEntrySet.add(getService().toData(entry.getKey()), getService().toData(entry.getValue()));
+            if (tooManyEntries) {
+                List<Future> flist = new LinkedList<Future>();
+                Map<Integer, MapEntrySet> entryMap = new HashMap<Integer, MapEntrySet>();
+                for (Entry entry : entries.entrySet()) {
+                    int partitionId = partitionService.getPartitionId(entry.getKey());
+                    if(!entryMap.containsKey(partitionId)) {
+                        entryMap.put(partitionId, new MapEntrySet());
+                    }
+                    entryMap.get(partitionId).add(new AbstractMap.SimpleImmutableEntry<Data,Data>(mapService.toData(entry.getKey()), mapService.toData(entry.getValue())));
+                }
+
+                for (Integer partitionId : entryMap.keySet()) {
+                    PutAllOperation op = new PutAllOperation(name, entryMap.get(partitionId));
+                    op.setPartitionId(partitionId);
+                    flist.add(operationService.createInvocationBuilder(SERVICE_NAME, op, partitionId).build().invoke());
+                }
+
+                for (Future future : flist) {
+                    future.get();
+                }
+
+            } else {
+                System.err.println("less entries put all");
+                for (Entry entry : entries.entrySet()) {
+                    putInternal(mapService.toData(entry.getKey()), mapService.toData(entry.getValue()), -1, TimeUnit.SECONDS);
+                }
             }
-            nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(SERVICE_NAME, new MapPutAllOperationFactory(name, mapEntrySet));
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
@@ -581,7 +607,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
             }
             List<Integer> missingList = new ArrayList<Integer>();
             for (Integer partitionId : partitionIds) {
-                if(!returnedPartitionIds.contains(partitionId))
+                if (!returnedPartitionIds.contains(partitionId))
                     missingList.add(partitionId);
             }
             List<Future> futures = new ArrayList<Future>(missingList.size());
