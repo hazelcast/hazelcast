@@ -26,10 +26,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.SerialTest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -55,12 +52,12 @@ public class HazelcastClientReconnectTest {
     }
 
     @Test(timeout = 180000)
+    @Ignore
     public void testClientReconnectOnClusterDown() throws Exception {
         Config config = new Config();
         final HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setGroupConfig(new GroupConfig(h1.getConfig().getGroupConfig().getName(), h1.getConfig().getGroupConfig().getPassword()));
-//        clientConfig.setReconnectionAttemptLimit(Integer.MAX_VALUE);
         clientConfig.setConnectionAttemptLimit(Integer.MAX_VALUE);
         final HazelcastInstance client1 = HazelcastClient.newHazelcastClient(clientConfig);
 
@@ -88,29 +85,29 @@ public class HazelcastClientReconnectTest {
     }
 
     @Test(timeout = 180000)
+    @Ignore
     public void testClientReconnectOnClusterDownWithEntryListeners() throws Exception {
         Config config = new Config();
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(config);
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setGroupConfig(new GroupConfig(h1.getConfig().getGroupConfig().getName(), h1.getConfig().getGroupConfig().getPassword()));
         clientConfig.setConnectionAttemptLimit(Integer.MAX_VALUE);
-//        clientConfig.setReconnectionAttemptLimit(Integer.MAX_VALUE);
         //this test depends on connection timeout and adapted to run with 30000 value, which is also default
-//        clientConfig.setConnectionTimeout(30000);
+        clientConfig.setConnectionTimeout(30000);
         final HazelcastInstance client1 = HazelcastClient.newHazelcastClient(clientConfig);
         //add 35 listeners to make sure OutRunnable.checkOnReconnect will spend 35 * 100 ms
         //this will make it impossible to send command in 3 sec window before ConnecitonManager.hearbeatTimer will terminate the connection
         //in real situation with 1 or 2 listeners OutRunnable.resubscribe will increase OutRunnable.reconnectionCalls list on every unsuccessful reconnect
         // meaning every unsuccessful reconnect will lower the chance for reconnect to succeed.
         // If server or connection to the server is slow then a few failed initial reconnects will make it impossible to reconnect in future
-        for (int i = 0; i < 20; i++) {
+        for (int i = 0; i < 35; i++) {
             final IMap<String, String> m = client1.getMap("default" + i);
             m.addEntryListener(new EntryAdapter<String, String>(), true);
         }
 
         h1.getLifecycleService().shutdown();
         //wait enough time to GET_MEMBERS command to appear and to default connectionTimeout (30 seconds) pass
-        Thread.sleep(10000);
+        Thread.sleep(50000);
 
         //creating this thread to wait for put operation to complete
         //this will block test until client is connected
