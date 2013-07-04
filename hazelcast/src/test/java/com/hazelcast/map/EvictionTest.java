@@ -217,7 +217,7 @@ public class EvictionTest extends HazelcastTestSupport {
         }
 
         try {
-            Assert.assertEquals(latch.await(10, TimeUnit.MINUTES), true);
+            Assert.assertTrue(latch.await(10, TimeUnit.MINUTES));
             Assert.assertTrue(success.get());
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -278,7 +278,7 @@ public class EvictionTest extends HazelcastTestSupport {
         }
 
         try {
-            Assert.assertEquals(latch.await(10, TimeUnit.MINUTES), true);
+            Assert.assertTrue(latch.await(10, TimeUnit.MINUTES));
         } catch (InterruptedException e) {
             e.printStackTrace();
             Assert.fail(e.getMessage());
@@ -458,7 +458,7 @@ public class EvictionTest extends HazelcastTestSupport {
         for (int i = 0; i < size; i++) {
             map.put(i, i);
         }
-        assertTrue(latch.await(30, TimeUnit.SECONDS));
+        assertTrue(latch.await(1, TimeUnit.MINUTES));
         assertEquals(0, map.size());
     }
 
@@ -501,7 +501,7 @@ public class EvictionTest extends HazelcastTestSupport {
         for (int i = 0; i < size; i++) {
             map.put(i, i);
         }
-        latch.await(10, TimeUnit.SECONDS);
+        assertTrue(latch.await(1, TimeUnit.MINUTES));
         Assert.assertEquals(nsize, map.size());
 
         thread.interrupt();

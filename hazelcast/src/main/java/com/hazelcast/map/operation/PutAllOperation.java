@@ -32,9 +32,6 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 
-// TODO - @mm: If entry set size is bigger than partitionCount * 3
-// then group entries per partition and send invocations for each partition
-// else invoke put operation for each entry.
 public class PutAllOperation extends AbstractMapOperation implements PartitionAwareOperation, BackupAwareOperation {
 
     private MapEntrySet entrySet;
