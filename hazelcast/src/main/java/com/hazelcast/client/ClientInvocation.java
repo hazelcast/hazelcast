@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- * @mdogan 4/25/13
+ * @author mdogan 4/25/13
  */
 final class ClientInvocation {
 

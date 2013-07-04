@@ -19,7 +19,7 @@ package com.hazelcast.nio.serialization;
 import java.io.IOException;
 
 /**
- * @mdogan 12/26/12
+ * @author mdogan 12/26/12
  */
 public interface SerializationContext {
 

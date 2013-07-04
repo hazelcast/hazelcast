@@ -21,7 +21,7 @@ import com.hazelcast.nio.BufferObjectDataInput;
 import java.io.IOException;
 
 /**
- * @mdogan 1/7/13
+ * @author mdogan 1/7/13
  */
 public class MorphingPortableReader extends DefaultPortableReader {
 

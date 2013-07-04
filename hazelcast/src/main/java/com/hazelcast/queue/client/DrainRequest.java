@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.util.Collection;
 
 /**
- * @ali 5/8/13
+ * @author ali 5/8/13
  */
 public class DrainRequest extends QueueRequest {
 

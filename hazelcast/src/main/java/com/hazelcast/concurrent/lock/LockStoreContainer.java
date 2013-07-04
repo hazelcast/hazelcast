@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * @mdogan 2/12/13
+ * @author mdogan 2/12/13
  */
 final class LockStoreContainer {
 

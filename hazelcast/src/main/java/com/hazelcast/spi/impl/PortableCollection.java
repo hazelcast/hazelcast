@@ -30,7 +30,7 @@ import java.util.HashSet;
 import java.util.List;
 
 /**
- * @ali 5/19/13
+ * @author ali 5/19/13
  */
 public final class PortableCollection implements Portable {
 

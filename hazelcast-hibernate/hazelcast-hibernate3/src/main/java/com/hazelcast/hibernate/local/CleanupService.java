@@ -25,7 +25,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @mdogan 11/14/12
+ * @author mdogan 11/14/12
  */
 public final class CleanupService {
 

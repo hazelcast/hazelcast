@@ -26,7 +26,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 /**
-* @mdogan 06/15/13
+* @author mdogan 06/15/13
 */
 final class ByteBufferObjectDataOutput extends OutputStream implements BufferObjectDataOutput, SerializationContextAware {
 

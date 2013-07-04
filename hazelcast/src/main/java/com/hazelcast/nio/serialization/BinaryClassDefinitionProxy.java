@@ -23,7 +23,7 @@ import java.io.IOException;
 import java.util.Set;
 
 /**
- * @mdogan 1/3/13
+ * @author mdogan 1/3/13
  */
 public final class BinaryClassDefinitionProxy extends BinaryClassDefinition implements ClassDefinition {
 

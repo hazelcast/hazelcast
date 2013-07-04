@@ -21,7 +21,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 /**
- * @mdogan 12/31/12
+ * @author mdogan 12/31/12
  */
 public final class DynamicByteBuffer {
 

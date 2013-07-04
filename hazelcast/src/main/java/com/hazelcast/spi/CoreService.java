@@ -22,7 +22,7 @@ import com.hazelcast.spi.annotation.PrivateApi;
 *
 * Marker interface for core Hazelcast services.
 *
-* @mdogan 9/14/12
+* @author mdogan 9/14/12
 */
 
 @PrivateApi

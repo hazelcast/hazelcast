@@ -70,8 +70,8 @@ public interface ICountDownLatch extends DistributedObject {
      * @param unit    the time unit of the {@code timeout} argument
      * @return {@code true} if the count reached zero and {@code false}
      *         if the waiting time elapsed before the count reached zero
-     * @throws InterruptedException       if the current thread is interrupted
-     * @throws IllegalStateException      if hazelcast instance is shutdown while waiting
+     * @throws InterruptedException  if the current thread is interrupted
+     * @throws IllegalStateException if hazelcast instance is shutdown while waiting
      */
     public boolean await(long timeout, TimeUnit unit) throws InterruptedException;
 

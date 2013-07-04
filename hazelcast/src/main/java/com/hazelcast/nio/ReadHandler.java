@@ -25,7 +25,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.util.logging.Level;
 
-class ReadHandler extends AbstractSelectionHandler implements Runnable {
+final class ReadHandler extends AbstractSelectionHandler implements Runnable {
 
     private final ByteBuffer buffer;
 
@@ -86,6 +86,7 @@ class ReadHandler extends AbstractSelectionHandler implements Runnable {
                 String protocol = new String(protocolBuffer.array());
                 WriteHandler writeHandler = connection.getWriteHandler();
                 if (Protocols.CLUSTER.equals(protocol)) {
+                    connection.setType(ConnectionType.MEMBER);
                     writeHandler.setProtocol(Protocols.CLUSTER);
                     socketReader = new SocketPacketReader(connection);
                 } else if (Protocols.CLIENT_BINARY.equals(protocol)) {

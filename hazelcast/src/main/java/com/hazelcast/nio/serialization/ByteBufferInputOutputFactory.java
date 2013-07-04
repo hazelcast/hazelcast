@@ -6,7 +6,7 @@ import com.hazelcast.nio.BufferObjectDataOutput;
 import java.nio.ByteOrder;
 
 /**
- * @mdogan 6/15/13
+ * @author mdogan 6/15/13
  */
 final class ByteBufferInputOutputFactory implements InputOutputFactory {
 

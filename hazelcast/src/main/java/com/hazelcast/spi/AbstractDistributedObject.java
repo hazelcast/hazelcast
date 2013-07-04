@@ -20,7 +20,7 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 
 /**
- * @mdogan 1/14/13
+ * @author mdogan 1/14/13
  */
 public abstract class AbstractDistributedObject<S extends RemoteService> implements DistributedObject {
 

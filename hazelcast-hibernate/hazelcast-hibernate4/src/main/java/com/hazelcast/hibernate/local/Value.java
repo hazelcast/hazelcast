@@ -19,7 +19,7 @@ package com.hazelcast.hibernate.local;
 import org.hibernate.cache.spi.access.SoftLock;
 
 /**
- * @mdogan 11/12/12
+ * @author mdogan 11/12/12
  */
 public class Value {
 

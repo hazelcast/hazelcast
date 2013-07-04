@@ -32,7 +32,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * @mdogan 1/17/13
+ * @author mdogan 1/17/13
  */
 public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedExecutorService> implements IExecutorService {
 

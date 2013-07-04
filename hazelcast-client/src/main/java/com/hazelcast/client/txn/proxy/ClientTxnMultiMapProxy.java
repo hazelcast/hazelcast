@@ -30,7 +30,7 @@ import java.util.HashSet;
 import java.util.List;
 
 /**
- * @ali 6/10/13
+ * @author ali 6/10/13
  */
 public class ClientTxnMultiMapProxy<K, V> extends ClientTxnProxy implements TransactionalMultiMap<K,V> {
 

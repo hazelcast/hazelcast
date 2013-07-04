@@ -20,7 +20,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.WaitNotifyKey;
 
 /**
- * @mdogan 2/13/13
+ * @author mdogan 2/13/13
  */
 public final class ConditionKey implements WaitNotifyKey {
 

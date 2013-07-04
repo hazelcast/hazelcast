@@ -19,7 +19,7 @@ package com.hazelcast.core;
 import com.hazelcast.transaction.TransactionalObject;
 
 /**
- * @ali 4/16/13
+ * Transactional implementation of {@link ISet}.
  */
 public interface TransactionalSet<E> extends TransactionalObject {
 

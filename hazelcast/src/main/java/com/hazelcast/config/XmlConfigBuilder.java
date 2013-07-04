@@ -44,7 +44,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.logging.Level;
 
-
 public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigBuilder {
 
     private final ILogger logger = Logger.getLogger(XmlConfigBuilder.class.getName());

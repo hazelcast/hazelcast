@@ -31,7 +31,7 @@ import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * @mdogan 5/16/13
+ * @author mdogan 5/16/13
  */
 public final class HazelcastClientProxy implements HazelcastInstance {
 

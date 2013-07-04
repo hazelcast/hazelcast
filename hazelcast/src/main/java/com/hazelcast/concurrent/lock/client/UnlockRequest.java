@@ -21,7 +21,7 @@ import com.hazelcast.concurrent.lock.LockPortableHook;
 import com.hazelcast.nio.serialization.Data;
 
 /**
- * @mdogan 5/3/13
+ * @author mdogan 5/3/13
  */
 public final class UnlockRequest extends AbstractUnlockRequest {
 

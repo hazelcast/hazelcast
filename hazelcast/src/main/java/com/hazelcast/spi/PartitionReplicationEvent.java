@@ -19,7 +19,7 @@ package com.hazelcast.spi;
 import java.util.EventObject;
 
 /**
- * @mdogan 9/12/12
+ * @author mdogan 9/12/12
  */
 public class PartitionReplicationEvent extends EventObject {
 

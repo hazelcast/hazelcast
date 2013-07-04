@@ -23,7 +23,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import java.util.logging.Level;
 
 /**
- * @mdogan 9/14/12
+ * @author mdogan 9/14/12
  */
 public class AuthenticationFailureOperation extends AbstractClusterOperation
         implements JoinOperation {

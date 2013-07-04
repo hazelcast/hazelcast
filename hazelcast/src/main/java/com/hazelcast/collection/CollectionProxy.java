@@ -22,7 +22,7 @@ import com.hazelcast.core.DistributedObject;
 import java.util.Collection;
 
 /**
- * @ali 1/1/13
+ * @author ali 1/1/13
  */
 public interface CollectionProxy extends DistributedObject {
 

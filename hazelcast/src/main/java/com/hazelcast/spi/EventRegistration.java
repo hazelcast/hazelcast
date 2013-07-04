@@ -20,7 +20,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 /**
- * @mdogan 12/14/12
+ * @author mdogan 12/14/12
  */
 public interface EventRegistration extends DataSerializable {
 

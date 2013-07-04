@@ -28,7 +28,7 @@ import javax.annotation.PostConstruct;
 import java.io.IOException;
 
 /**
- * @mdogan 4/6/12
+ * @author mdogan 4/6/12
  */
 
 @SpringAware

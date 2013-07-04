@@ -17,7 +17,7 @@
 package com.hazelcast.collection;
 
 /**
- * @ali 1/2/13
+ * @author ali 1/2/13
  */
 public enum CollectionProxyType {
 

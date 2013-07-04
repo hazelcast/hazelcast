@@ -36,7 +36,7 @@ import java.util.concurrent.Future;
 import static com.hazelcast.map.MapService.SERVICE_NAME;
 
 /**
- * @mdogan 2/26/13
+ * @author mdogan 2/26/13
  */
 public abstract class TxnMapProxySupport extends AbstractDistributedObject<MapService> implements TransactionalObject {
 

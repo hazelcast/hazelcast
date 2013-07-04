@@ -46,6 +46,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 
+import static com.hazelcast.core.MigrationEvent.MigrationStatus;
+
 public class PartitionServiceImpl implements PartitionService, ManagedService,
         EventPublishingService<MigrationEvent, MigrationListener> {
 

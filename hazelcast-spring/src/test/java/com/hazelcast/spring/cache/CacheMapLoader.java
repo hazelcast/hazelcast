@@ -27,7 +27,7 @@ import java.util.Properties;
 import java.util.Set;
 
 /**
- * @mdogan 4/3/12
+ * @author mdogan 4/3/12
  */
 public class CacheMapLoader implements MapStore, MapLoaderLifecycleSupport {
 

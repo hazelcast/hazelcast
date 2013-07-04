@@ -36,7 +36,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @mdogan 5/17/13
+ * @author mdogan 5/17/13
  */
 public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 

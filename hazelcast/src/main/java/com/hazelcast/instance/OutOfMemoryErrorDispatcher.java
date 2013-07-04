@@ -20,7 +20,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OutOfMemoryHandler;
 
 /**
- * @mdogan 8/16/12
+ * @author mdogan 8/16/12
  */
 public final class OutOfMemoryErrorDispatcher {
 

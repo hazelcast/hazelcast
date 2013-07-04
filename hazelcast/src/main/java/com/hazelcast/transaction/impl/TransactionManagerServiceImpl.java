@@ -33,7 +33,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 
 /**
- * @mdogan 2/26/13
+ * @author mdogan 2/26/13
  */
 public class TransactionManagerServiceImpl implements TransactionManagerService, ManagedService,
         MembershipAwareService, ClientAwareService {

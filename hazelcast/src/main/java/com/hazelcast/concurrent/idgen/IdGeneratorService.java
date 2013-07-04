@@ -25,7 +25,7 @@ import com.hazelcast.spi.RemoteService;
 import java.util.Properties;
 
 /**
- * @ali 5/28/13
+ * @author ali 5/28/13
  */
 public class IdGeneratorService implements ManagedService, RemoteService {
 

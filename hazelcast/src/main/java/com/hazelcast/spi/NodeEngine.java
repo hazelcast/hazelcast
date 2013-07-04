@@ -30,7 +30,7 @@ import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.wan.WanReplicationService;
 
 /**
- * @mdogan 8/24/12
+ * @author mdogan 8/24/12
  */
 public interface NodeEngine {
 

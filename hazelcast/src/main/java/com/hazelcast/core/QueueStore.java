@@ -21,7 +21,9 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * @ali 12/14/12
+ * QueueStore makes a queue backed by a central data store; such as database, disk etc.
+ *
+ * @param <T> queue item type
  */
 public interface QueueStore<T> {
     /**

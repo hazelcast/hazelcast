@@ -23,7 +23,7 @@ import com.hazelcast.core.MembershipListener;
 import java.util.Set;
 
 /**
- * @mdogan 8/26/12
+ * @author mdogan 8/26/12
  */
 public class ClusterProxy implements Cluster {
 

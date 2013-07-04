@@ -27,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * @mdogan 5/3/13
+ * @author mdogan 5/3/13
  */
 public abstract class MultiTargetClientRequest extends ClientRequest {
 

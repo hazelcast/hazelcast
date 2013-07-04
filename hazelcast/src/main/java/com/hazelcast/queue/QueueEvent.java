@@ -27,7 +27,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 
 /**
- * @ali 12/24/12
+ * @author ali 12/24/12
  */
 public class QueueEvent implements IdentifiedDataSerializable {
 

@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * @ali 12/14/12
+ * @author ali 12/14/12
  */
 public class DummyQueueStore implements QueueStore<Object> {
 

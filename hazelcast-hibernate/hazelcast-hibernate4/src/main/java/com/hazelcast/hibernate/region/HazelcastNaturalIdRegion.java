@@ -30,7 +30,7 @@ import org.hibernate.cache.spi.access.NaturalIdRegionAccessStrategy;
 import java.util.Properties;
 
 /**
- * @mdogan 11/16/12
+ * @author mdogan 11/16/12
  */
 public class HazelcastNaturalIdRegion extends AbstractTransactionalDataRegion<IMapRegionCache>
         implements NaturalIdRegion {

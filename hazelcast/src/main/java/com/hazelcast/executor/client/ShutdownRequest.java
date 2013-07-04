@@ -30,7 +30,7 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 
 /**
- * @ali 5/27/13
+ * @author ali 5/27/13
  */
 public class ShutdownRequest extends TargetClientRequest implements IdentifiedDataSerializable, RetryableRequest {
 

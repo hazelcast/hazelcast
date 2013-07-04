@@ -18,13 +18,14 @@ package com.hazelcast.client.spi.impl;
 
 import com.hazelcast.client.connection.Connection;
 import com.hazelcast.client.spi.ResponseStream;
+import com.hazelcast.client.util.ErrorHandler;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 
 import java.io.IOException;
 
 /**
- * @mdogan 5/17/13
+ * @author mdogan 5/17/13
  */
 final class ResponseStreamImpl implements ResponseStream {
 
@@ -39,7 +40,8 @@ final class ResponseStreamImpl implements ResponseStream {
 
     public Object read() throws Exception {
         final Data data = connection.read();
-        return serializationService.toObject(data);
+        Object result = serializationService.toObject(data);
+        return ErrorHandler.returnResultOrThrowException(result);
     }
 
     public void end() throws IOException {

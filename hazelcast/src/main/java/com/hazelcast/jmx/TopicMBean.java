@@ -21,7 +21,7 @@ import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 
 /**
- * @ali 2/11/13
+ * @author ali 2/11/13
  */
 @ManagedDescription("ITopic")
 public class TopicMBean extends HazelcastMBean<ITopic> {

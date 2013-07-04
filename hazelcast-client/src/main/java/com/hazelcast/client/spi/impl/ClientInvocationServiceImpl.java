@@ -22,7 +22,7 @@ import com.hazelcast.client.spi.ResponseHandler;
 import com.hazelcast.nio.Address;
 
 /**
- * @mdogan 5/16/13
+ * @author mdogan 5/16/13
  */
 public final class ClientInvocationServiceImpl implements ClientInvocationService {
 

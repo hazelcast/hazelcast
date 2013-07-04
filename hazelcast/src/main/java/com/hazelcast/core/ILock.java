@@ -17,8 +17,14 @@
 package com.hazelcast.core;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 
+/**
+ * Distributed implementation of {@link Lock}.
+ *
+ * @see Lock
+ */
 public interface ILock extends Lock, DistributedObject {
 
     /**
@@ -27,6 +33,26 @@ public interface ILock extends Lock, DistributedObject {
      * @return lock object.
      */
     Object getKey();
+
+    /**
+     * {@inheritDoc}
+     */
+    void lock();
+
+    /**
+     * {@inheritDoc}
+     */
+    boolean tryLock();
+
+    /**
+     * {@inheritDoc}
+     */
+    boolean tryLock(long time, TimeUnit unit) throws InterruptedException;
+
+    /**
+     * Releases the lock.
+     */
+    void unlock();
 
     /**
      * Acquires the lock for the specified lease time.
@@ -48,12 +74,46 @@ public interface ILock extends Lock, DistributedObject {
      */
     void forceUnlock();
 
+    /**
+     * This method is not implemented! Use {@link #newCondition(String)} instead.
+     *
+     * @throws UnsupportedOperationException
+     */
+    Condition newCondition();
+
+    /**
+     * Returns a new {@link ICondition} instance that is bound to this
+     * {@code ILock} instance with given name.
+     *
+     * <p>Before waiting on the condition the lock must be held by the
+     * current thread.
+     * A call to {@link ICondition#await()} will atomically release the lock
+     * before waiting and re-acquire the lock before the wait returns.
+     *
+     * @param name identifier of the new condition instance
+     * @return A new {@link ICondition} instance for this {@code ILock} instance
+     */
     ICondition newCondition(String name);
 
+    /**
+     * Returns whether this lock is locked or not.
+     *
+     * @return {@code true} if this lock is locked, {@code false} otherwise.
+     */
     boolean isLocked();
 
+    /**
+     * Returns whether this lock is locked by current thread or not.
+     *
+     * @return {@code true} if this lock is locked by current thread, {@code false} otherwise.
+     */
     boolean isLockedByCurrentThread();
 
+    /**
+     * Returns re-entrant lock hold count, regardless of lock ownership.
+     *
+     * @return lock hold count.
+     */
     int getLockCount();
 
     /**

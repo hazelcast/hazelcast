@@ -28,7 +28,7 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * @ali 1/8/13
+ * @author ali 1/8/13
  */
 public class EntrySetResponse implements DataSerializable {
 

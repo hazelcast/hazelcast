@@ -17,7 +17,7 @@
 package com.hazelcast.spi.impl;
 
 /**
- * @mdogan 4/10/13
+ * @author mdogan 4/10/13
  */
 class Response {
 

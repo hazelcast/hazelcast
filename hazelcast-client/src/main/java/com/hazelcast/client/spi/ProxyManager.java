@@ -28,6 +28,7 @@ import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.core.DistributedObjectEvent;
+import com.hazelcast.spi.impl.DistributedObjectEventImpl;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.executor.DistributedExecutorService;
@@ -45,7 +46,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * @mdogan 5/16/13
+ * @author mdogan 5/16/13
  */
 public final class ProxyManager {
 
@@ -201,9 +202,9 @@ public final class ProxyManager {
             public void run() {
                 final DistributedObjectEvent event;
                 if (removed) {
-                    event = new DistributedObjectEvent(DistributedObjectEvent.EventType.DESTROYED, proxy.getServiceName(), proxy.getId());
+                    event = new DistributedObjectEventImpl(DistributedObjectEvent.EventType.DESTROYED, proxy.getServiceName(), proxy.getId());
                 } else {
-                    event = new DistributedObjectEvent(DistributedObjectEvent.EventType.CREATED, proxy.getServiceName(), proxy.getId());
+                    event = new DistributedObjectEventImpl(DistributedObjectEvent.EventType.CREATED, proxy.getServiceName(), proxy.getId());
                 }
                 for (DistributedObjectListener listener : listeners.values()) {
                     if (removed) {

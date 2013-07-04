@@ -19,7 +19,7 @@ package com.hazelcast.queue;
 import com.hazelcast.spi.impl.SerializableCollection;
 
 /**
- * @ali 12/18/12
+ * @author ali 12/18/12
  */
 public class IteratorOperation extends QueueOperation {
 

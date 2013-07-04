@@ -34,7 +34,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @mdogan 5/7/12
+ * @author mdogan 5/7/12
  */
 public class RuntimeStateRequest implements ConsoleRequest {
 

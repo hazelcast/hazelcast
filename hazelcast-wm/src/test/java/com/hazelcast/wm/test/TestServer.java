@@ -21,7 +21,7 @@ import org.eclipse.jetty.server.nio.SelectChannelConnector;
 import org.eclipse.jetty.webapp.WebAppContext;
 
 /**
- * @mdogan 5/11/12
+ * @author mdogan 5/11/12
  */
 public class TestServer {
 

@@ -21,7 +21,7 @@ import com.hazelcast.nio.serialization.SerializationService;
 import java.io.IOException;
 
 /**
- * @ali 5/14/13
+ * @author ali 5/14/13
  */
 public interface SimpleClient {
 

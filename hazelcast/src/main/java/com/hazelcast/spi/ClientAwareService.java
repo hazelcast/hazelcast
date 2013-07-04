@@ -17,7 +17,7 @@
 package com.hazelcast.spi;
 
 /**
- * @mdogan 5/6/13
+ * @author mdogan 5/6/13
  */
 
 public interface ClientAwareService {

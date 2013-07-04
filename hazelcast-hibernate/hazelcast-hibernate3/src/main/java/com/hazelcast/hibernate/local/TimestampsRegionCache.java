@@ -23,7 +23,7 @@ import com.hazelcast.hibernate.RegionCache;
 import com.hazelcast.util.Clock;
 
 /**
- * @mdogan 11/9/12
+ * @author mdogan 11/9/12
  */
 public class TimestampsRegionCache extends LocalRegionCache implements RegionCache {
 

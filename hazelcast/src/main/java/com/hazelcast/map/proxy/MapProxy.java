@@ -20,7 +20,7 @@ import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.IMap;
 
 /**
- * @mdogan 11/5/12
+ * @author mdogan 11/5/12
  */
 public interface MapProxy<K, V> extends IMap<K, V>, DistributedObject {
 

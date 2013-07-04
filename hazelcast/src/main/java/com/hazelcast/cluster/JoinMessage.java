@@ -24,7 +24,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import java.io.IOException;
 
 /**
- * @mdogan 1/30/13
+ * @author mdogan 1/30/13
  */
 
 public class JoinMessage implements DataSerializable {

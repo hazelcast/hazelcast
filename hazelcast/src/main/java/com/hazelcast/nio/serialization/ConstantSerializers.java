@@ -24,7 +24,7 @@ import java.io.IOException;
 import static com.hazelcast.nio.serialization.SerializationConstants.*;
 
 /**
- * @mdogan 6/18/12
+ * @author mdogan 6/18/12
  */
 public final class ConstantSerializers {
 

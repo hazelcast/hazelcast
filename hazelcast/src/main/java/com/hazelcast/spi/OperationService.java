@@ -23,7 +23,7 @@ import java.util.Collection;
 import java.util.Map;
 
 /**
- * @mdogan 12/14/12
+ * @author mdogan 12/14/12
  */
 public interface OperationService {
 

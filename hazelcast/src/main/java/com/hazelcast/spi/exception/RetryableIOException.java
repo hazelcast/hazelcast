@@ -19,7 +19,7 @@ package com.hazelcast.spi.exception;
 import java.io.IOException;
 
 /**
- * @mdogan 1/18/13
+ * @author mdogan 1/18/13
  */
 public class RetryableIOException extends IOException implements RetryableException {
 

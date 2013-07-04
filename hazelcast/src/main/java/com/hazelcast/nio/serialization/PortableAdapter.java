@@ -17,7 +17,7 @@
 package com.hazelcast.nio.serialization;
 
 /**
- * @mdogan 1/4/13
+ * @author mdogan 1/4/13
  */
 public interface PortableAdapter<T> extends Portable {
 

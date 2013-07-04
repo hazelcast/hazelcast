@@ -21,7 +21,7 @@ import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.map.client.TxnMapRequest;
 
 /**
- * @ali 6/10/13
+ * @author ali 6/10/13
  */
 public class ClientTxnMapProxy<K,V> extends ClientTxnProxy implements TransactionalMap<K, V> {
 
@@ -44,6 +44,10 @@ public class ClientTxnMapProxy<K,V> extends ClientTxnProxy implements Transactio
         TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.SIZE);
         Integer result = invoke(request);
         return result;
+    }
+
+    public boolean isEmpty() {
+        return size() == 0;
     }
 
     public V put(K key, V value) {

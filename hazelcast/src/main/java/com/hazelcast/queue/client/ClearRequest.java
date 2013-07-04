@@ -22,7 +22,7 @@ import com.hazelcast.queue.QueuePortableHook;
 import com.hazelcast.spi.Operation;
 
 /**
- * @ali 5/8/13
+ * @author ali 5/8/13
  */
 public class ClearRequest extends QueueRequest implements RetryableRequest {
 

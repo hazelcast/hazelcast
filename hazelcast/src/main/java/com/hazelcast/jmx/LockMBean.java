@@ -19,7 +19,7 @@ package com.hazelcast.jmx;
 import com.hazelcast.core.ILock;
 
 /**
- * @ali 2/11/13
+ * @author ali 2/11/13
  */
 @ManagedDescription("ILock")
 public class LockMBean extends  HazelcastMBean<ILock> {

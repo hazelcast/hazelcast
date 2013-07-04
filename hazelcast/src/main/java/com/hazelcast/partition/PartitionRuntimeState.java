@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * @mdogan 5/7/12
+ * @author mdogan 5/7/12
  */
 public class PartitionRuntimeState implements DataSerializable {
 

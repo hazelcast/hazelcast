@@ -30,7 +30,7 @@ import java.util.Map;
 import static com.hazelcast.nio.serialization.SerializationConstants.CONSTANT_TYPE_DATA;
 
 /**
- * @mdogan 6/19/12
+ * @author mdogan 6/19/12
  */
 final class DataSerializer implements StreamSerializer<DataSerializable> {
 

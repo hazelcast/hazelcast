@@ -4,7 +4,7 @@ import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 
 /**
- * @mdogan 6/15/13
+ * @author mdogan 6/15/13
  */
 public interface InputOutputFactory {
 

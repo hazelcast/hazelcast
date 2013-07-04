@@ -3,7 +3,7 @@ package com.hazelcast.partition;
 import com.hazelcast.nio.Address;
 
 /**
- * @mdogan 6/17/13
+ * @author mdogan 6/17/13
  */
 public interface PartitionView {
 

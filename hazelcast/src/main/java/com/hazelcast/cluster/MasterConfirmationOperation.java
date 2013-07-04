@@ -23,7 +23,7 @@ import com.hazelcast.nio.Address;
 import java.util.logging.Level;
 
 /**
- * @mdogan 9/28/12
+ * @author mdogan 9/28/12
  */
 public class MasterConfirmationOperation extends AbstractClusterOperation {
 

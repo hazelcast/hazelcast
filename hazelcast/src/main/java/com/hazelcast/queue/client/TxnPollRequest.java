@@ -14,7 +14,7 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @ali 6/7/13
+ * @author ali 6/7/13
  */
 public class TxnPollRequest extends CallableClientRequest implements Portable {
 

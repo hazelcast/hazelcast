@@ -19,7 +19,7 @@ package com.hazelcast.nio.serialization;
 import java.util.*;
 
 /**
- * @mdogan 2/6/13
+ * @author mdogan 2/6/13
  */
 public final class ClassDefinitionBuilder {
 

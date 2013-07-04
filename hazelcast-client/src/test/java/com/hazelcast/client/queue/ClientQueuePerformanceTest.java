@@ -27,7 +27,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * @ali 5/21/13
+ * @author ali 5/21/13
  */
 @Ignore("not a JUnit test")
 public class ClientQueuePerformanceTest {

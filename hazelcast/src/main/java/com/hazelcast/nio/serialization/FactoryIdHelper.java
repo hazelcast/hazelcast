@@ -17,7 +17,7 @@
 package com.hazelcast.nio.serialization;
 
 /**
- * @mdogan 4/30/13
+ * @author mdogan 4/30/13
  */
 public final class FactoryIdHelper {
 

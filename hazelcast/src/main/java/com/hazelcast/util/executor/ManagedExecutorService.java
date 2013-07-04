@@ -23,7 +23,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * @mdogan 2/18/13
+ * @author mdogan 2/18/13
  */
 public final class ManagedExecutorService implements ExecutorService {
 

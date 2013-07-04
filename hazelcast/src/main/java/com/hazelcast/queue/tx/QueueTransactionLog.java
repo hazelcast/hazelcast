@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.util.concurrent.Future;
 
 /**
- * @ali 3/25/13
+ * @author ali 3/25/13
  */
 public class QueueTransactionLog implements KeyAwareTransactionLog {
 

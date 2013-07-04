@@ -23,7 +23,7 @@ import com.hazelcast.spi.AbstractOperation;
 import java.io.IOException;
 
 /**
- * @mdogan 5/7/13
+ * @author mdogan 5/7/13
  */
 public class ClientReAuthOperation extends AbstractOperation {
 

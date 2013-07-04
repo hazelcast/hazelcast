@@ -22,7 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 
 /**
- * @mdogan 1/10/13
+ * @author mdogan 1/10/13
  */
 public class SetCountOperation extends BackupAwareCountDownLatchOperation {
 

@@ -18,79 +18,113 @@ package com.hazelcast.core;
 
 import com.hazelcast.transaction.TransactionalObject;
 
+/**
+ * Transactional implementation of {@link BaseMap}.
+ *
+ * @see BaseMap
+ * @see IMap
+ * @param <K> key
+ * @param <V> value
+ */
 public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, V> {
 
     /**
-     * Transactional version of containsKey method.
-     * <p>See: {@link com.hazelcast.core.IMap#containsKey(Object)}</p>
+     * Transactional implementation of {@link com.hazelcast.core.IMap#containsKey(Object)}.
+     *
+     * @see IMap#containsKey(Object)
      */
     boolean containsKey(Object key);
 
     /**
-     * Transactional version of get method.
-     * <p>See: {@link com.hazelcast.core.IMap#get(Object)}</p>
+     * Transactional implementation of {@link com.hazelcast.core.IMap#get(Object)}.
+     *
+     * @see IMap#get(Object)
      */
     V get(Object key);
 
     /**
-     * Transactional version of size method.
-     * See: {@link com.hazelcast.core.IMap#size()}
+     * Transactional implementation of {@link com.hazelcast.core.IMap#size()}.
+     *
+     * @see com.hazelcast.core.IMap#size()
      */
     int size();
 
     /**
-     * Transactional version of put method.
+     * Transactional implementation of {@link IMap#isEmpty()}.
+     *
+     * @see com.hazelcast.core.IMap#isEmpty()
+     */
+    boolean isEmpty();
+
+    /**
+     * Transactional implementation of {@link com.hazelcast.core.IMap#put(Object, Object)}.
+     * <p/>
      * The object to be put will be accessible only in the current transaction context till transaction is committed.
-     * <p>See: {@link com.hazelcast.core.IMap#put(Object, Object)}</p>
+     *
+     * @see IMap#put(Object, Object)
      */
     V put(K key, V value);
 
     /**
-     * Transactional version of set method.
+     * Transactional implementation of {@link com.hazelcast.core.IMap#set(Object, Object)}.
+     * <p/>
      * The object to be set will be accessible only in the current transaction context till transaction is committed.
-     * <p>See: {@link com.hazelcast.core.IMap#set(Object, Object)}</p>
+     *
+     * @see IMap#set(Object, Object)
      */
     void set(K key, V value);
 
     /**
-     * Transactional version of putIfAbsent method.
+     * Transactional implementation of {@link com.hazelcast.core.IMap#putIfAbsent(Object, Object)}.
+     * <p/>
      * The object to be put will be accessible only in the current transaction context till transaction is committed.
-     * <p>See: {@link com.hazelcast.core.IMap#putIfAbsent(Object, Object)}</p>
+     *
+     * @see IMap#putIfAbsent(Object, Object)
      */
     V putIfAbsent(K key, V value);
 
     /**
-     * Transactional version of replace method.
+     * Transactional implementation of {@link com.hazelcast.core.IMap#replace(Object, Object)}.
+     * <p/>
      * The object to be replaced will be accessible only in the current transaction context till transaction is committed.
-     * <p>See: {@link com.hazelcast.core.IMap#replace(Object, Object)}</p>
+     *
+     * @see IMap#replace(Object, Object)
      */
     V replace(K key, V value);
 
     /**
-     * Transactional version of replace method.
+     * Transactional implementation of {@link com.hazelcast.core.IMap#replace(Object, Object, Object)}.
+     * <p/>
      * The object to be replaced will be accessible only in the current transaction context till transaction is committed.
-     * <p>See: {@link com.hazelcast.core.IMap#replace(Object, Object, Object)}</p>
+     *
+     * @see IMap#replace(Object, Object, Object)
      */
     boolean replace(K key, V oldValue, V newValue);
 
     /**
-     * Transactional version of remove method.
+     * Transactional implementation of {@link com.hazelcast.core.IMap#remove(Object)}.
+     * <p/>
      * The object to be removed will be removed from only the current transaction context till transaction is committed.
-     * <p>See: {@link com.hazelcast.core.IMap#remove(Object)}</p>
+     *
+     * @see IMap#remove(Object)
      */
     V remove(Object key);
 
     /**
-     * Transactional version of delete method.
+     * Transactional implementation of {@link com.hazelcast.core.IMap#delete(Object)}.
+     * <p/>
      * The object to be deleted will be removed from only the current transaction context till transaction is committed.
-     * <p>See: {@link com.hazelcast.core.IMap#delete(Object)}</p>
+     *
+     * @see IMap#delete(Object)
      */
     void delete(Object key);
 
     /**
-     * Transactional version of remove method.
+     * Transactional implementation of {@link com.hazelcast.core.IMap#remove(Object, Object)}.
+     * <p/>
      * The object to be removed will be removed from only the current transaction context till transaction is committed.
-     * <p>See: {@link com.hazelcast.core.IMap#remove(Object, Object)}</p>
+     *
+     * @see IMap#remove(Object, Object)
      */
     boolean remove(Object key, Object value);
 }

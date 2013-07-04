@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 /**
- * @mdogan 1/18/13
+ * @author mdogan 1/18/13
  */
 public final class CompletedFuture<V> implements Future<V> {
 

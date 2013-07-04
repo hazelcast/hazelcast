@@ -27,7 +27,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import java.io.IOException;
 
 /**
- * @ali 1/9/13
+ * @author ali 1/9/13
  */
 public class CollectionEvent implements DataSerializable {
 

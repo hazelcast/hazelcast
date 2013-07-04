@@ -16,7 +16,14 @@
 
 package com.hazelcast.core;
 
+/**
+ * Type of a client.
+ */
 public enum ClientType {
-    Native,
-    Memcache
+    JAVA,
+    CSHARP,
+    CPP,
+    PYTHON,
+    RUBY,
+    OTHER
 }

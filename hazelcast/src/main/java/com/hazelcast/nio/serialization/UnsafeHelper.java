@@ -32,7 +32,7 @@ import java.lang.reflect.Field;
  * See Gil Tene's comment related to Unsafe usage;
  * https://groups.google.com/d/msg/mechanical-sympathy/X-GtLuG0ETo/LMV1d_2IybQJ
  *
- * @mdogan 6/14/13
+ * @author mdogan 6/14/13
  */
 final class UnsafeHelper {
 

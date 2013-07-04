@@ -23,7 +23,7 @@ import com.hazelcast.util.ConstructorFunction;
 import java.util.Collection;
 
 /**
- * @ali 5/9/13
+ * @author ali 5/9/13
  */
 public class CollectionPortableHook implements PortableHook {
 
@@ -70,8 +70,6 @@ public class CollectionPortableHook implements PortableHook {
     public static final int TXN_SET_ADD = 35;
     public static final int TXN_SET_REMOVE = 36;
     public static final int TXN_SET_SIZE = 37;
-
-
 
 
     public int getFactoryId() {

@@ -18,12 +18,24 @@ package com.hazelcast.core;
 
 import java.util.Collection;
 
+/**
+ * ClientService allows to query connected {@link Client}s and
+ * attach/detach {@link ClientListener}s to listen connection events.
+ *
+ * @see Client
+ * @see ClientListener
+ */
 public interface ClientService {
 
+    /**
+     * Returns all connected clients to this member.
+     *
+     * @return all connected clients to this member.
+     */
     Collection<Client> getConnectedClients();
 
     /**
-     * @param clientListener
+     * @param clientListener ClientListener
      *
      * @return returns registration id.
      */

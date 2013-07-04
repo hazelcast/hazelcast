@@ -17,7 +17,7 @@
 package com.hazelcast.spi;
 
 /**
- * @mdogan 12/12/12
+ * @author mdogan 12/12/12
  */
 public interface EventPublishingService<E, T> {
 

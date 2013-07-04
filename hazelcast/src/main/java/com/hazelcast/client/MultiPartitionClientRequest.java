@@ -22,7 +22,7 @@ import java.util.Collection;
 import java.util.Map;
 
 /**
- * @mdogan 5/3/13
+ * @author mdogan 5/3/13
  */
 public abstract class MultiPartitionClientRequest extends ClientRequest {
 

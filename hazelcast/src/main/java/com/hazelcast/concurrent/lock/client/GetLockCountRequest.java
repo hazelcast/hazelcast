@@ -32,7 +32,7 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 
 /**
- * @mdogan 5/3/13
+ * @author mdogan 5/3/13
  */
 public final class GetLockCountRequest extends KeyBasedClientRequest implements Portable {
 

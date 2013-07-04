@@ -23,7 +23,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import java.io.IOException;
 
 /**
- * @mdogan 11/19/12
+ * @author mdogan 11/19/12
  */
 public class Timestamp implements DataSerializable {
 

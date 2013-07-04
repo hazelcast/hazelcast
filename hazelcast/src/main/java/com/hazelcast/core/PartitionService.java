@@ -16,25 +16,40 @@
 
 package com.hazelcast.core;
 
-
 import java.util.Set;
 
+/**
+ * PartitionService allows to query {@link Partition}s
+ * and attach/detach {@link MigrationListener}s to listen partition migration events.
+ *
+ * @see Partition
+ * @see MigrationListener
+ */
 public interface PartitionService {
 
+    /**
+     * Returns all partitions.
+     *
+     * @return all partitions
+     */
     Set<Partition> getPartitions();
 
+    /**
+     * Returns partition which given key belongs to.
+     *
+     * @param key key
+     * @return partition which given key belongs to
+     */
     Partition getPartition(Object key);
 
     /**
-     * @param migrationListener
-     *
+     * @param migrationListener listener
      * @return returns registration id.
      */
     String addMigrationListener(MigrationListener migrationListener);
 
     /**
      * @param registrationId Id of listener registration.
-     *
      * @return true if registration is removed, false otherwise
      */
     boolean removeMigrationListener(final String registrationId);

@@ -21,7 +21,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 /**
- * @mdogan 11/29/12
+ * @author mdogan 11/29/12
  */
 public enum MigrationEndpoint {
 

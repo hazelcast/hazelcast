@@ -17,7 +17,7 @@
 package com.hazelcast.nio.serialization;
 
 /**
- * @mdogan 1/3/13
+ * @author mdogan 1/3/13
  */
 public abstract class BinaryClassDefinition implements ClassDefinition {
 

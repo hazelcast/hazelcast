@@ -25,7 +25,7 @@ import com.hazelcast.topic.client.TopicDestroyRequest;
 import java.util.Collection;
 
 /**
- * @ali 5/14/13
+ * @author ali 5/14/13
  */
 public class TopicPortableHook implements PortableHook {
 

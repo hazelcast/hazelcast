@@ -32,7 +32,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @ali 6/11/13
+ * @author ali 6/11/13
  */
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(SerialTest.class)

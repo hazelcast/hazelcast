@@ -27,7 +27,7 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import java.io.IOException;
 
 /**
- * @ali 5/24/13
+ * @author ali 5/24/13
  */
 public class AtomicLongDestroyRequest extends CallableClientRequest implements Portable, RetryableRequest {
 

@@ -17,7 +17,7 @@
 package com.hazelcast.concurrent.atomiclong;
 
 /**
- * @ali 5/13/13
+ * @author ali 5/13/13
  */
 public class AtomicLongWrapper {
 

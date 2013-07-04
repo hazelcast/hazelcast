@@ -33,7 +33,7 @@ import java.util.Arrays;
 import java.util.logging.Level;
 
 /**
- * @mdogan 4/11/13
+ * @author mdogan 4/11/13
  */
 public class ReplicaSyncResponse extends Operation implements PartitionAwareOperation, BackupOperation {
 

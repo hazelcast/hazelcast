@@ -38,7 +38,7 @@ public final class TcpIpConnection implements Connection {
 
     private volatile boolean live = true;
 
-    private volatile Type type = Type.NONE;
+    private volatile ConnectionType type = ConnectionType.NONE;
 
     private Address endPoint = null;
 
@@ -65,7 +65,7 @@ public final class TcpIpConnection implements Connection {
         return systemLogService;
     }
 
-    public Type getType() {
+    public ConnectionType getType() {
         return type;
     }
 
@@ -82,37 +82,13 @@ public final class TcpIpConnection implements Connection {
         return true;
     }
 
-    public enum Type {
-        NONE(false, false),
-        MEMBER(true, true),
-        BINARY_CLIENT(false, true),
-        PROTOCOL_CLIENT(false, true),
-        REST_CLIENT(false, false),
-        MEMCACHE_CLIENT(false, false);
-
-        final boolean member;
-        final boolean binary;
-
-        Type(boolean member, boolean binary) {
-            this.member = member;
-            this.binary = binary;
-        }
-
-        public boolean isBinary() {
-            return binary;
-        }
-
-        public boolean isClient() {
-            return !member;
-        }
-    }
-
     public boolean isClient() {
-        return (type != null) && type != Type.NONE && type.isClient();
+        final ConnectionType t = type;
+        return (t != null) && t != ConnectionType.NONE && t.isClient();
     }
 
-    public void setType(Type type) {
-        if (this.type == Type.NONE) {
+    public void setType(ConnectionType type) {
+        if (this.type == ConnectionType.NONE) {
             this.type = type;
         }
     }

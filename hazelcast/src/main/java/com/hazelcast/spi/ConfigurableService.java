@@ -17,7 +17,7 @@
 package com.hazelcast.spi;
 
 /**
- * @mdogan 6/24/13
+ * @author mdogan 6/24/13
  */
 public interface ConfigurableService<T> {
 

@@ -22,7 +22,7 @@ import com.hazelcast.core.DistributedObjectListener;
 import java.util.Collection;
 
 /**
- * @mdogan 1/14/13
+ * @author mdogan 1/14/13
  */
 public interface ProxyService extends CoreService {
 

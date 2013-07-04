@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.nio.ByteOrder;
 
 /**
-* @mdogan 06/16/13
+* @author mdogan 06/16/13
 */
 final class UnsafeObjectDataInput extends ByteArrayObjectDataInput {
 

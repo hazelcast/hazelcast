@@ -37,7 +37,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @mdogan 5/20/13
+ * @author mdogan 5/20/13
  */
 
 @RunWith(HazelcastJUnit4ClassRunner.class)

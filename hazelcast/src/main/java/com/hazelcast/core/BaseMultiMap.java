@@ -19,20 +19,63 @@ package com.hazelcast.core;
 import java.util.Collection;
 
 /**
- * @ali 3/13/13
+ * Base interface for Hazelcast distributed multi-maps.
+ *
+ * @see MultiMap
+ * @see TransactionalMultiMap
+ * @param <K>
+ * @param <V>
  */
 public interface BaseMultiMap<K, V> extends DistributedObject {
 
+    /**
+     * Stores a key-value pair in the multimap.
+     *
+     * @param key   the key to be stored
+     * @param value the value to be stored
+     * @return true if size of the multimap is increased, false if the multimap
+     *         already contains the key-value pair.
+     */
     boolean put(K key, V value);
 
+    /**
+     * Returns the collection of values associated with the key.
+     *
+     * @param key the key whose associated values are to be returned
+     * @return the collection of the values associated with the key.
+     */
     Collection<V> get(K key);
 
+    /**
+     * Removes the given key value pair from the multimap.
+     *
+     * @param key   the key of the entry to remove
+     * @param value the value of the entry to remove
+     * @return true if the size of the multimap changed after the remove operation, false otherwise.
+     */
     boolean remove(Object key, Object value);
 
+    /**
+     * Removes all the entries with the given key.
+     *
+     * @param key the key of the entries to remove
+     * @return the collection of removed values associated with the given key. Returned collection
+     *         might be modifiable but it has no effect on the multimap
+     */
     Collection<V> remove(Object key);
 
+    /**
+     * Returns number of values matching to given key in the multimap.
+     *
+     * @param key the key whose values count are to be returned
+     * @return number of values matching to given key in the multimap.
+     */
     int valueCount(K key);
 
+    /**
+     * Returns the number of key-value pairs in the multimap.
+     *
+     * @return the number of key-value pairs in the multimap.
+     */
     int size();
-
 }

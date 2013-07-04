@@ -51,7 +51,6 @@ class SocketPacketReader implements SocketReader {
 
     private void enqueueFullPacket(final Packet p) {
         p.setConn(connection);
-        connection.setType(TcpIpConnection.Type.MEMBER);
         ioService.handleMemberPacket(p);
     }
 

@@ -27,7 +27,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @ali 1/22/13
+ * @author ali 1/22/13
  */
 public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> implements ISemaphore {
 

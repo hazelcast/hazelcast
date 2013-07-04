@@ -35,7 +35,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 /**
- * @mdogan 5/13/13
+ * @author mdogan 5/13/13
  */
 public final class AddMembershipListenerRequest extends CallableClientRequest implements IdentifiedDataSerializable {
 

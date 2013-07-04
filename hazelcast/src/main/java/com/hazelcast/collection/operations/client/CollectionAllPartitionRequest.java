@@ -29,7 +29,7 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import java.io.IOException;
 
 /**
- * @ali 5/10/13
+ * @author ali 5/10/13
  */
 public abstract class CollectionAllPartitionRequest extends AllPartitionsClientRequest implements Portable {
 

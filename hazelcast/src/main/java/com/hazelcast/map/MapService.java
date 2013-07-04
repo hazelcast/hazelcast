@@ -576,7 +576,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         mapContainer.getWanReplicationPublisher().publishReplicationEvent(SERVICE_NAME, replicationEvent);
     }
 
-    public void publishEvent(Address caller, String mapName, int eventType, Data dataKey, Data dataOldValue, Data dataValue) {
+    public void publishEvent(Address caller, String mapName, EntryEventType eventType, Data dataKey, Data dataOldValue, Data dataValue) {
         Collection<EventRegistration> candidates = nodeEngine.getEventService().getRegistrations(SERVICE_NAME, mapName);
         Set<EventRegistration> registrationsWithValue = new HashSet<EventRegistration>();
         Set<EventRegistration> registrationsWithoutValue = new HashSet<EventRegistration>();
@@ -591,7 +591,7 @@ public class MapService implements ManagedService, MigrationAwareService,
                 registrationsWithValue.add(candidate);
             } else if (filter instanceof QueryEventFilter) {
                 Object testValue;
-                if (eventType == EntryEvent.TYPE_REMOVED || eventType == EntryEvent.TYPE_EVICTED) {
+                if (eventType == EntryEventType.REMOVED || eventType == EntryEventType.EVICTED) {
                     oldValue = oldValue != null ? oldValue : toObject(dataOldValue);
                     testValue = oldValue;
                 } else {
@@ -620,10 +620,10 @@ public class MapService implements ManagedService, MigrationAwareService,
         if (registrationsWithValue.isEmpty() && registrationsWithoutValue.isEmpty())
             return;
         String source = nodeEngine.getThisAddress().toString();
-        if (eventType == EntryEvent.TYPE_REMOVED || eventType == EntryEvent.TYPE_EVICTED) {
+        if (eventType == EntryEventType.REMOVED || eventType == EntryEventType.EVICTED) {
             dataValue = dataValue != null ? dataValue : dataOldValue;
         }
-        EventData event = new EventData(source, mapName, caller, dataKey, dataValue, dataOldValue, eventType);
+        EventData event = new EventData(source, mapName, caller, dataKey, dataValue, dataOldValue, eventType.getType());
         nodeEngine.getEventService().publishEvent(SERVICE_NAME, registrationsWithValue, event);
         nodeEngine.getEventService().publishEvent(SERVICE_NAME, registrationsWithoutValue, event.cloneWithoutValues());
     }
@@ -836,7 +836,7 @@ public class MapService implements ManagedService, MigrationAwareService,
                         nodeEngine.getOperationService().executeOperation(clearOperation);
 
                         for (Record record : recordSet) {
-                            publishEvent(nodeEngine.getThisAddress(), mapName, EntryEvent.TYPE_EVICTED, record.getKey(), toData(record.getValue()), null);
+                            publishEvent(nodeEngine.getThisAddress(), mapName, EntryEventType.EVICTED, record.getKey(), toData(record.getValue()), null);
                         }
                     }
                 }

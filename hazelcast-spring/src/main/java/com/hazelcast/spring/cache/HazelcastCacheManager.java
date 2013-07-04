@@ -29,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * @mdogan 4/3/12
+ * @author mdogan 4/3/12
  */
 public class HazelcastCacheManager implements CacheManager, InitializingBean {
 

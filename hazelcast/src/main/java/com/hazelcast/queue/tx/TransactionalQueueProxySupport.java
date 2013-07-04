@@ -35,7 +35,7 @@ import java.util.Set;
 import java.util.concurrent.Future;
 
 /**
- * @ali 3/25/13
+ * @author ali 3/25/13
  */
 public abstract class TransactionalQueueProxySupport extends AbstractDistributedObject<QueueService> implements TransactionalObject {
 

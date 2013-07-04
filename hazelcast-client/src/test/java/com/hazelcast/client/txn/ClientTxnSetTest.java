@@ -30,7 +30,7 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.*;
 
 /**
- * @ali 6/11/13
+ * @author ali 6/11/13
  */
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(SerialTest.class)

@@ -23,7 +23,7 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import java.io.IOException;
 
 /**
- * @mdogan 5/6/13
+ * @author mdogan 5/6/13
  */
 public final class ClientPrincipal implements Portable {
 

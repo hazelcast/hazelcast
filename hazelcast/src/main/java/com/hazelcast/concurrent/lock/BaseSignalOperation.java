@@ -24,7 +24,7 @@ import com.hazelcast.spi.ObjectNamespace;
 import java.io.IOException;
 
 /**
- * @mdogan 2/13/13
+ * @author mdogan 2/13/13
  */
 abstract class BaseSignalOperation extends BaseLockOperation {
 

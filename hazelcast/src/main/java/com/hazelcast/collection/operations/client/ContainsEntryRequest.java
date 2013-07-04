@@ -32,7 +32,7 @@ import java.io.IOException;
 import java.util.Map;
 
 /**
- * @ali 5/10/13
+ * @author ali 5/10/13
  */
 public class ContainsEntryRequest extends CollectionAllPartitionRequest implements RetryableRequest {
 

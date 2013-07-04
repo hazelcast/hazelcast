@@ -31,7 +31,7 @@ import com.hazelcast.topic.client.TopicDestroyRequest;
 import com.hazelcast.util.ExceptionUtil;
 
 /**
- * @ali 5/24/13
+ * @author ali 5/24/13
  */
 public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
 

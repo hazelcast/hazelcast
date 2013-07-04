@@ -24,7 +24,7 @@ import com.hazelcast.queue.QueueOperation;
 import java.io.IOException;
 
 /**
- * @ali 3/27/13
+ * @author ali 3/27/13
  */
 public class TxnPollBackupOperation extends QueueOperation {
 

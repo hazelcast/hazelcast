@@ -25,7 +25,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
- * @mdogan 5/16/13
+ * @author mdogan 5/16/13
  */
 public final class PartitionServiceProxy implements PartitionService {
 

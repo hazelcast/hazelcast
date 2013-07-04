@@ -20,7 +20,7 @@ import java.util.concurrent.Callable;
 import java.util.logging.Level;
 
 /**
- * @mdogan 5/6/13
+ * @author mdogan 5/6/13
  */
 public abstract class CallableClientRequest extends ClientRequest implements Callable {
 

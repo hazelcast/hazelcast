@@ -19,7 +19,7 @@ package com.hazelcast.util.scheduler;
 import com.hazelcast.util.Clock;
 
 /**
- * @mdogan 2/25/13
+ * @author mdogan 2/25/13
  */
 public final class ScheduledEntry<K, V> {
 

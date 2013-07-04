@@ -33,7 +33,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * @mdogan 1/4/13
+ * @author mdogan 1/4/13
  */
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)

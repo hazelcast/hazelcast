@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
 /**
- * @mdogan 1/22/13
+ * @author mdogan 1/22/13
  */
 class ExecutionCallbackAdapterFactory {
 

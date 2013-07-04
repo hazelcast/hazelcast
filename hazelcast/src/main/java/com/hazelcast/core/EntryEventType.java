@@ -17,6 +17,7 @@
 package com.hazelcast.core;
 
 public enum EntryEventType {
+
     ADDED(1),
     REMOVED(2),
     UPDATED(3),

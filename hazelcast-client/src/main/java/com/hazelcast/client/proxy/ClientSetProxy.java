@@ -34,7 +34,7 @@ import com.hazelcast.util.ThreadUtil;
 import java.util.*;
 
 /**
- * @ali 5/20/13
+ * @author ali 5/20/13
  */
 public class ClientSetProxy<E> extends ClientProxy implements ISet<E> {
 

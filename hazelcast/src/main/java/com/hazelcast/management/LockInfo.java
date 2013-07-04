@@ -23,7 +23,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import java.io.IOException;
 
 /**
- * @mdogan 5/8/12
+ * @author mdogan 5/8/12
  */
 public class LockInfo implements DataSerializable {
 

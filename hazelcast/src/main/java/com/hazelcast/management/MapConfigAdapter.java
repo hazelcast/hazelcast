@@ -25,7 +25,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import java.io.IOException;
 
 /**
- * @mdogan 6/11/13
+ * @author mdogan 6/11/13
  */
 public class MapConfigAdapter implements DataSerializable {
 

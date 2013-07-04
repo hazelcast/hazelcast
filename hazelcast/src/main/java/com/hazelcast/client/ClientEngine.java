@@ -27,7 +27,7 @@ import com.hazelcast.partition.PartitionService;
 import com.hazelcast.transaction.TransactionManagerService;
 
 /**
- * @mdogan 4/25/13
+ * @author mdogan 4/25/13
  */
 public interface ClientEngine {
 

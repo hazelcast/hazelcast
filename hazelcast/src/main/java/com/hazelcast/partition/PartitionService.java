@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @mdogan 1/24/13
+ * @author mdogan 1/24/13
  */
 public interface PartitionService extends CoreService {
 

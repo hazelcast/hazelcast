@@ -26,7 +26,7 @@ import com.hazelcast.spi.EventFilter;
 import java.io.IOException;
 
 /**
- * @ali 1/9/13
+ * @author ali 1/9/13
  */
 public class CollectionEventFilter implements EventFilter, DataSerializable {
 

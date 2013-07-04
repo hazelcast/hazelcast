@@ -17,7 +17,7 @@
 package com.hazelcast.spi;
 
 /**
- * @mdogan 12/6/12
+ * @author mdogan 12/6/12
  */
 public interface BackupAwareOperation extends PartitionAwareOperation {
 

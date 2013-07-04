@@ -22,7 +22,7 @@ import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 /**
- * @mdogan 5/15/13
+ * @author mdogan 5/15/13
  */
 public final class ClientMembershipEvent extends MembershipEvent implements IdentifiedDataSerializable {
 

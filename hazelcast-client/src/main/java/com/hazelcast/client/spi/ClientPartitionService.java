@@ -21,7 +21,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 
 /**
- * @mdogan 5/16/13
+ * @author mdogan 5/16/13
  */
 public interface ClientPartitionService {
 

@@ -30,7 +30,7 @@ import java.util.Collection;
 import java.util.Iterator;
 
 /**
- * @ali 1/16/13
+ * @author ali 1/16/13
  */
 public class RemoveBackupOperation extends CollectionKeyBasedOperation implements BackupOperation {
 

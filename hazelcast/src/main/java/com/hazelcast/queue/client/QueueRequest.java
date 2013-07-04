@@ -26,7 +26,7 @@ import com.hazelcast.queue.QueueService;
 import java.io.IOException;
 
 /**
- * @ali 5/8/13
+ * @author ali 5/8/13
  */
 public abstract class QueueRequest extends PartitionClientRequest implements Portable {
 

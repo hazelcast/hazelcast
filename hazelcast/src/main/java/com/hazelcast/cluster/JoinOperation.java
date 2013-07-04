@@ -17,7 +17,7 @@
 package com.hazelcast.cluster;
 
 /**
- * @mdogan 7/25/12
+ * @author mdogan 7/25/12
  */
 
 /**

@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
 /**
- * @mdogan 1/18/13
+ * @author mdogan 1/18/13
  */
 public class DistributedExecutorService implements ManagedService, RemoteService {
 

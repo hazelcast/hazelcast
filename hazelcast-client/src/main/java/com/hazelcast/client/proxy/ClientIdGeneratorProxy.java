@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * @ali 5/28/13
+ * @author ali 5/28/13
  */
 public class ClientIdGeneratorProxy extends ClientProxy implements IdGenerator {
 

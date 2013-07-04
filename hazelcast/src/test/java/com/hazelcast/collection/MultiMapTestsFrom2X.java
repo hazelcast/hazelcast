@@ -42,7 +42,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 /**
- * @ali 6/4/13
+ * @author ali 6/4/13
  */
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
