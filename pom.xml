@@ -163,6 +163,78 @@
                     <skipTests>true</skipTests>
                 </configuration>
             </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>${maven.javadoc.plugin.version}</version>
+                <configuration>
+                    <javaApiLinks>
+                        <property>
+                            <name>api_1.5</name>
+                            <value>http://download.oracle.com/javase/1.5.0/docs/api/</value>
+                        </property>
+                        <property>
+                            <name>api_1.6</name>
+                            <value>http://download.oracle.com/javase/1.6.0/docs/api/</value>
+                        </property>
+                    </javaApiLinks>
+
+                    <sourceFileIncludes>
+                        <include>com/hazelcast/core/**</include>
+                        <include>com/hazelcast/config/**</include>
+                        <include>com/hazelcast/jmx/**</include>
+                        <include>com/hazelcast/monitor/*</include>
+                        <include>com/hazelcast/query/*</include>
+                        <include>com/hazelcast/security/*</include>
+                        <include>com/hazelcast/spi/*</include>
+                        <include>com/hazelcast/transaction/*</include>
+
+                        <include>com/hazelcast/nio/serialization/ClassDefinition.java</include>
+                        <include>com/hazelcast/nio/serialization/ClassDefinitionBuilder.java</include>
+                        <include>com/hazelcast/nio/serialization/DataSerializable.java</include>
+                        <include>com/hazelcast/nio/serialization/IdentifiedDataSerializable.java</include>
+                        <include>com/hazelcast/nio/serialization/DataSerializableFactory.java</include>
+                        <include>com/hazelcast/nio/serialization/Portable.java</include>
+                        <include>com/hazelcast/nio/serialization/PortableFactory.java</include>
+                        <include>com/hazelcast/nio/serialization/ByteArraySerializer.java</include>
+                        <include>com/hazelcast/nio/serialization/StreamSerializer.java</include>
+
+                        <include>com/hazelcast/client/HazelcastClient.java</include>
+                        <include>com/hazelcast/client/LoadBalancer.java</include>
+                        <include>com/hazelcast/client/config/**</include>
+                        <include>com/hazelcast/client/exception/**</include>
+                        <include>com/hazelcast/client/spi/*</include>
+
+                        <include>com/hazelcast/cluster/TcpIpJoinerOverAWS.java</include>
+
+                        <include>com/hazelcast/hibernate/HazelcastCacheRegionFactory.java</include>
+                        <include>com/hazelcast/hibernate/HazelcastLocalCacheRegionFactory.java</include>
+                        <include>com/hazelcast/hibernate/VersionAwareMapMergePolicy.java</include>
+                        <include>com/hazelcast/hibernate/instance/HazelcastAccessor.java</include>
+
+                        <include>com/hazelcast/spring/cache/HazelcastCache.java</include>
+                        <include>com/hazelcast/spring/cache/HazelcastCacheManager.java</include>
+                        <include>com/hazelcast/spring/context/SpringAware.java</include>
+                        <include>com/hazelcast/spring/context/SpringManagedContext.java</include>
+                        <include>com/hazelcast/spring/jpa/JPAMapStore.java</include>
+                        <include>com/hazelcast/spring/mongodb/MongoMapStore.java</include>
+
+                        <include>com/hazelcast/web/SessionListener.java</include>
+                        <include>com/hazelcast/web/WebFilter.java</include>
+                    </sourceFileIncludes>
+                    <excludePackageNames>*.impl.*</excludePackageNames>
+
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
@@ -185,77 +257,6 @@
                             </execution>
                         </executions>
                     </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>${maven.javadoc.plugin.version}</version>
-                        <configuration>
-                            <javaApiLinks>
-                                <property>
-                                    <name>api_1.5</name>
-                                    <value>http://download.oracle.com/javase/1.5.0/docs/api/</value>
-                                </property>
-                                <property>
-                                    <name>api_1.6</name>
-                                    <value>http://download.oracle.com/javase/1.6.0/docs/api/</value>
-                                </property>
-                            </javaApiLinks>
-
-                            <sourceFileIncludes>
-                                <include>com/hazelcast/core/**</include>
-                                <include>com/hazelcast/config/**</include>
-                                <include>com/hazelcast/jmx/**</include>
-                                <include>com/hazelcast/monitor/*</include>
-                                <include>com/hazelcast/query/*</include>
-                                <include>com/hazelcast/security/*</include>
-                                <include>com/hazelcast/spi/*</include>
-                                <include>com/hazelcast/transaction/*</include>
-
-                                <include>com/hazelcast/nio/serialization/ClassDefinition.java</include>
-                                <include>com/hazelcast/nio/serialization/ClassDefinitionBuilder.java</include>
-                                <include>com/hazelcast/nio/serialization/DataSerializable.java</include>
-                                <include>com/hazelcast/nio/serialization/IdentifiedDataSerializable.java</include>
-                                <include>com/hazelcast/nio/serialization/DataSerializableFactory.java</include>
-                                <include>com/hazelcast/nio/serialization/Portable.java</include>
-                                <include>com/hazelcast/nio/serialization/PortableFactory.java</include>
-                                <include>com/hazelcast/nio/serialization/ByteArraySerializer.java</include>
-                                <include>com/hazelcast/nio/serialization/StreamSerializer.java</include>
-
-                                <include>com/hazelcast/client/HazelcastClient.java</include>
-                                <include>com/hazelcast/client/LoadBalancer.java</include>
-                                <include>com/hazelcast/client/config/**</include>
-                                <include>com/hazelcast/client/exception/**</include>
-                                <include>com/hazelcast/client/spi/*</include>
-
-                                <include>com/hazelcast/cluster/TcpIpJoinerOverAWS.java</include>
-
-                                <include>com/hazelcast/hibernate/HazelcastCacheRegionFactory.java</include>
-                                <include>com/hazelcast/hibernate/HazelcastLocalCacheRegionFactory.java</include>
-                                <include>com/hazelcast/hibernate/VersionAwareMapMergePolicy.java</include>
-                                <include>com/hazelcast/hibernate/instance/HazelcastAccessor.java</include>
-
-                                <include>com/hazelcast/spring/cache/HazelcastCache.java</include>
-                                <include>com/hazelcast/spring/cache/HazelcastCacheManager.java</include>
-                                <include>com/hazelcast/spring/context/SpringAware.java</include>
-                                <include>com/hazelcast/spring/context/SpringManagedContext.java</include>
-                                <include>com/hazelcast/spring/jpa/JPAMapStore.java</include>
-                                <include>com/hazelcast/spring/mongodb/MongoMapStore.java</include>
-
-                                <include>com/hazelcast/web/SessionListener.java</include>
-                                <include>com/hazelcast/web/WebFilter.java</include>
-                            </sourceFileIncludes>
-                            <excludePackageNames>*.impl.*</excludePackageNames>
-
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>attach-javadocs</id>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
                 </plugins>
             </build>
             <modules>
@@ -265,81 +266,6 @@
 
         <profile>
             <id>release-snapshot</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>${maven.javadoc.plugin.version}</version>
-                        <configuration>
-                            <javaApiLinks>
-                                <property>
-                                    <name>api_1.5</name>
-                                    <value>http://download.oracle.com/javase/1.5.0/docs/api/</value>
-                                </property>
-                                <property>
-                                    <name>api_1.6</name>
-                                    <value>http://download.oracle.com/javase/1.6.0/docs/api/</value>
-                                </property>
-                            </javaApiLinks>
-
-                            <sourceFileIncludes>
-                                <include>com/hazelcast/core/**</include>
-                                <include>com/hazelcast/config/**</include>
-                                <include>com/hazelcast/jmx/**</include>
-                                <include>com/hazelcast/monitor/*</include>
-                                <include>com/hazelcast/query/*</include>
-                                <include>com/hazelcast/security/*</include>
-                                <include>com/hazelcast/spi/*</include>
-                                <include>com/hazelcast/transaction/*</include>
-
-                                <include>com/hazelcast/nio/serialization/ClassDefinition.java</include>
-                                <include>com/hazelcast/nio/serialization/ClassDefinitionBuilder.java</include>
-                                <include>com/hazelcast/nio/serialization/DataSerializable.java</include>
-                                <include>com/hazelcast/nio/serialization/IdentifiedDataSerializable.java</include>
-                                <include>com/hazelcast/nio/serialization/DataSerializableFactory.java</include>
-                                <include>com/hazelcast/nio/serialization/Portable.java</include>
-                                <include>com/hazelcast/nio/serialization/PortableFactory.java</include>
-                                <include>com/hazelcast/nio/serialization/ByteArraySerializer.java</include>
-                                <include>com/hazelcast/nio/serialization/StreamSerializer.java</include>
-
-                                <include>com/hazelcast/client/HazelcastClient.java</include>
-                                <include>com/hazelcast/client/LoadBalancer.java</include>
-                                <include>com/hazelcast/client/config/**</include>
-                                <include>com/hazelcast/client/exception/**</include>
-                                <include>com/hazelcast/client/spi/*</include>
-
-                                <include>com/hazelcast/cluster/TcpIpJoinerOverAWS.java</include>
-
-                                <include>com/hazelcast/hibernate/HazelcastCacheRegionFactory.java</include>
-                                <include>com/hazelcast/hibernate/HazelcastLocalCacheRegionFactory.java</include>
-                                <include>com/hazelcast/hibernate/VersionAwareMapMergePolicy.java</include>
-                                <include>com/hazelcast/hibernate/instance/HazelcastAccessor.java</include>
-
-                                <include>com/hazelcast/spring/cache/HazelcastCache.java</include>
-                                <include>com/hazelcast/spring/cache/HazelcastCacheManager.java</include>
-                                <include>com/hazelcast/spring/context/SpringAware.java</include>
-                                <include>com/hazelcast/spring/context/SpringManagedContext.java</include>
-                                <include>com/hazelcast/spring/jpa/JPAMapStore.java</include>
-                                <include>com/hazelcast/spring/mongodb/MongoMapStore.java</include>
-
-                                <include>com/hazelcast/web/SessionListener.java</include>
-                                <include>com/hazelcast/web/WebFilter.java</include>
-                            </sourceFileIncludes>
-                            <excludePackageNames>*.impl.*</excludePackageNames>
-
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>attach-javadocs</id>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
             <modules>
                 <module>hazelcast-all</module>
             </modules>
