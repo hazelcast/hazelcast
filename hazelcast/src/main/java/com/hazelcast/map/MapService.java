@@ -977,6 +977,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         if (mapContainer.getMapStoreWriteScheduler() != null && mapContainer.getMapStoreDeleteScheduler() != null) {
             dirtyCount = mapContainer.getMapStoreWriteScheduler().size() + mapContainer.getMapStoreDeleteScheduler().size();
         }
+        localMapStats.setBackupCount(backupCount);
         localMapStats.setDirtyEntryCount(zeroOrPositive(dirtyCount));
         localMapStats.setLockedEntryCount(zeroOrPositive(lockedEntryCount));
         localMapStats.setHits(zeroOrPositive(hits));
