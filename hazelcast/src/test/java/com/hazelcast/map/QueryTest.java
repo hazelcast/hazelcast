@@ -1358,7 +1358,7 @@ public class QueryTest extends HazelcastTestSupport {
             });
         }
         try {
-            assertTrue(latch.await(200, TimeUnit.SECONDS));
+            assertTrue(latch.await(10, TimeUnit.MINUTES));
             assertEquals(0, countdown.get());
         } finally {
             ex.shutdownNow();

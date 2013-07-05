@@ -251,7 +251,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements MapProxy<K, V
     }
 
     public void putAll(final Map<? extends K, ? extends V> m) {
-        putAllObjectInternal(m);
+        putAllInternal(m);
     }
 
     public boolean tryLock(final K key) {
