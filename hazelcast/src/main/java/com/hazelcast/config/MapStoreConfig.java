@@ -31,7 +31,45 @@ public final class MapStoreConfig {
     private Object implementation;
     private Object factoryImplementation;
     private Properties properties = new Properties();
+    private String backupClassName = null;
+    private String backupFactoryClassName = null;
+    private Object backupImplementation ;
+    private Object backupFactoryImplementation;
 
+    public String getBackupClassName() {
+        return backupClassName;
+    }
+
+    public void setBackupClassName(String backupClassName) {
+        this.backupClassName = backupClassName;
+    }
+
+    public String getBackupFactoryClassName() {
+        return backupFactoryClassName;
+    }
+
+    public void setBackupFactoryClassName(String backupFactoryClassName) {
+        this.backupFactoryClassName = backupFactoryClassName;
+    }
+
+    public Object getBackupImplementation() {
+        return backupImplementation;
+    }
+
+    public void setBackupImplementation(Object backupImplementation) {
+        this.backupImplementation = backupImplementation;
+    }
+
+    public Object getBackupFactoryImplementation() {
+        return backupFactoryImplementation;
+    }
+
+    public void setBackupFactoryImplementation(Object backupFactoryImplementation) {
+        this.backupFactoryImplementation = backupFactoryImplementation;
+    }
+
+    
+    
     /**
      * Returns the name of the MapStore implementation class
      *

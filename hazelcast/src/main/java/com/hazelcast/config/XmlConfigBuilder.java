@@ -766,6 +766,10 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 mapStoreConfig.setClassName(getTextContent(n).trim());
             } else if ("factory-class-name".equals(nodeName)) {
                 mapStoreConfig.setFactoryClassName(getTextContent(n).trim());
+            } else if ("backup-class-name".equals(nodeName)) {
+                mapStoreConfig.setBackupClassName(getTextContent(n).trim());
+            } else if ("backup-factory-class-name".equals(nodeName)) {
+                mapStoreConfig.setBackupFactoryClassName(getTextContent(n).trim());
             } else if ("write-delay-seconds".equals(nodeName)) {
                 mapStoreConfig.setWriteDelaySeconds(getIntegerValue("write-delay-seconds", getTextContent(n).trim(),
                         MapStoreConfig.DEFAULT_WRITE_DELAY_SECONDS));

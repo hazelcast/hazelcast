@@ -56,6 +56,32 @@ public class CMap {
     private static final Comparator<MapEntry> LRU_COMPARATOR = new LRUMapEntryComparator();
     private static final Comparator<MapEntry> LFU_COMPARATOR = new LFUMapEntryComparator();
 
+    private void backupStoreProceed(final Record record) {
+        if (backupStore != null && writeDelayMillis == 0) {
+            concurrentMapManager.executeLocally(new Runnable() {
+                public void run() {
+                    try {
+                        backupStore.store(record.getKey(), record.getValue());
+                    } catch (Throwable e) {
+                    }
+                }
+            });
+        }
+    }
+
+    private void backupRemoveProceed(final Record record) {
+        if (backupStore != null && writeDelayMillis == 0) {
+            concurrentMapManager.executeLocally(new Runnable() {
+                public void run() {
+                    try {
+                        backupStore.delete(record.getKey());
+                    } catch (Throwable e) {
+                    }
+                }
+            });
+        }
+    }
+
     enum EvictionPolicy {
         LRU,
         LFU,
@@ -128,10 +154,16 @@ public class CMap {
     private AtomicLong totalGetCount = new AtomicLong(0);
 
     private MapStoreWrapper mapStoreWrapper;
+    
+    private MapStoreWrapper backupMapStoreWrapper;
 
     final MapLoader loader;
 
     final MapStore store;
+    
+    final MapLoader backupLoader;
+
+    final MapStore backupStore;
 
     final ConcurrentMapManager concurrentMapManager;
 
@@ -214,6 +246,39 @@ public class CMap {
                     throw new Exception("MapStore class [" + storeInstance.getClass().getName()
                             + "] should implement either MapLoader or MapStore!");
                 }
+                
+                //backup store
+                MapStoreFactory backupFactory = null;
+                if (backupFactory == null) {
+                    String factoryClassName = mapStoreConfig.getBackupFactoryClassName();
+                    if (factoryClassName != null && !"".equals(factoryClassName)) {
+                        backupFactory = (MapStoreFactory)
+                                Serializer.loadClass(node.getConfig().getClassLoader(), factoryClassName).newInstance();
+                    }
+                }
+                Object backupStoreInstance = backupFactory == null ? mapStoreConfig.getImplementation() :
+                        backupFactory.newMapStore(name, mapStoreConfig.getProperties());
+                if (backupStoreInstance == null) {
+                    String mapStoreClassName = mapStoreConfig.getBackupClassName();
+                    backupStoreInstance = Serializer.loadClass(node.getConfig().getClassLoader(), mapStoreClassName).newInstance();
+                }
+                mapStoreWrapper = new MapStoreWrapper(storeInstance,
+                        node.factory.getHazelcastInstanceProxy(),
+                        mapStoreConfig.getProperties(),
+                        mapConfigName, mapStoreConfig.isEnabled());
+                if (!mapStoreWrapper.isMapLoader() && !mapStoreWrapper.isMapStore()) {
+                    throw new Exception("MapStore class [" + storeInstance.getClass().getName()
+                            + "] should implement either MapLoader or MapStore!");
+                }
+                
+                backupMapStoreWrapper = new MapStoreWrapper(backupStoreInstance,
+                        node.factory.getHazelcastInstanceProxy(),
+                        mapStoreConfig.getProperties(),
+                        mapConfigName, mapStoreConfig.isEnabled());
+                if (!backupMapStoreWrapper.isMapLoader() && !backupMapStoreWrapper.isMapStore()) {
+                    throw new Exception("Backup MapStore class [" + storeInstance.getClass().getName()
+                            + "] should implement either MapLoader or MapStore!");
+                }
             } catch (Exception e) {
                 logger.log(Level.SEVERE, e.getMessage(), e);
             }
@@ -227,6 +292,8 @@ public class CMap {
         }
         loader = (mapStoreWrapper == null || !mapStoreWrapper.isMapLoader()) ? null : mapStoreWrapper;
         store = (mapStoreWrapper == null || !mapStoreWrapper.isMapStore()) ? null : mapStoreWrapper;
+        backupLoader = (backupMapStoreWrapper == null || !backupMapStoreWrapper.isMapLoader()) ? null : backupMapStoreWrapper;
+        backupStore = (backupMapStoreWrapper == null || !backupMapStoreWrapper.isMapStore()) ? null : backupMapStoreWrapper;
         NearCacheConfig nearCacheConfig = mapConfig.getNearCacheConfig();
         if (nearCacheConfig == null) {
             nearCache = null;
@@ -587,12 +654,13 @@ public class CMap {
         }
         if (req.operation == CONCURRENT_MAP_BACKUP_PUT
                 || req.operation == CONCURRENT_MAP_BACKUP_PUT_AND_UNLOCK) {
-            Record record = toRecord(req);
+            final Record record = toRecord(req);
             if (req.operation == CONCURRENT_MAP_BACKUP_PUT_AND_UNLOCK
                     || req.txnId != -1) {
                 unlock(record, req);
             }
             markAsActive(record);
+            markAsDirty(record, false);
             record.setVersion(req.version);
             if (req.indexes != null) {
                 if (req.indexTypes == null) {
@@ -607,8 +675,9 @@ public class CMap {
                 record.setTTL(req.ttl);
                 ttlPerRecord = true;
             }
+            backupStoreProceed(record);
         } else if (req.operation == CONCURRENT_MAP_BACKUP_REMOVE) {
-            Record record = getRecord(req);
+            final Record record = getRecord(req);
             if (record != null) {
                 if (record.isActive()) {
 //                    markAsEvicted(record);
@@ -618,6 +687,7 @@ public class CMap {
                     unlock(record, req);
                 }
                 record.setVersion(req.version);
+                backupRemoveProceed(record);
             }
         } else if (req.operation == CONCURRENT_MAP_BACKUP_LOCK) {
             if (req.lockCount == 0) {
@@ -638,6 +708,8 @@ public class CMap {
             }
         } else if (req.operation == CONCURRENT_MAP_BACKUP_ADD) {
             add(req, true);
+            final Record record = toRecord(req);
+            backupStoreProceed(record);
         } else if (req.operation == CONCURRENT_MAP_BACKUP_REMOVE_MULTI) {
             Record record = getRecord(req);
             if (record != null) {
@@ -999,6 +1071,22 @@ public class CMap {
             });
         }
     }
+    
+    private void executeBackupStoreUpdate(final Set<Record> dirtyRecords) {
+        if (dirtyRecords.size() > 0) {
+            concurrentMapManager.executeLocally(new Runnable() {
+                public void run() {
+                    try {
+                        runBackupStoreUpdate(dirtyRecords);
+                    } catch (Throwable e) {
+                        for (Record dirtyRecord : dirtyRecords) {
+                            dirtyRecord.setDirty(true);
+                        }
+                    }
+                }
+            });
+        }
+    }
 
     void runStoreUpdate(final Set<Record> dirtyRecords) throws Exception {
         Set<Object> keysToDelete = new HashSet<Object>();
@@ -1022,6 +1110,34 @@ public class CMap {
             store.store(entry.getKey(), entry.getValue());
         } else if (updates.size() > 1) {
             store.storeAll(updates);
+        }
+        for (Record stored : toStore) {
+            stored.setLastStoredTime(Clock.currentTimeMillis());
+        }
+    }
+    
+        void runBackupStoreUpdate(final Set<Record> dirtyRecords) throws Exception {
+        Set<Object> keysToDelete = new HashSet<Object>();
+        Set<Record> toStore = new HashSet<Record>();
+        Map<Object, Object> updates = new HashMap<Object, Object>();
+        for (Record dirtyRecord : dirtyRecords) {
+            if (!dirtyRecord.isActive()) {
+                keysToDelete.add(dirtyRecord.getKey());
+            } else {
+                toStore.add(dirtyRecord);
+                updates.put(dirtyRecord.getKey(), dirtyRecord.getValue());
+            }
+        }
+        if (keysToDelete.size() == 1) {
+            backupStore.delete(keysToDelete.iterator().next());
+        } else if (keysToDelete.size() > 1) {
+            backupStore.deleteAll(keysToDelete);
+        }
+        if (updates.size() == 1) {
+            Map.Entry entry = updates.entrySet().iterator().next();
+            backupStore.store(entry.getKey(), entry.getValue());
+        } else if (updates.size() > 1) {
+            backupStore.storeAll(updates);
         }
         for (Record stored : toStore) {
             stored.setLastStoredTime(Clock.currentTimeMillis());
@@ -1371,6 +1487,7 @@ public class CMap {
                 }
                 dirty = false;
                 final Set<Record> recordsDirty = new HashSet<Record>();
+                final Set<Record> backupRecordsDirty = new HashSet<Record>();
                 final Set<Record> recordsUnknown = new HashSet<Record>();
                 final Set<Record> recordsToPurge = new HashSet<Record>();
                 final Set<Record> recordsToEvict = new HashSet<Record>();
@@ -1410,10 +1527,27 @@ public class CMap {
                                 costOfRecords += record.getCost();
                             }
                         } else if (ownedOrBackup) {
-                            if (shouldPurgeRecord(record, now)) {
-                                recordsToPurge.add(record);
-                                backupPurgeCount++;
+                             if (store != null && mapStoreWrapper.isEnabled()
+                                    && writeDelayMillis > 0 && record.isDirty()) {
+                                if (now > record.getWriteTime()) {
+                                    backupRecordsDirty.add(record);
+                                    record.setDirty(false);   // set dirty to false, we will store these soon
+                                } else {
+                                    dirty = true;
+                                }
+                            } else if (shouldPurgeRecord(record, now)) {
+                                recordsToPurge.add(record);  // removed records
+                            } else if (record.isActive() && !record.isValid(now)) {
+                                recordsToEvict.add(record);  // expired records
+                            } else if (evictionAware && record.isActive() && record.isEvictable()) {
+                                sortedRecords.add(record);   // sorting for eviction
+                                recordsStillOwned++;
                             }
+
+                            if (record.isActive() && record.isValid(now)) {
+                                costOfRecords += record.getCost();
+                            }
+                            
                         } else {
                             recordsUnknown.add(record);
                         }
@@ -1447,6 +1581,7 @@ public class CMap {
                             + "  totalCost: " + costOfRecords);
                 }
                 executeStoreUpdate(recordsDirty);
+                executeBackupStoreUpdate(backupRecordsDirty);
                 executeEviction(recordsToEvict);
                 executePurge(recordsToPurge);
                 executePurgeUnknowns(recordsUnknown);
