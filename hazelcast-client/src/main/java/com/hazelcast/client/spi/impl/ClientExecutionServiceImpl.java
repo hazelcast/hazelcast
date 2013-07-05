@@ -30,9 +30,14 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     private final ExecutorService executor;
     private final ScheduledExecutorService scheduledExecutor;
 
-    public ClientExecutionServiceImpl(String name, ThreadGroup threadGroup, ClassLoader classLoader) {
-        final int cores = Runtime.getRuntime().availableProcessors();
-        executor = Executors.newFixedThreadPool(cores * 5, new PoolExecutorThreadFactory(threadGroup, name + ".cached-", classLoader));
+    public ClientExecutionServiceImpl(String name, ThreadGroup threadGroup, ClassLoader classLoader, int poolSize) {
+        if (poolSize == -1){
+            final int cores = Runtime.getRuntime().availableProcessors();
+            poolSize = cores * 5;
+        }
+        executor = Executors.newFixedThreadPool(poolSize, new PoolExecutorThreadFactory(threadGroup, name + ".cached-", classLoader));
+//        executor = Executors.newCachedThreadPool(new PoolExecutorThreadFactory(threadGroup, name + ".cached-", classLoader));
+
         scheduledExecutor = Executors.newSingleThreadScheduledExecutor(new SingleExecutorThreadFactory(threadGroup, classLoader, name + ".scheduled"));
     }
 

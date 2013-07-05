@@ -443,6 +443,8 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     Address address = new Address(isa);
                     return getConnectionManager().firstConnection(address, authenticator);
                 } catch (IOException ignored) {
+                } catch (AuthenticationException e){
+                    e.printStackTrace();
                 }
             }
             if (attempt++ >= connectionAttemptLimit) {

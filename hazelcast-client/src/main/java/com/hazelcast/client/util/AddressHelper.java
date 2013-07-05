@@ -31,7 +31,7 @@ public final class AddressHelper {
     private static final int MAX_PORT_TRIES = 3;
 
     public static Collection<InetSocketAddress> getSocketAddresses(String address) {
-        final AddressHolder addressHolder = AddressUtil.getAddressHolder(address, 5701);
+        final AddressHolder addressHolder = AddressUtil.getAddressHolder(address, -1);
         final String scopedAddress = addressHolder.scopeId != null
                                      ? addressHolder.address + "%" + addressHolder.scopeId
                                      : addressHolder.address;
@@ -44,20 +44,25 @@ public final class AddressHelper {
     }
 
     public static Collection<InetSocketAddress> getPossibleSocketAddresses(InetAddress inetAddress, int port, String scopedAddress) {
+        int portTryCount = 1;
+        if (port == -1){
+            portTryCount = MAX_PORT_TRIES;
+            port = 5701;
+        }
         final Collection<InetSocketAddress> socketAddresses = new LinkedList<InetSocketAddress>();
         if (inetAddress == null) {
-            for (int i=0; i<MAX_PORT_TRIES; i++){
+            for (int i=0; i<portTryCount; i++){
                 socketAddresses.add(new InetSocketAddress(scopedAddress, port+i));
             }
         }
         else if (inetAddress instanceof Inet4Address) {
-            for (int i=0; i<MAX_PORT_TRIES; i++){
+            for (int i=0; i<portTryCount; i++){
                 socketAddresses.add(new InetSocketAddress(inetAddress, port+i));
             }
         } else {
             final Collection<Inet6Address> addresses = AddressUtil.getPossibleInetAddressesFor((Inet6Address) inetAddress);
             for (Inet6Address inet6Address : addresses) {
-                for (int i=0; i<MAX_PORT_TRIES; i++){
+                for (int i=0; i<portTryCount; i++){
                     socketAddresses.add(new InetSocketAddress(inet6Address, port+i));
                 }
             }

@@ -692,7 +692,17 @@ public class BasicTest extends HazelcastTestSupport {
         assertTrue(map.isEmpty());
 
         Map mm = new HashMap();
-        final int size = 100;
+        int size = 100;
+        for (int i = 0; i < size; i++) {
+            mm.put(i, i);
+        }
+        map.putAll(mm);
+        assertEquals(size, map.size());
+        for (int i = 0; i < size; i++) {
+            assertEquals(map.get(i), i);
+        }
+
+        size = 10000;
         for (int i = 0; i < size; i++) {
             mm.put(i, i);
         }

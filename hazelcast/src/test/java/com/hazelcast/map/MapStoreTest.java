@@ -661,6 +661,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance(config);
         IMap map1 = h1.getMap("default");
         IMap map2 = h2.getMap("default");
+        Thread.sleep(10000);
         assertEquals("value1", map1.get(1));
         assertEquals("value1", map2.get(1));
         assertEquals(1000, map1.size());
