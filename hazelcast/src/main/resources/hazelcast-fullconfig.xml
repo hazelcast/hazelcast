@@ -42,6 +42,7 @@
     </wan-replication>
     <network>
         <port auto-increment="true">5701</port>
+        <port-count>100</port-count>
         <outbound-ports>
             <ports>33000-35000</ports>
             <ports>37000,37001,37002,37003</ports>

@@ -353,6 +353,9 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             final String nodeName = cleanNodeName(child.getNodeName());
             if ("port".equals(nodeName)) {
                 handlePort(child);
+            }else if("port-count".equals(nodeName)){
+                final String value = getTextContent(child).trim();
+                config.getNetworkConfig().setPortCount(Integer.parseInt(value));
             } else if ("outbound-ports".equals(nodeName)) {
                 handleOutboundPorts(child);
             } else if ("public-address".equals(nodeName)) {
