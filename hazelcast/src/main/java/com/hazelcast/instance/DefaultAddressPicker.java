@@ -52,8 +52,6 @@ class DefaultAddressPicker implements AddressPicker {
             final AddressDefinition bindAddressDef = pickAddress(networkConfig);
             final boolean reuseAddress = networkConfig.isReuseAddress();
             final boolean bindAny = node.getGroupProperties().SOCKET_SERVER_BIND_ANY.getBoolean();
-            serverSocketChannel = ServerSocketChannel.open();
-            final ServerSocket serverSocket = serverSocketChannel.socket();
             /**
              * why setReuseAddress(true)?
              * when the member is shutdown,
@@ -70,12 +68,23 @@ class DefaultAddressPicker implements AddressPicker {
              * By default if the OS is Windows then reuseaddress will be false.
              */
             log(Level.FINEST, "inet reuseAddress:" + reuseAddress);
-            serverSocket.setReuseAddress(reuseAddress);
-            serverSocket.setSoTimeout(1000);
             InetSocketAddress isa;
+            ServerSocket serverSocket = null;
             int port = networkConfig.getPort();
             Throwable error = null;
             for (int i = 0; i < 100; i++) {
+                /**
+                 * Instead of reusing the ServerSocket/ServerSocketChannel, we are going to close and replace them on
+                 * every attempt to find a free port. The reason to do this is because in some cases, when concurrent
+                 * threads/processes try to acquire the same port, the ServerSocket gets corrupted and isn't able to find
+                 * any free port at all (no matter if there are more than enough free ports available). We have seen this
+                 * happening on Linux and Windows environments.
+                 */
+                serverSocketChannel = ServerSocketChannel.open();
+                serverSocket = serverSocketChannel.socket();
+                serverSocket.setReuseAddress(reuseAddress);
+                serverSocket.setSoTimeout(1000);
+
                 try {
                     if (bindAny) {
                         isa = new InetSocketAddress(port);
@@ -87,6 +96,9 @@ class DefaultAddressPicker implements AddressPicker {
                     log(Level.FINEST, "Bind successful to inet socket address:" + isa);
                     break;
                 } catch (final Exception e) {
+                    serverSocket.close();
+                    serverSocketChannel.close();
+
                     if (networkConfig.isPortAutoIncrement()) {
                         port++;
                         error = e;
@@ -98,7 +110,7 @@ class DefaultAddressPicker implements AddressPicker {
                     }
                 }
             }
-            if (!serverSocket.isBound()) {
+            if (serverSocket == null || !serverSocket.isBound()) {
                 throw new HazelcastException("ServerSocket bind has failed. Hazelcast cannot start! " +
                         "config-port: " + networkConfig.getPort() + ", latest-port: " + port, error);
             }
