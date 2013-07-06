@@ -73,13 +73,18 @@ class AddressPicker {
             serverSocket.setSoTimeout(1000);
             InetSocketAddress isa;
             int port = networkConfig.getPort();
+            int localBindPort = getLocalBindPort(node.getConfig());
+            AddressDefinition localBindAddressDef = getLocalBindAddressDef(node.getConfig()); 
             Throwable error = null;
             for (int i = 0; i < 100; i++) {
                 try {
                     if (bindAny) {
                         isa = new InetSocketAddress(port);
                     } else {
-                        isa = new InetSocketAddress(bindAddressDef.inetAddress, port);
+                    	if (localBindAddressDef != null)
+                    		isa = new InetSocketAddress(localBindAddressDef.inetAddress, localBindPort);
+                    	else
+                    		isa = new InetSocketAddress(bindAddressDef.inetAddress, port);
                     }
                     log(Level.FINEST, "Trying to bind inet socket address:" + isa);
                     serverSocket.bind(isa, 100);
@@ -118,6 +123,24 @@ class AddressPicker {
             throw e;
         }
     }
+    
+    private AddressDefinition getLocalBindAddressDef(Config config) throws UnknownHostException {
+    	String address = config.getProperty("hazelcast.local.localBindAddress");
+    	
+    	if (address != null && address.trim().length() > 0)
+    		return new AddressDefinition(address, InetAddress.getByName(address));
+    	else
+    		return null;
+    }
+    	    
+    private int getLocalBindPort(Config config) throws UnknownHostException {
+    	String port = config.getProperty("hazelcast.local.localBindPort");
+        
+    	if (port != null && port.trim().length() > 0)
+    		return Integer.parseInt(port);
+    	else
+    		return 0;
+    } 
 
     private Address createAddress(final AddressDefinition addressDef, final int port) throws UnknownHostException {
 //        return new Address(addressDef.host != null ? addressDef.host : addressDef.address, port);

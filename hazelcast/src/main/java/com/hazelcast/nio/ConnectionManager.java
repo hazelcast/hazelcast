@@ -20,6 +20,7 @@ import com.hazelcast.cluster.Bind;
 import com.hazelcast.config.SSLConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.impl.ClusterOperation;
+import com.hazelcast.impl.Node;
 import com.hazelcast.impl.ThreadContext;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ssl.BasicSSLContextFactory;
@@ -88,8 +89,11 @@ public class ConnectionManager {
     private final LinkedList<Integer> outboundPorts = new LinkedList<Integer>();  // accessed only in synchronized block
 
     private Thread socketAcceptorThread; // accessed only in synchronized block
+    
+    private Node node;
 
-    public ConnectionManager(IOService ioService, ServerSocketChannel serverSocketChannel) {
+    public ConnectionManager(Node node, IOService ioService, ServerSocketChannel serverSocketChannel) {
+    	this.node = node;
         this.ioService = ioService;
         this.serverSocketChannel = serverSocketChannel;
         this.logger = ioService.getLogger(ConnectionManager.class.getName());
@@ -184,6 +188,10 @@ public class ConnectionManager {
 
     public IOService getIOHandler() {
         return ioService;
+    }
+    
+    public Node getNode() {
+    	return node;
     }
 
     public MemberSocketInterceptor getMemberSocketInterceptor() {
