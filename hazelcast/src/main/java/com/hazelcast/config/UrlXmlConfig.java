@@ -27,7 +27,7 @@ import java.util.logging.Level;
 
 public class UrlXmlConfig extends Config {
 
-    private final ILogger logger = Logger.getLogger(UrlXmlConfig.class.getName());
+    private final static ILogger logger = Logger.getLogger(UrlXmlConfig.class.getName());
 
     public UrlXmlConfig() {
     }
