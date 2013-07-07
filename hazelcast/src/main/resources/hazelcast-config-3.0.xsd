@@ -285,7 +285,6 @@
         <xs:sequence>
             <xs:element name="public-address" type="xs:string" minOccurs="0" maxOccurs="1"/>
             <xs:element name="port" type="port" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="port-count" type="xs:unsignedInt" minOccurs="0" maxOccurs="1"/>
             <xs:element name="outbound-ports" type="outbound-ports" minOccurs="0" maxOccurs="1"/>
             <xs:element name="join" type="join" minOccurs="0" maxOccurs="1"/>
             <xs:element name="interfaces" type="interfaces" minOccurs="0" maxOccurs="1"/>
@@ -325,7 +324,8 @@
     <xs:complexType name="port">
         <xs:simpleContent>
             <xs:extension base="xs:unsignedShort">
-                <xs:attribute name="auto-increment" type="xs:boolean" use="required"/>
+                <xs:attribute name="auto-increment" type="xs:boolean" use="optional" default="true"/>
+                <xs:attribute name="port-count" type="xs:unsignedInt" use="optional" default="100"/>
             </xs:extension>
         </xs:simpleContent>
     </xs:complexType>

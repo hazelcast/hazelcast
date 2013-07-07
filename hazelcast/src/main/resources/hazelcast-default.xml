@@ -24,8 +24,7 @@
     </group>
     <management-center enabled="false">http://localhost:8080/mancenter</management-center>
     <network>
-        <port auto-increment="true">5701</port>
-        <port-count>100</port-count>
+        <port auto-increment="true" port-count="100">5701</port>
         <outbound-ports>
             <!--
             Allowed port range when connecting to other nodes.

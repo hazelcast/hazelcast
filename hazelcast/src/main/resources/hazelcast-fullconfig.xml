@@ -41,8 +41,7 @@
         </target-cluster>
     </wan-replication>
     <network>
-        <port auto-increment="true">5701</port>
-        <port-count>100</port-count>
+        <port auto-increment="true" port-count="100">5701</port>
         <outbound-ports>
             <ports>33000-35000</ports>
             <ports>37000,37001,37002,37003</ports>

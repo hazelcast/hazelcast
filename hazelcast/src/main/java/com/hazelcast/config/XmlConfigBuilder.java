@@ -353,9 +353,6 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             final String nodeName = cleanNodeName(child.getNodeName());
             if ("port".equals(nodeName)) {
                 handlePort(child);
-            }else if("port-count".equals(nodeName)){
-                final String value = getTextContent(child).trim();
-                config.getNetworkConfig().setPortCount(Integer.parseInt(value));
             } else if ("outbound-ports".equals(nodeName)) {
                 handleOutboundPorts(child);
             } else if ("public-address".equals(nodeName)) {
@@ -630,8 +627,12 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         for (int a = 0; a < atts.getLength(); a++) {
             final org.w3c.dom.Node att = atts.item(a);
             final String value = getTextContent(att).trim();
-            if (att.getNodeName().equals("auto-increment")) {
+
+            if ("auto-increment".equals(att.getNodeName())) {
                 networkConfig.setPortAutoIncrement(checkTrue(value));
+            } else if("port-count".equals(att.getNodeName())){
+                int portCount = Integer.parseInt(value);
+                networkConfig.setPortCount(portCount);
             }
         }
     }

@@ -112,16 +112,41 @@ public class XMLConfigBuilderTest {
 
     @Test
     public void readPortCount() {
-        String xml =
-                "<hazelcast>\n" +
-                        "    <network>\n" +
-                        "        <port-count>200</port-count>\n" +
-                        "    </network>\n" +
-                        "</hazelcast>";
-        Config config = buildConfig(xml);
+        //check when it is explicitly set.
+         Config config = buildConfig("<hazelcast>\n" +
+                "    <network>\n" +
+                "        <port port-count=\"200\">5701</port>\n" +
+                "    </network>\n" +
+                "</hazelcast>");
         assertEquals(200, config.getNetworkConfig().getPortCount());
+
+        //check if the default is passed in correctly
+        config = buildConfig( "<hazelcast>\n" +
+                "    <network>\n" +
+                "        <port>5701</port>\n" +
+                "    </network>\n" +
+                "</hazelcast>");
+        assertEquals(100, config.getNetworkConfig().getPortCount());
     }
 
+    @Test
+    public void readPortAutoIncrement() {
+        //explicitly set.
+        Config config = buildConfig("<hazelcast>\n" +
+                "    <network>\n" +
+                "        <port auto-increment=\"false\">5701</port>\n" +
+                "    </network>\n" +
+                "</hazelcast>");
+        assertFalse(config.getNetworkConfig().isPortAutoIncrement());
+
+        //check if the default is picked up correctly
+        config = buildConfig( "<hazelcast>\n" +
+                "    <network>\n" +
+                "        <port>5701</port>\n" +
+                "    </network>\n" +
+                "</hazelcast>");
+        assertTrue(config.getNetworkConfig().isPortAutoIncrement());
+    }
 
     @Test
     public void readSemaphoreConfig() {
