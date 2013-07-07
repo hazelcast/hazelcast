@@ -312,7 +312,7 @@ public final class SerializationServiceImpl implements SerializationService {
 
     public void registerGlobal(final Serializer serializer) {
         if (!global.compareAndSet(null, createSerializerAdapter(serializer))) {
-            throw new IllegalStateException("Fallback serializer is already registered!");
+//            throw new IllegalStateException("Fallback serializer is already registered!");
         }
     }
 

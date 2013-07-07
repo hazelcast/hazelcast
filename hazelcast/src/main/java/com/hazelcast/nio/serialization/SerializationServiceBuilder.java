@@ -209,7 +209,7 @@ public final class SerializationServiceBuilder {
                 throw new IllegalArgumentException("DataSerializableFactory factoryId must be positive! -> " + entry.getValue());
             }
             if (dataSerializableFactories.containsKey(entry.getKey())) {
-                throw new IllegalArgumentException("DataSerializableFactory with factoryId '" + entry.getKey() + "' is already registered!");
+//                throw new IllegalArgumentException("DataSerializableFactory with factoryId '" + entry.getKey() + "' is already registered!");
             }
             dataSerializableFactories.put(entry.getKey(), entry.getValue());
         }
@@ -239,7 +239,7 @@ public final class SerializationServiceBuilder {
                 throw new IllegalArgumentException("PortableFactory factoryId must be positive! -> " + entry.getValue());
             }
             if (portableFactories.containsKey(entry.getKey())) {
-                throw new IllegalArgumentException("PortableFactory with factoryId '" + entry.getKey() + "' is already registered!");
+//                throw new IllegalArgumentException("PortableFactory with factoryId '" + entry.getKey() + "' is already registered!");
             }
             portableFactories.put(entry.getKey(), entry.getValue());
         }
@@ -250,7 +250,7 @@ public final class SerializationServiceBuilder {
                 throw new IllegalArgumentException("PortableFactory factoryId must be positive! -> " + entry.getValue());
             }
             if (portableFactories.containsKey(entry.getKey())) {
-                throw new IllegalArgumentException("PortableFactory with factoryId '" + entry.getKey() + "' is already registered!");
+//                throw new IllegalArgumentException("PortableFactory with factoryId '" + entry.getKey() + "' is already registered!");
             }
             PortableFactory f;
             try {
