@@ -32,15 +32,15 @@ import java.util.logging.Level;
 
 class DefaultAddressPicker implements AddressPicker {
 
+    private final static ILogger logger = Logger.getLogger(DefaultAddressPicker.class.getName());
+
     private final Node node;
-    private final ILogger logger;
     private ServerSocketChannel serverSocketChannel;
     private Address publicAddress;
     private Address bindAddress;
 
     public DefaultAddressPicker(Node node) {
         this.node = node;
-        this.logger = Logger.getLogger(DefaultAddressPicker.class.getName());
     }
 
     public void pickAddress() throws Exception {

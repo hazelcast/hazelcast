@@ -42,7 +42,7 @@ import java.util.logging.Level;
 
 public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
 
-    private final ILogger logger = Logger.getLogger(XmlClientConfigBuilder.class.getName());
+    private final static ILogger logger = Logger.getLogger(XmlClientConfigBuilder.class.getName());
 
     private ClientConfig clientConfig;
     private InputStream in;
