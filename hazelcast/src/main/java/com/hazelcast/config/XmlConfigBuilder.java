@@ -46,7 +46,7 @@ import java.util.logging.Level;
 
 public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigBuilder {
 
-    private final ILogger logger = Logger.getLogger(XmlConfigBuilder.class.getName());
+    private final ILogger logger = Logger.getLogger(XmlConfigBuilder.class);
     private Config config;
     private InputStream in;
     private File configurationFile;

@@ -32,7 +32,7 @@ import java.util.logging.Level;
 
 class HazelcastClientLoader implements IHazelcastInstanceLoader {
 
-    private final static ILogger logger = Logger.getLogger(HazelcastInstanceFactory.class.getName());
+    private final static ILogger logger = Logger.getLogger(HazelcastInstanceFactory.class);
 
     private final Properties props = new Properties();
     private HazelcastInstance client;

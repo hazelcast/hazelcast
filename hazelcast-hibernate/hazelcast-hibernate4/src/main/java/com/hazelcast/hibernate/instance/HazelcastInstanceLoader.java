@@ -34,7 +34,7 @@ import java.util.logging.Level;
 
 class HazelcastInstanceLoader implements IHazelcastInstanceLoader {
 
-    private final static ILogger logger = Logger.getLogger(HazelcastInstanceFactory.class.getName());
+    private final static ILogger logger = Logger.getLogger(HazelcastInstanceFactory.class);
 
     private final Properties props = new Properties();
     private String instanceName = null;
