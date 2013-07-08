@@ -27,7 +27,7 @@ import java.util.logging.Level;
 
 public class FileSystemXmlConfig extends Config {
 
-    private final ILogger logger = Logger.getLogger(FileSystemXmlConfig.class);
+    private final static ILogger logger = Logger.getLogger(FileSystemXmlConfig.class);
 
     public FileSystemXmlConfig() {
     }

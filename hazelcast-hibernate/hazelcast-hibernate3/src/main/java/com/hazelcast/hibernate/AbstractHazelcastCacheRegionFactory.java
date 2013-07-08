@@ -33,7 +33,7 @@ import java.util.logging.Level;
 
 public abstract class AbstractHazelcastCacheRegionFactory implements RegionFactory {
 
-    private final ILogger LOG = Logger.getLogger(getClass());
+    private final ILogger logger = Logger.getLogger(getClass());
 
     private IHazelcastInstanceLoader instanceLoader = null;
     protected HazelcastInstance instance;
@@ -66,7 +66,7 @@ public abstract class AbstractHazelcastCacheRegionFactory implements RegionFacto
     }
 
     public void start(final Settings settings, final Properties properties) throws CacheException {
-        LOG.log(Level.INFO, "Starting up " + getClass().getSimpleName());
+        logger.log(Level.INFO, "Starting up " + getClass().getSimpleName());
         if (instance == null || !instance.getLifecycleService().isRunning()) {
             instanceLoader = HazelcastInstanceFactory.createInstanceLoader(properties);
             instance = instanceLoader.loadInstance();
@@ -75,7 +75,7 @@ public abstract class AbstractHazelcastCacheRegionFactory implements RegionFacto
 
     public void stop() {
         if (instanceLoader != null) {
-            LOG.log(Level.INFO, "Shutting down " + getClass().getSimpleName());
+            logger.log(Level.INFO, "Shutting down " + getClass().getSimpleName());
             instanceLoader.unloadInstance();
             instance = null;
             instanceLoader = null;
