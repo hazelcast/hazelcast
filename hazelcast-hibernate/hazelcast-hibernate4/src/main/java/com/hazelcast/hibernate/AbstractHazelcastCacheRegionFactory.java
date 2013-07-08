@@ -36,7 +36,7 @@ import java.util.logging.Level;
 
 public abstract class AbstractHazelcastCacheRegionFactory implements RegionFactory {
 
-    private final ILogger LOG = Logger.getLogger(getClass().getName());
+    private final ILogger LOG = Logger.getLogger(getClass());
 
     private IHazelcastInstanceLoader instanceLoader = null;
     protected HazelcastInstance instance;

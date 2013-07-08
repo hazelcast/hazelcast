@@ -32,7 +32,7 @@ import java.util.logging.Level;
 
 public abstract class HibernateTestSupport {
 
-    private final ILogger logger = Logger.getLogger(getClass().getName());
+    private final ILogger logger = Logger.getLogger(getClass());
 
     @BeforeClass
     @AfterClass

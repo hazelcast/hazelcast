@@ -25,7 +25,7 @@ import java.util.logging.Level;
 
 public class ThreadDumpGenerator {
 
-    protected static final ILogger logger = Logger.getLogger(ThreadDumpGenerator.class.getName());
+    protected static final ILogger logger = Logger.getLogger(ThreadDumpGenerator.class);
 
     public static ThreadDumpGenerator newInstance() {
         return newInstance(ManagementFactory.getThreadMXBean());
