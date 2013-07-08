@@ -74,8 +74,10 @@ class DefaultAddressPicker implements AddressPicker {
             serverSocket.setSoTimeout(1000);
             InetSocketAddress isa;
             int port = networkConfig.getPort();
+            final int portCount = networkConfig.getPortCount();
+
             Throwable error = null;
-            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i < portCount; i++) {
                 try {
                     if (bindAny) {
                         isa = new InetSocketAddress(port);
