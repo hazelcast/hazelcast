@@ -19,9 +19,11 @@ package com.hazelcast.cluster.client;
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.cluster.ClusterDataSerializerHook;
 import com.hazelcast.cluster.ClusterServiceImpl;
+import com.hazelcast.core.MemberAttributeEvent;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.map.operation.MapOperationType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -62,7 +64,21 @@ public final class AddMembershipListenerRequest extends CallableClientRequest im
                 }
             }
 
-            private void deregister() {
+            @Override
+			public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
+                if (getEndpoint().live()) {
+                    final MemberImpl member = (MemberImpl) memberAttributeEvent.getMember();
+                    final String uuid = member.getUuid();
+                    final MapOperationType op = memberAttributeEvent.getOperationType();
+                    final String key = memberAttributeEvent.getKey();
+                    final Object value = memberAttributeEvent.getValue();
+                    getClientEngine().sendResponse(getEndpoint(), new ClientMemberAttributeChangedEvent(uuid, op, key, value));
+                } else {
+                    deregister();
+                }
+			}
+
+			private void deregister() {
                 final String registrationId = id.getString();
                 if (registrationId != null) {
                     service.removeMembershipListener(registrationId);

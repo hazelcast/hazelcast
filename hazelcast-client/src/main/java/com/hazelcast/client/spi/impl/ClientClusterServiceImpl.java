@@ -28,12 +28,14 @@ import com.hazelcast.client.spi.ResponseStream;
 import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.client.util.ErrorHandler;
 import com.hazelcast.cluster.client.AddMembershipListenerRequest;
+import com.hazelcast.cluster.client.ClientMemberAttributeChangedEvent;
 import com.hazelcast.cluster.client.ClientMembershipEvent;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.core.MembershipListener;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.map.operation.MapOperationType;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
@@ -371,16 +373,34 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             final SerializationService serializationService = getSerializationService();
             while (!Thread.currentThread().isInterrupted()) {
                 final Data eventData = conn.read();
-                final ClientMembershipEvent event = (ClientMembershipEvent) serializationService.toObject(eventData);
-                final MemberImpl member = (MemberImpl) event.getMember();
-                if (event.getEventType() == MembershipEvent.MEMBER_ADDED) {
-                    members.add(member);
-                } else {
-                    members.remove(member);
-                    getConnectionManager().removeConnectionPool(member.getAddress());
+                final Object eventObject = serializationService.toObject(eventData);
+                if (eventObject instanceof ClientMembershipEvent) {
+	                final ClientMembershipEvent event = (ClientMembershipEvent) eventObject;
+	                final MemberImpl member = (MemberImpl) event.getMember();
+	                if (event.getEventType() == MembershipEvent.MEMBER_ADDED) {
+	                    members.add(member);
+	                } else {
+	                    members.remove(member);
+	                    getConnectionManager().removeConnectionPool(member.getAddress());
+	                }
+	                updateMembersRef();
+	                fireMembershipEvent(event);
+                } else if (eventObject instanceof ClientMemberAttributeChangedEvent) {
+                	ClientMemberAttributeChangedEvent event = (ClientMemberAttributeChangedEvent) eventObject;
+                    Map<Address, MemberImpl> memberMap = membersRef.get();
+                    if (memberMap != null) {
+                    	for (MemberImpl member : memberMap.values()) {
+                    		if (member.getUuid().equals(event.getUuid())) {
+                    			final MapOperationType operationType = event.getOperationType();
+                    			final String key = event.getKey();
+                    			final Object value = event.getValue();
+                    			member.updateAttribute(operationType, key, value);
+                    			fireMemberAttributeEvent(new MemberAttributeEvent(member, operationType, key, value));
+                    			break;
+                    		}
+                    	}
+                    }
                 }
-                updateMembersRef();
-                fireMembershipEvent(event);
             }
         }
 
@@ -398,6 +418,16 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             });
         }
 
+        private void fireMemberAttributeEvent(final MemberAttributeEvent event) {
+            client.getClientExecutionService().execute(new Runnable() {
+                public void run() {
+                    for (MembershipListener listener : listeners.values()) {
+                        listener.memberAttributeChanged(event);
+                    }
+                }
+            });
+        }
+        
         private void updateMembersRef() {
             final Map<Address, MemberImpl> map = new LinkedHashMap<Address, MemberImpl>(members.size());
             for (MemberImpl member : members) {

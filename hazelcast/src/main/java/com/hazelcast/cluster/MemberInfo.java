@@ -16,17 +16,22 @@
 
 package com.hazelcast.cluster;
 
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
 public class MemberInfo implements DataSerializable {
     Address address = null;
     String uuid;
-
+    Map<String, Object> attributes = null;
+    
     public MemberInfo() {
     }
 
@@ -41,12 +46,24 @@ public class MemberInfo implements DataSerializable {
         this.uuid = uuid;
     }
 
+    public MemberInfo(MemberImpl member) {
+    	this(member.getAddress(), member.getUuid());
+    	attributes = member.getAttributes();
+    }
+    
     public void readData(ObjectDataInput in) throws IOException {
         address = new Address();
         address.readData(in);
         if (in.readBoolean()) {
             uuid = in.readUTF();
         }
+		int size = in.readInt();
+		if (size > 0) attributes = new HashMap<String, Object>();
+		for (int i = 0; i < size; i++) {
+			String key = in.readUTF();
+			Object value = in.readObject();
+			attributes.put(key, value);
+		}
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
@@ -56,6 +73,13 @@ public class MemberInfo implements DataSerializable {
         if (hasUuid) {
             out.writeUTF(uuid);
         }
+		out.writeInt(attributes == null ? 0 : attributes.size());
+		if (attributes != null) {
+			for (Entry<String, Object> entry : attributes.entrySet()) {
+				out.writeUTF(entry.getKey());
+				out.writeObject(entry.getValue());
+			}
+		}
     }
 
     public Address getAddress() {

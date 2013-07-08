@@ -16,23 +16,18 @@
 
 package com.hazelcast.spi;
 
-/**
-* @author mdogan 9/5/12
-*/
-public interface MembershipAwareService {
+import com.hazelcast.core.MemberAttributeEvent;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.map.operation.MapOperationType;
 
-    /**
-     * Invoked when a new member is added to the cluster.
-     */
-    void memberAdded(MembershipServiceEvent event);
+public class MemberAttributeServiceEvent extends MemberAttributeEvent {
 
-    /**
-     * Invoked when an existing member leaves the cluster.
-     */
-    void memberRemoved(MembershipServiceEvent event);
-    
-    /**
-     * Invoked when a member attribute is changed.
-     */
-    void memberAttributeChanged(MemberAttributeServiceEvent event);
+	public MemberAttributeServiceEvent() {
+		super();
+	}
+
+	public MemberAttributeServiceEvent(MemberImpl member, MapOperationType operationType, String key, Object value) {
+		super(member, operationType, key, value);
+	}
+
 }

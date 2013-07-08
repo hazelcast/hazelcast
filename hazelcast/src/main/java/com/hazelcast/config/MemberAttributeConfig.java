@@ -14,25 +14,29 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spi;
+package com.hazelcast.config;
 
-/**
-* @author mdogan 9/5/12
-*/
-public interface MembershipAwareService {
+import java.util.HashMap;
+import java.util.Map;
 
-    /**
-     * Invoked when a new member is added to the cluster.
-     */
-    void memberAdded(MembershipServiceEvent event);
+public class MemberAttributeConfig {
 
-    /**
-     * Invoked when an existing member leaves the cluster.
-     */
-    void memberRemoved(MembershipServiceEvent event);
-    
-    /**
-     * Invoked when a member attribute is changed.
-     */
-    void memberAttributeChanged(MemberAttributeServiceEvent event);
+	private final Map<String, Object> attributes = new HashMap<String, Object>();
+	
+	public Map<String, Object> getAttributes() {
+		return attributes;
+	}
+	
+	public void setAttribute(String key, Object value) {
+		attributes.put(key, value);
+	}
+	
+	public void removeAttribute(String key) {
+		attributes.remove(key);
+	}
+	
+	public Object getAttribute(String key) {
+		return attributes.get(key);
+	}
+	
 }

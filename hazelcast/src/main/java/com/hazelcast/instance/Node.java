@@ -49,6 +49,7 @@ import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.nio.channels.ServerSocketChannel;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -138,7 +139,8 @@ public class Node {
         }
         final ServerSocketChannel serverSocketChannel = addressPicker.getServerSocketChannel();
         address = addressPicker.getPublicAddress();
-        localMember = new MemberImpl(address, true, UuidUtil.createMemberUuid(address));
+        final Map<String, Object> memberAttributes = config.getMemberAttributeConfig().getAttributes();
+        localMember = new MemberImpl(address, true, UuidUtil.createMemberUuid(address), hazelcastInstance, memberAttributes);
         String loggingType = groupProperties.LOGGING_TYPE.getString();
         loggingService = new LoggingServiceImpl(systemLogService, config.getGroupConfig().getName(), loggingType, localMember);
         logger = loggingService.getLogger(Node.class.getName());

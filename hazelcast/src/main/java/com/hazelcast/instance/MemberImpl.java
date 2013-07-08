@@ -17,28 +17,43 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.cluster.ClusterDataSerializerHook;
+import com.hazelcast.cluster.ClusterServiceImpl;
+import com.hazelcast.cluster.MemberAttributeChangedOperation;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.operation.MapOperationType;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.InvocationBuilder;
+import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.logging.Level;
 
 public final class MemberImpl implements Member, HazelcastInstanceAware, IdentifiedDataSerializable {
 
+	private final Map<String, Object> attributes = new HashMap<String, Object>();
+	
     private boolean localMember;
     private Address address;
     private String uuid;
 
+    private transient volatile HazelcastInstanceImpl instance;
+    
     private transient volatile long lastRead = 0;
     private transient volatile long lastWrite = 0;
     private transient volatile long lastPing = 0;
@@ -48,15 +63,17 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
     }
 
     public MemberImpl(Address address, boolean localMember) {
-        this(address, localMember, null);
+        this(address, localMember, null, null, null);
     }
 
-    public MemberImpl(Address address, boolean localMember, String uuid) {
+    public MemberImpl(Address address, boolean localMember, String uuid, HazelcastInstance instance, Map<String, Object> attributes) {
         this();
         this.localMember = localMember;
         this.address = address;
         this.lastRead = Clock.currentTimeMillis();
         this.uuid = uuid;
+        this.instance = (HazelcastInstanceImpl) instance;
+    	if (attributes != null) this.attributes.putAll(attributes);
     }
 
     public Address getAddress() {
@@ -89,7 +106,57 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         }
     }
 
-    public boolean localMember() {
+	public Map<String, Object> getAttributes() {
+		if (!localMember) return Collections.unmodifiableMap(attributes);
+		return attributes;
+	}
+
+	public Object getAttribute(String key) {
+		return attributes.get(key);
+	}
+
+	public void setAttribute(String key, Object value) {
+		if (!localMember) throw new UnsupportedOperationException("Attributes on remote members must not be changed");
+		if (value != null) {
+			attributes.put(key, value);
+		} else {
+			attributes.remove(key);
+		}
+		if (instance != null) {
+			NodeEngineImpl nodeEngine = instance.node.nodeEngine;
+			OperationService os = nodeEngine.getOperationService();
+			MemberAttributeChangedOperation operation;
+			if (value != null) {
+				operation = new MemberAttributeChangedOperation(MapOperationType.PUT, key, value);
+			} else {
+				operation = new MemberAttributeChangedOperation(MapOperationType.REMOVE, key, null);
+			}
+			String uuid = nodeEngine.getLocalMember().getUuid();
+			operation.setCallerUuid(uuid).setNodeEngine(nodeEngine);
+			try {
+				for (Member m : nodeEngine.getClusterService().getMembers()) {
+					MemberImpl member = (MemberImpl) m;
+					InvocationBuilder inv = os.createInvocationBuilder(ClusterServiceImpl.SERVICE_NAME, operation, member.getAddress());
+					inv.build().invoke();
+				}
+			} catch (Throwable t) {
+	            throw ExceptionUtil.rethrow(t);
+			}
+		}
+	}
+
+	public void updateAttribute(MapOperationType operationType, String key, Object value) {
+		switch (operationType) {
+			case PUT:
+				attributes.put(key, value);
+				break;
+			case REMOVE:
+				attributes.remove(key);
+				break;
+		}
+	}
+	
+	public boolean localMember() {
         return localMember;
     }
 
@@ -127,7 +194,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
 
     public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
         if (hazelcastInstance instanceof HazelcastInstanceImpl) {
-            HazelcastInstanceImpl instance = (HazelcastInstanceImpl) hazelcastInstance;
+        	instance = (HazelcastInstanceImpl) hazelcastInstance;
             localMember = instance.node.address.equals(address);
             logger = instance.node.getLogger(this.getClass().getName());
         }
@@ -137,12 +204,23 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
         address = new Address();
         address.readData(in);
         uuid = in.readUTF();
+		int size = in.readInt();
+		for (int i = 0; i < size; i++) {
+			String key = in.readUTF();
+			Object value = in.readObject();
+			attributes.put(key, value);
+		}
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
         address.writeData(out);
         out.writeUTF(uuid);
-    }
+		out.writeInt(attributes.size());
+		for (Entry<String, Object> entry : attributes.entrySet()) {
+			out.writeUTF(entry.getKey());
+			out.writeObject(entry.getValue());
+		}
+   }
 
     @Override
     public String toString() {

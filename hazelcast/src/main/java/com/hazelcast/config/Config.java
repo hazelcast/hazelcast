@@ -70,6 +70,8 @@ public class Config {
 
     private SerializationConfig serializationConfig = new SerializationConfig();
 
+    private MemberAttributeConfig memberAttributeConfig = new MemberAttributeConfig();
+    
     private ManagedContext managedContext;
 
     private ConcurrentMap<String, Object> userContext = new ConcurrentHashMap<String, Object>();
@@ -116,7 +118,15 @@ public class Config {
         return this;
     }
 
-    public GroupConfig getGroupConfig() {
+    public MemberAttributeConfig getMemberAttributeConfig() {
+		return memberAttributeConfig;
+	}
+
+	public void setMemberAttributeConfig(MemberAttributeConfig memberAttributeConfig) {
+		this.memberAttributeConfig = memberAttributeConfig;
+	}
+
+	public GroupConfig getGroupConfig() {
         return groupConfig;
     }
 

@@ -21,6 +21,7 @@ import com.hazelcast.instance.LifecycleServiceImpl;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.operation.MapOperationType;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.ConnectionListener;
@@ -28,6 +29,7 @@ import com.hazelcast.nio.Packet;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.EventServiceImpl.Registration;
 import com.hazelcast.util.Clock;
 
 import javax.security.auth.login.LoginContext;
@@ -337,7 +339,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             return;
         }
         final Collection<MemberImpl> members = getMemberList();
-        MemberInfoUpdateOperation op = new MemberInfoUpdateOperation(createMemberInfos(members), getClusterTime(), false);
+        MemberInfoUpdateOperation op = new MemberInfoUpdateOperation(createMemberInfos(members, false), getClusterTime(), false);
         for (MemberImpl member : members) {
             if (member.equals(thisMember)) {
                 continue;
@@ -440,7 +442,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                         String message = "Ignoring join request, member already exists.. => " + joinMessage;
                         logger.log(Level.FINEST, message);
                         // send members update back to node trying to join again...
-                        nodeEngine.getOperationService().send(new MemberInfoUpdateOperation(createMemberInfos(getMemberList()), getClusterTime(), false),
+                        nodeEngine.getOperationService().send(new MemberInfoUpdateOperation(createMemberInfos(getMemberList(), true), getClusterTime(), false),
                                 member.getAddress());
                         return;
                     }
@@ -633,7 +635,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         try {
             joinInProgress = true;
             final Collection<MemberImpl> members = getMemberList();
-            final Collection<MemberInfo> memberInfos = createMemberInfos(members);
+            final Collection<MemberInfo> memberInfos = createMemberInfos(members, true);
             for (MemberInfo memberJoining : setJoins) {
                 memberInfos.add(memberJoining);
             }
@@ -668,10 +670,11 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
     }
 
-    private static Collection<MemberInfo> createMemberInfos(Collection<MemberImpl> members) {
+    private static Collection<MemberInfo> createMemberInfos(Collection<MemberImpl> members, boolean joinOperation) {
         final Collection<MemberInfo> memberInfos = new LinkedList<MemberInfo>();
         for (MemberImpl member : members) {
-            memberInfos.add(new MemberInfo(member.getAddress(), member.getUuid()));
+        	MemberInfo mi = joinOperation ? new MemberInfo(member) : new MemberInfo(member.getAddress(), member.getUuid());
+            memberInfos.add(mi);
         }
         return memberInfos;
     }
@@ -702,7 +705,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             for (MemberInfo memberInfo : members) {
                 MemberImpl member = oldMemberMap.get(memberInfo.address);
                 if (member == null) {
-                    member = createMember(memberInfo.address, memberInfo.uuid, thisAddress.getScopeId());
+                    member = createMember(memberInfo.address, memberInfo.uuid, thisAddress.getScopeId(), memberInfo.attributes);
                 }
                 newMembers[k++] = member;
                 member.didRead();
@@ -720,6 +723,24 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
     }
 
+    public void updateMemberAttribute(String uuid, MapOperationType operationType, String key, Object value) {
+    	lock.lock();
+    	try {
+            Map<Address, MemberImpl> memberMap = membersRef.get();
+            if (memberMap != null) {
+            	for (MemberImpl member : memberMap.values()) {
+            		if (member.getUuid().equals(uuid)) {
+            			member.updateAttribute(operationType, key, value);
+            			fireMemberAttributeEvent(member, operationType, key, value);
+            			break;
+            		}
+            	}
+            }
+    	} finally {
+    		lock.unlock();
+    	}
+    }
+    
     public boolean sendJoinRequest(Address toAddress, boolean withCredentials) {
         if (toAddress == null) {
             toAddress = node.getMasterAddress();
@@ -844,9 +865,33 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         eventService.publishEvent(SERVICE_NAME, registrations, membershipEvent);
     }
 
-    protected MemberImpl createMember(Address address, String nodeUuid, String ipV6ScopeId) {
+    private void fireMemberAttributeEvent(final MemberImpl member, final MapOperationType operationType, String key, Object value) {
+        final MemberAttributeEvent membershipEvent = new MemberAttributeEvent(member, operationType, key, value);
+        final Collection<MembershipAwareService> membershipAwareServices = nodeEngine.getServices(MembershipAwareService.class);
+        if (membershipAwareServices != null && !membershipAwareServices.isEmpty()) {
+            final MemberAttributeServiceEvent event = new MemberAttributeServiceEvent(member, operationType, key, value);
+            for (final MembershipAwareService service : membershipAwareServices) {
+                // service events should not block each other
+                nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
+                    public void run() {
+                        service.memberAttributeChanged(event);
+                    }
+                });
+            }
+        }
+        // Only execute locally because of usage of cluster operation to distribute delta updates
+        final EventService eventService = nodeEngine.getEventService();
+        Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, SERVICE_NAME);
+        for (EventRegistration registration : registrations) {
+            if (registration instanceof Registration && ((Registration) registration).isLocal()) {
+            	eventService.publishEvent(SERVICE_NAME, registration, membershipEvent);
+            }
+        }
+    }
+
+    protected MemberImpl createMember(Address address, String nodeUuid, String ipV6ScopeId, Map<String, Object> attributes) {
         address.setScopeId(ipV6ScopeId);
-        return new MemberImpl(address, thisAddress.equals(address), nodeUuid);
+        return new MemberImpl(address, thisAddress.equals(address), nodeUuid, nodeEngine.getHazelcastInstance(), attributes);
     }
 
     public MemberImpl getMember(Address address) {
@@ -944,7 +989,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     public void dispatchEvent(MembershipEvent event, MembershipListener listener) {
         if (event.getEventType() == MembershipEvent.MEMBER_ADDED) {
             listener.memberAdded(event);
-        } else {
+        } else if (event.getEventType() == MembershipEvent.MEMBER_REMOVED) {
             listener.memberRemoved(event);
         }
     }

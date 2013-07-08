@@ -74,6 +74,9 @@ public class ClusterQueueTest extends HazelcastTestSupport {
             public void memberRemoved(MembershipEvent membershipEvent) {
                 shutdownLatch.countDown();
             }
+
+            public void memberAttributeChanged(MemberAttributeEvent memberAttributeEvent) {
+			}
         }));
 
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
