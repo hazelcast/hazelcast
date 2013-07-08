@@ -36,7 +36,7 @@ import java.util.logging.Level;
 public class ConfigXmlGenerator {
 
     private final boolean formatted;
-    final ILogger logger = Logger.getLogger(this.getClass().getName());
+    final ILogger logger = Logger.getLogger(this.getClass());
 
     public ConfigXmlGenerator() {
         this(true);

@@ -33,7 +33,7 @@ import java.util.logging.Level;
  */
 public class ServiceLoader {
 
-    private static final ILogger logger = Logger.getLogger(ServiceLoader.class.getName());
+    private static final ILogger logger = Logger.getLogger(ServiceLoader.class);
 
     public static <T> T load(Class<T> clazz, String factoryId, ClassLoader classLoader) throws Exception {
         final Iterator<T> iter = iterator(clazz, factoryId, classLoader);

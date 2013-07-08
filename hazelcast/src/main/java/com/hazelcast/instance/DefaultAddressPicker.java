@@ -40,7 +40,7 @@ class DefaultAddressPicker implements AddressPicker {
 
     public DefaultAddressPicker(Node node) {
         this.node = node;
-        this.logger = Logger.getLogger(DefaultAddressPicker.class.getName());
+        this.logger = Logger.getLogger(DefaultAddressPicker.class);
     }
 
     public void pickAddress() throws Exception {

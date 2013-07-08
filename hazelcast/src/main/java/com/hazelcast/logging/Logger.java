@@ -22,6 +22,10 @@ public final class Logger {
     private static volatile LoggerFactory loggerFactory = null;
     private static final Object factoryLock = new Object();
 
+    public static ILogger getLogger(Class clazz){
+        return getLogger(clazz.getName());
+    }
+
     public static ILogger getLogger(String name) {
         //noinspection DoubleCheckedLocking
         if (loggerFactory == null) {

@@ -39,7 +39,7 @@ import static com.hazelcast.web.HazelcastInstanceLoader.*;
 
 public class WebFilter implements Filter {
 
-    private static final ILogger logger = Logger.getLogger(WebFilter.class.getName());
+    private static final ILogger logger = Logger.getLogger(WebFilter.class);
 
     private static final String HAZELCAST_REQUEST = "*hazelcast-request";
 
