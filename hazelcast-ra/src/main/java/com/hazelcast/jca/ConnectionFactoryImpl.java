@@ -21,44 +21,83 @@ import javax.naming.Reference;
 import javax.resource.ResourceException;
 import javax.resource.cci.*;
 import javax.resource.spi.ConnectionManager;
-import java.util.concurrent.atomic.AtomicInteger;
 
-public class ConnectionFactoryImpl extends JcaBase implements ConnectionFactory {
-    final ManagedConnectionFactoryImpl mcf;
-    final ConnectionManager cm;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+
+/**
+ * Small facade to bring together container's pooling mechanism and other 
+ * vendor-specific calls with the real implementation classes of this 
+ * resource adapter
+ */
+public class ConnectionFactoryImpl implements HazelcastConnectionFactory {
+	private static final long serialVersionUID = -5909363703528221650L;
+	/** Access to this resource adapter infrastructure */
+	private ManagedConnectionFactoryImpl mcf;
+	/** Container's connection manager - i.e. for pooling */
+    private ConnectionManager cm;
+    /** JNDI reference - not used */
     private Reference ref;
+    /** identity generator */
     private final static AtomicInteger idGen = new AtomicInteger();
+    /** class logger*/
+    private final static ILogger logger = Logger.getLogger("com.hazelcast.jca");
+    /** this identity */
     private transient final int id;
 
+    public ConnectionFactoryImpl() {
+    	id = idGen.incrementAndGet();
+    }
+    
     public ConnectionFactoryImpl(ManagedConnectionFactoryImpl mcf, ConnectionManager cm) {
-        super();
+    	this();
         this.mcf = mcf;
         this.cm = cm;
-        id = idGen.incrementAndGet();
+    }
+    
+    /* (non-Javadoc)
+     * @see com.hazelcast.jca.HazelcastConnectionFactory#getConnection()
+     */
+    public HazelcastConnection getConnection() throws ResourceException {
+        logger.log(Level.FINEST, "getConnection");
+        return this.getConnection(null);
     }
 
-    public Connection getConnection() throws ResourceException {
-        log(this, "getConn");
-        return (Connection) cm.allocateConnection(mcf, null);
+    /* (non-Javadoc)
+     * @see com.hazelcast.jca.HazelcastConnectionFactory#getConnection(javax.resource.cci.ConnectionSpec)
+     */
+    public HazelcastConnection getConnection(ConnectionSpec connSpec) throws ResourceException {
+    	logger.log(Level.FINEST, "getConnection spec: " + connSpec);
+        return (HazelcastConnectionImpl) cm.allocateConnection(mcf, null);
     }
 
-    public Connection getConnection(ConnectionSpec connSpec) throws ResourceException {
-        log(this, "getConn spec: " + connSpec);
-        return (Connection) cm.allocateConnection(mcf, null);
-    }
-
+    /* (non-Javadoc)
+     * @see javax.resource.cci.ConnectionFactory#getMetaData()
+     */
     public ResourceAdapterMetaData getMetaData() throws ResourceException {
-        return null;
+        return new ConnectionFactoryMetaData();
     }
 
+    /* (non-Javadoc)
+     * @see javax.resource.cci.ConnectionFactory#getRecordFactory()
+     */
     public RecordFactory getRecordFactory() throws ResourceException {
         return null;
     }
 
+    /* (non-Javadoc)
+     * @see javax.resource.Referenceable#setReference(javax.naming.Reference)
+     */
     public void setReference(Reference ref) {
         this.ref = ref;
     }
 
+    /* (non-Javadoc)
+     * @see javax.naming.Referenceable#getReference()
+     */
     public Reference getReference() throws NamingException {
         return ref;
     }
@@ -67,4 +106,27 @@ public class ConnectionFactoryImpl extends JcaBase implements ConnectionFactory 
     public String toString() {
         return "hazelcast.ConnectionFactoryImpl [" + id + "]";
     }
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + id;
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		ConnectionFactoryImpl other = (ConnectionFactoryImpl) obj;
+		if (id != other.id)
+			return false;
+		return true;
+	}
+    
 }
