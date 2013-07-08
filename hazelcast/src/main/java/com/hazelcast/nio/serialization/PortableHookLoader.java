@@ -16,10 +16,12 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.logging.Logger;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ServiceLoader;
 
 import java.util.*;
+import java.util.logging.Level;
 
 /**
  * @author mdogan 5/8/13
@@ -74,10 +76,16 @@ final class PortableHookLoader {
 
     private void register(int factoryId, PortableFactory factory) {
         final PortableFactory current = factories.get(factoryId);
-        if (current != null && current != factory) {
-            throw new IllegalArgumentException("PortableFactory[" + factoryId + "] is already registered! " + current + " -> " + factory);
+        if (current != null) {
+            if (current.equals(factory)) {
+                Logger.getLogger(getClass()).log(Level.WARNING, "PortableFactory[" + factoryId + "] is already registered! Skipping "
+                        + factory);
+            } else {
+                throw new IllegalArgumentException("PortableFactory[" + factoryId + "] is already registered! " + current + " -> " + factory);
+            }
+        } else {
+            factories.put(factoryId, factory);
         }
-        factories.put(factoryId, factory);
     }
 
 }
