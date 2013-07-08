@@ -20,12 +20,12 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ILock;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.SerialTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -39,11 +39,6 @@ import static org.junit.Assert.assertNull;
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(SerialTest.class)
 public class ClientIssueTest {
-
-    @BeforeClass
-    public static void init() throws Exception {
-        Hazelcast.shutdownAll();
-    }
 
     @After
     @Before
@@ -71,6 +66,34 @@ public class ClientIssueTest {
         final IMap<Object,Object> map = client.getMap("map");
         assertNull(map.put("key", "value"));
         assertEquals(1, map.size());
+    }
+
+    @Test
+    public void testIssue267() throws Exception {
+
+        final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();
+
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setRedoOperation(true);
+
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        final ILock lock = client.getLock("lock");
+        //Scanner s = new Scanner(System.in);
+
+        for (int k = 0; k < 10; k++) {
+            lock.lock();
+            try {
+                Thread.sleep(100);
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        lock.lock();
+        hz1.getLifecycleService().shutdown();
+        lock.unlock();
     }
 
 }
