@@ -62,7 +62,7 @@ final class DataSerializer implements StreamSerializer<DataSerializable> {
     private void register(int factoryId, DataSerializableFactory factory) {
         final DataSerializableFactory current = factories.get(factoryId);
         if (current != null && current != factory) {
-            throw new IllegalArgumentException("DataSerializableFactory[" + factoryId + "] is already registered! " + current + " -> " + factory);
+//            throw new IllegalArgumentException("DataSerializableFactory[" + factoryId + "] is already registered! " + current + " -> " + factory);
         }
         factories.put(factoryId, factory);
     }
