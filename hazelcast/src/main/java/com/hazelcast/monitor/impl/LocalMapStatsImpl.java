@@ -47,6 +47,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
     private long creationTime;
     private long lockedEntryCount;
     private long dirtyEntryCount;
+    private int backupCount;
 
     public LocalMapStatsImpl() {
         creationTime = Clock.currentTimeMillis();
@@ -62,6 +63,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         out.writeLong(hits.get());
         out.writeLong(ownedEntryCount);
         out.writeLong(backupEntryCount);
+        out.writeInt(backupCount);
         out.writeLong(ownedEntryMemoryCost);
         out.writeLong(backupEntryMemoryCost);
         out.writeLong(creationTime);
@@ -85,6 +87,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         hits.set(in.readLong());
         ownedEntryCount = in.readLong();
         backupEntryCount = in.readLong();
+        backupCount = in.readInt();
         ownedEntryMemoryCost = in.readLong();
         backupEntryMemoryCost = in.readLong();
         creationTime = in.readLong();
@@ -112,6 +115,14 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
 
     public void setBackupEntryCount(long backupEntryCount) {
         this.backupEntryCount = backupEntryCount;
+    }
+
+    public int getBackupCount() {
+        return backupCount;
+    }
+
+    public void setBackupCount(int backupCount) {
+        this.backupCount = backupCount;
     }
 
     public long getOwnedEntryMemoryCost() {
@@ -254,6 +265,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
                 ", totalRemoveLatencies=" + totalRemoveLatencies +
                 ", ownedEntryCount=" + ownedEntryCount +
                 ", backupEntryCount=" + backupEntryCount +
+                ", backupCount=" + backupCount +
                 ", ownedEntryMemoryCost=" + ownedEntryMemoryCost +
                 ", backupEntryMemoryCost=" + backupEntryMemoryCost +
                 ", creationTime=" + creationTime +

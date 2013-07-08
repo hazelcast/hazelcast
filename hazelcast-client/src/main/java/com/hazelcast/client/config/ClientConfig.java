@@ -28,6 +28,7 @@ import com.hazelcast.security.UsernamePasswordCredentials;
 import java.util.*;
 
 // todo check the new attributes added on 3.0 working in spring configuration
+//TODO @ali reform clientConfig API so that it reflects the server-side config API
 public class ClientConfig {
 
     /**
@@ -74,7 +75,7 @@ public class ClientConfig {
     /**
      * limit for the Pool size that is used to pool the connections to the members.
      */
-    private int poolSize = 100;
+    private int connectionPoolSize = 100;
 
     /**
      * Client will be sending heartbeat messages to members and this is the timeout. If there is no any message
@@ -94,6 +95,11 @@ public class ClientConfig {
      * Period for the next attempt to find a member to connect. (see {@link ClientConfig#connectionAttemptLimit}).
      */
     private int connectionAttemptPeriod = 3000;
+
+    /**
+     * Period for the next attempt to find a member to connect. (see {@link ClientConfig#connectionAttemptLimit}).
+     */
+    private int executorPoolSize = -1;
 
 
     private final SocketOptions socketOptions = new SocketOptions();
@@ -121,24 +127,27 @@ public class ClientConfig {
         return smart;
     }
 
-    public void setSmart(boolean smart) {
+    public ClientConfig setSmart(boolean smart) {
         this.smart = smart;
+        return this;
     }
 
-    public int getPoolSize() {
-        return poolSize;
+    public int getConnectionPoolSize() {
+        return connectionPoolSize;
     }
 
-    public void setPoolSize(int poolSize) {
-        this.poolSize = poolSize;
+    public ClientConfig setConnectionPoolSize(int connectionPoolSize) {
+        this.connectionPoolSize = connectionPoolSize;
+        return this;
     }
 
     public SocketInterceptor getSocketInterceptor() {
         return socketInterceptor;
     }
 
-    public void setSocketInterceptor(SocketInterceptor socketInterceptor) {
+    public ClientConfig setSocketInterceptor(SocketInterceptor socketInterceptor) {
         this.socketInterceptor = socketInterceptor;
+        return this;
     }
 
     public int getConnectionAttemptPeriod() {
@@ -187,11 +196,12 @@ public class ClientConfig {
     }
 
     // required for spring module
-    public void setAddresses(List<String> addresses) {
+    public ClientConfig setAddresses(List<String> addresses) {
         addressList.clear();
         for (String address : addresses) {
             addressList.addAll(addresses);
         }
+        return this;
     }
 
     public Collection<String> getAddressList() {
@@ -230,16 +240,18 @@ public class ClientConfig {
         return loadBalancer;
     }
 
-    public void setLoadBalancer(LoadBalancer loadBalancer) {
+    public ClientConfig setLoadBalancer(LoadBalancer loadBalancer) {
         this.loadBalancer = loadBalancer;
+        return this;
     }
 
     public boolean isRedoOperation() {
         return redoOperation;
     }
 
-    public void setRedoOperation(boolean redoOperation) {
+    public ClientConfig setRedoOperation(boolean redoOperation) {
         this.redoOperation = redoOperation;
+        return this;
     }
 
     public SocketOptions getSocketOptions() {
@@ -250,16 +262,27 @@ public class ClientConfig {
         return classLoader;
     }
 
-    public void setClassLoader(ClassLoader classLoader) {
+    public ClientConfig setClassLoader(ClassLoader classLoader) {
         this.classLoader = classLoader;
+        return this;
     }
 
     public ManagedContext getManagedContext() {
         return managedContext;
     }
 
-    public void setManagedContext(ManagedContext managedContext) {
+    public ClientConfig setManagedContext(ManagedContext managedContext) {
         this.managedContext = managedContext;
+        return this;
+    }
+
+    public int getExecutorPoolSize() {
+        return executorPoolSize;
+    }
+
+    public ClientConfig setExecutorPoolSize(int executorPoolSize) {
+        this.executorPoolSize = executorPoolSize;
+        return this;
     }
 
     public ProxyFactoryConfig getProxyFactoryConfig() {

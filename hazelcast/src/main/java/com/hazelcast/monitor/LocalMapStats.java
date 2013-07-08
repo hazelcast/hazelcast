@@ -40,6 +40,13 @@ public interface LocalMapStats extends LocalInstanceStats {
     long getBackupEntryCount();
 
     /**
+     * Returns the number of backups per entry.
+     *
+     * @return  the number of backups per entry.
+     */
+    int getBackupCount() ;
+
+    /**
      * Returns memory cost (number of bytes) of owned entries in this member.
      *
      * @return memory cost (number of bytes) of owned entries in this member.

@@ -146,6 +146,20 @@ public class ClientExecutorServiceTest {
         assertTrue(latch.await(5, TimeUnit.SECONDS));
     }
 
+    @Test
+    @Ignore
+    public void testThreadPoolSize() throws Exception {
+        final Thread thread = new Thread() {
+            public void run() {
+                while (true) {
+                    service.submit(new CallableTask("asd"));
+                }
+            }
+        };
+        thread.start();
+        thread.join();
+    }
+
 
     @Test(expected = IllegalStateException.class)
     public void submitFailingCallable() {

@@ -28,5 +28,8 @@
         </cluster-members>
         <smart-routing>true</smart-routing>
         <redo-operation>true</redo-operation>
+        <connection-pool-size>30</connection-pool-size>
     </network>
+
+    <executor-pool-size>40</executor-pool-size>
 </hazelcast-client>
