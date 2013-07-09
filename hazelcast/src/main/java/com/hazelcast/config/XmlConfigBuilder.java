@@ -46,7 +46,8 @@ import java.util.logging.Level;
 
 public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigBuilder {
 
-    private final ILogger logger = Logger.getLogger(XmlConfigBuilder.class.getName());
+    private final static ILogger logger = Logger.getLogger(XmlConfigBuilder.class);
+
     private Config config;
     private InputStream in;
     private File configurationFile;
@@ -627,8 +628,12 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         for (int a = 0; a < atts.getLength(); a++) {
             final org.w3c.dom.Node att = atts.item(a);
             final String value = getTextContent(att).trim();
-            if (att.getNodeName().equals("auto-increment")) {
+
+            if ("auto-increment".equals(att.getNodeName())) {
                 networkConfig.setPortAutoIncrement(checkTrue(value));
+            } else if("port-count".equals(att.getNodeName())){
+                int portCount = Integer.parseInt(value);
+                networkConfig.setPortCount(portCount);
             }
         }
     }

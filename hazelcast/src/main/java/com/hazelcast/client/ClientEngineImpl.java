@@ -147,11 +147,11 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
         return node.getConfig();
     }
 
-    public ILogger getILogger(Class clazz) {
+    public ILogger getLogger(Class clazz) {
         return node.getLogger(clazz);
     }
 
-    public ILogger getILogger(String className) {
+    public ILogger getLogger(String className) {
         return node.getLogger(className);
     }
 
@@ -278,6 +278,9 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
     }
 
     public void memberRemoved(MembershipServiceEvent event) {
+        if (event.getMember().localMember()) {
+            return;
+        }
         final String uuid = event.getMember().getUuid();
         nodeEngine.getExecutionService().schedule(new Runnable() {
             public void run() {

@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -26,6 +27,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.logging.Level;
 
 import static com.hazelcast.nio.serialization.SerializationConstants.CONSTANT_TYPE_DATA;
 
@@ -61,10 +63,17 @@ final class DataSerializer implements StreamSerializer<DataSerializable> {
 
     private void register(int factoryId, DataSerializableFactory factory) {
         final DataSerializableFactory current = factories.get(factoryId);
-        if (current != null && current != factory) {
-            throw new IllegalArgumentException("DataSerializableFactory[" + factoryId + "] is already registered! " + current + " -> " + factory);
+        if (current != null) {
+            if (current.equals(factory)) {
+                Logger.getLogger(getClass()).log(Level.WARNING, "DataSerializableFactory[" + factoryId + "] is already registered! Skipping "
+                        + factory);
+            } else {
+                throw new IllegalArgumentException("DataSerializableFactory[" + factoryId + "] is already registered! "
+                        + current + " -> " + factory);
+            }
+        } else {
+            factories.put(factoryId, factory);
         }
-        factories.put(factoryId, factory);
     }
 
     public int getTypeId() {

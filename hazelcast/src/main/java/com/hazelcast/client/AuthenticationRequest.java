@@ -59,7 +59,7 @@ public final class AuthenticationRequest extends CallableClientRequest implement
     public Object call() throws Exception {
         ClientEngineImpl clientEngine = getService();
         Connection connection = endpoint.getConnection();
-        ILogger logger = clientEngine.getILogger(getClass());
+        ILogger logger = clientEngine.getLogger(getClass());
         clientEngine.sendResponse(endpoint, clientEngine.getThisAddress());
         boolean authenticated;
         if (credentials == null) {

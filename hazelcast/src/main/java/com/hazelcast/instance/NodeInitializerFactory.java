@@ -24,7 +24,7 @@ import java.util.logging.Level;
 
 public final class NodeInitializerFactory {
 
-    private static final ILogger logger = Logger.getLogger(NodeInitializerFactory.class.getName());
+    private static final ILogger logger = Logger.getLogger(NodeInitializerFactory.class);
     private static final String FACTORY_ID = "com.hazelcast.NodeInitializer";
 
     public static NodeInitializer create(ClassLoader classLoader) {

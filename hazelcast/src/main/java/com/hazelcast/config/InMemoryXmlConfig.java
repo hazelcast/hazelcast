@@ -25,7 +25,7 @@ import java.util.logging.Level;
 
 public class InMemoryXmlConfig extends Config {
 
-    private final ILogger logger = Logger.getLogger(InMemoryXmlConfig.class.getName());
+    private final static ILogger logger = Logger.getLogger(InMemoryXmlConfig.class);
 
     public InMemoryXmlConfig() {
     }

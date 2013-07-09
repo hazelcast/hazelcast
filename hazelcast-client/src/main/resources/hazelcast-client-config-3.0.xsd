@@ -22,6 +22,7 @@
             <xs:sequence>
                 <xs:element ref="group" minOccurs="0" maxOccurs="1" />
                 <xs:element ref="network" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="executor-pool-size" minOccurs="0" maxOccurs="1" />
                 <xs:element ref="security" minOccurs="0" maxOccurs="1" />
                 <xs:element ref="listeners" minOccurs="0" maxOccurs="1" />
                 <xs:element ref="serialization" minOccurs="0" maxOccurs="unbounded" />
@@ -236,7 +237,7 @@
                 <xs:element ref="cluster-members" minOccurs="0" maxOccurs="1" />
                 <xs:element ref="smart-routing" minOccurs="0" maxOccurs="1" />
                 <xs:element ref="redo-operation" minOccurs="0" maxOccurs="1" />
-                <xs:element ref="pool-size" minOccurs="0" maxOccurs="1" />
+                <xs:element ref="connection-pool-size" minOccurs="0" maxOccurs="1" />
                 <xs:element ref="connection-timeout" minOccurs="0" maxOccurs="1" />
                 <xs:element ref="connection-attempt-period" minOccurs="0" maxOccurs="1" />
                 <xs:element ref="connection-attempt-limit" minOccurs="0" maxOccurs="1" />
@@ -295,7 +296,19 @@
             <xs:restriction base="xs:boolean" />
         </xs:simpleType>
     </xs:element>
-    <xs:element name="pool-size" default="10">
+    <xs:element name="connection-pool-size" default="100">
+        <xs:annotation>
+            <xs:documentation>
+                Limit for the Pool size that is used to pool the connections to the members.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:simpleType>
+            <xs:restriction base="xs:int">
+                <xs:minInclusive value="1" />
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:element>
+    <xs:element name="executor-pool-size" default="100">
         <xs:annotation>
             <xs:documentation>
                 Limit for the Pool size that is used to pool the connections to the members.

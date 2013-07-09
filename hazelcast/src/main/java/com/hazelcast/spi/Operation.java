@@ -221,7 +221,7 @@ public abstract class Operation implements DataSerializable {
 
     protected final ILogger getLogger() {
         final NodeEngine ne = nodeEngine;
-        return ne != null ? ne.getLogger(getClass()) : Logger.getLogger(getClass().getName());
+        return ne != null ? ne.getLogger(getClass()) : Logger.getLogger(getClass());
     }
 
     public void logError(Throwable e) {

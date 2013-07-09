@@ -24,7 +24,7 @@ import java.util.logging.Level;
 
 public class ClasspathXmlConfig extends Config {
 
-    private final ILogger logger = Logger.getLogger(ClasspathXmlConfig.class.getName());
+    private final static ILogger logger = Logger.getLogger(ClasspathXmlConfig.class);
 
     public ClasspathXmlConfig() {
     }

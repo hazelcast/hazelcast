@@ -57,7 +57,7 @@ public class SmartClientConnectionManager implements ClientConnectionManager {
         ClientConfig config = client.getClientConfig();
         router = new Router(loadBalancer);
         socketInterceptor = config.getSocketInterceptor();
-        poolSize = config.getPoolSize();
+        poolSize = config.getConnectionPoolSize();
         int connectionTimeout = config.getConnectionTimeout();
         heartbeat = new HeartBeatChecker(connectionTimeout, client.getSerializationService(), client.getClientExecutionService());
         socketOptions = config.getSocketOptions();

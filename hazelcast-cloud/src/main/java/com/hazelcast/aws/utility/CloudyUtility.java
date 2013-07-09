@@ -37,7 +37,7 @@ import java.util.logging.Level;
 import static com.hazelcast.config.AbstractXmlConfigHelper.cleanNodeName;
 
 public class CloudyUtility {
-    final static ILogger logger = Logger.getLogger(CloudyUtility.class.getName());
+    final static ILogger logger = Logger.getLogger(CloudyUtility.class);
 
     public static String getQueryString(Map<String, String> attributes) {
         StringBuilder query = new StringBuilder();

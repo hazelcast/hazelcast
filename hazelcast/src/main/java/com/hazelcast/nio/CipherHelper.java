@@ -33,7 +33,7 @@ import java.util.logging.Level;
 final class CipherHelper {
     private static SymmetricCipherBuilder symmetricCipherBuilder = null;
 
-    final static ILogger logger = Logger.getLogger(CipherHelper.class.getName());
+    final static ILogger logger = Logger.getLogger(CipherHelper.class);
 
     static {
         try {

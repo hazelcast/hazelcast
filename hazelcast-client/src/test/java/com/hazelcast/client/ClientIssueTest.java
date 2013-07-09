@@ -17,48 +17,83 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.config.Config;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ILock;
+import com.hazelcast.core.IMap;
+import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.annotation.SerialTest;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 /**
  * @ali 7/3/13
  */
+@RunWith(HazelcastJUnit4ClassRunner.class)
+@Category(SerialTest.class)
 public class ClientIssueTest {
 
+    @After
+    @Before
+    public void cleanup() throws Exception {
+        HazelcastClient.shutdownAll();
+        Hazelcast.shutdownAll();
+    }
 
-    public static void main(String[] args) throws Exception {
+    @Test
+    public void testClientPortConnection(){
+        final Config config1 = new Config();
+        config1.getGroupConfig().setName("foo");
+        config1.getNetworkConfig().setPort(5701);
+        final HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config1);
+
+        final Config config2 = new Config();
+        config2.getGroupConfig().setName("bar");
+        config2.getNetworkConfig().setPort(5702);
+        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config2);
+
+        final ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getGroupConfig().setName("bar");
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+
+        final IMap<Object,Object> map = client.getMap("map");
+        assertNull(map.put("key", "value"));
+        assertEquals(1, map.size());
+    }
+
+    @Test
+    public void testIssue267() throws Exception {
+
         final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
         final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();
 
-        final HazelcastInstance c = HazelcastClient.newHazelcastClient(new ClientConfig());
 
-        final Thread thread = new Thread() {
-            public void run() {
-                final IMap<Object, Object> map = c.getMap("test");
-                map.addEntryListener(new EntryAdapter<Object, Object>() {
-                    public void entryAdded(EntryEvent<Object, Object> event) {
-                        System.err.println("event = " + event);
-                    }
-                }, true);
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setRedoOperation(true);
 
-                for (int i = 0; i < 40; i++) {
-                    try {
-                        map.put(System.currentTimeMillis(), Math.random());
-                        System.err.println("put");
-                        sleep(500);
-                    } catch (Exception e) {
-                        System.err.println("-------");
-                        e.printStackTrace();
-                    }
-                }
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+        final ILock lock = client.getLock("lock");
+        //Scanner s = new Scanner(System.in);
+
+        for (int k = 0; k < 10; k++) {
+            lock.lock();
+            try {
+                Thread.sleep(100);
+            } finally {
+                lock.unlock();
             }
-        };
-        thread.start();
+        }
 
-        Thread.sleep(5000);
-
-        hz1.getLifecycleService().terminate();
-        thread.join();
-        c.getLifecycleService().terminate();
-        hz2.getLifecycleService().terminate();
+        lock.lock();
+        hz1.getLifecycleService().shutdown();
+        lock.unlock();
     }
+
 }

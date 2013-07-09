@@ -19,6 +19,7 @@ package com.hazelcast.queue.client;
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngine;
+import com.hazelcast.collection.operations.client.AddEntryListenerRequest;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.serialization.Data;
@@ -30,6 +31,7 @@ import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.impl.PortableItemEvent;
 
 import java.io.IOException;
+import java.util.logging.Level;
 
 /**
  * @author ali 5/9/13
@@ -93,7 +95,7 @@ public class AddListenerRequest extends CallableClientRequest implements Portabl
                     if (registrationId != null){
                         service.removeItemListener(name, registrationId);
                     } else {
-                        System.err.println("registrationId is null!!!");
+                        getClientEngine().getLogger(AddListenerRequest.class).log(Level.WARNING, "RegistrationId is null!");
                     }
 
                 }

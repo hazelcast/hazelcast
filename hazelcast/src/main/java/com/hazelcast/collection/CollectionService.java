@@ -221,7 +221,10 @@ public class CollectionService implements ManagedService, RemoteService,
 
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
         int replicaIndex = event.getReplicaIndex();
-        CollectionPartitionContainer partitionContainer = partitionContainers[event.getPartitionId()];
+        final CollectionPartitionContainer partitionContainer = partitionContainers[event.getPartitionId()];
+        if (partitionContainer == null) {
+            return null;
+        }
         Map<CollectionProxyId, Map> map = new HashMap<CollectionProxyId, Map>(partitionContainer.containerMap.size());
         for (Map.Entry<CollectionProxyId, CollectionContainer> entry : partitionContainer.containerMap.entrySet()) {
             CollectionProxyId proxyId = entry.getKey();

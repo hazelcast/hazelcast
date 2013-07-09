@@ -42,7 +42,7 @@ import java.util.logging.Level;
 
 public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
 
-    private final ILogger logger = Logger.getLogger(XmlClientConfigBuilder.class.getName());
+    private final static ILogger logger = Logger.getLogger(XmlClientConfigBuilder.class);
 
     private ClientConfig clientConfig;
     private InputStream in;
@@ -199,8 +199,8 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
                 clientConfig.setSmart(Boolean.parseBoolean(getTextContent(child)));
             } else if ("redo-operation".equals(nodeName)) {
                 clientConfig.setRedoOperation(Boolean.parseBoolean(getTextContent(child)));
-            } else if ("pool-size".equals(nodeName)) {
-                clientConfig.setPoolSize(Integer.parseInt(getTextContent(child)));
+            } else if ("connection-pool-size".equals(nodeName)) {
+                clientConfig.setConnectionPoolSize(Integer.parseInt(getTextContent(child)));
             } else if ("connection-timeout".equals(nodeName)) {
                 clientConfig.setConnectionTimeout(Integer.parseInt(getTextContent(child)));
             } else if ("connection-attempt-period".equals(nodeName)) {
