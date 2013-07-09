@@ -18,10 +18,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ILock;
-import com.hazelcast.core.IMap;
+import com.hazelcast.core.*;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.SerialTest;
 import org.junit.After;
@@ -94,6 +91,38 @@ public class ClientIssueTest {
         lock.lock();
         hz1.getLifecycleService().shutdown();
         lock.unlock();
+    }
+
+    @Test
+    public void testOperationRedo() throws Exception {
+        final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();
+
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setRedoOperation(true);
+
+        HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+
+
+        final Thread thread = new Thread() {
+            public void run() {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                hz1.getLifecycleService().terminate();
+            }
+        };
+
+        final IQueue<Object> q = client.getQueue("q");
+        thread.start();
+        for (int i=0; i< 1000; i++){
+            q.offer("item"+i);
+        }
+        thread.join();
+        assertEquals(1000, q.size());
+
     }
 
 }
