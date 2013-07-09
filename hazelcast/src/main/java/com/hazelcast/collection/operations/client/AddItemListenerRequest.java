@@ -34,6 +34,7 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.impl.PortableItemEvent;
 
 import java.io.IOException;
+import java.util.logging.Level;
 
 /**
  * @author ali 5/23/13
@@ -77,7 +78,7 @@ public class AddItemListenerRequest extends CallableClientRequest implements Por
                     if (registrationId != null){
                         service.removeListener(proxyId.getName(), registrationId);
                     } else {
-                        System.err.println("registrationId is null!!!");
+                        getClientEngine().getLogger(AddItemListenerRequest.class).log(Level.WARNING, "RegistrationId is null!");
                     }
 
                 }

@@ -142,28 +142,6 @@ public class ListenerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void localListenerForEvictionTest() throws InterruptedException {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-        Config cfg = new Config();
-        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance h2 = nodeFactory.newHazelcastInstance(cfg);
-        IMap<String, String> map1 = h1.getMap(name);
-        map1.addLocalEntryListener(new EntryAdapter<String, String>(){
-            @Override
-            public void entryEvicted(EntryEvent<String, String> event) {
-                System.err.println("key:"+event.getKey());
-                System.err.println("value:"+event.getValue());
-            }
-        });
-
-        map1.put("key1", "value1", 1 , TimeUnit.SECONDS);
-        map1.put("key2", "value2", 1 , TimeUnit.SECONDS);
-        map1.put("key3", "value3", 1 , TimeUnit.SECONDS);
-
-        Thread.sleep(5000);
-    }
-
-    @Test
     /**
      * Test for issue 584 and 756
      */

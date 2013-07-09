@@ -34,6 +34,7 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.impl.PortableEntryEvent;
 
 import java.io.IOException;
+import java.util.logging.Level;
 
 /**
  * @author ali 5/10/13
@@ -88,7 +89,7 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Po
                     if (registrationId != null){
                         service.removeListener(proxyId.getName(), registrationId);
                     } else {
-                        System.err.println("registrationId is null!!!");
+                        getClientEngine().getLogger(AddEntryListenerRequest.class).log(Level.WARNING, "RegistrationId is null!");
                     }
                 }
             }
