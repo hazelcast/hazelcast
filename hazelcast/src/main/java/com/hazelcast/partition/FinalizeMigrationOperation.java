@@ -31,11 +31,8 @@ import java.util.logging.Level;
 // runs locally...
 final class FinalizeMigrationOperation extends AbstractOperation implements PartitionAwareOperation, MigrationCycleOperation {
 
-    private MigrationEndpoint endpoint;
-    private boolean success;
-
-    public FinalizeMigrationOperation() {
-    }
+    private final MigrationEndpoint endpoint;
+    private final boolean success;
 
     public FinalizeMigrationOperation(final MigrationEndpoint endpoint, final boolean success) {
         this.endpoint = endpoint;

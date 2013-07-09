@@ -83,7 +83,7 @@ public class PartitionRuntimeState implements DataSerializable {
 
     public PartitionView[] getPartitions() {
         int size = partitionInfos.size();
-        PartitionImpl[] partitions = new PartitionImpl[size];
+        PartitionView[] partitions = new PartitionView[size];
         for (ShortPartitionInfo spi : partitionInfos) {
             PartitionImpl partition = new PartitionImpl(spi.partitionId, null);
             int[] addressIndexes = spi.addressIndexes;
