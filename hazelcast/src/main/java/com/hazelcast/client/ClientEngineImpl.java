@@ -278,6 +278,9 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
     }
 
     public void memberRemoved(MembershipServiceEvent event) {
+        if (event.getMember().localMember()) {
+            return;
+        }
         final String uuid = event.getMember().getUuid();
         nodeEngine.getExecutionService().schedule(new Runnable() {
             public void run() {
