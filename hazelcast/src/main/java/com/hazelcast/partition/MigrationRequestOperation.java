@@ -35,6 +35,8 @@ import java.util.logging.Level;
 
 public final class MigrationRequestOperation extends BaseMigrationOperation {
 
+    private transient boolean returnResponse = true;
+
     public MigrationRequestOperation() {
     }
 
@@ -73,32 +75,43 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
                 final long timeout = nodeEngine.getGroupProperties().PARTITION_MIGRATION_TIMEOUT.getLong();
                 final Collection<Operation> tasks = prepareMigrationTasks();
                 if (tasks.size() > 0) {
+                    returnResponse = false;
+                    final ResponseHandler responseHandler = getResponseHandler();
                     final SerializationService serializationService = nodeEngine.getSerializationService();
-                    final BufferObjectDataOutput out = serializationService.createObjectDataOutput(1024 * 32);
-                    try {
-                        out.writeInt(tasks.size());
-                        for (Operation task : tasks) {
-                            serializationService.writeObject(out, task);
+
+                    nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR).execute(new Runnable() {
+                        public void run() {
+                            final BufferObjectDataOutput out = serializationService.createObjectDataOutput(1024 * 32);
+                            try {
+                                out.writeInt(tasks.size());
+                                for (Operation task : tasks) {
+                                    serializationService.writeObject(out, task);
+                                }
+                                final byte[] data = IOUtil.compress(out.toByteArray());
+                                final MigrationOperation migrationOperation = new MigrationOperation(migrationInfo, replicaVersions, data, tasks.size());
+                                Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(PartitionServiceImpl.SERVICE_NAME,
+                                        migrationOperation, to).setTryPauseMillis(1000).setReplicaIndex(getReplicaIndex()).build();
+                                Future future = inv.invoke();
+                                Boolean result = (Boolean) nodeEngine.toObject(future.get(timeout, TimeUnit.SECONDS));
+                                responseHandler.sendResponse(result);
+                            } catch (Throwable e) {
+                                responseHandler.sendResponse(Boolean.FALSE);
+                                if (e instanceof ExecutionException) {
+                                    e = e.getCause() != null ? e.getCause() : e;
+                                }
+                                Level level = (e instanceof MemberLeftException || e instanceof InterruptedException)
+                                        || !getNodeEngine().isActive() ? Level.INFO : Level.WARNING;
+                                getLogger().log(level, e.getMessage(), e);
+                            } finally {
+                                IOUtil.closeResource(out);
+                            }
                         }
-                        final byte[] data = IOUtil.compress(out.toByteArray());
-                        final MigrationOperation migrationOperation = new MigrationOperation(migrationInfo, replicaVersions, data, tasks.size());
-                        Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(PartitionServiceImpl.SERVICE_NAME,
-                                migrationOperation, to).setTryPauseMillis(1000).setReplicaIndex(getReplicaIndex()).build();
-                        Future future = inv.invoke();
-                        success = (Boolean) nodeEngine.toObject(future.get(timeout, TimeUnit.SECONDS));
-                    } finally {
-                        IOUtil.closeResource(out);
-                    }
+                    });
                 } else {
                     success = true;
                 }
             } catch (Throwable e) {
-                if (e instanceof ExecutionException) {
-                    e = e.getCause() != null ? e.getCause() : e;
-                }
-                Level level = (e instanceof MemberLeftException || e instanceof InterruptedException)
-                        || !getNodeEngine().isActive() ? Level.INFO : Level.WARNING;
-                getLogger().log(level, e.getMessage(), e);
+                getLogger().log(Level.WARNING, e.getMessage(), e);
                 success = false;
             } finally {
                 migrationInfo.doneProcessing();
@@ -116,7 +129,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
 
     @Override
     public boolean returnsResponse() {
-        return true;
+        return returnResponse;
     }
 
     private Collection<Operation> prepareMigrationTasks() {

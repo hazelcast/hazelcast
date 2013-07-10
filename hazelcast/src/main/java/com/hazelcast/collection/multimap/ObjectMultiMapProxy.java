@@ -42,6 +42,10 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     public ObjectMultiMapProxy(CollectionService service, NodeEngine nodeEngine, CollectionProxyId proxyId) {
         super(service, nodeEngine, nodeEngine.getConfig().getMultiMapConfig(proxyId.getName()), proxyId);
 
+        initializeListeners(nodeEngine);
+    }
+
+    private void initializeListeners(NodeEngine nodeEngine) {
         List<EntryListenerConfig> listenerConfigs = config.getEntryListenerConfigs();
         for (EntryListenerConfig listenerConfig : listenerConfigs) {
             EntryListener listener = null;

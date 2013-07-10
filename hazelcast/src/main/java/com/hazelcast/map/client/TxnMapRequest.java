@@ -17,6 +17,7 @@
 package com.hazelcast.map.client;
 
 import com.hazelcast.client.CallableClientRequest;
+import com.hazelcast.client.InitializingRequest;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
@@ -34,7 +35,7 @@ import java.io.IOException;
 /**
  * @author ali 6/10/13
  */
-public class TxnMapRequest extends CallableClientRequest implements Portable {
+public class TxnMapRequest extends CallableClientRequest implements Portable, InitializingRequest {
 
     String name;
     TxnMapRequestType requestType;
@@ -101,6 +102,11 @@ public class TxnMapRequest extends CallableClientRequest implements Portable {
 
     public String getServiceName() {
         return MapService.SERVICE_NAME;
+    }
+
+    @Override
+    public Object getObjectId() {
+        return name;
     }
 
     public int getFactoryId() {

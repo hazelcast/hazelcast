@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.client;
 
+import com.hazelcast.client.InitializingRequest;
 import com.hazelcast.client.KeyBasedClientRequest;
 import com.hazelcast.map.operation.EvictOperation;
 import com.hazelcast.map.MapPortableHook;
@@ -30,7 +31,7 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public class MapEvictRequest extends KeyBasedClientRequest implements Portable {
+public class MapEvictRequest extends KeyBasedClientRequest implements Portable, InitializingRequest {
 
     private String name;
     private Data key;
@@ -59,6 +60,11 @@ public class MapEvictRequest extends KeyBasedClientRequest implements Portable {
 
     public String getServiceName() {
         return MapService.SERVICE_NAME;
+    }
+
+    @Override
+    public Object getObjectId() {
+        return name;
     }
 
     @Override

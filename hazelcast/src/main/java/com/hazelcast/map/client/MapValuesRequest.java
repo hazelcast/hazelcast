@@ -17,6 +17,7 @@
 package com.hazelcast.map.client;
 
 import com.hazelcast.client.AllPartitionsClientRequest;
+import com.hazelcast.client.InitializingRequest;
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;

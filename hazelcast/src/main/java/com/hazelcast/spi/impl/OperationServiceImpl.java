@@ -315,20 +315,24 @@ final class OperationServiceImpl implements OperationService {
                 final Address target = partition.getReplicaAddress(replicaIndex);
                 if (target != null) {
                     if (target.equals(node.getThisAddress())) {
-                        throw new IllegalStateException("Normally shouldn't happen!!");
+                        throw new IllegalStateException("Normally shouldn't happen!! " + partition);
                     } else {
                         send(backup, target);
                     }
                 } else {
-                    final RemoteCallKey key = new RemoteCallKey(op.getCallerAddress(), op.getCallId());
-                    if (logger.isLoggable(Level.INFO)) {
-                        logger.log(Level.INFO, "Scheduling -> " + backup);
-                    }
-                    backupScheduler.schedule(500, key, new ScheduledBackup(backup, partitionId, replicaIndex));
+                    scheduleBackup(op, backup, partitionId, replicaIndex);
                 }
             }
         }
         return syncBackupCount;
+    }
+
+    private void scheduleBackup(Operation op, Backup backup, int partitionId, int replicaIndex) {
+        final RemoteCallKey key = new RemoteCallKey(op.getCallerAddress(), op.getCallId());
+        if (logger.isLoggable(Level.INFO)) {
+            logger.log(Level.INFO, "Scheduling -> " + backup);
+        }
+        backupScheduler.schedule(500, key, new ScheduledBackup(backup, partitionId, replicaIndex));
     }
 
     private class ScheduledBackupProcessor implements ScheduledEntryProcessor<Object, ScheduledBackup> {
@@ -341,7 +345,7 @@ final class OperationServiceImpl implements OperationService {
                     if (logger.isLoggable(Level.INFO)) {
                         logger.log(Level.INFO, "Re-scheduling[" + retries + "] -> " + backup);
                     }
-                    scheduler.schedule(entry.getScheduledDelayMillis(), entry.getKey(), backup);
+                    scheduler.schedule(entry.getScheduledDelayMillis() * retries, entry.getKey(), backup);
                 }
             }
         }
@@ -363,11 +367,21 @@ final class OperationServiceImpl implements OperationService {
             final PartitionService partitionService = nodeEngine.getPartitionService();
             final PartitionView partition = partitionService.getPartitionView(partitionId);
             final Address target = partition.getReplicaAddress(replicaIndex);
-            if (target != null) {
+            if (target != null && !target.equals(node.getThisAddress())) {
                 send(backup, target);
                 return true;
             }
-            return ++retries >= 5; // if retried 5 times, give-up!
+            return ++retries >= 10; // if retried 10 times, give-up!
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder("ScheduledBackup{");
+            sb.append("backup=").append(backup);
+            sb.append(", partitionId=").append(partitionId);
+            sb.append(", replicaIndex=").append(replicaIndex);
+            sb.append('}');
+            return sb.toString();
         }
     }
 

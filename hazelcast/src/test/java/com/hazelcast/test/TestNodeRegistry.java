@@ -42,6 +42,7 @@ final class TestNodeRegistry {
 
     private final Address[] addresses;
     private final ConcurrentMap<Address, NodeEngineImpl> nodes = new ConcurrentHashMap<Address, NodeEngineImpl>(10);
+    private final Object joinerLock = new Object();
 
     TestNodeRegistry(Address[] addresses) {
         this.addresses = addresses;
@@ -49,10 +50,6 @@ final class TestNodeRegistry {
 
     NodeContext createNodeContext(Address address) {
         return new MockNodeContext(address);
-    }
-
-    private void register(Address address, NodeEngineImpl nodeEngine) {
-        nodes.put(address, nodeEngine);
     }
 
     void shutdown() {
@@ -91,7 +88,9 @@ final class TestNodeRegistry {
             MockConnectionManager(Node node) {
                 this.node = node;
                 thisConnection = new MockConnection(node.getThisAddress(), node.nodeEngine);
-                register(node.getThisAddress(), node.nodeEngine);
+                synchronized (joinerLock) {
+                    nodes.put(node.getThisAddress(), node.nodeEngine);
+                }
             }
 
             public Connection getConnection(Address address) {
@@ -242,38 +241,40 @@ final class TestNodeRegistry {
 
             public void doJoin(AtomicBoolean joined) {
                 NodeEngineImpl nodeEngine = null;
-                for (Address address : addresses) {
-                    NodeEngineImpl ne = nodes.get(address);
-                    if (ne != null && ne.getNode().isActive() && ne.getNode().joined()) {
-                        nodeEngine = ne;
-                        break;
-                    }
-                }
-                Address master = null;
-                if (nodeEngine != null) {
-                    if (nodeEngine.getNode().isMaster()) {
-                        master = nodeEngine.getThisAddress();
-                    } else {
-                        master = nodeEngine.getMasterAddress();
-                    }
-                }
-                if (master == null) {
-                    master = node.getThisAddress();
-                }
-                node.setMasterAddress(master);
-                if (node.getMasterAddress().equals(node.getThisAddress())) {
-                    node.setJoined();
-                } else {
-                    for (int i = 0; !node.joined() && i < 1000; i++) {
-                        try {
-                            node.clusterService.sendJoinRequest(node.getMasterAddress(), true);
-                            Thread.sleep(50);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
+                synchronized (joinerLock) {
+                    for (Address address : addresses) {
+                        NodeEngineImpl ne = nodes.get(address);
+                        if (ne != null && ne.getNode().isActive() && ne.getNode().joined()) {
+                            nodeEngine = ne;
+                            break;
                         }
                     }
-                    if (!node.joined()) {
-                        throw new AssertionError("Node[" + thisAddress + "] should have been joined to " + node.getMasterAddress());
+                    Address master = null;
+                    if (nodeEngine != null) {
+                        if (nodeEngine.getNode().isMaster()) {
+                            master = nodeEngine.getThisAddress();
+                        } else {
+                            master = nodeEngine.getMasterAddress();
+                        }
+                    }
+                    if (master == null) {
+                        master = node.getThisAddress();
+                    }
+                    node.setMasterAddress(master);
+                    if (node.getMasterAddress().equals(node.getThisAddress())) {
+                        node.setJoined();
+                    } else {
+                        for (int i = 0; !node.joined() && i < 1000; i++) {
+                            try {
+                                node.clusterService.sendJoinRequest(node.getMasterAddress(), true);
+                                Thread.sleep(50);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                        if (!node.joined()) {
+                            throw new AssertionError("Node[" + thisAddress + "] should have been joined to " + node.getMasterAddress());
+                        }
                     }
                 }
             }

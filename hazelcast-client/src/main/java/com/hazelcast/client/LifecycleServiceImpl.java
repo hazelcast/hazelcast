@@ -56,7 +56,7 @@ public final class LifecycleServiceImpl implements LifecycleService {
     }
 
     private ILogger getLogger() {
-        return Logger.getLogger(LifecycleService.class.getName());
+        return Logger.getLogger(LifecycleService.class);
     }
 
     public String addLifecycleListener(LifecycleListener lifecycleListener) {

@@ -19,6 +19,7 @@ package com.hazelcast.topic.client;
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngine;
+import com.hazelcast.client.InitializingRequest;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.nio.serialization.Data;
@@ -29,11 +30,12 @@ import com.hazelcast.topic.TopicPortableHook;
 import com.hazelcast.topic.TopicService;
 
 import java.io.IOException;
+import java.util.logging.Level;
 
 /**
  * @author ali 5/24/13
  */
-public class AddMessageListenerRequest extends CallableClientRequest implements Portable {
+public class AddMessageListenerRequest extends CallableClientRequest implements Portable, InitializingRequest {
 
     private String name;
     private transient volatile String registrationId;
@@ -59,7 +61,7 @@ public class AddMessageListenerRequest extends CallableClientRequest implements 
                     if (registrationId != null){
                         service.removeMessageListener(name, registrationId);
                     } else {
-                        System.err.println("registrationId is null!!!");
+                        getClientEngine().getLogger(AddMessageListenerRequest.class).log(Level.WARNING, "RegistrationId is null!");
                     }
                 }
             }
@@ -78,6 +80,10 @@ public class AddMessageListenerRequest extends CallableClientRequest implements 
 
     public int getClassId() {
         return TopicPortableHook.ADD_LISTENER;
+    }
+
+    public Object getObjectId() {
+        return name;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {

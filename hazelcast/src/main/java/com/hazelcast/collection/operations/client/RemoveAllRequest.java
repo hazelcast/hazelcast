@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.operations.client;
 
+import com.hazelcast.client.InitializingRequest;
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
@@ -34,7 +35,7 @@ import java.util.Collection;
 /**
  * @author ali 5/10/13
  */
-public class RemoveAllRequest extends CollectionKeyBasedRequest{
+public class RemoveAllRequest extends CollectionKeyBasedRequest implements InitializingRequest {
 
     int threadId = -1;
 

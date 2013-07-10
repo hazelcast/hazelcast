@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.client;
 
+import com.hazelcast.client.InitializingRequest;
 import com.hazelcast.client.KeyBasedClientRequest;
 import com.hazelcast.map.operation.DeleteOperation;
 import com.hazelcast.map.MapPortableHook;
@@ -30,7 +31,7 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public class MapDeleteRequest extends KeyBasedClientRequest implements Portable {
+public class MapDeleteRequest extends KeyBasedClientRequest implements Portable, InitializingRequest {
 
     protected String name;
     protected Data key;
@@ -56,6 +57,11 @@ public class MapDeleteRequest extends KeyBasedClientRequest implements Portable 
     @Override
     protected Object getKey() {
         return key;
+    }
+
+    @Override
+    public Object getObjectId() {
+        return name;
     }
 
     @Override

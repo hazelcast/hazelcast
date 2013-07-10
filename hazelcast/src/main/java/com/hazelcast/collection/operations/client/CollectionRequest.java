@@ -50,6 +50,10 @@ public abstract class CollectionRequest extends PartitionClientRequest implement
         return CollectionService.SERVICE_NAME;
     }
 
+    public Object getObjectId() {
+        return proxyId;
+    }
+
     public int getFactoryId() {
         return CollectionPortableHook.F_ID;
     }

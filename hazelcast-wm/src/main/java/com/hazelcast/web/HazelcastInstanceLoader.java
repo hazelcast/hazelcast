@@ -39,7 +39,7 @@ import java.util.logging.Level;
 
 class HazelcastInstanceLoader {
 
-    private final static ILogger logger = Logger.getLogger(HazelcastInstanceLoader.class.getName());
+    private final static ILogger logger = Logger.getLogger(HazelcastInstanceLoader.class);
     public static final String INSTANCE_NAME = "instance-name";
     public static final String CONFIG_LOCATION = "config-location";
     public static final String USE_CLIENT = "use-client";

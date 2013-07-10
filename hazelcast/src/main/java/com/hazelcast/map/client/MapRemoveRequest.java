@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.client;
 
+import com.hazelcast.client.InitializingRequest;
 import com.hazelcast.client.KeyBasedClientRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
@@ -30,7 +31,7 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public class MapRemoveRequest extends KeyBasedClientRequest implements Portable {
+public class MapRemoveRequest extends KeyBasedClientRequest implements Portable, InitializingRequest {
 
     protected String name;
     protected Data key;
@@ -65,6 +66,11 @@ public class MapRemoveRequest extends KeyBasedClientRequest implements Portable 
 
     public String getServiceName() {
         return MapService.SERVICE_NAME;
+    }
+
+    @Override
+    public Object getObjectId() {
+        return name;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {

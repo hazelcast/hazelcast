@@ -500,7 +500,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         final SerializationService serializationService = getSerializationService();
         connection.write(serializationService.toData(auth));
         final Data addressData = connection.read();
-        Address address = (Address)serializationService.toObject(addressData);
+        Address address = ErrorHandler.returnResultOrThrowException(serializationService.toObject(addressData));
         connection.setEndpoint(address);
 
         final Data data = connection.read();

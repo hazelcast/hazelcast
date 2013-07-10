@@ -25,6 +25,8 @@ public class NetworkConfig {
 
     private int port = DEFAULT_PORT;
 
+    private int portCount = 100;
+
     private boolean portAutoIncrement = true;
 
     private boolean reuseAddress = false;
@@ -63,6 +65,21 @@ public class NetworkConfig {
     public NetworkConfig setPort(int port) {
         this.port = port;
         return this;
+    }
+
+    /**
+     * @return the maximum number of ports allowed to use.
+     */
+    public int getPortCount() {
+        return portCount;
+    }
+
+
+    /**
+     * @param portCount the maximum number of ports allowed to use.
+     */
+    public void setPortCount(int portCount) {
+        this.portCount = portCount;
     }
 
     /**
@@ -195,6 +212,7 @@ public class NetworkConfig {
         sb.append("NetworkConfig {");
         sb.append("publicAddress='").append(publicAddress).append('\'');
         sb.append(", port=").append(port);
+        sb.append(", portCount=").append(portCount);
         sb.append(", portAutoIncrement=").append(portAutoIncrement);
         sb.append(", join=").append(join);
         sb.append(", interfaces=").append(interfaces);
@@ -204,5 +222,6 @@ public class NetworkConfig {
         sb.append('}');
         return sb.toString();
     }
+
 
 }

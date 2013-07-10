@@ -39,9 +39,9 @@ public interface ClientEngine {
 
     Config getConfig();
 
-    ILogger getILogger(Class clazz);
+    ILogger getLogger(Class clazz);
 
-    ILogger getILogger(String className);
+    ILogger getLogger(String className);
 
     Object toObject(Data data);
 

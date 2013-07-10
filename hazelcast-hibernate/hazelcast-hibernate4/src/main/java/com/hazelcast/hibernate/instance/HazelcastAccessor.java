@@ -33,7 +33,7 @@ import java.util.logging.Level;
  */
 public final class HazelcastAccessor {
 
-    static final ILogger logger = Logger.getLogger(HazelcastAccessor.class.getName());
+    static final ILogger logger = Logger.getLogger(HazelcastAccessor.class);
 
     /**
      * Tries to extract <code>HazelcastInstance</code> from <code>Session</code>.

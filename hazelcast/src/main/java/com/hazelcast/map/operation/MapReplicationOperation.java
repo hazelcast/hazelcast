@@ -85,7 +85,7 @@ public class MapReplicationOperation extends AbstractOperation {
     }
 
     public void run() {
-        MapService mapService = (MapService) getService();
+        MapService mapService = getService();
         if (data != null) {
             for (Entry<String, Set<RecordState>> dataEntry : data.entrySet()) {
                 Set<RecordState> recordStates = dataEntry.getValue();

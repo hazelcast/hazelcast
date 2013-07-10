@@ -243,6 +243,7 @@ public class EvictionTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
         final HazelcastInstance[] instances = factory.newInstances(cfg);
         final int pnum = instances[0].getPartitionService().getPartitions().size();
+        final AtomicInteger failCount = new AtomicInteger(0);
 
         new Thread() {
             final IMap map = instances[0].getMap(mapName);
@@ -253,7 +254,9 @@ public class EvictionTest extends HazelcastTestSupport {
                     while (latch.getCount() != 0) {
                         try {
                             int msize = map.size();
-                            assertTrue(msize <= (size * pnum + size * pnum * 10 / 100));
+                            if(msize > (size * pnum * 1.2)){
+                                failCount.incrementAndGet();
+                            }
                             Thread.sleep(1000);
                         } catch (InterruptedException e) {
                             e.printStackTrace();
@@ -278,7 +281,8 @@ public class EvictionTest extends HazelcastTestSupport {
         }
 
         try {
-            Assert.assertTrue(latch.await(10, TimeUnit.MINUTES));
+            Assert.assertEquals(latch.await(10, TimeUnit.MINUTES), true);
+            Assert.assertEquals(0, failCount.get());
         } catch (InterruptedException e) {
             e.printStackTrace();
             Assert.fail(e.getMessage());

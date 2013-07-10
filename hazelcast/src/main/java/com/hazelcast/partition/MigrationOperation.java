@@ -99,11 +99,6 @@ public final class MigrationOperation extends BaseMigrationOperation {
         return success;
     }
 
-    @Override
-    public boolean returnsResponse() {
-        return true;
-    }
-
     private boolean runMigrationTasks() {
         boolean error = false;
         final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();

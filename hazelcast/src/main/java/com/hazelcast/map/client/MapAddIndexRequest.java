@@ -17,6 +17,7 @@
 package com.hazelcast.map.client;
 
 import com.hazelcast.client.AllPartitionsClientRequest;
+import com.hazelcast.client.InitializingRequest;
 import com.hazelcast.map.operation.AddIndexOperationFactory;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
@@ -28,7 +29,7 @@ import com.hazelcast.spi.OperationFactory;
 import java.io.IOException;
 import java.util.Map;
 
-public class MapAddIndexRequest extends AllPartitionsClientRequest implements Portable {
+public class MapAddIndexRequest extends AllPartitionsClientRequest implements Portable, InitializingRequest {
 
     private String name;
     private String attribute;
@@ -55,6 +56,11 @@ public class MapAddIndexRequest extends AllPartitionsClientRequest implements Po
 
     public int getClassId() {
         return MapPortableHook.ADD_INDEX;
+    }
+
+    @Override
+    public Object getObjectId() {
+        return name;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {

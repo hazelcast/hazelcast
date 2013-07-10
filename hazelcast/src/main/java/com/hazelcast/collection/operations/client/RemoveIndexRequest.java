@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.operations.client;
 
+import com.hazelcast.client.InitializingRequest;
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.operations.RemoveIndexOperation;
@@ -29,7 +30,7 @@ import java.io.IOException;
 /**
  * @author ali 5/10/13
  */
-public class RemoveIndexRequest extends CollectionKeyBasedRequest{
+public class RemoveIndexRequest extends CollectionKeyBasedRequest implements InitializingRequest {
 
     int index;
 

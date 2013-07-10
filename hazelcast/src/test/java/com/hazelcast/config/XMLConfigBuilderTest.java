@@ -59,6 +59,7 @@ public class XMLConfigBuilderTest {
                         "</hazelcast>";
         ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
         XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
+
         Properties properties = new Properties();
         properties.setProperty("name","s");
         properties.setProperty("initial.permits","25");
@@ -101,14 +102,50 @@ public class XMLConfigBuilderTest {
                         "        </interfaces>\n" +
                         "    </network>\n" +
                         "</hazelcast>";
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        Config config = configBuilder.build();
+        Config config = buildConfig(xml);
         AwsConfig awsConfig = config.getNetworkConfig().getJoin().getAwsConfig();
         assertTrue(awsConfig.isEnabled());
         assertEquals(10, config.getNetworkConfig().getJoin().getAwsConfig().getConnectionTimeoutSeconds());
         assertEquals("access", awsConfig.getAccessKey());
         assertEquals("secret", awsConfig.getSecretKey());
+    }
+
+    @Test
+    public void readPortCount() {
+        //check when it is explicitly set.
+         Config config = buildConfig("<hazelcast>\n" +
+                "    <network>\n" +
+                "        <port port-count=\"200\">5701</port>\n" +
+                "    </network>\n" +
+                "</hazelcast>");
+        assertEquals(200, config.getNetworkConfig().getPortCount());
+
+        //check if the default is passed in correctly
+        config = buildConfig( "<hazelcast>\n" +
+                "    <network>\n" +
+                "        <port>5701</port>\n" +
+                "    </network>\n" +
+                "</hazelcast>");
+        assertEquals(100, config.getNetworkConfig().getPortCount());
+    }
+
+    @Test
+    public void readPortAutoIncrement() {
+        //explicitly set.
+        Config config = buildConfig("<hazelcast>\n" +
+                "    <network>\n" +
+                "        <port auto-increment=\"false\">5701</port>\n" +
+                "    </network>\n" +
+                "</hazelcast>");
+        assertFalse(config.getNetworkConfig().isPortAutoIncrement());
+
+        //check if the default is picked up correctly
+        config = buildConfig( "<hazelcast>\n" +
+                "    <network>\n" +
+                "        <port>5701</port>\n" +
+                "    </network>\n" +
+                "</hazelcast>");
+        assertTrue(config.getNetworkConfig().isPortAutoIncrement());
     }
 
     @Test
@@ -125,9 +162,7 @@ public class XMLConfigBuilderTest {
                         "        </semaphore-factory>" +
                         "    </semaphore>" +
                         "</hazelcast>";
-        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
-        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
-        Config config = configBuilder.build();
+        Config config = buildConfig(xml);
         SemaphoreConfig defaultConfig = config.getSemaphoreConfig("default");
         SemaphoreConfig customConfig = config.getSemaphoreConfig("custom");
         assertEquals(1, defaultConfig.getInitialPermits());
@@ -175,4 +210,11 @@ public class XMLConfigBuilderTest {
             fail(xmlFileName + " is not valid because: " + ex.toString());
         }
     }
+
+    private Config buildConfig(String xml) {
+        ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
+        XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
+        return configBuilder.build();
+    }
+
 }

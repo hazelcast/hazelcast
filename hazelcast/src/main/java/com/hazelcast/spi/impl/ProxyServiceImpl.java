@@ -70,6 +70,11 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
         }
     };
 
+    @Override
+    public void initializeDistributedObject(String serviceName, Object objectId) {
+        getDistributedObject(serviceName, objectId);
+    }
+
     public DistributedObject getDistributedObject(String serviceName, Object objectId) {
         ProxyRegistry registry = ConcurrencyUtil.getOrPutIfAbsent(registries, serviceName, registryConstructor);
         return registry.getProxy(objectId);
