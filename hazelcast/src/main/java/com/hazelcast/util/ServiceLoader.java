@@ -45,10 +45,13 @@ public class ServiceLoader {
 
     public static <T> Iterator<T> iterator(final Class<T> clazz, final String factoryId, final ClassLoader classLoader) throws Exception {
         final Set<ServiceDefinition> classDefinitions = parse(factoryId, classLoader);
-        // If we are in a multi classloader environment like JEE we need to ask the hazelcast classloader for default services
-        if (classLoader != null && ServiceLoader.class.getClassLoader() != classLoader) {
-            classDefinitions.addAll(parse(factoryId, ServiceLoader.class.getClassLoader()));
+        // If we are in a multi class-loader environment like JEE we need to ask the Hazelcast class-loader for default services
+        final ClassLoader systemClassLoader = ServiceLoader.class.getClassLoader();
+        if (classLoader != null && systemClassLoader != classLoader) {
+            final Set<ServiceDefinition> systemDefinitions = parse(factoryId, systemClassLoader);
+            classDefinitions.addAll(systemDefinitions);
         }
+
         return new Iterator<T>() {
             final Iterator<ServiceDefinition> classIter = classDefinitions.iterator();
 
@@ -122,6 +125,23 @@ public class ServiceLoader {
         private ServiceDefinition(String className, ClassLoader classLoader) {
             this.className = className;
             this.classLoader = classLoader;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            ServiceDefinition that = (ServiceDefinition) o;
+
+            if (className != null ? !className.equals(that.className) : that.className != null) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return className != null ? className.hashCode() : 0;
         }
     }
 

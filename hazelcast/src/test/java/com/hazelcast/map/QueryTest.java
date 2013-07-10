@@ -1365,10 +1365,6 @@ public class QueryTest extends HazelcastTestSupport {
         }
         try {
             assertTrue(latch.await(10, TimeUnit.MINUTES));
-//            final Set<HazelcastInstance> instances = Hazelcast.getAllHazelcastInstances();
-//            for (HazelcastInstance hz : instances) {
-//                assertEquals(n, hz.getCluster().getMembers().size());
-//            }
             assertEquals(0, countdown.get());
         } finally {
             ex.shutdownNow();
