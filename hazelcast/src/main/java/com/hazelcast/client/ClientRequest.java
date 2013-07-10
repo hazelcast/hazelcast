@@ -16,8 +16,6 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.nio.serialization.Portable;
-
 /**
  *
  * @author mdogan 4/29/13

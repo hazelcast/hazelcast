@@ -22,7 +22,10 @@ import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.query.*;
+import com.hazelcast.query.EntryObject;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -622,6 +625,11 @@ public class QueryTest extends HazelcastTestSupport {
     @Test
     public void testIndexPerformance() {
         Config cfg = new Config();
+        final MapConfig mapConfig = cfg.getMapConfig("employees2");
+        mapConfig.addMapIndexConfig(new MapIndexConfig("name", false))
+                .addMapIndexConfig(new MapIndexConfig("age", true))
+                .addMapIndexConfig(new MapIndexConfig("active", false));
+
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(4);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
         IMap imap = h1.getMap("employees");
@@ -640,10 +648,8 @@ public class QueryTest extends HazelcastTestSupport {
             assertTrue(c.isActive());
         }
         imap.clear();
+
         imap = h1.getMap("employees2");
-        imap.addIndex("name", false);
-        imap.addIndex("age", true);
-        imap.addIndex("active", false);
         for (int i = 0; i < 5000; i++) {
             imap.put(String.valueOf(i), new Employee("name" + i, i % 60, ((i & 1) == 1), Double.valueOf(i)));
         }
@@ -1359,6 +1365,10 @@ public class QueryTest extends HazelcastTestSupport {
         }
         try {
             assertTrue(latch.await(10, TimeUnit.MINUTES));
+//            final Set<HazelcastInstance> instances = Hazelcast.getAllHazelcastInstances();
+//            for (HazelcastInstance hz : instances) {
+//                assertEquals(n, hz.getCluster().getMembers().size());
+//            }
             assertEquals(0, countdown.get());
         } finally {
             ex.shutdownNow();

@@ -19,7 +19,7 @@ package com.hazelcast.queue.client;
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngine;
-import com.hazelcast.collection.operations.client.AddEntryListenerRequest;
+import com.hazelcast.client.InitializingRequest;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.serialization.Data;
@@ -36,7 +36,7 @@ import java.util.logging.Level;
 /**
  * @author ali 5/9/13
  */
-public class AddListenerRequest extends CallableClientRequest implements Portable {
+public class AddListenerRequest extends CallableClientRequest implements Portable, InitializingRequest {
 
     private String name;
     private boolean includeValue;
@@ -52,6 +52,10 @@ public class AddListenerRequest extends CallableClientRequest implements Portabl
 
     public String getServiceName() {
         return QueueService.SERVICE_NAME;
+    }
+
+    public Object getObjectId() {
+        return name;
     }
 
     public int getFactoryId() {

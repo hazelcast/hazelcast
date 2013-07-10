@@ -328,12 +328,17 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
                 final ClientRequest request = (ClientRequest) serializationService.toObject(data);
                 if (endpoint.isAuthenticated() || request instanceof AuthenticationRequest) {
                     request.setEndpoint(endpoint);
-                    if (request.getServiceName() != null) {
-                        final Object service = nodeEngine.getService(request.getServiceName());
+                    final String serviceName = request.getServiceName();
+                    if (serviceName != null) {
+                        final Object service = nodeEngine.getService(serviceName);
                         if (service == null) {
-                            throw new IllegalArgumentException("No service registered with name: " + request.getServiceName());
+                            throw new IllegalArgumentException("No service registered with name: " + serviceName);
                         }
                         request.setService(service);
+                        if (request instanceof InitializingRequest) {
+                            Object objectId = ((InitializingRequest) request).getObjectId();
+                            nodeEngine.getProxyService().initializeDistributedObject(serviceName, objectId);
+                        }
                     }
                     request.setClientEngine(ClientEngineImpl.this);
                     request.process();
@@ -344,7 +349,8 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
                     removeEndpoint(conn);
                 }
             } catch (Throwable e) {
-                logger.log(Level.SEVERE, e.getMessage(), e);
+                final Level level = nodeEngine.isActive() ? Level.SEVERE : Level.FINEST;
+                logger.log(level, e.getMessage(), e);
                 sendResponse(endpoint, e);
             }
         }

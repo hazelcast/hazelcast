@@ -26,6 +26,8 @@ import java.util.Collection;
  */
 public interface ProxyService extends CoreService {
 
+    void initializeDistributedObject(String serviceName, Object objectId);
+
     DistributedObject getDistributedObject(String serviceName, Object objectId);
 
     void destroyDistributedObject(String serviceName, Object objectId);

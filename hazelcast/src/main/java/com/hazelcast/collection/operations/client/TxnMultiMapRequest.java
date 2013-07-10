@@ -17,7 +17,10 @@
 package com.hazelcast.collection.operations.client;
 
 import com.hazelcast.client.CallableClientRequest;
+import com.hazelcast.client.InitializingRequest;
 import com.hazelcast.collection.CollectionPortableHook;
+import com.hazelcast.collection.CollectionProxyId;
+import com.hazelcast.collection.CollectionProxyType;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
@@ -29,7 +32,7 @@ import java.io.IOException;
 /**
  * @author ali 6/10/13
  */
-public abstract class TxnMultiMapRequest extends CallableClientRequest implements Portable {
+public abstract class TxnMultiMapRequest extends CallableClientRequest implements Portable, InitializingRequest {
 
     String name;
 
@@ -42,6 +45,10 @@ public abstract class TxnMultiMapRequest extends CallableClientRequest implement
 
     public String getServiceName() {
         return CollectionService.SERVICE_NAME;
+    }
+
+    public Object getObjectId() {
+        return new CollectionProxyId(name, null, CollectionProxyType.MULTI_MAP);
     }
 
     public int getFactoryId() {

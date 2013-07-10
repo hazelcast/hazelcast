@@ -17,7 +17,11 @@
 package com.hazelcast.map.client;
 
 import com.hazelcast.client.AllPartitionsClientRequest;
-import com.hazelcast.map.*;
+import com.hazelcast.client.InitializingRequest;
+import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.MapEntrySet;
+import com.hazelcast.map.MapPortableHook;
+import com.hazelcast.map.MapService;
 import com.hazelcast.map.operation.PartitionWideEntryOperationFactory;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -25,15 +29,13 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-public class MapExecuteOnAllKeysRequest extends AllPartitionsClientRequest implements Portable {
+public class MapExecuteOnAllKeysRequest extends AllPartitionsClientRequest implements Portable, InitializingRequest {
 
     private String name;
     private EntryProcessor processor;
@@ -69,6 +71,11 @@ public class MapExecuteOnAllKeysRequest extends AllPartitionsClientRequest imple
 
     public String getServiceName() {
         return MapService.SERVICE_NAME;
+    }
+
+    @Override
+    public Object getObjectId() {
+        return name;
     }
 
     @Override

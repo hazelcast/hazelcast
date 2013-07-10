@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.operations.client;
 
+import com.hazelcast.client.InitializingRequest;
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.operations.CompareAndRemoveOperation;
@@ -33,7 +34,7 @@ import java.util.List;
 /**
  * @author ali 5/10/13
  */
-public class CompareAndRemoveRequest extends CollectionKeyBasedRequest {
+public class CompareAndRemoveRequest extends CollectionKeyBasedRequest implements InitializingRequest {
 
     List<Data> dataList;
 

@@ -19,6 +19,7 @@ package com.hazelcast.collection.operations.client;
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngine;
+import com.hazelcast.client.InitializingRequest;
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionService;
@@ -39,7 +40,7 @@ import java.util.logging.Level;
 /**
  * @author ali 5/10/13
  */
-public class AddEntryListenerRequest extends CallableClientRequest implements Portable {
+public class AddEntryListenerRequest extends CallableClientRequest implements Portable, InitializingRequest {
 
     CollectionProxyId proxyId;
     Data key;
@@ -100,6 +101,10 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Po
 
     public String getServiceName() {
         return CollectionService.SERVICE_NAME;
+    }
+
+    public Object getObjectId() {
+        return proxyId;
     }
 
     public int getFactoryId() {

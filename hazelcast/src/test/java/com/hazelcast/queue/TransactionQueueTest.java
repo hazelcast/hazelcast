@@ -18,6 +18,7 @@ package com.hazelcast.queue;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.IQueue;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
@@ -77,6 +78,7 @@ public class TransactionQueueTest extends HazelcastTestSupport {
                     sleep(3000);
                     getQueue(instances, name0).offer("item0");
                 } catch (InterruptedException ignored) {
+                } catch (HazelcastInstanceNotActiveException ignored) {
                 }
             }
         }.start();

@@ -49,6 +49,10 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
         this.name = name;
         this.partitionId = nodeEngine.getPartitionService().getPartitionId(nodeEngine.toData(name));
         this.config = nodeEngine.getConfig().getQueueConfig(name);
+        initializeListeners(nodeEngine);
+    }
+
+    private void initializeListeners(NodeEngine nodeEngine) {
         final List<ItemListenerConfig> itemListenerConfigs = config.getItemListenerConfigs();
         for (ItemListenerConfig itemListenerConfig : itemListenerConfigs) {
             ItemListener listener = itemListenerConfig.getImplementation();

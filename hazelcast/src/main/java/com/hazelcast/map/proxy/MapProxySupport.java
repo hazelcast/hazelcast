@@ -19,26 +19,27 @@ package com.hazelcast.map.proxy;
 import com.hazelcast.concurrent.lock.proxy.LockProxySupport;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.map.operation.*;
-import com.hazelcast.nio.ClassLoaderUtil;
-import com.hazelcast.partition.PartitionService;
-import com.hazelcast.partition.PartitionView;
-import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.map.*;
+import com.hazelcast.map.operation.*;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
+import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.PartitionService;
+import com.hazelcast.partition.PartitionView;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.BinaryOperationFactory;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryResultStream;
+import com.hazelcast.util.ThreadUtil;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -60,6 +61,20 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         mapConfig = service.getMapContainer(name).getMapConfig();
         localMapStats = service.getLocalMapStatsImpl(name);
         lockSupport = new LockProxySupport(new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
+
+        initializeListeners(nodeEngine);
+        initializeIndexes();
+    }
+
+    private void initializeIndexes() {
+        for (MapIndexConfig index : mapConfig.getMapIndexConfigs()) {
+            if (index.getAttribute() != null) {
+                addIndex(index.getAttribute(), index.isOrdered());
+            }
+        }
+    }
+
+    private void initializeListeners(NodeEngine nodeEngine) {
         List<EntryListenerConfig> listenerConfigs = mapConfig.getEntryListenerConfigs();
         for (EntryListenerConfig listenerConfig : listenerConfigs) {
             EntryListener listener = null;

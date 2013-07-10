@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.operations.client;
 
+import com.hazelcast.client.InitializingRequest;
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.operations.SetOperation;
@@ -31,7 +32,7 @@ import java.io.IOException;
 /**
  * @author ali 5/10/13
  */
-public class SetRequest extends CollectionKeyBasedRequest {
+public class SetRequest extends CollectionKeyBasedRequest implements InitializingRequest {
 
     Data value;
 

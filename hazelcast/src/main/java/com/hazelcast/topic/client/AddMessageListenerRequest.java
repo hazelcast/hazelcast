@@ -19,7 +19,7 @@ package com.hazelcast.topic.client;
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngine;
-import com.hazelcast.collection.operations.client.AddEntryListenerRequest;
+import com.hazelcast.client.InitializingRequest;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.nio.serialization.Data;
@@ -35,7 +35,7 @@ import java.util.logging.Level;
 /**
  * @author ali 5/24/13
  */
-public class AddMessageListenerRequest extends CallableClientRequest implements Portable {
+public class AddMessageListenerRequest extends CallableClientRequest implements Portable, InitializingRequest {
 
     private String name;
     private transient volatile String registrationId;
@@ -80,6 +80,10 @@ public class AddMessageListenerRequest extends CallableClientRequest implements 
 
     public int getClassId() {
         return TopicPortableHook.ADD_LISTENER;
+    }
+
+    public Object getObjectId() {
+        return name;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {

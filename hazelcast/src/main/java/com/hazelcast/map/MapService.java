@@ -127,10 +127,6 @@ public class MapService implements ManagedService, MigrationAwareService,
         nodeEngine.getExecutionService().scheduleAtFixedRate(new MapEvictTask(), 1, 1, TimeUnit.SECONDS);
     }
 
-    private void initMap(String mapName) {
-        getMapContainer(mapName);
-    }
-
     public void reset() {
         final PartitionContainer[] containers = partitionContainers;
         for (PartitionContainer container : containers) {
@@ -144,12 +140,10 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     public void shutdown() {
-        // todo you should do this before shutdown
         flushMaps();
         destroyMapStores();
         final PartitionContainer[] containers = partitionContainers;
-        for (int i = 0; i < containers.length; i++) {
-            PartitionContainer container = containers[i];
+        for (PartitionContainer container : containers) {
             if (container != null) {
                 container.clear();
             }
@@ -462,7 +456,6 @@ public class MapService implements ManagedService, MigrationAwareService,
 
     public MapProxyImpl createDistributedObject(Object objectId) {
         final String name = String.valueOf(objectId);
-        initMap(name);
         return new MapProxyImpl(name, this, nodeEngine);
     }
 
