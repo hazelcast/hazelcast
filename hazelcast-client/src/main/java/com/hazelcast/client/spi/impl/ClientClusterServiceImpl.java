@@ -41,12 +41,15 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static com.hazelcast.util.ExceptionUtil.fixRemoteStackTrace;
 
 /**
  * @author mdogan 5/15/13
@@ -259,6 +262,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         } catch (Throwable e) {
             if (e instanceof ExecutionException && e.getCause() != null) {
                 e = e.getCause();
+                fixRemoteStackTrace(e, Thread.currentThread().getStackTrace());
             }
             if (e instanceof RuntimeException) {
                 throw (RuntimeException) e;
