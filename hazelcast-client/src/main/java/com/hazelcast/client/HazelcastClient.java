@@ -95,14 +95,12 @@ public final class HazelcastClient implements HazelcastInstance {
         name = "hz.client_" + id + (groupConfig != null ? "_" + groupConfig.getName() : "");
         threadGroup = new ThreadGroup(name);
         lifecycleService = new LifecycleServiceImpl(this);
-        SerializationService ss;
         try {
-            ss = new SerializationServiceBuilder().setManagedContext(new HazelcastClientManagedContext(this, config.getManagedContext()))
+            serializationService = new SerializationServiceBuilder().setManagedContext(new HazelcastClientManagedContext(this, config.getManagedContext()))
                     .setClassLoader(config.getClassLoader()).setConfig(config.getSerializationConfig()).build();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-        serializationService = ss;
         proxyManager = new ProxyManager(this);
         executionService = new ClientExecutionServiceImpl(name, threadGroup, Thread.currentThread().getContextClassLoader(), config.getExecutorPoolSize());
         clusterService = new ClientClusterServiceImpl(this);
@@ -117,12 +115,22 @@ public final class HazelcastClient implements HazelcastInstance {
         }
         invocationService = new ClientInvocationServiceImpl(this);
         userContext = new ConcurrentHashMap<String, Object>();
-        clusterService.start();
         loadBalancer.init(getCluster(), config);
         proxyManager.init(config.getProxyFactoryConfig());
-        lifecycleService.setStarted();
         partitionService = new ClientPartitionServiceImpl(this);
+    }
+
+    private void start(){
+        try{
+            clusterService.start();
+        }catch(IllegalStateException e){
+            //there was an authentication failure (todo: perhaps use an AuthenticationException
+            // ??)
+            lifecycleService.shutdown();
+            throw e;
+        }
         partitionService.start();
+        lifecycleService.setStarted();
     }
 
     public static HazelcastInstance newHazelcastClient() {
@@ -134,6 +142,7 @@ public final class HazelcastClient implements HazelcastInstance {
             config = new XmlClientConfigBuilder().build();
         }
         final HazelcastClient client = new HazelcastClient(config);
+        client.start();
         final HazelcastClientProxy proxy = new HazelcastClientProxy(client);
         CLIENTS.put(client.id, proxy);
         return proxy;
