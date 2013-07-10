@@ -21,26 +21,21 @@ public final class ConsoleRequestConstants {
     public static final byte STATE_OUT_OF_MEMORY = 0;
     public static final byte STATE_ACTIVE = 1;
 
-    public static final int REQUEST_TYPE_LOGIN = 0;
     public static final int REQUEST_TYPE_CLUSTER_STATE = 1;
     public static final int REQUEST_TYPE_GET_THREAD_DUMP = 2;
     public static final int REQUEST_TYPE_EXECUTE_SCRIPT = 3;
     public static final int REQUEST_TYPE_EVICT_LOCAL_MAP = 4;
     public static final int REQUEST_TYPE_CONSOLE_COMMAND = 5;
     public static final int REQUEST_TYPE_MAP_CONFIG = 6;
-    public static final int REQUEST_TYPE_DETECT_DEADLOCK = 7;
     public static final int REQUEST_TYPE_MEMBER_CONFIG = 8;
     public static final int REQUEST_TYPE_CLUSTER_PROPERTIES = 9;
-    public static final int REQUEST_TYPE_LOG_LEVEL = 10;
     public static final int REQUEST_TYPE_LOGS = 11;
     public static final int REQUEST_TYPE_MAP_ENTRY = 12;
     public static final int REQUEST_TYPE_MEMBER_SYSTEM_PROPERTIES = 13;
-    public static final int REQUEST_TYPE_GET_VERSION = 14;
     public static final int REQUEST_TYPE_RUN_GC = 15;
-    public static final int REQUEST_TYPE_SET_LOG_LEVEL = 16;
     public static final int REQUEST_TYPE_LOG_VERSION_MISMATCH = 17;
     public static final int REQUEST_TYPE_MEMBER_SHUTDOWN = 18;
-    public static final int REQUEST_TYPE_MEMBER_RESTART = 19;
+    public static final int REQUEST_TYPE_SYSTEM_WARNINGS = 20;
 
     private ConsoleRequestConstants() {
     }

@@ -52,7 +52,8 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
             res.append("\n");
             command.setResponse(null, res.toString().getBytes());
         } else if (uri.startsWith(URI_STATE_DUMP)) {
-            final String stateDump = textCommandService.getNode().getSystemLogService().dump();
+            String stateDump = textCommandService.getNode().getSystemLogService().dump();
+            stateDump += textCommandService.getNode().getPartitionService().toString() + "\n";
             command.setResponse(HttpCommand.CONTENT_TYPE_PLAIN_TEXT, stateDump.getBytes());
         } else {
             command.send400();

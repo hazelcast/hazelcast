@@ -17,8 +17,6 @@
 package com.hazelcast.management.request;
 
 import com.hazelcast.management.ManagementCenterService;
-import com.hazelcast.management.request.ConsoleRequest;
-import com.hazelcast.management.request.ConsoleRequestConstants;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 

@@ -16,82 +16,41 @@
 
 package com.hazelcast.logging;
 
-import com.hazelcast.instance.Node;
-
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class SystemLogService {
 
-    public enum Level {
-        NONE("none"),
-        DEFAULT("default"),
-        INFO("info"),
-        TRACE("trace");
-
-        private String value;
-
-        public String getValue() {
-            return value;
-        }
-
-        Level(String value) {
-            this.value = value;
-        }
-
-        public static Level toLevel(String level) {
-            if(level.equals("trace"))
-                return Level.TRACE;
-            else if(level.equals("default"))
-                return Level.DEFAULT;
-            else if(level.equals("info"))
-                return Level.INFO;
-
-            return Level.NONE;
-        }
-    }
-
     private final Queue<SystemLog> joinLogs = new LinkedBlockingQueue<SystemLog>(1000);
-
     private final Queue<SystemLog> connectionLogs = new LinkedBlockingQueue<SystemLog>(1000);
-
     private final Queue<SystemLog> partitionLogs = new LinkedBlockingQueue<SystemLog>(1000);
-
     private final Queue<SystemLog> nodeLogs = new LinkedBlockingQueue<SystemLog>(1000);
-
-    private volatile Level currentLevel = Level.DEFAULT;
-
-    private final Node node;
-
+    private final Queue<SystemLog> warningLevelLogs = new LinkedBlockingQueue<SystemLog>(1000);
     private final boolean systemLogEnabled;
 
-    public SystemLogService(Node node) {
-        this.node = node;
-        systemLogEnabled = node != null && node.groupProperties.SYSTEM_LOG_ENABLED.getBoolean();
+    public SystemLogService(boolean systemLogEnabled) {
+        this.systemLogEnabled = systemLogEnabled;
     }
 
-    public String getCurrentLevel() {
-        return currentLevel.getValue();
-    }
-
-    public void setCurrentLevel(String level) {
-        this.currentLevel = Level.toLevel(level);
+    public List<SystemLogRecord> getSystemWarnings() {
+        ArrayList<SystemLogRecord> systemLogList = new ArrayList<SystemLogRecord>();
+        ((LinkedBlockingQueue) warningLevelLogs).drainTo(systemLogList);
+        return systemLogList;
     }
 
     public List<SystemLogRecord> getLogBundle() {
         ArrayList<SystemLogRecord> systemLogList = new ArrayList<SystemLogRecord>();
-        String node = this.node.getThisAddress().getHost() + ":" + this.node.getThisAddress().getPort();
         for (SystemLog log : joinLogs) {
-            systemLogList.add(new SystemLogRecord(0L, node, log.getDate(), log.toString(), log.getType().toString()));
+            systemLogList.add(new SystemLogRecord(log.getDate(), log.toString(), log.getType().toString()));
         }
         for (SystemLog log : nodeLogs) {
-            systemLogList.add(new SystemLogRecord(0L, node, log.getDate(), log.toString(), log.getType().toString()));
+            systemLogList.add(new SystemLogRecord(log.getDate(), log.toString(), log.getType().toString()));
         }
         for (SystemLog log : connectionLogs) {
-            systemLogList.add(new SystemLogRecord(0L, node, log.getDate(), log.toString(), log.getType().toString()));
+            systemLogList.add(new SystemLogRecord(log.getDate(), log.toString(), log.getType().toString()));
         }
         for (SystemLog log : partitionLogs) {
-            systemLogList.add(new SystemLogRecord(0L, node, log.getDate(), log.toString(), log.getType().toString()));
+            systemLogList.add(new SystemLogRecord(log.getDate(), log.toString(), log.getType().toString()));
         }
         return systemLogList;
     }
@@ -124,8 +83,6 @@ public class SystemLogService {
             sb.append(systemLog.toString());
             sb.append("\n");
         }
-        sb.append(node.partitionService.toString());
-        sb.append("\n");
         return sb.toString();
     }
 
@@ -160,4 +117,41 @@ public class SystemLogService {
             joinLogs.offer(systemLog);
         }
     }
+
+    public void logWarningConnection(String str) {
+        if (systemLogEnabled) {
+            SystemObjectLog systemLog = new SystemObjectLog(str);
+            systemLog.setType(SystemLog.Type.CONNECTION);
+            connectionLogs.offer(systemLog);
+            warningLevelLogs.offer(systemLog);
+        }
+    }
+
+    public void logWarningPartition(String str) {
+        if (systemLogEnabled) {
+            SystemObjectLog systemLog = new SystemObjectLog(str);
+            systemLog.setType(SystemLog.Type.PARTITION);
+            partitionLogs.offer(systemLog);
+            warningLevelLogs.offer(systemLog);
+        }
+    }
+
+    public void logWarningNode(String str) {
+        if (systemLogEnabled) {
+            SystemObjectLog systemLog = new SystemObjectLog(str);
+            systemLog.setType(SystemLog.Type.NODE);
+            nodeLogs.offer(systemLog);
+            warningLevelLogs.offer(systemLog);
+        }
+    }
+
+    public void logWarningJoin(String str) {
+        if (systemLogEnabled) {
+            SystemObjectLog systemLog = new SystemObjectLog(str);
+            systemLog.setType(SystemLog.Type.JOIN);
+            joinLogs.offer(systemLog);
+            warningLevelLogs.offer(systemLog);
+        }
+    }
+
 }

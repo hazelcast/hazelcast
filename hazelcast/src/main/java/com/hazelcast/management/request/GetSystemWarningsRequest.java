@@ -16,36 +16,61 @@
 
 package com.hazelcast.management.request;
 
+import com.hazelcast.logging.SystemLogRecord;
 import com.hazelcast.management.ManagementCenterService;
+import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 
-// author: sancar - 12.12.2012
-public class GetLogLevelRequest implements ConsoleRequest {
+/**
+ * User: sancar
+ * Date: 7/10/13
+ * Time: 1:59 PM
+ */
+public class GetSystemWarningsRequest  implements ConsoleRequest {
 
-    public GetLogLevelRequest() {
+    public GetSystemWarningsRequest(){
         super();
     }
 
     public int getType() {
-        return ConsoleRequestConstants.REQUEST_TYPE_LOG_LEVEL;
+        return ConsoleRequestConstants.REQUEST_TYPE_SYSTEM_WARNINGS;
     }
 
+
     public Object readResponse(ObjectDataInput in) throws IOException {
-        return in.readUTF();
+        List<SystemLogRecord> list = new LinkedList<SystemLogRecord>();
+        String node = in.readUTF();
+        int size = in.readInt();
+        for (int i = 0; i < size; i++) {
+            SystemLogRecord systemLogRecord = new SystemLogRecord();
+            systemLogRecord.readData(in);
+            systemLogRecord.setNode(node);
+            list.add(systemLogRecord);
+        }
+        return list;
     }
 
     public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
-        dos.writeUTF(mcs.getHazelcastInstance().node.getSystemLogService().getCurrentLevel());
+        List<SystemLogRecord> logBundle = mcs.getHazelcastInstance().node.getSystemLogService().getSystemWarnings();
+        final Address address = mcs.getHazelcastInstance().node.getThisAddress();
+        dos.writeUTF(address.getHost() + ":" + address.getPort());
+        dos.writeInt(logBundle.size());
+        for (SystemLogRecord systemLogRecord : logBundle) {
+            systemLogRecord.writeData(dos);
+        }
     }
 
+    
     public void writeData(ObjectDataOutput out) throws IOException {
-
     }
 
+    
     public void readData(ObjectDataInput in) throws IOException {
-
     }
+
 }

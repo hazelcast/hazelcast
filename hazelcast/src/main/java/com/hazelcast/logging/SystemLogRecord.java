@@ -28,11 +28,8 @@ public class SystemLogRecord implements Comparable, DataSerializable {
     private String node;
     private String message;
     private String type;
-    private long callId;
 
-    public SystemLogRecord(long callId, String node, long date, String message, String type) {
-        this.callId = callId;
-        this.node = node;
+    public SystemLogRecord(long date, String message, String type) {
         this.date = date;
         this.message = message;
         this.type = type;
@@ -47,14 +44,6 @@ public class SystemLogRecord implements Comparable, DataSerializable {
     }
 
     public SystemLogRecord() {
-    }
-
-    public long getCallId() {
-        return callId;
-    }
-
-    public void setCallId(long callId) {
-        this.callId = callId;
     }
 
     public long getDate() {
@@ -89,14 +78,12 @@ public class SystemLogRecord implements Comparable, DataSerializable {
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeLong(callId);
         out.writeLong(date);
         out.writeUTF(message);
         out.writeUTF(type);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
-        callId = in.readLong();
         date = in.readLong();
         message = in.readUTF();
         type = in.readUTF();

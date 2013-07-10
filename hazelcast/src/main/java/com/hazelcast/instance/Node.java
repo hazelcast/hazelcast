@@ -129,7 +129,7 @@ public class Node {
             throw ExceptionUtil.rethrow(e);
         }
         serializationService = (SerializationServiceImpl) ss;
-        systemLogService = new SystemLogService(this);
+        systemLogService = new SystemLogService(groupProperties.SYSTEM_LOG_ENABLED.getBoolean());
         final AddressPicker addressPicker = nodeContext.createAddressPicker(this);
         try {
             addressPicker.pickAddress();
