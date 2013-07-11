@@ -142,7 +142,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 final String warning = "Owner of partition is being removed! " +
                         "Possible data loss for partition[" + event.getPartitionId() + "]. " + event;
                 logger.log(Level.WARNING, warning);
-                systemLogService.logPartition(warning);
+                systemLogService.logWarningPartition(warning);
             }
             if (node.isMaster()) {
                 stateVersion.incrementAndGet();
