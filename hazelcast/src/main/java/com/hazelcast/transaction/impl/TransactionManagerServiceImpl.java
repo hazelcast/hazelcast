@@ -32,6 +32,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 
+import static com.hazelcast.transaction.impl.Transaction.State;
+
 /**
  * @author mdogan 2/26/13
  */
@@ -107,7 +109,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
                 if (uuid.equals(log.callerUuid)) {
                     TransactionImpl tx = new TransactionImpl(this, nodeEngine, log.txnId, log.txLogs, log.timeoutMillis,
                             log.startTime, log.callerUuid);
-                    if (log.state == Transaction.State.COMMITTING) {
+                    if (log.state == State.COMMITTING) {
                         try {
                             tx.commit();
                         } catch (Throwable e) {
@@ -151,7 +153,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
     void rollbackTxBackupLog(String txnId) {
         final TxBackupLog log = txBackupLogs.get(txnId);
         if (log != null) {
-            log.state = Transaction.State.ROLLING_BACK;
+            log.state = State.ROLLING_BACK;
         } else {
             logger.log(Level.WARNING, "No tx backup log is found, tx -> " + txnId);
         }
@@ -168,7 +170,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         private final long timeoutMillis;
         private final long startTime;
 
-        private volatile Transaction.State state = Transaction.State.COMMITTING;
+        private volatile State state = State.COMMITTING;
 
         private TxBackupLog(List<TransactionLog> txLogs, String callerUuid, String txnId, long timeoutMillis, long startTime) {
             this.txLogs = txLogs;

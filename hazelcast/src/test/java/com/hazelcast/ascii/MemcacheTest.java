@@ -141,24 +141,25 @@ public class MemcacheTest {
     public void testMemcacheWithIMap() throws IOException, InterruptedException, ExecutionException {
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         MemcachedClient client = getMemcacheClient(instance);
+        final String prefix = "testMemcacheWithIMap:";
         try {
             final IMap<String, Object> map = instance.getMap("hz_memcache_testMemcacheWithIMap");
             for (int i = 0; i < 100; i++) {
                 map.put(String.valueOf(i), String.valueOf(i));
             }
             for (int i = 0; i < 100; i++) {
-                Assert.assertEquals(String.valueOf(i), client.get("testMemcacheWithIMap:" + String.valueOf(i)));
-                client.set("testMemcacheWithIMap:" + String.valueOf(i), 0, String.valueOf(i * 10));
+                Assert.assertEquals(String.valueOf(i), client.get(prefix + String.valueOf(i)));
+                client.set(prefix + String.valueOf(i), 0, String.valueOf(i * 10));
             }
             for (int i = 0; i < 100; i++) {
                 final MemcacheEntry memcacheEntry = (MemcacheEntry) map.get(String.valueOf(i));
-                final MemcacheEntry expected = new MemcacheEntry("testMemcacheWithIMap:" + String.valueOf(i), String.valueOf(i * 10).getBytes(), 0);
+                final MemcacheEntry expected = new MemcacheEntry(prefix + String.valueOf(i), String.valueOf(i * 10).getBytes(), 0);
                 Assert.assertEquals(expected, memcacheEntry);
             }
-            final OperationFuture<Boolean> future = client.delete("testMemcacheWithIMap:");
+            final OperationFuture<Boolean> future = client.delete(prefix);
             future.get();
             for (int i = 0; i < 100; i++) {
-                Assert.assertEquals(null, client.get("testMemcacheWithIMap:" + String.valueOf(i)));
+                Assert.assertEquals(null, client.get(prefix + String.valueOf(i)));
             }
         } finally {
             client.shutdown();

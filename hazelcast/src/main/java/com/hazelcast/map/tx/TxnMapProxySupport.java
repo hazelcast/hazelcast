@@ -26,7 +26,7 @@ import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionalObject;
-import com.hazelcast.transaction.impl.Transaction;
+import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
 
@@ -41,9 +41,9 @@ import static com.hazelcast.map.MapService.SERVICE_NAME;
 public abstract class TxnMapProxySupport extends AbstractDistributedObject<MapService> implements TransactionalObject {
 
     protected final String name;
-    protected final Transaction tx;
+    protected final TransactionSupport tx;
 
-    public TxnMapProxySupport(String name, MapService mapService, NodeEngine nodeEngine, Transaction transaction) {
+    public TxnMapProxySupport(String name, MapService mapService, NodeEngine nodeEngine, TransactionSupport transaction) {
         super(nodeEngine, mapService);
         this.name = name;
         this.tx = transaction;

@@ -17,19 +17,13 @@
 package com.hazelcast.map.tx;
 
 import com.hazelcast.core.TransactionalMap;
-import com.hazelcast.map.MapRecordKey;
 import com.hazelcast.map.MapService;
-import com.hazelcast.map.operation.ClearOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.impl.BinaryOperationFactory;
-import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.transaction.impl.TransactionSupport;
 
 import java.util.HashMap;
 import java.util.Map;
-
-import static com.hazelcast.map.MapService.SERVICE_NAME;
 
 /**
  * @author mdogan 2/26/13
@@ -38,7 +32,7 @@ public class TxnMapProxy extends TxnMapProxySupport implements TransactionalMap 
 
     private final Map<Object, TxnValueWrapper> txMap = new HashMap<Object, TxnValueWrapper>();
 
-    public TxnMapProxy(String name, MapService mapService, NodeEngine nodeEngine, Transaction transaction) {
+    public TxnMapProxy(String name, MapService mapService, NodeEngine nodeEngine, TransactionSupport transaction) {
         super(name, mapService, nodeEngine, transaction);
     }
 

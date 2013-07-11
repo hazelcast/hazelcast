@@ -46,7 +46,7 @@ import com.hazelcast.query.impl.QueryResultEntryImpl;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
-import com.hazelcast.transaction.impl.Transaction;
+import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
@@ -404,7 +404,7 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     @SuppressWarnings("unchecked")
-    public TxnMapProxy createTransactionalObject(Object id, Transaction transaction) {
+    public TxnMapProxy createTransactionalObject(Object id, TransactionSupport transaction) {
         return new TxnMapProxy(String.valueOf(id), this, nodeEngine, transaction);
     }
 

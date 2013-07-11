@@ -28,7 +28,7 @@ import com.hazelcast.partition.PartitionView;
 import com.hazelcast.queue.proxy.ObjectQueueProxy;
 import com.hazelcast.queue.tx.TransactionalQueueProxy;
 import com.hazelcast.spi.*;
-import com.hazelcast.transaction.impl.Transaction;
+import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
@@ -194,7 +194,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, localQueueStatsConstructorFunction);
     }
 
-    public TransactionalQueueProxy createTransactionalObject(Object id, Transaction transaction) {
+    public TransactionalQueueProxy createTransactionalObject(Object id, TransactionSupport transaction) {
         return new TransactionalQueueProxy(nodeEngine, this, String.valueOf(id), transaction);
     }
 }

@@ -34,7 +34,7 @@ import java.util.Map;
 /**
  * @author mdogan 2/26/13
  */
-class TransactionContextImpl implements TransactionContext {
+final class TransactionContextImpl implements TransactionContext {
 
     private final NodeEngineImpl nodeEngine;
     private final TransactionImpl transaction;
@@ -109,6 +109,10 @@ class TransactionContextImpl implements TransactionContext {
         }
         return obj;
 
+    }
+
+    Transaction getTransaction() {
+        return transaction;
     }
 
     private class TransactionalObjectKey {

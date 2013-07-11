@@ -34,7 +34,7 @@ import java.util.logging.Level;
 import static com.hazelcast.transaction.TransactionOptions.TransactionType;
 import static com.hazelcast.transaction.impl.Transaction.State.*;
 
-final class TransactionImpl implements Transaction {
+final class TransactionImpl implements Transaction, TransactionSupport {
 
     private static final ThreadLocal<Boolean> threadFlag = new ThreadLocal<Boolean>();
 
@@ -125,7 +125,7 @@ final class TransactionImpl implements Transaction {
         }
     }
 
-    void begin() throws IllegalStateException {
+    public void begin() throws IllegalStateException {
         if (state == ACTIVE) {
             throw new IllegalStateException("Transaction is already active");
         }
@@ -145,7 +145,7 @@ final class TransactionImpl implements Transaction {
         }
     }
 
-    void prepare() throws TransactionException {
+    public void prepare() throws TransactionException {
         if (state != ACTIVE) {
             throw new TransactionNotActiveException("Transaction is not active");
         }
@@ -184,7 +184,7 @@ final class TransactionImpl implements Transaction {
         }
     }
 
-    void commit() throws TransactionException, IllegalStateException {
+    public void commit() throws TransactionException, IllegalStateException {
         if (transactionType.equals(TransactionType.TWO_PHASE) && state != PREPARED) {
             throw new IllegalStateException("Transaction is not prepared");
         }
@@ -224,7 +224,7 @@ final class TransactionImpl implements Transaction {
         }
     }
 
-    void rollback() throws IllegalStateException {
+    public void rollback() throws IllegalStateException {
         if (state == NO_TXN || state == ROLLED_BACK) {
             throw new IllegalStateException("Transaction is not active");
         }
