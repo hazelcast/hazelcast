@@ -29,7 +29,7 @@ import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.TransactionalObject;
-import com.hazelcast.transaction.impl.Transaction;
+import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
 
@@ -42,13 +42,13 @@ import java.util.concurrent.Future;
 public abstract class TransactionalMultiMapProxySupport extends AbstractDistributedObject<CollectionService> implements TransactionalObject {
 
     protected final CollectionProxyId proxyId;
-    protected final Transaction tx;
+    protected final TransactionSupport tx;
     protected final MultiMapConfig config;
     private long version = -1;
 
     private final Map<Data, Collection<CollectionRecord>> txMap = new HashMap<Data, Collection<CollectionRecord>>();
 
-    protected TransactionalMultiMapProxySupport(NodeEngine nodeEngine, CollectionService service, CollectionProxyId proxyId, Transaction tx, MultiMapConfig config) {
+    protected TransactionalMultiMapProxySupport(NodeEngine nodeEngine, CollectionService service, CollectionProxyId proxyId, TransactionSupport tx, MultiMapConfig config) {
         super(nodeEngine, service);
         this.proxyId = proxyId;
         this.tx = tx;

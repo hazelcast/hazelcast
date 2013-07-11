@@ -36,7 +36,7 @@ import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.PartitionView;
 import com.hazelcast.spi.*;
 import com.hazelcast.transaction.TransactionalObject;
-import com.hazelcast.transaction.impl.Transaction;
+import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.ExceptionUtil;
@@ -331,7 +331,7 @@ public class CollectionService implements ManagedService, RemoteService,
         return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, localMultiMapStatsConstructorFunction);
     }
 
-    public <T extends TransactionalObject> T createTransactionalObject(Object id, Transaction transaction) {
+    public <T extends TransactionalObject> T createTransactionalObject(Object id, TransactionSupport transaction) {
         CollectionProxyId collectionProxyId = (CollectionProxyId) id;
         final CollectionProxyType type = collectionProxyId.type;
         switch (type) {

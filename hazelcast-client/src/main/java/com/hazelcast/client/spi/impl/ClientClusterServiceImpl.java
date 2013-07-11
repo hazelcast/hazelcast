@@ -48,6 +48,8 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.util.ExceptionUtil.fixRemoteStackTrace;
+
 /**
  * @author mdogan 5/15/13
  */
@@ -140,9 +142,9 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             final Data response = conn.read();
             final Object result = serializationService.toObject(response);
             return ErrorHandler.returnResultOrThrowException(result);
-        } catch (IOException e){
-            ((ClientPartitionServiceImpl)client.getClientPartitionService()).refreshPartitions();
-            if (redoOperation || obj instanceof RetryableRequest){
+        } catch (IOException e) {
+            ((ClientPartitionServiceImpl) client.getClientPartitionService()).refreshPartitions();
+            if (redoOperation || obj instanceof RetryableRequest) {
                 return sendAndReceive(obj);
             }
             throw new HazelcastException(e);
@@ -155,10 +157,8 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         conn.write(request);
         final Data response = conn.read();
         final Object result = serializationService.toObject(response);
-        return ErrorHandler.returnResultOrThrowException(result) ;
+        return ErrorHandler.returnResultOrThrowException(result);
     }
-
-
 
     private SerializationService getSerializationService() {
         return client.getSerializationService();
@@ -173,12 +173,12 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     private Connection getConnection(Address address) throws IOException {
-        if (!client.getLifecycleService().isRunning()){
+        if (!client.getLifecycleService().isRunning()) {
             throw new HazelcastInstanceNotActiveException();
         }
         Connection connection = null;
         int retryCount = RETRY_COUNT;
-        while (connection == null && retryCount > 0 ){
+        while (connection == null && retryCount > 0) {
             if (address != null) {
                 connection = client.getConnectionManager().getConnection(address);
                 address = null;
@@ -218,9 +218,9 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             final Data request = serializationService.toData(obj);
             conn.write(request);
             stream = new ResponseStreamImpl(serializationService, conn);
-        } catch (IOException e){
-            ((ClientPartitionServiceImpl)client.getClientPartitionService()).refreshPartitions();
-            if (redoOperation || obj instanceof RetryableRequest){
+        } catch (IOException e) {
+            ((ClientPartitionServiceImpl) client.getClientPartitionService()).refreshPartitions();
+            if (redoOperation || obj instanceof RetryableRequest) {
                 sendAndHandle(obj, handler);
                 return;
             }
@@ -234,7 +234,6 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         } finally {
             stream.end();
         }
-
     }
 
     public Authenticator getAuthenticator() {
@@ -259,6 +258,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         } catch (Throwable e) {
             if (e instanceof ExecutionException && e.getCause() != null) {
                 e = e.getCause();
+                fixRemoteStackTrace(e, Thread.currentThread().getStackTrace());
             }
             if (e instanceof RuntimeException) {
                 throw (RuntimeException) e;
@@ -305,7 +305,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     if (conn == null) {
                         try {
                             conn = pickConnection();
-                        } catch (Exception e){
+                        } catch (Exception e) {
                             e.printStackTrace();
                             client.getLifecycleService().shutdown();
                             return;
@@ -443,7 +443,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     Address address = new Address(isa);
                     return getConnectionManager().firstConnection(address, authenticator);
                 } catch (IOException ignored) {
-                } catch (AuthenticationException e){
+                } catch (AuthenticationException e) {
                     e.printStackTrace();
                 }
             }

@@ -23,7 +23,7 @@ import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.TransactionalList;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.transaction.impl.Transaction;
+import com.hazelcast.transaction.impl.TransactionSupport;
 
 /**
  * @author ali 4/16/13
@@ -32,7 +32,7 @@ public class TransactionalListProxy<E> extends TransactionalMultiMapProxySupport
 
     final Data key;
 
-    public TransactionalListProxy(NodeEngine nodeEngine, CollectionService service, CollectionProxyId proxyId, Transaction tx) {
+    public TransactionalListProxy(NodeEngine nodeEngine, CollectionService service, CollectionProxyId proxyId, TransactionSupport tx) {
         super(nodeEngine, service, proxyId, tx,
                 nodeEngine.getConfig().getMultiMapConfig("list:" + proxyId.getKeyName()).setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST));
         this.key = nodeEngine.toData(proxyId.getKeyName());

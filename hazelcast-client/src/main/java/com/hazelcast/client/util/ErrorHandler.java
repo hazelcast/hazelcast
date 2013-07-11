@@ -18,6 +18,8 @@ package com.hazelcast.client.util;
 
 import com.hazelcast.util.ExceptionUtil;
 
+import static com.hazelcast.util.ExceptionUtil.fixRemoteStackTrace;
+
 /**
  * @ali 7/2/13
  */
@@ -25,8 +27,9 @@ public class ErrorHandler {
 
     public static <T> T returnResultOrThrowException(Object result) {
         if (result instanceof Throwable) {
-          ExceptionUtil.sneakyThrow((Throwable) result);
-          return null; // not accessible!
+            fixRemoteStackTrace((Throwable) result, Thread.currentThread().getStackTrace());
+            ExceptionUtil.sneakyThrow((Throwable) result);
+            return null; // not accessible!
         } else {
             return (T) result;
         }

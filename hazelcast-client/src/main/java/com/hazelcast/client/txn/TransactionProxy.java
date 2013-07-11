@@ -22,19 +22,18 @@ import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
-import com.hazelcast.transaction.impl.Transaction;
-import com.hazelcast.transaction.impl.TransactionLog;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
 
+import static com.hazelcast.transaction.impl.Transaction.State;
 import static com.hazelcast.transaction.impl.Transaction.State.*;
 
 /**
  * @author ali 6/6/13
  */
-public class TransactionProxy implements Transaction {
+final class TransactionProxy {
 
     private static final ThreadLocal<Boolean> threadFlag = new ThreadLocal<Boolean>();
 
@@ -47,22 +46,10 @@ public class TransactionProxy implements Transaction {
     private State state = NO_TXN;
     private long startTime = 0L;
 
-    public TransactionProxy(HazelcastClient client, TransactionOptions options, Connection connection) {
+    TransactionProxy(HazelcastClient client, TransactionOptions options, Connection connection) {
         this.options = options;
         this.clusterService = (ClientClusterServiceImpl) client.getClientClusterService();
         this.connection = connection;
-    }
-
-    public void addTransactionLog(TransactionLog transactionLog) {
-
-    }
-
-    public void removeTransactionLog(Object key) {
-
-    }
-
-    public TransactionLog getTransactionLog(Object key) {
-        return null;
     }
 
     public String getTxnId() {
@@ -93,7 +80,7 @@ public class TransactionProxy implements Transaction {
             state = ACTIVE;
         } catch (Exception e){
             closeConnection();
-            ExceptionUtil.rethrow(e);
+            throw ExceptionUtil.rethrow(e);
         }
     }
 
@@ -108,7 +95,7 @@ public class TransactionProxy implements Transaction {
             state = COMMITTED;
         } catch (Exception e){
             state = ROLLING_BACK;
-            ExceptionUtil.rethrow(e);
+            throw ExceptionUtil.rethrow(e);
         } finally {
             closeConnection();
         }
@@ -126,7 +113,7 @@ public class TransactionProxy implements Transaction {
             checkThread();
             try {
                 sendAndReceive(new RollbackTransactionRequest());
-            } catch (Exception e) {
+            } catch (Exception ignored) {
             }
             state = ROLLED_BACK;
         } finally {

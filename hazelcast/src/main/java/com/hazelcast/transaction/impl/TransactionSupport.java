@@ -16,33 +16,15 @@
 
 package com.hazelcast.transaction.impl;
 
-import com.hazelcast.transaction.TransactionException;
+public interface TransactionSupport {
 
-public interface Transaction {
+    void addTransactionLog(TransactionLog transactionLog);
 
-    public enum State {
-        NO_TXN,
-        ACTIVE,
-        PREPARING,
-        PREPARED,
-        COMMITTING,
-        COMMITTED,
-        COMMIT_FAILED,
-        ROLLING_BACK,
-        ROLLED_BACK
-    }
+    void removeTransactionLog(Object key);
 
-    void begin() throws IllegalStateException;
-
-    void prepare() throws TransactionException;
-
-    void commit() throws TransactionException, IllegalStateException;
-
-    void rollback() throws IllegalStateException;
+    TransactionLog getTransactionLog(Object key);
 
     String getTxnId();
-
-    State getState();
 
     long getTimeoutMillis();
 
