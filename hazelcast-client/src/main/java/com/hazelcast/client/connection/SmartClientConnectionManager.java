@@ -26,6 +26,8 @@ import com.hazelcast.client.util.Factory;
 import com.hazelcast.client.util.ObjectPool;
 import com.hazelcast.client.util.QueueBasedObjectPool;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.Protocols;
@@ -36,8 +38,11 @@ import com.hazelcast.util.ConstructorFunction;
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.logging.Level;
 
 public class SmartClientConnectionManager implements ClientConnectionManager {
+
+    private static final ILogger logger = Logger.getLogger(ClientConnectionManager.class);
 
     private final int poolSize;
     private final Authenticator authenticator;
@@ -101,7 +106,7 @@ public class SmartClientConnectionManager implements ClientConnectionManager {
         try {
             connection = pool.take();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, "Error during connection creation...", e);
         }
         // Could be that this address is dead and that's why pool is not able to create and give a connection.
         // We will call it again, and hopefully at some time LoadBalancer will give us the right target for the connection.

@@ -65,8 +65,11 @@ public class ClientIssueTest {
         assertEquals(1, map.size());
     }
 
+    /**
+     * Test for issues #267 and #493
+     */
     @Test
-    public void testIssue267() throws Exception {
+    public void testIssue493() throws Exception {
 
         final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
         final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();

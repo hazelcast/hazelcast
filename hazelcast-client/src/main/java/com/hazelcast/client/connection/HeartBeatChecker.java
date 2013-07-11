@@ -18,6 +18,8 @@ package com.hazelcast.client.connection;
 
 import com.hazelcast.client.spi.ClientExecutionService;
 import com.hazelcast.cluster.client.ClientPingRequest;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.util.Clock;
@@ -25,8 +27,11 @@ import com.hazelcast.util.Clock;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
 public class HeartBeatChecker {
+
+    private static final ILogger logger = Logger.getLogger(HeartBeatChecker.class);
 
     private final int connectionTimeout;
     private final ClientExecutionService executionService;
@@ -48,7 +53,7 @@ public class HeartBeatChecker {
                         connection.read();
                         latch.countDown();
                     } catch (IOException e) {
-                        e.printStackTrace();
+                        logger.log(Level.SEVERE, "Error during heartbeat check!", e);
                     }
                 }
             });

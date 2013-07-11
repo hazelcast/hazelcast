@@ -18,6 +18,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientType;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.TcpIpConnection;
 import com.hazelcast.transaction.TransactionContext;
@@ -109,7 +110,7 @@ public final class ClientEndpoint implements Client {
     }
 
     public TransactionContext getTransactionContext() {
-        if (transactionContext == null){
+        if (transactionContext == null) {
             throw new TransactionException("No transaction context!!!");
         }
         return transactionContext;
@@ -125,10 +126,11 @@ public final class ClientEndpoint implements Client {
             lc.logout();
         }
         final TransactionContext context = transactionContext;
-        if (context != null){
+        if (context != null) {
             try {
                 context.rollbackTransaction();
-            } catch (Exception e){
+            } catch (HazelcastInstanceNotActiveException ignored) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
             transactionContext = null;

@@ -18,7 +18,6 @@ package com.hazelcast.client.txn;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.connection.Connection;
-import com.hazelcast.client.exception.ClientException;
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.txn.proxy.*;
 import com.hazelcast.collection.CollectionProxyId;
@@ -51,7 +50,7 @@ public class TransactionContextProxy implements TransactionContext {
         this.client = client;
         this.connection = connect();
         if (connection == null) {
-            throw new ClientException("Could not obtain Connection!!!");
+            throw new HazelcastException("Could not obtain Connection!!!");
         }
         this.transaction = new TransactionProxy(client, options, connection);
     }

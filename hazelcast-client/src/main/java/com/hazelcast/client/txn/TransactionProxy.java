@@ -19,6 +19,7 @@ package com.hazelcast.client.txn;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.connection.Connection;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
+import com.hazelcast.nio.IOUtil;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
@@ -123,11 +124,7 @@ final class TransactionProxy {
 
     private void closeConnection(){
         threadFlag.set(null);
-        try {
-            connection.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        IOUtil.closeResource(connection);
     }
 
     private void checkThread() {

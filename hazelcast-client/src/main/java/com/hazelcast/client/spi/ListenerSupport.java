@@ -16,7 +16,7 @@
 
 package com.hazelcast.client.spi;
 
-import com.hazelcast.client.exception.ClientException;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
@@ -68,9 +68,9 @@ public final class ListenerSupport  {
         });
         try {
             if(!latch.await(1, TimeUnit.MINUTES)){
-                throw new ClientException("Could not register listener!!!");
+                throw new HazelcastException("Could not register listener!!!");
             }
-        } catch (InterruptedException e) {
+        } catch (InterruptedException ignored) {
         }
         return UUID.randomUUID().toString();
     }

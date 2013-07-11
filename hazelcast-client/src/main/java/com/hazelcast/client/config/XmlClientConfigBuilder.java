@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.config;
 
-import com.hazelcast.client.exception.ClientException;
 import com.hazelcast.client.spi.ClientProxyFactory;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
@@ -25,6 +24,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.security.UsernamePasswordCredentials;
+import com.hazelcast.util.ExceptionUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -136,7 +136,7 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
             parse(clientConfig);
             return clientConfig;
         } catch (Exception e) {
-            throw new ClientException(e);
+            throw ExceptionUtil.rethrow(e);
         }
     }
 

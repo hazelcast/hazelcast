@@ -22,6 +22,8 @@ import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
 import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.client.GetPartitionsRequest;
@@ -31,11 +33,14 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
 /**
  * @author mdogan 5/16/13
  */
 public final class ClientPartitionServiceImpl implements ClientPartitionService {
+
+    private static final ILogger logger = Logger.getLogger(ClientPartitionService.class);
 
     private final HazelcastClient client;
 
@@ -92,7 +97,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         try {
             return clusterService.sendAndReceive(address, new GetPartitionsRequest());
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.SEVERE, "Error while fetching cluster partition table!", e);
         }
         return null;
     }
