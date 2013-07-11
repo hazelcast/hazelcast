@@ -96,8 +96,11 @@ public final class HazelcastClient implements HazelcastInstance {
         threadGroup = new ThreadGroup(name);
         lifecycleService = new LifecycleServiceImpl(this);
         try {
-            serializationService = new SerializationServiceBuilder().setManagedContext(new HazelcastClientManagedContext(this, config.getManagedContext()))
-                    .setClassLoader(config.getClassLoader()).setConfig(config.getSerializationConfig()).build();
+            serializationService = new SerializationServiceBuilder()
+                    .setManagedContext(new HazelcastClientManagedContext(this, config.getManagedContext()))
+                    .setClassLoader(config.getClassLoader())
+                    .setConfig(config.getSerializationConfig())
+                    .build();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
@@ -121,6 +124,8 @@ public final class HazelcastClient implements HazelcastInstance {
     }
 
     private void start(){
+        lifecycleService.setStarted();
+
         try{
             clusterService.start();
         }catch(IllegalStateException e){
@@ -130,7 +135,6 @@ public final class HazelcastClient implements HazelcastInstance {
             throw e;
         }
         partitionService.start();
-        lifecycleService.setStarted();
     }
 
     public static HazelcastInstance newHazelcastClient() {
