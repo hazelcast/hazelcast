@@ -18,6 +18,7 @@ package com.hazelcast.jca;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
@@ -28,9 +29,16 @@ import javax.resource.spi.ConnectionEventListener;
 import javax.resource.spi.ConnectionRequestInfo;
 import javax.resource.spi.ManagedConnection;
 import javax.security.auth.Subject;
+import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.transaction.TransactionOptions;
+import com.hazelcast.transaction.impl.Transaction;
+import com.hazelcast.transaction.impl.TransactionAccessor;
+import com.hazelcast.util.UuidUtil;
 
 public class ManagedConnectionImpl extends JcaBase implements ManagedConnection {
 	/** Identity generator */
@@ -42,13 +50,13 @@ public class ManagedConnectionImpl extends JcaBase implements ManagedConnection 
 	private final ConnectionRequestInfo cxRequestInfo;
 	
 	private final XAResourceImpl xaResource;
-	private final HazelcastTransaction tx;
+
+    private HazelcastTransactionImpl tx;
 
 	// Application server will always register at least one listener
 	private final List<ConnectionEventListener> connectionEventListeners = new ArrayList<ConnectionEventListener>(1);
 
-	public ManagedConnectionImpl(ConnectionRequestInfo cxRequestInfo,
-			ManagedConnectionFactoryImpl factory) {
+	public ManagedConnectionImpl(ConnectionRequestInfo cxRequestInfo,ManagedConnectionFactoryImpl factory) {
 		this.setLogWriter(factory.getLogWriter());
 		log(Level.FINEST, "ManagedConnectionImpl");
 		
@@ -117,7 +125,6 @@ public class ManagedConnectionImpl extends JcaBase implements ManagedConnection 
 			default:
 				log(Level.WARNING, "Uknown event ignored: " + event);
 			}
-			;
 		}
 	}
 
@@ -139,7 +146,8 @@ public class ManagedConnectionImpl extends JcaBase implements ManagedConnection 
 
 	public HazelcastTransaction getLocalTransaction() {
 		log(Level.FINEST, "getLocalTransaction");
-		return tx;
+        return new HazelcastTransactionImpl(factory, this);
+		//return tx;
 	}
 
 	public ManagedConnectionMetaData getMetaData() {
@@ -156,7 +164,11 @@ public class ManagedConnectionImpl extends JcaBase implements ManagedConnection 
 		return xaResource;
 	}
 
-	protected boolean isDeliverClosed() {
+    public HazelcastTransactionImpl getTx() {
+        return tx;
+    }
+
+    protected boolean isDeliverClosed() {
 		return true;
 	}
 
@@ -181,4 +193,5 @@ public class ManagedConnectionImpl extends JcaBase implements ManagedConnection 
 	public String toString() {
 		return "hazelcast.ManagedConnectionImpl [" + id + "]";
 	}
+
 }

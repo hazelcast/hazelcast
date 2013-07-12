@@ -24,16 +24,8 @@ import javax.resource.cci.ResultSetInfo;
 import javax.resource.spi.ConnectionEvent;
 import javax.security.auth.Subject;
 
-import com.hazelcast.core.AtomicNumber;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ICountDownLatch;
-import com.hazelcast.core.IList;
-import com.hazelcast.core.IMap;
-import com.hazelcast.core.IQueue;
-import com.hazelcast.core.ISemaphore;
-import com.hazelcast.core.ISet;
-import com.hazelcast.core.ITopic;
-import com.hazelcast.core.MultiMap;
+import com.hazelcast.core.*;
+import com.hazelcast.transaction.TransactionContext;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -46,16 +38,16 @@ public class HazelcastConnectionImpl implements HazelcastConnection {
     private static AtomicInteger idGen = new AtomicInteger();
     /** this identity */
     private final int id;
-    
+
     public HazelcastConnectionImpl(ManagedConnectionImpl managedConnectionImpl, Subject subject) {
         super();
         this.managedConnection = managedConnectionImpl;
         id = idGen.incrementAndGet();
     }
-    
+
     /* (non-Javadoc)
-     * @see javax.resource.cci.Connection#close()
-     */
+         * @see javax.resource.cci.Connection#close()
+         */
     public void close() throws ResourceException {
     	managedConnection.log(Level.FINEST, "close");
     	//important: inform the container!
@@ -141,13 +133,6 @@ public class HazelcastConnectionImpl implements HazelcastConnection {
 	}
 
 	/* (non-Javadoc)
-	 * @see com.hazelcast.jca.HazelcastConnection#getExecutorService()
-	 */
-	public ExecutorService getExecutorService() {
-		return getHazelcastInstance().getExecutorService();
-	}
-
-	/* (non-Javadoc)
 	 * @see com.hazelcast.jca.HazelcastConnection#getExecutorService(java.lang.String)
 	 */
 	public ExecutorService getExecutorService(String name) {
@@ -155,10 +140,10 @@ public class HazelcastConnectionImpl implements HazelcastConnection {
 	}
 
 	/* (non-Javadoc)
-	 * @see com.hazelcast.jca.HazelcastConnection#getAtomicNumber(java.lang.String)
+	 * @see com.hazelcast.jca.HazelcastConnection#getAtomicLong(java.lang.String)
 	 */
-	public AtomicNumber getAtomicNumber(String name) {
-		return getHazelcastInstance().getAtomicNumber(name);
+	public IAtomicLong getAtomicLong(String name) {
+		return getHazelcastInstance().getAtomicLong(name);
 	}
 
 	/* (non-Javadoc)
@@ -174,4 +159,46 @@ public class HazelcastConnectionImpl implements HazelcastConnection {
 	public ISemaphore getSemaphore(String name) {
 		return getHazelcastInstance().getSemaphore(name);
 	}
+
+
+    public <K, V> TransactionalMap<K, V> getTransactionalMap(String name){
+        final TransactionContext txContext = this.managedConnection.getTx().getTxContext();
+        if(txContext==null){
+            throw new IllegalStateException("Transaction is not active");
+        }
+        return txContext.getMap(name);
+    }
+
+    public <E> TransactionalQueue<E> getTransactionalQueue(String name){
+        final TransactionContext txContext = this.managedConnection.getTx().getTxContext();
+        if(txContext==null){
+            throw new IllegalStateException("Transaction is not active");
+        }
+        return  txContext.getQueue(name);
+    }
+
+    public <K, V> TransactionalMultiMap<K, V> getTransactionalMultiMap(String name){
+        final TransactionContext txContext = this.managedConnection.getTx().getTxContext();
+        if(txContext==null){
+            throw new IllegalStateException("Transaction is not active");
+        }
+        return  txContext.getMultiMap(name);
+    }
+
+    public <E> TransactionalList<E> getTransactionalList(String name){
+        final TransactionContext txContext = this.managedConnection.getTx().getTxContext();
+        if(txContext==null){
+            throw new IllegalStateException("Transaction is not active");
+        }
+        return  txContext.getList(name);
+    }
+
+    public <E> TransactionalSet<E> getTransactionalSet(String name){
+        final TransactionContext txContext = this.managedConnection.getTx().getTxContext();
+        if(txContext==null){
+            throw new IllegalStateException("Transaction is not active");
+        }
+        return  txContext.getSet(name);
+    }
+
 }

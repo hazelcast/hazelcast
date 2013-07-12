@@ -35,7 +35,7 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 
 /**
- * This is the starting point of the whole resrouce adapter for hazelcast.
+ * This is the starting point of the whole resource adapter for hazelcast.
  * The hazelcast instance is created/fetched in this class 
  */
 public class ResourceAdapterImpl implements ResourceAdapter, Serializable {

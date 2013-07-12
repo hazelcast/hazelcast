@@ -16,40 +16,31 @@
 
 package com.hazelcast.jca;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import javax.resource.ResourceException;
 import javax.resource.spi.ConnectionEvent;
+import javax.transaction.xa.XAException;
 
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.Transaction;
-import com.hazelcast.impl.CallContext;
-import com.hazelcast.impl.ThreadContext;
+import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.transaction.TransactionOptions;
+import com.hazelcast.transaction.impl.Transaction;
+import com.hazelcast.transaction.impl.TransactionAccessor;
+import com.hazelcast.util.UuidUtil;
 
-/**
- * Mapping class between Hazelcast's Transaction the the JCA-spec Transaction interfaces.
- * This class is aware of suspended transactions (by the container) and
- * transaction cleanup by different threads (as done by some containers).
- * 
- * All in all the JCA/tread context is created/restored in the method implementations of
- * {@link HazelcastTransaction} - The actual hazelcast transaction calls are in the doXXX methods
- * @see #doBegin()
- * @see #doCommit()
- * @see #doRollback()
- */
 public class HazelcastTransactionImpl extends JcaBase implements HazelcastTransaction {
 	/** List of former transaction used during transaction restore */
-	private static final ConcurrentMap<CallContext, CallContext> predecessors = new ConcurrentHashMap<CallContext, CallContext>();
+	//private static final ConcurrentMap<CallContext, CallContext> predecessors = new ConcurrentHashMap<CallContext, CallContext>();
+
 	/** access to the creator of this {@link #connection} */
 	private final ManagedConnectionFactoryImpl factory;
 	/** access to the creator of this transaction */
 	private final ManagedConnectionImpl connection;
-	/** The id of this transaction */
-	private String txThreadId;
-	/** The hazelcast transaction itself */
-	private Transaction tx;
+	/** The hazelcast transaction context itself */
+	private TransactionContext txContext;
 	
 	public HazelcastTransactionImpl(ManagedConnectionFactoryImpl factory, ManagedConnectionImpl connection) {
 		this.setLogWriter(factory.getLogWriter());
@@ -76,37 +67,20 @@ public class HazelcastTransactionImpl extends JcaBase implements HazelcastTransa
 	 * @see javax.resource.cci.LocalTransaction#begin()
 	 */
 	public void begin() throws ResourceException {
-		if (null == tx) {
+		if (null == txContext) {
 			factory.logHzConnectionEvent(this, HzConnectionEvent.TX_START);
 
-			CallContext callContext = ThreadContext.get().getCallContext();
-			Transaction tx = callContext.getTransaction();
-			if ((null != tx) && (Transaction.TXN_STATUS_ACTIVE == tx.getStatus())) {
-				log(Level.INFO, "Suspending outer TX");
+            this.txContext=getHazelcastInstance().newTransactionContext();
 
-				CallContext innerCallContext = new CallContext(callContext.getThreadId(), false);
 
-				predecessors.put(innerCallContext, callContext);
-				ThreadContext.get().setCallContext(innerCallContext);
-			}
+            log(Level.FINEST, "begin");
+            txContext.beginTransaction();
 
-			doBegin();
+            fireConnectionEvent(ConnectionEvent.LOCAL_TRANSACTION_STARTED);
 
-			this.tx = getHazelcastInstance().getTransaction();
-			this.txThreadId = Thread.currentThread().toString();
 		} else {
 			log(Level.INFO, "Ignoring duplicate TX begin event");
 		}
-	}
-
-	/**
-	 * Executes the begin on the  hazelcast transaction as the 
-	 * JCA-context is restored by {@link #begin()} 
-	 */
-	private void doBegin() {
-		log(Level.FINEST, "begin");
-		getHazelcastInstance().getTransaction().begin();
-		fireConnectionEvent(ConnectionEvent.LOCAL_TRANSACTION_STARTED);
 	}
 
 	/* (non-Javadoc)
@@ -115,56 +89,16 @@ public class HazelcastTransactionImpl extends JcaBase implements HazelcastTransa
 	public void commit() throws ResourceException {
 		factory.logHzConnectionEvent(this, HzConnectionEvent.TX_COMPLETE);
 
-		CallContext callContext = ThreadContext.get().getCallContext();
-		CallContext outerCallContext = predecessors.get(callContext);
-
-		if (tx == callContext.getTransaction()) {
-			doCommit();
-
-			if (null != outerCallContext) {
-				log(Level.INFO, "Restoring outer TX");
-				ThreadContext.get().setCallContext(outerCallContext);
-			}
-		} else {
-			log(Level.INFO, "txn.commit");
-			tx.commit();
-			fireConnectionEvent(ConnectionEvent.LOCAL_TRANSACTION_COMMITTED);
-
-			// TODO finalize TX on original thread
-			callContext.finalizeTransaction();
-			if (null != outerCallContext) {
-				log(Level.INFO, "Restoring outer TX");
-				callContext.setTransaction(outerCallContext.getTransaction());
-			}
-
-			String threadIx = Thread.currentThread().toString();
-			log(Level.INFO, "Finalizing TX on thread " + threadIx
-					+ " that was started on thread " + txThreadId);
-		}
-
-		if (null != outerCallContext) {
-			predecessors.remove(callContext, outerCallContext);
-		}
-
-		this.tx = null;
-		this.txThreadId = null;
+        log(Level.FINEST, "commit");
+        if (this.txContext != null) {
+            this.txContext.commitTransaction();
+            fireConnectionEvent(ConnectionEvent.LOCAL_TRANSACTION_COMMITTED);
+            this.txContext = null;
+        } else {
+            throw new ResourceException("Invalid transaction context; commit operation invoked without an active transaction context");
+        }
 	}
 
-	/**
-	 * Executes the commit on the  hazelcast transaction as the 
-	 * JCA-context is restored by {@link #commit()} 
-	 */
-	private void doCommit() {
-		log(Level.FINEST, "commit");
-		Transaction transaction = ThreadContext.get().getTransaction();
-		if (transaction != null) {
-			transaction.commit();
-			fireConnectionEvent(ConnectionEvent.LOCAL_TRANSACTION_COMMITTED);
-		} else {
-			log(Level.WARNING,
-					"Missed transaction commit due to thread switch!");
-		}
-	}
 
 	/* (non-Javadoc)
 	 * @see javax.resource.cci.LocalTransaction#rollback()
@@ -172,55 +106,29 @@ public class HazelcastTransactionImpl extends JcaBase implements HazelcastTransa
 	public void rollback() throws ResourceException {
 		factory.logHzConnectionEvent(this, HzConnectionEvent.TX_COMPLETE);
 
-		CallContext callContext = ThreadContext.get().getCallContext();
-		CallContext outerCallContext = predecessors.get(callContext);
-
-		if (tx == callContext.getTransaction()) {
-			doRollback();
-
-			if (null != outerCallContext) {
-				log(Level.INFO, "Restoring outer TX");
-				ThreadContext.get().setCallContext(outerCallContext);
-			}
-		} else {
-			log(Level.INFO, "txn.rollback");
-			tx.rollback();
-			fireConnectionEvent(ConnectionEvent.LOCAL_TRANSACTION_ROLLEDBACK);
-
-			// TODO finalize TX on original thread
-			callContext.finalizeTransaction();
-			if (null != outerCallContext) {
-				log(Level.INFO, "Restoring outer TX");
-				callContext.setTransaction(outerCallContext.getTransaction());
-			}
-
-			String threadIx = Thread.currentThread().toString();
-			log(Level.INFO, "Finalizing TX on thread " + threadIx
-					+ " that was started on thread " + txThreadId);
-		}
-
-		if (null != outerCallContext) {
-			predecessors.remove(callContext, outerCallContext);
-		}
-
-		this.tx = null;
-		this.txThreadId = null;
+        log(Level.FINEST, "rollback");
+        if (this.txContext != null) {
+            this.txContext.rollbackTransaction();
+            fireConnectionEvent(ConnectionEvent.LOCAL_TRANSACTION_ROLLEDBACK);
+            this.txContext = null;
+        } else {
+            throw new ResourceException("Invalid transaction context; rollback operation invoked without an active transaction context");
+        }
 	}
 
-	/**
-	 * Executes the rollback on the  hazelcast transaction as the 
-	 * JCA-context is restored by {@link #rollback()} 
-	 */
-	private void doRollback() {
-		log(Level.FINEST, "rollback");
-		Transaction transaction = ThreadContext.get().getTransaction();
-		if (transaction != null) {
-			transaction.rollback();
-			fireConnectionEvent(ConnectionEvent.LOCAL_TRANSACTION_ROLLEDBACK);
-		} else {
-			log(Level.WARNING,
-					"Missed transaction rollback due to thread switch!");
-		}
-	}
+    public TransactionContext getTxContext(){
+        return this.txContext;
+    }
+
+    public void setTxContext(TransactionContext txContext) {
+        this.txContext = txContext;
+    }
+
+    public static TransactionContext createTransaction(int timeout,HazelcastInstance hazelcastInstance) throws XAException {
+        final TransactionOptions transactionOptions=TransactionOptions.getDefault().setTimeout(timeout, TimeUnit.SECONDS);
+        return hazelcastInstance.newTransactionContext(transactionOptions);
+        //final TransactionContext txContext = ((HazelcastInstanceImpl)hazelcastInstance).node.nodeEngine.getTransactionManagerService().newClientTransactionContext(transactionOptions, UuidUtil.createClientUuid(null));
+        //return TransactionAccessor.getTransaction(txContext);
+    }
 
 }
