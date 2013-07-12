@@ -27,6 +27,9 @@ public class EntrySetOperationFactory implements OperationFactory {
 
     String name;
 
+    public EntrySetOperationFactory() {
+    }
+
     public EntrySetOperationFactory(String name) {
         this.name = name;
     }

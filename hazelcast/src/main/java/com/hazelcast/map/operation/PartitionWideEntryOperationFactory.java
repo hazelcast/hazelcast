@@ -29,6 +29,9 @@ public class PartitionWideEntryOperationFactory implements OperationFactory {
     private String name;
     private EntryProcessor entryProcessor;
 
+    public PartitionWideEntryOperationFactory() {
+    }
+
     public PartitionWideEntryOperationFactory(String name, EntryProcessor entryProcessor) {
         this.name = name;
         this.entryProcessor = entryProcessor;

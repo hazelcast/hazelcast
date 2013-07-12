@@ -28,7 +28,10 @@ public class RemoveInterceptorOperationFactory implements OperationFactory {
 
     String id;
     String name;
-    MapInterceptor mapInterceptor;
+    MapInterceptor mapInterceptor;   //TODO @ali interceptor not used?
+
+    public RemoveInterceptorOperationFactory() {
+    }
 
     public RemoveInterceptorOperationFactory(String id, String name) {
         this.id = id;

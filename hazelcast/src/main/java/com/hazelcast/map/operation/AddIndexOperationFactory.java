@@ -29,6 +29,9 @@ public class AddIndexOperationFactory implements OperationFactory {
     String attributeName;
     boolean ordered;
 
+    public AddIndexOperationFactory() {
+    }
+
     public AddIndexOperationFactory(String name, String attributeName, boolean ordered) {
         this.name = name;
         this.attributeName = attributeName;
