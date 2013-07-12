@@ -24,6 +24,7 @@ import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
+import com.hazelcast.map.MapService;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -34,7 +35,6 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.impl.PortableItemEvent;
 
 import java.io.IOException;
-import java.util.logging.Level;
 
 /**
  * @author ali 5/23/13
@@ -44,7 +44,6 @@ public class AddItemListenerRequest extends CallableClientRequest implements Por
     CollectionProxyId proxyId;
     Data key;
     boolean includeValue;
-    private transient String registrationId;
 
     public AddItemListenerRequest() {
     }
@@ -74,17 +73,11 @@ public class AddItemListenerRequest extends CallableClientRequest implements Por
                     Data item = clientEngine.toData(event.getItem());
                     PortableItemEvent portableItemEvent = new PortableItemEvent(item, event.getEventType(), event.getMember().getUuid());
                     clientEngine.sendResponse(endpoint, portableItemEvent);
-                } else {
-                    if (registrationId != null){
-                        service.removeListener(proxyId.getName(), registrationId);
-                    } else {
-                        getClientEngine().getLogger(AddItemListenerRequest.class).log(Level.WARNING, "RegistrationId is null!");
-                    }
-
                 }
             }
         };
-        registrationId = service.addListener(proxyId.getName(), listener, key, includeValue, false);
+        String registrationId = service.addListener(proxyId.getName(), listener, key, includeValue, false);
+        endpoint.setListenerRegistration(MapService.SERVICE_NAME, proxyId.getName(), registrationId);
         return registrationId;
     }
 

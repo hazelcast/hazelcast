@@ -44,7 +44,6 @@ public class MapAddEntryListenerRequest extends CallableClientRequest implements
     private Data key;
     private Predicate predicate;
     private boolean includeValue;
-    private transient volatile String registrationId;
 
     public MapAddEntryListenerRequest() {
     }
@@ -69,6 +68,7 @@ public class MapAddEntryListenerRequest extends CallableClientRequest implements
         final ClientEndpoint endpoint = getEndpoint();
         final ClientEngine clientEngine = getClientEngine();
         final MapService mapService = getService();
+
         EntryListener<Object, Object> listener = new EntryListener<Object, Object>() {
 
             private void handleEvent(EntryEvent<Object, Object> event) {
@@ -78,8 +78,6 @@ public class MapAddEntryListenerRequest extends CallableClientRequest implements
                     Data oldValue = clientEngine.toData(event.getOldValue());
                     PortableEntryEvent portableEntryEvent = new PortableEntryEvent(key, value, oldValue, event.getEventType(), event.getMember().getUuid());
                     clientEngine.sendResponse(endpoint, portableEntryEvent);
-                } else {
-                    mapService.removeEventListener(name, registrationId);
                 }
             }
 
@@ -100,13 +98,14 @@ public class MapAddEntryListenerRequest extends CallableClientRequest implements
             }
         };
 
-        EventFilter eventFilter = null;
+        EventFilter eventFilter;
         if (predicate == null){
             eventFilter = new EntryEventFilter(includeValue, key);
         } else {
             eventFilter = new QueryEventFilter(includeValue, key, predicate);
         }
-        registrationId = mapService.addEventListener(listener, eventFilter, name);
+        String registrationId = mapService.addEventListener(listener, eventFilter, name);
+        endpoint.setListenerRegistration(MapService.SERVICE_NAME, name, registrationId);
         return true;
     }
 

@@ -19,8 +19,10 @@ package com.hazelcast.client;
 import com.hazelcast.core.Client;
 import com.hazelcast.core.ClientType;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.TcpIpConnection;
+import com.hazelcast.spi.EventService;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 
@@ -28,18 +30,23 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.net.SocketAddress;
+import java.util.logging.Level;
 
 public final class ClientEndpoint implements Client {
 
+    private final ClientEngine clientEngine;
     private final Connection conn;
     private String uuid;
     private LoginContext loginContext = null;
     private ClientPrincipal principal;
-    private TransactionContext transactionContext;
     private boolean firstConnection = false;
-    private volatile boolean authenticated = false;
 
-    ClientEndpoint(Connection conn, String uuid) {
+    private volatile boolean authenticated = false;
+    private volatile TransactionContext transactionContext;
+    private volatile ListenerRegistration registration;
+
+    ClientEndpoint(ClientEngine clientEngine, Connection conn, String uuid) {
+        this.clientEngine = clientEngine;
         this.conn = conn;
         this.uuid = uuid;
     }
@@ -110,17 +117,32 @@ public final class ClientEndpoint implements Client {
     }
 
     public TransactionContext getTransactionContext() {
-        if (transactionContext == null) {
-            throw new TransactionException("No transaction context!!!");
+        final TransactionContext context = transactionContext;
+        if (context == null) {
+            throw new TransactionException("No transaction context!");
         }
-        return transactionContext;
+        return context;
     }
 
     public void setTransactionContext(TransactionContext transactionContext) {
         this.transactionContext = transactionContext;
     }
 
+    public void setListenerRegistration(String service, String topic, String id) {
+        ListenerRegistration reg = registration;
+        if (reg != null) {
+            getLogger().log(Level.WARNING, "A listener already exists. De-registering current listener: " + reg);
+            deregisterListener(reg);
+        }
+        registration = new ListenerRegistration(service, topic, id);
+    }
+
     void destroy() throws LoginException {
+        final ListenerRegistration reg = registration;
+        if (reg != null) {
+            deregisterListener(reg);
+            registration = null;
+        }
         final LoginContext lc = loginContext;
         if (lc != null) {
             lc.logout();
@@ -131,11 +153,20 @@ public final class ClientEndpoint implements Client {
                 context.rollbackTransaction();
             } catch (HazelcastInstanceNotActiveException ignored) {
             } catch (Exception e) {
-                e.printStackTrace();
+                getLogger().log(Level.WARNING, e.getMessage(), e);
             }
             transactionContext = null;
         }
         authenticated = false;
+    }
+
+    private ILogger getLogger() {
+        return clientEngine.getLogger(getClass());
+    }
+
+    private void deregisterListener(ListenerRegistration reg) {
+        final EventService eventService = clientEngine.getEventService();
+        eventService.deregisterListener(reg.service, reg.topic, reg.id);
     }
 
     @Override

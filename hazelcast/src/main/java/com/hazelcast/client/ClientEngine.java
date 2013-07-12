@@ -24,6 +24,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.PartitionService;
+import com.hazelcast.spi.EventService;
 import com.hazelcast.transaction.TransactionManagerService;
 
 /**
@@ -37,6 +38,10 @@ public interface ClientEngine {
 
     SerializationService getSerializationService();
 
+    EventService getEventService();
+
+    TransactionManagerService getTransactionManagerService();
+
     Config getConfig();
 
     ILogger getLogger(Class clazz);
@@ -46,8 +51,6 @@ public interface ClientEngine {
     Object toObject(Data data);
 
     Data toData(Object obj);
-
-    TransactionManagerService getTransactionManagerService();
 
     Address getMasterAddress();
 

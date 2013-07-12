@@ -94,6 +94,10 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
         return serializationService;
     }
 
+    public EventService getEventService() {
+        return nodeEngine.getEventService();
+    }
+
     void sendOperation(Operation op, Address target) {
         nodeEngine.getOperationService().send(op, target);
     }
@@ -158,7 +162,7 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
     private final ConstructorFunction<Connection, ClientEndpoint> endpointConstructor
             = new ConstructorFunction<Connection, ClientEndpoint>() {
         public ClientEndpoint createNew(Connection conn) {
-            return new ClientEndpoint(conn, UuidUtil.createClientUuid(conn.getEndPoint()));
+            return new ClientEndpoint(ClientEngineImpl.this, conn, UuidUtil.createClientUuid(conn.getEndPoint()));
         }
     };
 
@@ -226,7 +230,7 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
             final ClientEndpoint endpoint = endpoints.get(connection);
             if (endpoint != null && node.getLocalMember().getUuid().equals(endpoint.getPrincipal().getOwnerUuid())) {
                 removeEndpoint(connection, true);
-                if (!endpoint.isFirstConnection()){
+                if (!endpoint.isFirstConnection()) {
                     return;
                 }
                 NodeEngine nodeEngine = node.nodeEngine;

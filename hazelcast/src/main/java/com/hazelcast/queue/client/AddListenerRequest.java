@@ -31,7 +31,6 @@ import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.impl.PortableItemEvent;
 
 import java.io.IOException;
-import java.util.logging.Level;
 
 /**
  * @author ali 5/9/13
@@ -40,7 +39,6 @@ public class AddListenerRequest extends CallableClientRequest implements Portabl
 
     private String name;
     private boolean includeValue;
-    private transient String registrationId;
 
     public AddListenerRequest() {
     }
@@ -95,17 +93,11 @@ public class AddListenerRequest extends CallableClientRequest implements Portabl
                     Data item = clientEngine.toData(event.getItem());
                     PortableItemEvent portableItemEvent = new PortableItemEvent(item, event.getEventType(), event.getMember().getUuid());
                     clientEngine.sendResponse(endpoint, portableItemEvent);
-                } else {
-                    if (registrationId != null){
-                        service.removeItemListener(name, registrationId);
-                    } else {
-                        getClientEngine().getLogger(AddListenerRequest.class).log(Level.WARNING, "RegistrationId is null!");
-                    }
-
                 }
             }
         };
-        registrationId = service.addItemListener(name, listener, includeValue);
+        String registrationId = service.addItemListener(name, listener, includeValue);
+        endpoint.setListenerRegistration(QueueService.SERVICE_NAME, name, registrationId);
         return registrationId;
     }
 }
