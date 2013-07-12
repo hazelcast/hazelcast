@@ -16,26 +16,6 @@
 
 package com.hazelcast.impl;
 
-import com.hazelcast.cluster.*;
-import com.hazelcast.config.*;
-import com.hazelcast.core.InstanceListener;
-import com.hazelcast.core.LifecycleListener;
-import com.hazelcast.core.MembershipListener;
-import com.hazelcast.impl.ascii.TextCommandService;
-import com.hazelcast.impl.ascii.TextCommandServiceImpl;
-import com.hazelcast.impl.base.*;
-import com.hazelcast.impl.management.ManagementCenterService;
-import com.hazelcast.impl.wan.WanReplicationService;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.LoggingServiceImpl;
-import com.hazelcast.nio.*;
-import com.hazelcast.partition.MigrationListener;
-import com.hazelcast.security.Credentials;
-import com.hazelcast.security.SecurityContext;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.ConcurrentHashSet;
-import com.hazelcast.util.SimpleBoundedQueue;
-
 import java.lang.reflect.Constructor;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -45,12 +25,47 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
+import com.hazelcast.cluster.ClusterImpl;
+import com.hazelcast.cluster.ClusterManager;
+import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.cluster.JoinInfo;
+import com.hazelcast.cluster.JoinRequest;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.Join;
+import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.MulticastConfig;
+import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.core.InstanceListener;
+import com.hazelcast.core.LifecycleListener;
+import com.hazelcast.core.MembershipListener;
+import com.hazelcast.impl.ascii.TextCommandService;
+import com.hazelcast.impl.ascii.TextCommandServiceImpl;
+import com.hazelcast.impl.base.CpuUtilization;
+import com.hazelcast.impl.base.NodeInitializer;
+import com.hazelcast.impl.base.NodeInitializerFactory;
+import com.hazelcast.impl.base.SystemLogService;
+import com.hazelcast.impl.base.VersionCheck;
+import com.hazelcast.impl.management.ManagementCenterService;
+import com.hazelcast.impl.wan.WanReplicationService;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.LoggingServiceImpl;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.nio.NodeIOService;
+import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.Serializer;
+import com.hazelcast.partition.MigrationListener;
+import com.hazelcast.security.Credentials;
+import com.hazelcast.security.SecurityContext;
+import com.hazelcast.util.Clock;
+import com.hazelcast.util.ConcurrentHashSet;
+import com.hazelcast.util.SimpleBoundedQueue;
 
 public class Node {
     private final ILogger logger;
 
     //private volatile boolean joined = false;
-    private AtomicBoolean joined = new AtomicBoolean(false);
+    private final AtomicBoolean joined = new AtomicBoolean(false);
 
     private volatile boolean active = false;
 
@@ -332,6 +347,7 @@ public class Node {
             doShutdown(force);
         } else {
             new Thread(new Runnable() {
+                @Override
                 public void run() {
                     ThreadContext.get().setCurrentFactory(factory);
                     doShutdown(force);
@@ -595,6 +611,24 @@ public class Node {
                 logger.log(Level.WARNING, e.getMessage());
                 return null;
             }
+        } else if (join.getGenericConfig().isEnabled()) {
+            try {
+                Class<?> clazz = Class.forName(join.getGenericConfig().getClassName());
+                for (Constructor<?> ctor : clazz.getDeclaredConstructors()) {
+                    if (null != ctor.getParameterTypes() && 1 == ctor.getParameterTypes().length &&
+                        Node.class.equals(ctor.getParameterTypes()[0])) {
+                        // prefer c'tor with Node parameter
+                        systemLogService.logJoin("Instantiating GenericJoiner(Node)");
+                        return (Joiner) ctor.newInstance(this);
+                    }
+                }
+                // use default c'tor without arguments
+                systemLogService.logJoin("Instantiating GenericJoiner()");
+                return (Joiner)clazz.newInstance();
+            } catch (Exception e) {
+                logger.log(Level.WARNING, e.getMessage());
+                return null;
+            }
         }
         return null;
     }
@@ -604,6 +638,7 @@ public class Node {
         systemLogService.logJoin("No master node found! Setting this node as the master.");
         masterAddress = address;
         clusterManager.enqueueAndWait(new Processable() {
+            @Override
             public void process() {
                 clusterManager.addMember(address, getLocalNodeType(), localMember.getUuid()); // add
                 // myself
@@ -647,6 +682,7 @@ public class Node {
         return Thread.currentThread() == serviceThread;
     }
 
+    @Override
     public String toString() {
         return "Node[" + getName() + "]";
     }

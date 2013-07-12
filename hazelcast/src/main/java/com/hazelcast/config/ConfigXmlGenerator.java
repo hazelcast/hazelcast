@@ -16,16 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.Address;
-
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Source;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.transform.stream.StreamSource;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Collection;
@@ -33,6 +23,15 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.logging.Level;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+import com.hazelcast.nio.Address;
 
 public class ConfigXmlGenerator {
 
@@ -131,6 +130,10 @@ public class ConfigXmlGenerator {
         xml.append("<tag-key>").append(awsConfig.getTagKey()).append("</tag-key>");
         xml.append("<tag-value>").append(awsConfig.getTagValue()).append("</tag-value>");
         xml.append("</aws>");
+        final GenericConfig genericConfig = join.getGenericConfig();
+        xml.append("<generic enabled=\"").append(genericConfig.isEnabled()).append("\">");
+        xml.append("<class-name>").append(genericConfig.getClassName()).append("</class-name>");
+        xml.append("</generic>");
         xml.append("</join>");
         final Interfaces interfaces = netCfg.getInterfaces();
         xml.append("<interfaces enabled=\"").append(interfaces.isEnabled()).append("\">");
