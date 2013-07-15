@@ -28,10 +28,7 @@ import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.client.util.ErrorHandler;
 import com.hazelcast.cluster.client.AddMembershipListenerRequest;
 import com.hazelcast.cluster.client.ClientMembershipEvent;
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.MembershipEvent;
-import com.hazelcast.core.MembershipListener;
+import com.hazelcast.core.*;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -370,6 +367,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 members.add((MemberImpl) serializationService.toObject(d));
             }
             updateMembersRef();
+            logger.log(Level.INFO, membersString());
             final List<MembershipEvent> events = new LinkedList<MembershipEvent>();
             for (MemberImpl member : members) {
                 final MemberImpl former = prevMembers.remove(member.getUuid());
@@ -398,6 +396,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     getConnectionManager().removeConnectionPool(member.getAddress());
                 }
                 updateMembersRef();
+                logger.log(Level.INFO, membersString());
                 fireMembershipEvent(event);
             }
         }
@@ -527,6 +526,20 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
 
         final Data data = connection.read();
         return ErrorHandler.returnResultOrThrowException(serializationService.toObject(data));
+    }
+
+    public String membersString() {
+        StringBuilder sb = new StringBuilder("\n\nMembers [");
+        final Collection<MemberImpl> members = getMemberList();
+        sb.append(members != null ? members.size() : 0);
+        sb.append("] {");
+        if (members != null) {
+            for (Member member : members) {
+                sb.append("\n\t").append(member);
+            }
+        }
+        sb.append("\n}\n");
+        return sb.toString();
     }
 
 }
