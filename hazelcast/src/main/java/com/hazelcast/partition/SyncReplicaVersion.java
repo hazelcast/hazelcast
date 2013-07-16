@@ -46,7 +46,7 @@ final class SyncReplicaVersion extends Operation implements PartitionAwareOperat
         final PartitionServiceImpl partitionService = getService();
         final int partitionId = getPartitionId();
         final int replicaIndex = syncReplicaIndex;
-        final PartitionImpl partition = partitionService.getPartitionView(partitionId);
+        final PartitionImpl partition = partitionService.getPartition(partitionId);
         final Address target = partition.getReplicaAddress(replicaIndex);
         if (target != null) {
             final long[] currentVersions = partitionService.getPartitionReplicaVersions(partitionId);

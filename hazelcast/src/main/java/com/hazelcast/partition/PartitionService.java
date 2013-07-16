@@ -16,6 +16,7 @@
 
 package com.hazelcast.partition;
 
+import com.hazelcast.core.MigrationListener;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.CoreService;
@@ -32,7 +33,7 @@ public interface PartitionService extends CoreService {
 
     boolean isPartitionMigrating(int partitionId);
 
-    PartitionView getPartitionView(int partitionId);
+    PartitionView getPartition(int partitionId);
 
     int getPartitionId(Data key);
 
@@ -49,4 +50,8 @@ public interface PartitionService extends CoreService {
     Map<Address, List<Integer>> getMemberPartitionsMap();
 
     int getMemberGroupsSize();
+
+    String addMigrationListener(MigrationListener migrationListener);
+
+    boolean removeMigrationListener(final String registrationId);
 }

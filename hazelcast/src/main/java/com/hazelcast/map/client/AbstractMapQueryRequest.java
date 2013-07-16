@@ -21,7 +21,9 @@ import com.hazelcast.client.InitializingRequest;
 import com.hazelcast.client.InvocationClientRequest;
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.map.*;
+import com.hazelcast.map.MapPortableHook;
+import com.hazelcast.map.MapService;
+import com.hazelcast.map.QueryResult;
 import com.hazelcast.map.operation.QueryOperation;
 import com.hazelcast.map.operation.QueryPartitionOperation;
 import com.hazelcast.nio.serialization.Portable;
@@ -31,7 +33,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
-import com.hazelcast.util.QueryDataResultStream;
+import com.hazelcast.util.QueryResultSet;
 
 import java.io.IOException;
 import java.util.*;
@@ -58,7 +60,7 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
         int partitionCount = getClientEngine().getPartitionService().getPartitionCount();
         Set<Integer> plist = new HashSet<Integer>(partitionCount);
         final ClientEndpoint endpoint = getEndpoint();
-        QueryDataResultStream result = new QueryDataResultStream(iterationType, true);
+        QueryResultSet result = new QueryResultSet(null, iterationType, true);
         try {
             List<Future> flist = new ArrayList<Future>();
             final Predicate predicate = getPredicate();
@@ -101,12 +103,8 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
                 }
             }
         } catch (Throwable t) {
-            t.printStackTrace();
             throw ExceptionUtil.rethrow(t);
-        } finally {
-            result.end();
         }
-
         getClientEngine().sendResponse(endpoint, result);
     }
 

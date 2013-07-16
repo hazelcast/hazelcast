@@ -179,7 +179,7 @@ final class OperationServiceImpl implements OperationService {
                 if (partitionId < 0) {
                     throw new IllegalArgumentException("Partition id cannot be negative! -> " + partitionId);
                 }
-                final PartitionView partitionView = nodeEngine.getPartitionService().getPartitionView(partitionId);
+                final PartitionView partitionView = nodeEngine.getPartitionService().getPartition(partitionId);
                 if (partitionView == null) {
                     throw new PartitionMigratingException(node.getThisAddress(), partitionId,
                             op.getClass().getName(), op.getServiceName());
@@ -299,7 +299,7 @@ final class OperationServiceImpl implements OperationService {
             final String serviceName = op.getServiceName();
             final int partitionId = op.getPartitionId();
             final long[] replicaVersions = partitionService.incrementPartitionReplicaVersions(partitionId, totalBackupCount);
-            final PartitionView partition = partitionService.getPartitionView(partitionId);
+            final PartitionView partition = partitionService.getPartition(partitionId);
             for (int replicaIndex = 1; replicaIndex <= totalBackupCount; replicaIndex++) {
                 final Operation backupOp = backupAwareOp.getBackupOperation();
                 if (backupOp == null) {
@@ -315,7 +315,7 @@ final class OperationServiceImpl implements OperationService {
                 final Address target = partition.getReplicaAddress(replicaIndex);
                 if (target != null) {
                     if (target.equals(node.getThisAddress())) {
-                        throw new IllegalStateException("Normally shouldn't happen!! " + partition);
+                        throw new IllegalStateException("Normally shouldn't happen! Owner node and backup node are the same! " + partition);
                     } else {
                         send(backup, target);
                     }
@@ -365,7 +365,7 @@ final class OperationServiceImpl implements OperationService {
 
         public boolean backup() {
             final PartitionService partitionService = nodeEngine.getPartitionService();
-            final PartitionView partition = partitionService.getPartitionView(partitionId);
+            final PartitionView partition = partitionService.getPartition(partitionId);
             final Address target = partition.getReplicaAddress(replicaIndex);
             if (target != null && !target.equals(node.getThisAddress())) {
                 send(backup, target);
@@ -475,7 +475,7 @@ final class OperationServiceImpl implements OperationService {
     }
 
     public boolean send(final Operation op, final int partitionId, final int replicaIndex) {
-        Address target = nodeEngine.getPartitionService().getPartitionView(partitionId).getReplicaAddress(replicaIndex);
+        Address target = nodeEngine.getPartitionService().getPartition(partitionId).getReplicaAddress(replicaIndex);
         if (target == null) {
             logger.log(Level.WARNING, "No target available for partition: " + partitionId + " and replica: " + replicaIndex);
             return false;

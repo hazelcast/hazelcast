@@ -8,9 +8,9 @@ import java.util.NoSuchElementException;
  */
 public final class Partitions implements Iterable<PartitionView> {
 
-    private final PartitionImpl[] partitions;
+    private final PartitionView[] partitions;
 
-    Partitions(PartitionImpl[] partitions) {
+    Partitions(PartitionView[] partitions) {
         this.partitions = partitions;
     }
 
