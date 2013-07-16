@@ -95,9 +95,14 @@ public class ConnectionManager implements MembershipListener {
                             currentConnection.close();
                         }
                     }
-                } catch (InterruptedException e) {
-                    return;
+                } catch (InterruptedException ignore) {
+
                 } catch (IOException ignored) {
+
+                } catch (Exception e) {
+                    //we need to catch all exceptions to prevent the TimerTask.run method from throwing one. If we fail
+                    //to do so, the TimerTask will not run again.
+                    logger.log(Level.SEVERE,"Error scheduleHeartbeatTimerTask",e);
                 }
             }
         }, TIMEOUT / 10, TIMEOUT / 10);
