@@ -1320,7 +1320,7 @@ public class QueryTest extends HazelcastTestSupport {
         final Config config = new Config();
         config.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
         final String mapName = "testIndexCleanupOnMigration";
-        config.getMapConfig(mapName).addMapIndexConfig(new MapIndexConfig("name", false));
+//        config.getMapConfig(mapName).addMapIndexConfig(new MapIndexConfig("name", false));
         ExecutorService ex = Executors.newFixedThreadPool(n);
         final CountDownLatch latch = new CountDownLatch(n);
         final AtomicInteger countdown = new AtomicInteger(n * runCount);
@@ -1344,12 +1344,13 @@ public class QueryTest extends HazelcastTestSupport {
                             } catch (InterruptedException e) {
                                 break;
                             }
+                            Value v1 = map.get(name);
+                            assertEquals(v, v1);
                             EntryObject e = new PredicateBuilder().getEntryObject();
                             Predicate<?, ?> predicate = e.get("name").equal(name);
-                            final Collection<Value> values = map.values(predicate);
+                            Collection<Value> values = map.values(predicate);
                             assertEquals(1, values.size());
-                            Value v1 = values.iterator().next();
-                            Value v2 = map.get(name);
+                            Value v2 = values.iterator().next();
                             assertEquals(v1, v2);
                             countdown.decrementAndGet();
                         }

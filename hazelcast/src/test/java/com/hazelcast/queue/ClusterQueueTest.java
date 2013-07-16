@@ -127,13 +127,12 @@ public class ClusterQueueTest extends HazelcastTestSupport {
         final HazelcastInstance h2 = instances[1];
         final IQueue q1 = h1.getQueue("default");
         final IQueue q2 = h2.getQueue("default");
-        for (int i = 0; i < 40; ) {
-            assertTrue(q1.offer("item" + i++, 100, TimeUnit.SECONDS));
-            assertTrue(q2.offer("item" + i++, 100, TimeUnit.SECONDS));
+        for (int i = 0; i < 40; i++) {
+            assertTrue(q1.offer("item" + i, 100, TimeUnit.SECONDS));
         }
         h1.getLifecycleService().shutdown();
-        for (int i = 40; i < 100; ) {
-            assertTrue(q2.offer("item" + i++, 100, TimeUnit.SECONDS));
+        for (int i = 40; i < 100; i++) {
+            assertTrue(q2.offer("item" + i, 100, TimeUnit.SECONDS));
         }
         for (int i = 0; i < 100; i++) {
             assertEquals("item" + i, q2.poll());
