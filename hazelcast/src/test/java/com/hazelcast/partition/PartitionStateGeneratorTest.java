@@ -173,10 +173,8 @@ public class PartitionStateGeneratorTest {
                         shift(state, memberList);
                     }
                     groups = memberGroupFactory.createMemberGroups(memberList);
-                    println("PARTITION-COUNT= " + partitionCount + ", MEMBER-COUNT= "
-                            + memberCount + ", GROUP-COUNT= " + groups.size());
-                    state = generator.reArrange(state, memberGroupFactory.createMemberGroups(memberList),
-                            partitionCount, new LinkedList<MigrationInfo>());
+                    println("PARTITION-COUNT= " + partitionCount + ", MEMBER-COUNT= " + memberCount + ", GROUP-COUNT= " + groups.size());
+                    state = generator.reArrange(memberGroupFactory.createMemberGroups(memberList), state);
                     checkTestResult(state, groups, partitionCount);
                     previousMemberCount = memberCount;
                 }

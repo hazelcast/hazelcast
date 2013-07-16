@@ -60,7 +60,7 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
     public void beforeRun() throws Exception {
         final NodeEngine nodeEngine = getNodeEngine();
         final int partitionId = getPartitionId();
-        final PartitionView partition = nodeEngine.getPartitionService().getPartitionView(partitionId);
+        final PartitionView partition = nodeEngine.getPartitionService().getPartition(partitionId);
         final Address owner = partition.getReplicaAddress(getReplicaIndex());
         if (!nodeEngine.getThisAddress().equals(owner)) {
             valid = false;

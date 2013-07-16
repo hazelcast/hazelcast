@@ -74,11 +74,13 @@ public class IndexService {
     }
 
     public Set<QueryableEntry> query(Predicate predicate) {
-        QueryContext queryContext = new QueryContext(this);
-        if (predicate instanceof IndexAwarePredicate) {
-            IndexAwarePredicate iap = (IndexAwarePredicate) predicate;
-            if (iap.isIndexed(queryContext)) {
-                return iap.filter(queryContext);
+        if (hasIndex) {
+            QueryContext queryContext = new QueryContext(this);
+            if (predicate instanceof IndexAwarePredicate) {
+                IndexAwarePredicate iap = (IndexAwarePredicate) predicate;
+                if (iap.isIndexed(queryContext)) {
+                    return iap.filter(queryContext);
+                }
             }
         }
         return null;

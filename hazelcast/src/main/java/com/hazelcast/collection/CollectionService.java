@@ -155,7 +155,7 @@ public class CollectionService implements ManagedService, RemoteService,
         ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();
         Address thisAddress = clusterService.getThisAddress();
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
-            PartitionView partition = nodeEngine.getPartitionService().getPartitionView(i);
+            PartitionView partition = nodeEngine.getPartitionService().getPartition(i);
             CollectionPartitionContainer partitionContainer = getPartitionContainer(i);
             CollectionContainer collectionContainer = partitionContainer.getCollectionContainer(proxyId);
             if (collectionContainer == null) {
@@ -282,7 +282,7 @@ public class CollectionService implements ManagedService, RemoteService,
 
         Address thisAddress = clusterService.getThisAddress();
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
-            PartitionView partition = nodeEngine.getPartitionService().getPartitionView(i);
+            PartitionView partition = nodeEngine.getPartitionService().getPartition(i);
             CollectionPartitionContainer partitionContainer = getPartitionContainer(i);
             CollectionContainer collectionContainer = partitionContainer.getCollectionContainer(proxyId);
             if (collectionContainer == null) {

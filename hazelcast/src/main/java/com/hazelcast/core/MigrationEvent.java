@@ -16,7 +16,6 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -67,27 +66,16 @@ public class MigrationEvent implements DataSerializable {
 
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(partitionId);
-        oldOwner.writeData(out);
-        newOwner.writeData(out);
+        out.writeObject(oldOwner);
+        out.writeObject(newOwner);
         MigrationStatus.writeTo(status, out);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
         partitionId = in.readInt();
-        oldOwner = new MemberImpl();
-        oldOwner.readData(in);
-        newOwner = new MemberImpl();
-        newOwner.readData(in);
+        oldOwner = in.readObject();
+        newOwner = in.readObject();
         status = MigrationStatus.readFrom(in);
-    }
-
-    @Override
-    public String toString() {
-        return "MigrationEvent{" +
-                "partitionId=" + partitionId +
-                ", oldOwner=" + oldOwner +
-                ", newOwner=" + newOwner +
-                '}';
     }
 
     public static enum MigrationStatus {
@@ -118,5 +106,16 @@ public class MigrationEvent implements DataSerializable {
             }
             return null;
         }
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("MigrationEvent{");
+        sb.append("partitionId=").append(partitionId);
+        sb.append(", status=").append(status);
+        sb.append(", oldOwner=").append(oldOwner);
+        sb.append(", newOwner=").append(newOwner);
+        sb.append('}');
+        return sb.toString();
     }
 }

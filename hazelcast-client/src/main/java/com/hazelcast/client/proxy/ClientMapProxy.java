@@ -27,7 +27,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.PortableEntryEvent;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
-import com.hazelcast.util.QueryDataResultStream;
+import com.hazelcast.util.QueryResultSet;
 import com.hazelcast.util.ThreadUtil;
 
 import java.util.*;
@@ -346,8 +346,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     public Set<K> keySet(Predicate predicate) {
         MapQueryRequest request = new MapQueryRequest(name, predicate, IterationType.KEY);
-        QueryDataResultStream result = invoke(request);
-        result.end();
+        QueryResultSet result = invoke(request);
         Set<K> keySet = new HashSet<K>(result.size());
         for (Object data : result) {
             K key = toObject((Data)data);
@@ -358,8 +357,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     public Set<Entry<K, V>> entrySet(Predicate predicate) {
         MapQueryRequest request = new MapQueryRequest(name, predicate, IterationType.ENTRY);
-        QueryDataResultStream result = invoke(request);
-        result.end();
+        QueryResultSet result = invoke(request);
         Set<Entry<K, V>> entrySet = new HashSet<Entry<K, V>>(result.size());
         for (Object data : result) {
             AbstractMap.SimpleImmutableEntry<Data ,Data > dataEntry = (AbstractMap.SimpleImmutableEntry<Data ,Data >)data;
@@ -372,8 +370,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
     public Collection<V> values(Predicate predicate) {
         MapQueryRequest request = new MapQueryRequest(name, predicate, IterationType.VALUE);
-        QueryDataResultStream result = invoke(request);
-        result.end();
+        QueryResultSet result = invoke(request);
         Collection<V> values = new ArrayList<V>(result.size());
         for (Object data : result) {
             V value = toObject((Data)data);

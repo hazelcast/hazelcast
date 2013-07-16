@@ -183,7 +183,7 @@ public class SplitBrainHandlerTest {
         assertEquals(2, h1.getCluster().getMembers().size());
         assertEquals(2, h2.getCluster().getMembers().size());
         assertEquals(1, h3.getCluster().getMembers().size());
-        latch.await(10, TimeUnit.SECONDS);
+        assertTrue(latch.await(30, TimeUnit.SECONDS));
         assertEquals(3, h1.getCluster().getMembers().size());
         assertEquals(3, h2.getCluster().getMembers().size());
         assertEquals(3, h3.getCluster().getMembers().size());
@@ -254,7 +254,7 @@ public class SplitBrainHandlerTest {
         h3.getConfig().getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
         h4.getConfig().getNetworkConfig().getJoin().getTcpIpConfig().clear().setMembers(Collections.<String> emptyList());
 
-        latch.await(60, TimeUnit.SECONDS);
+        assertTrue(latch.await(60, TimeUnit.SECONDS));
 
         // Both nodes from cluster two should have joined cluster one
         assertEquals(4, h1.getCluster().getMembers().size());
@@ -303,7 +303,7 @@ public class SplitBrainHandlerTest {
 
         h3.getConfig().getNetworkConfig().getJoin().getTcpIpConfig().setMembers(allMembers);
 
-        latch.await(60, TimeUnit.SECONDS);
+        assertTrue(latch.await(60, TimeUnit.SECONDS));
 
         // Both nodes from cluster two should have joined cluster one
         assertFalse(h1.getLifecycleService().isRunning());
