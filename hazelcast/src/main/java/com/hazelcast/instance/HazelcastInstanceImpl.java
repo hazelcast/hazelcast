@@ -34,7 +34,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.management.ThreadMonitoringService;
 import com.hazelcast.map.MapService;
-import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.annotation.PrivateApi;
@@ -104,33 +103,54 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public <K, V> IMap<K, V> getMap(String name) {
+        if (name == null) {
+            throw new NullPointerException("Retrieving a map instance with a null key is not allowed!");
+        }
         return getDistributedObject(MapService.SERVICE_NAME, name);
     }
 
     public <E> IQueue<E> getQueue(String name) {
+        if (name == null) {
+            throw new NullPointerException("Retrieving a queue instance with a null key is not allowed!");
+        }
         return getDistributedObject(QueueService.SERVICE_NAME, name);
     }
 
     public <E> ITopic<E> getTopic(String name) {
+        if (name == null) {
+            throw new NullPointerException("Retrieving a topic instance with a null key is not allowed!");
+        }
         return getDistributedObject(TopicService.SERVICE_NAME, name);
     }
 
     public <E> ISet<E> getSet(String name) {
+        if (name == null) {
+            throw new NullPointerException("Retrieving a set instance with a null key is not allowed!");
+        }
         return getDistributedObject(CollectionService.SERVICE_NAME,
                 new CollectionProxyId(ObjectSetProxy.COLLECTION_SET_NAME, name, CollectionProxyType.SET));
     }
 
     public <E> IList<E> getList(String name) {
+        if (name == null) {
+            throw new NullPointerException("Retrieving a list instance with a null key is not allowed!");
+        }
         return getDistributedObject(CollectionService.SERVICE_NAME,
                 new CollectionProxyId(ObjectListProxy.COLLECTION_LIST_NAME, name, CollectionProxyType.LIST));
     }
 
     public <K, V> MultiMap<K, V> getMultiMap(String name) {
+        if (name == null) {
+            throw new NullPointerException("Retrieving a multi-map instance with a null key is not allowed!");
+        }
         return getDistributedObject(CollectionService.SERVICE_NAME,
                 new CollectionProxyId(name, null, CollectionProxyType.MULTI_MAP));
     }
 
     public ILock getLock(Object key) {
+        if (name == null) {
+            throw new NullPointerException("Retrieving a lock instance with a null key is not allowed!");
+        }
         return getDistributedObject(LockService.SERVICE_NAME, node.getSerializationService().toData(key));
     }
 
@@ -151,31 +171,42 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public IExecutorService getExecutorService(final String name) {
+        if (name == null) {
+            throw new NullPointerException("Retrieving an executor instance with a null key is not allowed!");
+        }
         return getDistributedObject(DistributedExecutorService.SERVICE_NAME, name);
     }
 
     public IdGenerator getIdGenerator(final String name) {
+        if (name == null) {
+            throw new NullPointerException("Retrieving an id-generator instance with a null key is not allowed!");
+        }
         return getDistributedObject(IdGeneratorService.SERVICE_NAME, name);
     }
 
     public IAtomicLong getAtomicLong(final String name) {
+        if (name == null) {
+            throw new NullPointerException("Retrieving an atomic-long instance with a null key is not allowed!");
+        }
         return getDistributedObject(AtomicLongService.SERVICE_NAME, name);
     }
 
     public ICountDownLatch getCountDownLatch(final String name) {
+        if (name == null) {
+            throw new NullPointerException("Retrieving a countdown-latch instance with a null key is not allowed!");
+        }
         return getDistributedObject(CountDownLatchService.SERVICE_NAME, name);
     }
 
     public ISemaphore getSemaphore(final String name) {
+        if (name == null) {
+            throw new NullPointerException("Retrieving a semaphore instance with a null key is not allowed!");
+        }
         return getDistributedObject(SemaphoreService.SERVICE_NAME, name);
     }
 
     public Cluster getCluster() {
         return node.clusterService.getClusterProxy();
-    }
-
-    public Collection<DistributedObject> getDistributedObjects(String serviceName) {
-        return node.nodeEngine.getProxyService().getDistributedObjects(serviceName);
     }
 
     public Collection<DistributedObject> getDistributedObjects() {

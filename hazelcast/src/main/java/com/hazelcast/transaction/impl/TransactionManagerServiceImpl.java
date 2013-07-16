@@ -54,6 +54,9 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
     }
 
     public <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException {
+        if (task == null) {
+            throw new NullPointerException("TransactionalTask is required!");
+        }
         final TransactionContextImpl context = new TransactionContextImpl(this, nodeEngine, options, null);
         context.beginTransaction();
         try {

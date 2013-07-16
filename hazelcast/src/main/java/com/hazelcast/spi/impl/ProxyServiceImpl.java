@@ -16,13 +16,15 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.core.*;
+import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.DistributedObjectEvent;
+import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.*;
-import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
@@ -72,15 +74,33 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
 
     @Override
     public void initializeDistributedObject(String serviceName, Object objectId) {
+        if (serviceName == null) {
+            throw new NullPointerException("Service name is required!");
+        }
+        if (objectId == null) {
+            throw new NullPointerException("Object id is required!");
+        }
         getDistributedObject(serviceName, objectId);
     }
 
     public DistributedObject getDistributedObject(String serviceName, Object objectId) {
+        if (serviceName == null) {
+            throw new NullPointerException("Service name is required!");
+        }
+        if (objectId == null) {
+            throw new NullPointerException("Object id is required!");
+        }
         ProxyRegistry registry = ConcurrencyUtil.getOrPutIfAbsent(registries, serviceName, registryConstructor);
         return registry.getProxy(objectId);
     }
 
     public void destroyDistributedObject(String serviceName, Object objectId) {
+        if (serviceName == null) {
+            throw new NullPointerException("Service name is required!");
+        }
+        if (objectId == null) {
+            throw new NullPointerException("Object id is required!");
+        }
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         Collection<Future> calls = new ArrayList<Future>(members.size());
         for (MemberImpl member : members) {
@@ -105,8 +125,7 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
         }
     }
 
-    @PrivateApi
-    public void destroyLocalDistributedObject(String serviceName, Object objectId) {
+    private void destroyLocalDistributedObject(String serviceName, Object objectId) {
         final RemoteService service = nodeEngine.getService(serviceName);
         if (service != null) {
             service.destroyDistributedObject(objectId);
@@ -115,6 +134,9 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
     }
 
     public Collection<DistributedObject> getDistributedObjects(String serviceName) {
+        if (serviceName == null) {
+            throw new NullPointerException("Service name is required!");
+        }
         Collection<DistributedObject> objects = new LinkedList<DistributedObject>();
         ProxyRegistry registry = registries.get(serviceName);
         if (registry != null) {
