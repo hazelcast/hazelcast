@@ -16,7 +16,10 @@
 
 package com.hazelcast.map.operation;
 
-import com.hazelcast.map.*;
+import com.hazelcast.map.MapService;
+import com.hazelcast.map.PartitionContainer;
+import com.hazelcast.map.QueryResult;
+import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.record.CachedDataRecord;
 import com.hazelcast.map.record.DataRecord;
 import com.hazelcast.map.record.Record;
@@ -55,7 +58,7 @@ public class QueryOperation extends AbstractMapOperation {
         IndexService indexService = mapService.getMapContainer(name).getIndexService();
         Set<QueryableEntry> entries = null;
         // TODO: fix
-         if(!getNodeEngine().getPartitionService().hasOnGoingMigration()){
+        if (!getNodeEngine().getPartitionService().hasOnGoingMigration()) {
             entries = indexService.query(predicate);
         }
         result = new QueryResult();
@@ -68,7 +71,7 @@ public class QueryOperation extends AbstractMapOperation {
             runParallel(initialPartitions);
         }
         List<Integer> finalPartitions = mapService.getOwnedPartitions().get();
-        if (initialPartitions.equals(finalPartitions) ) {
+        if (initialPartitions.equals(finalPartitions)) {
             result.setPartitionIds(finalPartitions);
         }
         if (mapContainer.getMapConfig().isStatisticsEnabled()) {
