@@ -28,7 +28,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class QueryResultSet extends AbstractSet<QueryResultEntry> implements IdentifiedDataSerializable {
+public class QueryResultSet extends AbstractSet implements IdentifiedDataSerializable {
 
     private transient final SerializationService serializationService;
 
@@ -50,6 +50,10 @@ public class QueryResultSet extends AbstractSet<QueryResultEntry> implements Ide
         return entries.add(entry);
     }
 
+    public boolean add(Object entry) {
+        return entries.add((QueryResultEntry) entry);
+    }
+
     public Iterator iterator() {
         return new QueryResultIterator();
     }
@@ -63,16 +67,16 @@ public class QueryResultSet extends AbstractSet<QueryResultEntry> implements Ide
         }
 
         public Object next() {
-            QueryResultEntry currentEntry = iter.next();
+            QueryResultEntry entry = iter.next();
             if (iterationType == IterationType.VALUE) {
-                Data valueData = currentEntry.getValueData();
+                Data valueData = entry.getValueData();
                 return (data) ? valueData : serializationService.toObject(valueData);
             } else if (iterationType == IterationType.KEY) {
-                Data keyData = currentEntry.getKeyData();
+                Data keyData = entry.getKeyData();
                 return (data) ? keyData : serializationService.toObject(keyData);
             } else {
-                Data keyData = currentEntry.getKeyData();
-                Data valueData = currentEntry.getValueData();
+                Data keyData = entry.getKeyData();
+                Data valueData = entry.getValueData();
                 return (data) ? new AbstractMap.SimpleImmutableEntry(keyData, valueData) : new AbstractMap.SimpleImmutableEntry(serializationService.toObject(keyData), serializationService.toObject(valueData));
             }
         }
@@ -117,4 +121,13 @@ public class QueryResultSet extends AbstractSet<QueryResultEntry> implements Ide
         }
     }
 
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("QueryResultSet{");
+        sb.append("entries=").append(entries);
+        sb.append(", iterationType=").append(iterationType);
+        sb.append(", data=").append(data);
+        sb.append('}');
+        return sb.toString();
+    }
 }
