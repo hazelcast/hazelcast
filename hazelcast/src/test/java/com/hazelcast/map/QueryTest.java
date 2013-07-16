@@ -1320,7 +1320,7 @@ public class QueryTest extends HazelcastTestSupport {
         final Config config = new Config();
         config.setProperty(GroupProperties.PROP_WAIT_SECONDS_BEFORE_JOIN, "0");
         final String mapName = "testIndexCleanupOnMigration";
-//        config.getMapConfig(mapName).addMapIndexConfig(new MapIndexConfig("name", false));
+        config.getMapConfig(mapName).addMapIndexConfig(new MapIndexConfig("name", false));
         ExecutorService ex = Executors.newFixedThreadPool(n);
         final CountDownLatch latch = new CountDownLatch(n);
         final AtomicInteger countdown = new AtomicInteger(n * runCount);

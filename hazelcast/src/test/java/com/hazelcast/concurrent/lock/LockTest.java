@@ -238,7 +238,7 @@ public class LockTest extends HazelcastTestSupport {
         Assert.assertTrue(lock1.tryLock());
         lock1.unlock();
         lock1.unlock();
-        Assert.assertTrue(latch.await(5, TimeUnit.SECONDS));
+        Assert.assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
     @Test(timeout = 100000)
