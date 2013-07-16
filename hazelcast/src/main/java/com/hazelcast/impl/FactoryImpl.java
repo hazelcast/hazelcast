@@ -535,34 +535,58 @@ public class FactoryImpl implements HazelcastInstance {
     }
 
     public <K, V> IMap<K, V> getMap(String name) {
+        if (name == null) {
+            throw new NullPointerException("Retrieving a map instance with a null key is not allowed!");
+        }
         return (IMap<K, V>) getOrCreateProxyByName(Prefix.MAP + name);
     }
 
     public <E> IQueue<E> getQueue(String name) {
+        if (name == null) {
+            throw new NullPointerException("Retrieving a queue instance with a null key is not allowed!");
+        }
         return (IQueue) getOrCreateProxyByName(Prefix.QUEUE + name);
     }
 
     public <E> ITopic<E> getTopic(String name) {
+        if (name == null) {
+            throw new NullPointerException("Retrieving a topic instance with a null key is not allowed!");
+        }
         return (ITopic<E>) getOrCreateProxyByName(Prefix.TOPIC + name);
     }
 
     public <E> ISet<E> getSet(String name) {
+        if (name == null) {
+            throw new NullPointerException("Retrieving a set instance with a null key is not allowed!");
+        }
         return (ISet<E>) getOrCreateProxyByName(Prefix.SET + name);
     }
 
     public <E> IList<E> getList(String name) {
+        if (name == null) {
+            throw new NullPointerException("Retrieving a list instance with a null key is not allowed!");
+        }
         return (IList<E>) getOrCreateProxyByName(Prefix.AS_LIST + name);
     }
 
     public <K, V> MultiMap<K, V> getMultiMap(String name) {
+        if (name == null) {
+            throw new NullPointerException("Retrieving a multi-map instance with a null key is not allowed!");
+        }
         return (MultiMap<K, V>) getOrCreateProxyByName(Prefix.MULTIMAP + name);
     }
 
     public ILock getLock(Object key) {
+        if (key == null) {
+            throw new NullPointerException("Retrieving a lock instance with a null key is not allowed!");
+        }
         return (ILock) getOrCreateProxy(new ProxyKey("lock", key));
     }
 
     public Object getOrCreateProxyByName(final String name) {
+        if (name == null) {
+            throw new NullPointerException("Proxy name is required!");
+        }
         Object proxy = proxiesByName.get(name);
         if (proxy == null) {
             proxy = getOrCreateProxy(new ProxyKey(name, null));
@@ -572,6 +596,9 @@ public class FactoryImpl implements HazelcastInstance {
     }
 
     public Object getOrCreateProxy(final ProxyKey proxyKey) {
+        if (proxyKey == null) {
+            throw new NullPointerException("Proxy key is required!");
+        }
         initialChecks();
         Object proxy = proxies.get(proxyKey);
         if (proxy == null) {
