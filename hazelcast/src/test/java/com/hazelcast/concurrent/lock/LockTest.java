@@ -268,7 +268,7 @@ public class LockTest extends HazelcastTestSupport {
         }
 
         final ILock lock = instance1.getLock(key);
-        lock.lock(3, TimeUnit.SECONDS);
+        lock.lock(5, TimeUnit.SECONDS);
         assertTrue(lock.getRemainingLeaseTime() > 0);
         Assert.assertTrue(lock.isLocked());
 

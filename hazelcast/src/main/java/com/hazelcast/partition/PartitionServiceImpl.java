@@ -272,9 +272,9 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         if (deadAddress == null || deadAddress.equals(thisAddress)) {
             return;
         }
-        clearMigrationQueue();
         lock.lock();
         try {
+            clearMigrationQueue();
             if (!activeMigrations.isEmpty()) {
                 if (node.isMaster()) {
                     rollbackActiveMigrationsFromPreviousMaster(node.getLocalMember().getUuid());
