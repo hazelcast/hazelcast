@@ -25,7 +25,9 @@ import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionalObject;
+import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
@@ -38,15 +40,21 @@ import static com.hazelcast.map.MapService.SERVICE_NAME;
 /**
  * @author mdogan 2/26/13
  */
-public abstract class TxnMapProxySupport extends AbstractDistributedObject<MapService> implements TransactionalObject {
+public abstract class TransactionalMapProxySupport extends AbstractDistributedObject<MapService> implements TransactionalObject {
 
     protected final String name;
     protected final TransactionSupport tx;
 
-    public TxnMapProxySupport(String name, MapService mapService, NodeEngine nodeEngine, TransactionSupport transaction) {
+    public TransactionalMapProxySupport(String name, MapService mapService, NodeEngine nodeEngine, TransactionSupport transaction) {
         super(nodeEngine, mapService);
         this.name = name;
         this.tx = transaction;
+    }
+
+    protected void checkTransactionState(){
+        if(!tx.getState().equals(Transaction.State.ACTIVE)) {
+            throw new TransactionNotActiveException("Transaction is not active!");
+        }
     }
 
     public boolean containsKeyInternal(Data key) {

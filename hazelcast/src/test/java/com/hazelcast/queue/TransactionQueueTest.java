@@ -153,4 +153,19 @@ public class TransactionQueueTest extends HazelcastTestSupport {
 
     }
 
+    @Test(expected = TransactionNotActiveException.class)
+    public void testTxnQueueOuterTransaction() throws Throwable
+    {
+        Config config = new Config();
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
+
+        final TransactionContext transactionContext = h1.newTransactionContext();
+        transactionContext.beginTransaction();
+        TransactionalQueue<Object> queue = transactionContext.getQueue("testTxnQueueOuterTransaction");
+        queue.offer("item");
+        transactionContext.commitTransaction();
+        queue.poll();
+    }
+
 }

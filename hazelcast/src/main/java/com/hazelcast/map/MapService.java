@@ -29,7 +29,7 @@ import com.hazelcast.map.merge.*;
 import com.hazelcast.map.operation.*;
 import com.hazelcast.map.proxy.MapProxyImpl;
 import com.hazelcast.map.record.*;
-import com.hazelcast.map.tx.TxnMapProxy;
+import com.hazelcast.map.tx.TransactionalMapProxy;
 import com.hazelcast.map.wan.MapReplicationRemove;
 import com.hazelcast.map.wan.MapReplicationUpdate;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
@@ -400,8 +400,8 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     @SuppressWarnings("unchecked")
-    public TxnMapProxy createTransactionalObject(Object id, TransactionSupport transaction) {
-        return new TxnMapProxy(String.valueOf(id), this, nodeEngine, transaction);
+    public TransactionalMapProxy createTransactionalObject(Object id, TransactionSupport transaction) {
+        return new TransactionalMapProxy(String.valueOf(id), this, nodeEngine, transaction);
     }
 
     private final ConstructorFunction<String, NearCache> nearCacheConstructor = new ConstructorFunction<String, NearCache>() {

@@ -20,6 +20,8 @@ import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.transaction.TransactionNotActiveException;
+import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionSupport;
 
 import java.util.concurrent.TimeUnit;
@@ -42,6 +44,7 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport i
     }
 
     public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
+        checkTransactionState();
         Data data = getNodeEngine().toData(e);
         return offerInternal(data, unit.toMillis(timeout));
     }
@@ -55,6 +58,7 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport i
     }
 
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
+        checkTransactionState();
         Data data = pollInternal(unit.toMillis(timeout));
         return getNodeEngine().toObject(data);
     }

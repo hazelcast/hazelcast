@@ -39,16 +39,19 @@ public class TransactionalListProxy<E> extends TransactionalMultiMapProxySupport
     }
 
     public boolean add(E e) {
+        checkTransactionState();
         Data value = getNodeEngine().toData(e);
         return putInternal(key, value);
     }
 
     public boolean remove(E e) {
+        checkTransactionState();
         Data value = getNodeEngine().toData(e);
         return removeInternal(key, value);
     }
 
     public int size() {
+        checkTransactionState();
         return valueCountInternal(key);
     }
 

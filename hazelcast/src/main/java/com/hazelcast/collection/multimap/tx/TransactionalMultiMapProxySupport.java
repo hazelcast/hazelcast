@@ -28,7 +28,9 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionalObject;
+import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
@@ -53,6 +55,12 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         this.proxyId = proxyId;
         this.tx = tx;
         this.config = config;
+    }
+
+    protected void checkTransactionState(){
+        if(!tx.getState().equals(Transaction.State.ACTIVE)) {
+            throw new TransactionNotActiveException("Transaction is not active!");
+        }
     }
 
     protected boolean putInternal(Data key, Data value) {
@@ -199,6 +207,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
     }
 
     public int size(){
+        checkTransactionState();
         try {
             final Map<Integer, Object> results = getNodeEngine().getOperationService().invokeOnAllPartitions(CollectionService.SERVICE_NAME,
                     new MultiMapOperationFactory(proxyId, MultiMapOperationFactory.OperationFactoryType.SIZE));
