@@ -16,6 +16,7 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.impl.MemberImpl;
 import com.hazelcast.nio.Address;
@@ -48,6 +49,14 @@ public class HazelcastClientCountDownLatchTest {
     @After
     public void tearDown() throws Exception {
         Hazelcast.shutdownAll();
+    }
+
+    @Test
+    public void testDestroy() {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastClient client = newHazelcastClient(h1);
+        ICountDownLatch latch = client.getCountDownLatch("testDestroy");
+        latch.destroy();
     }
 
     @Test

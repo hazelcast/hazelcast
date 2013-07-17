@@ -580,7 +580,7 @@ public class FactoryImpl implements HazelcastInstance {
         if (key == null) {
             throw new NullPointerException("Retrieving a lock instance with a null key is not allowed!");
         }
-        return (ILock) getOrCreateProxy(new ProxyKey("lock", key));
+        return (ILock) getOrCreateProxy(new ProxyKey(Prefix.LOCK, key));
     }
 
     public Object getOrCreateProxyByName(final String name) {
@@ -809,7 +809,7 @@ public class FactoryImpl implements HazelcastInstance {
                 proxy = proxyFactory.createSemaphoreProxy(name);
             } else if (name.startsWith(Prefix.COUNT_DOWN_LATCH)) {
                 proxy = proxyFactory.createCountDownLatchProxy(name);
-            } else if (name.equals("lock")) {
+            } else if (name.equals(Prefix.LOCK)) {
                 proxy = proxyFactory.createLockProxy(proxyKey.key);
             }
             final HazelcastInstanceAwareInstance anotherProxy = proxies.putIfAbsent(proxyKey, proxy);
@@ -884,7 +884,7 @@ public class FactoryImpl implements HazelcastInstance {
     void destroyInstanceClusterWide(String name, Object key) {
         final ProxyKey proxyKey = new ProxyKey(name, key);
         if (proxies.containsKey(proxyKey)) {
-            if (name.equals("lock")) {
+            if (name.equals(Prefix.LOCK)) {
                 locksMapProxy.remove(key);
             }
             node.clusterManager.sendProcessableToAll(new CreateOrDestroyInstanceProxy(proxyKey, false), true);

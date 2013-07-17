@@ -17,6 +17,7 @@
 package com.hazelcast.impl;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.Prefix;
 import com.hazelcast.core.RuntimeInterruptedException;
 import com.hazelcast.impl.FactoryImpl.ProxyKey;
 import com.hazelcast.impl.monitor.LocalLockStatsImpl;
@@ -209,7 +210,7 @@ public class LockProxyImpl extends SerializationHelper implements HazelcastInsta
         }
 
         public void destroy() {
-            factory.destroyInstanceClusterWide("lock", key);
+            factory.destroyInstanceClusterWide(Prefix.LOCK, key);
         }
 
         public InstanceType getInstanceType() {
@@ -221,7 +222,7 @@ public class LockProxyImpl extends SerializationHelper implements HazelcastInsta
         }
 
         public Object getId() {
-            return new ProxyKey("lock", key);
+            return new ProxyKey(Prefix.LOCK, key);
         }
 
         public LocalLockStats getLocalLockStats() {

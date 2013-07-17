@@ -25,6 +25,7 @@ import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.util.Clock;
 import org.junit.AfterClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -37,6 +38,7 @@ import java.util.concurrent.*;
 
 import static org.junit.Assert.*;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class HazelcastClientMapTest extends HazelcastClientTestBase {
 
     @Test(expected = NullPointerException.class)
@@ -44,6 +46,13 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
         HazelcastClient hClient = getHazelcastClient();
         final IMap<Integer, Integer> imap = hClient.getMap("testPutNull");
         imap.put(1, null);
+    }
+
+    @Test
+    public void testDestroy() {
+        HazelcastClient hClient = getHazelcastClient();
+        IMap<?,?> map = hClient.getMap("testDestroy");
+        map.destroy();
     }
 
     @Test

@@ -22,6 +22,7 @@ import com.hazelcast.core.MultiMap;
 import com.hazelcast.impl.base.Values;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -32,6 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class HazelcastClientMultiMapTest extends HazelcastClientTestBase {
 
     @Test(expected = NullPointerException.class)
@@ -39,6 +41,13 @@ public class HazelcastClientMultiMapTest extends HazelcastClientTestBase {
         HazelcastClient hClient = getHazelcastClient();
         final MultiMap<Integer, String> map = hClient.getMultiMap("testPutNull");
         map.put(1, null);
+    }
+
+    @Test
+    public void testDestroy() {
+        HazelcastClient hClient = getHazelcastClient();
+        MultiMap<?, ?> multiMap = hClient.getMultiMap("testDestroy");
+        multiMap.destroy();
     }
 
     @Test

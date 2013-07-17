@@ -18,10 +18,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.SemaphoreConfig;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ISemaphore;
-import com.hazelcast.core.InstanceDestroyedException;
+import com.hazelcast.core.*;
 import org.junit.*;
 import org.junit.runner.RunWith;
 
@@ -59,6 +56,14 @@ public class HazelcastClientSemaphoreTest {
     @After
     public void tearDown() throws Exception {
         Hazelcast.shutdownAll();
+    }
+
+    @Test
+    public void testDestroy() {
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        HazelcastClient client = newHazelcastClient(instance);
+        ISemaphore semaphore = client.getSemaphore("testDestroy");
+        semaphore.destroy();
     }
 
     @Test

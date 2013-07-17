@@ -363,7 +363,14 @@ public class ClientHandlerService implements ConnectionListener {
 
     private class DestroyHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
-            Instance instance = (Instance) factory.getOrCreateProxyByName(packet.name);
+            String name = packet.name;
+            Instance instance;
+            if (Prefix.LOCK.equals(name)) {
+                Object key = toObject(packet.getKeyData());
+                instance = (Instance) factory.getOrCreateProxy(new FactoryImpl.ProxyKey(name, key));
+            } else {
+                instance = (Instance) factory.getOrCreateProxyByName(name);
+            }
             instance.destroy();
         }
     }

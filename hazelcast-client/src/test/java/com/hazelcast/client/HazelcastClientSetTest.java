@@ -21,6 +21,7 @@ import com.hazelcast.core.ItemListener;
 import org.junit.AfterClass;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
@@ -30,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class HazelcastClientSetTest extends HazelcastClientTestBase {
 
     @Test(expected = NullPointerException.class)
@@ -44,6 +46,13 @@ public class HazelcastClientSetTest extends HazelcastClientTestBase {
         HazelcastClient hClient = getHazelcastClient();
         ISet<String> set = hClient.getSet("getSetName");
         assertEquals("getSetName", set.getName());
+    }
+
+    @Test
+    public void testDestroy() {
+        HazelcastClient hClient = getHazelcastClient();
+        ISet<String> set = hClient.getSet("testDestroy");
+        set.destroy();
     }
 
     @Test

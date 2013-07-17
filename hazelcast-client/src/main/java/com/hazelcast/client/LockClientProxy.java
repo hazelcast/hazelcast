@@ -17,6 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.core.ILock;
+import com.hazelcast.core.Prefix;
 import com.hazelcast.impl.ClusterOperation;
 import com.hazelcast.impl.FactoryImpl;
 import com.hazelcast.monitor.LocalLockStats;
@@ -27,11 +28,13 @@ import java.util.concurrent.locks.Condition;
 import static com.hazelcast.client.ProxyHelper.check;
 
 public class LockClientProxy implements ILock {
+    private static final String LOCK = Prefix.LOCK;
+
     final ProxyHelper proxyHelper;
     final Object lockObject;
 
     public LockClientProxy(Object object, HazelcastClient client) {
-        proxyHelper = new ProxyHelper("", client);
+        proxyHelper = new ProxyHelper(LOCK, client);
         lockObject = object;
         check(lockObject);
     }
@@ -81,7 +84,7 @@ public class LockClientProxy implements ILock {
     }
 
     public Condition newCondition() {
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     public InstanceType getInstanceType() {
@@ -89,11 +92,11 @@ public class LockClientProxy implements ILock {
     }
 
     public void destroy() {
-        proxyHelper.destroy();
+        proxyHelper.doOp(ClusterOperation.DESTROY, lockObject, null);
     }
 
     public Object getId() {
-        return new FactoryImpl.ProxyKey("lock", lockObject);
+        return new FactoryImpl.ProxyKey(LOCK, lockObject);
     }
 
     @Override

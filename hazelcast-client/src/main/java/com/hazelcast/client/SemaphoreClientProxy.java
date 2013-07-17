@@ -34,7 +34,7 @@ public class SemaphoreClientProxy implements ISemaphore {
 
     public SemaphoreClientProxy(HazelcastClient hazelcastClient, String name) {
         this.name = name;
-        proxyHelper = new ProxyHelper(getName(), hazelcastClient);
+        proxyHelper = new ProxyHelper(name, hazelcastClient);
     }
 
     public void acquire() throws InstanceDestroyedException, InterruptedException {
