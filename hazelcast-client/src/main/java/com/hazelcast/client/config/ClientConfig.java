@@ -19,6 +19,7 @@ package com.hazelcast.client.config;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.nio.SocketInterceptor;
@@ -121,6 +122,17 @@ public class ClientConfig {
      * Can be used instead of {@link GroupConfig} in Hazelcast EE.
      */
     private Credentials credentials;
+
+    private Map<String, NearCacheConfig> cacheConfigMap = new HashMap<String, NearCacheConfig>();
+
+    public NearCacheConfig getNearCacheConfig(String mapName){
+        return cacheConfigMap.get(mapName);
+    }
+
+    public ClientConfig addNearCacheConfig(String mapName, NearCacheConfig nearCacheConfig){
+        cacheConfigMap.put(mapName, nearCacheConfig);
+        return this;
+    }
 
 
     public boolean isSmart() {
