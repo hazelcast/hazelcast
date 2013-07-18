@@ -184,7 +184,7 @@ final class OperationServiceImpl implements OperationService {
                     throw new PartitionMigratingException(node.getThisAddress(), partitionId,
                             op.getClass().getName(), op.getServiceName());
                 }
-                if (!OperationAccessor.isMigrationOperation(op) && node.partitionService.isPartitionMigrating(partitionId)) {
+                if (retryDuringMigration(op) && node.partitionService.isPartitionMigrating(partitionId)) {
                     throw new PartitionMigratingException(node.getThisAddress(), partitionId,
                         op.getClass().getName(), op.getServiceName());
                 }
@@ -241,6 +241,10 @@ final class OperationServiceImpl implements OperationService {
         } finally {
             afterCallExecution(op, callKey);
         }
+    }
+
+    private static boolean retryDuringMigration(Operation op) {
+        return !(op instanceof ReadonlyOperation || OperationAccessor.isMigrationOperation(op));
     }
 
     boolean isCallTimedOut(Operation op) {
@@ -342,8 +346,8 @@ final class OperationServiceImpl implements OperationService {
                 final ScheduledBackup backup = entry.getValue();
                 if (!backup.backup()) {
                     final int retries = backup.retries;
-                    if (logger.isLoggable(Level.INFO)) {
-                        logger.log(Level.INFO, "Re-scheduling[" + retries + "] -> " + backup);
+                    if (logger.isLoggable(Level.FINEST)) {
+                        logger.log(Level.FINEST, "Re-scheduling[" + retries + "] -> " + backup);
                     }
                     scheduler.schedule(entry.getScheduledDelayMillis() * retries, entry.getKey(), backup);
                 }

@@ -23,6 +23,7 @@ import com.hazelcast.collection.CollectionWrapper;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.ReadonlyOperation;
 
 import java.io.IOException;
 import java.util.List;
@@ -30,7 +31,7 @@ import java.util.List;
 /**
  * @author ali 1/16/13
  */
-public class GetOperation extends CollectionKeyBasedOperation {
+public class GetOperation extends CollectionKeyBasedOperation implements ReadonlyOperation {
 
     int index;
 
