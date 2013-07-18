@@ -38,16 +38,38 @@
     </license>
     <resourceadapter>
         <resourceadapter-class>com.hazelcast.jca.ResourceAdapterImpl</resourceadapter-class>
+        <config-property>
+        	<description>Location of the hazelcast.xml file</description>
+        	<config-property-name>configurationLocation</config-property-name>
+        	<config-property-type>java.lang.String</config-property-type>
+        </config-property>
+
         <outbound-resourceadapter>
             <connection-definition>
-                <managedconnectionfactory-class>com.hazelcast.jca.ManagedConnectionFactoryImpl
-                </managedconnectionfactory-class>
+                <managedconnectionfactory-class>com.hazelcast.jca.ManagedConnectionFactoryImpl</managedconnectionfactory-class>
+				<config-property>
+					<description>Comma separated list of FACTORY_INIT, CREATE, TX_START, TX_COMPLETE, CLEANUP and DESTROY to
+					trace connection events</description>
+					<config-property-name>connectionTracingEvents</config-property-name>
+					<config-property-type>java.lang.String</config-property-type>
+					<config-property-value>FACTORY_INIT</config-property-value>
+				</config-property>
+                
+                <config-property>
+                	<description>Shows a stacktrace for all loged connectionTracingEvents</description>
+                	<config-property-name>connectionTracingDetail</config-property-name>
+                	<config-property-type>java.lang.Boolean</config-property-type>
+                	<config-property-value>false</config-property-value>
+                </config-property>
+                
                 <connectionfactory-interface>javax.resource.cci.ConnectionFactory</connectionfactory-interface>
                 <connectionfactory-impl-class>com.hazelcast.jca.ConnectionFactoryImpl</connectionfactory-impl-class>
-                <connection-interface>javax.resource.cci.ConnectionFactory</connection-interface>
+                
+                <connection-interface>javax.resource.cci.Connection</connection-interface>
                 <connection-impl-class>com.hazelcast.jca.ConnectionImpl</connection-impl-class>
             </connection-definition>
-            <transaction-support>LocalTransaction</transaction-support>
+
+            <transaction-support>XATransaction</transaction-support>
             <authentication-mechanism>
                 <authentication-mechanism-type>BasicPassword</authentication-mechanism-type>
                 <credential-interface>javax.resource.spi.security.PasswordCredential</credential-interface>

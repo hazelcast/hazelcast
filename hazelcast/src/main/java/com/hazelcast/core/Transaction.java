@@ -62,4 +62,16 @@ public interface Transaction {
      * @return the status
      */
     int getStatus();
+    
+    /**
+     * Sets the transaction timeout of this transaction in milliseconds
+     * @param timeout The new timeout, values equal or less zero are ignored
+     */
+    void setTransactionTimeout(long timeout);
+    /**
+     * Gets the transaction timeout of this transaction in milliseconds.
+     * The default value is 30.000
+     * @return 
+     */
+    long getTransactionTimeout();
 }

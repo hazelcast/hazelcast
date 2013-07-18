@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<ironjacamar xmlns="http://www.jboss.org/ironjacamar/schema"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.jboss.org/ironjacamar/schema 
+             http://www.jboss.org/ironjacamar/schema/ironjacamar_1_0.xsd">
+
+<!-- 
+	<config-property name="configurationLocation"></config-property>
+ -->
+ 
+	<connection-definitions>
+		<connection-definition class-name="com.hazelcast.jca.ManagedConnectionFactoryImpl"
+			jndi-name="java:/HazelcastCF" pool-name="HazelcastConnectionFactory">
+			<!-- 
+			<config-property name="connectionTracingEvents">FACTORY_INIT,CREATE,TX_START,TX_COMPLETE,CLEANUP,DESTROY</config-property>
+			 -->
+			 <!-- 
+			 <config-property name="connectionTracingDetail">true</config-property>
+			  -->
+		</connection-definition>
+	</connection-definitions>
+
+</ironjacamar>
