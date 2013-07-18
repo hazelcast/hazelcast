@@ -526,6 +526,8 @@
                             <source>${jdk.version}</source>
                             <target>${jdk.version}</target>
                             <encoding>${project.build.sourceEncoding}</encoding>
+                            <verbose>true</verbose>
+                            <fork>true</fork>
                             <executable>/usr/lib/jvm/java-1.7.0/bin/javac</executable>
                         </configuration>
                     </plugin>
@@ -560,6 +562,8 @@
                         <artifactId>maven-compiler-plugin</artifactId>
                         <version>${maven.compiler.plugin.version}</version>
                         <configuration>
+                            <verbose>true</verbose>
+                            <fork>true</fork>
                             <source>${jdk.version}</source>
                             <target>${jdk.version}</target>
                             <encoding>${project.build.sourceEncoding}</encoding>
