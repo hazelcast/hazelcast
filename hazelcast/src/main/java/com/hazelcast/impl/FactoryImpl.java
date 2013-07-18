@@ -150,7 +150,7 @@ public class FactoryImpl implements HazelcastInstance {
                 } catch (InterruptedException ignored) {
                 }
             }
-            int initialMinClusterSize = factory.node.groupProperties.INITIAL_MIN_CLUSTER_SIZE.getInteger();
+            final int initialMinClusterSize = factory.node.groupProperties.INITIAL_MIN_CLUSTER_SIZE.getInteger();
             while (factory.node.getClusterImpl().getMembers().size() < initialMinClusterSize) {
                 try {
                     //noinspection BusyWait
@@ -158,7 +158,7 @@ public class FactoryImpl implements HazelcastInstance {
                 } catch (InterruptedException ignored) {
                 }
             }
-            if (initialMinClusterSize > 0) {
+            if (initialMinClusterSize > 1) {
                 if (firstMember) {
                     final ConcurrentMapManager concurrentMapManager = factory.node.concurrentMapManager;
                     concurrentMapManager.enqueueAndReturn(new Processable() {
