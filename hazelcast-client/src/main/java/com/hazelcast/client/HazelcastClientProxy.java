@@ -21,7 +21,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.TerminatedLifecycleService;
 import com.hazelcast.logging.LoggingService;
-import com.hazelcast.nio.serialization.Serializer;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
@@ -161,6 +161,10 @@ public final class HazelcastClientProxy implements HazelcastInstance {
     // to be able destroy instance bean from Spring
     public final void shutdown() {
         getLifecycleService().shutdown();
+    }
+
+    public final SerializationService getSerializationService() {
+        return getClient().getSerializationService();
     }
 
     private HazelcastClient getClient() {
