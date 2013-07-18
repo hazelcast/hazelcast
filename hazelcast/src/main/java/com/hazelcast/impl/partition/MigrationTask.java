@@ -49,7 +49,7 @@ public class MigrationTask implements Callable<Boolean>, DataSerializable, Hazel
     }
 
     public MigrationTask(int partitionId, CostAwareRecordList costAwareRecordList,
-                         int replicaIndex, Address from) throws IOException {
+                         int replicaIndex, Address from, boolean compress) throws IOException {
         this.partitionId = partitionId;
         this.replicaIndex = replicaIndex;
         this.from = from;
@@ -57,7 +57,12 @@ public class MigrationTask implements Callable<Boolean>, DataSerializable, Hazel
         ByteArrayOutputStream bos = new ByteArrayOutputStream((int) (costAwareRecordList.getCost() / 100));
         DataOutputStream dos = null;
         try {
-            dos = new DataOutputStream(new DeflaterOutputStream(bos));
+            bos.write(compress ? 1 : 0);
+            if (compress) {
+                dos = new DataOutputStream(new DeflaterOutputStream(bos));
+            } else {
+                dos = new DataOutputStream(bos);
+            }
             List<Record> lsRecordsToMigrate = costAwareRecordList.getRecords();
             dos.writeInt(lsRecordsToMigrate.size());
             for (Record record : lsRecordsToMigrate) {
@@ -75,7 +80,12 @@ public class MigrationTask implements Callable<Boolean>, DataSerializable, Hazel
         DataInputStream dis = null;
         try {
             ByteArrayInputStream bais = new ByteArrayInputStream(bytesRecordSet);
-            dis = new DataInputStream(new InflaterInputStream(bais));
+            boolean compressed = bais.read() != 0;
+            if (compressed) {
+                dis = new DataInputStream(new InflaterInputStream(bais));
+            } else {
+                dis = new DataInputStream(bais);
+            }
             int size = dis.readInt();
             RecordSet recordSet = new RecordSet();
             for (int i = 0; i < size; i++) {
