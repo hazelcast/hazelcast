@@ -179,7 +179,7 @@ public final class ProxyManager {
 
     private void initialize(ClientProxy clientProxy) {
         clientProxy.setContext(new ClientContext(client.getSerializationService(), client.getClientClusterService(),
-                client.getClientPartitionService(), client.getInvocationService(), client.getClientExecutionService(), this));
+                client.getClientPartitionService(), client.getInvocationService(), client.getClientExecutionService(), this, client.getClientConfig()));
     }
 
     public Collection<ClientProxy> getProxies() {
