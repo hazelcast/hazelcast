@@ -19,7 +19,8 @@ package com.hazelcast.web;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.*;
-import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.instance.HazelcastInstanceLoader;
+import com.hazelcast.instance.SerializationHelper;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
@@ -35,7 +36,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 
-import static com.hazelcast.web.HazelcastInstanceLoader.*;
+import static com.hazelcast.instance.HazelcastInstanceLoader.*;
 
 public class WebFilter implements Filter {
 
@@ -49,7 +50,9 @@ public class WebFilter implements Filter {
 
     private static final ConcurrentMap<String, HazelcastHttpSession> mapSessions = new ConcurrentHashMap<String, HazelcastHttpSession>(1000);
 
-    private HazelcastInstanceImpl hazelcastInstance;
+    private HazelcastInstance hazelcastInstance;
+
+    private SerializationHelper serializationHelper;
 
     private String clusterMapName = "none";
 
@@ -162,7 +165,8 @@ public class WebFilter implements Filter {
         setProperty(INSTANCE_NAME);
         setProperty(USE_CLIENT);
         setProperty(CLIENT_CONFIG_LOCATION);
-        hazelcastInstance = (HazelcastInstanceImpl) getInstance(properties);
+        hazelcastInstance = getInstance(properties);
+        serializationHelper = new SerializationHelper(hazelcastInstance);
     }
 
     private void setProperty(String propertyName) {
@@ -499,10 +503,10 @@ public class WebFilter implements Filter {
             originalSession.setMaxInactiveInterval(maxInactiveSeconds);
         }
 
-        public synchronized Data writeObject(final Object obj) {
+        private Data writeObject(final Object obj) {
             if (obj == null)
                 return null;
-            return hazelcastInstance.node.getSerializationService().toData(obj);
+            return serializationHelper.toData(obj);
         }
 
         void destroy() {
