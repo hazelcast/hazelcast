@@ -37,17 +37,19 @@ public final class MigrationOperation extends BaseMigrationOperation {
 
     private long[] replicaVersions;
     private transient Collection<Operation> tasks;
-    private byte[] zippedTaskData;
+    private byte[] taskData;
     private int taskCount;
+    private boolean compressed;
 
     public MigrationOperation() {
     }
 
-    public MigrationOperation(MigrationInfo migrationInfo, long[] replicaVersions, byte[] taskData, int taskCount) {
+    public MigrationOperation(MigrationInfo migrationInfo, long[] replicaVersions, byte[] taskData, int taskCount, boolean compressed) {
         super(migrationInfo);
         this.replicaVersions = replicaVersions;
         this.taskCount = taskCount;
-        this.zippedTaskData = taskData;
+        this.taskData = taskData;
+        this.compressed = compressed;
     }
 
     public void run() throws Exception {
@@ -59,8 +61,13 @@ public final class MigrationOperation extends BaseMigrationOperation {
         BufferObjectDataInput in = null;
         if (migrationInfo.startProcessing()) {
             try {
-                final byte[] taskData = IOUtil.decompress(zippedTaskData);
-                in = serializationService.createObjectDataInput(taskData);
+                final byte[] data;
+                if (compressed) {
+                    data = IOUtil.decompress(taskData);
+                } else {
+                    data = taskData;
+                }
+                in = serializationService.createObjectDataInput(data);
                 int size = in.readInt();
                 tasks = new ArrayList<Operation>(size);
                 for (int i = 0; i < size; i++) {
@@ -133,18 +140,20 @@ public final class MigrationOperation extends BaseMigrationOperation {
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
+        out.writeBoolean(compressed);
         out.writeInt(taskCount);
-        out.writeInt(zippedTaskData.length);
-        out.write(zippedTaskData);
+        out.writeInt(taskData.length);
+        out.write(taskData);
         out.writeLongArray(replicaVersions);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
+        compressed = in.readBoolean();
         taskCount = in.readInt();
         int size = in.readInt();
-        zippedTaskData = new byte[size];
-        in.readFully(zippedTaskData);
+        taskData = new byte[size];
+        in.readFully(taskData);
         replicaVersions = in.readLongArray();
     }
 
@@ -155,6 +164,7 @@ public final class MigrationOperation extends BaseMigrationOperation {
         sb.append("{partitionId=").append(getPartitionId());
         sb.append(", migration=").append(migrationInfo);
         sb.append(", taskCount=").append(taskCount);
+        sb.append(", compressed=").append(compressed);
         sb.append('}');
         return sb.toString();
     }
