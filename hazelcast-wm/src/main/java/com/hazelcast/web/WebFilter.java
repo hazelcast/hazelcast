@@ -95,12 +95,16 @@ public class WebFilter implements Filter {
         } else {
             clusterMapName = "_web_" + servletContext.getServletContextName();
         }
-        Config hzConfig = hazelcastInstance.getConfig();
-        String sessionTTL = getParam("session-ttl-seconds");
-        if (sessionTTL != null) {
-            MapConfig mapConfig = new MapConfig(clusterMapName);
-            mapConfig.setTimeToLiveSeconds(Integer.valueOf(sessionTTL));
-            hzConfig.addMapConfig(mapConfig);
+        try {
+            Config hzConfig = hazelcastInstance.getConfig();
+            String sessionTTL = getParam("session-ttl-seconds");
+            if (sessionTTL != null) {
+                MapConfig mapConfig = new MapConfig(clusterMapName);
+                mapConfig.setTimeToLiveSeconds(Integer.valueOf(sessionTTL));
+                hzConfig.addMapConfig(mapConfig);
+            }
+        } catch (UnsupportedOperationException ignored) {
+            // client cannot access Config.
         }
         String cookieName = getParam("cookie-name");
         if (cookieName != null) {
