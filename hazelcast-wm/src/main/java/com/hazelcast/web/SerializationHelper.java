@@ -14,36 +14,38 @@
  * limitations under the License.
  */
 
-package com.hazelcast.instance;
+package com.hazelcast.web;
 
+import com.hazelcast.client.HazelcastClientProxy;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 
 /**
  * @author mdogan 7/18/13
  */
-public final class SerializationHelper {
+final class SerializationHelper {
 
     private final SerializationService serializationService;
 
     public SerializationHelper(HazelcastInstance instance) {
-        serializationService = getNode(instance).getSerializationService();
+        serializationService = getSerializationService(instance);
     }
 
     public Data toData(final Object obj) {
         return serializationService.toData(obj);
     }
 
-    private static Node getNode(HazelcastInstance hz) {
-        final HazelcastInstanceImpl impl;
+    private static SerializationService getSerializationService(HazelcastInstance hz) {
         if (hz instanceof HazelcastInstanceProxy) {
-            impl = ((HazelcastInstanceProxy) hz).original;
+            return  ((HazelcastInstanceProxy) hz).getSerializationService();
         } else if (hz instanceof HazelcastInstanceImpl) {
-            impl = (HazelcastInstanceImpl) hz;
-        } else {
-            throw new IllegalArgumentException();
+            ((HazelcastInstanceImpl) hz).getSerializationService();
+        } else if (hz instanceof HazelcastClientProxy) {
+            return ((HazelcastClientProxy) hz).getSerializationService();
         }
-        return impl.node;
+        throw new IllegalArgumentException();
     }
 }

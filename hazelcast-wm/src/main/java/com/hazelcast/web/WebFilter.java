@@ -19,8 +19,6 @@ package com.hazelcast.web;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.*;
-import com.hazelcast.instance.HazelcastInstanceLoader;
-import com.hazelcast.instance.SerializationHelper;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
@@ -36,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 
-import static com.hazelcast.instance.HazelcastInstanceLoader.*;
+import static com.hazelcast.web.HazelcastInstanceLoader.*;
 
 public class WebFilter implements Filter {
 
@@ -98,12 +96,16 @@ public class WebFilter implements Filter {
         } else {
             clusterMapName = "_web_" + servletContext.getServletContextName();
         }
-        Config hzConfig = hazelcastInstance.getConfig();
-        String sessionTTL = getParam("session-ttl-seconds");
-        if (sessionTTL != null) {
-            MapConfig mapConfig = new MapConfig(clusterMapName);
-            mapConfig.setTimeToLiveSeconds(Integer.valueOf(sessionTTL));
-            hzConfig.addMapConfig(mapConfig);
+        try {
+            Config hzConfig = hazelcastInstance.getConfig();
+            String sessionTTL = getParam("session-ttl-seconds");
+            if (sessionTTL != null) {
+                MapConfig mapConfig = new MapConfig(clusterMapName);
+                mapConfig.setTimeToLiveSeconds(Integer.valueOf(sessionTTL));
+                hzConfig.addMapConfig(mapConfig);
+            }
+        } catch (UnsupportedOperationException ignored) {
+            // client cannot access Config.
         }
         String cookieName = getParam("cookie-name");
         if (cookieName != null) {

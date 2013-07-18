@@ -26,7 +26,7 @@ import org.eclipse.jetty.webapp.WebAppContext;
 public class TestServer {
 
     public static void main(String[] args) throws Exception {
-        final String baseDir = "/java/projects";
+        final String baseDir = args.length > 0 ? args[0] : "/work/projects";
         final String sourceDir = baseDir + "/hazelcast/hazelcast-wm/src/test/webapp";
 
         Server server = new Server();
