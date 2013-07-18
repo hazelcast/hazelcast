@@ -19,8 +19,9 @@ package com.hazelcast.map.operation;
 import com.hazelcast.map.MapDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.ReadonlyOperation;
 
-public final class GetOperation extends KeyBasedMapOperation implements IdentifiedDataSerializable {
+public final class GetOperation extends KeyBasedMapOperation implements IdentifiedDataSerializable, ReadonlyOperation {
 
     private transient Data result;
 

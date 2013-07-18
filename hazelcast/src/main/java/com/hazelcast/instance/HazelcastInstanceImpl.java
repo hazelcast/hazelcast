@@ -34,6 +34,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.management.ThreadMonitoringService;
 import com.hazelcast.map.MapService;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.ProxyService;
 import com.hazelcast.spi.annotation.PrivateApi;
@@ -253,6 +254,10 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
 
     public ThreadGroup getThreadGroup() {
         return threadGroup;
+    }
+
+    public final SerializationService getSerializationService() {
+        return node.getSerializationService();
     }
 
     @Override

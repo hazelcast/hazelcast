@@ -96,8 +96,14 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
                                 for (Operation task : tasks) {
                                     serializationService.writeObject(out, task);
                                 }
-                                final byte[] data = IOUtil.compress(out.toByteArray());
-                                final MigrationOperation migrationOperation = new MigrationOperation(migrationInfo, replicaVersions, data, tasks.size());
+                                final byte[] data;
+                                boolean compress = nodeEngine.getGroupProperties().PARTITION_MIGRATION_ZIP_ENABLED.getBoolean();
+                                if (compress) {
+                                    data = IOUtil.compress(out.toByteArray());
+                                } else {
+                                    data = out.toByteArray();
+                                }
+                                final MigrationOperation migrationOperation = new MigrationOperation(migrationInfo, replicaVersions, data, tasks.size(), compress);
                                 Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(PartitionServiceImpl.SERVICE_NAME,
                                         migrationOperation, destination).setTryPauseMillis(1000).setReplicaIndex(getReplicaIndex()).build();
                                 Future future = inv.invoke();

@@ -147,8 +147,6 @@ public class TransactionQueueTest extends HazelcastTestSupport {
 
         transactionContext.rollbackTransaction();
 
-        assertNull(queue.poll());
-
         assertNull(h1.getQueue("testq").poll());
 
     }

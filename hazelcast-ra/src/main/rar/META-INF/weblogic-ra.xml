@@ -1,0 +1,55 @@
+<?xml version="1.0"?>
+<!--
+  ~ Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<weblogic-connector  xmlns="http://xmlns.oracle.com/weblogic/weblogic-connector"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://xmlns.oracle.com/weblogic/weblogic-connector
+             http://xmlns.oracle.com/weblogic/weblogic-connector/1.0/weblogic-connector.xsd">
+             
+	<jndi-name>HazelcastResource</jndi-name>
+	<enable-access-outside-app>true</enable-access-outside-app>
+	<enable-global-access-to-classes>true</enable-global-access-to-classes>
+	<outbound-resource-adapter>
+		<connection-definition-group>
+			<connection-factory-interface>javax.resource.cci.ConnectionFactory</connection-factory-interface>
+			<connection-instance>
+				<jndi-name>HazelcastCF</jndi-name>
+				<connection-properties>
+					<pool-params>
+						<initial-capacity>1</initial-capacity>
+						<max-capacity>50</max-capacity>
+						<capacity-increment>1</capacity-increment>
+					</pool-params>
+					<!-- 
+					<properties>
+						<property>
+							<name>connectionTracingEvents</name>
+							<value>FACTORY_INIT,CREATE,TX_START,TX_COMPLETE,CLEANUP,DESTROY</value>
+						</property>
+						 -->
+						<!-- 
+						<property>
+							<name>connectionTracingDetail</name>
+							<value>true</value>
+						</property>
+					</properties>
+					-->
+				</connection-properties>
+			</connection-instance>
+		</connection-definition-group>
+	</outbound-resource-adapter>
+</weblogic-connector>

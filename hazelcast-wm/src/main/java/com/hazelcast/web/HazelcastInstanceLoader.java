@@ -37,7 +37,7 @@ import java.net.URL;
 import java.util.Properties;
 import java.util.logging.Level;
 
-class HazelcastInstanceLoader {
+final class HazelcastInstanceLoader {
 
     private final static ILogger logger = Logger.getLogger(HazelcastInstanceLoader.class);
     public static final String INSTANCE_NAME = "instance-name";
