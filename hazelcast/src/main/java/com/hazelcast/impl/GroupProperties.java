@@ -72,6 +72,7 @@ public class GroupProperties {
     public static final String PROP_CLEANUP_DELAY_SECONDS = "hazelcast.map.cleanup.delay.seconds";
     public static final String PROP_EXECUTOR_QUERY_THREAD_COUNT = "hazelcast.executor.query.thread.count";
     public static final String PROP_EXECUTOR_EVENT_THREAD_COUNT = "hazelcast.executor.event.thread.count";
+    public static final String PROP_EXECUTOR_ASYNC_THREAD_COUNT = "hazelcast.executor.async.thread.count";
     public static final String PROP_EXECUTOR_CLIENT_THREAD_COUNT = "hazelcast.executor.client.thread.count";
     public static final String PROP_EXECUTOR_STORE_THREAD_COUNT = "hazelcast.executor.store.thread.count";
     public static final String PROP_LOGGING_TYPE = "hazelcast.logging.type";
@@ -148,8 +149,6 @@ public class GroupProperties {
 
     public final GroupProperty MAX_CONCURRENT_OPERATION_LIMIT;
 
-//    public final GroupProperty SOCKET_BIND_ANY;
-
     public final GroupProperty SOCKET_SERVER_BIND_ANY;
 
     public final GroupProperty SOCKET_CLIENT_BIND_ANY;
@@ -203,6 +202,8 @@ public class GroupProperties {
     public final GroupProperty CLEANUP_DELAY_SECONDS;
 
     public final GroupProperty EXECUTOR_QUERY_THREAD_COUNT;
+
+    public final GroupProperty EXECUTOR_ASYNC_THREAD_COUNT;
 
     public final GroupProperty EXECUTOR_EVENT_THREAD_COUNT;
 
@@ -314,6 +315,7 @@ public class GroupProperties {
         REMOVE_DELAY_SECONDS = new GroupProperty(config, PROP_REMOVE_DELAY_SECONDS, "5");
         CLEANUP_DELAY_SECONDS = new GroupProperty(config, PROP_CLEANUP_DELAY_SECONDS, "10");
         EXECUTOR_QUERY_THREAD_COUNT = new GroupProperty(config, PROP_EXECUTOR_QUERY_THREAD_COUNT, "8");
+        EXECUTOR_ASYNC_THREAD_COUNT = new GroupProperty(config, PROP_EXECUTOR_ASYNC_THREAD_COUNT, "24");
         EXECUTOR_EVENT_THREAD_COUNT = new GroupProperty(config, PROP_EXECUTOR_EVENT_THREAD_COUNT, "16");
         EXECUTOR_CLIENT_THREAD_COUNT = new GroupProperty(config, PROP_EXECUTOR_CLIENT_THREAD_COUNT, "40");
         EXECUTOR_STORE_THREAD_COUNT = new GroupProperty(config, PROP_EXECUTOR_STORE_THREAD_COUNT, "16");

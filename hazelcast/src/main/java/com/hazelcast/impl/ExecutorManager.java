@@ -103,7 +103,7 @@ public class ExecutorManager extends BaseManager {
         queryExecutorService = getOrCreateNamedExecutorService(QUERY_EXECUTOR_SERVICE, gp.EXECUTOR_QUERY_THREAD_COUNT);
         eventExecutorService = getOrCreateNamedExecutorService(EVENT_EXECUTOR_SERVICE, gp.EXECUTOR_EVENT_THREAD_COUNT);
         mapLoaderExecutorService = parallelExecutorService.newParallelExecutor(gp.MAP_LOAD_THREAD_COUNT.getInteger());
-        asyncExecutorService = parallelExecutorService.newBlockingParallelExecutor(24, 1000);
+        asyncExecutorService = parallelExecutorService.newBlockingParallelExecutor(gp.EXECUTOR_QUERY_THREAD_COUNT.getInteger(), 1000);
         newNamedExecutorService(Prefix.EXECUTOR_SERVICE + "hz.initialization", new ExecutorConfig("hz.initialization",
                 Integer.MAX_VALUE, Integer.MAX_VALUE, 60));
         registerPacketProcessor(EXECUTE, new ExecutionOperationHandler());
