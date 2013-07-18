@@ -47,7 +47,7 @@
         <maven.build.timestamp.format>yyyyMMdd</maven.build.timestamp.format>
         <timestamp>${maven.build.timestamp}</timestamp>
 
-        <maven.compiler.plugin.version>2.5.1</maven.compiler.plugin.version>
+        <maven.compiler.plugin.version>3.1</maven.compiler.plugin.version>
         <!--<maven.compiler.plugin.version>3.1</maven.compiler.plugin.version>-->
         <maven.jar.plugin.version>2.4</maven.jar.plugin.version>
         <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
@@ -492,9 +492,32 @@
              compiling the Unsafe functionality because some methods are missing.
              With this profile we prevent that problem because we use the compiler of java 7-->
         <profile>
-            <id>jenkins-openjdk6</id>
+            <id>jenkins-openjdk6-parallel-test</id>
             <build>
                 <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${maven.surefire.plugin.version}</version>
+                        <configuration combine.self="override">
+                            <!-- 1C means 1 process per cpu core -->
+                            <forkCount>1C</forkCount>
+                            <reuseForks>true</reuseForks>
+
+                            <threadCount>1</threadCount>
+                            <perCoreThreadCount>true</perCoreThreadCount>
+                            <parallel>methods</parallel>
+
+                            <argLine>-Xms128m -Xmx1G -XX:MaxPermSize=128M
+                                -Dhazelcast.version.check.enabled=false
+                                -Dhazelcast.mancenter.enabled=false
+                                -Dhazelcast.logging.type=none
+                                -Dhazelcast.test.use.network=false
+                            </argLine>
+                            <groups>com.hazelcast.test.annotation.ParallelTest</groups>
+                            <excludedGroups>com.hazelcast.test.annotation.SerialTest</excludedGroups>
+                        </configuration>
+                    </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-compiler-plugin</artifactId>
@@ -503,11 +526,52 @@
                             <source>${jdk.version}</source>
                             <target>${jdk.version}</target>
                             <encoding>${project.build.sourceEncoding}</encoding>
+                            <verbose>true</verbose>
+                            <fork>true</fork>
+                            <executable>/usr/lib/jvm/java-1.7.0/bin/javac</executable>
+                        </configuration>
+                    </plugin>
+                 </plugins>
+            </build>
+        </profile>
+
+        <!-- this profile is only used by Jenkins to be able to build Hazelcast using OpenJDK 6. It has issues
+             compiling the Unsafe functionality because some methods are missing.
+             With this profile we prevent that problem because we use the compiler of java 7-->
+        <profile>
+            <id>jenkins-openjdk6-serial-test</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>${maven.surefire.plugin.version}</version>
+                        <configuration combine.self="override">
+                            <parallel>none</parallel>
+                            <argLine>-Xms128m -Xmx1G -XX:MaxPermSize=128M
+                                -Dhazelcast.version.check.enabled=false
+                                -Dhazelcast.mancenter.enabled=false
+                                -Dhazelcast.logging.type=none
+                                -Dhazelcast.test.use.network=true
+                            </argLine>
+                            <groups>com.hazelcast.test.annotation.SerialTest</groups>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <version>${maven.compiler.plugin.version}</version>
+                        <configuration>
+                            <verbose>true</verbose>
+                            <fork>true</fork>
+                            <source>${jdk.version}</source>
+                            <target>${jdk.version}</target>
+                            <encoding>${project.build.sourceEncoding}</encoding>
                             <executable>/usr/lib/jvm/java-1.7.0/bin/javac</executable>
                         </configuration>
                     </plugin>
                 </plugins>
-            </build>
+             </build>
         </profile>
     </profiles>
 
