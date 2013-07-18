@@ -3801,6 +3801,11 @@ public class ConcurrentMapManager extends BaseManager {
             }
         }
 
+        boolean isPartitionMigrating(Request request) {
+            // Get operation is not blocked by migration.
+            return false;
+        }
+
         void doOperation(Request request) {
             CMap cmap = getOrCreateMap(request.name);
             Data value = cmap.get(request);
