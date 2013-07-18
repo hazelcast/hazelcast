@@ -52,7 +52,7 @@
         </init-param>
         <init-param>
             <param-name>client-config-location</param-name>
-            <param-value>/WEB-INF/hazelcast-client.properties</param-value>
+            <param-value>/WEB-INF/hazelcast-client.xml</param-value>
         </init-param>
     </filter>
     <filter-mapping>
@@ -68,16 +68,4 @@
             com.hazelcast.web.SessionListener
         </listener-class>
     </listener>
-    <!--
-    <servlet>
-        <servlet-name>HelloServlet</servlet-name>
-        <servlet-class>mypackage.Hello</servlet-class>
-        <load-on-startup>1</load-on-startup>
-    </servlet>
-
-    <servlet-mapping>
-        <servlet-name>HelloServlet</servlet-name>
-        <url-pattern>/hello</url-pattern>
-    </servlet-mapping>
-    -->
 </web-app>

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.web;
+package com.hazelcast.instance;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.HazelcastClient;
@@ -37,7 +37,7 @@ import java.net.URL;
 import java.util.Properties;
 import java.util.logging.Level;
 
-class HazelcastInstanceLoader {
+public final class HazelcastInstanceLoader {
 
     private final static ILogger logger = Logger.getLogger(HazelcastInstanceLoader.class);
     public static final String INSTANCE_NAME = "instance-name";

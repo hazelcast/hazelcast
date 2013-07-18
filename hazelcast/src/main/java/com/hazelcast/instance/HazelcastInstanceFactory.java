@@ -113,12 +113,14 @@ public final class HazelcastInstanceFactory {
                 } catch (InterruptedException ignored) {
                 }
             }
-            if (initialMinClusterSize > 0) {
+            if (initialMinClusterSize > 1) {
                 if (firstMember) {
                     node.partitionService.firstArrangement();
                 } else {
                     Thread.sleep(3 * 1000);
                 }
+                hazelcastInstance.logger.log(Level.INFO, "HazelcastInstance starting after waiting for cluster size of "
+                        + initialMinClusterSize);
             }
             hazelcastInstance.lifecycleService.fireLifecycleEvent(STARTED);
         } catch (Throwable t) {
