@@ -561,10 +561,9 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
                     void invalidate(EntryEvent<K, V> event){
                         System.err.println("invalidate");
                         final Data key = toData(event.getKey());
-//                        nearCache.invalidate(key);
-                        nearCache.put(key, event.getValue());
+                        nearCache.invalidate(key);
                     }
-                }, true);
+                }, false);
             }
         }
     }
