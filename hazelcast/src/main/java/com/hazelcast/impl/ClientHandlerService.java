@@ -154,7 +154,12 @@ public class ClientHandlerService implements ConnectionListener {
 
     // always called by InThread
     public void handle(Packet packet) {
-        ClientEndpoint clientEndpoint = getClientEndpoint(packet.conn);
+        ClientEndpoint clientEndpoint = mapClientEndpoints.get(packet.conn);
+        if (clientEndpoint == null) {
+            clientEndpoint = new ClientEndpoint(node, packet.conn);
+            mapClientEndpoints.put(packet.conn, clientEndpoint);
+        }
+
         CallContext callContext = clientEndpoint.getCallContext(packet.threadId);
         ClientOperationHandler clientOperationHandler = clientOperationHandlers[packet.operation.getValue()];
         if (clientOperationHandler == null) {
@@ -232,12 +237,7 @@ public class ClientHandlerService implements ConnectionListener {
     }
 
     public ClientEndpoint getClientEndpoint(Connection conn) {
-        ClientEndpoint clientEndpoint = mapClientEndpoints.get(conn);
-        if (clientEndpoint == null) {
-            clientEndpoint = new ClientEndpoint(node, conn);
-            mapClientEndpoints.put(conn, clientEndpoint);
-        }
-        return clientEndpoint;
+        return mapClientEndpoints.get(conn);
     }
 
     public void connectionAdded(Connection connection) {
@@ -363,7 +363,14 @@ public class ClientHandlerService implements ConnectionListener {
 
     private class DestroyHandler extends ClientOperationHandler {
         public void processCall(Node node, Packet packet) {
-            Instance instance = (Instance) factory.getOrCreateProxyByName(packet.name);
+            String name = packet.name;
+            Instance instance;
+            if (Prefix.LOCK.equals(name)) {
+                Object key = toObject(packet.getKeyData());
+                instance = (Instance) factory.getOrCreateProxy(new FactoryImpl.ProxyKey(name, key));
+            } else {
+                instance = (Instance) factory.getOrCreateProxyByName(name);
+            }
             instance.destroy();
         }
     }

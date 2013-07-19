@@ -55,7 +55,10 @@ public class ClientRequestHandler extends FallThroughRunnable {
                 public Void run() {
                     Connection connection = packet.conn;
                     clientOperationHandler.handle(node, packet);
-                    node.clientHandlerService.getClientEndpoint(connection).removeRequest(ClientRequestHandler.this);
+                    final ClientEndpoint clientEndpoint = node.clientHandlerService.getClientEndpoint(connection);
+                    if(clientEndpoint != null){
+                        clientEndpoint.removeRequest(ClientRequestHandler.this);
+                    }
                     return null;
                 }
             };

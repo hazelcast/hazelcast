@@ -72,6 +72,7 @@ public class GroupProperties {
     public static final String PROP_CLEANUP_DELAY_SECONDS = "hazelcast.map.cleanup.delay.seconds";
     public static final String PROP_EXECUTOR_QUERY_THREAD_COUNT = "hazelcast.executor.query.thread.count";
     public static final String PROP_EXECUTOR_EVENT_THREAD_COUNT = "hazelcast.executor.event.thread.count";
+    public static final String PROP_EXECUTOR_ASYNC_THREAD_COUNT = "hazelcast.executor.async.thread.count";
     public static final String PROP_EXECUTOR_CLIENT_THREAD_COUNT = "hazelcast.executor.client.thread.count";
     public static final String PROP_EXECUTOR_STORE_THREAD_COUNT = "hazelcast.executor.store.thread.count";
     public static final String PROP_LOGGING_TYPE = "hazelcast.logging.type";
@@ -91,6 +92,7 @@ public class GroupProperties {
     public static final String PROP_CONNECTION_MONITOR_MAX_FAULTS = "hazelcast.connection.monitor.max.faults";
     public static final String PROP_PARTITION_MIGRATION_INTERVAL = "hazelcast.partition.migration.interval";
     public static final String PROP_PARTITION_MIGRATION_TIMEOUT = "hazelcast.partition.migration.timeout";
+    public static final String PROP_PARTITION_MIGRATION_ZIP_ENABLED = "hazelcast.partition.migration.zip.enabled";
     public static final String PROP_IMMEDIATE_BACKUP_INTERVAL = "hazelcast.immediate.backup.interval";
     public static final String PROP_PARTITION_TABLE_SEND_INTERVAL = "hazelcast.partition.table.send.interval";
     public static final String PROP_GRACEFUL_SHUTDOWN_MAX_WAIT = "hazelcast.graceful.shutdown.max.wait";
@@ -148,8 +150,6 @@ public class GroupProperties {
 
     public final GroupProperty MAX_CONCURRENT_OPERATION_LIMIT;
 
-//    public final GroupProperty SOCKET_BIND_ANY;
-
     public final GroupProperty SOCKET_SERVER_BIND_ANY;
 
     public final GroupProperty SOCKET_CLIENT_BIND_ANY;
@@ -204,6 +204,8 @@ public class GroupProperties {
 
     public final GroupProperty EXECUTOR_QUERY_THREAD_COUNT;
 
+    public final GroupProperty EXECUTOR_ASYNC_THREAD_COUNT;
+
     public final GroupProperty EXECUTOR_EVENT_THREAD_COUNT;
 
     public final GroupProperty EXECUTOR_CLIENT_THREAD_COUNT;
@@ -245,6 +247,8 @@ public class GroupProperties {
     public final GroupProperty PARTITION_MIGRATION_INTERVAL;
 
     public final GroupProperty PARTITION_MIGRATION_TIMEOUT;
+
+    public final GroupProperty PARTITION_MIGRATION_ZIP_ENABLED;
 
     public final GroupProperty PARTITION_TABLE_SEND_INTERVAL;
 
@@ -314,6 +318,7 @@ public class GroupProperties {
         REMOVE_DELAY_SECONDS = new GroupProperty(config, PROP_REMOVE_DELAY_SECONDS, "5");
         CLEANUP_DELAY_SECONDS = new GroupProperty(config, PROP_CLEANUP_DELAY_SECONDS, "10");
         EXECUTOR_QUERY_THREAD_COUNT = new GroupProperty(config, PROP_EXECUTOR_QUERY_THREAD_COUNT, "8");
+        EXECUTOR_ASYNC_THREAD_COUNT = new GroupProperty(config, PROP_EXECUTOR_ASYNC_THREAD_COUNT, "24");
         EXECUTOR_EVENT_THREAD_COUNT = new GroupProperty(config, PROP_EXECUTOR_EVENT_THREAD_COUNT, "16");
         EXECUTOR_CLIENT_THREAD_COUNT = new GroupProperty(config, PROP_EXECUTOR_CLIENT_THREAD_COUNT, "40");
         EXECUTOR_STORE_THREAD_COUNT = new GroupProperty(config, PROP_EXECUTOR_STORE_THREAD_COUNT, "16");
@@ -334,6 +339,7 @@ public class GroupProperties {
         CONNECTION_MONITOR_MAX_FAULTS = new GroupProperty(config, PROP_CONNECTION_MONITOR_MAX_FAULTS, "3");
         PARTITION_MIGRATION_INTERVAL = new GroupProperty(config, PROP_PARTITION_MIGRATION_INTERVAL, "0");
         PARTITION_MIGRATION_TIMEOUT = new GroupProperty(config, PROP_PARTITION_MIGRATION_TIMEOUT, "300");
+        PARTITION_MIGRATION_ZIP_ENABLED = new GroupProperty(config, PROP_PARTITION_MIGRATION_ZIP_ENABLED, "true");
         IMMEDIATE_BACKUP_INTERVAL = new GroupProperty(config, PROP_IMMEDIATE_BACKUP_INTERVAL, "0");
         PARTITION_TABLE_SEND_INTERVAL = new GroupProperty(config, PROP_PARTITION_TABLE_SEND_INTERVAL, "10");
         GRACEFUL_SHUTDOWN_MAX_WAIT = new GroupProperty(config, PROP_GRACEFUL_SHUTDOWN_MAX_WAIT, "600");

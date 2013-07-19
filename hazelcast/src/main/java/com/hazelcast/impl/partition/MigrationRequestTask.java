@@ -90,7 +90,7 @@ public class MigrationRequestTask extends MigratingPartition implements Callable
             }
             final CostAwareRecordList costAwareRecordList = pm.getActivePartitionRecords(partitionId, replicaIndex, to, diffOnly);
             DistributedTask task = new DistributedTask(new MigrationTask(partitionId, costAwareRecordList,
-                    replicaIndex, from), target);
+                    replicaIndex, from, node.groupProperties.PARTITION_MIGRATION_ZIP_ENABLED.getBoolean()), target);
 
             Future future = node.factory.getExecutorService(PartitionManager.MIGRATION_EXECUTOR_NAME).submit(task);
             final long timeout = node.groupProperties.PARTITION_MIGRATION_TIMEOUT.getLong();

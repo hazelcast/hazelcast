@@ -41,6 +41,14 @@ public class HazelcastClientAtomicNumberTest {
     }
 
     @Test
+    public void testDestroy() {
+        HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
+        HazelcastClient client = newHazelcastClient(h1);
+        AtomicNumber number = client.getAtomicNumber("testDestroy");
+        number.destroy();
+    }
+
+    @Test
     public void testAtomicLong() {
         HazelcastInstance h1 = Hazelcast.newHazelcastInstance(new Config());
         HazelcastClient client = newHazelcastClient(h1);

@@ -135,6 +135,9 @@ public final class Prefix {
      */
     public static final String LOCKS_MAP_HAZELCAST = MAP_HAZELCAST + "Locks";
 
+
+    public static final String LOCK = "lock";
+
     /**
      * Private constructor to avoid instances of the class.
      */

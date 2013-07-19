@@ -16,12 +16,10 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IQueue;
-import com.hazelcast.core.ItemEvent;
-import com.hazelcast.core.ItemListener;
+import com.hazelcast.core.*;
 import org.junit.AfterClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
@@ -31,6 +29,7 @@ import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class HazelcastClientQueueTest extends HazelcastClientTestBase {
 
     @Test(expected = NullPointerException.class)
@@ -45,6 +44,13 @@ public class HazelcastClientQueueTest extends HazelcastClientTestBase {
         HazelcastClient hClient = getHazelcastClient();
         IQueue<?> queue = hClient.getQueue("testQueueName");
         assertEquals("testQueueName", queue.getName());
+    }
+
+    @Test
+    public void testDestroy() {
+        HazelcastClient hClient = getHazelcastClient();
+        IQueue<?> queue = hClient.getQueue("testDestroy");
+        queue.destroy();
     }
 
     @Test

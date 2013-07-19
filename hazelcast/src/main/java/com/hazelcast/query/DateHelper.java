@@ -16,6 +16,7 @@
 
 package com.hazelcast.query;
 
+import java.sql.Time;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -27,9 +28,10 @@ import java.util.Date;
  */
 final class DateHelper {
 
-    static final String timestampFormat = "yyyy-MM-dd hh:mm:ss.SSS";
+    static final String timestampFormat = "yyyy-MM-dd HH:mm:ss.SSS";
     static final String dateFormat = "EEE MMM dd HH:mm:ss zzz yyyy";
-    static final String sqlDateFormat = "yyyy-mm-dd";
+    static final String sqlDateFormat = "yyyy-MM-dd";
+    static final String sqlTimeFormat = "HH:mm:ss";
 
     static Date parseDate(final String value) {
         try {
@@ -50,6 +52,14 @@ final class DateHelper {
     static java.sql.Date parseSqlDate(final String value) {
         try {
             return new java.sql.Date(getSqlDateFormat().parse(value).getTime());
+        } catch (ParseException e) {
+            return throwRuntimeParseException(value, e);
+        }
+    }
+
+    static java.sql.Time parseSqlTime(final String value) {
+        try {
+            return new Time(getSqlTimeFormat().parse(value).getTime());
         } catch (ParseException e) {
             return throwRuntimeParseException(value, e);
         }
@@ -90,6 +100,10 @@ final class DateHelper {
 
     private static DateFormat getUtilDateFormat() {
         return new SimpleDateFormat(dateFormat);
+    }
+
+    private static DateFormat getSqlTimeFormat() {
+        return new SimpleDateFormat(sqlTimeFormat);
     }
 
     private DateHelper() {}

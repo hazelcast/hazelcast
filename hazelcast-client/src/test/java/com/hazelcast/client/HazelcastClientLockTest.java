@@ -20,6 +20,7 @@ import com.hazelcast.core.ILock;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -27,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+@RunWith(com.hazelcast.util.RandomBlockJUnit4ClassRunner.class)
 public class HazelcastClientLockTest extends HazelcastClientTestBase {
 
     @BeforeClass
@@ -40,6 +42,13 @@ public class HazelcastClientLockTest extends HazelcastClientTestBase {
         HazelcastClient hClient = getHazelcastClient();
         final ILock lock = hClient.getLock(null);
         lock.lock();
+    }
+
+    @Test
+    public void testDestroy() {
+        HazelcastClient hClient = getHazelcastClient();
+        ILock lock = hClient.getLock("testDestroy");
+        lock.destroy();
     }
 
     @Test
