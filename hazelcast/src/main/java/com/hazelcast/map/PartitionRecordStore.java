@@ -37,6 +37,9 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+/**
+ * @author enesakar 1/17/13
+ */
 public class PartitionRecordStore implements RecordStore {
     final String name;
     final PartitionContainer partitionContainer;
@@ -234,6 +237,9 @@ public class PartitionRecordStore implements RecordStore {
                 temp.put(key, record);
             }
         }
+        Set<Data> keysToDelete = records.keySet();
+        keysToDelete.removeAll(temp.keySet());
+        mapStoreDeleteAll(keysToDelete);
         records.clear();
         records.putAll(temp);
     }
@@ -566,12 +572,27 @@ public class PartitionRecordStore implements RecordStore {
             long writeDelayMillis = mapContainer.getWriteDelayMillis();
             if (writeDelayMillis == 0) {
                 store.delete(mapService.toObject(key));
+                // todo ea record will be deleted then why calling onstore
                 if (record != null)
                     record.onStore();
             } else {
                 mapService.scheduleMapStoreDelete(name, key, writeDelayMillis);
                 toBeRemovedKeys.add(key);
             }
+        }
+    }
+
+    private void mapStoreDeleteAll(Collection<Data> keys) {
+        final MapStoreWrapper store = mapContainer.getStore();
+        Set<Object> keysObject = new HashSet<Object>();
+        if (store != null) {
+            for (Data key : keys) {
+                // todo ea have a removeAllIndexes(Keys) method for optimizations
+                removeIndex(key);
+                keysObject.add(mapService.toObject(key));
+            }
+            store.deleteAll(keysObject);
+            toBeRemovedKeys.clear();
         }
     }
 

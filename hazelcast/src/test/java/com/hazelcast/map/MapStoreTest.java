@@ -39,6 +39,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.hazelcast.query.SampleObjects.Employee;
 import static org.junit.Assert.*;
 
+
+/**
+ * @author enesakar 1/21/13
+ */
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
 public class MapStoreTest extends HazelcastTestSupport {
@@ -184,7 +188,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         final AtomicInteger loadCount = new AtomicInteger(0);
         final AtomicInteger storeCount = new AtomicInteger(0);
         final AtomicInteger deleteCount = new AtomicInteger(0);
-        class SimpleMapStore2<K, V> extends SimpleMapStore<K, V>  {
+        class SimpleMapStore2<K, V> extends SimpleMapStore<K, V> {
 
             SimpleMapStore2(ConcurrentMap<K, V> store) {
                 super(store);
@@ -404,14 +408,14 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertEquals(0, map.getLocalMapStats().getDirtyEntryCount());
         assertEquals(size, map.size());
 
-        for (int i = 0; i < size/2; i++) {
+        for (int i = 0; i < size / 2; i++) {
             map.remove(i);
         }
-        assertEquals(size/2, map.size());
+        assertEquals(size / 2, map.size());
         assertEquals(size, testMapStore.getStore().size());
         map.flush();
-        assertEquals(size/2, testMapStore.getStore().size());
-        assertEquals(size/2, map.size());
+        assertEquals(size / 2, testMapStore.getStore().size());
+        assertEquals(size / 2, map.size());
     }
 
     @Test
@@ -461,13 +465,13 @@ public class MapStoreTest extends HazelcastTestSupport {
         testMapStore.assertAwait(1);
         assertEquals(1, testMapStore.getInitCount());
         assertEquals("default", testMapStore.getMapName());
-        assertEquals(TestUtil.getNode((HazelcastInstanceProxy)h1), TestUtil.getNode(testMapStore.getHazelcastInstance()));
+        assertEquals(TestUtil.getNode((HazelcastInstanceProxy) h1), TestUtil.getNode(testMapStore.getHazelcastInstance()));
     }
 
     @Test
     public void testOneMemberWriteThroughWithLRU() throws Exception {
         int size = 10000;
-        TestMapStore testMapStore = new TestMapStore(size*2, 1, 1);
+        TestMapStore testMapStore = new TestMapStore(size * 2, 1, 1);
         testMapStore.setLoadAllKeys(false);
         Config config = newConfig(testMapStore, 0);
         MaxSizeConfig maxSizeConfig = new MaxSizeConfig();
@@ -479,7 +483,7 @@ public class MapStoreTest extends HazelcastTestSupport {
 
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
         IMap map = h1.getMap("default");
-        for (int i = 0; i < size*2; i++) {
+        for (int i = 0; i < size * 2; i++) {
             map.put(i, new Employee("joe", i, true, 100.00));
         }
         assertEquals(testMapStore.getStore().size(), size * 2);
@@ -679,6 +683,28 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertEquals("value1", map2.get(1));
         assertEquals(1000, map1.size());
         assertEquals(1000, map2.size());
+    }
+
+    /*
+     * Test for Issue 572
+    */
+    @Test
+    public void testMapstoreDeleteOnClear() throws Exception {
+        Config config = new Config();
+        MapStoreTest.SimpleMapStore store = new MapStoreTest.SimpleMapStore();
+        config.getMapConfig("testMapstoreDeleteOnClear").setMapStoreConfig(new MapStoreConfig().setEnabled(true).setImplementation(store));
+
+        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+        IMap<Object, Object> map = hz.getMap("testMapstoreDeleteOnClear");
+        int size = 10;
+        for (int i = 0; i < size; i++) {
+            map.put(i, i);
+        }
+        assertEquals(size, map.size());
+        assertEquals(size, store.loadAllKeys().size());
+        map.clear();
+        assertEquals(0, map.size());
+        assertEquals(0, store.loadAllKeys().size());
     }
 
     public static Config newConfig(Object storeImpl, int writeDelaySeconds) {
@@ -887,7 +913,7 @@ public class MapStoreTest extends HazelcastTestSupport {
 
         public Set loadAllKeys() {
             try {
-                    return db.keySet();
+                return db.keySet();
             } finally {
                 loadAllKeys.incrementAndGet();
             }
@@ -1110,7 +1136,7 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     public static class SimpleMapStore<K, V> extends MapStoreAdaptor<K, V> {
-        final Map<K, V> store ;
+        final Map<K, V> store;
         private boolean loadAllKeys = true;
 
         public SimpleMapStore() {
