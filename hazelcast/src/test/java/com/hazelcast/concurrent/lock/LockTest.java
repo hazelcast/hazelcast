@@ -572,6 +572,7 @@ public class LockTest extends HazelcastTestSupport {
             public void run() {
                 try {
                     latch.await(1, TimeUnit.MINUTES);
+                    Thread.sleep(5000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }

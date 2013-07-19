@@ -36,13 +36,35 @@ import java.util.logging.Logger;
 public class LongRunningTest {
 
     private static final int STATS_SECONDS = 10;
-    private List<TheNode> nodes = new CopyOnWriteArrayList<TheNode>();
+    private static final Logger logger = Logger.getLogger(LongRunningTest.class.getName());
+
+    private final List<TheNode> nodes = new CopyOnWriteArrayList<TheNode>();
     private int nodeIdGen = 0;
-    private final Logger logger = Logger.getLogger(LongRunningTest.class.getName());
     private int starts, stops, restarts = 0;
+    private int maxNodeSize = 4;
+    private int minNodeSize = 2;
+    private int nextActionMin = 90;
+    private int nextActionMax = 180;
+
+    public LongRunningTest(String[] input) {
+        if (input != null && input.length > 0) {
+            for (String arg : input) {
+                arg = arg.trim();
+                if (arg.startsWith("-n1=")) {
+                    minNodeSize = Integer.parseInt(arg.substring(4));
+                } else if (arg.startsWith("-n2=")) {
+                    maxNodeSize = Integer.parseInt(arg.substring(4));
+                } else if (arg.startsWith("-i1=")) {
+                    nextActionMin = Integer.parseInt(arg.substring(4));
+                } else if (arg.startsWith("-i2=")) {
+                    nextActionMax = Integer.parseInt(arg.substring(4));
+                }
+            }
+        }
+    }
 
     public static void main(String[] args) {
-        LongRunningTest t = new LongRunningTest();
+        LongRunningTest t = new LongRunningTest(args);
         t.run();
     }
 
@@ -55,15 +77,16 @@ public class LongRunningTest {
                 }
             }
         });
-        while (true) {
-            if (nodes.size() >= 4) {
+        log("Min node size: " + minNodeSize);
+        log("Max node size: " + maxNodeSize);
+        for (int i = 0; i < minNodeSize; i++) {
+            addNode();
+        }
+
+        while (!Thread.currentThread().isInterrupted()) {
+            if (nodes.size() >= maxNodeSize) {
                 removeNode();
-            } else if (nodes.size() == 0) {
-                addNode();
-                addNode();
-                addNode();
-                addNode();
-            } else if (nodes.size() < 2) {
+            } else if (nodes.size() < minNodeSize) {
                 addNode();
             } else {
                 int action = random(3);
@@ -80,17 +103,18 @@ public class LongRunningTest {
                 }
             }
             try {
-                int nextSeconds = random(90, 180);
+                int nextSeconds = random(nextActionMin, nextActionMax);
                 log("Next Action after " + nextSeconds + " seconds.");
                 log("members:" + nodes.size() + ", starts: " + starts + ", stops:" + stops + ", restart:" + restarts);
                 Thread.sleep(nextSeconds * 1000);
             } catch (InterruptedException e) {
+                break;
             }
         }
     }
 
     void log(Object obj) {
-        logger.log(Level.INFO, "LRT-" + obj);
+        logger.log(Level.INFO, obj.toString());
     }
 
     void addNode() {

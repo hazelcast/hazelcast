@@ -540,7 +540,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
                 return;
             }
             nearCache = new ClientNearCache(name, getContext(), nearCacheConfig);
-            if (nearCache != null && nearCacheConfig.isInvalidateOnChange()){
+            if (nearCacheConfig.isInvalidateOnChange()){
                 nearCacheListenerId = addEntryListener(new EntryListener<K, V>() {
                     public void entryAdded(EntryEvent<K, V> event) {
                         invalidate(event);
@@ -559,7 +559,6 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
                     }
 
                     void invalidate(EntryEvent<K, V> event){
-                        System.err.println("invalidate");
                         final Data key = toData(event.getKey());
                         nearCache.invalidate(key);
                     }
