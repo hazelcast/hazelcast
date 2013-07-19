@@ -229,19 +229,31 @@ public class PartitionRecordStore implements RecordStore {
 
     public void removeAll() {
         final Collection<Data> locks = lockStore != null ? lockStore.getLockedKeys() : Collections.<Data>emptySet();
-        final ConcurrentMap<Data, Record> temp = new ConcurrentHashMap<Data, Record>(locks.size());
+        final Map<Data, Record> lockRecords = new HashMap<Data, Record>(locks.size());
 //        keys with locks will be re-inserted
         for (Data key : locks) {
             Record record = records.get(key);
             if (record != null) {
-                temp.put(key, record);
+                lockRecords.put(key, record);
             }
         }
         Set<Data> keysToDelete = records.keySet();
-        keysToDelete.removeAll(temp.keySet());
-        mapStoreDeleteAll(keysToDelete);
+        keysToDelete.removeAll(lockRecords.keySet());
+
+        final MapStoreWrapper store = mapContainer.getStore();
+        if (store != null) {
+            Set<Object> keysObject = new HashSet<Object>();
+            for (Data key : keysToDelete) {
+                // todo ea have a removeAllIndexes(Keys) method for optimizations
+                removeIndex(key);
+                keysObject.add(mapService.toObject(key));
+            }
+            store.deleteAll(keysObject);
+            toBeRemovedKeys.clear();
+        }
+
         records.clear();
-        records.putAll(temp);
+        records.putAll(lockRecords);
     }
 
     public void reset() {
@@ -255,6 +267,7 @@ public class PartitionRecordStore implements RecordStore {
             if (mapContainer.getStore() != null) {
                 oldValue = mapContainer.getStore().load(mapService.toObject(dataKey));
                 if (oldValue != null) {
+                    removeIndex(dataKey);
                     mapStoreDelete(null, dataKey);
                 }
             }
@@ -262,6 +275,7 @@ public class PartitionRecordStore implements RecordStore {
             oldValue = record.getValue();
             oldValue = mapService.interceptRemove(name, oldValue);
             if (oldValue != null) {
+                removeIndex(dataKey);
                 mapStoreDelete(record, dataKey);
             }
             records.remove(dataKey);
@@ -304,6 +318,7 @@ public class PartitionRecordStore implements RecordStore {
         }
         if (mapService.compare(name, testValue, oldValue)) {
             mapService.interceptRemove(name, oldValue);
+            removeIndex(dataKey);
             mapStoreDelete(record, dataKey);
             records.remove(dataKey);
             removed = true;
@@ -426,6 +441,7 @@ public class PartitionRecordStore implements RecordStore {
             newValue = mergePolicy.merge(name, mergingEntry, existingEntry);
             if (newValue == null) { // existing entry will be removed
                 records.remove(dataKey);
+                removeIndex(dataKey);
                 mapStoreDelete(record, dataKey);
                 return true;
             }
@@ -566,7 +582,6 @@ public class PartitionRecordStore implements RecordStore {
     }
 
     private void mapStoreDelete(Record record, Data key) {
-        removeIndex(key);
         final MapStoreWrapper store = mapContainer.getStore();
         if (store != null) {
             long writeDelayMillis = mapContainer.getWriteDelayMillis();
@@ -579,20 +594,6 @@ public class PartitionRecordStore implements RecordStore {
                 mapService.scheduleMapStoreDelete(name, key, writeDelayMillis);
                 toBeRemovedKeys.add(key);
             }
-        }
-    }
-
-    private void mapStoreDeleteAll(Collection<Data> keys) {
-        final MapStoreWrapper store = mapContainer.getStore();
-        Set<Object> keysObject = new HashSet<Object>();
-        if (store != null) {
-            for (Data key : keys) {
-                // todo ea have a removeAllIndexes(Keys) method for optimizations
-                removeIndex(key);
-                keysObject.add(mapService.toObject(key));
-            }
-            store.deleteAll(keysObject);
-            toBeRemovedKeys.clear();
         }
     }
 
