@@ -231,8 +231,17 @@ public final class Predicates {
 
         public boolean apply(MapEntry entry) {
             checkInValues();
-            if (firstValueObject == null) {
-                firstValueObject = inValues.iterator().next();
+            Iterator iterator = inValues.iterator();
+            while (firstValueObject == null) {
+                if(iterator.hasNext()) {
+                    firstValueObject = iterator.next();
+                }
+                else {
+                    break;
+                }
+            }
+            if(firstValueObject == null) {
+                return false;
             }
             Object entryValue = first.getValue(entry);
             if (entryValue == null) return false;

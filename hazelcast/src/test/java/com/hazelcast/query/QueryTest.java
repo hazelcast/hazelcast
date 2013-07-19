@@ -917,6 +917,21 @@ public class QueryTest extends TestUtil {
         testPredicateEnumAttribute(map);
     }
 
+    // test for issue 573
+    @Test
+    public void testInPredicateWithEmptyArray() {
+        final IMap<String, Value> map = Hazelcast.getMap("testInPredicateWithEmptyArray");
+        for (int i = 0; i < 10; i++) {
+            final Value v = new Value("name" + i, new ValueType("type" + i), i);
+            map.put("" + i, v);
+        }
+        String[] emptyArray = new String[2];
+        final Predicate predicate = new PredicateBuilder().getEntryObject().get("name").in(emptyArray);
+        final Collection<Value> values = map.values(predicate);
+        assertEquals(values.size(), 0);
+    }
+
+
     @Test
     public void testPredicateEnumAttributeWithIndex() {
         IMap map = Hazelcast.getMap("testPredicateEnumAttribute");
