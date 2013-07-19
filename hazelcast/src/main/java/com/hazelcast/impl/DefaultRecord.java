@@ -79,7 +79,18 @@ public final class DefaultRecord extends AbstractRecord {
 
     protected void invalidateValueCache() {
         if (cmap.isCacheValue()) {
-            valueObject = null;
+            //we need to synchronize
+            //Imagine we have some value v1 written, but it isn't put in the valueObject cache uet. When one method calls
+            //getValue it could be that the line 'valueObject = v;' gets interleaved. So this line is busy building up the
+            //cached value for v1. But imagine that another thread is calling setValueData with v2 and it will clear the cache.
+            //But because the getValue method is working on calculating a cache value based on v1 and eventually writes it to the cache.
+            //Once this has happened, we will have v2 in the valueObject (good) but v1 in the cache (bad) so the cache is
+            //out of sync with the value.
+            //When we add this synchronized bock, the interleaving of 'valueObject = v' is not possible anymore by invalidateCache
+            //since it will either be executed before or after it.
+            synchronized (this){
+                valueObject = null;
+            }
         }
     }
 
