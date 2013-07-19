@@ -334,6 +334,7 @@ final class OperationServiceImpl implements OperationService {
     private void scheduleBackup(Operation op, Backup backup, int partitionId, int replicaIndex) {
         final RemoteCallKey key = new RemoteCallKey(op.getCallerAddress(), op.getCallId());
         if (logger.isLoggable(Level.INFO)) {
+            // TODO: @mm - change log level to FINEST before final release!
             logger.log(Level.INFO, "Scheduling -> " + backup);
         }
         backupScheduler.schedule(500, key, new ScheduledBackup(backup, partitionId, replicaIndex));
