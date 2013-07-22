@@ -21,7 +21,7 @@ import java.util.List;
 
 public final class TopicConfig {
 
-    public final static boolean DEFAULT_GLOBAL_ORDERING_ENABLED = true;
+    public final static boolean DEFAULT_GLOBAL_ORDERING_ENABLED = false;
 
     private String name;
     private boolean globalOrderingEnabled = DEFAULT_GLOBAL_ORDERING_ENABLED;
