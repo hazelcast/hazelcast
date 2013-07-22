@@ -62,7 +62,7 @@ public class QueueBasedObjectPool<E> implements ObjectPool<E> {
     }
 
     public void destroy() {
-        active = true;
+        active = false;
         final Collection<E> c = new LinkedList<E>();
         queue.drainTo(c);
         for (E e : c) {
