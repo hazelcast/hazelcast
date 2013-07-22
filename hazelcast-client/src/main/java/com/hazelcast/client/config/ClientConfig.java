@@ -210,9 +210,7 @@ public class ClientConfig {
     // required for spring module
     public ClientConfig setAddresses(List<String> addresses) {
         addressList.clear();
-        for (String address : addresses) {
-            addressList.addAll(addresses);
-        }
+        addressList.addAll(addresses);
         return this;
     }
 
