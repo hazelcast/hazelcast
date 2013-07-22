@@ -38,7 +38,7 @@ import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.BinaryOperationFactory;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
-import com.hazelcast.util.QueryResultStream;
+import com.hazelcast.util.QueryResultSet;
 import com.hazelcast.util.ThreadUtil;
 
 import java.util.*;
@@ -117,7 +117,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
             PartitionService partitionService = mapService.getNodeEngine().getPartitionService();
             for (int i = 0; i <= backupCount; i++) {
                 int partitionId = partitionService.getPartitionId(key);
-                PartitionView partition = partitionService.getPartitionView(partitionId);
+                PartitionView partition = partitionService.getPartition(partitionId);
                 if (partition.getReplicaAddress(i).equals(getNodeEngine().getThisAddress())) {
                     Object val = mapService.getPartitionContainer(partitionId).getRecordStore(name).get(key);
                     if (val != null) {
@@ -604,7 +604,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         final NodeEngine nodeEngine = getNodeEngine();
         OperationService operationService = nodeEngine.getOperationService();
         List<Integer> partitionIds = nodeEngine.getPartitionService().getMemberPartitions(nodeEngine.getThisAddress());
-        QueryResultStream result = new QueryResultStream(nodeEngine.getSerializationService(), iterationType, dataResult, true);
+        QueryResultSet result = new QueryResultSet(nodeEngine.getSerializationService(), iterationType, dataResult);
         List<Integer> returnedPartitionIds = new ArrayList<Integer>();
         try {
             Invocation invocation = operationService
@@ -641,8 +641,6 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
             }
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
-        } finally {
-            result.end();
         }
         return result;
     }
@@ -654,7 +652,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         Set<Integer> plist = new HashSet<Integer>(partitionCount);
-        QueryResultStream result = new QueryResultStream(nodeEngine.getSerializationService(), iterationType, dataResult, true);
+        QueryResultSet result = new QueryResultSet(nodeEngine.getSerializationService(), iterationType, dataResult);
         try {
             List<Future> flist = new ArrayList<Future>();
             for (MemberImpl member : members) {
@@ -699,8 +697,6 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
             }
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
-        } finally {
-            result.end();
         }
         return result;
     }

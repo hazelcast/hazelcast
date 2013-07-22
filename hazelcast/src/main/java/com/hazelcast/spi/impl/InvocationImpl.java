@@ -480,7 +480,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
     }
 
     PartitionView getPartition() {
-        return nodeEngine.getPartitionService().getPartitionView(partitionId);
+        return nodeEngine.getPartitionService().getPartition(partitionId);
     }
 
     public int getReplicaIndex() {

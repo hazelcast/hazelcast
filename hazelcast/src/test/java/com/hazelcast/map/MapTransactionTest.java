@@ -23,10 +23,7 @@ import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.transaction.TransactionException;
-import com.hazelcast.transaction.TransactionOptions;
-import com.hazelcast.transaction.TransactionalTask;
-import com.hazelcast.transaction.TransactionalTaskContext;
+import com.hazelcast.transaction.*;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -34,6 +31,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -498,4 +496,49 @@ public class MapTransactionTest extends HazelcastTestSupport {
         assertNull(h2.getMap(map).get("1"));
         assertEquals("value1", h2.getMap(anotherMap).get("1"));
     }
+
+    @Test
+    public void testRollbackMap() throws Throwable
+    {
+        Config config = new Config();
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(4);
+        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
+
+        final TransactionContext transactionContext = h1.newTransactionContext();
+
+        transactionContext.beginTransaction();
+
+        TransactionalMap<Integer, String> m = transactionContext.getMap("testRollbackMap");
+
+        Integer key1=1;
+        String value1="value1";
+
+        Integer key2=2;
+        String value2="value2";
+
+        m.put(key1,value1);
+        m.put(key2,value2);
+
+        transactionContext.rollbackTransaction();
+
+        assertNull(h1.getMap("testRollbackMap").get(key1));
+        assertNull(h1.getMap("testRollbackMap").get(key2));
+    }
+
+    @Test(expected = TransactionNotActiveException.class)
+    public void testTxnMapOuterTransaction() throws Throwable
+    {
+        Config config = new Config();
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
+
+        final TransactionContext transactionContext = h1.newTransactionContext();
+        transactionContext.beginTransaction();
+        TransactionalMap<Integer, Integer> m = transactionContext.getMap("testTxnMapOuterTransaction");
+        m.put(1,1);
+        transactionContext.commitTransaction();
+        m.put(1,1);
+    }
+
+
 }

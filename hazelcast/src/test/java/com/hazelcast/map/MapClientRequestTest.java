@@ -27,7 +27,7 @@ import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
 import com.hazelcast.util.IterationType;
-import com.hazelcast.util.QueryDataResultStream;
+import com.hazelcast.util.QueryResultSet;
 import com.hazelcast.util.ThreadUtil;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -35,7 +35,6 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 import static com.hazelcast.query.SampleObjects.Employee;
@@ -278,10 +277,9 @@ public class MapClientRequestTest extends ClientTestSupport {
         final SimpleClient client = getClient();
         client.send(request);
         Object receive = client.receive();
-        QueryDataResultStream result = (QueryDataResultStream) receive;
-        Iterator iterator = result.iterator();
-        while(iterator.hasNext()) {
-            Employee x = (Employee) TestUtil.toObject((Data) iterator.next());
+        QueryResultSet result = (QueryResultSet) receive;
+        for (Object aResult : result) {
+            Employee x = (Employee) TestUtil.toObject((Data) aResult);
             testSet.remove(x.getName());
         }
         assertEquals(0, testSet.size());

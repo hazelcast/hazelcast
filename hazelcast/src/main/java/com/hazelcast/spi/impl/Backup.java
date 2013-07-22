@@ -21,11 +21,10 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.partition.PartitionView;
 import com.hazelcast.partition.PartitionServiceImpl;
+import com.hazelcast.partition.PartitionView;
 import com.hazelcast.partition.ReplicaErrorLogger;
 import com.hazelcast.spi.*;
-import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
@@ -60,7 +59,7 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
     public void beforeRun() throws Exception {
         final NodeEngine nodeEngine = getNodeEngine();
         final int partitionId = getPartitionId();
-        final PartitionView partition = nodeEngine.getPartitionService().getPartitionView(partitionId);
+        final PartitionView partition = nodeEngine.getPartitionService().getPartition(partitionId);
         final Address owner = partition.getReplicaAddress(getReplicaIndex());
         if (!nodeEngine.getThisAddress().equals(owner)) {
             valid = false;
@@ -69,7 +68,10 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
             if (owner == null) {
                 level = Level.FINEST;
             }
-            logger.log(level, "Wrong target! " + toString() + " cannot be processed! Target should be: " + owner);
+            // TODO: @mm - change log level to FINEST before final release!
+            if (logger.isLoggable(level)) {
+                logger.log(level, "Wrong target! " + toString() + " cannot be processed! Target should be: " + owner);
+            }
         }
     }
 
@@ -81,14 +83,7 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
 
             if (backupOp != null) {
                 backupOp.setNodeEngine(nodeEngine);
-                backupOp.setResponseHandler(new ResponseHandler() {
-                    public void sendResponse(Object obj) {
-                        if (obj instanceof Throwable && !(obj instanceof RetryableException)) {
-                            Throwable t = (Throwable) obj;
-                            nodeEngine.getLogger(getClass()).log(Level.SEVERE, t.getMessage(), t);
-                        }
-                    }
-                });
+                backupOp.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
                 backupOp.setCallerUuid(getCallerUuid());
                 OperationAccessor.setCallerAddress(backupOp, getCallerAddress());
                 OperationAccessor.setInvocationTime(backupOp, Clock.currentTimeMillis());

@@ -17,10 +17,7 @@
 package com.hazelcast.queue;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.IQueue;
-import com.hazelcast.core.TransactionalQueue;
+import com.hazelcast.core.*;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -132,4 +129,41 @@ public class TransactionQueueTest extends HazelcastTestSupport {
         final Random rnd = new Random(System.currentTimeMillis());
         return instances[rnd.nextInt(instances.length)].getQueue(name);
     }
+
+    @Test
+    public void testRollbackQueue() throws Throwable
+    {
+        Config config = new Config();
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(4);
+        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
+
+        final TransactionContext transactionContext = h1.newTransactionContext();
+
+        transactionContext.beginTransaction();
+
+        TransactionalQueue<String> queue = transactionContext.getQueue("testq");
+
+        queue.offer("offered-val");
+
+        transactionContext.rollbackTransaction();
+
+        assertNull(h1.getQueue("testq").poll());
+
+    }
+
+    @Test(expected = TransactionNotActiveException.class)
+    public void testTxnQueueOuterTransaction() throws Throwable
+    {
+        Config config = new Config();
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
+
+        final TransactionContext transactionContext = h1.newTransactionContext();
+        transactionContext.beginTransaction();
+        TransactionalQueue<Object> queue = transactionContext.getQueue("testTxnQueueOuterTransaction");
+        queue.offer("item");
+        transactionContext.commitTransaction();
+        queue.poll();
+    }
+
 }

@@ -25,7 +25,7 @@ import com.hazelcast.nio.Address;
 import java.util.*;
 import java.util.logging.Level;
 
-class PartitionStateGeneratorImpl implements PartitionStateGenerator {
+final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
 
     private static final ILogger logger = Logger.getLogger(PartitionStateGenerator.class);
     private static final float RANGE_CHECK_RATIO = 1.1f;
@@ -43,15 +43,12 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         return arrange(nodeGroups, partitionCount, new EmptyStateInitializer());
     }
 
-    public PartitionImpl[] reArrange(PartitionView[] currentState, Collection<MemberGroup> memberGroups, int partitionCount,
-                                     final List<MigrationInfo> migrationQ) {
+    public PartitionImpl[] reArrange(final Collection<MemberGroup> memberGroups, final PartitionView[] currentState) {
         final LinkedList<NodeGroup> nodeGroups = createNodeGroups(memberGroups);
         if (nodeGroups.size() == 0) {
             return null;
         }
-        PartitionImpl[] newState = arrange(nodeGroups, partitionCount, new CopyStateInitializer(currentState));
-        fillMigrationQueue(currentState, newState, migrationQ);
-        return newState;
+        return arrange(nodeGroups, currentState.length, new CopyStateInitializer(currentState));
     }
 
     private PartitionImpl[] arrange(final LinkedList<NodeGroup> groups, final int partitionCount,
@@ -76,22 +73,6 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
             logger.log(Level.SEVERE, "Failed to arrange partitions !!!");
         }
         return state;
-    }
-
-    private void fillMigrationQueue(PartitionView[] currentState, PartitionImpl[] newState, final List<MigrationInfo> migrationQ) {
-        final int partitionCount = currentState.length;
-        for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            PartitionView currentPartition = currentState[partitionId];
-            PartitionImpl newPartition = newState[partitionId];
-
-            Address currentOwner = currentPartition.getOwner();
-            Address newOwner = newPartition.getOwner();
-
-            if (currentOwner != null && newOwner != null && !currentOwner.equals(newOwner)) {
-                MigrationInfo op = new MigrationInfo(partitionId, currentOwner, newOwner);
-                migrationQ.add(op);
-            }
-        }
     }
 
     private void tryArrange(final PartitionImpl[] state, final LinkedList<NodeGroup> groups,
@@ -389,7 +370,7 @@ class PartitionStateGeneratorImpl implements PartitionStateGenerator {
             }
             for (int i = 0; i < state.length; i++) {
                 final PartitionView p = currentState[i];
-                state[i] = new PartitionImpl(p.getPartitionId());
+                state[i] = new PartitionImpl(i);
                 state[i].setPartitionInfo(p);
             }
         }

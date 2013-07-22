@@ -77,7 +77,7 @@ public class HazelcastCache implements Cache {
 
     public void evict(final Object key) {
         if (key != null) {
-            map.evict(key);
+            map.delete(key);
         }
     }
 

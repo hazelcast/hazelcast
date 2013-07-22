@@ -27,6 +27,9 @@ public class MapFlushOperationFactory implements OperationFactory {
 
     String name;
 
+    public MapFlushOperationFactory() {
+    }
+
     public MapFlushOperationFactory(String name) {
         this.name = name;
     }

@@ -25,7 +25,9 @@ import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionalObject;
+import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -52,6 +54,12 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
         this.tx = tx;
         partitionId = nodeEngine.getPartitionService().getPartitionId(name);
         config = nodeEngine.getConfig().getQueueConfig(name);
+    }
+
+    protected void checkTransactionState(){
+        if(!tx.getState().equals(Transaction.State.ACTIVE)) {
+            throw new TransactionNotActiveException("Transaction is not active!");
+        }
     }
 
     public boolean offerInternal(Data data, long timeout) {
@@ -102,6 +110,7 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
     }
 
     public int size() {
+        checkTransactionState();
         SizeOperation operation = new SizeOperation(name);
         try {
             Invocation invocation = getNodeEngine().getOperationService().createInvocationBuilder(QueueService.SERVICE_NAME, operation, partitionId).build();

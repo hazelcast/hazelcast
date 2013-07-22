@@ -17,12 +17,10 @@
 package com.hazelcast.partition;
 
 import java.util.Collection;
-import java.util.List;
 
 public interface PartitionStateGenerator {
 
     PartitionImpl[] initialize(final Collection<MemberGroup> groups, final int partitionCount);
 
-    PartitionImpl[] reArrange(final PartitionView[] currentState, final Collection<MemberGroup> groups,
-                              final int partitionCount, final List<MigrationInfo> migrations);
+    PartitionImpl[] reArrange(final Collection<MemberGroup> groups, final PartitionView[] currentState);
 }

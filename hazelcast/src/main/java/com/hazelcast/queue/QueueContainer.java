@@ -56,13 +56,13 @@ public class QueueContainer implements DataSerializable {
     private final QueueWaitNotifyKey pollWaitNotifyKey;
     private final QueueWaitNotifyKey offerWaitNotifyKey;
 
-    private volatile long minAge;
+    private long minAge = Long.MAX_VALUE;
 
-    private volatile long maxAge;
+    private long maxAge = Long.MIN_VALUE;
 
-    private volatile long totalAge;
+    private long totalAge;
 
-    private volatile long totalAgedCount;
+    private long totalAgedCount;
 
 
     public QueueContainer(String name) {
@@ -572,26 +572,16 @@ public class QueueContainer implements DataSerializable {
         }
         totalAgedCount++;
         totalAge += elapsed;
-        if (minAge == 0) {
-            minAge = elapsed;
-            maxAge = elapsed;
-        } else {
-            minAge = Math.min(minAge, elapsed);
-            maxAge = Math.max(maxAge, elapsed);
-        }
+
+        minAge = Math.min(minAge, elapsed);
+        maxAge = Math.max(maxAge, elapsed);
     }
 
     public void setStats(LocalQueueStatsImpl stats) {
         stats.setMinAge(minAge);
-        minAge = 0;
         stats.setMaxAge(maxAge);
-        maxAge = 0;
-        long totalAgeVal = totalAge;
-        totalAge = 0;
-        long totalAgedCountVal = totalAgedCount;
-        totalAgedCount = 0;
-        totalAgedCountVal = totalAgedCountVal == 0 ? 1 : totalAgedCountVal;
-        stats.setAveAge(totalAgeVal / totalAgedCountVal);
+        long totalAgedCountVal = Math.max(totalAgedCount, 1);
+        stats.setAveAge(totalAge / totalAgedCountVal);
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {

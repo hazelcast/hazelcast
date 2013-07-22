@@ -29,7 +29,7 @@ import com.hazelcast.map.merge.*;
 import com.hazelcast.map.operation.*;
 import com.hazelcast.map.proxy.MapProxyImpl;
 import com.hazelcast.map.record.*;
-import com.hazelcast.map.tx.TxnMapProxy;
+import com.hazelcast.map.tx.TransactionalMapProxy;
 import com.hazelcast.map.wan.MapReplicationRemove;
 import com.hazelcast.map.wan.MapReplicationUpdate;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
@@ -313,14 +313,12 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
-        logger.log(Level.FINEST, "Preparing replication op -> " + event);
         final PartitionContainer container = partitionContainers[event.getPartitionId()];
         final MapReplicationOperation operation = new MapReplicationOperation(container, event.getPartitionId(), event.getReplicaIndex());
         return operation.isEmpty() ? null : operation;
     }
 
     public void commitMigration(PartitionMigrationEvent event) {
-        logger.log(Level.FINEST, "Committing " + event);
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
             migrateIndex(event);
             clearPartitionData(event.getPartitionId());
@@ -332,11 +330,11 @@ public class MapService implements ManagedService, MigrationAwareService,
 
     private void migrateIndex(PartitionMigrationEvent event) {
         final PartitionContainer container = partitionContainers[event.getPartitionId()];
-        for (PartitionRecordStore mapPartition : container.getMaps().values()) {
-            final MapContainer mapContainer = getMapContainer(mapPartition.name);
+        for (PartitionRecordStore recordStore : container.getMaps().values()) {
+            final MapContainer mapContainer = getMapContainer(recordStore.name);
             final IndexService indexService = mapContainer.getIndexService();
             if (indexService.hasIndex()) {
-                for (Record record : mapPartition.getRecords().values()) {
+                for (Record record : recordStore.getRecords().values()) {
                     if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
                         indexService.removeEntryIndex(record.getKey());
                     } else {
@@ -348,7 +346,6 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     public void rollbackMigration(PartitionMigrationEvent event) {
-        logger.log(Level.FINEST, "Rolling back " + event);
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
             clearPartitionData(event.getPartitionId());
         }
@@ -356,7 +353,6 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     private void clearPartitionData(final int partitionId) {
-        logger.log(Level.FINEST, "Clearing partition data -> " + partitionId);
         final PartitionContainer container = partitionContainers[partitionId];
         if (container != null) {
             for (PartitionRecordStore mapPartition : container.getMaps().values()) {
@@ -404,8 +400,8 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     @SuppressWarnings("unchecked")
-    public TxnMapProxy createTransactionalObject(Object id, TransactionSupport transaction) {
-        return new TxnMapProxy(String.valueOf(id), this, nodeEngine, transaction);
+    public TransactionalMapProxy createTransactionalObject(Object id, TransactionSupport transaction) {
+        return new TransactionalMapProxy(String.valueOf(id), this, nodeEngine, transaction);
     }
 
     private final ConstructorFunction<String, NearCache> nearCacheConstructor = new ConstructorFunction<String, NearCache>() {
@@ -922,7 +918,7 @@ public class MapService implements ManagedService, MigrationAwareService,
 
         Address thisAddress = clusterService.getThisAddress();
         for (int partitionId = 0; partitionId < partitionService.getPartitionCount(); partitionId++) {
-            PartitionView partition = partitionService.getPartitionView(partitionId);
+            PartitionView partition = partitionService.getPartition(partitionId);
             if (partition.getOwner().equals(thisAddress)) {
                 PartitionContainer partitionContainer = getPartitionContainer(partitionId);
                 RecordStore recordStore = partitionContainer.getRecordStore(mapName);

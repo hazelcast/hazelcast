@@ -28,4 +28,6 @@ public interface TransactionSupport {
 
     long getTimeoutMillis();
 
+    Transaction.State getState();
+
 }

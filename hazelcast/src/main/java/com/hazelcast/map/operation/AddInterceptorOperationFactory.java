@@ -30,6 +30,9 @@ public class AddInterceptorOperationFactory implements OperationFactory {
     String name;
     MapInterceptor mapInterceptor;
 
+    public AddInterceptorOperationFactory() {
+    }
+
     public AddInterceptorOperationFactory(String id, String name, MapInterceptor mapInterceptor) {
         this.id = id;
         this.name = name;

@@ -31,7 +31,7 @@ public final class ClientExecutionServiceImpl implements ClientExecutionService 
     private final ScheduledExecutorService scheduledExecutor;
 
     public ClientExecutionServiceImpl(String name, ThreadGroup threadGroup, ClassLoader classLoader, int poolSize) {
-        if (poolSize == -1){
+        if (poolSize <= 0){
             final int cores = Runtime.getRuntime().availableProcessors();
             poolSize = cores * 5;
         }

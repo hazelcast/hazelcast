@@ -27,6 +27,10 @@ public class MapValuesOperationFactory implements OperationFactory {
 
     String name;
 
+
+    public MapValuesOperationFactory() {
+    }
+
     public MapValuesOperationFactory(String name) {
         this.name = name;
     }

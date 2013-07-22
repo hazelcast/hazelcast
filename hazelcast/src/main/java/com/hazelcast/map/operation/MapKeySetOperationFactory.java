@@ -27,6 +27,9 @@ public class MapKeySetOperationFactory implements OperationFactory {
 
     String name;
 
+    public MapKeySetOperationFactory() {
+    }
+
     public MapKeySetOperationFactory(String name) {
         this.name = name;
     }

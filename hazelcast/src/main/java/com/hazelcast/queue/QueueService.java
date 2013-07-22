@@ -180,7 +180,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         }
 
         Address thisAddress = nodeEngine.getClusterService().getThisAddress();
-        PartitionView partition = nodeEngine.getPartitionService().getPartitionView(partitionId);
+        PartitionView partition = nodeEngine.getPartitionService().getPartition(partitionId);
         if (thisAddress.equals(partition.getOwner())) {
             stats.setOwnedItemCount(container.size());
         } else {

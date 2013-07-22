@@ -19,7 +19,6 @@ package com.hazelcast.web;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.*;
-import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
@@ -49,7 +48,9 @@ public class WebFilter implements Filter {
 
     private static final ConcurrentMap<String, HazelcastHttpSession> mapSessions = new ConcurrentHashMap<String, HazelcastHttpSession>(1000);
 
-    private HazelcastInstanceImpl hazelcastInstance;
+    private HazelcastInstance hazelcastInstance;
+
+    private SerializationHelper serializationHelper;
 
     private String clusterMapName = "none";
 
@@ -95,12 +96,16 @@ public class WebFilter implements Filter {
         } else {
             clusterMapName = "_web_" + servletContext.getServletContextName();
         }
-        Config hzConfig = hazelcastInstance.getConfig();
-        String sessionTTL = getParam("session-ttl-seconds");
-        if (sessionTTL != null) {
-            MapConfig mapConfig = new MapConfig(clusterMapName);
-            mapConfig.setTimeToLiveSeconds(Integer.valueOf(sessionTTL));
-            hzConfig.addMapConfig(mapConfig);
+        try {
+            Config hzConfig = hazelcastInstance.getConfig();
+            String sessionTTL = getParam("session-ttl-seconds");
+            if (sessionTTL != null) {
+                MapConfig mapConfig = new MapConfig(clusterMapName);
+                mapConfig.setTimeToLiveSeconds(Integer.valueOf(sessionTTL));
+                hzConfig.addMapConfig(mapConfig);
+            }
+        } catch (UnsupportedOperationException ignored) {
+            // client cannot access Config.
         }
         String cookieName = getParam("cookie-name");
         if (cookieName != null) {
@@ -162,7 +167,8 @@ public class WebFilter implements Filter {
         setProperty(INSTANCE_NAME);
         setProperty(USE_CLIENT);
         setProperty(CLIENT_CONFIG_LOCATION);
-        hazelcastInstance = (HazelcastInstanceImpl) getInstance(properties);
+        hazelcastInstance = getInstance(properties);
+        serializationHelper = new SerializationHelper(hazelcastInstance);
     }
 
     private void setProperty(String propertyName) {
@@ -499,10 +505,10 @@ public class WebFilter implements Filter {
             originalSession.setMaxInactiveInterval(maxInactiveSeconds);
         }
 
-        public synchronized Data writeObject(final Object obj) {
+        private Data writeObject(final Object obj) {
             if (obj == null)
                 return null;
-            return hazelcastInstance.node.getSerializationService().toData(obj);
+            return serializationHelper.toData(obj);
         }
 
         void destroy() {

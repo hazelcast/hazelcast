@@ -23,7 +23,7 @@ import com.hazelcast.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.nio.serialization.*;
 import com.hazelcast.query.impl.QueryResultEntryImpl;
 import com.hazelcast.util.ConstructorFunction;
-import com.hazelcast.util.QueryDataResultStream;
+import com.hazelcast.util.QueryResultSet;
 
 /**
  * @author mdogan 8/24/12
@@ -45,9 +45,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int ENTRY_VIEW = 10;
     public static final int MAP_STATS = 11;
     public static final int QUERY_RESULT_ENTRY = 12;
-    public static final int QUERY_RESULT_STREAM = 13;
+    public static final int QUERY_RESULT_SET = 13;
 
-    private static final int LEN = QUERY_RESULT_STREAM + 1;
+    private static final int LEN = QUERY_RESULT_SET + 1;
 
     public int getFactoryId() {
         return F_ID;
@@ -121,9 +121,9 @@ public final class MapDataSerializerHook implements DataSerializerHook {
                 return new QueryResultEntryImpl();
             }
         };
-        constructors[QUERY_RESULT_STREAM] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[QUERY_RESULT_SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
-                return new QueryDataResultStream();
+                return new QueryResultSet();
             }
         };
 

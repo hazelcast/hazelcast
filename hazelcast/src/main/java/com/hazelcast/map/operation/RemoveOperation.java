@@ -20,6 +20,9 @@ import com.hazelcast.map.MapDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+/**
+ * @author enesakar 1/17/13
+ */
 public final class RemoveOperation extends BaseRemoveOperation implements IdentifiedDataSerializable {
 
     transient boolean successful = false;

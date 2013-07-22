@@ -23,6 +23,8 @@ import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionNotActiveException;
+import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionSupport;
 
 import java.util.ArrayList;
@@ -38,12 +40,14 @@ public class TransactionalMultiMapProxy<K,V> extends TransactionalMultiMapProxyS
     }
 
     public boolean put(K key, V value) throws TransactionException {
+        checkTransactionState();
         Data dataKey = getNodeEngine().toData(key);
         Data dataValue = getNodeEngine().toData(value);
         return putInternal(dataKey, dataValue);
     }
 
     public Collection<V> get(K key) {
+        checkTransactionState();
         Data dataKey = getNodeEngine().toData(key);
         Collection<CollectionRecord> coll = getInternal(dataKey);
         Collection<V> collection = new ArrayList<V>(coll.size());
@@ -54,12 +58,14 @@ public class TransactionalMultiMapProxy<K,V> extends TransactionalMultiMapProxyS
     }
 
     public boolean remove(Object key, Object value) {
+        checkTransactionState();
         Data dataKey = getNodeEngine().toData(key);
         Data dataValue = getNodeEngine().toData(value);
         return removeInternal(dataKey, dataValue);
     }
 
     public Collection<V> remove(Object key) {
+        checkTransactionState();
         Data dataKey = getNodeEngine().toData(key);
         Collection<CollectionRecord> coll = removeAllInternal(dataKey);
         Collection<V> result = new ArrayList<V>(coll.size());
@@ -70,6 +76,7 @@ public class TransactionalMultiMapProxy<K,V> extends TransactionalMultiMapProxyS
     }
 
     public int valueCount(K key) {
+        checkTransactionState();
         Data dataKey = getNodeEngine().toData(key);
         return valueCountInternal(dataKey);
     }

@@ -18,18 +18,12 @@ package com.hazelcast.collection;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.core.BaseMultiMap;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.TransactionalList;
-import com.hazelcast.core.TransactionalMultiMap;
+import com.hazelcast.core.*;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.transaction.TransactionContext;
-import com.hazelcast.transaction.TransactionException;
-import com.hazelcast.transaction.TransactionalTask;
-import com.hazelcast.transaction.TransactionalTaskContext;
+import com.hazelcast.transaction.*;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -148,5 +142,20 @@ public class TxnMultiMapTest extends HazelcastTestSupport {
 
         assertEquals(1, instances[1].getList(name).size());
         assertTrue(instances[2].getList(name).add("value1"));
+    }
+
+    @Test(expected = TransactionNotActiveException.class)
+    public void testTxnMultimapOuterTransaction() throws Throwable
+    {
+        Config config = new Config();
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
+
+        final TransactionContext transactionContext = h1.newTransactionContext();
+        transactionContext.beginTransaction();
+        TransactionalMultiMap<Object,Object> mm = transactionContext.getMultiMap("testTxnMultimapOuterTransaction");
+        mm.put("key", "value");
+        transactionContext.commitTransaction();
+        mm.get("key");
     }
 }

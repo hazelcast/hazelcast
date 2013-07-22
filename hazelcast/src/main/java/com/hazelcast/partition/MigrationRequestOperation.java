@@ -16,6 +16,7 @@
 
 package com.hazelcast.partition;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.Address;
@@ -53,23 +54,31 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
         if (!masterAddress.equals(getCallerAddress())) {
             throw new RetryableHazelcastException("Caller is not master node! => " + toString());
         }
-        final Address from = migrationInfo.getSource();
-        final Address to = migrationInfo.getDestination();
-        if (to.equals(from)) {
-            getLogger().log(Level.WARNING, "To and from addresses are the same! => " + toString());
+
+        final Address source = migrationInfo.getSource();
+        final Address destination = migrationInfo.getDestination();
+        final Member target = nodeEngine.getClusterService().getMember(destination);
+        if (target == null) {
+            throw new RetryableHazelcastException("Destination of migration could not be found! => " + toString());
+        }
+        if (destination.equals(source)) {
+            getLogger().log(Level.WARNING, "Source and destination addresses are the same! => " + toString());
             success = false;
             return;
         }
-        if (from == null) {
-            getLogger().log(Level.FINEST, "From address is null => " + toString());
+
+        if (source == null || !source.equals(nodeEngine.getThisAddress())) {
+            throw new RetryableHazelcastException("Source of migration is not this node! => " + toString());
         }
         if (migrationInfo.startProcessing()) {
             try {
-                final Member target = nodeEngine.getClusterService().getMember(to);
-                if (target == null) {
-                    throw new RetryableHazelcastException("Destination of migration could not be found! => " + toString());
+                PartitionServiceImpl partitionService = getService();
+                PartitionImpl partition = partitionService.getPartition(migrationInfo.getPartitionId());
+                final Address owner = partition.getOwner();
+                if (!source.equals(owner)) {
+                    throw new HazelcastException("Cannot migrate! This node is not owner of the partition => "
+                            + migrationInfo + " -> " + partition);
                 }
-                final PartitionServiceImpl partitionService = getService();
                 partitionService.addActiveMigration(migrationInfo);
                 final long[] replicaVersions = partitionService.getPartitionReplicaVersions(migrationInfo.getPartitionId());
                 final long timeout = nodeEngine.getGroupProperties().PARTITION_MIGRATION_TIMEOUT.getLong();
@@ -87,10 +96,16 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
                                 for (Operation task : tasks) {
                                     serializationService.writeObject(out, task);
                                 }
-                                final byte[] data = IOUtil.compress(out.toByteArray());
-                                final MigrationOperation migrationOperation = new MigrationOperation(migrationInfo, replicaVersions, data, tasks.size());
+                                final byte[] data;
+                                boolean compress = nodeEngine.getGroupProperties().PARTITION_MIGRATION_ZIP_ENABLED.getBoolean();
+                                if (compress) {
+                                    data = IOUtil.compress(out.toByteArray());
+                                } else {
+                                    data = out.toByteArray();
+                                }
+                                final MigrationOperation migrationOperation = new MigrationOperation(migrationInfo, replicaVersions, data, tasks.size(), compress);
                                 Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(PartitionServiceImpl.SERVICE_NAME,
-                                        migrationOperation, to).setTryPauseMillis(1000).setReplicaIndex(getReplicaIndex()).build();
+                                        migrationOperation, destination).setTryPauseMillis(1000).setReplicaIndex(getReplicaIndex()).build();
                                 Future future = inv.invoke();
                                 Boolean result = (Boolean) nodeEngine.toObject(future.get(timeout, TimeUnit.SECONDS));
                                 responseHandler.sendResponse(result);
@@ -139,10 +154,10 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
         final Collection<Operation> tasks = new LinkedList<Operation>();
         for (ServiceInfo serviceInfo : nodeEngine.getServiceInfos(MigrationAwareService.class)) {
             MigrationAwareService service = (MigrationAwareService) serviceInfo.getService();
+            service.beforeMigration(migrationEvent);
             final Operation op = service.prepareReplicationOperation(replicationEvent);
             if (op != null) {
                 op.setServiceName(serviceInfo.getName());
-                service.beforeMigration(migrationEvent);
                 tasks.add(op);
             }
         }

@@ -177,8 +177,32 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
                 handleNetwork(node);
             } else if ("load-balancer".equals(nodeName)) {
                 handleLoadBalancer(node);
+            } else if ("near-cache".equals(nodeName)) {
+                handleNearCache(node);
             }
         }
+    }
+
+    private void handleNearCache(Node node){
+        final String name = getAttribute(node, "name");
+        final NearCacheConfig nearCacheConfig = new NearCacheConfig();
+        for (Node child : new IterableNodeList(node.getChildNodes())) {
+            final String nodeName = cleanNodeName(child);
+            if ("max-size".equals(nodeName)) {
+                nearCacheConfig.setMaxSize(Integer.parseInt(getTextContent(child)));
+            } else if ("time-to-live-seconds".equals(nodeName)){
+                nearCacheConfig.setTimeToLiveSeconds(Integer.parseInt(getTextContent(child)));
+            } else if ("max-idle-seconds".equals(nodeName)){
+                nearCacheConfig.setMaxIdleSeconds(Integer.parseInt(getTextContent(child)));
+            } else if ("eviction-policy".equals(nodeName)){
+                nearCacheConfig.setEvictionPolicy(getTextContent(child));
+            } else if ("in-memory-format".equals(nodeName)){
+                nearCacheConfig.setInMemoryFormat(MapConfig.InMemoryFormat.valueOf(getTextContent(child)));
+            } else if ("invalidate-on-change".equals(nodeName)){
+                nearCacheConfig.setInvalidateOnChange(Boolean.parseBoolean(getTextContent(child)));
+            }
+        }
+        clientConfig.addNearCacheConfig(name, nearCacheConfig);
     }
 
     private void handleLoadBalancer(Node node) {
