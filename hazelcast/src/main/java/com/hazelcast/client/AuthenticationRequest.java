@@ -111,10 +111,11 @@ public final class AuthenticationRequest extends CallableClientRequest implement
                             }
                         }
 //                    }
-                } else if (clusterService.getMember(principal.getOwnerUuid()) == null) {
-                    clientEngine.removeEndpoint(connection);
-                    return new AuthenticationException("Owner member is not member of this cluster!");
                 }
+//                else if (clusterService.getMember(principal.getOwnerUuid()) == null) {
+//                    clientEngine.removeEndpoint(connection);
+//                    return new AuthenticationException("Owner member is not member of this cluster!");
+//                }
             }
             if (principal == null) {
                 principal = new ClientPrincipal(endpoint.getUuid(), clientEngine.getLocalMember().getUuid());
