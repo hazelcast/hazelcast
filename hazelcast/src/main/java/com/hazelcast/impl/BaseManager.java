@@ -49,6 +49,9 @@ import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
 public abstract class BaseManager {
+    protected static final String BATCH_OPS_EXECUTOR_NAME = "hz.batch";
+    protected static final String INTERNAL_OPS_EXECUTOR_NAME = "hz.internal";
+
 
     private static final long MIN_POLL_TIMEOUT = 100L;      // 100 milliseconds
     private static final long MAX_POLL_TIMEOUT = 1000L * 5; // 5 seconds

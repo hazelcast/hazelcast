@@ -359,7 +359,7 @@ public class BlockingQueueManager extends BaseManager {
             GetValueKeysCallable callable = new GetValueKeysCallable(name, item);
             DistributedTask<Keys> dt = new DistributedTask<Keys>(callable, member);
             lsFutures.add(dt);
-            node.factory.getExecutorService().execute(dt);
+            node.factory.getExecutorService(INTERNAL_OPS_EXECUTOR_NAME).execute(dt);
         }
         Set<Long> foundKeys = new TreeSet<Long>();
         for (Future<Keys> future : lsFutures) {

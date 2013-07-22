@@ -56,7 +56,6 @@ import static com.hazelcast.nio.IOUtil.toObject;
 import static com.hazelcast.util.Clock.currentTimeMillis;
 
 public class ConcurrentMapManager extends BaseManager {
-    private static final String BATCH_OPS_EXECUTOR_NAME = "hz.batch";
 
     final int partitionCount;
     final int maxBackupCount;
