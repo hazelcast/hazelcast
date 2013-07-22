@@ -20,15 +20,17 @@ import com.hazelcast.core.IList;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * @author ali 1/31/13
  */
 @ManagedDescription("IList")
 public class ListMBean extends HazelcastMBean<IList<?>> {
 
-    private long totalAddedItemCount;
+    private AtomicLong totalAddedItemCount = new AtomicLong();
 
-    private long totalRemovedItemCount;
+    private AtomicLong totalRemovedItemCount = new AtomicLong();
 
     private final String registrationId;
 
@@ -37,11 +39,11 @@ public class ListMBean extends HazelcastMBean<IList<?>> {
         objectName = createObjectName("List", managedObject.getName());
         ItemListener itemListener = new ItemListener() {
             public void itemAdded(ItemEvent item) {
-                totalAddedItemCount++;
+                totalAddedItemCount.incrementAndGet();
             }
 
             public void itemRemoved(ItemEvent item) {
-                totalRemovedItemCount++;
+                totalRemovedItemCount.incrementAndGet();
             }
         };
         registrationId = managedObject.addItemListener(itemListener, false);
@@ -61,12 +63,12 @@ public class ListMBean extends HazelcastMBean<IList<?>> {
 
     @ManagedAnnotation("totalAddedItemCount")
     public long getTotalAddedItemCount() {
-        return totalAddedItemCount;
+        return totalAddedItemCount.get();
     }
 
     @ManagedAnnotation("totalRemovedItemCount")
     public long getTotalRemovedItemCount() {
-        return totalRemovedItemCount;
+        return totalRemovedItemCount.get();
     }
 
     public void preDeregister() throws Exception {

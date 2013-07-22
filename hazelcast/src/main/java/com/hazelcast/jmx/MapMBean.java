@@ -25,6 +25,7 @@ import com.hazelcast.query.SqlPredicate;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author ali 2/11/13
@@ -32,13 +33,13 @@ import java.util.Set;
 @ManagedDescription("IMap")
 public class MapMBean extends HazelcastMBean<IMap> {
 
-    private long totalAddedEntryCount;
+    private AtomicLong totalAddedEntryCount = new AtomicLong();
 
-    private long totalRemovedEntryCount;
+    private AtomicLong totalRemovedEntryCount = new AtomicLong();
 
-    private long totalUpdatedEntryCount;
+    private AtomicLong totalUpdatedEntryCount = new AtomicLong();
 
-    private long totalEvictedEntryCount;
+    private AtomicLong totalEvictedEntryCount = new AtomicLong();
 
     private final EntryListener entryListener;
 
@@ -49,19 +50,19 @@ public class MapMBean extends HazelcastMBean<IMap> {
         objectName = createObjectName("Map", managedObject.getName());
         entryListener = new EntryListener() {
             public void entryAdded(EntryEvent event) {
-                totalAddedEntryCount++;
+                totalAddedEntryCount.incrementAndGet();
             }
 
             public void entryRemoved(EntryEvent event) {
-                totalRemovedEntryCount++;
+                totalRemovedEntryCount.incrementAndGet();
             }
 
             public void entryUpdated(EntryEvent event) {
-                totalUpdatedEntryCount++;
+                totalUpdatedEntryCount.incrementAndGet();
             }
 
             public void entryEvicted(EntryEvent event) {
-                totalEvictedEntryCount++;
+                totalEvictedEntryCount.incrementAndGet();
             }
         };
         listenerId = managedObject.addEntryListener(entryListener, false);
@@ -98,22 +99,22 @@ public class MapMBean extends HazelcastMBean<IMap> {
 
     @ManagedAnnotation("totalAddedEntryCount")
     public long getTotalAddedEntryCount(){
-        return totalAddedEntryCount;
+        return totalAddedEntryCount.get();
     }
 
     @ManagedAnnotation("totalRemovedEntryCount")
     public long getTotalRemovedEntryCount() {
-        return totalRemovedEntryCount;
+        return totalRemovedEntryCount.get();
     }
 
     @ManagedAnnotation("totalUpdatedEntryCount")
     public long getTotalUpdatedEntryCount() {
-        return totalUpdatedEntryCount;
+        return totalUpdatedEntryCount.get();
     }
 
     @ManagedAnnotation("totalEvictedEntryCount")
     public long getTotalEvictedEntryCount() {
-        return totalEvictedEntryCount;
+        return totalEvictedEntryCount.get();
     }
 
     @ManagedAnnotation(value = "values", operation = true)

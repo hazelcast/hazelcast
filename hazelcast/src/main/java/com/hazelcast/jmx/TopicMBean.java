@@ -20,13 +20,15 @@ import com.hazelcast.core.ITopic;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * @author ali 2/11/13
  */
 @ManagedDescription("ITopic")
 public class TopicMBean extends HazelcastMBean<ITopic> {
 
-    private long totalMessageCount;
+    private AtomicLong totalMessageCount = new AtomicLong();
     private final String registrationId;
 
     protected TopicMBean(ITopic managedObject, ManagementService service) {
@@ -34,7 +36,7 @@ public class TopicMBean extends HazelcastMBean<ITopic> {
         objectName = createObjectName("Topic", managedObject.getName());
         MessageListener messageListener = new MessageListener() {
             public void onMessage(Message message) {
-                totalMessageCount++;
+                totalMessageCount.incrementAndGet();
             }
         };
         registrationId = managedObject.addMessageListener(messageListener);
@@ -48,7 +50,7 @@ public class TopicMBean extends HazelcastMBean<ITopic> {
 
     @ManagedAnnotation("totalMessageCount")
     public long getTotalMessageCount() {
-        return totalMessageCount;
+        return totalMessageCount.get();
     }
 
     @ManagedAnnotation("config")
