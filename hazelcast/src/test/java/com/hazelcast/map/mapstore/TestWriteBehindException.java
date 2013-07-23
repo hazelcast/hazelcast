@@ -38,7 +38,7 @@ import static org.junit.Assert.assertEquals;
  */
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
-public class TestWriteBehindException extends HazelcastTestSupport{
+public class TestWriteBehindException extends HazelcastTestSupport {
 
     final CountDownLatch latch1 = new CountDownLatch(1);
     final CountDownLatch latch2 = new CountDownLatch(1);
@@ -58,10 +58,10 @@ public class TestWriteBehindException extends HazelcastTestSupport{
             map.put(i, "value-" + i);
         }
         for (int i = 0; i < 10; i++) {
-            map2.put(i+10, "value-" + i);
+            map2.put(i + 10, "value-" + i);
         }
         for (int i = 0; i < 10; i++) {
-            map3.put(i+20, "value-" + i);
+            map3.put(i + 20, "value-" + i);
         }
 //        Map store = mapStore.store;
 //        int sec = 0;
