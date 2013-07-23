@@ -104,6 +104,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             if (op.getCallerUuid() == null) {
                 op.setCallerUuid(nodeEngine.getLocalMember().getUuid());
             }
+            OperationAccessor.setAsync(op, callback != null);
             doInvoke();
         } catch (Exception e) {
             if (e instanceof RetryableException) {
