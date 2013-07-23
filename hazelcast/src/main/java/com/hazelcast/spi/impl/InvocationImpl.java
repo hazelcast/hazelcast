@@ -155,7 +155,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                     if (prevCallId != 0) {
                         operationService.deregisterRemoteCall(prevCallId);
                     }
-                    if (op instanceof BackupAwareOperation) {
+                    if (callback == null && op instanceof BackupAwareOperation) {
                         final long callId = operationService.newCallId();
                         registerBackups((BackupAwareOperation) op, callId);
                         OperationAccessor.setCallId(op, callId);
@@ -170,7 +170,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                     remote = true;
                     final RemoteCall call = member != null ? new RemoteCall(member, this) : new RemoteCall(invTarget, this);
                     final long callId = operationService.registerRemoteCall(call);
-                    if (op instanceof BackupAwareOperation) {
+                    if (callback == null && op instanceof BackupAwareOperation) {
                         registerBackups((BackupAwareOperation) op, callId);
                     }
                     OperationAccessor.setCallId(op, callId);
@@ -245,6 +245,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                         final Object realResponse;
                         if (response instanceof Response) {
                             final Response responseObj = (Response) response;
+                            // no need to deregister backup call, since backups are not registered for async invocations.
                             realResponse = responseObj.response;
                         } else if (response == NULL_RESPONSE) {
                             realResponse = null;
