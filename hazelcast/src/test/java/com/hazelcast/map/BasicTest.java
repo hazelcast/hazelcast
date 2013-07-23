@@ -137,11 +137,12 @@ public class BasicTest extends HazelcastTestSupport {
         map.addEntryListener(new EntryAdapter<String, String>() {
             public void entryEvicted(EntryEvent<String, String> event) {
                 if (value1.equals(event.getValue())) {
+                    newList.add(event.getValue());
                     latch1.countDown();
                 } else if (value2.equals(event.getValue())) {
+                    newList.add(event.getValue());
                     latch2.countDown();
                 }
-                newList.add(event.getValue());
             }
         }, true);
 

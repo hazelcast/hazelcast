@@ -104,6 +104,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             if (op.getCallerUuid() == null) {
                 op.setCallerUuid(nodeEngine.getLocalMember().getUuid());
             }
+            OperationAccessor.setAsync(op, callback != null);
             doInvoke();
         } catch (Exception e) {
             if (e instanceof RetryableException) {
@@ -118,7 +119,12 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
     private void doInvoke() {
         if (!nodeEngine.isActive()) {
             remote = false;
-            throw new HazelcastInstanceNotActiveException();
+            if (callback == null) {
+                throw new HazelcastInstanceNotActiveException();
+            } else {
+                notify(new HazelcastInstanceNotActiveException());
+                return;
+            }
         }
         final Address invTarget = getTarget();
         target = invTarget;
@@ -260,7 +266,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             }
         }
 
-        class ScheduledInv implements Runnable {
+        private class ScheduledInv implements Runnable {
             public void run() {
                 doInvoke();
             }

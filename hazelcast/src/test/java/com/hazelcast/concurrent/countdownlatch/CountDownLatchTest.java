@@ -125,10 +125,11 @@ public class CountDownLatchTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(5);
         HazelcastInstance hz1 = factory.newHazelcastInstance(new Config());
         HazelcastInstance hz2 = factory.newHazelcastInstance(new Config());
+        warmUpPartitions(hz2, hz1);
 
         final ICountDownLatch latch1 = hz1.getCountDownLatch("test");
         latch1.trySetCount(10);
-        Thread.sleep(100);
+        Thread.sleep(500);
 
         final ICountDownLatch latch2 = hz2.getCountDownLatch("test");
         Assert.assertEquals(10, latch2.getCount());
@@ -138,6 +139,7 @@ public class CountDownLatchTest extends HazelcastTestSupport {
         Assert.assertEquals(9, latch2.getCount());
 
         HazelcastInstance hz3 = factory.newHazelcastInstance(new Config());
+        warmUpPartitions(hz3);
         final ICountDownLatch latch3 = hz3.getCountDownLatch("test");
         latch3.countDown();
         Assert.assertEquals(8, latch3.getCount());
@@ -148,6 +150,7 @@ public class CountDownLatchTest extends HazelcastTestSupport {
 
         HazelcastInstance hz4 = factory.newHazelcastInstance(new Config());
         HazelcastInstance hz5 = factory.newHazelcastInstance(new Config());
+        warmUpPartitions(hz5, hz4);
         Thread.sleep(250);
 
         hz3.getLifecycleService().shutdown();

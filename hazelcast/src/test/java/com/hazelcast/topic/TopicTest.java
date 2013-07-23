@@ -465,7 +465,7 @@ public class TopicTest extends HazelcastTestSupport {
      * and if topic has any issue after a shutdown.
      */
     @Test
-    public void testTopicCluster() {
+    public void testTopicCluster() throws InterruptedException {
         final Config cfg = new Config();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance[] instances = factory.newInstances(cfg);
@@ -474,9 +474,10 @@ public class TopicTest extends HazelcastTestSupport {
         String topicName = "TestMessages";
         ITopic<String> topic1 = h1.getTopic(topicName);
         final CountDownLatch latch1 = new CountDownLatch(1);
+        final String message = "Test1";
         topic1.addMessageListener(new MessageListener<String>() {
             public void onMessage(Message msg) {
-                assertEquals("Test1", msg.getMessageObject());
+                assertEquals(message, msg.getMessageObject());
                 latch1.countDown();
             }
         });
@@ -484,18 +485,17 @@ public class TopicTest extends HazelcastTestSupport {
         final CountDownLatch latch2 = new CountDownLatch(2);
         topic2.addMessageListener(new MessageListener<String>() {
             public void onMessage(Message msg) {
-                assertEquals("Test1", msg.getMessageObject());
+                assertEquals(message, msg.getMessageObject());
                 latch2.countDown();
             }
         });
-        topic1.publish("Test1");
+
+        topic1.publish(message);
+        assertTrue(latch1.await(5, TimeUnit.SECONDS));
+
         h1.getLifecycleService().shutdown();
-        topic2.publish("Test1");
-        try {
-            assertTrue(latch1.await(5, TimeUnit.SECONDS));
-            assertTrue(latch2.await(5, TimeUnit.SECONDS));
-        } catch (InterruptedException ignored) {
-        }
+        topic2.publish(message);
+        assertTrue(latch2.await(5, TimeUnit.SECONDS));
     }
 
     @Test
