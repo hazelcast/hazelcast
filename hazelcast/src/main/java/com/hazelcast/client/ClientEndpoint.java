@@ -140,7 +140,12 @@ public final class ClientEndpoint implements Client {
     void destroy() throws LoginException {
         final ListenerRegistration reg = registration;
         if (reg != null) {
-            deregisterListener(reg);
+            try {
+                deregisterListener(reg);
+            } catch (HazelcastInstanceNotActiveException ignored) {
+            } catch (Exception e) {
+                getLogger().log(Level.WARNING, e.getMessage(), e);
+            }
             registration = null;
         }
         final LoginContext lc = loginContext;

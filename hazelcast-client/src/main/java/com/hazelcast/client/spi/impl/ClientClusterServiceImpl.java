@@ -150,7 +150,6 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
 
     private <T> T retryOrThrowException(Object obj, ResponseHandler handler, Exception e) throws IOException {
         if (isRetryable(e)) {
-            ((ClientPartitionServiceImpl) client.getClientPartitionService()).refreshPartitions();
             if (redoOperation || obj instanceof RetryableRequest) {
                 beforeRetry();
                 if (handler == null) {
