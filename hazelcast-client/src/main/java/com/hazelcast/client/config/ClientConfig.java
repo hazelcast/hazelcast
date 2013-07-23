@@ -61,7 +61,7 @@ public class ClientConfig {
      * Note that it uses a cached version of {@link com.hazelcast.core.PartitionService#getPartitions()} and doesn't
      * guarantee that the operation will always be executed on the owner. The cached table is updated every second.
      */
-    private boolean smart = false;
+    private boolean smart = true;
 
     /**
      * If true, client will redo the operations that were executing on the server and client lost the connection.
