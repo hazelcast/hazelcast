@@ -17,6 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
@@ -35,20 +36,49 @@ public class MapStoreDeleteProcessor implements ScheduledEntryProcessor<Data, Ob
         this.mapService = mapService;
     }
 
+    private Exception tryDelete(EntryTaskScheduler<Data, Object> scheduler, ScheduledEntry<Data, Object> entry) {
+        Exception exception = null;
+        try {
+            mapContainer.getStore().delete(mapService.toObject(entry.getKey()));
+        } catch (Exception e) {
+            exception = e;
+            scheduler.schedule(mapContainer.getWriteDelayMillis(), entry.getKey(), entry.getValue());
+        }
+        return exception;
+    }
+
+
     public void process(EntryTaskScheduler<Data, Object> scheduler, Collection<ScheduledEntry<Data, Object>> entries) {
-        if(entries.isEmpty())
+        if (entries.isEmpty())
             return;
 
-        if(entries.size() == 1) {
-            mapContainer.getStore().delete(mapService.toObject(entries.iterator().next().getKey()));
-            return;
+        if (entries.size() == 1) {
+            ScheduledEntry<Data, Object> entry = entries.iterator().next();
+            Exception e = tryDelete(scheduler, entry);
+            if (e != null) {
+                ExceptionUtil.rethrow(e);
+            }
+        } else {
+            Set keys = new HashSet();
+            Exception e = null;
+            for (ScheduledEntry<Data, Object> entry : entries) {
+                keys.add(mapService.toObject(entry.getKey()));
+            }
+            try {
+                mapContainer.getStore().deleteAll(keys);
+            } catch (Exception ex) {
+                // if delete all throws exception we will try to put delete them one by one.
+                for (ScheduledEntry<Data, Object> entry : entries) {
+                    Exception temp = tryDelete(scheduler, entry);
+                    if (temp != null) {
+                        e = temp;
+                    }
+                }
+            }
+            if (e != null) {
+                ExceptionUtil.rethrow(e);
+            }
         }
-
-        Set keys = new HashSet();
-        for (ScheduledEntry<Data, Object> entry : entries) {
-            keys.add(mapService.toObject(entry.getKey()));
-        }
-        mapContainer.getStore().deleteAll(keys);
     }
 
 }

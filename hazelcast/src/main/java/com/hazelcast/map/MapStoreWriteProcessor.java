@@ -17,9 +17,11 @@
 package com.hazelcast.map;
 
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
+import com.sun.xml.internal.ws.util.UtilException;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -35,20 +37,48 @@ public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Obj
         this.mapService = mapService;
     }
 
-    public void process(EntryTaskScheduler<Data, Object> scheduler, Collection<ScheduledEntry<Data, Object>> entries) {
-        if(entries.isEmpty())
-            return;
-        if(entries.size() == 1) {
-            ScheduledEntry<Data, Object> entry = entries.iterator().next();
+    private Exception tryStore(EntryTaskScheduler<Data, Object> scheduler, ScheduledEntry<Data, Object> entry) {
+        Exception exception = null;
+        try {
             mapContainer.getStore().store(mapService.toObject(entry.getKey()), mapService.toObject(entry.getValue()));
+        } catch (Exception e) {
+            exception = e;
+            scheduler.schedule(mapContainer.getWriteDelayMillis(), entry.getKey(), entry.getValue());
+        }
+        return exception;
+    }
+
+    public void process(EntryTaskScheduler<Data, Object> scheduler, Collection<ScheduledEntry<Data, Object>> entries) {
+        if (entries.isEmpty())
             return;
+        if (entries.size() == 1) {
+            ScheduledEntry<Data, Object> entry = entries.iterator().next();
+            Exception exception = tryStore(scheduler, entry);
+            if (exception != null) {
+                ExceptionUtil.rethrow(exception);
+            }
+        } else {   // if entries size > 0, we will call storeAll
+            Map map = new HashMap(entries.size());
+            for (ScheduledEntry<Data, Object> entry : entries) {
+                map.put(mapService.toObject(entry.getKey()), mapService.toObject(entry.getValue()));
+            }
+            Exception exception = null;
+            try {
+                mapContainer.getStore().storeAll(map);
+            } catch (Exception e) {
+                // if store all throws exception we will try to put insert them one by one.
+                for (ScheduledEntry<Data, Object> entry : entries) {
+                    Exception temp = tryStore(scheduler, entry);
+                    if(temp != null) {
+                        exception = temp;
+                    }
+                }
+            }
+            if (exception != null) {
+                ExceptionUtil.rethrow(exception);
+            }
         }
 
-        Map map = new HashMap(entries.size());
-        for (ScheduledEntry<Data, Object> entry : entries) {
-            map.put(mapService.toObject(entry.getKey()), mapService.toObject(entry.getValue()));
-        }
-        mapContainer.getStore().storeAll(map);
     }
 
 }

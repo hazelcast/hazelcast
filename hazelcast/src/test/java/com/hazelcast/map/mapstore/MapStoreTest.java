@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map;
+package com.hazelcast.map.mapstore;
 
 import com.hazelcast.config.*;
 import com.hazelcast.core.*;
@@ -1136,7 +1136,7 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     public static class SimpleMapStore<K, V> extends MapStoreAdaptor<K, V> {
-        final Map<K, V> store;
+        public final Map<K, V> store;
         private boolean loadAllKeys = true;
 
         public SimpleMapStore() {
