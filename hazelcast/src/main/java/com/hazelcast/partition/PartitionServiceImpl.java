@@ -607,7 +607,8 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                         + ", replicaIndex: " + replicaIndex + ", partition-info: " + partitionImpl);
             }
             if (sendRequest) {
-                final Level level = force ? Level.FINEST : Level.INFO;
+//                final Level level = force ? Level.FINEST : Level.INFO;
+                final Level level = Level.FINEST;
                 if (logger.isLoggable(level)) {
                     logger.log(level, "Sending sync replica request to -> " + target
                             + "; for partition: " + partitionId + ", replica: " + replicaIndex);
