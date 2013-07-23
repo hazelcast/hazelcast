@@ -425,12 +425,12 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     public void invalidateAllNearCaches(String mapName, Data key) {
-        InvalidateNearCacheOperation operation = new InvalidateNearCacheOperation(mapName, key);
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         for (MemberImpl member : members) {
             try {
                 if (member.localMember())
                     continue;
+                InvalidateNearCacheOperation operation = new InvalidateNearCacheOperation(mapName, key);
                 Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, member.getAddress()).build();
                 invocation.invoke();
             } catch (Throwable throwable) {
