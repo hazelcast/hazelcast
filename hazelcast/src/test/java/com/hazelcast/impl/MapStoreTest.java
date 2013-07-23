@@ -886,11 +886,11 @@ public class MapStoreTest extends TestUtil {
         map.unlock("key");
     }
 
-    protected Config newConfig(Object storeImpl, int writeDelaySeconds) {
+    public static Config newConfig(Object storeImpl, int writeDelaySeconds) {
         return newConfig("default", storeImpl, writeDelaySeconds);
     }
 
-    protected Config newConfig(String mapName, Object storeImpl, int writeDelaySeconds) {
+    public static Config newConfig(String mapName, Object storeImpl, int writeDelaySeconds) {
         Config config = new XmlConfigBuilder().build();
         MapConfig mapConfig = config.getMapConfig(mapName);
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
@@ -941,7 +941,7 @@ public class MapStoreTest extends TestUtil {
     }
 
     public static class SimpleMapStore<K, V> extends MapStoreAdaptor<K, V> {
-        final Map<K, V> store;
+        public final Map<K, V> store;
         private boolean loadAllKeys = true;
 
         public SimpleMapStore() {
@@ -986,7 +986,7 @@ public class MapStoreTest extends TestUtil {
 
     public static class TestMapStore extends MapStoreAdaptor implements MapLoaderLifecycleSupport, MapStore {
 
-        final Map store = new ConcurrentHashMap();
+        public final Map store = new ConcurrentHashMap();
 
         final CountDownLatch latchStore;
         final CountDownLatch latchStoreAll;

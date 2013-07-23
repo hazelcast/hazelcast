@@ -1393,6 +1393,36 @@ public class HazelcastTest {
         assertEquals("value2", map.get("key"));
         h.getLifecycleService().shutdown();
     }
+    /*
+       github issue 585
+    */
+    @Test
+    public void testIssue585ZeroTTLShouldPreventEvictionInSet() throws InterruptedException {
+        Config config = new Config();
+        config.getGroupConfig().setName("testIssue585ZeroTTLShouldPreventEvictionInSet");
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
+        IMap<String, String> map = h.getMap("testIssue585ZeroTTLShouldPreventEvictionInSet");
+        map.set("key", "value", 1, TimeUnit.SECONDS);
+        map.set("key", "value2", 0, TimeUnit.SECONDS);
+        Thread.sleep(2000);
+        assertEquals("value2", map.get("key"));
+        h.getLifecycleService().shutdown();
+    }
+    /*
+       github issue 585
+    */
+    @Test
+    public void testIssue585SetWithoutTtl() throws InterruptedException {
+        Config config = new Config();
+        config.getGroupConfig().setName("testIssue585SetWithoutTtl");
+        HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
+        IMap<String, String> map = h.getMap("testIssue585SetWithoutTtl");
+        map.set("key", "value", 1, TimeUnit.SECONDS);
+        map.set("key", "value2");
+        Thread.sleep(2000);
+        assertEquals(0, map.size());
+        h.getLifecycleService().shutdown();
+    }
 
     /*
         github issue 304

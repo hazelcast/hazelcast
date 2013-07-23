@@ -242,6 +242,10 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
         return dynamicProxy.tryPut(key, value, time, timeunit);
     }
 
+    public void set(Object key, Object value) {
+        dynamicProxy.set(key, value);
+    }
+
     public void set(Object key, Object value, long time, TimeUnit timeunit) {
         dynamicProxy.set(key, value, time, timeunit);
     }
@@ -637,14 +641,16 @@ public class MProxyImpl extends FactoryAwareNamedProxy implements MProxy, DataSe
             return result;
         }
 
+        public void set(Object key, Object value) {
+            set(key, value, -1, TimeUnit.SECONDS);
+        }
+
         public void set(Object key, Object value, long ttl, TimeUnit timeunit) {
             long begin = Clock.currentTimeMillis();
-            if (ttl < 0) {
+            if (ttl < 0 && ttl != -1) {
                 throw new IllegalArgumentException("ttl value cannot be negative. " + ttl);
             }
-            if (ttl == 0) {
-                ttl = -1;
-            } else {
+            if (ttl > 0) {
                 ttl = toMillis(ttl, timeunit);
             }
             check(key);
