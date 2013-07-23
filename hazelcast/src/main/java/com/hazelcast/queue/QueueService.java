@@ -79,10 +79,12 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         QueueContainer container = containerMap.get(name);
         if (container == null) {
             container = new QueueContainer(name, nodeEngine.getPartitionService().getPartitionId(nodeEngine.toData(name)), nodeEngine.getConfig().getQueueConfig(name),
-                    nodeEngine, fromBackup);
+                    nodeEngine);
             QueueContainer existing = containerMap.putIfAbsent(name, container);
             if (existing != null) {
                 container = existing;
+            } else {
+                container.loadInitialKeys(fromBackup);
             }
         }
         return container;

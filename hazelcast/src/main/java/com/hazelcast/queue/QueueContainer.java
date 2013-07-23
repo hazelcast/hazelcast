@@ -70,10 +70,13 @@ public class QueueContainer implements DataSerializable {
         offerWaitNotifyKey = new QueueWaitNotifyKey(name, "offer");
     }
 
-    public QueueContainer(String name, int partitionId, QueueConfig config, NodeEngine nodeEngine, boolean fromBackup) throws Exception {
+    public QueueContainer(String name, int partitionId, QueueConfig config, NodeEngine nodeEngine) throws Exception {
         this(name);
         this.partitionId = partitionId;
         setConfig(config, nodeEngine);
+    }
+
+    public void loadInitialKeys(boolean fromBackup){
         if (!fromBackup && store.isEnabled()) {
             Set<Long> keys = store.loadAllKeys();
             if (keys != null) {
