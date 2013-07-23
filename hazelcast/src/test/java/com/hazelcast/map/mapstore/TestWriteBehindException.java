@@ -63,12 +63,7 @@ public class TestWriteBehindException extends HazelcastTestSupport {
         for (int i = 0; i < 10; i++) {
             map3.put(i + 20, "value-" + i);
         }
-//        Map store = mapStore.store;
-//        int sec = 0;
-//        for (int i = 0; i < 10; i++) {
-//            System.out.println("time:" + sec++ + " size:" + store.size());
-//            Thread.sleep(1000);
-//        }
+
         latch1.await();
         Thread.sleep(2000);
         assertEquals(29, mapStore.store.size());
@@ -100,7 +95,6 @@ public class TestWriteBehindException extends HazelcastTestSupport {
         @Override
         public void delete(Integer key) {
             if (key.equals(6)) {
-                System.out.println("delete rejected value");
                 throw new RuntimeException("delete db rejected value");
             }
             super.delete(key);
@@ -117,7 +111,6 @@ public class TestWriteBehindException extends HazelcastTestSupport {
         @Override
         public void store(Integer key, String value) {
             if (key.equals(5)) {
-                System.out.println("rejected value");
                 throw new RuntimeException("db rejected value");
             }
             super.store(key, value);
