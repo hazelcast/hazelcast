@@ -313,7 +313,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             BeanDefinitionBuilder globalSerializerConfigBuilder = null;
             String implementation = "implementation";
             String className = "class-name";
-            ManagedList typeSerializers = new ManagedList();
+            ManagedList serializers = new ManagedList();
             for (org.w3c.dom.Node child : new IterableNodeList(node, Node.ELEMENT_NODE)) {
                 final String name = cleanNodeName(child);
                 if ("global-serializer".equals(name)) {
@@ -340,11 +340,13 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     if(classNode != null) {
                         serializerConfigBuilder.addPropertyValue(xmlToJavaName(className), getTextContent(classNode));
                     }
-                    typeSerializers.add(serializerConfigBuilder.getBeanDefinition());
+                    serializers.add(serializerConfigBuilder.getBeanDefinition());
                 }
             }
-            serializationConfigBuilder.addPropertyValue("globalSerializerConfig", globalSerializerConfigBuilder.getBeanDefinition());
-            serializationConfigBuilder.addPropertyValue("serializerConfigs", typeSerializers);
+            if(globalSerializerConfigBuilder != null) {
+                serializationConfigBuilder.addPropertyValue("globalSerializerConfig", globalSerializerConfigBuilder.getBeanDefinition());
+            }
+            serializationConfigBuilder.addPropertyValue("serializerConfigs", serializers);
         }
 
 

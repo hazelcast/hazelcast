@@ -178,8 +178,20 @@
                                     <xs:element ref="portable-factories" minOccurs="0" maxOccurs="1" />
                                     <xs:element ref="serializers" minOccurs="0" maxOccurs="1" />
                                 </xs:sequence>
+                                <xs:attribute name="use-native-byte-order" use="optional" type="xs:string" default="false"/>
+                                <xs:attribute name="byte-order" use="optional" default="BIG_ENDIAN">
+                                    <xs:simpleType>
+                                        <xs:restriction base="non-space-string">
+                                            <xs:enumeration value="BIG_ENDIAN"/>
+                                            <xs:enumeration value="LITTLE_ENDIAN"/>
+                                        </xs:restriction>
+                                    </xs:simpleType>
+                                </xs:attribute>
                                 <xs:attribute name="portable-version" use="optional" type="xs:string"/>
-                                <xs:attribute name="check-class-def-errors" use="optional" type="xs:string"/>
+                                <xs:attribute name="check-class-def-errors" use="optional" type="xs:string" default="false"/>
+                                <xs:attribute name="enable-compression" use="optional" type="xs:string" default="false"/>
+                                <xs:attribute name="enable-shared-object" use="optional" type="xs:string" default="false"/>
+                                <xs:attribute name="allow-unsafe" use="optional" type="xs:string" default="true"/>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="security" type="security" minOccurs="0" maxOccurs="1"/>
@@ -192,7 +204,7 @@
     <xs:element name="data-serializable-factories" >
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="data-serializable-factory" type="data-serializable-factory" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="data-serializable-factory" type="serialization-factory" minOccurs="0" maxOccurs="unbounded"/>
             </xs:sequence>
         </xs:complexType>
     </xs:element>
@@ -200,7 +212,7 @@
     <xs:element name="portable-factories" >
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="portable-factory" type="portable-factory" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="portable-factory" type="serialization-factory" minOccurs="0" maxOccurs="unbounded"/>
             </xs:sequence>
         </xs:complexType>
     </xs:element>
@@ -214,13 +226,7 @@
         </xs:complexType>
     </xs:element>
 
-    <xs:complexType name="data-serializable-factory">
-        <xs:attribute name="factory-id" type="xs:string" use="required"/>
-        <xs:attribute name="class-name" type="xs:string" use="optional"/>
-        <xs:attribute name="implementation" type="xs:string" use="optional"/>
-    </xs:complexType>
-
-    <xs:complexType name="portable-factory">
+    <xs:complexType name="serialization-factory">
         <xs:attribute name="factory-id" type="xs:string" use="required"/>
         <xs:attribute name="class-name" type="xs:string" use="optional"/>
         <xs:attribute name="implementation" type="xs:string" use="optional"/>
