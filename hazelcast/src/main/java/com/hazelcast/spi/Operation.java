@@ -43,6 +43,7 @@ public abstract class Operation implements DataSerializable {
     private long invocationTime = -1;
     private long callTimeout = Long.MAX_VALUE;
     private String callerUuid;
+    private boolean async;
 
     // injected
     private transient NodeEngine nodeEngine;
@@ -219,6 +220,15 @@ public abstract class Operation implements DataSerializable {
         return this;
     }
 
+    public boolean isAsync() {
+        return async;
+    }
+
+    // Accessed using OperationAccessor
+    void setAsync(boolean async) {
+        this.async = async;
+    }
+
     protected final ILogger getLogger() {
         final NodeEngine ne = nodeEngine;
         return ne != null ? ne.getLogger(getClass()) : Logger.getLogger(getClass());
@@ -250,6 +260,7 @@ public abstract class Operation implements DataSerializable {
             out.writeLong(invocationTime);
             out.writeLong(callTimeout);
             out.writeUTF(callerUuid);
+            out.writeBoolean(async);
             writeInternal(out);
         } finally {
             writeDataFlag = false;
@@ -271,6 +282,7 @@ public abstract class Operation implements DataSerializable {
             invocationTime = in.readLong();
             callTimeout = in.readLong();
             callerUuid = in.readUTF();
+            async = in.readBoolean();
             readInternal(in);
         } finally {
             readDataFlag = false;
