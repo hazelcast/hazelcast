@@ -21,8 +21,6 @@ import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
-import com.sun.xml.internal.ws.util.UtilException;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
