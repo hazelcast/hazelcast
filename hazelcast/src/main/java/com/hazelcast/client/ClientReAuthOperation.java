@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.AbstractOperation;
 
 import java.io.IOException;
+import java.util.Set;
 
 /**
  * @author mdogan 5/7/13
@@ -41,8 +42,8 @@ public class ClientReAuthOperation extends AbstractOperation {
 
     public void run() throws Exception {
         ClientEngineImpl service = getService();
-        final ClientEndpoint endpoint = service.getEndpoint(clientUuid);
-        if (endpoint != null) {
+        final Set<ClientEndpoint> endpoints = service.getEndpoints(clientUuid);
+        for (ClientEndpoint endpoint : endpoints) {
             endpoint.authenticated(new ClientPrincipal(clientUuid, getCallerUuid()), firstConnection);
         }
     }

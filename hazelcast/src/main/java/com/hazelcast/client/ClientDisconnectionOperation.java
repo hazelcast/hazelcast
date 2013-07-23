@@ -24,6 +24,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Set;
 
 /**
  * @author mdogan 2/11/13
@@ -41,8 +42,8 @@ public class ClientDisconnectionOperation extends AbstractOperation {
 
     public void run() throws Exception {
         ClientEngineImpl engine = getService();
-        final ClientEndpoint endpoint = engine.getEndpoint(clientUuid);
-        if (endpoint != null) {
+        final Set<ClientEndpoint> endpoints = engine.getEndpoints(clientUuid);
+        for (ClientEndpoint endpoint : endpoints) {
             engine.removeEndpoint(endpoint.getConnection(), true);
         }
 

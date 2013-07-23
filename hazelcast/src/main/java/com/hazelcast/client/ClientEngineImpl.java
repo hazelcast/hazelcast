@@ -166,13 +166,14 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
         }
     };
 
-    ClientEndpoint getEndpoint(String uuid) {
+    Set<ClientEndpoint> getEndpoints(String uuid) {
+        Set<ClientEndpoint> endpointSet = new HashSet<ClientEndpoint>();
         for (ClientEndpoint endpoint : endpoints.values()) {
             if (uuid.equals(endpoint.getUuid())) {
-                return endpoint;
+                endpointSet.add(endpoint);
             }
         }
-        return null;
+        return endpointSet;
     }
 
     ClientEndpoint getEndpoint(Connection conn) {
