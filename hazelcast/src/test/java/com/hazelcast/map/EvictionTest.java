@@ -28,7 +28,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -254,7 +256,7 @@ public class EvictionTest extends HazelcastTestSupport {
                     while (latch.getCount() != 0) {
                         try {
                             int msize = map.size();
-                            if(msize > (size * pnum * 1.2)){
+                            if (msize > (size * pnum * 1.2)) {
                                 failCount.incrementAndGet();
                             }
                             Thread.sleep(1000);
@@ -478,11 +480,11 @@ public class EvictionTest extends HazelcastTestSupport {
         final HazelcastInstance[] instances = factory.newInstances(cfg);
         final IMap map = instances[0].getMap("testMapRecordIdleEviction");
         final CountDownLatch latch = new CountDownLatch(size - nsize);
-        map.addEntryListener(new EntryAdapter(){
+        map.addEntryListener(new EntryAdapter() {
             public void entryEvicted(EntryEvent event) {
                 latch.countDown();
             }
-        },false);
+        }, false);
 
         final Thread thread = new Thread(new Runnable() {
             public void run() {
@@ -522,11 +524,11 @@ public class EvictionTest extends HazelcastTestSupport {
         HazelcastInstance instance = factory.newHazelcastInstance(cfg);
         IMap<Object, Object> map = instance.getMap("testZeroResetsTTL");
         final CountDownLatch latch = new CountDownLatch(1);
-        map.addEntryListener(new EntryAdapter<Object, Object>(){
+        map.addEntryListener(new EntryAdapter<Object, Object>() {
             public void entryEvicted(EntryEvent event) {
                 latch.countDown();
             }
-        },false);
+        }, false);
 
         map.put(1, 1);
         map.put(2, 2);
@@ -550,11 +552,11 @@ public class EvictionTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
         final IMap map = instance1.getMap(name);
         final CountDownLatch latch = new CountDownLatch(size - nsize);
-        map.addEntryListener(new EntryAdapter(){
+        map.addEntryListener(new EntryAdapter() {
             public void entryEvicted(EntryEvent event) {
                 latch.countDown();
             }
-        },false);
+        }, false);
 
         for (int i = 0; i < size; i++) {
             map.put(i, i);
@@ -598,45 +600,32 @@ public class EvictionTest extends HazelcastTestSupport {
         final CountDownLatch latch = new CountDownLatch(k * putCount);
         final IMap map = instances[0].getMap("testMapEvictionTtlWithListener");
 
-        final ExecutorService ex = Executors.newFixedThreadPool(k * 2);
         final AtomicBoolean error = new AtomicBoolean(false);
         final Set<Long> times = Collections.newSetFromMap(new ConcurrentHashMap<Long, Boolean>());
 
         map.addEntryListener(new EntryAdapter() {
             public void entryEvicted(final EntryEvent event) {
-                ex.execute(new Runnable() {
-                    public void run() {
-                        final Long expectedEvictionTime = (Long) (event.getOldValue());
-                        long timeDifference = System.currentTimeMillis() - expectedEvictionTime;
-                        if (timeDifference > 5000) {
-                            error.set(true);
-                            times.add(timeDifference);
-                        }
-                        latch.countDown();
-                    }
-                });
+                final Long expectedEvictionTime = (Long) (event.getOldValue());
+                long timeDifference = System.currentTimeMillis() - expectedEvictionTime;
+                if (timeDifference > 5000) {
+                    error.set(true);
+                    times.add(timeDifference);
+                }
+                latch.countDown();
             }
         }, true);
 
         for (int i = 0; i < k; i++) {
             final int threadId = i;
-            ex.execute(new Runnable() {
-                public void run() {
-                    int ttl = (int) (Math.random() * 5000 + 3000);
-                    for (int j = 0; j < putCount; j++) {
-                        final long expectedEvictionTime = ttl + System.currentTimeMillis();
-                        map.put(j + putCount * threadId, expectedEvictionTime, ttl, TimeUnit.MILLISECONDS);
-                    }
-                }
-            });
+            int ttl = (int) (Math.random() * 5000 + 3000);
+            for (int j = 0; j < putCount; j++) {
+                final long expectedEvictionTime = ttl + System.currentTimeMillis();
+                map.put(j + putCount * threadId, expectedEvictionTime, ttl, TimeUnit.MILLISECONDS);
+            }
         }
 
-        try {
-            assertTrue(latch.await(1, TimeUnit.MINUTES));
-            assertFalse("Some evictions took more than 3 seconds! -> " + times, error.get());
-        } finally {
-            ex.shutdownNow();
-        }
+        assertTrue(latch.await(1, TimeUnit.MINUTES));
+        assertFalse("Some evictions took more than 3 seconds! -> " + times, error.get());
     }
 
     /**
@@ -652,14 +641,14 @@ public class EvictionTest extends HazelcastTestSupport {
         HazelcastInstance instance = factory.newHazelcastInstance(cfg);
         IMap<Object, Object> map = instance.getMap("map");
         final AtomicInteger count = new AtomicInteger(0);
-        map.addEntryListener(new EntryAdapter<Object, Object>(){
+        map.addEntryListener(new EntryAdapter<Object, Object>() {
             @Override
             public void entryEvicted(EntryEvent<Object, Object> event) {
-                 count.incrementAndGet();
+                count.incrementAndGet();
             }
-        },true);
-        map.put(1,1,1, TimeUnit.SECONDS);
-        map.put(2,2,1, TimeUnit.SECONDS);
+        }, true);
+        map.put(1, 1, 1, TimeUnit.SECONDS);
+        map.put(2, 2, 1, TimeUnit.SECONDS);
         map.remove(1);
         Thread.sleep(2000);
         assertEquals(1, count.get());
