@@ -21,6 +21,7 @@ import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.*;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.map.*;
 import com.hazelcast.map.client.*;
 import com.hazelcast.monitor.LocalMapStats;
@@ -37,6 +38,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
 
 /**
  * @author mdogan 5/17/13
@@ -44,9 +46,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V> {
 
     private final String name;
-    private ClientNearCache nearCache;
+    private volatile ClientNearCache nearCache;
     private String nearCacheListenerId;
-    private AtomicBoolean nearCacheInitialized = new AtomicBoolean();
+    private final AtomicBoolean nearCacheInitialized = new AtomicBoolean();
 
     public ClientMapProxy(String serviceName, String name) {
         super(serviceName, name);
@@ -539,31 +541,38 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
             if (nearCacheConfig == null){
                 return;
             }
-            nearCache = new ClientNearCache(name, getContext(), nearCacheConfig);
+            ClientNearCache _nearCache = new ClientNearCache(name, getContext(), nearCacheConfig);
             if (nearCacheConfig.isInvalidateOnChange()){
-                nearCacheListenerId = addEntryListener(new EntryListener<K, V>() {
-                    public void entryAdded(EntryEvent<K, V> event) {
-                        invalidate(event);
-                    }
+                try {
+                    nearCacheListenerId = addEntryListener(new EntryListener<K, V>() {
+                        public void entryAdded(EntryEvent<K, V> event) {
+                            invalidate(event);
+                        }
 
-                    public void entryRemoved(EntryEvent<K, V> event) {
-                        invalidate(event);
-                    }
+                        public void entryRemoved(EntryEvent<K, V> event) {
+                            invalidate(event);
+                        }
 
-                    public void entryUpdated(EntryEvent<K, V> event) {
-                        invalidate(event);
-                    }
+                        public void entryUpdated(EntryEvent<K, V> event) {
+                            invalidate(event);
+                        }
 
-                    public void entryEvicted(EntryEvent<K, V> event) {
-                        invalidate(event);
-                    }
+                        public void entryEvicted(EntryEvent<K, V> event) {
+                            invalidate(event);
+                        }
 
-                    void invalidate(EntryEvent<K, V> event){
-                        final Data key = toData(event.getKey());
-                        nearCache.invalidate(key);
-                    }
-                }, false);
+                        void invalidate(EntryEvent<K, V> event){
+                            final Data key = toData(event.getKey());
+                            nearCache.invalidate(key);
+                        }
+                    }, false);
+                } catch (Exception e) {
+                    _nearCache = null;
+//                    nearCacheInitialized.set(false);
+                    Logger.getLogger(ClientMapProxy.class).log(Level.SEVERE, "-----------------\n Near Cache is not initialized!!! \n-----------------", e);
+                }
             }
+            nearCache = _nearCache;
         }
     }
 

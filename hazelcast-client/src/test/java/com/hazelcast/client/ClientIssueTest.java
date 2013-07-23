@@ -18,14 +18,19 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.SerialTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -125,6 +130,44 @@ public class ClientIssueTest {
         }
         thread.join();
         assertEquals(1000, q.size());
+
+    }
+
+    @Test
+    @Ignore
+    public void testIssue584() throws InterruptedException {
+        final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();
+
+        final ClientConfig clientConfig = new ClientConfig();
+        clientConfig.addNearCacheConfig("map*", new NearCacheConfig().setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT));
+
+
+
+        final Random random = new Random(System.currentTimeMillis());
+
+        for (int i=0; i<12; i++){
+            new Thread(){
+                public void run() {
+
+                    final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
+                    final IMap<Object, Object> map = client.getMap("map" + random.nextInt(3));
+
+                    while (true){
+                        final int r1 = random.nextInt(2);
+                        final int r2 = random.nextInt(1000);
+                        if (r1 == 0){
+                            map.put("key" + r2, "value" + r2);
+                        } else {
+                            map.get("key" + r2);
+                        }
+                    }
+                }
+            }.start();
+
+        }
+
+        Thread.sleep(50 * 1000);
 
     }
 
