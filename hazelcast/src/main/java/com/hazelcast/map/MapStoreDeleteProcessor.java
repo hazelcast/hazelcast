@@ -16,8 +16,8 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
@@ -25,11 +25,12 @@ import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.logging.Level;
 
 public class MapStoreDeleteProcessor implements ScheduledEntryProcessor<Data, Object> {
 
-    MapContainer mapContainer;
-    MapService mapService;
+    private final MapContainer mapContainer;
+    private final MapService mapService;
 
     public MapStoreDeleteProcessor(MapContainer mapContainer, MapService mapService) {
         this.mapContainer = mapContainer;
@@ -52,11 +53,12 @@ public class MapStoreDeleteProcessor implements ScheduledEntryProcessor<Data, Ob
         if (entries.isEmpty())
             return;
 
+        final ILogger logger = mapService.getNodeEngine().getLogger(getClass());
         if (entries.size() == 1) {
             ScheduledEntry<Data, Object> entry = entries.iterator().next();
             Exception e = tryDelete(scheduler, entry);
             if (e != null) {
-                ExceptionUtil.rethrow(e);
+                logger.log(Level.SEVERE, e.getMessage(), e);
             }
         } else {
             Set keys = new HashSet();
@@ -76,7 +78,7 @@ public class MapStoreDeleteProcessor implements ScheduledEntryProcessor<Data, Ob
                 }
             }
             if (e != null) {
-                ExceptionUtil.rethrow(e);
+                logger.log(Level.SEVERE, e.getMessage(), e);
             }
         }
     }

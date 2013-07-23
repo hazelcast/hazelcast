@@ -16,19 +16,21 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 
 public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Object> {
 
-    MapContainer mapContainer;
-    MapService mapService;
+    private final MapContainer mapContainer;
+    private final MapService mapService;
 
     public MapStoreWriteProcessor(MapContainer mapContainer, MapService mapService) {
         this.mapContainer = mapContainer;
@@ -49,11 +51,13 @@ public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Obj
     public void process(EntryTaskScheduler<Data, Object> scheduler, Collection<ScheduledEntry<Data, Object>> entries) {
         if (entries.isEmpty())
             return;
+
+        final ILogger logger = mapService.getNodeEngine().getLogger(getClass());
         if (entries.size() == 1) {
             ScheduledEntry<Data, Object> entry = entries.iterator().next();
             Exception exception = tryStore(scheduler, entry);
             if (exception != null) {
-                ExceptionUtil.rethrow(exception);
+                logger.log(Level.SEVERE, exception.getMessage(), exception);
             }
         } else {   // if entries size > 0, we will call storeAll
             Map map = new HashMap(entries.size());
@@ -67,13 +71,13 @@ public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Obj
                 // if store all throws exception we will try to put insert them one by one.
                 for (ScheduledEntry<Data, Object> entry : entries) {
                     Exception temp = tryStore(scheduler, entry);
-                    if(temp != null) {
+                    if (temp != null) {
                         exception = temp;
                     }
                 }
             }
             if (exception != null) {
-                ExceptionUtil.rethrow(exception);
+                logger.log(Level.SEVERE, exception.getMessage(), exception);
             }
         }
 
