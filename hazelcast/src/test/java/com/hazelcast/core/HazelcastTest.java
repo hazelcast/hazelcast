@@ -1419,8 +1419,9 @@ public class HazelcastTest {
         IMap<String, String> map = h.getMap("testIssue585SetWithoutTtl");
         map.set("key", "value", 1, TimeUnit.SECONDS);
         map.set("key", "value2");
+        map.set("key1", "value3");
         Thread.sleep(2000);
-        assertEquals(0, map.size());
+        assertEquals(1, map.size());
         h.getLifecycleService().shutdown();
     }
 

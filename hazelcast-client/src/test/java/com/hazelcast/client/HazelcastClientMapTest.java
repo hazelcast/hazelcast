@@ -16,6 +16,7 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.nio.DataSerializable;
 import com.hazelcast.query.EntryObject;
@@ -51,7 +52,7 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
     @Test
     public void testDestroy() {
         HazelcastClient hClient = getHazelcastClient();
-        IMap<?,?> map = hClient.getMap("testDestroy");
+        IMap<?, ?> map = hClient.getMap("testDestroy");
         map.destroy();
     }
 
@@ -323,6 +324,35 @@ public class HazelcastClientMapTest extends HazelcastClientTestBase {
             assertEquals(5000 + i, e.getSalary(), 0);
         }
 //        }
+    }
+
+
+    /*
+       github issue 585
+    */
+    @Test
+    public void testIssue585SetWithoutTtl() throws InterruptedException {
+        HazelcastClient hClient = getHazelcastClient();
+        IMap<String, String> map = hClient.getMap("testIssue585SetWithoutTtl");
+        map.set("key", "value", 1, TimeUnit.SECONDS);
+        map.set("key", "value2");
+        map.set("key1", "value3");
+        Thread.sleep(2000);
+        assertEquals(1, map.size());
+    }
+
+    /*
+       github issue 585
+    */
+    @Test
+    public void testIssue585ZeroTTLShouldPreventEvictionInSet() throws InterruptedException {
+        HazelcastClient h = getHazelcastClient();
+        IMap<String, String> map = h.getMap("testIssue585ZeroTTLShouldPreventEvictionInSet");
+        map.set("key", "value", 1, TimeUnit.SECONDS);
+        map.set("key", "value2", 0, TimeUnit.SECONDS);
+        Thread.sleep(2000);
+        assertEquals("value2", map.get("key"));
+        h.getLifecycleService().shutdown();
     }
 
     @Test
