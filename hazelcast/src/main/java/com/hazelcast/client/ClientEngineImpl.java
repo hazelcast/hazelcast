@@ -267,7 +267,7 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
     private void sendClientEvent(ClientEndpoint endpoint) {
         final EventService eventService = nodeEngine.getEventService();
         final Collection<EventRegistration> regs = eventService.getRegistrations(SERVICE_NAME, SERVICE_NAME);
-        eventService.publishEvent(SERVICE_NAME, regs, endpoint);
+        eventService.publishEvent(SERVICE_NAME, regs, endpoint, endpoint.getUuid().hashCode());
     }
 
     public void dispatchEvent(ClientEndpoint event, ClientListener listener) {

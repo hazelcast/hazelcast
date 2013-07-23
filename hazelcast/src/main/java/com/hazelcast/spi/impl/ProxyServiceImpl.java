@@ -28,6 +28,7 @@ import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.executor.StripedRunnable;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -209,7 +210,7 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
             }
         }
 
-        DistributedObject getProxy(Object objectId) {
+        DistributedObject getProxy(final Object objectId) {
             DistributedObject proxy = proxies.get(objectId);
             if (proxy == null) {
                 if (!nodeEngine.isActive()) {
@@ -220,11 +221,14 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
                 if (current == null) {
                     final DistributedObjectEvent event = createEvent(objectId, CREATED);
                     publish(event);
-                    nodeEngine.eventService.executeEvent(new Runnable() {
+                    nodeEngine.eventService.executeEvent(new StripedRunnable() {
                         public void run() {
                             for (DistributedObjectListener listener : listeners.values()) {
                                 listener.distributedObjectCreated(event);
                             }
+                        }
+                        public int getKey() {
+                            return objectId.hashCode();
                         }
                     });
                 } else {
@@ -248,7 +252,7 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
         private void publish(DistributedObjectEvent event) {
             final EventService eventService = nodeEngine.getEventService();
             final Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, SERVICE_NAME);
-            eventService.publishEvent(SERVICE_NAME, registrations, event);
+            eventService.publishEvent(SERVICE_NAME, registrations, event, event.getObjectId().hashCode());
         }
 
         private DistributedObjectEvent createEvent(Object objectId, DistributedObjectEventImpl.EventType type) {

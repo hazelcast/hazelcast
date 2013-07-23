@@ -26,6 +26,7 @@ import com.hazelcast.topic.proxy.TotalOrderedTopicProxy;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 
+import java.util.Collection;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -106,9 +107,10 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         getLocalTopicStats(topicName).incrementReceives();
     }
 
-    public void publishEvent(String name, TopicEvent event){
+    public void publishEvent(String name, TopicEvent event) {
         EventService eventService = nodeEngine.getEventService();
-        eventService.publishEvent(TopicService.SERVICE_NAME, eventService.getRegistrations(TopicService.SERVICE_NAME, name), event);
+        Collection<EventRegistration> registrations = eventService.getRegistrations(TopicService.SERVICE_NAME, name);
+        eventService.publishEvent(TopicService.SERVICE_NAME, registrations, event, name.hashCode());
     }
 
     public String addMessageListener(String name, MessageListener listener){

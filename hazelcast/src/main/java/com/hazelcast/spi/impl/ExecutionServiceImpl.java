@@ -142,6 +142,11 @@ public final class ExecutionServiceImpl implements ExecutionService {
         return new ScheduledTaskRunner(scheduledManagedExecutor, command);
     }
 
+    @PrivateApi
+    public Executor getCachedExecutor() {
+        return new ExecutorDelegate(cachedExecutorService);
+    }
+
     public ScheduledExecutorService getScheduledExecutor() {
         return new ScheduledExecutorServiceDelegate(scheduledExecutorService);
     }
@@ -166,6 +171,18 @@ public final class ExecutionServiceImpl implements ExecutionService {
         final ExecutorService ex = executors.remove(name);
         if (ex != null) {
             ex.shutdown();
+        }
+    }
+
+    private static class ExecutorDelegate implements Executor {
+        private final Executor executor;
+
+        private ExecutorDelegate(Executor executor) {
+            this.executor = executor;
+        }
+
+        public void execute(Runnable command) {
+            executor.execute(command);
         }
     }
 
