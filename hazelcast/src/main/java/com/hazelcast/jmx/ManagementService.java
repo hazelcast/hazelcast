@@ -34,36 +34,31 @@ public class ManagementService implements DistributedObjectListener {
 
     final HazelcastInstanceImpl instance;
 
-    final boolean enabled;
-
-    final boolean showDetails;
+    private final boolean enabled;
 
     private final ILogger logger;
 
-    private String registrationId;
+    private final String registrationId;
 
     public ManagementService(HazelcastInstanceImpl instance) {
         this.instance = instance;
         logger = instance.getLoggingService().getLogger(getClass());
         this.enabled = instance.node.groupProperties.ENABLE_JMX.getBoolean();
-        this.showDetails = instance.node.groupProperties.ENABLE_JMX_DETAILED.getBoolean();
         if (enabled) {
-            init();
-        }
-    }
-
-    public void init() {
-        logger.log(Level.INFO, "Hazelcast JMX agent enabled.");
-        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-        try {
-            InstanceMBean instanceMBean = new InstanceMBean(instance, this);
-            mbs.registerMBean(instanceMBean, instanceMBean.objectName);
-        } catch (Exception e) {
-            logger.log(Level.WARNING, "Unable to start JMX service", e);
-        }
-        registrationId = instance.addDistributedObjectListener(this);
-        for (final DistributedObject distributedObject : instance.getDistributedObjects()) {
-            registerDistributedObject(distributedObject);
+            logger.log(Level.INFO, "Hazelcast JMX agent enabled.");
+            MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+            try {
+                InstanceMBean instanceMBean = new InstanceMBean(instance, this);
+                mbs.registerMBean(instanceMBean, instanceMBean.objectName);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Unable to start JMX service", e);
+            }
+            registrationId = instance.addDistributedObjectListener(this);
+            for (final DistributedObject distributedObject : instance.getDistributedObjects()) {
+                registerDistributedObject(distributedObject);
+            }
+        } else {
+            registrationId = null;
         }
     }
 

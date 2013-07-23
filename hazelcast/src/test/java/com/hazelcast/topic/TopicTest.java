@@ -19,7 +19,11 @@ package com.hazelcast.topic;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.*;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.monitor.impl.LocalTopicStatsImpl;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -29,12 +33,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
@@ -98,62 +99,196 @@ public class TopicTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testTopicTotalOrder() throws Exception {
+    public void testTopicLocalOrder() throws Exception {
+        final int k = 5;
+        final int count = 1000;
+        final CountDownLatch startLatch = new CountDownLatch(k);
+        final CountDownLatch messageLatch = new CountDownLatch(k * k * count);
+        final CountDownLatch publishLatch = new CountDownLatch(k * count);
+        final Config config = new Config();
+        config.getTopicConfig("default").setGlobalOrderingEnabled(false);
+
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
+        final HazelcastInstance[] instances = factory.newInstances(config);
+        final List<TestMessage>[] messageLists = new List[k];
+        for (int i = 0; i < k; i++) {
+            messageLists[i] = new CopyOnWriteArrayList<TestMessage>();
+        }
+
+        ExecutorService ex = Executors.newFixedThreadPool(k);
+        for (int i = 0; i < k; i++) {
+            final int finalI = i;
+            ex.execute(new Runnable() {
+                public void run() {
+                    final List<TestMessage> messages = messageLists[finalI];
+                    HazelcastInstance hz = instances[finalI];
+                    ITopic<TestMessage> topic = hz.getTopic("default");
+                    topic.addMessageListener(new MessageListener<TestMessage>() {
+                        public void onMessage(Message<TestMessage> message) {
+                            messages.add(message.getMessageObject());
+                            messageLatch.countDown();
+                        }
+                    });
+
+                    startLatch.countDown();
+                    try {
+                        startLatch.await(1, TimeUnit.MINUTES);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                        return;
+                    }
+
+                    Member localMember = hz.getCluster().getLocalMember();
+                    for (int j = 0; j < count; j++) {
+                        topic.publish(new TestMessage(localMember, UUID.randomUUID().toString()));
+                        publishLatch.countDown();
+                    }
+                }
+            });
+        }
+
+        try {
+            assertTrue(publishLatch.await(2, TimeUnit.MINUTES));
+            assertTrue(messageLatch.await(5, TimeUnit.MINUTES));
+            TestMessage[] ref = new TestMessage[messageLists[0].size()];
+            messageLists[0].toArray(ref);
+
+            Comparator<TestMessage> comparator = new Comparator<TestMessage>() {
+                public int compare(TestMessage m1, TestMessage m2) {
+                    // sort only publisher blocks. if publishers are the same, leave them as they are.
+                    return m1.publisher.getUuid().compareTo(m2.publisher.getUuid());
+                }
+            };
+            Arrays.sort(ref, comparator);
+
+            for (int i = 1; i < k; i++) {
+                TestMessage[] messages = new TestMessage[messageLists[i].size()];
+                messageLists[i].toArray(messages);
+                Arrays.sort(messages, comparator);
+                assertArrayEquals(ref, messages);
+            }
+        } finally {
+            ex.shutdownNow();
+        }
+    }
+
+    @Test
+    public void testTopicGlobalOrder() throws Exception {
+        final int k = 5;
+        final int count = 1000;
+        final CountDownLatch startLatch = new CountDownLatch(k);
+        final CountDownLatch messageLatch = new CountDownLatch(k * k * count);
+        final CountDownLatch publishLatch = new CountDownLatch(k * count);
         final Config config = new Config();
         config.getTopicConfig("default").setGlobalOrderingEnabled(true);
 
-        final int k = 4;
-
-        final Map<Long, String> stringMap = new HashMap<Long, String>();
-        final CountDownLatch countDownLatch = new CountDownLatch(k);
-        final CountDownLatch mainLatch = new CountDownLatch(k);
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(k);
         final HazelcastInstance[] instances = factory.newInstances(config);
-
-        Assert.assertEquals(true, instances[0].getConfig().getTopicConfig("default").isGlobalOrderingEnabled());
-
+        final List<TestMessage>[] messageLists = new List[k];
         for (int i = 0; i < k; i++) {
-            final HazelcastInstance hazelcastInstance = instances[i];
-            new Thread(new Runnable() {
+            messageLists[i] = new CopyOnWriteArrayList<TestMessage>();
+        }
 
+        ExecutorService ex = Executors.newFixedThreadPool(k);
+        for (int i = 0; i < k; i++) {
+            final int finalI = i;
+            ex.execute(new Runnable() {
                 public void run() {
-                    ITopic<Long> topic = hazelcastInstance.getTopic("first");
-                    final long threadId = Thread.currentThread().getId();
-                    topic.addMessageListener(new MessageListener<Long>() {
-
-                        public void onMessage(Message<Long> message) {
-                            String str = stringMap.get(threadId) + message.getMessageObject().toString();
-                            stringMap.put(threadId, str);
+                    final List<TestMessage> messages = messageLists[finalI];
+                    HazelcastInstance hz = instances[finalI];
+                    ITopic<TestMessage> topic = hz.getTopic("default");
+                    topic.addMessageListener(new MessageListener<TestMessage>() {
+                        public void onMessage(Message<TestMessage> message) {
+                            messages.add(message.getMessageObject());
+                            messageLatch.countDown();
                         }
                     });
-                    countDownLatch.countDown();
+
+                    startLatch.countDown();
                     try {
-                        countDownLatch.await();
+                        startLatch.await(1, TimeUnit.MINUTES);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
+                        return;
                     }
-                    for (int j = 0; j < 20; j++) {
-                        if (threadId % 2 == 0)
-                            topic.publish((long) j);
-                        else
-                            topic.publish(Long.valueOf(-1));
+
+                    Member localMember = hz.getCluster().getLocalMember();
+                    for (int j = 0; j < count; j++) {
+                        topic.publish(new TestMessage(localMember, UUID.randomUUID().toString()));
+                        publishLatch.countDown();
                     }
-                    mainLatch.countDown();
                 }
-            }, String.valueOf(i)).start();
-
+            });
         }
-        mainLatch.await();
-        Thread.sleep(500);
 
-        String ref = stringMap.values().iterator().next();
-        for (String s : stringMap.values()) {
-            if (!ref.equals(s)) {
-                assertFalse("no total order", true);
-                return;
+        try {
+            assertTrue(publishLatch.await(2, TimeUnit.MINUTES));
+            assertTrue(messageLatch.await(5, TimeUnit.MINUTES));
+            TestMessage[] ref = new TestMessage[messageLists[0].size()];
+            messageLists[0].toArray(ref);
+
+            for (int i = 1; i < k; i++) {
+                TestMessage[] messages = new TestMessage[messageLists[i].size()];
+                messageLists[i].toArray(messages);
+
+                assertArrayEquals(ref, messages);
             }
+        } finally {
+            ex.shutdownNow();
         }
-        assertTrue("total order", true);
+    }
+
+    static class TestMessage implements DataSerializable {
+        Member publisher;
+        String data;
+
+        TestMessage() {
+        }
+
+        TestMessage(Member publisher, String data) {
+            this.publisher = publisher;
+            this.data = data;
+        }
+
+        public void writeData(ObjectDataOutput out) throws IOException {
+            publisher.writeData(out);
+            out.writeUTF(data);
+        }
+
+        public void readData(ObjectDataInput in) throws IOException {
+            publisher = new MemberImpl();
+            publisher.readData(in);
+            data = in.readUTF();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            TestMessage that = (TestMessage) o;
+
+            if (data != null ? !data.equals(that.data) : that.data != null) return false;
+            if (publisher != null ? !publisher.equals(that.publisher) : that.publisher != null) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = publisher != null ? publisher.hashCode() : 0;
+            result = 31 * result + (data != null ? data.hashCode() : 0);
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder("TestMessage{");
+            sb.append("publisher=").append(publisher);
+            sb.append(", data='").append(data).append('\'');
+            sb.append('}');
+            return sb.toString();
+        }
     }
 
     @Test

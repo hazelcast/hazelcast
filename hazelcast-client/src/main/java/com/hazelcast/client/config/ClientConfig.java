@@ -125,8 +125,8 @@ public class ClientConfig {
 
     private Map<String, NearCacheConfig> cacheConfigMap = new HashMap<String, NearCacheConfig>();
 
-    public NearCacheConfig getNearCacheConfig(String mapName){
-        return cacheConfigMap.get(mapName);
+    public NearCacheConfig getNearCacheConfig(String mapName) {
+    	return lookupByPattern(cacheConfigMap, mapName);
     }
 
     public ClientConfig addNearCacheConfig(String mapName, NearCacheConfig nearCacheConfig){
@@ -210,9 +210,7 @@ public class ClientConfig {
     // required for spring module
     public ClientConfig setAddresses(List<String> addresses) {
         addressList.clear();
-        for (String address : addresses) {
-            addressList.addAll(addresses);
-        }
+        addressList.addAll(addresses);
         return this;
     }
 
@@ -304,5 +302,34 @@ public class ClientConfig {
     public SerializationConfig getSerializationConfig()
     {
         return serializationConfig;
+    }
+    
+    private static <T> T lookupByPattern(Map<String, T> map, String name) {
+        T t = map.get(name);
+        if (t == null) {
+            final Set<String> tNames = map.keySet();
+            for (final String pattern : tNames) {
+                if (nameMatches(name, pattern)) {
+                    return map.get(pattern);
+                }
+            }
+        }
+        return t;
+    }
+
+    private static boolean nameMatches(final String name, final String pattern) {
+        final int index = pattern.indexOf('*');
+        if (index == -1) {
+            return name.equals(pattern);
+        } else {
+            final String firstPart = pattern.substring(0, index);
+            final int indexFirstPart = name.indexOf(firstPart, 0);
+            if (indexFirstPart == -1) {
+                return false;
+            }
+            final String secondPart = pattern.substring(index + 1);
+            final int indexSecondPart = name.indexOf(secondPart, index + 1);
+            return indexSecondPart != -1;
+        }
     }
 }

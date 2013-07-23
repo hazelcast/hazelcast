@@ -164,7 +164,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     }
 
     public boolean validateJoinMessage(JoinMessage joinMessage) throws Exception {
-        boolean valid = Packet.PACKET_VERSION == joinMessage.getPacketVersion();
+        boolean valid = Packet.VERSION == joinMessage.getPacketVersion();
         if (valid) {
             try {
                 valid = node.createConfigCheck().isCompatible(joinMessage.getConfigCheck());
@@ -841,7 +841,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
         final EventService eventService = nodeEngine.getEventService();
         Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, SERVICE_NAME);
-        eventService.publishEvent(SERVICE_NAME, registrations, membershipEvent);
+        eventService.publishEvent(SERVICE_NAME, registrations, membershipEvent, member.hashCode());
     }
 
     protected MemberImpl createMember(Address address, String nodeUuid, String ipV6ScopeId) {

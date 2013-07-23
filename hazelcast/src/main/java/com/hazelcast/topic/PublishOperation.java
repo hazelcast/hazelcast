@@ -17,7 +17,6 @@
 package com.hazelcast.topic;
 
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -62,7 +61,7 @@ public class PublishOperation extends AbstractNamedOperation {
         final Lock lock = service.getOrderLock(name);
         lock.lock();
         try {
-            eventService.publishEvent(TopicService.SERVICE_NAME, registrations, topicEvent);
+            eventService.publishEvent(TopicService.SERVICE_NAME, registrations, topicEvent, name.hashCode());
         } finally {
             lock.unlock();
         }

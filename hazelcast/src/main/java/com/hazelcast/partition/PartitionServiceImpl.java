@@ -607,7 +607,8 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                         + ", replicaIndex: " + replicaIndex + ", partition-info: " + partitionImpl);
             }
             if (sendRequest) {
-                final Level level = force ? Level.FINEST : Level.INFO;
+//                final Level level = force ? Level.FINEST : Level.INFO;
+                final Level level = Level.FINEST;
                 if (logger.isLoggable(level)) {
                     logger.log(level, "Sending sync replica request to -> " + target
                             + "; for partition: " + partitionId + ", replica: " + replicaIndex);
@@ -1328,7 +1329,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         final MigrationEvent event = new MigrationEvent(migrationInfo.getPartitionId(), current, newOwner, status);
         final EventService eventService = nodeEngine.getEventService();
         final Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, SERVICE_NAME);
-        eventService.publishEvent(SERVICE_NAME, registrations, event);
+        eventService.publishEvent(SERVICE_NAME, registrations, event, event.getPartitionId());
     }
 
     public String addMigrationListener(MigrationListener migrationListener) {

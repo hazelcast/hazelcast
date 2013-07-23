@@ -41,14 +41,12 @@ public class MapMBean extends HazelcastMBean<IMap> {
 
     private AtomicLong totalEvictedEntryCount = new AtomicLong();
 
-    private final EntryListener entryListener;
-
-    private String listenerId;
+    private final String listenerId;
 
     protected MapMBean(IMap managedObject, ManagementService service) {
         super(managedObject, service);
         objectName = createObjectName("Map", managedObject.getName());
-        entryListener = new EntryListener() {
+        EntryListener entryListener = new EntryListener() {
             public void entryAdded(EntryEvent event) {
                 totalAddedEntryCount.incrementAndGet();
             }

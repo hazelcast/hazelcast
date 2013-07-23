@@ -63,7 +63,7 @@ final class OperationServiceImpl implements OperationService {
     private final ExecutorService systemExecutor;
     private final ExecutorService responseExecutor;
     private final long defaultCallTimeout;
-    private final Set<RemoteCallKey> executingCalls;
+    private final Map<RemoteCallKey, RemoteCallKey> executingCalls;
     private final ConcurrentMap<Long, Semaphore> backupCalls;
     private final int operationThreadCount;
     private final EntryTaskScheduler<Object, ScheduledBackup> backupScheduler;
@@ -86,7 +86,8 @@ final class OperationServiceImpl implements OperationService {
         systemExecutor = nodeEngine.getExecutionService().getExecutor(ExecutionService.SYSTEM_EXECUTOR);
         responseExecutor = Executors.newSingleThreadExecutor(new SingleExecutorThreadFactory(node.threadGroup,
                 node.getConfigClassLoader(), node.getThreadNamePrefix("response")));
-        executingCalls = Collections.newSetFromMap(new ConcurrentHashMap<RemoteCallKey, Boolean>(1000, 0.75f, concurrencyLevel));
+//        executingCalls = Collections.newSetFromMap(new ConcurrentHashMap<RemoteCallKey, Boolean>(1000, 0.75f, concurrencyLevel));
+        executingCalls = new ConcurrentHashMap<RemoteCallKey, RemoteCallKey>(1000, 0.75f, concurrencyLevel);
         backupCalls = new ConcurrentHashMap<Long, Semaphore>(1000, 0.75f, concurrencyLevel);
         backupScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(),
                 new ScheduledBackupProcessor(), false);
@@ -266,8 +267,9 @@ final class OperationServiceImpl implements OperationService {
         RemoteCallKey callKey = null;
         if (op.getCallId() != 0 && op.returnsResponse()) {
             callKey = new RemoteCallKey(op.getCallerAddress(), op.getCallId());
-            if (!executingCalls.add(callKey)) {
-                logger.log(Level.SEVERE, "Duplicate Call record! -> " + callKey + " == " + op.getClass().getName());
+            RemoteCallKey current;
+            if ((current = executingCalls.put(callKey, callKey)) != null) {
+                logger.log(Level.SEVERE, "Duplicate Call record! -> " + callKey + " / " + current + " == " + op.getClass().getName());
             }
         }
         return callKey;
@@ -275,7 +277,7 @@ final class OperationServiceImpl implements OperationService {
 
     private void afterCallExecution(Operation op, RemoteCallKey callKey) {
         if (callKey != null && op.getCallId() != 0 && op.returnsResponse()) {
-            if (!executingCalls.remove(callKey)) {
+            if (executingCalls.remove(callKey) == null) {
                 logger.log(Level.SEVERE, "No Call record has been found: -> " + callKey + " == " + op.getClass().getName());
             }
         }
@@ -333,9 +335,8 @@ final class OperationServiceImpl implements OperationService {
 
     private void scheduleBackup(Operation op, Backup backup, int partitionId, int replicaIndex) {
         final RemoteCallKey key = new RemoteCallKey(op.getCallerAddress(), op.getCallId());
-        if (logger.isLoggable(Level.INFO)) {
-            // TODO: @mm - change log level to FINEST before final release!
-            logger.log(Level.INFO, "Scheduling -> " + backup);
+        if (logger.isLoggable(Level.FINEST)) {
+            logger.log(Level.FINEST, "Scheduling -> " + backup);
         }
         backupScheduler.schedule(500, key, new ScheduledBackup(backup, partitionId, replicaIndex));
     }
@@ -585,7 +586,7 @@ final class OperationServiceImpl implements OperationService {
 
     @PrivateApi
     boolean isOperationExecuting(Address caller, long operationCallId) {
-        return executingCalls.contains(new RemoteCallKey(caller, operationCallId));
+        return executingCalls.containsKey(new RemoteCallKey(caller, operationCallId));
     }
 
     void onMemberLeft(final MemberImpl member) {
@@ -716,6 +717,7 @@ final class OperationServiceImpl implements OperationService {
     }
 
     private class RemoteCallKey {
+        private final long time = Clock.currentTimeMillis();
         private final Address caller;
         private final long callId;
 
@@ -747,6 +749,7 @@ final class OperationServiceImpl implements OperationService {
             sb.append("RemoteCallKey");
             sb.append("{caller=").append(caller);
             sb.append(", callId=").append(callId);
+            sb.append(", time=").append(time);
             sb.append('}');
             return sb.toString();
         }

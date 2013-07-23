@@ -479,7 +479,7 @@ public class Node {
         final Credentials credentials = (withCredentials && securityContext != null)
                 ? securityContext.getCredentialsFactory().newCredentials() : null;
 
-        return new JoinRequest(Packet.PACKET_VERSION, buildNumber, address,
+        return new JoinRequest(Packet.VERSION, buildNumber, address,
                 localMember.getUuid(), createConfigCheck(), credentials, clusterService.getSize(), 0);
     }
 

@@ -51,11 +51,11 @@ public class NodeEngineImpl implements NodeEngine {
 
     private final ServiceManager serviceManager;
     private final ProxyServiceImpl proxyService;
-    private final ExecutionServiceImpl executionService;
     private final TransactionManagerServiceImpl transactionManagerService;
     private final WanReplicationService wanReplicationService;
 
     final OperationServiceImpl operationService;
+    final ExecutionServiceImpl executionService;
     final EventServiceImpl eventService;
     final WaitNotifyServiceImpl waitNotifyService;
 

@@ -102,7 +102,7 @@ public abstract class QueueOperation extends Operation implements PartitionAware
         for (EventRegistration registration : registrations) {
             QueueEventFilter filter = (QueueEventFilter) registration.getFilter();
             QueueEvent event = new QueueEvent(name, filter.isIncludeValue() ? data : null, eventType, getNodeEngine().getThisAddress());
-            eventService.publishEvent(getServiceName(), registration, event);
+            eventService.publishEvent(getServiceName(), registration, event, name.hashCode());
         }
     }
 

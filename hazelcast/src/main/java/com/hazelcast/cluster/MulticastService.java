@@ -145,9 +145,9 @@ public class MulticastService implements Runnable {
                 input.position(offset);
 
                 final byte packetVersion = input.readByte();
-                if (packetVersion != Packet.PACKET_VERSION) {
-                    logger.log(Level.WARNING, "Received a JoinRequest with different packet version: "
-                            + packetVersion);
+                if (packetVersion != Packet.VERSION) {
+                    logger.log(Level.WARNING, "Received a JoinRequest with a different packet version! This -> "
+                            + Packet.VERSION + ", Incoming -> " + packetVersion);
                     return null;
                 }
                 try {
@@ -174,7 +174,7 @@ public class MulticastService implements Runnable {
         final BufferObjectDataOutput out = sendOutput;
         synchronized (sendLock) {
             try {
-                out.writeByte(Packet.PACKET_VERSION);
+                out.writeByte(Packet.VERSION);
                 out.writeObject(joinMessage);
                 datagramPacketSend.setData(out.toByteArray());
                 multicastSocket.send(datagramPacketSend);

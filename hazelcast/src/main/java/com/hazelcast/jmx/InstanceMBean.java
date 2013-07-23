@@ -33,8 +33,8 @@ import java.util.Set;
 @ManagedDescription("HazelcastInstance")
 public class InstanceMBean extends HazelcastMBean<HazelcastInstance> {
 
-    Config config;
-    Cluster cluster;
+    final Config config;
+    final Cluster cluster;
 
     protected InstanceMBean(HazelcastInstance managedObject, ManagementService service) {
         super(managedObject, service);
@@ -109,12 +109,6 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstance> {
     public boolean isRunning(){
         return managedObject.getLifecycleService().isRunning();
     }
-
-//    @ManagedAnnotation(value = "restart", operation = true)
-//    @ManagedDescription("Restart the Node")
-//    public void restart(){
-//        managedObject.getLifecycleService().restart();
-//    }
 
     @ManagedAnnotation(value = "shutdown", operation = true)
     @ManagedDescription("Shutdown the Node")

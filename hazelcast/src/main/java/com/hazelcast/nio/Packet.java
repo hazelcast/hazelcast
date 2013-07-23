@@ -24,8 +24,9 @@ import java.nio.ByteBuffer;
 
 public final class Packet extends DataAdapter implements SocketWritable, SocketReadable {
 
-    public static final byte PACKET_VERSION = 1;
+    public static final byte VERSION = 1;
 
+    private static final int stVersion = stBit++;
     private static final int stHeader = stBit++;
     private static final int stPartition = stBit++;
 
@@ -77,7 +78,13 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
     }
 
     public final boolean writeTo(ByteBuffer destination) {
-        // TODO: @mm - think about packet versions
+        if (!isStatusSet(stVersion)) {
+            if (!destination.hasRemaining()) {
+                return false;
+            }
+            destination.put(VERSION);
+            setStatus(stVersion);
+        }
         if (!isStatusSet(stHeader)) {
             if (destination.remaining() < 2) {
                 return false;
@@ -96,7 +103,17 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
     }
 
     public final boolean readFrom(ByteBuffer source) {
-        // TODO: @mm - think about packet versions
+        if (!isStatusSet(stVersion)) {
+            if (!source.hasRemaining()) {
+                return false;
+            }
+            byte version = source.get();
+            setStatus(stVersion);
+            if (VERSION != version) {
+                throw new IllegalArgumentException("Packet versions are not matching! This -> "
+                        + VERSION + ", Incoming -> " + version);
+            }
+        }
         if (!isStatusSet(stHeader)) {
             if (source.remaining() < 2) {
                 return false;
