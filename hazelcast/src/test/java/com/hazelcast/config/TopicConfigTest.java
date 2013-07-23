@@ -57,7 +57,7 @@ public class TopicConfigTest {
     @Test
     public void testIsGlobalOrderingEnabled() {
         TopicConfig topicConfig = new TopicConfig();
-        assertTrue(topicConfig.isGlobalOrderingEnabled());
+        assertFalse(topicConfig.isGlobalOrderingEnabled());
     }
 
     /**
@@ -65,7 +65,7 @@ public class TopicConfigTest {
      */
     @Test
     public void testSetGlobalOrderingEnabled() {
-        TopicConfig topicConfig = new TopicConfig().setGlobalOrderingEnabled(false);
-        assertFalse(topicConfig.isGlobalOrderingEnabled());
+        TopicConfig topicConfig = new TopicConfig().setGlobalOrderingEnabled(true);
+        assertTrue(topicConfig.isGlobalOrderingEnabled());
     }
 }
