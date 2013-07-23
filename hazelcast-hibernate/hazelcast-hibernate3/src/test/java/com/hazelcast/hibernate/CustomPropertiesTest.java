@@ -64,6 +64,7 @@ public class CustomPropertiesTest extends HibernateTestSupport {
     public void testNativeClient() throws Exception {
         HazelcastInstance main = Hazelcast.newHazelcastInstance(new ClasspathXmlConfig("hazelcast-custom.xml"));
         Properties props = getDefaultProperties();
+        props.remove(CacheEnvironment.CONFIG_FILE_PATH_LEGACY);
         props.setProperty(Environment.CACHE_REGION_FACTORY, HazelcastCacheRegionFactory.class.getName());
         props.setProperty(CacheEnvironment.USE_NATIVE_CLIENT, "true");
         props.setProperty(CacheEnvironment.NATIVE_CLIENT_GROUP, "dev-custom");
@@ -77,6 +78,8 @@ public class CustomPropertiesTest extends HibernateTestSupport {
         ClientConfig clientConfig = client.getClientConfig();
         assertEquals("dev-custom", clientConfig.getGroupConfig().getName());
         assertEquals("dev-pass", clientConfig.getGroupConfig().getPassword());
+        assertTrue(clientConfig.isSmart());
+        assertTrue(clientConfig.isRedoOperation());
         Hazelcast.newHazelcastInstance(new ClasspathXmlConfig("hazelcast-custom.xml"));
         assertEquals(2, hz.getCluster().getMembers().size());
         main.getLifecycleService().shutdown();
