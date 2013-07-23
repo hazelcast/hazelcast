@@ -214,6 +214,7 @@
             </xs:element>
             <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="1"/>
             <xs:element name="async-backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="0"/>
+            <xs:element name="empty-queue-ttl" type="empty-queue-ttl" minOccurs="0" maxOccurs="1" default="-1"/>
             <xs:element name="item-listeners" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
                     <xs:sequence>
@@ -420,6 +421,12 @@
             <xs:maxInclusive value="6"/>
         </xs:restriction>
     </xs:simpleType>
+    <xs:simpleType name="empty-queue-ttl">
+        <xs:restriction base="xs:int">
+            <xs:minInclusive value="-1"/>
+        </xs:restriction>
+    </xs:simpleType>
+
     <xs:complexType name="symmetric-encryption">
         <xs:sequence>
             <xs:element name="algorithm" type="xs:string"/>

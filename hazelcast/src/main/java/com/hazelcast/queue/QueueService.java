@@ -31,6 +31,8 @@ import com.hazelcast.spi.*;
 import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
+import com.hazelcast.util.scheduler.EntryTaskScheduler;
+import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -58,10 +60,20 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
             return new LocalQueueStatsImpl();
         }
     };
+    final EntryTaskScheduler queueEvictionScheduler;
 
     public QueueService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         logger = nodeEngine.getLogger(QueueService.class);
+        queueEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new QueueEvictionProcessor(nodeEngine, this), true);
+    }
+
+    public void scheduleEviction(String name, long delay){
+        queueEvictionScheduler.schedule(delay, name, null);
+    }
+
+    public void cancelEviction(String name){
+        queueEvictionScheduler.cancel(name);
     }
 
     public void init(NodeEngine nodeEngine, Properties properties) {
@@ -79,14 +91,15 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         QueueContainer container = containerMap.get(name);
         if (container == null) {
             container = new QueueContainer(name, nodeEngine.getPartitionService().getPartitionId(nodeEngine.toData(name)), nodeEngine.getConfig().getQueueConfig(name),
-                    nodeEngine);
+                    nodeEngine, this);
             QueueContainer existing = containerMap.putIfAbsent(name, container);
             if (existing != null) {
                 container = existing;
             } else {
-                container.loadInitialKeys(fromBackup);
+                container.init(fromBackup);
             }
         }
+        container.cancelEvictionIfExists();
         return container;
     }
 

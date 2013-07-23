@@ -19,11 +19,9 @@ package com.hazelcast.queue;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.QueueConfig;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IQueue;
-import com.hazelcast.core.ItemEvent;
-import com.hazelcast.core.ItemListener;
+import com.hazelcast.core.*;
 import com.hazelcast.monitor.LocalQueueStats;
+import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -33,10 +31,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -81,6 +76,61 @@ public class BasicQueueTest extends HazelcastTestSupport {
             latch.countDown();
         }
     }
+
+    @Test
+    public void testQueueEviction() throws Exception {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        final Config config = new Config();
+        config.getQueueConfig("q").setEmptyQueueTtl(0);
+        final HazelcastInstance hz = factory.newHazelcastInstance(config);
+        final IQueue<Object> q = hz.getQueue("q");
+
+        new Thread(){
+            public void run() {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                q.drainTo(new LinkedList<Object>());
+            }
+        }.start();
+
+        try {
+            q.take();
+            fail();
+        } catch (Exception e){
+            assertTrue(e instanceof DistributedObjectDestroyedException);
+        }
+        q.size();
+
+    }
+
+    @Test
+    public void testQueueEviction2() throws Exception {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        final Config config = new Config();
+        config.getQueueConfig("q2").setEmptyQueueTtl(0);
+        final HazelcastInstance hz = factory.newHazelcastInstance(config);
+
+        final CountDownLatch latch = new CountDownLatch(2);
+        hz.addDistributedObjectListener(new DistributedObjectListener() {
+            public void distributedObjectCreated(DistributedObjectEvent event) {
+                latch.countDown();
+            }
+
+            public void distributedObjectDestroyed(DistributedObjectEvent event) {
+                latch.countDown();
+            }
+        });
+
+        final IQueue<Object> q = hz.getQueue("q2");
+        q.offer("item");
+        q.poll();
+
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+    }
+
 
     @Test
     public void testQueueStats() {

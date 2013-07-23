@@ -47,7 +47,7 @@ public class TxnRollbackBackupOperation extends QueueOperation implements Backup
             response = getOrCreateContainer().txnRollbackPoll(itemId, true);
         }
         else {
-            response = getOrCreateContainer().txnRollbackOffer(itemId);
+            response = getOrCreateContainer().txnRollbackOfferBackup(itemId);
         }
     }
 

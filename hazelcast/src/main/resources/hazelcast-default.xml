@@ -101,6 +101,7 @@
             Number of async backups. 0 means no backup.
         -->
         <async-backup-count>0</async-backup-count>
+        <empty-queue-ttl>-1</empty-queue-ttl>
 
 
     </queue>

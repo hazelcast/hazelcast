@@ -24,12 +24,14 @@ public final class QueueConfig {
     public final static int DEFAULT_MAX_SIZE = 0;
     public final static int DEFAULT_SYNC_BACKUP_COUNT = 1;
     public final static int DEFAULT_ASYNC_BACKUP_COUNT = 0;
+    public final static int DEFAULT_EMPTY_QUEUE_TTL = -1;
 
     private String name;
     private List<ItemListenerConfig> listenerConfigs;
     private int backupCount = DEFAULT_SYNC_BACKUP_COUNT;
     private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
     private int maxSize = DEFAULT_MAX_SIZE;
+    private int emptyQueueTtl = DEFAULT_EMPTY_QUEUE_TTL;
     private QueueStoreConfig queueStoreConfig;
     private boolean statisticsEnabled = true;
 
@@ -42,8 +44,18 @@ public final class QueueConfig {
         this.backupCount = config.backupCount;
         this.asyncBackupCount = config.asyncBackupCount;
         this.maxSize = config.maxSize;
+        this.emptyQueueTtl = config.emptyQueueTtl;
         this.queueStoreConfig = config.queueStoreConfig;
         this.listenerConfigs = new ArrayList<ItemListenerConfig>(config.getItemListenerConfigs());
+    }
+
+    public int getEmptyQueueTtl() {
+        return emptyQueueTtl;
+    }
+
+    public QueueConfig setEmptyQueueTtl(int emptyQueueTtl) {
+        this.emptyQueueTtl = emptyQueueTtl;
+        return this;
     }
 
     public int getMaxSize() {

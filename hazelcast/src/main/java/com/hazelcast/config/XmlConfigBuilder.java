@@ -677,6 +677,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             } else if ("queue-store".equals(nodeName)) {
                 final QueueStoreConfig queueStoreConfig = createQueueStoreConfig(n);
                 qConfig.setQueueStoreConfig(queueStoreConfig);
+            } else if ("empty-queue-ttl".equals(nodeName)) {
+                qConfig.setEmptyQueueTtl(getIntegerValue("empty-queue-ttl", value, QueueConfig.DEFAULT_EMPTY_QUEUE_TTL));
             }
         }
         this.config.addQueueConfig(qConfig);

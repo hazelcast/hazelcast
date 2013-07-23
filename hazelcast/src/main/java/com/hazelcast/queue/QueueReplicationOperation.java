@@ -50,7 +50,7 @@ public class QueueReplicationOperation extends AbstractOperation implements Iden
             String name = entry.getKey();
             QueueContainer container = entry.getValue();
             QueueConfig conf = getNodeEngine().getConfig().getQueueConfig(name);
-            container.setConfig(conf, getNodeEngine());
+            container.setConfig(conf, getNodeEngine(), service);
             service.addContainer(name, container);
         }
     }

@@ -64,13 +64,15 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
     public static final int TXN_ROLLBACK_BACKUP = 31;
     public static final int TXN_ROLLBACK = 32;
 
+    public static final int CHECK_EVICT = 33;
+
     public int getFactoryId() {
         return F_ID;
     }
 
     public DataSerializableFactory createFactory() {
 
-        ConstructorFunction<Integer, IdentifiedDataSerializable> constructors[] = new ConstructorFunction[33];
+        ConstructorFunction<Integer, IdentifiedDataSerializable> constructors[] = new ConstructorFunction[CHECK_EVICT+1];
         
         constructors[OFFER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
@@ -231,6 +233,11 @@ public final class QueueDataSerializerHook implements DataSerializerHook {
         constructors[TXN_ROLLBACK] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new TxnRollbackOperation();
+            }
+        };
+        constructors[CHECK_EVICT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CheckAndEvictOperation();
             }
         };
 

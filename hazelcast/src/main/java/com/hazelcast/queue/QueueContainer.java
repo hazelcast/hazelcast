@@ -49,10 +49,12 @@ public class QueueContainer implements DataSerializable {
     private QueueConfig config;
     private QueueStoreWrapper store;
     private NodeEngine nodeEngine;
+    private QueueService service;
     private ILogger logger;
 
     private long idGenerator = 0;
 
+    private final String name;
     private final QueueWaitNotifyKey pollWaitNotifyKey;
     private final QueueWaitNotifyKey offerWaitNotifyKey;
 
@@ -64,19 +66,22 @@ public class QueueContainer implements DataSerializable {
 
     private long totalAgedCount;
 
+    private boolean isEvictionScheduled = false;
+
 
     public QueueContainer(String name) {
+        this.name = name;
         pollWaitNotifyKey = new QueueWaitNotifyKey(name, "poll");
         offerWaitNotifyKey = new QueueWaitNotifyKey(name, "offer");
     }
 
-    public QueueContainer(String name, int partitionId, QueueConfig config, NodeEngine nodeEngine) throws Exception {
+    public QueueContainer(String name, int partitionId, QueueConfig config, NodeEngine nodeEngine, QueueService service) throws Exception {
         this(name);
         this.partitionId = partitionId;
-        setConfig(config, nodeEngine);
+        setConfig(config, nodeEngine, service);
     }
 
-    public void loadInitialKeys(boolean fromBackup){
+    public void init(boolean fromBackup){
         if (!fromBackup && store.isEnabled()) {
             Set<Long> keys = store.loadAllKeys();
             if (keys != null) {
@@ -126,6 +131,12 @@ public class QueueContainer implements DataSerializable {
     }
 
     public Data txnCommitPoll(long itemId) {
+        final Data result = txnCommitPollBackup(itemId);
+        scheduleEvictionIfEmpty();
+        return result;
+    }
+
+    public Data txnCommitPollBackup(long itemId) {
         QueueItem item = txMap.remove(itemId);
         if (item == null) {
             logger.log(Level.WARNING, "txnCommitPoll operation-> No txn item for itemId: " + itemId);
@@ -193,6 +204,12 @@ public class QueueContainer implements DataSerializable {
     }
 
     public boolean txnRollbackOffer(long itemId) {
+        final boolean result = txnRollbackOfferBackup(itemId);
+        scheduleEvictionIfEmpty();
+        return result;
+    }
+
+    public boolean txnRollbackOfferBackup(long itemId) {
         QueueItem item = txMap.remove(itemId);
         if (item == null) {
             logger.log(Level.WARNING, "txnRollbackOffer operation-> No txn item for itemId: " + itemId);
@@ -289,6 +306,7 @@ public class QueueContainer implements DataSerializable {
         }
         getItemQueue().poll();
         age(item, Clock.currentTimeMillis());
+        scheduleEvictionIfEmpty();
         return item;
     }
 
@@ -328,6 +346,7 @@ public class QueueContainer implements DataSerializable {
             QueueItem item = getItemQueue().poll();
             age(item, current); //For Stats
         }
+        scheduleEvictionIfEmpty();
         return map;
     }
 
@@ -362,6 +381,7 @@ public class QueueContainer implements DataSerializable {
         }
         getItemQueue().clear();
         dataMap.clear();
+        scheduleEvictionIfEmpty();
         return map;
     }
 
@@ -387,6 +407,7 @@ public class QueueContainer implements DataSerializable {
                 }
                 iter.remove();
                 age(item, Clock.currentTimeMillis()); //For Stats
+                scheduleEvictionIfEmpty();
                 return item.getItemId();
             }
         }
@@ -468,6 +489,7 @@ public class QueueContainer implements DataSerializable {
                     age(item, Clock.currentTimeMillis());//For Stats
                 }
             }
+            scheduleEvictionIfEmpty();
         }
         return map;
     }
@@ -535,8 +557,9 @@ public class QueueContainer implements DataSerializable {
         return dataMap.remove(itemId);
     }
 
-    public void setConfig(QueueConfig config, NodeEngine nodeEngine) {
+    public void setConfig(QueueConfig config, NodeEngine nodeEngine, QueueService service) {
         this.nodeEngine = nodeEngine;
+        this.service = service;
         logger = nodeEngine.getLogger(QueueContainer.class);
         store = new QueueStoreWrapper(nodeEngine.getSerializationService());
         this.config = new QueueConfig(config);
@@ -585,6 +608,32 @@ public class QueueContainer implements DataSerializable {
         stats.setMaxAge(maxAge);
         long totalAgedCountVal = Math.max(totalAgedCount, 1);
         stats.setAveAge(totalAge / totalAgedCountVal);
+    }
+
+    private void scheduleEvictionIfEmpty(){
+        final int emptyQueueTtl = config.getEmptyQueueTtl();
+        if (emptyQueueTtl < 0){
+            return;
+        }
+        if(getItemQueue().isEmpty() && txMap.isEmpty() && !isEvictionScheduled ){
+            if (emptyQueueTtl == 0){
+                nodeEngine.getProxyService().destroyDistributedObject(QueueService.SERVICE_NAME, name);
+            } else if (emptyQueueTtl > 0){
+                service.scheduleEviction(name, emptyQueueTtl*1000);
+                isEvictionScheduled = true;
+            }
+        }
+    }
+
+    public void cancelEvictionIfExists(){
+        if (isEvictionScheduled){
+            service.cancelEviction(name);
+            isEvictionScheduled = false;
+        }
+    }
+
+    public boolean isEvictable(){
+        return getItemQueue().isEmpty() && txMap.isEmpty();
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
