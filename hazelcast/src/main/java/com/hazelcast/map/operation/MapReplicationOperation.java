@@ -19,7 +19,7 @@ package com.hazelcast.map.operation;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.map.*;
 import com.hazelcast.map.record.Record;
-import com.hazelcast.map.record.RecordState;
+import com.hazelcast.map.record.RecordReplicationInfo;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -36,14 +36,14 @@ import java.util.Map.Entry;
  */
 public class MapReplicationOperation extends AbstractOperation {
 
-    private Map<String, Set<RecordState>> data;
+    private Map<String, Set<RecordReplicationInfo>> data;
 
     public MapReplicationOperation() {
     }
 
     public MapReplicationOperation(PartitionContainer container, int partitionId, int replicaIndex) {
         this.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
-        data = new HashMap<String, Set<RecordState>>(container.getMaps().size());
+        data = new HashMap<String, Set<RecordReplicationInfo>>(container.getMaps().size());
         for (Entry<String, PartitionRecordStore> entry : container.getMaps().entrySet()) {
             String name = entry.getKey();
             RecordStore recordStore = entry.getValue();
@@ -52,23 +52,28 @@ public class MapReplicationOperation extends AbstractOperation {
             if (mapConfig.getTotalBackupCount() < replicaIndex) {
                 continue;
             }
-            Set<RecordState> recordSet = new HashSet<RecordState>(recordStore.getRecords().size());
+            Set<RecordReplicationInfo> recordSet = new HashSet<RecordReplicationInfo>(recordStore.getRecords().size());
             for (Entry<Data, Record> recordEntry : recordStore.getRecords().entrySet()) {
-                Data key = recordEntry.getValue().getKey();
-                RecordState recordState = null;
+                Data key = recordEntry.getKey();
+                Record record = recordEntry.getValue();
+                if (record.getValue() == null) {
+                    // see optimization at PartitionRecordStore.get(Data dataKey)
+                    continue;
+                }
+                RecordReplicationInfo recordReplicationInfo = null;
                 if(replicaIndex == 0) {
-                    recordState = createScheduledRecordState(mapContainer, recordEntry, key);
+                    recordReplicationInfo = createScheduledRecordState(mapContainer, recordEntry, key);
                 }
                 else {
-                    recordState = new RecordState(recordEntry.getValue());
+                    recordReplicationInfo = new RecordReplicationInfo(record);
                 }
-                recordSet.add(recordState);
+                recordSet.add(recordReplicationInfo);
             }
             data.put(name, recordSet);
         }
     }
 
-    private RecordState createScheduledRecordState(MapContainer mapContainer, Entry<Data, Record> recordEntry, Data key) {
+    private RecordReplicationInfo createScheduledRecordState(MapContainer mapContainer, Entry<Data, Record> recordEntry, Data key) {
         ScheduledEntry idleScheduledEntry = mapContainer.getIdleEvictionScheduler() == null ? null : mapContainer.getIdleEvictionScheduler().cancel(key);
         long idleDelay = idleScheduledEntry == null ? -1 : findDelayMillis(idleScheduledEntry);
 
@@ -81,33 +86,33 @@ public class MapReplicationOperation extends AbstractOperation {
         ScheduledEntry deleteScheduledEntry = mapContainer.getMapStoreDeleteScheduler() == null ? null : mapContainer.getMapStoreDeleteScheduler().cancel(key);
         long deleteDelay = deleteScheduledEntry == null ? -1 : findDelayMillis(deleteScheduledEntry);
 
-        return new RecordState(recordEntry.getValue(), idleDelay, ttlDelay, writeDelay, deleteDelay);
+        return new RecordReplicationInfo(recordEntry.getValue(), idleDelay, ttlDelay, writeDelay, deleteDelay);
     }
 
     public void run() {
         MapService mapService = getService();
         if (data != null) {
-            for (Entry<String, Set<RecordState>> dataEntry : data.entrySet()) {
-                Set<RecordState> recordStates = dataEntry.getValue();
+            for (Entry<String, Set<RecordReplicationInfo>> dataEntry : data.entrySet()) {
+                Set<RecordReplicationInfo> recordReplicationInfos = dataEntry.getValue();
                 final String mapName = dataEntry.getKey();
                 RecordStore recordStore = mapService.getRecordStore(getPartitionId(), mapName);
-                for (RecordState recordState : recordStates) {
-                    Record inputRecord = recordState.getRecord();
+                for (RecordReplicationInfo recordReplicationInfo : recordReplicationInfos) {
+                    Record inputRecord = recordReplicationInfo.getRecord();
                     Data key = inputRecord.getKey();
                     Record record = mapService.createRecord(mapName, key, inputRecord.getValue(), -1, false);
                     record.setStatistics(inputRecord.getStatistics());
                     recordStore.getRecords().put(key, record);
-                    if(recordState.getIdleDelayMillis() >= 0) {
-                        mapService.scheduleIdleEviction(mapName, key, recordState.getIdleDelayMillis());
+                    if(recordReplicationInfo.getIdleDelayMillis() >= 0) {
+                        mapService.scheduleIdleEviction(mapName, key, recordReplicationInfo.getIdleDelayMillis());
                     }
-                    if(recordState.getTtlDelayMillis() >= 0) {
-                        mapService.scheduleTtlEviction(mapName, record, recordState.getTtlDelayMillis());
+                    if(recordReplicationInfo.getTtlDelayMillis() >= 0) {
+                        mapService.scheduleTtlEviction(mapName, record, recordReplicationInfo.getTtlDelayMillis());
                     }
-                    if(recordState.getMapstoreWriteDelayMillis() >= 0) {
-                        mapService.scheduleMapStoreWrite(mapName, key, record.getValue(), recordState.getMapstoreWriteDelayMillis());
+                    if(recordReplicationInfo.getMapStoreWriteDelayMillis() >= 0) {
+                        mapService.scheduleMapStoreWrite(mapName, key, record.getValue(), recordReplicationInfo.getMapStoreWriteDelayMillis());
                     }
-                    if(recordState.getMapstoreDeleteDelayMillis() >= 0) {
-                        mapService.scheduleMapStoreDelete(mapName, key, recordState.getMapstoreDeleteDelayMillis());
+                    if(recordReplicationInfo.getMapStoreDeleteDelayMillis() >= 0) {
+                        mapService.scheduleMapStoreDelete(mapName, key, recordReplicationInfo.getMapStoreDeleteDelayMillis());
                     }
                 }
             }
@@ -124,27 +129,27 @@ public class MapReplicationOperation extends AbstractOperation {
 
     protected void readInternal(final ObjectDataInput in) throws IOException {
         int size = in.readInt();
-        data = new HashMap<String, Set<RecordState>>(size);
+        data = new HashMap<String, Set<RecordReplicationInfo>>(size);
         for (int i = 0; i < size; i++) {
             String name = in.readUTF();
             int mapSize = in.readInt();
-            Set<RecordState> recordStates = new HashSet<RecordState>(mapSize);
+            Set<RecordReplicationInfo> recordReplicationInfos = new HashSet<RecordReplicationInfo>(mapSize);
             for (int j = 0; j < mapSize; j++) {
-                RecordState recordState = in.readObject();
-                recordStates.add(recordState);
+                RecordReplicationInfo recordReplicationInfo = in.readObject();
+                recordReplicationInfos.add(recordReplicationInfo);
             }
-            data.put(name, recordStates);
+            data.put(name, recordReplicationInfos);
         }
     }
 
     protected void writeInternal(final ObjectDataOutput out) throws IOException {
         out.writeInt(data.size());
-        for (Entry<String, Set<RecordState>> mapEntry : data.entrySet()) {
+        for (Entry<String, Set<RecordReplicationInfo>> mapEntry : data.entrySet()) {
             out.writeUTF(mapEntry.getKey());
-            Set<RecordState> recordStates = mapEntry.getValue();
-            out.writeInt(recordStates.size());
-            for (RecordState recordState : recordStates) {
-                out.writeObject(recordState);
+            Set<RecordReplicationInfo> recordReplicationInfos = mapEntry.getValue();
+            out.writeInt(recordReplicationInfos.size());
+            for (RecordReplicationInfo recordReplicationInfo : recordReplicationInfos) {
+                out.writeObject(recordReplicationInfo);
             }
         }
     }

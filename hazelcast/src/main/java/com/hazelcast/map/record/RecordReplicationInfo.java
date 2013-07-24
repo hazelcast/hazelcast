@@ -22,27 +22,27 @@ import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 
-public class RecordState implements DataSerializable {
+public class RecordReplicationInfo implements DataSerializable {
 
     private Record record;
     private long idleDelayMillis = -1;
     private long ttlDelayMillis = -1;
-    private long mapstoreWriteDelayMillis = -1;
-    private long mapstoreDeleteDelayMillis = -1;
+    private long mapStoreWriteDelayMillis = -1;
+    private long mapStoreDeleteDelayMillis = -1;
 
-    public RecordState(Record record, long idleDelayMillis, long ttlDelayMillis, long mapstoreWriteDelayMillis, long mapstoreDeleteDelayMillis) {
+    public RecordReplicationInfo(Record record, long idleDelayMillis, long ttlDelayMillis, long mapStoreWriteDelayMillis, long mapStoreDeleteDelayMillis) {
         this.record = record;
         this.idleDelayMillis = idleDelayMillis;
         this.ttlDelayMillis = ttlDelayMillis;
-        this.mapstoreWriteDelayMillis = mapstoreWriteDelayMillis;
-        this.mapstoreDeleteDelayMillis = mapstoreDeleteDelayMillis;
+        this.mapStoreWriteDelayMillis = mapStoreWriteDelayMillis;
+        this.mapStoreDeleteDelayMillis = mapStoreDeleteDelayMillis;
     }
 
-    public RecordState(Record record) {
+    public RecordReplicationInfo(Record record) {
         this.record = record;
     }
 
-    public RecordState() {
+    public RecordReplicationInfo() {
     }
 
     public Record getRecord() {
@@ -57,12 +57,12 @@ public class RecordState implements DataSerializable {
         return ttlDelayMillis;
     }
 
-    public long getMapstoreWriteDelayMillis() {
-        return mapstoreWriteDelayMillis;
+    public long getMapStoreWriteDelayMillis() {
+        return mapStoreWriteDelayMillis;
     }
 
-    public long getMapstoreDeleteDelayMillis() {
-        return mapstoreDeleteDelayMillis;
+    public long getMapStoreDeleteDelayMillis() {
+        return mapStoreDeleteDelayMillis;
     }
 
     @Override
@@ -70,8 +70,8 @@ public class RecordState implements DataSerializable {
         out.writeObject(record);
         out.writeLong(idleDelayMillis);
         out.writeLong(ttlDelayMillis);
-        out.writeLong(mapstoreWriteDelayMillis);
-        out.writeLong(mapstoreDeleteDelayMillis);
+        out.writeLong(mapStoreWriteDelayMillis);
+        out.writeLong(mapStoreDeleteDelayMillis);
 
     }
 
@@ -80,7 +80,7 @@ public class RecordState implements DataSerializable {
         record = in.readObject();
         idleDelayMillis = in.readLong();
         ttlDelayMillis = in.readLong();
-        mapstoreWriteDelayMillis = in.readLong();
-        mapstoreDeleteDelayMillis = in.readLong();
+        mapStoreWriteDelayMillis = in.readLong();
+        mapStoreDeleteDelayMillis = in.readLong();
     }
 }

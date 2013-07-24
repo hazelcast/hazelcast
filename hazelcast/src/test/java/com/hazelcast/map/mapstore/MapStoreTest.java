@@ -47,7 +47,6 @@ import static org.junit.Assert.*;
 @Category(ParallelTest.class)
 public class MapStoreTest extends HazelcastTestSupport {
 
-    // todo fails in parallel
     @Test
     public void testMapInitialLoad() throws InterruptedException {
         int size = 100000;
@@ -70,34 +69,14 @@ public class MapStoreTest extends HazelcastTestSupport {
             assertEquals(i, map.get(i));
         }
 
-        HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(cfg);
-
-        for (int i = 0; i < size; i++) {
-            assertEquals(i, map.get(i));
-        }
-    }
-
-    @Test
-    public void testMapLoader() throws InterruptedException {
-        int size = 100;
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-
-        Config cfg = new Config();
-        MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setEnabled(true);
-        mapStoreConfig.setImplementation(new SimpleMapLoader(size));
-        cfg.getMapConfig("default").setMapStoreConfig(mapStoreConfig);
-
-        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
-        IMap map = instance1.getMap("default");
-
-        for (int i = 0; i < size; i++) {
-            assertEquals(i, map.get(i));
-        }
         assertNull(map.put(size, size));
         assertEquals(size, map.remove(size));
         assertNull(map.get(size));
+
+        HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(cfg);
+        for (int i = 0; i < size; i++) {
+            assertEquals(i, map.get(i));
+        }
     }
 
     private class SimpleMapLoader implements MapLoader {
