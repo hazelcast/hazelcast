@@ -503,7 +503,7 @@ public class EvictionTest extends HazelcastTestSupport {
         for (int i = 0; i < size; i++) {
             map.put(i, i);
         }
-        assertTrue(latch.await(1, TimeUnit.MINUTES));
+        assertTrue(latch.await(5, TimeUnit.MINUTES));
         assertEquals(0, map.size());
     }
 
