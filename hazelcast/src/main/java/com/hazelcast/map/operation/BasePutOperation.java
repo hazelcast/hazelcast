@@ -26,6 +26,7 @@ import com.hazelcast.spi.ResponseHandler;
 public abstract class BasePutOperation extends LockAwareOperation implements BackupAwareOperation {
 
     protected transient Data dataOldValue;
+    protected transient EntryEventType eventType;
 
     public BasePutOperation(String name, Data dataKey, Data value) {
         super(name, dataKey, value, -1);
@@ -40,7 +41,8 @@ public abstract class BasePutOperation extends LockAwareOperation implements Bac
 
     public void afterRun() {
         mapService.interceptAfterPut(name, dataValue);
-        EntryEventType eventType = dataOldValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
+        if (eventType == null)
+            eventType = dataOldValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
         mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, dataValue);
         invalidateNearCaches();
         if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {

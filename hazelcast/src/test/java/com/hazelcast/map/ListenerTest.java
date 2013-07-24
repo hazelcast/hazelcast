@@ -178,6 +178,42 @@ public class ListenerTest extends HazelcastTestSupport {
         Assert.assertEquals(expectedValue, valueCount.get());
     }
 
+    /**
+     * test for issue 589
+     */
+    @Test
+    public void setFiresAlwaysAddEvent() throws InterruptedException {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        HazelcastInstance h1 = nodeFactory.newHazelcastInstance(cfg);
+        IMap<Object, Object> map = h1.getMap("map");
+        final CountDownLatch updateLatch = new CountDownLatch(1);
+        final CountDownLatch addLatch = new CountDownLatch(1);
+        map.addEntryListener(new EntryListener<Object, Object>() {
+            @Override
+            public void entryAdded(EntryEvent<Object, Object> event) {
+                addLatch.countDown();
+            }
+
+            @Override
+            public void entryRemoved(EntryEvent<Object, Object> event) {
+            }
+
+            @Override
+            public void entryUpdated(EntryEvent<Object, Object> event) {
+                updateLatch.countDown();
+            }
+
+            @Override
+            public void entryEvicted(EntryEvent<Object, Object> event) {
+            }
+        }, false);
+        map.set(1,1);
+        map.set(1,2);
+        assertTrue(addLatch.await(5, TimeUnit.SECONDS));
+        assertTrue(updateLatch.await(5, TimeUnit.SECONDS));
+    }
+
     private EntryListener<String, String> createEntryListener(final boolean isLocal) {
         return new EntryListener<String, String>() {
             private final boolean local = isLocal;

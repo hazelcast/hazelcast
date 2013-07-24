@@ -16,6 +16,8 @@
 
 package com.hazelcast.map.operation;
 
+import com.hazelcast.core.EntryEventType;
+import com.hazelcast.map.SimpleEntryView;
 import com.hazelcast.nio.serialization.Data;
 
 public class SetOperation extends BasePutOperation {
@@ -29,13 +31,18 @@ public class SetOperation extends BasePutOperation {
     public SetOperation() {
     }
 
+    public void afterRun() {
+        eventType = newRecord ? EntryEventType.ADDED : EntryEventType.UPDATED;
+        super.afterRun();
+    }
+
     public void run() {
-        recordStore.set(dataKey, dataValue, ttl);
+        newRecord = recordStore.set(dataKey, dataValue, ttl);
     }
 
     @Override
     public Object getResponse() {
-        return null;
+        return newRecord;
     }
 
     @Override
