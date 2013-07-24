@@ -66,7 +66,7 @@ public class MapClientRequestTest extends ClientTestSupport {
         client.send(new MapGetRequest(mapName, TestUtil.toData(7)));
         assertNull(client.receive());
         client.send(new MapSetRequest(mapName, TestUtil.toData(1), TestUtil.toData(7), ThreadUtil.getThreadId()));
-        assertNull(client.receive());
+        assertFalse((Boolean)client.receive());
         client.send(new MapGetRequest(mapName, TestUtil.toData(1)));
         assertEquals(7, client.receive());
         client.send(new MapPutTransientRequest(mapName, TestUtil.toData(1), TestUtil.toData(9), ThreadUtil.getThreadId()));
