@@ -195,12 +195,14 @@ public class PartitionRecordStore implements RecordStore {
 
     public Map.Entry<Data, Data> getMapEntryData(Data dataKey) {
         Record record = records.get(dataKey);
-        return new AbstractMap.SimpleImmutableEntry<Data, Data>(dataKey, mapService.toData(record.getValue()));
+        Data data = record != null ? mapService.toData(record.getValue()) : null;
+        return new AbstractMap.SimpleImmutableEntry<Data, Data>(dataKey, data);
     }
 
     public Map.Entry<Data, Object> getMapEntryObject(Data dataKey) {
         Record record = records.get(dataKey);
-        return new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, mapService.toObject(record.getValue()));
+        Object value = record != null ? mapService.toObject(record.getValue()) : null;
+        return new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, value);
     }
 
     public Set<Data> keySet() {

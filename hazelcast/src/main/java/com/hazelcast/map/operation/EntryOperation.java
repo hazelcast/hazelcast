@@ -16,6 +16,8 @@
 
 package com.hazelcast.map.operation;
 
+import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -29,10 +31,9 @@ import java.util.Map;
 
 public class EntryOperation extends LockAwareOperation implements BackupAwareOperation {
 
-    EntryProcessor entryProcessor;
+    private EntryProcessor entryProcessor;
 
-    transient Object response;
-    transient Map.Entry entry;
+    private transient Object response;
 
     public EntryOperation(String name, Data dataKey, EntryProcessor entryProcessor) {
         super(name, dataKey);
@@ -42,9 +43,15 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     public EntryOperation() {
     }
 
+    public void innerBeforeRun() {
+        if (entryProcessor instanceof HazelcastInstanceAware) {
+            ((HazelcastInstanceAware) entryProcessor).setHazelcastInstance(getNodeEngine().getHazelcastInstance());
+        }
+    }
+
     public void run() {
         Map.Entry<Data, Object> mapEntry = recordStore.getMapEntryObject(dataKey);
-        entry = new AbstractMap.SimpleEntry(mapService.toObject(dataKey), mapService.toObject(mapEntry.getValue()));
+        Map.Entry entry = new AbstractMap.SimpleEntry(mapService.toObject(dataKey), mapService.toObject(mapEntry.getValue()));
         response = mapService.toData(entryProcessor.process(entry));
         recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, entry.getValue()));
     }
@@ -82,7 +89,8 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     }
 
     public Operation getBackupOperation() {
-        return new EntryBackupOperation(name, dataKey, entryProcessor.getBackupProcessor());
+        EntryBackupProcessor backupProcessor = entryProcessor.getBackupProcessor();
+        return backupProcessor != null ? new EntryBackupOperation(name, dataKey, backupProcessor) : null;
     }
 
     public boolean shouldBackup() {

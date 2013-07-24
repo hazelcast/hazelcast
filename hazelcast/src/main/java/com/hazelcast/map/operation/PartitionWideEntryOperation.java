@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.operation;
 
+import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapEntrySet;
 import com.hazelcast.map.record.Record;
@@ -95,17 +96,17 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
         return entryProcessor.getBackupProcessor() != null;
     }
 
-    public int getAsyncBackupCount() {
-        return mapContainer.getAsyncBackupCount() + mapContainer.getBackupCount();
-    }
-
-    @Override
-    public Operation getBackupOperation() {
-        return new PartitionWideEntryBackupOperation(name, entryProcessor.getBackupProcessor());
-    }
-
     public int getSyncBackupCount() {
         return 0;
     }
 
+    public int getAsyncBackupCount() {
+        return mapContainer.getTotalBackupCount();
+    }
+
+    @Override
+    public Operation getBackupOperation() {
+        EntryBackupProcessor backupProcessor = entryProcessor.getBackupProcessor();
+        return backupProcessor != null ? new PartitionWideEntryBackupOperation(name, backupProcessor) : null;
+    }
 }

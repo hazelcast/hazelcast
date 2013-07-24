@@ -16,9 +16,8 @@
 
 package com.hazelcast.map.operation;
 
+import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.map.EntryBackupProcessor;
-import com.hazelcast.map.MapService;
-import com.hazelcast.map.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -30,10 +29,7 @@ import java.util.Map;
 
 public class EntryBackupOperation extends KeyBasedMapOperation implements BackupOperation {
 
-    EntryBackupProcessor entryProcessor;
-
-    Map.Entry entry;
-    MapService mapService;
+    private EntryBackupProcessor entryProcessor;
 
     public EntryBackupOperation(String name, Data dataKey, EntryBackupProcessor entryProcessor) {
         super(name, dataKey);
@@ -43,13 +39,19 @@ public class EntryBackupOperation extends KeyBasedMapOperation implements Backup
     public EntryBackupOperation() {
     }
 
+    public void innerBeforeRun() {
+        if (entryProcessor instanceof HazelcastInstanceAware) {
+            ((HazelcastInstanceAware) entryProcessor).setHazelcastInstance(getNodeEngine().getHazelcastInstance());
+        }
+    }
+
     public void run() {
-        mapService = (MapService) getService();
-        RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
         Map.Entry<Data, Object> mapEntry = recordStore.getMapEntryObject(dataKey);
-        entry = new AbstractMap.SimpleEntry<Object,Object>(mapService.toObject(dataKey), mapEntry.getValue());
-        entryProcessor.processBackup(entry);
-        recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, entry.getValue()));
+        if (mapEntry.getValue() != null) {
+            Map.Entry<Object, Object> entry = new AbstractMap.SimpleEntry<Object, Object>(mapService.toObject(dataKey), mapEntry.getValue());
+            entryProcessor.processBackup(entry);
+            recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, entry.getValue()));
+        }
     }
 
     @Override
