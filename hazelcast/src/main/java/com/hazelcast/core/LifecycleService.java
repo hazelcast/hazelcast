@@ -22,14 +22,34 @@ package com.hazelcast.core;
  */
 public interface LifecycleService {
 
+    /**
+     * whether the instance is running
+     * @return true if instance is active and running
+     */
     boolean isRunning();
 
+    /**
+     * gracefully shutdowns HazelcastInstance. Different from {@link #terminate()}, waits partition operations to be completed.
+     */
     void shutdown();
 
+    /**
+     * terminate HazelcastInstance ungracefully. Does not wait partition operations, forces immediate shutdown.
+     */
     void terminate();
 
+    /**
+     * Add listener object to listen lifecycle events.
+     * @param lifecycleListener Listener object
+     * @return listener id
+     */
     String addLifecycleListener(LifecycleListener lifecycleListener);
 
+    /**
+     * Remove lifecycle listener
+     * @param registrationId The listener id returned by {@link #addLifecycleListener(LifecycleListener)}
+     * @return true if removed successfully
+     */
     boolean removeLifecycleListener(String registrationId);
 
 }

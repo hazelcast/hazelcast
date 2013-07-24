@@ -16,6 +16,9 @@
 
 package com.hazelcast.core;
 
+/**
+ * Type of item event.
+ */
 public enum ItemEventType {
     ADDED(1),
     REMOVED(2);

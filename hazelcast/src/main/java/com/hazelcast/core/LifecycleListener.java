@@ -18,6 +18,18 @@ package com.hazelcast.core;
 
 import java.util.EventListener;
 
+/**
+ * Listener object for lisntening lifecycle events of hazelcast instance
+ *
+ * @see com.hazelcast.core.LifecycleEvent
+ * @see HazelcastInstance#getLifecycleService()
+ *
+ */
 public interface LifecycleListener extends EventListener {
+    /**
+     * Called when instance's state changes
+     * @param event Lifecycle event
+     *
+     */
     void stateChanged(LifecycleEvent event);
 }
