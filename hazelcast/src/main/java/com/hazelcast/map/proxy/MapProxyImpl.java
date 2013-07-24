@@ -36,9 +36,10 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.MapService.SERVICE_NAME;
 
+/**
+ * @author enesakar 1/17/13
+ */
 public class MapProxyImpl<K, V> extends MapProxySupport implements MapProxy<K, V> {
-
-    private static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
 
     public MapProxyImpl(final String name, final MapService mapService, final NodeEngine nodeEngine) {
         super(name, mapService, nodeEngine);
@@ -60,6 +61,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements MapProxy<K, V
         if (k == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
+        if (v == null) {
+            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
+        }
         final Data key = getService().toData(k);
         final Data value = getService().toData(v);
         final Data result = putInternal(key, value, ttl, timeunit);
@@ -69,6 +73,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements MapProxy<K, V
     public boolean tryPut(final K k, final V v, final long timeout, final TimeUnit timeunit) {
         if (k == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+        }
+        if (v == null) {
+            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
         }
         final Data key = getService().toData(k);
         final Data value = getService().toData(v);
@@ -83,6 +90,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements MapProxy<K, V
         if (k == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
+        if (v == null) {
+            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
+        }
         final Data key = getService().toData(k);
         final Data value = getService().toData(v);
         final Data result = putIfAbsentInternal(key, value, ttl, timeunit);
@@ -93,6 +103,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements MapProxy<K, V
         if (k == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
+        if (v == null) {
+            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
+        }
         final Data key = getService().toData(k);
         final Data value = getService().toData(v);
         putTransientInternal(key, value, ttl, timeunit);
@@ -101,6 +114,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements MapProxy<K, V
     public boolean replace(final K k, final V o, final V v) {
         if (k == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+        }
+        if (v == null) {
+            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
         }
         final Data key = getService().toData(k);
         final Data oldValue = getService().toData(o);
@@ -111,6 +127,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements MapProxy<K, V
     public V replace(final K k, final V v) {
         if (k == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+        }
+        if (v == null) {
+            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
         }
         final Data key = getService().toData(k);
         final Data value = getService().toData(v);
@@ -124,6 +143,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements MapProxy<K, V
     public void set(final K k, final V v, final long ttl, final TimeUnit timeunit) {
         if (k == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+        }
+        if (v == null) {
+            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
         }
         final Data key = getService().toData(k);
         final Data value = getService().toData(v);
@@ -142,6 +164,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements MapProxy<K, V
     public boolean remove(final Object k, final Object v) {
         if (k == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+        }
+        if (v == null) {
+            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
         }
         final Data key = getService().toData(k);
         final Data value = getService().toData(v);
@@ -165,6 +190,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements MapProxy<K, V
     }
 
     public boolean containsValue(final Object v) {
+        if (v == null) {
+            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
+        }
         Data value = getService().toData(v);
         return containsValueInternal(value);
     }
@@ -221,12 +249,18 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements MapProxy<K, V
     }
 
     public Future putAsync(final K key, final V value) {
+        if (value == null) {
+            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
+        }
         return putAsync(key, value, -1, null);
     }
 
     public Future putAsync(final K key, final V value, final long ttl, final TimeUnit timeunit) {
         if (key == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+        }
+        if (value == null) {
+            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
         }
         Data k = getService().toData(key);
         Data v = getService().toData(value);

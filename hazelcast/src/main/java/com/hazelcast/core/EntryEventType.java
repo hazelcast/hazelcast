@@ -16,6 +16,9 @@
 
 package com.hazelcast.core;
 
+/**
+ * Type of entry event.
+ */
 public enum EntryEventType {
 
     ADDED(1),

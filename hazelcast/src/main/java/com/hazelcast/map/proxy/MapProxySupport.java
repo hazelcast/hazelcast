@@ -48,7 +48,13 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.MapService.SERVICE_NAME;
 
+/**
+ * @author enesakar 1/17/13
+ */
 abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
+
+    protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
+    protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
 
     protected final String name;
     protected final MapConfig mapConfig;
@@ -390,6 +396,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
 
             } else {
                 for (Entry entry : entries.entrySet()) {
+                    if(entry.getValue() == null){
+                            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
+                    }
                     putInternal(mapService.toData(entry.getKey()), mapService.toData(entry.getValue()), -1, TimeUnit.SECONDS);
                 }
             }
