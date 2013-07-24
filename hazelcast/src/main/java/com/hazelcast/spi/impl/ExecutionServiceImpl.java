@@ -68,7 +68,8 @@ public final class ExecutionServiceImpl implements ExecutionService {
 
         final int coreSize = Runtime.getRuntime().availableProcessors();
         // default executors
-        register(SYSTEM_EXECUTOR, coreSize * 2, Integer.MAX_VALUE);
+        register(SYSTEM_EXECUTOR, coreSize, Integer.MAX_VALUE);
+        register(OPERATION_EXECUTOR, coreSize * 2, Integer.MAX_VALUE);
         register(ASYNC_EXECUTOR, coreSize * 10, coreSize * 10000);
         register(CLIENT_EXECUTOR, coreSize * 10, coreSize * 10000);
         scheduledManagedExecutor = register(SCHEDULED_EXECUTOR, coreSize * 5, coreSize * 10000);

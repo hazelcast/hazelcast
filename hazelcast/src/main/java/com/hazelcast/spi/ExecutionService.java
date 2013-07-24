@@ -24,6 +24,7 @@ import java.util.concurrent.*;
 public interface ExecutionService {
 
     static final String SYSTEM_EXECUTOR = "hz:system";
+    static final String OPERATION_EXECUTOR = "hz:operation";
     static final String ASYNC_EXECUTOR = "hz:async";
     static final String SCHEDULED_EXECUTOR = "hz:scheduled";
     static final String CLIENT_EXECUTOR = "hz:client";

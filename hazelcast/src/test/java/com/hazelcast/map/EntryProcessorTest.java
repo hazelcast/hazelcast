@@ -19,9 +19,10 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IMap;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Test;
@@ -31,6 +32,7 @@ import org.junit.runner.RunWith;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
@@ -46,10 +48,21 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
         map.put(1, 1);
         EntryProcessor entryProcessor = new IncrementorEntryProcessor();
-        map.executeOnKey(1, entryProcessor);
-        assertEquals(map.get(1), (Object) 2);
-        instance1.getLifecycleService().shutdown();
-        instance2.getLifecycleService().shutdown();
+        assertEquals(2, map.executeOnKey(1, entryProcessor));
+        assertEquals((Integer) 2, map.get(1));
+    }
+
+    @Test
+    public void testNotExistingEntryProcessor() throws InterruptedException {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        cfg.getMapConfig("default").setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+        IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
+        EntryProcessor entryProcessor = new IncrementorEntryProcessor();
+        assertEquals(1, map.executeOnKey(1, entryProcessor));
+        assertEquals((Integer) 1, map.get(1));
     }
 
     @Test
@@ -67,10 +80,10 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         EntryProcessor entryProcessor = new IncrementorEntryProcessor();
         Map<Integer, Object> res = map.executeOnEntries(entryProcessor);
         for (int i = 0; i < size; i++) {
-            assertEquals(map.get(i), (Object) (i+1));
+            assertEquals(map.get(i), (Object) (i + 1));
         }
         for (int i = 0; i < size; i++) {
-            assertEquals(map.get(i)*2, res.get(i));
+            assertEquals(map.get(i), res.get(i));
         }
         instance1.getLifecycleService().shutdown();
         instance2.getLifecycleService().shutdown();
@@ -93,13 +106,13 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         EntryProcessor entryProcessor = new IncrementorEntryProcessor();
         map.executeOnEntries(entryProcessor);
         for (int i = 0; i < size; i++) {
-            assertEquals(map.get(i), (Object) (i+1));
+            assertEquals(map.get(i), (Object) (i + 1));
         }
         instance1.getLifecycleService().shutdown();
         Thread.sleep(1000);
         IMap<Integer, Integer> map2 = instance2.getMap("testBackupMapEntryProcessorAllKeys");
         for (int i = 0; i < size; i++) {
-            assertEquals(map2.get(i), (Object) (i+1));
+            assertEquals(map2.get(i), (Object) (i + 1));
         }
     }
 
@@ -124,7 +137,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         IMap<Integer, Integer> map3 = instance3.getMap("testBackups");
 
         for (int i = 0; i < 1000; i++) {
-            assertEquals((Object) (i+1), map3.get(i));
+            assertEquals((Object) (i + 1), map3.get(i));
         }
         instance2.getLifecycleService().shutdown();
         instance3.getLifecycleService().shutdown();
@@ -137,9 +150,13 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
 
         public Object process(Map.Entry entry) {
-            Integer value = (Integer) entry.getValue() +1;
+            Integer value = (Integer) entry.getValue();
+            if (value == null) {
+                value = 0;
+            }
+            value++;
             entry.setValue(value);
-            return value*2;
+            return value;
         }
 
         public EntryBackupProcessor getBackupProcessor() {
@@ -151,5 +168,45 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
     }
 
+    @Test
+    public void testMapEntryProcessorPartitionAware() throws InterruptedException {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        String map1 = "default";
+        String map2 = "default-2";
+        cfg.getMapConfig(map1).setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+        IMap<Integer, Integer> map = instance1.getMap(map1);
+        map.put(1, 1);
+        EntryProcessor entryProcessor = new PartitionAwareTestEntryProcessor(map2);
+        assertNull(map.executeOnKey(1, entryProcessor));
+        assertEquals(1, instance2.getMap(map2).get(1));
+    }
 
+    private static class PartitionAwareTestEntryProcessor implements EntryProcessor<Object, Object>, HazelcastInstanceAware {
+
+        private String name;
+        private transient HazelcastInstance hz;
+
+        private PartitionAwareTestEntryProcessor(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public Object process(Map.Entry<Object, Object> entry) {
+            hz.getMap(name).put(entry.getKey(), entry.getValue());
+            return null;
+        }
+
+        @Override
+        public EntryBackupProcessor<Object, Object> getBackupProcessor() {
+            return null;
+        }
+
+        @Override
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            this.hz = hazelcastInstance;
+        }
+    }
 }

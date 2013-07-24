@@ -92,10 +92,6 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         if (op.getCallId() != 0) {
             throw new IllegalStateException("An operation[" + op + "] can not be used for multiple invocations!");
         }
-        if (nodeEngine.operationService.isOperationThread()
-                && (op instanceof PartitionAwareOperation) && !OperationAccessor.isMigrationOperation(op)) {
-            throw new IllegalThreadStateException(Thread.currentThread() + " cannot make remote call: " + op);
-        }
         try {
             OperationAccessor.setCallTimeout(op, callTimeout);
             OperationAccessor.setCallerAddress(op, nodeEngine.getThisAddress());
@@ -105,6 +101,9 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                 op.setCallerUuid(nodeEngine.getLocalMember().getUuid());
             }
             OperationAccessor.setAsync(op, callback != null);
+            if (!nodeEngine.operationService.isInvocationAllowedFromCurrentThread(op) && !OperationAccessor.isMigrationOperation(op)) {
+                throw new IllegalThreadStateException(Thread.currentThread() + " cannot make remote call: " + op);
+            }
             doInvoke();
         } catch (Exception e) {
             if (e instanceof RetryableException) {
@@ -167,7 +166,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                         OperationAccessor.setCallId(op, callId);
                     }
                     ResponseHandlerFactory.setLocalResponseHandler(op, this);
-                    if (op instanceof PartitionAwareOperation) {
+                    if (!nodeEngine.operationService.isAllowedToRunInCurrentThread(op)) {
                         operationService.executeOperation(op);
                     } else {
                         operationService.runOperation(op);
