@@ -39,6 +39,10 @@ public class MemberLeftException extends ExecutionException implements DataSeria
         this.member = member;
     }
 
+    /**
+     * Returns the member which left the cluster
+     * @return member
+     */
     public Member getMember() {
         return member;
     }

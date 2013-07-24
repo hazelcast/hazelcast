@@ -25,6 +25,10 @@ package com.hazelcast.core;
  */
 public interface PartitionAware<T> {
 
+    /**
+     * The key object that will be used by Hazelcast to specify the partition. You should give the same key for objects that you want them to locate in the same partition.
+     * @return partition key
+     */
     T getPartitionKey();
 
 }

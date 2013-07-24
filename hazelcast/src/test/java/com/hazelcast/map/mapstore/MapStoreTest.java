@@ -959,7 +959,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         }
     }
 
-    public static class TestMapStore extends MapStoreAdaptor implements MapLoaderLifecycleSupport, MapStore {
+    public static class TestMapStore extends MapStoreAdapter implements MapLoaderLifecycleSupport, MapStore {
 
         final Map store = new ConcurrentHashMap();
 
@@ -1114,7 +1114,7 @@ public class MapStoreTest extends HazelcastTestSupport {
 
     }
 
-    public static class SimpleMapStore<K, V> extends MapStoreAdaptor<K, V> {
+    public static class SimpleMapStore<K, V> extends MapStoreAdapter<K, V> {
         public final Map<K, V> store;
         private boolean loadAllKeys = true;
 

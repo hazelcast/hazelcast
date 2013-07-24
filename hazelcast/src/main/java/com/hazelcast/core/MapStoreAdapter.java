@@ -21,30 +21,55 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-public class MapStoreAdaptor<K, V> implements MapStore<K, V> {
+/**
+ * Adapter for MapStore.
+ *
+ * @param <K> key of the map entry
+ * @param <V> value of the map entry.
+ * @see com.hazelcast.core.MapStore
+ */
+public class MapStoreAdapter<K, V> implements MapStore<K, V> {
 
+    /**
+     * {@inheritDoc}
+     */
     public void delete(final K key) {
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void store(final K key, final V value) {
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void storeAll(final Map<K, V> map) {
         for (Map.Entry<K, V> entry : map.entrySet()) {
             store(entry.getKey(), entry.getValue());
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void deleteAll(final Collection<K> keys) {
         for (K key : keys) {
             delete(key);
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public V load(final K key) {
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public Map<K, V> loadAll(final Collection<K> keys) {
         Map<K, V> result = new HashMap<K, V>();
         for (K key : keys) {
@@ -56,6 +81,9 @@ public class MapStoreAdaptor<K, V> implements MapStore<K, V> {
         return result;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public Set<K> loadAllKeys() {
         return null;
     }

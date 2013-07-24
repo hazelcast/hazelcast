@@ -23,9 +23,23 @@ import com.hazelcast.transaction.TransactionalObject;
  */
 public interface TransactionalSet<E> extends TransactionalObject {
 
+    /**
+     * Add new item to transactional set
+     * @param e item
+     * @return true if item is added successfully
+     */
     boolean add(E e);
 
+    /**
+     * Add item from transactional set
+     * @param e item
+     * @return true if item is remove successfully
+     */
     boolean remove(E e);
 
+    /**
+     * Returns the size of the set
+     * @return size
+     */
     int size();
 }

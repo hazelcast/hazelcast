@@ -31,7 +31,6 @@ import org.junit.runner.RunWith;
 
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -474,7 +473,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         final String anotherMap = "anotherMap";
         Config config = new Config();
         config.getMapConfig(map).setMapStoreConfig(new MapStoreConfig()
-                .setEnabled(true).setImplementation(new MapStoreAdaptor() {
+                .setEnabled(true).setImplementation(new MapStoreAdapter() {
                     public void store(Object key, Object value) {
                         throw new IllegalStateException("Map store intentionally failed :) ");
                     }

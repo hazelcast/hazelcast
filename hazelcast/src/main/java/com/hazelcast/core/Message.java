@@ -36,14 +36,26 @@ public class Message<E> extends EventObject {
         this.publishingMember = publishingMember;
     }
 
+    /**
+     * Returns published message
+     * @return message object
+     */
     public E getMessageObject() {
         return messageObject;
     }
 
+    /**
+     * Return the time when the message is published
+     * @return publish time
+     */
     public long getPublishTime() {
         return publishTime;
     }
 
+    /**
+     * Returns the member that published the message
+     * @return publishing member
+     */
     public Member getPublishingMember() {
         return publishingMember;
     }

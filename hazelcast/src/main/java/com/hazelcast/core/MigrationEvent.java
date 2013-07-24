@@ -48,18 +48,34 @@ public class MigrationEvent implements DataSerializable {
         this.status = status;
     }
 
+    /**
+     * Returns the id of the partition which is (or being) migrated
+     * @return partition id
+     */
     public int getPartitionId() {
         return partitionId;
     }
 
+    /**
+     * Returns the old owner of the migrating partition
+     * @return old owner of partition
+     */
     public Member getOldOwner() {
         return oldOwner;
     }
 
+    /**
+     * Returns the new owner of the migrating partition
+     * @return new owner of partition
+     */
     public Member getNewOwner() {
         return newOwner;
     }
 
+    /**
+     * Returns the status of the migration: Started, completed or failed
+     * @return migration status
+     */
     public MigrationStatus getStatus() {
         return status;
     }
@@ -78,6 +94,9 @@ public class MigrationEvent implements DataSerializable {
         status = MigrationStatus.readFrom(in);
     }
 
+    /**
+     * Migration status: Started, completed or failed
+     */
     public static enum MigrationStatus {
 
         STARTED(0),

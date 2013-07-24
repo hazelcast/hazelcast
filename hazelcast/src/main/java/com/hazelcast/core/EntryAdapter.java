@@ -25,15 +25,27 @@ package com.hazelcast.core;
  */
 public class EntryAdapter<K, V> implements EntryListener<K, V> {
 
+    /**
+     * {@inheritDoc}
+     */
     public void entryAdded(EntryEvent<K, V> event) {
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void entryRemoved(EntryEvent<K, V> event) {
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void entryUpdated(EntryEvent<K, V> event) {
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void entryEvicted(EntryEvent<K, V> event) {
     }
 }
