@@ -16,6 +16,8 @@
 
 package com.hazelcast.map;
 
+import com.hazelcast.core.EntryAdapter;
+import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -31,8 +33,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
@@ -63,6 +64,28 @@ public class AsyncTest extends HazelcastTestSupport {
         Future<String> f2 = map.putAsync(key, value2);
         String f2Val = f2.get();
         TestCase.assertEquals(value1, f2Val);
+    }
+
+    @Test
+    public void testPutAsyncWithTtl() throws Exception {
+        int n = 1;
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
+        IMap<String, String> map = factory.newHazelcastInstance(null).getMap("map:test:putAsyncWithTtl");
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        map.addEntryListener(new EntryAdapter<String, String>() {
+            public void entryEvicted(EntryEvent<String, String> event) {
+                latch.countDown();
+            }
+        }, true);
+
+        Future<String> f1 = map.putAsync(key, value1, 3, TimeUnit.SECONDS);
+        String f1Val = f1.get();
+        TestCase.assertNull(f1Val);
+        assertEquals(value1, map.get(key));
+
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertNull(map.get(key));
     }
 
     @Test

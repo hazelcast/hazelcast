@@ -202,10 +202,10 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         }
     }
 
-    protected Future<Data> putAsyncInternal(final Data key, final Data value) {
+    protected Future<Data> putAsyncInternal(final Data key, final Data value, final long ttl, final TimeUnit timeunit) {
         final NodeEngine nodeEngine = getNodeEngine();
         int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
-        PutOperation operation = new PutOperation(name, key, value, -1);
+        PutOperation operation = new PutOperation(name, key, value, getTimeInMillis(ttl, timeunit));
         operation.setThreadId(ThreadUtil.getThreadId());
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)

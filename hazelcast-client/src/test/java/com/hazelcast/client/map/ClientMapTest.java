@@ -211,6 +211,25 @@ public class ClientMapTest {
         assertEquals("value", map.get("key3"));
     }
 
+
+    @Test
+    public void testAsyncPutWithTtl() throws Exception{
+        final CountDownLatch latch = new CountDownLatch(1);
+        map.addEntryListener(new EntryAdapter<String, String>() {
+            public void entryEvicted(EntryEvent<String, String> event) {
+                latch.countDown();
+            }
+        }, true);
+
+        Future<String> f1 = map.putAsync("key", "value1", 3, TimeUnit.SECONDS);
+        String f1Val = f1.get();
+        assertNull(f1Val);
+        assertEquals("value1", map.get("key"));
+
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertNull(map.get("key"));
+    }
+
     @Test
     public void testAsyncRemove() throws Exception {
         fillMap();
