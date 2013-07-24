@@ -221,12 +221,16 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements MapProxy<K, V
     }
 
     public Future putAsync(final K key, final V value) {
+        return putAsync(key, value, -1, null);
+    }
+
+    public Future putAsync(final K key, final V value, final long ttl, final TimeUnit timeunit) {
         if (key == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
         Data k = getService().toData(key);
         Data v = getService().toData(value);
-        return new DelegatingFuture<V>(putAsyncInternal(k, v), getNodeEngine().getSerializationService());
+        return new DelegatingFuture<V>(putAsyncInternal(k, v, ttl, timeunit), getNodeEngine().getSerializationService());
     }
 
     public Future removeAsync(final K key) {

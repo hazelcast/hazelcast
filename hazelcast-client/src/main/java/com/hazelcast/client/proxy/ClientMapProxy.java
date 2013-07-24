@@ -126,9 +126,13 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     }
 
     public Future<V> putAsync(final K key, final V value) {
+        return putAsync(key, value, -1, null);
+    }
+
+    public Future<V> putAsync(final K key, final V value, final long ttl, final TimeUnit timeunit) {
         Future<V> f = getContext().getExecutionService().submit(new Callable<V>() {
             public V call() throws Exception {
-                return put(key, value);
+                return put(key, value, ttl, timeunit);
             }
         });
         return f;
