@@ -44,10 +44,17 @@ public final class SampleObjects {
     public static class Value implements Serializable {
         String name;
         ValueType type;
+        State state;
         int index;
 
         public Value(String name, ValueType type, int index) {
             this.name = name;
+            this.type = type;
+            this.index = index;
+        }
+
+        public Value(State state, ValueType type, int index) {
+            this.state = state;
             this.type = type;
             this.index = index;
         }
@@ -59,6 +66,14 @@ public final class SampleObjects {
 
         public Value(String name) {
             this(name, null, 0);
+        }
+
+        public State getState() {
+            return state;
+        }
+
+        public void setState(State state) {
+            this.state = state;
         }
 
         public String getName() {
