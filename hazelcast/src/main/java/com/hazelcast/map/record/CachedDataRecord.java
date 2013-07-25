@@ -30,9 +30,6 @@ public class CachedDataRecord extends AbstractRecord<Data> {
     public CachedDataRecord() {
     }
 
-    public CachedDataRecord() {
-    }
-
     public CachedDataRecord(Data keyData, Data value, boolean statisticsEnabled) {
         super(keyData, statisticsEnabled);
         this.value = value;
