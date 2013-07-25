@@ -23,6 +23,7 @@ import com.hazelcast.logging.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -35,6 +36,7 @@ import java.util.Map;
 import java.util.logging.Level;
 
 import static com.hazelcast.config.AbstractXmlConfigHelper.cleanNodeName;
+import static java.lang.String.format;
 
 public class CloudyUtility {
     final static ILogger logger = Logger.getLogger(CloudyUtility.class);
@@ -114,39 +116,89 @@ public class CloudyUtility {
 
         public List<String> getList(String name, AwsConfig awsConfig) {
             List<String> list = new ArrayList<String>();
-            if (node != null) {
-                for (org.w3c.dom.Node node : new AbstractXmlConfigHelper.IterableNodeList(this.node.getChildNodes())) {
-                    String nodeName = cleanNodeName(node.getNodeName());
-                    if ("item".equals(nodeName)) {
-                        if (new NodeHolder(node).getSub("instancestate").getSub("name").getNode().getFirstChild().getNodeValue().equals("running")) {
-                            String ip = new NodeHolder(node).getSub(name).getNode().getFirstChild().getNodeValue();
-                            boolean passed = applyFilter(awsConfig, node);
-                            if (ip != null && passed) {
-                                list.add(ip);
-                            }
-                        }
+            if (node == null) return list;
+
+            for (org.w3c.dom.Node node : new AbstractXmlConfigHelper.IterableNodeList(this.node.getChildNodes())) {
+                String nodeName = cleanNodeName(node.getNodeName());
+                if (!"item".equals(nodeName)) continue;
+
+                final NodeHolder nodeHolder = new NodeHolder(node);
+                final String state = getState(nodeHolder);
+                final String ip = getIp(name, nodeHolder);
+                final String instanceName = getInstanceName(nodeHolder);
+
+                 if (ip != null) {
+                    if (!"running".equals(state)) {
+                        logger.log(Level.FINE, format("Ignoring EC2 instance [%s][%s] reason: the instance is not running but %s", instanceName,ip, state));
+                    } else if (!acceptTag(awsConfig, node)) {
+                        logger.log(Level.FINE, format("Ignoring EC2 instance [%s][%s] reason: security-group-name doesn't match", instanceName,ip));
+                    } else if (!acceptGroupName(awsConfig, node)) {
+                        logger.log(Level.FINE, format("Ignoring EC2 instance [%s][%s] reason: tag-key/tag-value don't match", instanceName,ip));
+                    } else {
+                        list.add(ip);
+                        logger.log(Level.FINE, format("Accepting EC2 instance [%s][%s]",instanceName, ip));
                     }
                 }
+
             }
             return list;
         }
 
-        private boolean applyFilter(AwsConfig awsConfig, Node node) {
-            boolean inGroup = applyFilter(node, awsConfig.getSecurityGroupName(), "groupset", "groupname");
-            return inGroup && applyTagFilter(node, awsConfig.getTagKey(), awsConfig.getTagValue());
+        private static String getState(NodeHolder nodeHolder) {
+            final NodeHolder instancestate = nodeHolder.getSub("instancestate");
+            return instancestate.getSub("name").getNode().getFirstChild().getNodeValue();
+        }
+
+        private static String getInstanceName(NodeHolder nodeHolder) {
+            final NodeHolder tagSetNode = nodeHolder.getSub("tagset");
+            if (tagSetNode.getNode() == null) {
+                return null;
+            }
+
+            final NodeList childNodes = tagSetNode.getNode().getChildNodes();
+            for (int k = 0; k < childNodes.getLength(); k++) {
+                Node item = childNodes.item(k);
+                if (!item.getNodeName().equals("item")) continue;
+
+                NodeHolder itemHolder = new NodeHolder(item);
+
+                final Node keyNode = itemHolder.getSub("key").getNode();
+                if (keyNode == null || keyNode.getFirstChild() == null) continue;
+                final String nodeValue = keyNode.getFirstChild().getNodeValue();
+                if (!"Name".equals(nodeValue)) continue;
+
+                final Node valueNode = itemHolder.getSub("value").getNode();
+                if (valueNode == null || valueNode.getFirstChild() == null) continue;
+                return valueNode.getFirstChild().getNodeValue();
+            }
+            return null;
+        }
+
+        private static String getIp(String name, NodeHolder nodeHolder) {
+            final Node node1 = nodeHolder.getSub(name).getNode();
+            return node1 == null ? null : node1.getFirstChild().getNodeValue();
+        }
+
+        private boolean acceptTag(AwsConfig awsConfig, Node node) {
+            return applyTagFilter(node, awsConfig.getTagKey(), awsConfig.getTagValue());
+        }
+
+        private boolean acceptGroupName(AwsConfig awsConfig, Node node) {
+            return applyFilter(node, awsConfig.getSecurityGroupName(), "groupset", "groupname");
         }
 
         private boolean applyFilter(Node node, String filter, String set, String filterField) {
-            boolean passed = (nullOrEmpty(filter));
-            if (!passed) {
+            if (nullOrEmpty(filter)) {
+                return true;
+            } else {
                 for (NodeHolder group : new NodeHolder(node).getSub(set).getSubNodes("item")) {
                     NodeHolder nh = group.getSub(filterField);
                     if (nh != null && nh.getNode().getFirstChild() != null && filter.equals(nh.getNode().getFirstChild().getNodeValue())) {
-                        passed = true;
+                        return true;
                     }
                 }
+                return false;
             }
-            return passed;
         }
 
         private boolean applyTagFilter(Node node, String keyExpected, String valueExpected) {
