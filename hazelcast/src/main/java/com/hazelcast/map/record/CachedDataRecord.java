@@ -27,6 +27,9 @@ public class CachedDataRecord extends AbstractRecord<Data> {
     private volatile Data value;
     private volatile Object cachedValue;
 
+    public CachedDataRecord() {
+    }
+
     public CachedDataRecord(Data keyData, Data value, boolean statisticsEnabled) {
         super(keyData, statisticsEnabled);
         this.value = value;
