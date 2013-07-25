@@ -282,9 +282,7 @@ public class BackupTest extends HazelcastTestSupport {
             }
             Thread.sleep(250);
         }
-        long ownedSize = getTotalOwnedEntryCount(maps);
         long backupSize = getTotalBackupEntryCount(maps);
-        assertEquals("Owned size invalid, node-count: " + nodeCount, expectedSize, ownedSize);
         assertEquals("Backup size invalid, node-count: " + nodeCount, expectedBackupSize, backupSize);
     }
 

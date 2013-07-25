@@ -25,7 +25,10 @@ import java.io.IOException;
 public class CachedDataRecord extends AbstractRecord<Data> {
 
     private volatile Data value;
-    private volatile Object cachedValue;
+    private transient volatile Object cachedValue;
+
+    public CachedDataRecord() {
+    }
 
     public CachedDataRecord() {
     }
@@ -41,7 +44,7 @@ public class CachedDataRecord extends AbstractRecord<Data> {
 
     public Data setValue(Data o) {
         cachedValue = null;
-        Data old = null;
+        Data old = value;
         this.value = o;
         return old;
     }

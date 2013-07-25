@@ -46,8 +46,7 @@ public final class DataRecord extends AbstractRecord<Data> implements Record<Dat
     }
 
     public Data setValue(Data o) {
-        // todo clone old value
-        Data old = null;
+        Data old = value;
         this.value = o;
         return old;
     }

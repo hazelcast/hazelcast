@@ -18,9 +18,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.Client;
-import com.hazelcast.core.ClientListener;
-import com.hazelcast.core.ClientService;
+import com.hazelcast.core.*;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
@@ -337,7 +335,10 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
                     if (serviceName != null) {
                         final Object service = nodeEngine.getService(serviceName);
                         if (service == null) {
-                            throw new IllegalArgumentException("No service registered with name: " + serviceName);
+                            if (nodeEngine.isActive()) {
+                                throw new IllegalArgumentException("No service registered with name: " + serviceName);
+                            }
+                            throw new HazelcastInstanceNotActiveException();
                         }
                         request.setService(service);
                         if (request instanceof InitializingRequest) {

@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
 /**
@@ -44,9 +45,11 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
 
     private final HazelcastClient client;
 
-    private volatile int partitionCount;
+    private final ConcurrentHashMap<Integer, Address> partitions = new ConcurrentHashMap<Integer, Address>(271, 0.75f, 1);
 
-    private ConcurrentHashMap<Integer, Address> partitions;
+    private final AtomicBoolean updating = new AtomicBoolean(false);
+
+    private volatile int partitionCount;
 
     public ClientPartitionServiceImpl(HazelcastClient client) {
         this.client = client;
@@ -54,16 +57,28 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
 
     public void start() {
         getInitialPartitions();
-        client.getClientExecutionService().scheduleWithFixedDelay(new Runnable() {
-            public void run() {
-                final ClientClusterService clusterService = client.getClientClusterService();
-                final Address master = clusterService.getMasterAddress();
-                final PartitionsResponse response = getPartitionsFrom((ClientClusterServiceImpl) clusterService, master);
-                if (response != null) {
-                    processPartitionResponse(response);
+        client.getClientExecutionService().scheduleWithFixedDelay(new RefreshTask(), 10, 10, TimeUnit.SECONDS);
+    }
+
+    public void refreshPartitions() {
+        client.getClientExecutionService().execute(new RefreshTask());
+    }
+
+    private class RefreshTask implements Runnable {
+        public void run() {
+            if (updating.compareAndSet(false, true)) {
+                try {
+                    final ClientClusterService clusterService = client.getClientClusterService();
+                    final Address master = clusterService.getMasterAddress();
+                    final PartitionsResponse response = getPartitionsFrom((ClientClusterServiceImpl) clusterService, master);
+                    if (response != null) {
+                        processPartitionResponse(response);
+                    }
+                } finally {
+                    updating.set(false);
                 }
             }
-        }, 10, 10, TimeUnit.SECONDS);
+        }
     }
 
     private void getInitialPartitions() {
@@ -93,7 +108,6 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         final Address[] members = response.getMembers();
         final int[] ownerIndexes = response.getOwnerIndexes();
         if (partitionCount == 0) {
-            partitions = new ConcurrentHashMap<Integer, Address>(271, 0.75f, 1);
             partitionCount = ownerIndexes.length;
         }
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {

@@ -184,7 +184,7 @@ public final class TcpIpConnection implements Connection {
         if (t != null) {
             message += t.getClass().getName() + "[" + t.getMessage() + "]";
         } else {
-            message += "Explicit close";
+            message += live ? "Socket explicitly closed" : "Socket already closed";
         }
         logger.log(Level.INFO, message);
         systemLogService.logConnection(message);

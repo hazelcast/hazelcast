@@ -467,41 +467,25 @@ public class ClientMapTest {
         final CountDownLatch latch2Add = new CountDownLatch(1);
         final CountDownLatch latch2Remove = new CountDownLatch(1);
 
-        EntryListener listener1 = new EntryListener() {
-
+        EntryListener listener1 = new EntryAdapter() {
             public void entryAdded(EntryEvent event) {
                 latch1Add.countDown();
             }
-
             public void entryRemoved(EntryEvent event) {
                 latch1Remove.countDown();
             }
-
-            public void entryUpdated(EntryEvent event) {
-            }
-
-            public void entryEvicted(EntryEvent event) {
-            }
         };
 
-        EntryListener listener2 = new EntryListener() {
-
+        EntryListener listener2 = new EntryAdapter() {
             public void entryAdded(EntryEvent event) {
                 latch2Add.countDown();
             }
-
             public void entryRemoved(EntryEvent event) {
                 latch2Remove.countDown();
             }
-
-            public void entryUpdated(EntryEvent event) {
-            }
-
-            public void entryEvicted(EntryEvent event) {
-            }
         };
 
-        map.addEntryListener(listener1, true);
+        map.addEntryListener(listener1, false);
         map.addEntryListener(listener2, "key3", true);
 
         Thread.sleep(1000);
@@ -513,14 +497,12 @@ public class ClientMapTest {
         map.put("key5", "value5");
 
         map.remove("key1");
-
         map.remove("key3");
 
-        assertTrue(latch1Add.await(8, TimeUnit.SECONDS));
-        assertTrue(latch1Remove.await(6, TimeUnit.SECONDS));
-
-        assertTrue(latch2Add.await(4, TimeUnit.SECONDS));
-        assertTrue(latch2Remove.await(2, TimeUnit.SECONDS));
+        assertTrue(latch1Add.await(10, TimeUnit.SECONDS));
+        assertTrue(latch1Remove.await(10, TimeUnit.SECONDS));
+        assertTrue(latch2Add.await(5, TimeUnit.SECONDS));
+        assertTrue(latch2Remove.await(5, TimeUnit.SECONDS));
     }
 
     @Test

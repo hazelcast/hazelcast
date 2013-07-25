@@ -47,7 +47,7 @@ public final class ObjectRecord extends AbstractRecord<Object> implements Record
     }
 
     public Object setValue(Object o) {
-        Object old = null;
+        Object old = value;
         value = o;
         return old;
     }

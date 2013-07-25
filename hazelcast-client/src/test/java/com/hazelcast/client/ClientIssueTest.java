@@ -20,7 +20,10 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ILock;
+import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.SerialTest;
 import org.junit.After;
@@ -50,7 +53,7 @@ public class ClientIssueTest {
     }
 
     @Test
-    public void testClientPortConnection(){
+    public void testClientPortConnection() {
         final Config config1 = new Config();
         config1.getGroupConfig().setName("foo");
         config1.getNetworkConfig().setPort(5701);
@@ -65,7 +68,7 @@ public class ClientIssueTest {
         clientConfig.getGroupConfig().setName("bar");
         final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
-        final IMap<Object,Object> map = client.getMap("map");
+        final IMap<Object, Object> map = client.getMap("map");
         assertNull(map.put("key", "value"));
         assertEquals(1, map.size());
     }
@@ -108,9 +111,7 @@ public class ClientIssueTest {
 
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setRedoOperation(true);
-
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-
 
         final Thread thread = new Thread() {
             public void run() {
@@ -123,14 +124,14 @@ public class ClientIssueTest {
             }
         };
 
-        final IQueue<Object> q = client.getQueue("q");
+        final IMap map = client.getMap("m");
         thread.start();
-        for (int i=0; i< 1000; i++){
-            q.offer("item"+i);
+        int expected = 1000;
+        for (int i = 0; i < expected; i++) {
+            map.put(i, "item" + i);
         }
         thread.join();
-        assertEquals(1000, q.size());
-
+        assertEquals(expected, map.size());
     }
 
     @Test
@@ -143,20 +144,19 @@ public class ClientIssueTest {
         clientConfig.addNearCacheConfig("map*", new NearCacheConfig().setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT));
 
 
-
         final Random random = new Random(System.currentTimeMillis());
 
-        for (int i=0; i<12; i++){
-            new Thread(){
+        for (int i = 0; i < 12; i++) {
+            new Thread() {
                 public void run() {
 
                     final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
                     final IMap<Object, Object> map = client.getMap("map" + random.nextInt(3));
 
-                    while (true){
+                    while (true) {
                         final int r1 = random.nextInt(2);
                         final int r2 = random.nextInt(1000);
-                        if (r1 == 0){
+                        if (r1 == 0) {
                             map.put("key" + r2, "value" + r2);
                         } else {
                             map.get("key" + r2);

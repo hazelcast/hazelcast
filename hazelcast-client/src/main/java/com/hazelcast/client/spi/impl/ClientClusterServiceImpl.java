@@ -118,48 +118,71 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     <T> T sendAndReceive(Object obj) throws IOException {
-        final Connection conn = getRandomConnection();
-        try {
-            return sendAndReceive(conn, obj);
-        } finally {
-            conn.release();
+        return _sendAndReceive(randomConnectionFactory, obj);
+    }
+
+    <T> T sendAndReceive(final Address address, Object obj) throws IOException {
+        return _sendAndReceive(new TargetConnectionFactory(address), obj);
+    }
+
+    private interface ConnectionFactory {
+        Connection create() throws IOException;
+    }
+
+    private final ConnectionFactory randomConnectionFactory = new ConnectionFactory() {
+        public Connection create() throws IOException {
+            return getRandomConnection();
+        }
+    };
+
+    private class TargetConnectionFactory implements ConnectionFactory {
+        final Address target;
+
+        private TargetConnectionFactory(Address target) {
+            this.target = target;
+        }
+
+        public Connection create() throws IOException {
+            return getConnection(target);
         }
     }
 
-    <T> T sendAndReceive(Address address, Object obj) throws IOException {
-        final Connection conn = getConnection(address);
-        try {
-            return sendAndReceive(conn, obj);
-        } finally {
-            conn.release();
-        }
-    }
-
-    private <T> T sendAndReceive(Connection conn, Object obj) throws IOException {
-        try {
-            final SerializationService serializationService = getSerializationService();
-            final Data request = serializationService.toData(obj);
-            conn.write(request);
-            final Data response = conn.read();
-            final Object result = serializationService.toObject(response);
-            return ErrorHandler.returnResultOrThrowException(result);
-        } catch (Exception e) {
-            return retryOrThrowException(obj, null, e);
-        }
-    }
-
-    private <T> T retryOrThrowException(Object obj, ResponseHandler handler, Exception e) throws IOException {
-        if (isRetryable(e)) {
-            if (redoOperation || obj instanceof RetryableRequest) {
-                beforeRetry();
-                if (handler == null) {
-                    return sendAndReceive(obj);
-                } else {
-                    sendAndHandle(obj, handler);
+    private <T> T _sendAndReceive(ConnectionFactory connectionFactory, Object obj) throws IOException {
+        while (true) {
+            Connection conn = null;
+            boolean release = true;
+            try {
+                conn = connectionFactory.create();
+                final SerializationService serializationService = getSerializationService();
+                final Data request = serializationService.toData(obj);
+                conn.write(request);
+                final Data response = conn.read();
+                final Object result = serializationService.toObject(response);
+                return ErrorHandler.returnResultOrThrowException(result);
+            } catch (Exception e) {
+                if (e instanceof IOException) {
+                    if (logger.isLoggable(Level.FINEST)) {
+                        logger.log(Level.FINEST, "Error on connection... conn: " + conn + ", error: " + e);
+                    }
+                    IOUtil.closeResource(conn);
+                    release = false;
+                }
+                if (isRetryable(e)) {
+                    if (redoOperation || obj instanceof RetryableRequest) {
+                        if (logger.isLoggable(Level.FINEST)) {
+                            logger.log(Level.FINEST, "Retrying " + obj + ", last-conn: " + conn + ", last-error: " + e);
+                        }
+                        beforeRetry();
+                        continue;
+                    }
+                }
+                throw ExceptionUtil.rethrow(e, IOException.class);
+            } finally {
+                if (release) {
+                    conn.release();
                 }
             }
         }
-        throw ExceptionUtil.rethrow(e, IOException.class);
     }
 
     private boolean isRetryable(Exception e) {
@@ -214,39 +237,58 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     private void beforeRetry() {
         try {
             Thread.sleep(RETRY_WAIT_TIME);
+            ((ClientPartitionServiceImpl) client.getClientPartitionService()).refreshPartitions();
         } catch (InterruptedException ignored) {
         }
     }
 
-    void sendAndHandle(Address address, Object obj, ResponseHandler handler) throws IOException {
-        final Connection conn = getConnection(address);
-        sendAndHandle(conn, obj, handler);
+    void sendAndHandle(final Address address, Object obj, ResponseHandler handler) throws IOException {
+        _sendAndHandle(new TargetConnectionFactory(address), obj, handler);
     }
 
     void sendAndHandle(Object obj, ResponseHandler handler) throws IOException {
-        final Connection conn = getRandomConnection();
-        sendAndHandle(conn, obj, handler);
+        _sendAndHandle(randomConnectionFactory, obj, handler);
     }
 
-    private void sendAndHandle(Connection conn, Object obj, ResponseHandler handler) throws IOException {
+    private void _sendAndHandle(ConnectionFactory connectionFactory, Object obj, ResponseHandler handler) throws IOException {
         ResponseStream stream = null;
-        try {
-            final SerializationService serializationService = getSerializationService();
-            final Data request = serializationService.toData(obj);
-            conn.write(request);
-            stream = new ResponseStreamImpl(serializationService, conn);
-        } catch (Exception e) {
-            retryOrThrowException(obj, handler, e);
+        while (stream == null) {
+            Connection conn = null;
+            try {
+                conn = connectionFactory.create();
+                final SerializationService serializationService = getSerializationService();
+                final Data request = serializationService.toData(obj);
+                conn.write(request);
+                stream = new ResponseStreamImpl(serializationService, conn);
+            } catch (Exception e) {
+                if (e instanceof IOException) {
+                    if (logger.isLoggable(Level.FINEST)) {
+                        logger.log(Level.FINEST, "Error on connection... conn: " + conn + ", error: " + e);
+                    }
+                    IOUtil.closeResource(conn);
+                } else {
+                    assert conn != null;
+                    conn.release();
+                }
+                if (isRetryable(e)) {
+                    if (redoOperation || obj instanceof RetryableRequest) {
+                        if (logger.isLoggable(Level.FINEST)) {
+                            logger.log(Level.FINEST, "Retrying " + obj + ", last-conn: " + conn + ", last-error: " + e);
+                        }
+                        beforeRetry();
+                        continue;
+                    }
+                }
+                throw ExceptionUtil.rethrow(e, IOException.class);
+            }
         }
 
-        if (stream != null) {
-            try {
-                handler.handle(stream);
-            } catch (Exception e) {
-                throw ExceptionUtil.rethrow(e, IOException.class);
-            } finally {
-                stream.end();
-            }
+        try {
+            handler.handle(stream);
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e, IOException.class);
+        } finally {
+            stream.end();
         }
     }
 
@@ -329,7 +371,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     listenMembershipEvents();
                 } catch (Exception e) {
                     if (client.getLifecycleService().isRunning()) {
-                        logger.log(Level.WARNING, "Error while listening cluster events!", e);
+                        logger.log(Level.WARNING, "Error while listening cluster events! -> " + conn, e);
                     }
                     IOUtil.closeResource(conn);
                     conn = null;
@@ -352,8 +394,12 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         }
 
         private void loadInitialMemberList() throws IOException {
-            SerializableCollection coll = sendAndReceive(conn, new AddMembershipListenerRequest());
             final SerializationService serializationService = getSerializationService();
+            final Data request = serializationService.toData(new AddMembershipListenerRequest());
+            conn.write(request);
+            final Data response = conn.read();
+            SerializableCollection coll = ErrorHandler.returnResultOrThrowException(serializationService.toObject(response));
+
             Map<String, MemberImpl> prevMembers = Collections.emptyMap();
             if (!members.isEmpty()) {
                 prevMembers = new HashMap<String, MemberImpl>(members.size());

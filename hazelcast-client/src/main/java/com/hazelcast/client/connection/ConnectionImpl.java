@@ -136,8 +136,7 @@ final class ConnectionImpl implements Connection {
 
     @Override
     public String toString() {
-        return "Connection [" + endpoint + " -> " +
-                socket.getInetAddress().getHostAddress() + ":" + socket.getPort() + "]";
+        return "Connection [" + endpoint + " -> " + socket.getLocalSocketAddress() + "]";
     }
 
     public void setEndpoint(Address address){
