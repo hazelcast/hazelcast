@@ -158,9 +158,10 @@ public final class TcpIpConnection implements Connection {
         return connectionId;
     }
 
-    public void close0() throws IOException {
-        if (!live)
+    private void close0() throws IOException {
+        if (!live) {
             return;
+        }
         live = false;
         if (socketChannel != null && socketChannel.isOpen()) {
             socketChannel.close();
@@ -174,6 +175,9 @@ public final class TcpIpConnection implements Connection {
     }
 
     public void close(Throwable t) {
+        if (!live) {
+            return;
+        }
         try {
             close0();
         } catch (Exception e) {
@@ -184,8 +188,9 @@ public final class TcpIpConnection implements Connection {
         if (t != null) {
             message += t.getClass().getName() + "[" + t.getMessage() + "]";
         } else {
-            message += live ? "Socket explicitly closed" : "Socket already closed";
+            message += "Socket explicitly closed";
         }
+
         logger.log(Level.INFO, message);
         systemLogService.logConnection(message);
         connectionManager.destroyConnection(this);
