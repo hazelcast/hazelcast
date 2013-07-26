@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
@@ -144,6 +145,8 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
                 f.get(5, TimeUnit.SECONDS);
             } catch (InterruptedException ignored) {
             } catch (TimeoutException ignored) {
+            } catch (MemberLeftException e){
+                logger.log(Level.FINEST, e.getMessage(), e);
             } catch (ExecutionException e) {
                 throw new HazelcastException(e);
             }

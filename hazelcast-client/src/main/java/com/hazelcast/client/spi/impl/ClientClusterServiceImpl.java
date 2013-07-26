@@ -167,7 +167,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     IOUtil.closeResource(conn);
                     release = false;
                 }
-                if (isRetryable(e)) {
+                if (ErrorHandler.isRetryable(e)) {
                     if (redoOperation || obj instanceof RetryableRequest) {
                         if (logger.isLoggable(Level.FINEST)) {
                             logger.log(Level.FINEST, "Retrying " + obj + ", last-conn: " + conn + ", last-error: " + e);
@@ -183,10 +183,6 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 }
             }
         }
-    }
-
-    private boolean isRetryable(Exception e) {
-        return e instanceof IOException || e instanceof HazelcastInstanceNotActiveException;
     }
 
     public <T> T sendAndReceiveFixedConnection(Connection conn, Object obj) throws IOException {
@@ -270,7 +266,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     assert conn != null;
                     conn.release();
                 }
-                if (isRetryable(e)) {
+                if (ErrorHandler.isRetryable(e)) {
                     if (redoOperation || obj instanceof RetryableRequest) {
                         if (logger.isLoggable(Level.FINEST)) {
                             logger.log(Level.FINEST, "Retrying " + obj + ", last-conn: " + conn + ", last-error: " + e);

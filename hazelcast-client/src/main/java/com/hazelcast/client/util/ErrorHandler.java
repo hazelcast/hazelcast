@@ -16,7 +16,10 @@
 
 package com.hazelcast.client.util;
 
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.util.ExceptionUtil;
+
+import java.io.IOException;
 
 import static com.hazelcast.util.ExceptionUtil.fixRemoteStackTrace;
 
@@ -33,5 +36,9 @@ public class ErrorHandler {
         } else {
             return (T) result;
         }
+    }
+
+    public static boolean isRetryable(Exception e) {
+        return e instanceof IOException || e instanceof HazelcastInstanceNotActiveException;
     }
 }

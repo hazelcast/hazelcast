@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.spi;
 
+import com.hazelcast.client.util.ErrorHandler;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.serialization.Data;
 
@@ -92,26 +93,26 @@ public final class ListenerSupport  {
     private class EventResponseHandler implements ResponseHandler {
 
         public void handle(final ResponseStream stream) throws Exception {
-            stream.read(); // initial ok response
-            lastStream = stream;
-            latch.countDown();
-
-            while (active && !Thread.currentThread().isInterrupted()) {
-                try {
+            try {
+                stream.read(); // initial ok response
+                lastStream = stream;
+                latch.countDown();
+                while (active && !Thread.currentThread().isInterrupted()) {
                     final Object event = stream.read();
                     handler.handle(event);
-                } catch (Exception e) {
-                    try {
-                        stream.end();
-                    } catch (IOException ignored) {
-                    }
-                    if (!(e instanceof IOException)) {
-                        active = false;
-                    } else {
-                        throw e;
-                    }
+                }
+            } catch (Exception e) {
+                try {
+                    stream.end();
+                } catch (IOException ignored) {
+                }
+                if (ErrorHandler.isRetryable(e)) {
+                    throw e;
+                } else {
+                    active = false;
                 }
             }
+
         }
     }
 
