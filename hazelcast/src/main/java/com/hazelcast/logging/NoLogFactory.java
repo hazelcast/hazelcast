@@ -26,6 +26,18 @@ public class NoLogFactory implements LoggerFactory {
     }
 
     class NoLogger implements ILogger {
+        public void debug(String message) {
+        }
+
+        public void info(String message) {
+        }
+
+        public void severe(String message) {
+        }
+
+        public void severe(String message, Throwable thrown) {
+        }
+
         public void log(Level level, String message) {
         }
 

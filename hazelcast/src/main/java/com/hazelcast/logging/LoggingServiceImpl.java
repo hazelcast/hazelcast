@@ -133,6 +133,22 @@ public class LoggingServiceImpl implements LoggingService {
             addToLoggingService = (name.equals(ClusterServiceImpl.class.getName()));
         }
 
+        public void debug(String message) {
+            log(Level.FINE, message);
+        }
+
+        public void info(String message) {
+            log(Level.INFO, message);
+        }
+
+        public void severe(String message) {
+            log(Level.SEVERE, message);
+        }
+
+        public void severe(String message, Throwable thrown) {
+            log(Level.SEVERE,message,thrown);
+        }
+
         public void log(Level level, String message) {
             log(level, message, null);
         }

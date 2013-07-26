@@ -19,6 +19,15 @@ package com.hazelcast.logging;
 import java.util.logging.Level;
 
 public interface ILogger {
+
+    void info(String message);
+
+    void debug(String message);
+
+    void severe(String message);
+
+    void severe(String message, Throwable thrown);
+
     void log(Level level, String message);
 
     void log(Level level, String message, Throwable thrown);

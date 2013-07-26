@@ -36,6 +36,22 @@ public class Slf4jFactory extends LoggerFactorySupport {
             this.logger = logger;
         }
 
+        public void debug(String message) {
+            log(Level.FINE, message);
+        }
+
+        public void info(String message) {
+            log(Level.INFO, message);
+        }
+
+        public void severe(String message) {
+            log(Level.SEVERE, message);
+        }
+
+        public void severe(String message, Throwable thrown) {
+            log(Level.SEVERE,message,thrown);
+        }
+
         public void log(Level level, String message) {
             if (Level.FINEST == level) {
                 logger.debug(message);
