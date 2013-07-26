@@ -98,7 +98,7 @@ public class ReplicaSyncResponse extends Operation implements PartitionAwareOper
         public void sendResponse(final Object obj) {
             if (obj instanceof Throwable) {
                 Throwable t = (Throwable) obj;
-                logger.severe( t.getMessage(), t);
+                logger.severe(t);
             }
         }
     }

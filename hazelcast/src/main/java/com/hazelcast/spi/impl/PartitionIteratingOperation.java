@@ -71,7 +71,7 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
                 }
             }
         } catch (Exception e) {
-            getLogger(nodeEngine).severe(e.getMessage(), e);
+            getLogger(nodeEngine).severe(e);
         }
     }
 

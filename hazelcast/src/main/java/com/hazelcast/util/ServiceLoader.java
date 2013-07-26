@@ -113,7 +113,7 @@ public class ServiceLoader {
             }
             return names;
         } catch (Exception e) {
-            logger.severe(e.getMessage(), e);
+            logger.severe(e);
         }
         return Collections.emptySet();
     }

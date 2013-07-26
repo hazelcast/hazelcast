@@ -145,6 +145,10 @@ public class LoggingServiceImpl implements LoggingService {
             log(Level.SEVERE, message);
         }
 
+        public void severe(Throwable thrown) {
+            log(Level.SEVERE, thrown.getMessage(), thrown);
+        }
+
         public void severe(String message, Throwable thrown) {
             log(Level.SEVERE,message,thrown);
         }

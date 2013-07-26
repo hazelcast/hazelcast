@@ -35,6 +35,9 @@ public class NoLogFactory implements LoggerFactory {
         public void severe(String message) {
         }
 
+        public void severe(Throwable thrown) {
+        }
+
         public void severe(String message, Throwable thrown) {
         }
 

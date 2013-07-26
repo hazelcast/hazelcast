@@ -26,6 +26,8 @@ public interface ILogger {
 
     void severe(String message);
 
+    void severe(Throwable thrown);
+
     void severe(String message, Throwable thrown);
 
     void log(Level level, String message);

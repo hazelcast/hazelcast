@@ -150,7 +150,7 @@ final class ServiceManager {
             }
             return ClassLoaderUtil.newInstance(serviceClass);
         } catch (Exception e) {
-            logger.severe(e.getMessage(), e);
+            logger.severe(e);
         }
         return null;
     }

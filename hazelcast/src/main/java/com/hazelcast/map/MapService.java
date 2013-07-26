@@ -245,7 +245,7 @@ public class MapService implements ManagedService, MigrationAwareService,
                 mergePolicy = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), mergePolicyName);
                 mergePolicyMap.put(mergePolicyName, mergePolicy);
             } catch (Exception e) {
-                logger.severe( e.getMessage(), e);
+                logger.severe(e);
                 throw ExceptionUtil.rethrow(e);
             }
         }

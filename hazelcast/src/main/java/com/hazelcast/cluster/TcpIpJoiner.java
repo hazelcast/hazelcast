@@ -226,7 +226,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             colPossibleAddresses.clear();
             node.getFailedConnections().clear();
         } catch (Throwable t) {
-            logger.severe(t.getMessage(), t);
+            logger.severe(t);
         }
     }
 
@@ -416,7 +416,7 @@ public class TcpIpJoiner extends AbstractJoiner {
         try {
             colPossibleAddresses = getPossibleAddresses();
         } catch (Throwable e) {
-            logger.severe(e.getMessage(), e);
+            logger.severe(e);
             return;
         }
         colPossibleAddresses.remove(node.getThisAddress());

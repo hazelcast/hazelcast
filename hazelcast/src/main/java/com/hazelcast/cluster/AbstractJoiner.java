@@ -183,7 +183,7 @@ public abstract class AbstractJoiner implements Joiner {
                     }
                 }
             } catch (Throwable e) {
-                logger.severe(e.getMessage(), e);
+                logger.severe(e);
                 return false;
             }
         }

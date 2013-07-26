@@ -127,7 +127,7 @@ class DefaultAddressPicker implements AddressPicker {
                 log(Level.FINEST, "Using public address the same as the bind address. " + publicAddress);
             }
         } catch (Exception e) {
-            logger.severe(e.getMessage(), e);
+            logger.severe(e);
             throw e;
         }
     }

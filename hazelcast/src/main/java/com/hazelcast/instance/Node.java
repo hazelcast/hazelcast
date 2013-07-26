@@ -196,7 +196,7 @@ public class Node {
                 mcService.addMulticastListener(new NodeMulticastListener(this));
             }
         } catch (Exception e) {
-            logger.severe(e.getMessage(), e);
+            logger.severe(e);
         }
         this.multicastService = mcService;
         initializeListeners(config);
@@ -210,7 +210,7 @@ public class Node {
                 try {
                     listener = ClassLoaderUtil.newInstance(configClassLoader, listenerCfg.getClassName());
                 } catch (Exception e) {
-                    logger.severe( e.getMessage(), e);
+                    logger.severe(e);
                 }
             }
             if (listener instanceof HazelcastInstanceAware) {

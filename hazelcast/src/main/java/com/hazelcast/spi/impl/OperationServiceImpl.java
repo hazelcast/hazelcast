@@ -680,7 +680,7 @@ final class OperationServiceImpl implements OperationService {
                     }
                 }
             } catch (Throwable e) {
-                logger.severe(e.getMessage(), e);
+                logger.severe(e);
             }
         }
 

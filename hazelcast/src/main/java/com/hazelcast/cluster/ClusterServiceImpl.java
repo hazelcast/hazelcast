@@ -222,7 +222,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                             memberImpl.didRead();
                         }
                     } catch (Exception e) {
-                        logger.severe(e.getMessage(), e);
+                        logger.severe(e);
                     }
                 }
             }

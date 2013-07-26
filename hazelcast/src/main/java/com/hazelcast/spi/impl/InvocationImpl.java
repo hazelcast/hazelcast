@@ -259,7 +259,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                         }
                         callbackLocal.notify(realResponse);
                     } catch (Throwable e) {
-                        logger.severe(e.getMessage(), e);
+                        logger.severe(e);
                     }
                 }
             }
