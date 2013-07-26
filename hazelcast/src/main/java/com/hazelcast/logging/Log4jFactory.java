@@ -65,7 +65,9 @@ public class Log4jFactory extends LoggerFactorySupport implements LoggerFactory 
         }
 
         public boolean isLoggable(Level level) {
-            if (Level.FINEST == level) {
+            if (Level.OFF == level) {
+                return false;
+            } else if (Level.FINEST == level) {
                 return logger.isDebugEnabled();
             } else if (Level.WARNING == level) {
                 return logger.isEnabledFor(org.apache.log4j.Level.WARN);

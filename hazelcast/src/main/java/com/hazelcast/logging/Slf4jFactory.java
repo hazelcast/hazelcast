@@ -61,7 +61,9 @@ public class Slf4jFactory extends LoggerFactorySupport {
         }
 
         public boolean isLoggable(Level level) {
-            if (Level.FINEST == level) {
+            if (Level.OFF == level) {
+                return false;
+            } else if (Level.FINEST == level) {
                 return logger.isDebugEnabled();
             } else if (Level.INFO == level) {
                 return logger.isInfoEnabled();
