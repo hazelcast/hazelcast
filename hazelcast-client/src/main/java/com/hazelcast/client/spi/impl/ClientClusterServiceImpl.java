@@ -161,7 +161,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 return ErrorHandler.returnResultOrThrowException(result);
             } catch (Exception e) {
                 if (e instanceof IOException) {
-                    if (logger.isLoggable(Level.FINEST)) {
+                    if (logger.isFinestEnabled()) {
                         logger.log(Level.FINEST, "Error on connection... conn: " + conn + ", error: " + e);
                     }
                     IOUtil.closeResource(conn);
@@ -169,7 +169,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 }
                 if (ErrorHandler.isRetryable(e)) {
                     if (redoOperation || obj instanceof RetryableRequest) {
-                        if (logger.isLoggable(Level.FINEST)) {
+                        if (logger.isFinestEnabled()) {
                             logger.log(Level.FINEST, "Retrying " + obj + ", last-conn: " + conn + ", last-error: " + e);
                         }
                         beforeRetry();
@@ -258,7 +258,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 stream = new ResponseStreamImpl(serializationService, conn);
             } catch (Exception e) {
                 if (e instanceof IOException) {
-                    if (logger.isLoggable(Level.FINEST)) {
+                    if (logger.isFinestEnabled()) {
                         logger.log(Level.FINEST, "Error on connection... conn: " + conn + ", error: " + e);
                     }
                     IOUtil.closeResource(conn);
@@ -269,7 +269,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 }
                 if (ErrorHandler.isRetryable(e)) {
                     if (redoOperation || obj instanceof RetryableRequest) {
-                        if (logger.isLoggable(Level.FINEST)) {
+                        if (logger.isFinestEnabled()) {
                             logger.log(Level.FINEST, "Retrying " + obj + ", last-conn: " + conn + ", last-error: " + e);
                         }
                         beforeRetry();

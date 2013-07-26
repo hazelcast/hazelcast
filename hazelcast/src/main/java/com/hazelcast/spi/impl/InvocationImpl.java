@@ -384,7 +384,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                 try {
                     final boolean ok = nodeEngine.operationService.waitForBackups(response.callId, response.backupCount, 5, TimeUnit.SECONDS);
                     if (!ok) {
-                        if (logger.isLoggable(Level.FINEST)) {
+                        if (logger.isFinestEnabled()) {
                             logger.log(Level.FINEST, "Backup response cannot be received -> " + InvocationImpl.this.toString());
                         }
                         if (nodeEngine.getClusterService().getMember(target) == null) {

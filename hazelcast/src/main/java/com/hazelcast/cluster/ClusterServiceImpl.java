@@ -318,7 +318,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             logger.log(Level.FINEST, "Could not send MasterConfirmation, master is null!");
             return;
         }
-        if (logger.isLoggable(Level.FINEST)) {
+        if (logger.isFinestEnabled()) {
             logger.log(Level.FINEST, "Sending MasterConfirmation to " + masterMember);
         }
         nodeEngine.getOperationService().send(new MasterConfirmationOperation(), masterAddress);
@@ -544,7 +544,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     void acceptMasterConfirmation(MemberImpl member) {
         if (member != null) {
-            if (logger.isLoggable(Level.FINEST)) {
+            if (logger.isFinestEnabled()) {
                 logger.log(Level.FINEST, "MasterConfirmation has been received from " + member);
             }
             masterConfirmationTimes.put(member, Clock.currentTimeMillis());

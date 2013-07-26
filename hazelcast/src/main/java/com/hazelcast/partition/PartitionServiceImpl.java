@@ -397,7 +397,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 for (int index = 0; index < PartitionImpl.MAX_REPLICA_COUNT; index++) {
                     Address address = newPartition.getReplicaAddress(index);
                     if (address != null && getMember(address) == null) {
-                        if (logger.isLoggable(Level.FINEST)) {
+                        if (logger.isFinestEnabled()) {
                             logger.log(Level.FINEST,
                                     "Unknown " + address + " is found in partition table sent from master "
                                             + sender + ". Probably it's already left the cluster. Partition: " + newPartition);

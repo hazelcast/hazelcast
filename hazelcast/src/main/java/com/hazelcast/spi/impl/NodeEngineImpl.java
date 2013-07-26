@@ -213,7 +213,7 @@ public class NodeEngineImpl implements NodeEngine {
 
         public void run() {
             retries++;
-            if (logger.isLoggable(Level.FINEST)) {
+            if (logger.isFinestEnabled()) {
                 logger.log(Level.FINEST, "Retrying[" + retries + "] packet send operation to: " + target);
             }
             send(packet, target, this);

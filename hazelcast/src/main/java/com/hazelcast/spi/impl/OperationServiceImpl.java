@@ -349,7 +349,7 @@ final class OperationServiceImpl implements OperationService {
 
     private void scheduleBackup(Operation op, Backup backup, int partitionId, int replicaIndex) {
         final RemoteCallKey key = new RemoteCallKey(op.getCallerAddress(), op.getCallId());
-        if (logger.isLoggable(Level.FINEST)) {
+        if (logger.isFinestEnabled()) {
             logger.log(Level.FINEST, "Scheduling -> " + backup);
         }
         backupScheduler.schedule(500, key, new ScheduledBackup(backup, partitionId, replicaIndex));
@@ -362,7 +362,7 @@ final class OperationServiceImpl implements OperationService {
                 final ScheduledBackup backup = entry.getValue();
                 if (!backup.backup()) {
                     final int retries = backup.retries;
-                    if (logger.isLoggable(Level.FINEST)) {
+                    if (logger.isFinestEnabled()) {
                         logger.log(Level.FINEST, "Re-scheduling[" + retries + "] -> " + backup);
                     }
                     scheduler.schedule(entry.getScheduledDelayMillis() * retries, entry.getKey(), backup);
@@ -465,7 +465,7 @@ final class OperationServiceImpl implements OperationService {
                 PartitionResponse result = (PartitionResponse) nodeEngine.toObject(response.getValue().get());
                 partitionResults.putAll(result.asMap());
             } catch (Throwable t) {
-                if (logger.isLoggable(Level.FINEST)) {
+                if (logger.isFinestEnabled()) {
                     logger.log(Level.FINEST, t.getMessage(), t);
                 } else {
                     logger.warning(t.getMessage());

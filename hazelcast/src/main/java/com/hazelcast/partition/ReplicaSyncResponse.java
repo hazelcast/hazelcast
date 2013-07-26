@@ -61,7 +61,7 @@ public class ReplicaSyncResponse extends Operation implements PartitionAwareOper
         try {
             if (data != null) {
                 final ILogger logger = nodeEngine.getLogger(getClass());
-                if (logger.isLoggable(Level.FINEST)) {
+                if (logger.isFinestEnabled()) {
                     logger.log(Level.FINEST, "Applying replica sync for partition: " + partitionId + ", replica: " + replicaIndex);
                 }
                 final byte[] taskData = IOUtil.decompress(data);

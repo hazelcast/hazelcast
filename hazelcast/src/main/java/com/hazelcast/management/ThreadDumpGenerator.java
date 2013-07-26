@@ -59,7 +59,7 @@ public class ThreadDumpGenerator {
     private String dump(ThreadInfo[] infos, StringBuilder s) {
         header(s);
         appendThreadInfos(infos, s);
-        if (logger.isLoggable(Level.FINEST)) {
+        if (logger.isFinestEnabled()) {
             logger.log(Level.FINEST, "\n" + s.toString());
         }
         return s.toString();
