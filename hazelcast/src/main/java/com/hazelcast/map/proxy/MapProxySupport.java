@@ -124,7 +124,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
             for (int i = 0; i <= backupCount; i++) {
                 int partitionId = partitionService.getPartitionId(key);
                 PartitionView partition = partitionService.getPartition(partitionId);
-                if (partition.getReplicaAddress(i).equals(getNodeEngine().getThisAddress())) {
+                if (getNodeEngine().getThisAddress().equals(partition.getReplicaAddress(i))) {
                     Object val = mapService.getPartitionContainer(partitionId).getRecordStore(name).get(key);
                     if (val != null) {
                         mapService.interceptAfterGet(name, val);
