@@ -377,7 +377,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
                     log(Level.FINEST, "Closing server socket channel: " + serverSocketChannel);
                     serverSocketChannel.close();
                 } catch (IOException ignore) {
-                    logger.log(Level.FINEST, ignore.getMessage(), ignore);
+                    logger.finest(ignore);
                 }
             }
         }
@@ -392,14 +392,14 @@ public class TcpIpConnectionManager implements ConnectionManager {
             try {
                 destroyConnection(conn);
             } catch (final Throwable ignore) {
-                logger.log(Level.FINEST, ignore.getMessage(), ignore);
+                logger.finest(ignore);
             }
         }
         for (TcpIpConnection conn : setActiveConnections) {
             try {
                 destroyConnection(conn);
             } catch (final Throwable ignore) {
-                logger.log(Level.FINEST, ignore.getMessage(), ignore);
+                logger.finest(ignore);
             }
         }
         shutdownIOSelectors();

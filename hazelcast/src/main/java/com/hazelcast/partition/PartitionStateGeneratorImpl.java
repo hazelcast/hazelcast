@@ -66,7 +66,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                 stateInitializer.initialize(state);
             } else if (result == TestResult.RETRY) {
                 tryCount++;
-                logger.log(Level.FINEST, "Re-trying partition arrangement.. Count: " + tryCount);
+                logger.finest( "Re-trying partition arrangement.. Count: " + tryCount);
             }
         }
         if (result == TestResult.FAIL) {
@@ -335,7 +335,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
                 }
                 if ((partitionCountOfGroup < avgPartitionPerGroup / ratio)
                         || (partitionCountOfGroup > avgPartitionPerGroup * ratio)) {
-                    logger.log(Level.FINEST, "Replica: " + i + ", PartitionCount: "
+                    logger.finest( "Replica: " + i + ", PartitionCount: "
                             + partitionCountOfGroup + ", AvgPartitionCount: " + avgPartitionPerGroup);
                     return TestResult.RETRY;
                 }
@@ -454,7 +454,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
             if (containsPartition(partitionId)) {
                 String error = "Partition[" + partitionId + "] is already owned by this group! " +
                         "Duplicate!";
-                logger.log(Level.FINEST, error);
+                logger.finest( error);
                 return false;
             }
             groupPartitionTable.add(index, partitionId);
@@ -602,7 +602,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
             if (containsPartition(partitionId)) {
                 String error = "Partition[" + partitionId + "] is already owned by this node " +
                         address + "! Duplicate!";
-                logger.log(Level.FINEST, error);
+                logger.finest( error);
                 return false;
             }
             return nodeTable.add(index, partitionId);

@@ -162,7 +162,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             } catch (Exception e) {
                 if (e instanceof IOException) {
                     if (logger.isFinestEnabled()) {
-                        logger.log(Level.FINEST, "Error on connection... conn: " + conn + ", error: " + e);
+                        logger.finest( "Error on connection... conn: " + conn + ", error: " + e);
                     }
                     IOUtil.closeResource(conn);
                     release = false;
@@ -170,7 +170,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 if (ErrorHandler.isRetryable(e)) {
                     if (redoOperation || obj instanceof RetryableRequest) {
                         if (logger.isFinestEnabled()) {
-                            logger.log(Level.FINEST, "Retrying " + obj + ", last-conn: " + conn + ", last-error: " + e);
+                            logger.finest( "Retrying " + obj + ", last-conn: " + conn + ", last-error: " + e);
                         }
                         beforeRetry();
                         continue;
@@ -259,7 +259,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             } catch (Exception e) {
                 if (e instanceof IOException) {
                     if (logger.isFinestEnabled()) {
-                        logger.log(Level.FINEST, "Error on connection... conn: " + conn + ", error: " + e);
+                        logger.finest( "Error on connection... conn: " + conn + ", error: " + e);
                     }
                     IOUtil.closeResource(conn);
                 } else {
@@ -270,7 +270,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 if (ErrorHandler.isRetryable(e)) {
                     if (redoOperation || obj instanceof RetryableRequest) {
                         if (logger.isFinestEnabled()) {
-                            logger.log(Level.FINEST, "Retrying " + obj + ", last-conn: " + conn + ", last-error: " + e);
+                            logger.finest( "Retrying " + obj + ", last-conn: " + conn + ", last-error: " + e);
                         }
                         beforeRetry();
                         continue;
@@ -504,7 +504,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     return getConnectionManager().firstConnection(address, authenticator);
                 } catch (IOException e) {
                     lastError = e;
-                    logger.log(Level.FINEST, "IO error during initial connection...", e);
+                    logger.finest( "IO error during initial connection...", e);
                 } catch (AuthenticationException e) {
                     lastError = e;
                     logger.warning("Authentication error on " + address, e);

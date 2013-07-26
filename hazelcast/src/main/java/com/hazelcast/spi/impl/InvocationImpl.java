@@ -280,7 +280,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             try {
                 return get(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
             } catch (TimeoutException e) {
-                logger.log(Level.FINEST, e.getMessage(), e);
+                logger.finest(e);
                 return null;
             }
         }
@@ -323,7 +323,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                     timeout = decrementTimeout(timeout, lastPollTime);
                 } catch (InterruptedException e) {
                     // do not allow interruption while waiting for a response!
-                    logger.log(Level.FINEST, Thread.currentThread().getName() + " is interrupted while waiting " +
+                    logger.finest( Thread.currentThread().getName() + " is interrupted while waiting " +
                             "response for operation " + op);
                     interrupted = e;
                     if (!nodeEngine.isActive()) {
@@ -385,7 +385,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                     final boolean ok = nodeEngine.operationService.waitForBackups(response.callId, response.backupCount, 5, TimeUnit.SECONDS);
                     if (!ok) {
                         if (logger.isFinestEnabled()) {
-                            logger.log(Level.FINEST, "Backup response cannot be received -> " + InvocationImpl.this.toString());
+                            logger.finest( "Backup response cannot be received -> " + InvocationImpl.this.toString());
                         }
                         if (nodeEngine.getClusterService().getMember(target) == null) {
                             return RETRY_RESPONSE;

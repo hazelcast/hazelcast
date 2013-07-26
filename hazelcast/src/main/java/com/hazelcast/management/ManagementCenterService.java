@@ -458,7 +458,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                         connection.getInputStream();
 
                     } catch (Exception e) {
-                        logger.log(Level.FINEST, e.getMessage(), e);
+                        logger.finest(e);
                     }
                     Thread.sleep(updateIntervalMs);
                 }
@@ -466,7 +466,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 if (throwable instanceof OutOfMemoryError) {
                     OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) throwable);
                 }
-                logger.log(Level.FINEST, "Web Management Center will be closed due to exception.", throwable);
+                logger.finest( "Web Management Center will be closed due to exception.", throwable);
                 shutdown();
             }
         }
@@ -514,7 +514,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 request.writeResponse(ManagementCenterService.this, out);
                 connection.getInputStream();
             } catch (Exception e) {
-                logger.log(Level.FINEST, e.getMessage(), e);
+                logger.finest( e);
             }
         }
 
@@ -549,7 +549,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                             }
                         }
                     } catch (Exception e) {
-                        logger.log(Level.FINEST, e.getMessage(), e);
+                        logger.finest(e);
                     }
                     Thread.sleep(700 + rand.nextInt(300));
                 }
@@ -557,7 +557,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 if (throwable instanceof OutOfMemoryError) {
                     OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) throwable);
                 }
-                logger.log(Level.FINEST, "Problem on management center while polling task.", throwable);
+                logger.finest( "Problem on management center while polling task.", throwable);
             }
         }
     }

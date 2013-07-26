@@ -43,14 +43,14 @@ public class ThreadDumpGenerator {
     }
 
     public final String dumpAllThreads() {
-        logger.log(Level.FINEST, "Generating full thread dump...");
+        logger.finest( "Generating full thread dump...");
         StringBuilder s = new StringBuilder();
         s.append("Full thread dump ");
         return dump(getAllThreads(), s);
     }
 
     public final String dumpDeadlocks() {
-        logger.log(Level.FINEST, "Generating dead-locked threads dump...");
+        logger.finest( "Generating dead-locked threads dump...");
         StringBuilder s = new StringBuilder();
         s.append("Deadlocked thread dump ");
         return dump(findDeadlockedThreads(), s);
@@ -60,7 +60,7 @@ public class ThreadDumpGenerator {
         header(s);
         appendThreadInfos(infos, s);
         if (logger.isFinestEnabled()) {
-            logger.log(Level.FINEST, "\n" + s.toString());
+            logger.finest( "\n" + s.toString());
         }
         return s.toString();
     }

@@ -75,7 +75,7 @@ public final class TcpIpConnection implements Connection {
 
     public boolean write(SocketWritable packet) {
         if (!live) {
-            logger.log(Level.FINEST, "Connection is closed, won't write packet -> " + packet);
+            logger.finest( "Connection is closed, won't write packet -> " + packet);
             return false;
         }
         writeHandler.enqueueSocketWritable(packet);

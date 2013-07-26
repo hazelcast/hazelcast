@@ -170,7 +170,7 @@ public class SocketTextReader implements TextCommandConstants, SocketReader {
                 command = new ErrorCommand(UNKNOWN);
             }
         } catch (Throwable t) {
-            logger.log(Level.FINEST, t.getMessage(), t);
+            logger.finest(t);
             command = new ErrorCommand(ERROR_CLIENT, "Invalid command : " + cmd);
         }
     }

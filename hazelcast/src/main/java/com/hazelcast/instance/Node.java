@@ -242,7 +242,7 @@ public class Node {
     }
 
     public void failedConnection(Address address) {
-        logger.log(Level.FINEST, getThisAddress() + " failed connecting to " + address);
+        logger.finest( getThisAddress() + " failed connecting to " + address);
         failedConnections.add(address);
     }
 
@@ -292,13 +292,13 @@ public class Node {
 
     public void setMasterAddress(final Address master) {
         if (master != null) {
-            logger.log(Level.FINEST, "** setting master address to " + master);
+            logger.finest( "** setting master address to " + master);
         }
         masterAddress = master;
     }
 
     public void start() {
-        logger.log(Level.FINEST, "We are asked to start and completelyShutdown is " + String.valueOf(completelyShutdown));
+        logger.finest( "We are asked to start and completelyShutdown is " + String.valueOf(completelyShutdown));
         if (completelyShutdown) return;
         nodeEngine.start();
         connectionManager.start();
@@ -308,10 +308,10 @@ public class Node {
         }
         setActive(true);
         if (!completelyShutdown) {
-            logger.log(Level.FINEST, "Adding ShutdownHook");
+            logger.finest( "Adding ShutdownHook");
             Runtime.getRuntime().addShutdownHook(shutdownHookThread);
         }
-        logger.log(Level.FINEST, "finished starting threads, calling join");
+        logger.finest( "finished starting threads, calling join");
         join();
         int clusterSize = clusterService.getSize();
         if (config.getNetworkConfig().isPortAutoIncrement()
@@ -345,7 +345,7 @@ public class Node {
 
     private void doShutdown(boolean force) {
         long start = Clock.currentTimeMillis();
-        logger.log(Level.FINEST, "** we are being asked to shutdown when active = " + String.valueOf(active));
+        logger.finest( "** we are being asked to shutdown when active = " + String.valueOf(active));
         if (!force && isActive()) {
             final int maxWaitSeconds = groupProperties.GRACEFUL_SHUTDOWN_MAX_WAIT.getInteger();
             if (!partitionService.prepareToSafeShutdown(maxWaitSeconds, TimeUnit.SECONDS)) {
@@ -369,15 +369,15 @@ public class Node {
             if (managementCenterService != null) {
                 managementCenterService.shutdown();
             }
-            logger.log(Level.FINEST, "Shutting down client command service");
+            logger.finest( "Shutting down client command service");
             clientEngine.shutdown();
-            logger.log(Level.FINEST, "Shutting down node engine");
+            logger.finest( "Shutting down node engine");
             nodeEngine.shutdown();
             if (multicastService != null) {
-                logger.log(Level.FINEST, "Shutting down multicast service");
+                logger.finest( "Shutting down multicast service");
                 multicastService.stop();
             }
-            logger.log(Level.FINEST, "Shutting down connection manager");
+            logger.finest( "Shutting down connection manager");
             connectionManager.shutdown();
             textCommandService.stop();
             masterAddress = null;
@@ -392,7 +392,7 @@ public class Node {
             for (int i = 0; i < numThreads; i++) {
                 Thread thread = threads[i];
                 if (thread.isAlive()) {
-                    logger.log(Level.FINEST, "Shutting down thread " + thread.getName());
+                    logger.finest( "Shutting down thread " + thread.getName());
                     thread.interrupt();
                 }
             }
@@ -406,7 +406,7 @@ public class Node {
         joined.set(false);
         joiner.reset();
         final String uuid = UuidUtil.createMemberUuid(address);
-        logger.log(Level.FINEST, "Generated new UUID for local member: " + uuid);
+        logger.finest( "Generated new UUID for local member: " + uuid);
         localMember.setUuid(uuid);
     }
 
@@ -458,7 +458,7 @@ public class Node {
                         shutdown(true, true);
                     }
                 } else {
-                    logger.log(Level.FINEST, "shutdown hook - we are not --> active and not completely down so we are not calling shutdown");
+                    logger.finest( "shutdown hook - we are not --> active and not completely down so we are not calling shutdown");
                 }
             } catch (Exception e) {
                 logger.warning(e);
@@ -553,7 +553,7 @@ public class Node {
     }
 
     public void setAsMaster() {
-        logger.log(Level.FINEST, "This node is being set as the master");
+        logger.finest( "This node is being set as the master");
         systemLogService.logJoin("No master node found! Setting this node as the master.");
         masterAddress = address;
         setJoined();

@@ -350,7 +350,7 @@ final class OperationServiceImpl implements OperationService {
     private void scheduleBackup(Operation op, Backup backup, int partitionId, int replicaIndex) {
         final RemoteCallKey key = new RemoteCallKey(op.getCallerAddress(), op.getCallId());
         if (logger.isFinestEnabled()) {
-            logger.log(Level.FINEST, "Scheduling -> " + backup);
+            logger.finest( "Scheduling -> " + backup);
         }
         backupScheduler.schedule(500, key, new ScheduledBackup(backup, partitionId, replicaIndex));
     }
@@ -363,7 +363,7 @@ final class OperationServiceImpl implements OperationService {
                 if (!backup.backup()) {
                     final int retries = backup.retries;
                     if (logger.isFinestEnabled()) {
-                        logger.log(Level.FINEST, "Re-scheduling[" + retries + "] -> " + backup);
+                        logger.finest( "Re-scheduling[" + retries + "] -> " + backup);
                     }
                     scheduler.schedule(entry.getScheduledDelayMillis() * retries, entry.getKey(), backup);
                 }
@@ -466,7 +466,7 @@ final class OperationServiceImpl implements OperationService {
                 partitionResults.putAll(result.asMap());
             } catch (Throwable t) {
                 if (logger.isFinestEnabled()) {
-                    logger.log(Level.FINEST, t.getMessage(), t);
+                    logger.finest(t);
                 } else {
                     logger.warning(t.getMessage());
                 }
@@ -619,7 +619,7 @@ final class OperationServiceImpl implements OperationService {
     }
 
     void shutdown() {
-        logger.log(Level.FINEST, "Stopping operation threads...");
+        logger.finest( "Stopping operation threads...");
         for (ExecutorService executor : operationExecutors) {
             executor.shutdown();
         }

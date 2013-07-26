@@ -54,7 +54,7 @@ public class MulticastJoiner extends AbstractJoiner {
             node.setMasterAddress(masterAddressNow);
 
             String msg = "Joining to master node: " + node.getMasterAddress();
-            logger.log(Level.FINEST, msg);
+            logger.finest( msg);
             systemLogService.logJoin(msg);
 
             if (node.getMasterAddress() == null || node.getThisAddress().equals(node.getMasterAddress())) {
@@ -85,7 +85,7 @@ public class MulticastJoiner extends AbstractJoiner {
 
     private void doTCP(AtomicBoolean joined) {
         node.setMasterAddress(null);
-        logger.log(Level.FINEST, "Multicast couldn't find cluster. Trying TCP/IP");
+        logger.finest( "Multicast couldn't find cluster. Trying TCP/IP");
         new TcpIpJoiner(node).join(joined);
     }
 
@@ -139,12 +139,12 @@ public class MulticastJoiner extends AbstractJoiner {
             throw new IllegalArgumentException();
         }
         Connection conn = node.connectionManager.getOrConnect(masterAddress);
-        logger.log(Level.FINEST, "Master connection " + conn);
+        logger.finest( "Master connection " + conn);
         systemLogService.logJoin("Master connection " + conn);
         if (conn != null) {
             return node.clusterService.sendJoinRequest(masterAddress, true);
         } else {
-            logger.log(Level.FINEST, "Connecting to master node: " + masterAddress);
+            logger.finest( "Connecting to master node: " + masterAddress);
             return false;
         }
     }

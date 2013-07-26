@@ -214,7 +214,7 @@ public class NodeEngineImpl implements NodeEngine {
         public void run() {
             retries++;
             if (logger.isFinestEnabled()) {
-                logger.log(Level.FINEST, "Retrying[" + retries + "] packet send operation to: " + target);
+                logger.finest( "Retrying[" + retries + "] packet send operation to: " + target);
             }
             send(packet, target, this);
         }
@@ -334,7 +334,7 @@ public class NodeEngineImpl implements NodeEngine {
 
     @PrivateApi
     public void shutdown() {
-        logger.log(Level.FINEST, "Shutting down services...");
+        logger.finest( "Shutting down services...");
         waitNotifyService.shutdown();
         proxyService.shutdown();
         serviceManager.shutdown();

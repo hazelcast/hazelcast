@@ -146,7 +146,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
             } catch (InterruptedException ignored) {
             } catch (TimeoutException ignored) {
             } catch (MemberLeftException e){
-                logger.log(Level.FINEST, e.getMessage(), e);
+                logger.finest(e);
             } catch (ExecutionException e) {
                 throw new HazelcastException(e);
             }
@@ -303,7 +303,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
     }
 
     void shutdown() {
-        logger.log(Level.FINEST, "Stopping event executor...");
+        logger.finest( "Stopping event executor...");
         eventExecutor.shutdown();
         for (EventServiceSegment segment : segments.values()) {
             segment.clear();

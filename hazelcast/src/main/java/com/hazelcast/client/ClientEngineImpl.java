@@ -386,7 +386,7 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
             try {
                 endpoint.destroy();
             } catch (LoginException e) {
-                logger.log(Level.FINEST, e.getMessage());
+                logger.finest( e.getMessage());
             }
             try {
                 final Connection conn = endpoint.getConnection();
@@ -394,7 +394,7 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
                     conn.close( );
                 }
             } catch (Exception e) {
-                logger.log(Level.FINEST, e.getMessage(), e);
+                logger.finest( e);
             }
         }
         endpoints.clear();

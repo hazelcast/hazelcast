@@ -45,7 +45,7 @@ public class TcpIpJoinerOverAWS extends TcpIpJoiner {
     protected Collection<String> getMembers() {
         try {
             List<String> list = aws.getPrivateIpAddresses();
-            logger.log(Level.FINEST, "The list of possible members are: " + list);
+            logger.finest( "The list of possible members are: " + list);
             return list;
         } catch (Exception e) {
             logger.warning(e);

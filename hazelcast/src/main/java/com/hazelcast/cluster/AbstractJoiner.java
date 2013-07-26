@@ -147,14 +147,14 @@ public abstract class AbstractJoiner implements Joiner {
                 try {
                     validJoinRequest = node.getClusterService().validateJoinMessage(joinRequest);
                 } catch (Exception e) {
-                    logger.log(Level.FINEST, e.getMessage());
+                    logger.finest( e.getMessage());
                     validJoinRequest = false;
                 }
                 if (validJoinRequest) {
                     for (Member member : node.getClusterService().getMembers()) {
                         MemberImpl memberImpl = (MemberImpl) member;
                         if (memberImpl.getAddress().equals(joinRequest.getAddress())) {
-                            logger.log(Level.FINEST, "Should not merge to " + joinRequest.getAddress()
+                            logger.finest( "Should not merge to " + joinRequest.getAddress()
                                     + ", because it is already member of this cluster.");
                             return false;
                         }
@@ -165,7 +165,7 @@ public abstract class AbstractJoiner implements Joiner {
                         logger.info(node.getThisAddress() + " is merging to " + joinRequest.getAddress()
                                 + ", because : joinRequest.getMemberCount() > currentMemberCount ["
                                 + (joinRequest.getMemberCount() + " > " + currentMemberCount) + "]");
-                        logger.log(Level.FINEST, joinRequest.toString());
+                        logger.finest( joinRequest.toString());
                         shouldMerge = true;
                     } else if (joinRequest.getMemberCount() == currentMemberCount) {
                         // compare the hashes
@@ -173,10 +173,10 @@ public abstract class AbstractJoiner implements Joiner {
                             logger.info(node.getThisAddress() + " is merging to " + joinRequest.getAddress()
                                     + ", because : node.getThisAddress().hashCode() > joinRequest.address.hashCode() "
                                     + ", this node member count: " + currentMemberCount);
-                            logger.log(Level.FINEST, joinRequest.toString());
+                            logger.finest( joinRequest.toString());
                             shouldMerge = true;
                         } else {
-                            logger.log(Level.FINEST, joinRequest.getAddress() + " should merge to this node "
+                            logger.finest( joinRequest.getAddress() + " should merge to this node "
                                     + ", because : node.getThisAddress().hashCode() < joinRequest.address.hashCode() "
                                     + ", this node member count: " + currentMemberCount);
                         }
@@ -194,7 +194,7 @@ public abstract class AbstractJoiner implements Joiner {
         for (Address possibleAddress : colPossibleAddresses) {
             final Connection conn = node.connectionManager.getOrConnect(possibleAddress);
             if (conn != null) {
-                logger.log(Level.FINEST, "sending join request for " + possibleAddress);
+                logger.finest( "sending join request for " + possibleAddress);
                 node.clusterService.sendJoinRequest(possibleAddress, true);
             }
         }
@@ -221,7 +221,7 @@ public abstract class AbstractJoiner implements Joiner {
             try {
                 f.get(1, TimeUnit.SECONDS);
             } catch (Exception e) {
-                logger.log(Level.FINEST, "While waiting merge response...", e);
+                logger.finest( "While waiting merge response...", e);
             }
         }
         final PrepareMergeOperation prepareMergeOperation = new PrepareMergeOperation(targetAddress);

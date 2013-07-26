@@ -117,7 +117,7 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
             try {
                 f.get(3, TimeUnit.SECONDS);
             } catch (Exception e) {
-                logger.log(Level.FINEST, e.getMessage(), e);
+                logger.finest(e);
             }
         }
         ProxyRegistry registry = registries.get(serviceName);

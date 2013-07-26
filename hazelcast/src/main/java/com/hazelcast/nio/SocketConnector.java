@@ -82,7 +82,7 @@ public class SocketConnector implements Runnable {
                 }
             }
         } catch (Throwable e) {
-            logger.log(Level.FINEST, e.getMessage(), e);
+            logger.finest(e);
             connectionManager.failedConnection(address, e, silent);
         }
     }

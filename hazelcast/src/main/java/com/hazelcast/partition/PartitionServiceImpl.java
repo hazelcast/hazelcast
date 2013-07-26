@@ -178,7 +178,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
 //        nodeEngine.getExecutionService().scheduleAtFixedRate(new Runnable() {
 //            public void run() {
 //                if (node.isMaster() && node.isActive() && initialized && shouldCheckRepartitioning()) {
-//                    logger.log(Level.FINEST, "Checking partition table for repartitioning...");
+//                    logger.finest( "Checking partition table for repartitioning...");
 //                    migrationQueue.add(new RepartitioningTask(false));
 //                }
 //            }
@@ -204,7 +204,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                     f.get(1, TimeUnit.SECONDS);
                 }
             } catch (Exception e) {
-                logger.log(Level.FINEST, e.getMessage(), e);
+                logger.finest(e);
             } finally {
                 lock.unlock();
             }
@@ -355,7 +355,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                     try {
                         nodeEngine.getOperationService().send(op, member.getAddress());
                     } catch (Exception e) {
-                        logger.log(Level.FINEST, e.getMessage(), e);
+                        logger.finest(e);
                     }
                 }
             }
@@ -398,7 +398,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                     Address address = newPartition.getReplicaAddress(index);
                     if (address != null && getMember(address) == null) {
                         if (logger.isFinestEnabled()) {
-                            logger.log(Level.FINEST,
+                            logger.finest(
                                     "Unknown " + address + " is found in partition table sent from master "
                                             + sender + ". Probably it's already left the cluster. Partition: " + newPartition);
                         }
@@ -520,7 +520,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 if (oldMaster) {
                     logger.info("Finalizing migration instantiated by the old master -> " + oldMigration);
                 } else {
-                    logger.log(Level.FINEST, "Finalizing previous migration -> " + oldMigration);
+                    logger.finest( "Finalizing previous migration -> " + oldMigration);
                 }
                 finalizeActiveMigration(oldMigration);
                 activeMigrations.put(partitionId, newMigration);
@@ -685,7 +685,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             boolean ok = checkReplicaSyncState();
             timeoutInMillis -= (Clock.currentTimeMillis() - start);
             if (ok) {
-                logger.log(Level.FINEST, "Replica sync state before shutdown is OK");
+                logger.finest( "Replica sync state before shutdown is OK");
                 return true;
             } else {
                 if (timeoutInMillis < 0) {
@@ -1108,7 +1108,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 sendMigrationEvent(migrationInfo, MigrationStatus.STARTED);
                 Boolean result = Boolean.FALSE;
                 MemberImpl fromMember = getMember(migrationInfo.getSource());
-                logger.log(Level.FINEST, "Started Migration : " + migrationInfo);
+                logger.finest( "Started Migration : " + migrationInfo);
                 systemLogService.logPartition("Started Migration : " + migrationInfo);
                 if (fromMember != null) {
                     Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME,
@@ -1127,7 +1127,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                     result = Boolean.TRUE;
                 }
                 if (Boolean.TRUE.equals(result)) {
-                    logger.log(Level.FINEST, "Finished Migration: " + migrationInfo);
+                    logger.finest( "Finished Migration: " + migrationInfo);
                     systemLogService.logPartition("Finished Migration: " + migrationInfo);
                     processMigrationResult();
                 } else {
@@ -1138,7 +1138,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             } catch (Throwable t) {
                 final Level level = migrationInfo.isValid() ? Level.WARNING : Level.FINEST;
                 logger.log(level, "Error [" + t.getClass() + ": " + t.getMessage() + "] while executing " + migrationRequestOp);
-                logger.log(Level.FINEST, t.getMessage(), t);
+                logger.finest(t);
                 migrationTaskFailed();
             }
         }
@@ -1214,7 +1214,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                     }
                 }
             } catch (InterruptedException e) {
-                logger.log(Level.FINEST, "MigrationThread is interrupted: " + e.getMessage());
+                logger.finest( "MigrationThread is interrupted: " + e.getMessage());
             } finally {
                 clearMigrationQueue();
             }
@@ -1306,7 +1306,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
     }
 
     public void shutdown() {
-        logger.log(Level.FINEST, "Shutting down the partition service");
+        logger.finest( "Shutting down the partition service");
         migrationThread.stopNow();
         reset();
     }

@@ -68,7 +68,7 @@ public class EvictionProcessor implements ScheduledEntryProcessor<Data, Object>{
             try {
                 future.get(30, TimeUnit.SECONDS);
             } catch (TimeoutException e) {
-                logger.log(Level.FINEST, e.getMessage(), e);
+                logger.finest(e);
             } catch (Exception e) {
                 logger.warning(e);
             }

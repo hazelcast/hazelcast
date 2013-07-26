@@ -228,7 +228,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             }
             if (deadAddresses != null) {
                 for (Address address : deadAddresses) {
-                    logger.log(Level.FINEST, "No heartbeat should remove " + address);
+                    logger.finest( "No heartbeat should remove " + address);
                     removeAddress(address);
                 }
             }
@@ -259,7 +259,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                     if (conn != null) {
                         sendHeartbeat(address);
                     } else {
-                        logger.log(Level.FINEST, "Could not connect to " + address + " to send heartbeat");
+                        logger.finest( "Could not connect to " + address + " to send heartbeat");
                     }
                 }
             }
@@ -299,7 +299,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         try {
             node.nodeEngine.getOperationService().send(new HeartbeatOperation(), target);
         } catch (Exception e) {
-            logger.log(Level.FINEST, "Error while sending heartbeat -> "
+            logger.finest( "Error while sending heartbeat -> "
                     + e.getClass().getName() + "[" + e.getMessage() + "]");
         }
     }
@@ -310,16 +310,16 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
         final Address masterAddress = getMasterAddress();
         if (masterAddress == null) {
-            logger.log(Level.FINEST, "Could not send MasterConfirmation, master is null!");
+            logger.finest( "Could not send MasterConfirmation, master is null!");
             return;
         }
         final MemberImpl masterMember = getMember(masterAddress);
         if (masterMember == null) {
-            logger.log(Level.FINEST, "Could not send MasterConfirmation, master is null!");
+            logger.finest( "Could not send MasterConfirmation, master is null!");
             return;
         }
         if (logger.isFinestEnabled()) {
-            logger.log(Level.FINEST, "Sending MasterConfirmation to " + masterMember);
+            logger.finest( "Sending MasterConfirmation to " + masterMember);
         }
         nodeEngine.getOperationService().send(new MasterConfirmationOperation(), masterAddress);
     }
@@ -415,7 +415,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         } else {
             node.setMasterAddress(null);
         }
-        logger.log(Level.FINEST, "Now Master " + node.getMasterAddress());
+        logger.finest( "Now Master " + node.getMasterAddress());
     }
 
     void handleJoinRequest(JoinRequestOperation joinRequest) {
@@ -425,7 +425,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             final long now = Clock.currentTimeMillis();
             String msg = "Handling join from " + joinMessage.getAddress() + ", inProgress: " + joinInProgress
                     + (timeToStartJoin > 0 ? ", timeToStart: " + (timeToStartJoin - now) : "");
-            logger.log(Level.FINEST, msg);
+            logger.finest( msg);
             boolean validJoinRequest;
             try {
                 validJoinRequest = validateJoinMessage(joinMessage);
@@ -438,7 +438,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 if (member != null) {
                     if (joinMessage.getUuid().equals(member.getUuid())) {
                         String message = "Ignoring join request, member already exists.. => " + joinMessage;
-                        logger.log(Level.FINEST, message);
+                        logger.finest( message);
                         // send members update back to node trying to join again...
                         nodeEngine.getOperationService().send(new MemberInfoUpdateOperation(createMemberInfos(getMemberList()), getClusterTime(), false),
                                 member.getAddress());
@@ -480,7 +480,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                                 securityLogger.severe("Authentication has failed for " + cr.getPrincipal()
                                         + '@' + cr.getEndpoint() + " => (" + e.getMessage() +
                                         ")");
-                                securityLogger.log(Level.FINEST, e.getMessage(), e);
+                                securityLogger.finest(e);
                                 nodeEngine.getOperationService().send(new AuthenticationFailureOperation(), joinMessage.getAddress());
                                 return;
                             }
@@ -521,7 +521,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         lock.lock();
         try {
             if (!node.joined() && !node.getThisAddress().equals(masterAddress)) {
-                logger.log(Level.FINEST, "Handling master response: " + this);
+                logger.finest( "Handling master response: " + this);
                 final Address currentMaster = node.getMasterAddress();
                 if (currentMaster != null && !currentMaster.equals(masterAddress)) {
                     final Connection conn = node.connectionManager.getConnection(currentMaster);
@@ -545,7 +545,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     void acceptMasterConfirmation(MemberImpl member) {
         if (member != null) {
             if (logger.isFinestEnabled()) {
-                logger.log(Level.FINEST, "MasterConfirmation has been received from " + member);
+                logger.finest( "MasterConfirmation has been received from " + member);
             }
             masterConfirmationTimes.put(member, Clock.currentTimeMillis());
         }
@@ -628,7 +628,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     }
 
     void startJoin() {
-        logger.log(Level.FINEST, "Starting Join.");
+        logger.finest( "Starting Join.");
         lock.lock();
         try {
             joinInProgress = true;
@@ -658,7 +658,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 try {
                     future.get(10, TimeUnit.SECONDS);
                 } catch (TimeoutException ignored) {
-                    logger.log(Level.FINEST, "Finalize join call timed-out: " + future);
+                    logger.finest( "Finalize join call timed-out: " + future);
                 } catch (Exception e) {
                     logger.warning("While waiting finalize join calls...", e);
                 }
@@ -693,7 +693,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                     }
                 }
                 if (same) {
-                    logger.log(Level.FINEST, "No need to process member update...");
+                    logger.finest( "No need to process member update...");
                     return;
                 }
             }
@@ -737,7 +737,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     }
 
     public void connectionRemoved(Connection connection) {
-        logger.log(Level.FINEST, "Connection is removed " + connection.getEndPoint());
+        logger.finest( "Connection is removed " + connection.getEndPoint());
         if (!node.joined()) {
             final Address masterAddress = node.getMasterAddress();
             if (masterAddress != null && masterAddress.equals(connection.getEndPoint())) {
@@ -757,7 +757,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private void setMembers(MemberImpl... members) {
         if (members == null || members.length == 0) return;
-        logger.log(Level.FINEST, "Updating members -> " + Arrays.toString(members));
+        logger.finest( "Updating members -> " + Arrays.toString(members));
         lock.lock();
         try {
             Collection<MemberImpl> newMembers = new LinkedList<MemberImpl>();
@@ -798,7 +798,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 nodeEngine.onMemberLeft(deadMember);                  // sync call
                 sendMembershipEventNotifications(deadMember, false); // async events
                 if (node.isMaster()) {
-                    logger.log(Level.FINEST, deadMember + " is dead. Sending remove to all other members.");
+                    logger.finest( deadMember + " is dead. Sending remove to all other members.");
                     invokeMemberRemoveOperation(deadMember.getAddress());
                 }
             }
