@@ -104,6 +104,7 @@ public class IndexImpl implements Index {
 
     private Comparable convert(Comparable value) {
         if (attributeType == null) return value;
+        if (attributeType == AttributeType.ENUM) return value;
         return attributeType.getConverter().convert(value);
     }
 
