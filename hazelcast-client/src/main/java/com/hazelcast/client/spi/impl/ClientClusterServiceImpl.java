@@ -178,7 +178,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 }
                 throw ExceptionUtil.rethrow(e, IOException.class);
             } finally {
-                if (release) {
+                if (release && conn != null) {
                     conn.release();
                 }
             }
@@ -263,8 +263,9 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     }
                     IOUtil.closeResource(conn);
                 } else {
-                    assert conn != null;
-                    conn.release();
+                    if (conn != null) {
+                        conn.release();
+                    }
                 }
                 if (ErrorHandler.isRetryable(e)) {
                     if (redoOperation || obj instanceof RetryableRequest) {

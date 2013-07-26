@@ -1388,4 +1388,28 @@ public class QueryTest extends HazelcastTestSupport {
             ex.shutdownNow();
         }
     }
+
+    @Test
+    public void testIndexingEnumAttributeIssue597() {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
+        final IMap<Integer, Value> map = instance.getMap("default");
+        map.addIndex("state", true);
+        for (int i = 0; i < 4; i++) {
+            final Value v = new Value(i % 2 == 0 ? State.STATE1 : State.STATE2, new ValueType(), i);
+            map.put(i, v);
+        }
+        final Predicate predicate = new PredicateBuilder().getEntryObject().get("state").equal(State.STATE1);
+        final Collection<Value> values = map.values(predicate);
+        final int[] expectedValues = new int[]{0, 2};
+        assertEquals(expectedValues.length, values.size());
+        final int[] indexes = new int[2];
+        int index = 0;
+        for (final Value configObject : values) {
+            indexes[index++] = configObject.getIndex();
+        }
+        Arrays.sort(indexes);
+        assertArrayEquals(indexes, expectedValues);
+    }
+
 }

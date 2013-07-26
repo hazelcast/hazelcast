@@ -32,6 +32,7 @@ import com.hazelcast.partition.client.PartitionsResponse;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -61,7 +62,10 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     }
 
     public void refreshPartitions() {
-        client.getClientExecutionService().execute(new RefreshTask());
+        try {
+            client.getClientExecutionService().execute(new RefreshTask());
+        } catch (RejectedExecutionException ignored) {
+        }
     }
 
     private class RefreshTask implements Runnable {

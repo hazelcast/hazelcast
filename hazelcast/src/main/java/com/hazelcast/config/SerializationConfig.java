@@ -49,7 +49,7 @@ public class SerializationConfig {
 
     private boolean enableSharedObject = false;
 
-    private boolean allowUnsafe = true;
+    private boolean allowUnsafe = false;
 
     private Set<ClassDefinition> classDefinitions;
 
