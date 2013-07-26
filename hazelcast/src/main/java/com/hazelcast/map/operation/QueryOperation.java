@@ -104,6 +104,9 @@ public class QueryOperation extends AbstractMapOperation {
                         } else {
                             value = record.getValue();
                         }
+                        if (value == null) {
+                            continue;
+                        }
                         final QueryEntry queryEntry = new QueryEntry(ss, key, key, value);
                         if (predicate.apply(queryEntry)) {
                             if (partitionResult == null) {

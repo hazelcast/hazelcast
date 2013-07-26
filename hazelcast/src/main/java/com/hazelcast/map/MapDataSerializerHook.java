@@ -17,6 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.map.operation.*;
+import com.hazelcast.map.record.CachedDataRecord;
 import com.hazelcast.map.record.DataRecord;
 import com.hazelcast.map.record.ObjectRecord;
 import com.hazelcast.monitor.impl.LocalMapStatsImpl;
@@ -39,13 +40,14 @@ public final class MapDataSerializerHook implements DataSerializerHook {
     public static final int REMOVE_BACKUP = 4;
     public static final int DATA_RECORD = 5;
     public static final int OBJECT_RECORD = 6;
-    public static final int KEY_SET = 7;
-    public static final int VALUES = 8;
-    public static final int ENTRY_SET = 9;
-    public static final int ENTRY_VIEW = 10;
-    public static final int MAP_STATS = 11;
-    public static final int QUERY_RESULT_ENTRY = 12;
-    public static final int QUERY_RESULT_SET = 13;
+    public static final int CACHED_RECORD = 7;
+    public static final int KEY_SET = 8;
+    public static final int VALUES = 9;
+    public static final int ENTRY_SET = 10;
+    public static final int ENTRY_VIEW = 11;
+    public static final int MAP_STATS = 12;
+    public static final int QUERY_RESULT_ENTRY = 13;
+    public static final int QUERY_RESULT_SET = 14;
 
     private static final int LEN = QUERY_RESULT_SET + 1;
 
@@ -79,6 +81,11 @@ public final class MapDataSerializerHook implements DataSerializerHook {
         constructors[OBJECT_RECORD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new ObjectRecord();
+            }
+        };
+        constructors[CACHED_RECORD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CachedDataRecord();
             }
         };
         constructors[PUT_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {

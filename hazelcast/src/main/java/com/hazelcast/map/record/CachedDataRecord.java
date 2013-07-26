@@ -16,34 +16,24 @@
 
 package com.hazelcast.map.record;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.map.MapDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-import java.io.IOException;
+public final class CachedDataRecord extends DataRecord implements IdentifiedDataSerializable {
 
-public class CachedDataRecord extends AbstractRecord<Data> {
-
-    private volatile Data value;
     private transient volatile Object cachedValue;
 
     public CachedDataRecord() {
     }
 
     public CachedDataRecord(Data keyData, Data value, boolean statisticsEnabled) {
-        super(keyData, statisticsEnabled);
-        this.value = value;
-    }
-
-    public Data getValue() {
-        return value;
+        super(keyData, value, statisticsEnabled);
     }
 
     public Data setValue(Data o) {
         cachedValue = null;
-        Data old = value;
-        this.value = o;
-        return old;
+        return super.setValue(o);
     }
 
     public Object getCachedValue() {
@@ -54,21 +44,11 @@ public class CachedDataRecord extends AbstractRecord<Data> {
         this.cachedValue = cachedValue;
     }
 
-    @Override
-    public long getCost() {
-        return key.totalSize() + value.totalSize();
+    public int getFactoryId() {
+        return MapDataSerializerHook.F_ID;
     }
 
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        super.writeData(out);
-        value.writeData(out);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        super.readData(in);
-        value = new Data();
-        value.readData(in);
+    public int getId() {
+        return MapDataSerializerHook.CACHED_RECORD;
     }
 }

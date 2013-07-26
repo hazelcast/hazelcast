@@ -58,7 +58,12 @@ public class AddIndexOperation extends AbstractNamedOperation implements Partiti
         Index index = indexService.addOrGetIndex(attributeName, ordered);
         for (Record record : records.values()) {
             Data key = record.getKey();
-            index.saveEntryIndex(new QueryEntry(ss, key, key, record.getValue()));
+            Object value = record.getValue();
+            if (value == null) {
+                // see optimization at PartitionRecordStore.get(Data dataKey)
+                continue;
+            }
+            index.saveEntryIndex(new QueryEntry(ss, key, key, value));
         }
     }
 

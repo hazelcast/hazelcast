@@ -20,7 +20,6 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.query.Predicate;
 
 import java.util.Collection;
 import java.util.Map;
@@ -99,6 +98,4 @@ public interface RecordStore {
     void reset();
 
     boolean forceUnlock(Data dataKey);
-
-    QueryResult query(Predicate predicate);
 }

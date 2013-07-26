@@ -25,8 +25,9 @@ import com.hazelcast.spi.PartitionAwareOperation;
 import java.io.IOException;
 
 public class QueryPartitionOperation extends AbstractMapOperation implements PartitionAwareOperation {
-    Predicate predicate;
-    QueryResult result;
+
+    private Predicate predicate;
+    private transient QueryResult result;
 
     public QueryPartitionOperation(String mapName, Predicate predicate) {
         super(mapName);
@@ -37,8 +38,7 @@ public class QueryPartitionOperation extends AbstractMapOperation implements Par
     }
 
     public void run() {
-        result = new QueryResult();
-        mapService.queryOnPartition(name, predicate, getPartitionId(), result);
+        result = mapService.queryOnPartition(name, predicate, getPartitionId());
     }
 
     @Override
@@ -49,14 +49,12 @@ public class QueryPartitionOperation extends AbstractMapOperation implements Par
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeUTF(name);
         out.writeObject(predicate);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        name = in.readUTF();
         predicate = in.readObject();
     }
 }

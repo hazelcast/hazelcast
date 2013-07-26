@@ -25,10 +25,8 @@ import com.hazelcast.map.record.ObjectRecord;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
-import com.hazelcast.query.impl.QueryResultEntryImpl;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
@@ -126,8 +124,9 @@ public class PartitionRecordStore implements RecordStore {
                 testValue = mapService.toObject(value);
             }
 
-            if (record.getValue().equals(testValue))
+            if (record.getValue().equals(testValue)) {
                 return true;
+            }
         }
         return false;
     }
@@ -150,19 +149,6 @@ public class PartitionRecordStore implements RecordStore {
 
     public boolean forceUnlock(Data dataKey) {
         return lockStore != null && lockStore.forceUnlock(dataKey);
-    }
-
-    public QueryResult query(Predicate predicate) {
-        QueryResult result = new QueryResult();
-        SerializationService serializationService = mapService.getNodeEngine().getSerializationService();
-        for (Record record : records.values()) {
-            Data key = record.getKey();
-            QueryEntry queryEntry = new QueryEntry(serializationService, key, key, record.getValue());
-            if (predicate.apply(queryEntry)) {
-                result.add(new QueryResultEntryImpl(key, key, queryEntry.getValueData()));
-            }
-        }
-        return result;
     }
 
     public boolean isLocked(Data dataKey) {
@@ -589,7 +575,7 @@ public class PartitionRecordStore implements RecordStore {
             long writeDelayMillis = mapContainer.getWriteDelayMillis();
             if (writeDelayMillis == 0) {
                 store.delete(mapService.toObject(key));
-                // todo ea record will be deleted then why calling onstore
+                // todo ea record will be deleted then why calling onStore
                 if (record != null)
                     record.onStore();
             } else {

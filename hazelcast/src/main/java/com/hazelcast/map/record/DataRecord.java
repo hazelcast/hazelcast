@@ -24,9 +24,9 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
-public final class DataRecord extends AbstractRecord<Data> implements Record<Data>, IdentifiedDataSerializable {
+public /*final*/ class DataRecord extends AbstractRecord<Data> implements Record<Data>, IdentifiedDataSerializable {
 
-    private volatile Data value;
+    protected volatile Data value;
 
     public DataRecord(Data keyData, Data value, boolean statisticsEnabled) {
         super(keyData, statisticsEnabled);
