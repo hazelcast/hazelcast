@@ -114,7 +114,7 @@ public class LongRunningTest {
     }
 
     void log(Object obj) {
-        logger.log(Level.INFO, obj.toString());
+        logger.info(obj.toString());
     }
 
     void addNode() {
@@ -227,7 +227,7 @@ public class LongRunningTest {
                             Thread.sleep(STATS_SECONDS * 1000);
                             int clusterSize = hazelcast.getCluster().getMembers().size();
                             Stats currentStats = stats.getAndReset();
-                            logger.log(Level.INFO, "Cluster size: " + clusterSize + ", Operations per Second: "
+                            logger.info("Cluster size: " + clusterSize + ", Operations per Second: "
                                     + (currentStats.total() / STATS_SECONDS));
                         } catch (HazelcastInstanceNotActiveException ignored) {
                         } catch (Exception e) {

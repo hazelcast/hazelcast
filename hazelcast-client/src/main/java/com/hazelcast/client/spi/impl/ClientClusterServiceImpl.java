@@ -409,7 +409,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 members.add((MemberImpl) serializationService.toObject(d));
             }
             updateMembersRef();
-            logger.log(Level.INFO, membersString());
+            logger.info( membersString());
             final List<MembershipEvent> events = new LinkedList<MembershipEvent>();
             for (MemberImpl member : members) {
                 final MemberImpl former = prevMembers.remove(member.getUuid());
@@ -438,7 +438,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     getConnectionManager().removeConnectionPool(member.getAddress());
                 }
                 updateMembersRef();
-                logger.log(Level.INFO, membersString());
+                logger.info(membersString());
                 fireMembershipEvent(event);
             }
         }

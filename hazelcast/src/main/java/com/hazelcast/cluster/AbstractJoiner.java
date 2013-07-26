@@ -115,7 +115,7 @@ public abstract class AbstractJoiner implements Joiner {
             final StringBuilder sb = new StringBuilder();
             sb.append("\n");
             sb.append(node.clusterService.membersString());
-            logger.log(Level.INFO, sb.toString());
+            logger.info(sb.toString());
         }
     }
 
@@ -162,7 +162,7 @@ public abstract class AbstractJoiner implements Joiner {
                     int currentMemberCount = node.getClusterService().getMembers().size();
                     if (joinRequest.getMemberCount() > currentMemberCount) {
                         // I should join the other cluster
-                        logger.log(Level.INFO, node.getThisAddress() + " is merging to " + joinRequest.getAddress()
+                        logger.info(node.getThisAddress() + " is merging to " + joinRequest.getAddress()
                                 + ", because : joinRequest.getMemberCount() > currentMemberCount ["
                                 + (joinRequest.getMemberCount() + " > " + currentMemberCount) + "]");
                         logger.log(Level.FINEST, joinRequest.toString());
@@ -170,7 +170,7 @@ public abstract class AbstractJoiner implements Joiner {
                     } else if (joinRequest.getMemberCount() == currentMemberCount) {
                         // compare the hashes
                         if (node.getThisAddress().hashCode() > joinRequest.getAddress().hashCode()) {
-                            logger.log(Level.INFO, node.getThisAddress() + " is merging to " + joinRequest.getAddress()
+                            logger.info(node.getThisAddress() + " is merging to " + joinRequest.getAddress()
                                     + ", because : node.getThisAddress().hashCode() > joinRequest.address.hashCode() "
                                     + ", this node member count: " + currentMemberCount);
                             logger.log(Level.FINEST, joinRequest.toString());

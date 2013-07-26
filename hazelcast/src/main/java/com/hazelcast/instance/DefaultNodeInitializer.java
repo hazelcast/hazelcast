@@ -40,9 +40,9 @@ public class DefaultNodeInitializer implements NodeInitializer {
     }
 
     public void printNodeInfo(Node node) {
-        systemLogger.log(Level.INFO, "Hazelcast Community Edition " + version + " ("
+        systemLogger.info("Hazelcast Community Edition " + version + " ("
                 + build + ") starting at " + node.getThisAddress());
-        systemLogger.log(Level.INFO, "Copyright (C) 2008-2013 Hazelcast.com");
+        systemLogger.info("Copyright (C) 2008-2013 Hazelcast.com");
     }
 
     public void afterInitialize(Node node) {
@@ -91,6 +91,6 @@ public class DefaultNodeInitializer implements NodeInitializer {
     }
 
     public void destroy() {
-        logger.log(Level.INFO, "Destroying node initializer.");
+        logger.info("Destroying node initializer.");
     }
 }

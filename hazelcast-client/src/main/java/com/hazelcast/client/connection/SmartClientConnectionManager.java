@@ -177,7 +177,7 @@ public class SmartClientConnectionManager implements ClientConnectionManager {
         }
 
         public void close() {
-            logger.log(Level.INFO, "Closing connection -> " + connection);
+            logger.info("Closing connection -> " + connection);
             IOUtil.closeResource(connection);
         }
 

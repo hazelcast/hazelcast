@@ -277,7 +277,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                     for (int i = 0; i < 5; i++) {
                         try {
                             if (address.getInetAddress().isReachable(null, icmpTtl, icmpTimeout)) {
-                                logger.log(Level.INFO, thisAddress + " pings successfully. Target: " + address);
+                                logger.info(thisAddress + " pings successfully. Target: " + address);
                                 return;
                             }
                         } catch (ConnectException ignored) {
@@ -378,7 +378,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             MemberImpl deadMember = getMember(deadAddress);
             if (deadMember != null) {
                 removeMember(deadMember);
-                logger.log(Level.INFO, membersString());
+                logger.info(membersString());
             }
         } finally {
             lock.unlock();
@@ -406,7 +406,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 logger.log(Level.WARNING, "Old master is dead and this node is not master " +
                         "but member list contains only " + size + " members! -> " + members);
             }
-            logger.log(Level.INFO, "Master " + oldMasterAddress + " left the cluster. Assigning new master " + newMaster);
+            logger.info("Master " + oldMasterAddress + " left the cluster. Assigning new master " + newMaster);
             if (newMaster != null) {
                 node.setMasterAddress(newMaster.getAddress());
             } else {
@@ -714,7 +714,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             joinReset();
             heartBeater();
             node.setJoined();
-            logger.log(Level.INFO, membersString());
+            logger.info(membersString());
         } finally {
             lock.unlock();
         }
@@ -785,7 +785,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     }
 
     private void removeMember(MemberImpl deadMember) {
-        logger.log(Level.INFO, "Removing " + deadMember);
+        logger.info("Removing " + deadMember);
         lock.lock();
         try {
             final Map<Address, MemberImpl> members = membersRef.get();

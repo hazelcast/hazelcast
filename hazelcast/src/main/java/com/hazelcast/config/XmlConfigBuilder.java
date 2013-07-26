@@ -76,7 +76,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         try {
             if (configFile != null) {
                 configurationFile = new File(configFile);
-                logger.log(Level.INFO, "Using configuration file at " + configurationFile.getAbsolutePath());
+                logger.info("Using configuration file at " + configurationFile.getAbsolutePath());
                 if (!configurationFile.exists()) {
                     String msg = "Config file at '" + configurationFile.getAbsolutePath() + "' doesn't exist.";
                     msg += "\nHazelcast will try to use the hazelcast.xml config file in the working directory.";
@@ -92,7 +92,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 }
             }
             if (configurationFile != null) {
-                logger.log(Level.INFO, "Using configuration file at " + configurationFile.getAbsolutePath());
+                logger.info("Using configuration file at " + configurationFile.getAbsolutePath());
                 try {
                     in = new FileInputStream(configurationFile);
                     configurationUrl = configurationFile.toURI().toURL();
@@ -106,7 +106,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 }
             }
             if (in == null) {
-                logger.log(Level.INFO, "Looking for hazelcast.xml config file in classpath.");
+                logger.info("Looking for hazelcast.xml config file in classpath.");
                 configurationUrl = Config.class.getClassLoader().getResource("hazelcast.xml");
                 if (configurationUrl == null) {
                     configurationUrl = Config.class.getClassLoader().getResource("hazelcast-default.xml");
@@ -118,7 +118,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                         return;
                     }
                 }
-                logger.log(Level.INFO, "Using configuration file " + configurationUrl.getFile() + " in the classpath.");
+                logger.info("Using configuration file " + configurationUrl.getFile() + " in the classpath.");
                 in = configurationUrl.openStream();
                 if (in == null) {
                     String msg = "Having problem reading config file hazelcast-default.xml in the classpath.";
@@ -377,7 +377,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         try {
             return Integer.parseInt(value);
         } catch (final Exception e) {
-            logger.log(Level.INFO, parameterName + " parameter value, [" + value
+            logger.info( parameterName + " parameter value, [" + value
                     + "], is not a proper integer. Default value, [" + defaultValue + "], will be used!");
             logger.log(Level.WARNING, e.getMessage(), e);
             return defaultValue;

@@ -398,7 +398,7 @@ public class Node {
             }
             failedConnections.clear();
             systemLogService.shutdown();
-            logger.log(Level.INFO, "Hazelcast Shutdown is completed in " + (Clock.currentTimeMillis() - start) + " ms.");
+            logger.info("Hazelcast Shutdown is completed in " + (Clock.currentTimeMillis() - start) + " ms.");
         }
     }
 

@@ -38,7 +38,7 @@ class SocketPacketWriter implements SocketWriter<Packet> {
         boolean symmetricEncryptionEnabled = CipherHelper.isSymmetricEncryptionEnabled(ioService);
         if (symmetricEncryptionEnabled) {
             packetWriter = new SymmetricCipherPacketWriter();
-            logger.log(Level.INFO, "Writer started with SymmetricEncryption");
+            logger.info("Writer started with SymmetricEncryption");
         } else {
             packetWriter = new DefaultPacketWriter();
         }

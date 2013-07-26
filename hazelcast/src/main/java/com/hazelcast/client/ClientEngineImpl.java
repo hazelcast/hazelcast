@@ -190,7 +190,7 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
 
     private void destroyEndpoint(ClientEndpoint endpoint, boolean closeImmediately) {
         if (endpoint != null) {
-            logger.log(Level.INFO, "Destroying " + endpoint);
+            logger.info("Destroying " + endpoint);
             try {
                 endpoint.destroy();
             } catch (LoginException e) {

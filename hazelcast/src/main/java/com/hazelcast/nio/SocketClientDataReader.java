@@ -71,7 +71,7 @@ class SocketClientDataReader implements SocketReader {
             } else if (ClientTypes.RUBY.equals(type)) {
                 connection.setType(ConnectionType.RUBY_CLIENT);
             } else {
-                ioService.getLogger(getClass().getName()).log(Level.INFO, "Unknown client type: " + type);
+                ioService.getLogger(getClass().getName()).info("Unknown client type: " + type);
                 connection.setType(ConnectionType.BINARY_CLIENT);
             }
             return true;

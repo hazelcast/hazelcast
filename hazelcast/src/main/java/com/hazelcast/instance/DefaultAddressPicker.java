@@ -210,7 +210,7 @@ class DefaultAddressPicker implements AddressPicker {
                 if (AddressUtil.isIpAddress(configInterface)) {
                     interfaces.add(new InterfaceDefinition(addressDomainMap.get(configInterface), configInterface));
                 } else {
-                    logger.log(Level.INFO, "'" + configInterface
+                    logger.info("'" + configInterface
                             + "' is not an IP address! Removing from interface list.");
                 }
             }
@@ -233,7 +233,7 @@ class DefaultAddressPicker implements AddressPicker {
         for (InetAddress inetAddress : inetAddresses) {
             addresses.add(inetAddress.getHostAddress());
         }
-        logger.log(Level.INFO, "Resolving domain name '" + domainName + "' to address(es): " + addresses);
+        logger.info("Resolving domain name '" + domainName + "' to address(es): " + addresses);
         return addresses;
     }
 

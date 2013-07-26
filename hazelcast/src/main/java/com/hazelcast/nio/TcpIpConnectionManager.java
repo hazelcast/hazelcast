@@ -113,7 +113,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         SSLConfig sslConfig = ioService.getSSLConfig();
         if (sslConfig != null && sslConfig.isEnabled()) {
             socketChannelWrapperFactory = new SSLSocketChannelWrapperFactory(sslConfig);
-            logger.log(Level.INFO, "SSL is enabled");
+            logger.info("SSL is enabled");
         } else {
             socketChannelWrapperFactory = new DefaultSocketChannelWrapperFactory();
         }
@@ -132,7 +132,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
                     logger.severe( "SocketInterceptor must be instance of " + MemberSocketInterceptor.class.getName());
                     implementation = null;
                 } else {
-                    logger.log(Level.INFO, "SocketInterceptor is enabled");
+                    logger.info("SocketInterceptor is enabled");
                 }
             }
             if (implementation != null) {

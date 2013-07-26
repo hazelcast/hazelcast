@@ -32,7 +32,7 @@ public class InMemoryXmlConfig extends Config {
 
     public InMemoryXmlConfig(String xml) {
         super();
-        logger.log(Level.INFO, "Configuring Hazelcast from 'in-memory xml'.");
+        logger.info("Configuring Hazelcast from 'in-memory xml'.");
         if (xml == null || "".equals(xml.trim())) {
             throw new IllegalArgumentException("XML configuration is null or empty! Please use a well-structured xml.");
         }

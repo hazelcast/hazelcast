@@ -197,20 +197,20 @@ public class SimpleMapTest {
             long removesNow = removes.getAndSet(0);
             long total = getsNow + putsNow + removesNow;
 
-            logger.log(Level.INFO, "total= " + total + ", gets:" + getsNow
+            logger.info("total= " + total + ", gets:" + getsNow
                     + ", puts:" + putsNow + ", removes:" + removesNow);
-            logger.log(Level.INFO, "Operations per Second : " + total / STATS_SECONDS);
+            logger.info("Operations per Second : " + total / STATS_SECONDS);
         }
     }
 
     private void printVariables() {
-        logger.log(Level.INFO, "Starting Test with ");
-        logger.log(Level.INFO, "Thread Count: " + threadCount);
-        logger.log(Level.INFO, "Entry Count: " + entryCount);
-        logger.log(Level.INFO, "Value Size: " + valueSize);
-        logger.log(Level.INFO, "Get Percentage: " + getPercentage);
-        logger.log(Level.INFO, "Put Percentage: " + putPercentage);
-        logger.log(Level.INFO, "Remove Percentage: " + (100 - (putPercentage + getPercentage)));
-        logger.log(Level.INFO, "Load: " + load);
+        logger.info("Starting Test with ");
+        logger.info("Thread Count: " + threadCount);
+        logger.info("Entry Count: " + entryCount);
+        logger.info("Value Size: " + valueSize);
+        logger.info("Get Percentage: " + getPercentage);
+        logger.info("Put Percentage: " + putPercentage);
+        logger.info("Remove Percentage: " + (100 - (putPercentage + getPercentage)));
+        logger.info("Load: " + load);
     }
 }

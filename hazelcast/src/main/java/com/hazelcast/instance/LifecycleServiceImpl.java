@@ -58,7 +58,7 @@ public class LifecycleServiceImpl implements LifecycleService {
     }
 
     public void fireLifecycleEvent(LifecycleEvent lifecycleEvent) {
-        getLogger().log(Level.INFO, instance.node.getThisAddress() + " is " + lifecycleEvent.getState());
+        getLogger().info(instance.node.getThisAddress() + " is " + lifecycleEvent.getState());
         for (LifecycleListener lifecycleListener : lifecycleListeners.values()) {
             lifecycleListener.stateChanged(lifecycleEvent);
         }

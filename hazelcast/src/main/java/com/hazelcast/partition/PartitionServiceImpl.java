@@ -158,7 +158,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             for (ScheduledEntry<Integer, ReplicaSyncInfo> entry : entries) {
                 final ReplicaSyncInfo syncInfo = entry.getValue();
                 if (replicaSyncRequests.remove(entry.getKey(), syncInfo)) {
-                    logger.log(Level.INFO, "Re-sending sync replica request for partition: " + syncInfo.partitionId + ", replica: " + syncInfo.replicaIndex);
+                    logger.info("Re-sending sync replica request for partition: " + syncInfo.partitionId + ", replica: " + syncInfo.replicaIndex);
                     syncPartitionReplica(syncInfo.partitionId, syncInfo.replicaIndex, false);
                 }
             }
@@ -222,7 +222,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                     return;
                 }
                 PartitionStateGenerator psg = partitionStateGenerator;
-                logger.log(Level.INFO, "Initializing cluster partition table first arrangement...");
+                logger.info("Initializing cluster partition table first arrangement...");
                 final Set<Member> members = node.getClusterService().getMembers();
                 PartitionImpl[] newState = psg.initialize(memberGroupFactory.createMemberGroups(members), partitionCount);
                 if (newState != null) {
@@ -321,7 +321,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                     if (!currentMasterUuid.equals(migrationInfo.getMasterUuid())) {
                         // Still there is possibility of the other endpoint commits the migration
                         // but this node roll-backs!
-                        logger.log(Level.INFO, "Rolling-back migration instantiated by the old master -> " + migrationInfo);
+                        logger.info("Rolling-back migration instantiated by the old master -> " + migrationInfo);
                         finalizeActiveMigration(migrationInfo);
                     }
                 }
@@ -468,7 +468,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                             migrationInfo.doneProcessing();
                         }
                     } else {
-                        logger.log(Level.INFO, "Scheduling finalization of " + migrationInfo + ", because migration process is currently running.");
+                        logger.info("Scheduling finalization of " + migrationInfo + ", because migration process is currently running.");
                         nodeEngine.getExecutionService().schedule(new Runnable() {
                             public void run() {
                                 finalizeActiveMigration(migrationInfo);
@@ -518,7 +518,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 }
 
                 if (oldMaster) {
-                    logger.log(Level.INFO, "Finalizing migration instantiated by the old master -> " + oldMigration);
+                    logger.info("Finalizing migration instantiated by the old master -> " + oldMigration);
                 } else {
                     logger.log(Level.FINEST, "Finalizing previous migration -> " + oldMigration);
                 }
@@ -668,7 +668,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
 
             if (!node.isMaster()) {
                 while (timeoutInMillis > 0 && hasOnGoingMigrationMaster()) { // ignore elapsed time during master inv.
-                    logger.log(Level.INFO, "Waiting for the master node to complete remaining migrations!");
+                    logger.info("Waiting for the master node to complete remaining migrations!");
                     try {
                         //noinspection BusyWait
                         Thread.sleep(sleep);
@@ -691,7 +691,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 if (timeoutInMillis < 0) {
                     return false;
                 }
-                logger.log(Level.INFO, "Backup replica versions inconsistent, waiting for synchronization..");
+                logger.info("Backup replica versions inconsistent, waiting for synchronization..");
                 try {
                     //noinspection BusyWait
                     Thread.sleep(sleep);
@@ -969,7 +969,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         public void run() {
             if (node.isMaster() && node.isActive()) {
                 if (!migrationQueue.isEmpty() && migrationActive.get()) {
-                    logger.log(Level.INFO, "Remaining migration tasks in queue => " + migrationQueue.size());
+                    logger.info("Remaining migration tasks in queue => " + migrationQueue.size());
                 }
                 sendPartitionRuntimeState();
             }
@@ -1040,9 +1040,9 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                     }
 
                     if (migrationCount > 0) {
-                        logger.log(Level.INFO, "Re-partitioning cluster data... Migration queue size: " + migrationCount);
+                        logger.info("Re-partitioning cluster data... Migration queue size: " + migrationCount);
                     } else {
-                        logger.log(Level.INFO, "Partition balance is ok, no need to re-partition cluster data... ");
+                        logger.info("Partition balance is ok, no need to re-partition cluster data... ");
                     }
                 } finally {
                     lock.unlock();
@@ -1206,7 +1206,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                     final boolean hasNoTasks = migrationQueue.isEmpty();
                     if (hasNoTasks && migrating) {
                         migrating = false;
-                        logger.log(Level.INFO, "All migration tasks has been completed, queues are empty.");
+                        logger.info("All migration tasks has been completed, queues are empty.");
                     }
                     if (!migrationActive.get() || hasNoTasks) {
                         evictCompletedMigrations();

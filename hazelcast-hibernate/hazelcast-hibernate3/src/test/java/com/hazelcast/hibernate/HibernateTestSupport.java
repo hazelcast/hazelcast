@@ -51,7 +51,7 @@ public abstract class HibernateTestSupport {
 
     protected void sleep(int seconds) {
         try {
-            logger.log(Level.INFO, "Waiting " + seconds + " seconds...");
+            logger.info("Waiting " + seconds + " seconds...");
             Thread.sleep(1000 * seconds);
         } catch (InterruptedException e) {
             logger.severe("", e);

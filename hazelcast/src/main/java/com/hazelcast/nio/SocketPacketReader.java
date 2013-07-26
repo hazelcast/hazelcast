@@ -39,7 +39,7 @@ class SocketPacketReader implements SocketReader {
         boolean symmetricEncryptionEnabled = CipherHelper.isSymmetricEncryptionEnabled(ioService);
         if (symmetricEncryptionEnabled) {
             packetReader = new SymmetricCipherPacketReader();
-            logger.log(Level.INFO, "Reader started with SymmetricEncryption");
+            logger.info("Reader started with SymmetricEncryption");
         } else {
             packetReader = new DefaultPacketReader();
         }

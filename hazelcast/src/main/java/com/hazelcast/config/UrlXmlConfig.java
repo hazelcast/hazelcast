@@ -38,7 +38,7 @@ public class UrlXmlConfig extends Config {
 
     public UrlXmlConfig(URL url) throws IOException {
         super();
-        logger.log(Level.INFO, "Configuring Hazelcast from '" + url.toString() + "'.");
+        logger.info("Configuring Hazelcast from '" + url.toString() + "'.");
         InputStream in = url.openStream();
         new XmlConfigBuilder(in).build(this);
     }

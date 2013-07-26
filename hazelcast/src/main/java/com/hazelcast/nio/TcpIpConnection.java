@@ -191,7 +191,7 @@ public final class TcpIpConnection implements Connection {
             message += "Socket explicitly closed";
         }
 
-        logger.log(Level.INFO, message);
+        logger.info(message);
         systemLogService.logConnection(message);
         connectionManager.destroyConnection(this);
         connectionManager.ioService.onDisconnect(endPoint);

@@ -79,7 +79,7 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
             File configurationFile = null;
             if (configFile != null) {
                 configurationFile = new File(configFile);
-                logger.log(Level.INFO, "Using configuration file at " + configurationFile.getAbsolutePath());
+                logger.info("Using configuration file at " + configurationFile.getAbsolutePath());
                 if (!configurationFile.exists()) {
                     String msg = "Config file at '" + configurationFile.getAbsolutePath() + "' doesn't exist.";
                     msg += "\nHazelcast will try to use the hazelcast-client.xml config file in the working directory.";
@@ -96,7 +96,7 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
             }
             URL configurationUrl;
             if (configurationFile != null) {
-                logger.log(Level.INFO, "Using configuration file at " + configurationFile.getAbsolutePath());
+                logger.info("Using configuration file at " + configurationFile.getAbsolutePath());
                 try {
                     in = new FileInputStream(configurationFile);
                     configurationUrl = configurationFile.toURI().toURL();
@@ -109,12 +109,12 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
                 }
             }
             if (in == null) {
-                logger.log(Level.INFO, "Looking for hazelcast-client.xml config file in classpath.");
+                logger.info("Looking for hazelcast-client.xml config file in classpath.");
                 configurationUrl = Config.class.getClassLoader().getResource("hazelcast-client-default.xml");
                 if (configurationUrl == null) {
                     throw new IllegalStateException("Cannot find hazelcast-client.xml in classpath, giving up.");
                 }
-                logger.log(Level.INFO, "Using configuration file " + configurationUrl.getFile() + " in the classpath.");
+                logger.info( "Using configuration file " + configurationUrl.getFile() + " in the classpath.");
                 in = configurationUrl.openStream();
                 if (in == null) {
                     throw new IllegalStateException("Cannot read configuration file, giving up.");
@@ -452,7 +452,7 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
         try {
             return Integer.parseInt(value);
         } catch (final Exception e) {
-            logger.log(Level.INFO, parameterName + " parameter value, [" + value
+            logger.info(parameterName + " parameter value, [" + value
                     + "], is not a proper integer. Default value, [" + defaultValue + "], will be used!");
             logger.log(Level.WARNING, e.getMessage(), e);
             return defaultValue;

@@ -96,7 +96,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             if (webServerUrl != null) {
                 taskPoller.start();
                 stateSender.start();
-                logger.log(Level.INFO, "Hazelcast will connect to Management Center on address: " + webServerUrl);
+                logger.info("Hazelcast will connect to Management Center on address: " + webServerUrl);
             } else {
                 logger.log(Level.WARNING, "Hazelcast Management Center web-server URL is null!");
             }
@@ -105,7 +105,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
 
     public void shutdown() {
         if (running.compareAndSet(true, false)) {
-            logger.log(Level.INFO, "Shutting down Hazelcast Management Center");
+            logger.info("Shutting down Hazelcast Management Center");
             try {
                 interruptThread(stateSender);
                 interruptThread(taskPoller);
@@ -161,7 +161,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             start();
         }
         urlChanged = true;
-        logger.log(Level.INFO, "Web server URL has been changed. " +
+        logger.info("Web server URL has been changed. " +
                 "Hazelcast will connect to Management Center on address: " + webServerUrl);
     }
 

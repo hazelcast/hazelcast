@@ -45,7 +45,7 @@ public class ManagementService implements DistributedObjectListener {
         logger = instance.getLoggingService().getLogger(getClass());
         this.enabled = instance.node.groupProperties.ENABLE_JMX.getBoolean();
         if (enabled) {
-            logger.log(Level.INFO, "Hazelcast JMX agent enabled.");
+            logger.info("Hazelcast JMX agent enabled.");
             MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
             try {
                 InstanceMBean instanceMBean = new InstanceMBean(instance, this);
