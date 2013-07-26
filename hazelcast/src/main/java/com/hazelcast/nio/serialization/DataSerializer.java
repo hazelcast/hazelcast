@@ -65,7 +65,7 @@ final class DataSerializer implements StreamSerializer<DataSerializable> {
         final DataSerializableFactory current = factories.get(factoryId);
         if (current != null) {
             if (current.equals(factory)) {
-                Logger.getLogger(getClass()).log(Level.WARNING, "DataSerializableFactory[" + factoryId + "] is already registered! Skipping "
+                Logger.getLogger(getClass()).warning("DataSerializableFactory[" + factoryId + "] is already registered! Skipping "
                         + factory);
             } else {
                 throw new IllegalArgumentException("DataSerializableFactory[" + factoryId + "] is already registered! "

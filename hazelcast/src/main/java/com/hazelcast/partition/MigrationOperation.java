@@ -75,7 +75,7 @@ public final class MigrationOperation extends BaseMigrationOperation {
                     tasks.add(task);
                 }
                 if (taskCount != tasks.size()) {
-                    getLogger().log(Level.SEVERE, "Migration task count mismatch! => " +
+                    getLogger().severe("Migration task count mismatch! => " +
                             "expected-count: " + size + ", actual-count: " + tasks.size() +
                             "\nfrom: " + migrationInfo.getSource() + ", partition: " + getPartitionId()
                             + ", replica: " + getReplicaIndex());
@@ -97,7 +97,7 @@ public final class MigrationOperation extends BaseMigrationOperation {
                 IOUtil.closeResource(in);
             }
         } else {
-            getLogger().log(Level.WARNING, "Migration is cancelled -> " + migrationInfo);
+            getLogger().warning( "Migration is cancelled -> " + migrationInfo);
             success = false;
         }
     }
@@ -125,7 +125,7 @@ public final class MigrationOperation extends BaseMigrationOperation {
                 op.afterRun();
             } catch (Throwable e) {
                 error = true;
-                getLogger().log(Level.SEVERE, "While executing " + op, e);
+                getLogger().severe("While executing " + op, e);
                 break;
             }
         }

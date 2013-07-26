@@ -27,7 +27,7 @@ public class StandardLoggerFactory extends LoggerFactorySupport implements Logge
         return new StandardLogger(l);
     }
 
-    class StandardLogger implements ILogger {
+    class StandardLogger extends AbstractLogger {
         private final Logger logger;
 
         public StandardLogger(Logger logger) {

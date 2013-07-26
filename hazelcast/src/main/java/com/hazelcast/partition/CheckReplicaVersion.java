@@ -53,7 +53,7 @@ public final class CheckReplicaVersion extends Operation implements PartitionAwa
         final long currentVersion = currentVersions[replicaIndex];
 
         if (currentVersion != version) {
-            getLogger().log(Level.INFO, "Backup partition version is not matching version of the owner " +
+            getLogger().info("Backup partition version is not matching version of the owner " +
                     "-> " + currentVersion + " -vs- " + version);
             partitionService.syncPartitionReplica(partitionId, replicaIndex, false);
             response = false;

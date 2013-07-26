@@ -101,7 +101,7 @@ abstract class AbstractIOSelector extends Thread implements IOSelector {
             while (live) {
                 processSelectionQueue();
                 if (!live || isInterrupted()) {
-                    logger.log(Level.FINEST, getName() + " is interrupted!");
+                    logger.finest( getName() + " is interrupted!");
                     live = false;
                     return;
                 }
@@ -109,7 +109,7 @@ abstract class AbstractIOSelector extends Thread implements IOSelector {
                 try {
                     selectedKeyCount = selector.select(waitTime);
                 } catch (Throwable e) {
-                    logger.log(Level.WARNING, e.toString());
+                    logger.warning(e.toString());
                     continue;
                 }
                 if (selectedKeyCount == 0) {
@@ -130,10 +130,10 @@ abstract class AbstractIOSelector extends Thread implements IOSelector {
         } catch (OutOfMemoryError e) {
             ioService.onOutOfMemory(e);
         } catch (Throwable e) {
-            logger.log(Level.WARNING, "Unhandled exception in " + getName(), e);
+            logger.warning("Unhandled exception in " + getName(), e);
         } finally {
             try {
-                logger.log(Level.FINEST, "Closing selector " + getName());
+                logger.finest( "Closing selector " + getName());
                 selector.close();
             } catch (final Exception ignored) {
             }
@@ -144,7 +144,7 @@ abstract class AbstractIOSelector extends Thread implements IOSelector {
 
     private void handleSelectorException(final Throwable e) {
         String msg = "Selector exception at  " + getName() + ", cause= " + e.toString();
-        logger.log(Level.WARNING, msg, e);
+        logger.warning(msg, e);
         if (e instanceof OutOfMemoryError) {
             ioService.onOutOfMemory((OutOfMemoryError) e);
         }

@@ -161,16 +161,16 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 return ErrorHandler.returnResultOrThrowException(result);
             } catch (Exception e) {
                 if (e instanceof IOException) {
-                    if (logger.isLoggable(Level.FINEST)) {
-                        logger.log(Level.FINEST, "Error on connection... conn: " + conn + ", error: " + e);
+                    if (logger.isFinestEnabled()) {
+                        logger.finest( "Error on connection... conn: " + conn + ", error: " + e);
                     }
                     IOUtil.closeResource(conn);
                     release = false;
                 }
                 if (ErrorHandler.isRetryable(e)) {
                     if (redoOperation || obj instanceof RetryableRequest) {
-                        if (logger.isLoggable(Level.FINEST)) {
-                            logger.log(Level.FINEST, "Retrying " + obj + ", last-conn: " + conn + ", last-error: " + e);
+                        if (logger.isFinestEnabled()) {
+                            logger.finest( "Retrying " + obj + ", last-conn: " + conn + ", last-error: " + e);
                         }
                         beforeRetry();
                         continue;
@@ -258,8 +258,8 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 stream = new ResponseStreamImpl(serializationService, conn);
             } catch (Exception e) {
                 if (e instanceof IOException) {
-                    if (logger.isLoggable(Level.FINEST)) {
-                        logger.log(Level.FINEST, "Error on connection... conn: " + conn + ", error: " + e);
+                    if (logger.isFinestEnabled()) {
+                        logger.finest( "Error on connection... conn: " + conn + ", error: " + e);
                     }
                     IOUtil.closeResource(conn);
                 } else {
@@ -269,8 +269,8 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 }
                 if (ErrorHandler.isRetryable(e)) {
                     if (redoOperation || obj instanceof RetryableRequest) {
-                        if (logger.isLoggable(Level.FINEST)) {
-                            logger.log(Level.FINEST, "Retrying " + obj + ", last-conn: " + conn + ", last-error: " + e);
+                        if (logger.isFinestEnabled()) {
+                            logger.finest( "Retrying " + obj + ", last-conn: " + conn + ", last-error: " + e);
                         }
                         beforeRetry();
                         continue;
@@ -359,7 +359,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                         try {
                             conn = pickConnection();
                         } catch (Exception e) {
-                            logger.log(Level.SEVERE, "Error while connecting to cluster!", e);
+                            logger.severe("Error while connecting to cluster!", e);
                             client.getLifecycleService().shutdown();
                             return;
                         }
@@ -368,7 +368,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     listenMembershipEvents();
                 } catch (Exception e) {
                     if (client.getLifecycleService().isRunning()) {
-                        logger.log(Level.WARNING, "Error while listening cluster events! -> " + conn, e);
+                        logger.warning("Error while listening cluster events! -> " + conn, e);
                     }
                     IOUtil.closeResource(conn);
                     conn = null;
@@ -409,7 +409,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 members.add((MemberImpl) serializationService.toObject(d));
             }
             updateMembersRef();
-            logger.log(Level.INFO, membersString());
+            logger.info( membersString());
             final List<MembershipEvent> events = new LinkedList<MembershipEvent>();
             for (MemberImpl member : members) {
                 final MemberImpl former = prevMembers.remove(member.getUuid());
@@ -438,7 +438,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     getConnectionManager().removeConnectionPool(member.getAddress());
                 }
                 updateMembersRef();
-                logger.log(Level.INFO, membersString());
+                logger.info(membersString());
                 fireMembershipEvent(event);
             }
         }
@@ -485,7 +485,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 try {
                     c.close();
                 } catch (IOException e) {
-                    logger.log(Level.WARNING, "Error while closing connection!", e);
+                    logger.warning("Error while closing connection!", e);
                 }
             }
         }
@@ -504,17 +504,17 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     return getConnectionManager().firstConnection(address, authenticator);
                 } catch (IOException e) {
                     lastError = e;
-                    logger.log(Level.FINEST, "IO error during initial connection...", e);
+                    logger.finest( "IO error during initial connection...", e);
                 } catch (AuthenticationException e) {
                     lastError = e;
-                    logger.log(Level.WARNING, "Authentication error on " + address, e);
+                    logger.warning("Authentication error on " + address, e);
                 }
             }
             if (attempt++ >= connectionAttemptLimit) {
                 break;
             }
             final long remainingTime = nextTry - Clock.currentTimeMillis();
-            logger.log(Level.WARNING,
+            logger.warning(
                     String.format("Unable to get alive cluster connection," +
                             " try in %d ms later, attempt %d of %d.",
                             Math.max(0, remainingTime), attempt, connectionAttemptLimit));

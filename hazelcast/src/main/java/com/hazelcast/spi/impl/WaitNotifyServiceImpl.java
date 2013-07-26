@@ -89,7 +89,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
                     } catch (InterruptedException e) {
                         return;
                     } catch (Throwable t) {
-                        logger.log(Level.WARNING, t.getMessage(), t);
+                        logger.warning(t);
                     }
                 }
             }
@@ -211,7 +211,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
     }
 
     void shutdown() {
-        logger.log(Level.FINEST, "Stopping tasks...");
+        logger.finest( "Stopping tasks...");
         expirationTask.cancel(true);
         expirationService.shutdown();
         final Object response = new HazelcastInstanceNotActiveException();

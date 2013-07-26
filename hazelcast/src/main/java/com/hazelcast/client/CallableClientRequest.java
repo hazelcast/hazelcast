@@ -30,7 +30,7 @@ public abstract class CallableClientRequest extends ClientRequest implements Cal
             result = call();
             clientEngine.sendResponse(getEndpoint(), result);
         } catch (Exception e) {
-            clientEngine.getLogger(getClass()).log(Level.WARNING, e.getMessage(), e);
+            clientEngine.getLogger(getClass()).warning(e);
             clientEngine.sendResponse(getEndpoint(), e);
         }
     }

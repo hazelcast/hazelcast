@@ -53,7 +53,7 @@ public class HeartBeatChecker {
                         connection.read();
                         latch.countDown();
                     } catch (IOException e) {
-                        logger.log(Level.SEVERE, "Error during heartbeat check!", e);
+                        logger.severe("Error during heartbeat check!", e);
                     }
                 }
             });

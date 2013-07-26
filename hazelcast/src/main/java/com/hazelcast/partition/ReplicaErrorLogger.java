@@ -39,7 +39,7 @@ public final class ReplicaErrorLogger {
             }
             logger.log(level, e.toString());
         } else {
-            logger.log(Level.WARNING, e.getMessage(), e);
+            logger.warning(e);
         }
     }
 

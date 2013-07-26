@@ -94,7 +94,7 @@ public class WanReplicationService implements CoreService {
                     ReplicationSupportingService service = node.nodeEngine.getService(serviceName);
                     service.onReplicationEvent(replicationEvent);
                 } catch (Exception e) {
-                    logger.log(Level.SEVERE, e.getMessage(), e);
+                    logger.severe(e);
                 }
             }
         });

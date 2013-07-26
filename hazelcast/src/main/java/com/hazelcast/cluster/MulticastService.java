@@ -86,10 +86,10 @@ public class MulticastService implements Runnable {
             }
             running = false;
             if (!stopLatch.await(5, TimeUnit.SECONDS)) {
-                logger.log(Level.WARNING, "Failed to shutdown MulticastService in 5 seconds!");
+                logger.warning("Failed to shutdown MulticastService in 5 seconds!");
             }
         } catch (Throwable e) {
-            logger.log(Level.WARNING, e.getMessage(), e);
+            logger.warning(e);
         }
     }
 
@@ -115,14 +115,14 @@ public class MulticastService implements Runnable {
                             try {
                                 multicastListener.onMessage(joinMessage);
                             } catch (Exception e) {
-                                logger.log(Level.WARNING, e.getMessage(), e);
+                                logger.warning(e);
                             }
                         }
                     }
                 } catch (OutOfMemoryError e) {
                     OutOfMemoryErrorDispatcher.onOutOfMemory(e);
                 } catch (Exception e) {
-                    logger.log(Level.WARNING, e.getMessage(), e);
+                    logger.warning(e);
                 }
             }
         } finally {
@@ -146,7 +146,7 @@ public class MulticastService implements Runnable {
 
                 final byte packetVersion = input.readByte();
                 if (packetVersion != Packet.VERSION) {
-                    logger.log(Level.WARNING, "Received a JoinRequest with a different packet version! This -> "
+                    logger.warning("Received a JoinRequest with a different packet version! This -> "
                             + Packet.VERSION + ", Incoming -> " + packetVersion);
                     return null;
                 }
@@ -157,14 +157,14 @@ public class MulticastService implements Runnable {
                 }
             } catch (Exception e) {
                 if (e instanceof EOFException) {
-                    logger.log(Level.WARNING, "Received data format is invalid." +
+                    logger.warning("Received data format is invalid." +
                             " (An old version of Hazelcast may be running here.)", e);
                 } else {
                     throw e;
                 }
             }
         } catch (Exception e) {
-            logger.log(Level.WARNING, e.getMessage(), e);
+            logger.warning(e);
         }
         return null;
     }
@@ -180,7 +180,7 @@ public class MulticastService implements Runnable {
                 multicastSocket.send(datagramPacketSend);
                 out.clear();
             } catch (IOException e) {
-                logger.log(Level.WARNING, "You probably have too long Hazelcast configuration!", e);
+                logger.warning("You probably have too long Hazelcast configuration!", e);
             }
         }
     }

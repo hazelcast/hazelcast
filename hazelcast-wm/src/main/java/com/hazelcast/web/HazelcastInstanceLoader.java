@@ -61,7 +61,7 @@ final class HazelcastInstanceLoader {
         }
 
         if(useClient) {
-            logger.log(Level.WARNING,
+            logger.warning(
                     "Creating HazelcastClient, make sure this node has access to an already running cluster...");
             ClientConfig clientConfig ;
             if (configUrl == null) {

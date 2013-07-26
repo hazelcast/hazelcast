@@ -66,7 +66,7 @@ public class ReadOnlyAccessDelegate<T extends HazelcastRegion> extends NonStrict
      */
     @Override
     public void unlockItem(final Object key, final SoftLock lock) throws CacheException {
-        LOG.log(Level.WARNING, "Attempting to unlock an item from a read-only cache region");
+        LOG.warning("Attempting to unlock an item from a read-only cache region");
     }
 
     /**
@@ -74,7 +74,7 @@ public class ReadOnlyAccessDelegate<T extends HazelcastRegion> extends NonStrict
      */
     @Override
     public void unlockRegion(final SoftLock lock) throws CacheException {
-        LOG.log(Level.WARNING, "Attempting to unlock a read-only cache region");
+        LOG.warning("Attempting to unlock a read-only cache region");
     }
 
     /**

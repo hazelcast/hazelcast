@@ -283,7 +283,7 @@ final class OperationServiceImpl implements OperationService {
             callKey = new RemoteCallKey(op.getCallerAddress(), op.getCallId());
             RemoteCallKey current;
             if ((current = executingCalls.put(callKey, callKey)) != null) {
-                logger.log(Level.SEVERE, "Duplicate Call record! -> " + callKey + " / " + current + " == " + op.getClass().getName());
+                logger.severe("Duplicate Call record! -> " + callKey + " / " + current + " == " + op.getClass().getName());
             }
         }
         return callKey;
@@ -292,7 +292,7 @@ final class OperationServiceImpl implements OperationService {
     private void afterCallExecution(Operation op, RemoteCallKey callKey) {
         if (callKey != null && op.getCallId() != 0 && op.returnsResponse()) {
             if (executingCalls.remove(callKey) == null) {
-                logger.log(Level.SEVERE, "No Call record has been found: -> " + callKey + " == " + op.getClass().getName());
+                logger.severe("No Call record has been found: -> " + callKey + " == " + op.getClass().getName());
             }
         }
     }
@@ -349,8 +349,8 @@ final class OperationServiceImpl implements OperationService {
 
     private void scheduleBackup(Operation op, Backup backup, int partitionId, int replicaIndex) {
         final RemoteCallKey key = new RemoteCallKey(op.getCallerAddress(), op.getCallId());
-        if (logger.isLoggable(Level.FINEST)) {
-            logger.log(Level.FINEST, "Scheduling -> " + backup);
+        if (logger.isFinestEnabled()) {
+            logger.finest( "Scheduling -> " + backup);
         }
         backupScheduler.schedule(500, key, new ScheduledBackup(backup, partitionId, replicaIndex));
     }
@@ -362,8 +362,8 @@ final class OperationServiceImpl implements OperationService {
                 final ScheduledBackup backup = entry.getValue();
                 if (!backup.backup()) {
                     final int retries = backup.retries;
-                    if (logger.isLoggable(Level.FINEST)) {
-                        logger.log(Level.FINEST, "Re-scheduling[" + retries + "] -> " + backup);
+                    if (logger.isFinestEnabled()) {
+                        logger.finest( "Re-scheduling[" + retries + "] -> " + backup);
                     }
                     scheduler.schedule(entry.getScheduledDelayMillis() * retries, entry.getKey(), backup);
                 }
@@ -414,7 +414,7 @@ final class OperationServiceImpl implements OperationService {
             try {
                 op.getResponseHandler().sendResponse(e);
             } catch (Throwable t) {
-                logger.log(Level.WARNING, "While sending op error...", t);
+                logger.warning("While sending op error...", t);
             }
         }
     }
@@ -465,10 +465,10 @@ final class OperationServiceImpl implements OperationService {
                 PartitionResponse result = (PartitionResponse) nodeEngine.toObject(response.getValue().get());
                 partitionResults.putAll(result.asMap());
             } catch (Throwable t) {
-                if (logger.isLoggable(Level.FINEST)) {
-                    logger.log(Level.WARNING, t.getMessage(), t);
+                if (logger.isFinestEnabled()) {
+                    logger.finest(t);
                 } else {
-                    logger.log(Level.WARNING, t.getMessage());
+                    logger.warning(t.getMessage());
                 }
                 List<Integer> partitions = memberPartitions.get(response.getKey());
                 for (Integer partition : partitions) {
@@ -501,7 +501,7 @@ final class OperationServiceImpl implements OperationService {
     public boolean send(final Operation op, final int partitionId, final int replicaIndex) {
         Address target = nodeEngine.getPartitionService().getPartition(partitionId).getReplicaAddress(replicaIndex);
         if (target == null) {
-            logger.log(Level.WARNING, "No target available for partition: " + partitionId + " and replica: " + replicaIndex);
+            logger.warning("No target available for partition: " + partitionId + " and replica: " + replicaIndex);
             return false;
         }
         return send(op, target);
@@ -565,7 +565,7 @@ final class OperationServiceImpl implements OperationService {
     void notifyBackupCall(long callId) {
         final Semaphore lock = backupCalls.get(callId);
         if (lock == null) {
-            logger.log(Level.WARNING, "No backup record found for call[" + callId + "]!");
+            logger.warning("No backup record found for call[" + callId + "]!");
         } else {
             lock.release();
         }
@@ -588,7 +588,7 @@ final class OperationServiceImpl implements OperationService {
     void registerBackupCall(long callId) {
         final Semaphore current = backupCalls.put(callId, new Semaphore(0));
         if (current != null) {
-            logger.log(Level.WARNING, "There is already a record for call[" + callId + "]!");
+            logger.warning( "There is already a record for call[" + callId + "]!");
         }
     }
 
@@ -619,7 +619,7 @@ final class OperationServiceImpl implements OperationService {
     }
 
     void shutdown() {
-        logger.log(Level.FINEST, "Stopping operation threads...");
+        logger.finest( "Stopping operation threads...");
         for (ExecutorService executor : operationExecutors) {
             executor.shutdown();
         }
@@ -680,7 +680,7 @@ final class OperationServiceImpl implements OperationService {
                     }
                 }
             } catch (Throwable e) {
-                logger.log(Level.SEVERE, e.getMessage(), e);
+                logger.severe(e);
             }
         }
 
@@ -690,7 +690,7 @@ final class OperationServiceImpl implements OperationService {
                 response.run();
                 response.afterRun();
             } catch (Throwable e) {
-                logger.log(Level.SEVERE, "While processing response...", e);
+                logger.severe("While processing response...", e);
             }
         }
     }

@@ -53,7 +53,7 @@ public final class HazelcastAccessor {
      */
     public static HazelcastInstance getHazelcastInstance(final SessionFactory sessionFactory) {
         if (!(sessionFactory instanceof SessionFactoryImplementor)) {
-            logger.log(Level.WARNING, "SessionFactory is expected to be instance of SessionFactoryImplementor.");
+            logger.warning("SessionFactory is expected to be instance of SessionFactoryImplementor.");
             return null;
         }
         return getHazelcastInstance((SessionFactoryImplementor) sessionFactory);
@@ -69,13 +69,13 @@ public final class HazelcastAccessor {
         final Settings settings = sessionFactory.getSettings();
         final RegionFactory rf = settings.getRegionFactory();
         if (rf == null) {
-            logger.log(Level.SEVERE, "Hibernate 2nd level cache has not been enabled!");
+            logger.severe("Hibernate 2nd level cache has not been enabled!");
             return null;
         }
         if (rf instanceof AbstractHazelcastCacheRegionFactory) {
             return ((AbstractHazelcastCacheRegionFactory) rf).getHazelcastInstance();
         } else {
-            logger.log(Level.WARNING, "Current 2nd level cache implementation is not HazelcastCacheRegionFactory!");
+            logger.warning("Current 2nd level cache implementation is not HazelcastCacheRegionFactory!");
         }
         return null;
     }

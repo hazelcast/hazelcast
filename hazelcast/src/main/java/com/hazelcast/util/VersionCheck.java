@@ -67,7 +67,7 @@ public class VersionCheck {
                         sb.append("Newer version " + finalVersion + "\t[" + finalDate + "]\n");
                         sb.append("\n");
                         sb.append("======================================\n");
-                        logger.log(Level.WARNING, sb.toString());
+                        logger.warning(sb.toString());
                     }
                 } else {
                     // snapshot
@@ -81,7 +81,7 @@ public class VersionCheck {
                         sb.append("Newer version " + snapshotVersion + "\t[" + snapshotDate + "]\n");
                         sb.append("\n");
                         sb.append("======================================\n");
-                        logger.log(Level.WARNING, sb.toString());
+                        logger.warning(sb.toString());
                     }
                 }
             }

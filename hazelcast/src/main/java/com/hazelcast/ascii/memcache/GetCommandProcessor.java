@@ -60,7 +60,7 @@ public class GetCommandProcessor extends MemcacheCommandProcessor<GetCommand> {
                 try {
                     entry = new MemcacheEntry(getCommand.getKey(), textCommandService.toByteArray(value), 0);
                 } catch (Exception e) {
-                    logger.log(Level.WARNING, e.getMessage(), e);
+                    logger.warning(e);
                 }
             }
         }

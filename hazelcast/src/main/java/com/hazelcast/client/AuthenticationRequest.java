@@ -64,7 +64,7 @@ public final class AuthenticationRequest extends CallableClientRequest implement
         boolean authenticated;
         if (credentials == null) {
             authenticated = false;
-            logger.log(Level.SEVERE, "Could not retrieve Credentials object!");
+            logger.severe("Could not retrieve Credentials object!");
         } else if (clientEngine.getSecurityContext() != null) {
             credentials.setEndpoint(connection.getInetAddress().getHostAddress());
             try {
@@ -74,7 +74,7 @@ public final class AuthenticationRequest extends CallableClientRequest implement
                 endpoint.setLoginContext(lc);
                 authenticated = true;
             } catch (LoginException e) {
-                logger.log(Level.WARNING, e.getMessage(), e);
+                logger.warning(e);
                 authenticated = false;
             }
         } else {
@@ -87,7 +87,7 @@ public final class AuthenticationRequest extends CallableClientRequest implement
                         && nodeGroupPassword.equals(usernamePasswordCredentials.getPassword()));
             } else {
                 authenticated = false;
-                logger.log(Level.SEVERE, "Hazelcast security is disabled.\nUsernamePasswordCredentials or cluster " +
+                logger.severe("Hazelcast security is disabled.\nUsernamePasswordCredentials or cluster " +
                         "group-name and group-password should be used for authentication!\n" +
                         "Current credentials type is: " + credentials.getClass().getName());
             }

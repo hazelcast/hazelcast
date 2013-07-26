@@ -39,7 +39,7 @@ public class SimpleCommandProcessor extends MemcacheCommandProcessor<SimpleComma
             try {
                 command.getSocketTextReader().closeConnection();
             } catch (Exception e) {
-                logger.log(Level.WARNING, e.getMessage(), e);
+                logger.warning(e);
             }
         } else if (command.getType() == UNKNOWN) {
             command.setResponse(ERROR);
