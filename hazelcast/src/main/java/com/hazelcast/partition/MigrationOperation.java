@@ -97,7 +97,7 @@ public final class MigrationOperation extends BaseMigrationOperation {
                 IOUtil.closeResource(in);
             }
         } else {
-            getLogger().log(Level.WARNING, "Migration is cancelled -> " + migrationInfo);
+            getLogger().warning( "Migration is cancelled -> " + migrationInfo);
             success = false;
         }
     }

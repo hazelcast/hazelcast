@@ -203,7 +203,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
                 try {
                     future.get(5, TimeUnit.MINUTES);
                 } catch (Throwable e) {
-                    nodeEngine.getLogger(getClass()).log(Level.WARNING, "Error during commit!", e);
+                    nodeEngine.getLogger(getClass()).warning("Error during commit!", e);
                 }
             }
             state = COMMITTED;
@@ -247,7 +247,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
                     try {
                         future.get(timeoutMillis, TimeUnit.MILLISECONDS);
                     } catch (Throwable e) {
-                        nodeEngine.getLogger(getClass()).log(Level.WARNING, "Error during tx rollback backup!", e);
+                        nodeEngine.getLogger(getClass()).warning("Error during tx rollback backup!", e);
                     }
                 }
                 futures.clear();
@@ -262,7 +262,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
                 try {
                     future.get(5, TimeUnit.MINUTES);
                 } catch (Throwable e) {
-                    nodeEngine.getLogger(getClass()).log(Level.WARNING, "Error during rollback!", e);
+                    nodeEngine.getLogger(getClass()).warning("Error during rollback!", e);
                 }
             }
             // purge tx backup
@@ -285,7 +285,7 @@ final class TransactionImpl implements Transaction, TransactionSupport {
                                 new PurgeTxBackupOperation(txnId), backupAddress).build();
                         inv.invoke();
                     } catch (Throwable e) {
-                        nodeEngine.getLogger(getClass()).log(Level.WARNING, "Error during purging backups!", e);
+                        nodeEngine.getLogger(getClass()).warning("Error during purging backups!", e);
                     }
                 }
             }

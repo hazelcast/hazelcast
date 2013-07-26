@@ -350,7 +350,7 @@ public class ConfigXmlGenerator {
             transformer.transform(xmlInput, xmlOutput);
             return xmlOutput.getWriter().toString();
         } catch (Exception e) {
-            logger.log(Level.WARNING, e.getMessage(), e);
+            logger.warning(e);
             return input;
         }
     }

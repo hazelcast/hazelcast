@@ -181,7 +181,7 @@ public class Node {
                         multicastSocket.setInterface(bindAddress.getInetAddress());
                     }
                 } catch (Exception e) {
-                    logger.log(Level.WARNING, e.getMessage(), e);
+                    logger.warning(e);
                 }
                 multicastSocket.setReceiveBufferSize(64 * 1024);
                 multicastSocket.setSendBufferSize(64 * 1024);
@@ -228,7 +228,7 @@ public class Node {
             } else if (listener != null) {
                 final String error = "Unknown listener type: " + listener.getClass();
                 Throwable t = new IllegalArgumentException(error);
-                logger.log(Level.WARNING, error, t);
+                logger.warning(error, t);
             }
         }
     }
@@ -321,12 +321,12 @@ public class Node {
             sb.append(" and cluster size is ");
             sb.append(clusterSize);
             sb.append(". Some of the ports seem occupied!");
-            logger.log(Level.WARNING, sb.toString());
+            logger.warning( sb.toString());
         }
         try {
             managementCenterService = new ManagementCenterService(hazelcastInstance);
         } catch (Exception e) {
-            logger.log(Level.WARNING, "ManagementCenterService could not be constructed!", e);
+            logger.warning("ManagementCenterService could not be constructed!", e);
         }
         initializer.afterInitialize(this);
     }
@@ -349,7 +349,7 @@ public class Node {
         if (!force && isActive()) {
             final int maxWaitSeconds = groupProperties.GRACEFUL_SHUTDOWN_MAX_WAIT.getInteger();
             if (!partitionService.prepareToSafeShutdown(maxWaitSeconds, TimeUnit.SECONDS)) {
-                logger.log(Level.WARNING, "Graceful shutdown could not be completed in " + maxWaitSeconds + " seconds!");
+                logger.warning("Graceful shutdown could not be completed in " + maxWaitSeconds + " seconds!");
             }
         }
         if (isActive()) {
@@ -461,7 +461,7 @@ public class Node {
                     logger.log(Level.FINEST, "shutdown hook - we are not --> active and not completely down so we are not calling shutdown");
                 }
             } catch (Exception e) {
-                logger.log(Level.WARNING, e.getMessage(), e);
+                logger.warning(e);
             }
         }
     }
@@ -510,14 +510,14 @@ public class Node {
         final long maxJoinMillis = getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
         try {
             if (joiner == null) {
-                logger.log(Level.WARNING, "No join method is enabled! Starting standalone.");
+                logger.warning("No join method is enabled! Starting standalone.");
                 setAsMaster();
             } else {
                 joiner.join(joined);
             }
         } catch (Exception e) {
             if (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis) {
-                logger.log(Level.WARNING, "Trying to rejoin: " + e.getMessage());
+                logger.warning("Trying to rejoin: " + e.getMessage());
                 rejoin();
             } else {
                 logger.severe( "Could not join cluster, shutting down!", e);

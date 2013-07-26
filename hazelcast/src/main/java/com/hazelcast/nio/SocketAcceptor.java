@@ -91,7 +91,7 @@ public class SocketAcceptor implements Runnable {
             } else {
                 String error = "Unexpected error while accepting connection! "
                                + e.getClass().getName() + ": " + e.getMessage();
-                logger.log(Level.WARNING, error, e);
+                logger.warning(error, e);
                 connectionManager.ioService.getSystemLogService().logConnection(error);
                 try {
                     serverSocketChannel.close();

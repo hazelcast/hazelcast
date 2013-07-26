@@ -62,7 +62,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
             tryArrange(state, groups, partitionCount, aggressive);
             result = testArrangement(state, groups, partitionCount);
             if (result == TestResult.FAIL) {
-                logger.log(Level.WARNING, "Error detected on partition arrangement! Try-count: " + tryCount);
+                logger.warning("Error detected on partition arrangement! Try-count: " + tryCount);
                 stateInitializer.initialize(state);
             } else if (result == TestResult.RETRY) {
                 tryCount++;
@@ -313,13 +313,13 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
             for (int i = 0; i < replicaCount; i++) {
                 Address owner = p.getReplicaAddress(i);
                 if (owner == null) {
-                    logger.log(Level.WARNING, "Partition-Arrangement-Test: Owner is null !!! => partition: "
+                    logger.warning("Partition-Arrangement-Test: Owner is null !!! => partition: "
                             + p.getPartitionId() + " replica: " + i);
                     return TestResult.FAIL;
                 }
                 if (set.contains(owner)) {
                     // Should not happen!
-                    logger.log(Level.WARNING, "Partition-Arrangement-Test: " +
+                    logger.warning("Partition-Arrangement-Test: " +
                             owner + " has owned multiple replicas of partition: " + p.getPartitionId() + " replica: " + i);
                     return TestResult.FAIL;
                 }
@@ -448,7 +448,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         public boolean ownPartition(Address address, int index, Integer partitionId) {
             if (!hasNode(address)) {
                 String error = "Address does not belong to this group: " + address.toString();
-                logger.log(Level.WARNING, error);
+                logger.warning( error);
                 return false;
             }
             if (containsPartition(partitionId)) {
@@ -562,7 +562,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
 
         public void addNode(Address addr) {
             if (address != null) {
-                logger.log(Level.WARNING, "Single node group already has an address => " + address);
+                logger.warning("Single node group already has an address => " + address);
                 return;
             }
             this.address = addr;
@@ -596,7 +596,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
         public boolean ownPartition(Address address, int index, Integer partitionId) {
             if (!hasNode(address)) {
                 String error = address + " is different from this node's " + this.address;
-                logger.log(Level.WARNING, error);
+                logger.warning(error);
                 return false;
             }
             if (containsPartition(partitionId)) {

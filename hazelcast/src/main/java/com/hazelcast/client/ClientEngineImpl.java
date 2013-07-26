@@ -194,7 +194,7 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
             try {
                 endpoint.destroy();
             } catch (LoginException e) {
-                logger.log(Level.WARNING, e.getMessage(), e);
+                logger.warning(e);
             }
 
             final Connection connection = endpoint.getConnection();
@@ -202,7 +202,7 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
                 try {
                     connection.close();
                 } catch (Throwable e) {
-                    logger.log(Level.WARNING, "While closing client connection: " + e.toString());
+                    logger.warning("While closing client connection: " + e.toString());
                 }
             } else {
                 nodeEngine.getExecutionService().schedule(new Runnable() {
@@ -211,7 +211,7 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
                             try {
                                 connection.close();
                             } catch (Throwable e) {
-                                logger.log(Level.WARNING, "While closing client connection: " + e.toString());
+                                logger.warning("While closing client connection: " + e.toString());
                             }
                         }
                     }

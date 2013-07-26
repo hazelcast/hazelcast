@@ -56,7 +56,7 @@ public class NodeMulticastListener implements MulticastListener {
                                 node.multicastService.send(response);
 
                             } else if (isMasterNode(joinMessage.getAddress()) && !checkMasterUuid(joinMessage.getUuid())) {
-                                node.getLogger("NodeMulticastListener").log(Level.WARNING,
+                                node.getLogger("NodeMulticastListener").warning(
                                         "New join request has been received from current master. "
                                         + "Removing " + node.getMasterAddress());
                                 node.getClusterService().removeAddress(node.getMasterAddress());

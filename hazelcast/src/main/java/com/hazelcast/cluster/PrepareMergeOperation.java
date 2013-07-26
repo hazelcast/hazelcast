@@ -45,10 +45,10 @@ public class PrepareMergeOperation extends AbstractClusterOperation {
         final Address masterAddress = node.getMasterAddress();
         final ILogger logger = node.loggingService.getLogger(this.getClass().getName());
         if (caller != null && !caller.equals(masterAddress)) { // caller null means local invocation.
-            logger.log(Level.WARNING, "Prepare-merge instruction sent from non-master endpoint: " + caller);
+            logger.warning("Prepare-merge instruction sent from non-master endpoint: " + caller);
             return;
         }
-        logger.log(Level.WARNING, "Preparing to merge... Waiting for merge instruction...");
+        logger.warning("Preparing to merge... Waiting for merge instruction...");
         node.getClusterService().prepareToMerge(newTargetAddress);
     }
 

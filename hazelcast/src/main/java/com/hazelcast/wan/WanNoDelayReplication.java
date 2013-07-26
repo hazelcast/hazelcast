@@ -97,7 +97,7 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
                 running = false;
             } catch (Throwable e) {
                 if (logger != null) {
-                    logger.log(Level.WARNING, e.getMessage(), e);
+                    logger.warning(e);
                 }
                 conn = null;
             }

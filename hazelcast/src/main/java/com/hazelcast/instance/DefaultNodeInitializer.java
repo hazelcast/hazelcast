@@ -86,7 +86,7 @@ public class DefaultNodeInitializer implements NodeInitializer {
     }
 
     public SecurityContext getSecurityContext() {
-        logger.log(Level.WARNING, "Security features are only available on Hazelcast Enterprise Edition!");
+        logger.warning("Security features are only available on Hazelcast Enterprise Edition!");
         return null;
     }
 

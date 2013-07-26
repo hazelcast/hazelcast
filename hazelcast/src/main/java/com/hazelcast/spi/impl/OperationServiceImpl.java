@@ -414,7 +414,7 @@ final class OperationServiceImpl implements OperationService {
             try {
                 op.getResponseHandler().sendResponse(e);
             } catch (Throwable t) {
-                logger.log(Level.WARNING, "While sending op error...", t);
+                logger.warning("While sending op error...", t);
             }
         }
     }
@@ -466,9 +466,9 @@ final class OperationServiceImpl implements OperationService {
                 partitionResults.putAll(result.asMap());
             } catch (Throwable t) {
                 if (logger.isLoggable(Level.FINEST)) {
-                    logger.log(Level.WARNING, t.getMessage(), t);
+                    logger.log(Level.FINEST, t.getMessage(), t);
                 } else {
-                    logger.log(Level.WARNING, t.getMessage());
+                    logger.warning(t.getMessage());
                 }
                 List<Integer> partitions = memberPartitions.get(response.getKey());
                 for (Integer partition : partitions) {
@@ -501,7 +501,7 @@ final class OperationServiceImpl implements OperationService {
     public boolean send(final Operation op, final int partitionId, final int replicaIndex) {
         Address target = nodeEngine.getPartitionService().getPartition(partitionId).getReplicaAddress(replicaIndex);
         if (target == null) {
-            logger.log(Level.WARNING, "No target available for partition: " + partitionId + " and replica: " + replicaIndex);
+            logger.warning("No target available for partition: " + partitionId + " and replica: " + replicaIndex);
             return false;
         }
         return send(op, target);
@@ -565,7 +565,7 @@ final class OperationServiceImpl implements OperationService {
     void notifyBackupCall(long callId) {
         final Semaphore lock = backupCalls.get(callId);
         if (lock == null) {
-            logger.log(Level.WARNING, "No backup record found for call[" + callId + "]!");
+            logger.warning("No backup record found for call[" + callId + "]!");
         } else {
             lock.release();
         }
@@ -588,7 +588,7 @@ final class OperationServiceImpl implements OperationService {
     void registerBackupCall(long callId) {
         final Semaphore current = backupCalls.put(callId, new Semaphore(0));
         if (current != null) {
-            logger.log(Level.WARNING, "There is already a record for call[" + callId + "]!");
+            logger.warning( "There is already a record for call[" + callId + "]!");
         }
     }
 

@@ -181,7 +181,7 @@ public final class TcpIpConnection implements Connection {
         try {
             close0();
         } catch (Exception e) {
-            logger.log(Level.WARNING, e.getMessage(), e);
+            logger.warning( e);
         }
         Object connAddress = (endPoint == null) ? socketChannel.socket().getRemoteSocketAddress() : endPoint;
         String message = "Connection [" + connAddress + "] lost. Reason: ";

@@ -98,7 +98,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 stateSender.start();
                 logger.info("Hazelcast will connect to Management Center on address: " + webServerUrl);
             } else {
-                logger.log(Level.WARNING, "Hazelcast Management Center web-server URL is null!");
+                logger.warning("Hazelcast Management Center web-server URL is null!");
             }
         }
     }
@@ -132,7 +132,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             ManagementCenterConfigOperation operation = new ManagementCenterConfigOperation(newUrl);
             sendToAllMembers(operation);
         } catch (Throwable throwable) {
-            logger.log(Level.WARNING, "New web server url cannot be assigned.", throwable);
+            logger.warning("New web server url cannot be assigned.", throwable);
             return HttpCommand.RES_500;
         }
         return HttpCommand.RES_204;
@@ -146,7 +146,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                 call(((MemberImpl) member).getAddress(), operation);
             }
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Web server url cannot be send to the newly joined member", e);
+            logger.warning("Web server url cannot be send to the newly joined member", e);
         }
     }
 
@@ -433,7 +433,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
 
         public void run() {
             if (webServerUrl == null) {
-                logger.log(Level.WARNING, "Web server url is null!");
+                logger.warning("Web server url is null!");
                 return;
             }
             try {
@@ -520,7 +520,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
 
         public void run() {
             if (webServerUrl == null) {
-                logger.log(Level.WARNING, "Web server url is null!");
+                logger.warning("Web server url is null!");
                 return;
             }
             try {

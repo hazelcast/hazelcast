@@ -139,13 +139,14 @@ public class QueueContainer implements DataSerializable {
     public Data txnCommitPollBackup(long itemId) {
         QueueItem item = txMap.remove(itemId);
         if (item == null) {
-            logger.log(Level.WARNING, "txnCommitPoll operation-> No txn item for itemId: " + itemId);
+            logger.warning("txnCommitPoll operation-> No txn item for itemId: " + itemId);
             return null;
         }
         if (store.isEnabled()) {
             try {
                 store.delete(item.getItemId());
             } catch (Exception e) {
+                //todo: ieuw.. we want to log it to a logger
                 e.printStackTrace();
             }
         }
@@ -155,7 +156,7 @@ public class QueueContainer implements DataSerializable {
     public boolean txnRollbackPoll(long itemId, boolean backup) {
         QueueItem item = txMap.remove(itemId);
         if (item == null) {
-            logger.log(Level.WARNING, "No txn item for itemId: " + itemId);
+            logger.warning("No txn item for itemId: " + itemId);
             return false;
         }
         if (!backup) {
@@ -212,7 +213,7 @@ public class QueueContainer implements DataSerializable {
     public boolean txnRollbackOfferBackup(long itemId) {
         QueueItem item = txMap.remove(itemId);
         if (item == null) {
-            logger.log(Level.WARNING, "txnRollbackOffer operation-> No txn item for itemId: " + itemId);
+            logger.warning("txnRollbackOffer operation-> No txn item for itemId: " + itemId);
             return false;
         }
         return true;

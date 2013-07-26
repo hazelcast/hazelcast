@@ -461,7 +461,7 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     public void destroyDistributedObject(Object objectId) {
-        logger.log(Level.WARNING, "Destroying object: " + objectId);
+        logger.warning("Destroying object: " + objectId);
         final String name = String.valueOf(objectId);
         mapContainers.remove(name);
         final PartitionContainer[] containers = partitionContainers;
@@ -958,7 +958,7 @@ public class MapService implements ManagedService, MigrationAwareService,
                             backupEntryMemoryCost += record.getCost();
                         }
                     } else if (replicaAddress == null && clusterService.getSize() > backupCount) {
-                        logger.log(Level.WARNING, "Partition: " + partition + ", replica: " + replica + " has no owner!");
+                        logger.warning("Partition: " + partition + ", replica: " + replica + " has no owner!");
                     }
                 }
             }

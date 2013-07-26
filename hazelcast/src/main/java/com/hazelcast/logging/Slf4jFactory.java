@@ -56,6 +56,18 @@ public class Slf4jFactory extends LoggerFactorySupport {
             log(Level.SEVERE,message,thrown);
         }
 
+        public void warning(String message) {
+            log(Level.WARNING,message);
+        }
+
+        public void warning(Throwable thrown) {
+            log(Level.WARNING,thrown.getMessage(),thrown);
+        }
+
+        public void warning(String message, Throwable thrown) {
+            log(Level.WARNING, message,thrown);
+        }
+
         public void log(Level level, String message) {
             if (Level.FINEST == level) {
                 logger.debug(message);

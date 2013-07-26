@@ -80,7 +80,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 if (!configurationFile.exists()) {
                     String msg = "Config file at '" + configurationFile.getAbsolutePath() + "' doesn't exist.";
                     msg += "\nHazelcast will try to use the hazelcast.xml config file in the working directory.";
-                    logger.log(Level.WARNING, msg);
+                    logger.warning( msg);
                     configurationFile = null;
                 }
             }
@@ -101,7 +101,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                     String msg = "Having problem reading config file at '" + configFile + "'.";
                     msg += "\nException message: " + e.getMessage();
                     msg += "\nHazelcast will try to use the hazelcast.xml config file in classpath.";
-                    logger.log(Level.WARNING, msg);
+                    logger.warning(msg);
                     in = null;
                 }
             }
@@ -110,10 +110,10 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 configurationUrl = Config.class.getClassLoader().getResource("hazelcast.xml");
                 if (configurationUrl == null) {
                     configurationUrl = Config.class.getClassLoader().getResource("hazelcast-default.xml");
-                    logger.log(Level.WARNING,
+                    logger.warning(
                             "Could not find hazelcast.xml in classpath.\nHazelcast will use hazelcast-default.xml config file in jar.");
                     if (configurationUrl == null) {
-                        logger.log(Level.WARNING, "Could not find hazelcast-default.xml in the classpath!"
+                        logger.warning("Could not find hazelcast-default.xml in the classpath!"
                                 + "\nThis may be due to a wrong-packaged or corrupted jar file.");
                         return;
                     }
@@ -123,7 +123,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 if (in == null) {
                     String msg = "Having problem reading config file hazelcast-default.xml in the classpath.";
                     msg += "\nHazelcast will start with default configuration.";
-                    logger.log(Level.WARNING, msg);
+                    logger.warning(msg);
                 }
             }
         } catch (final Throwable e) {
@@ -162,7 +162,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             String msg = "Having problem parsing the " + msgPart;
             msg += "\nException: " + e.getMessage();
             msg += "\nHazelcast will start with default configuration.";
-            logger.log(Level.WARNING, msg);
+            logger.warning(msg);
             return;
         } finally {
             IOUtil.closeResource(in);
@@ -207,7 +207,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         while (startIndex > -1) {
             endIndex = value.indexOf("}", startIndex);
             if (endIndex == -1) {
-                logger.log(Level.WARNING, "Bad variable syntax. Could not find a closing curly bracket '}' on node: " + node.getLocalName());
+                logger.warning("Bad variable syntax. Could not find a closing curly bracket '}' on node: " + node.getLocalName());
                 break;
             }
 
@@ -217,7 +217,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 sb.append(variableReplacement);
             } else {
                 sb.append(value.substring(startIndex, endIndex + 1));
-                logger.log(Level.WARNING, "Could not find a value for property  '" + variable + "' on node: " + node.getLocalName());
+                logger.warning("Could not find a value for property  '" + variable + "' on node: " + node.getLocalName());
             }
 
             startIndex = value.indexOf("${", endIndex);
@@ -379,7 +379,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         } catch (final Exception e) {
             logger.info( parameterName + " parameter value, [" + value
                     + "], is not a proper integer. Default value, [" + defaultValue + "], will be used!");
-            logger.log(Level.WARNING, e.getMessage(), e);
+            logger.warning(e);
             return defaultValue;
         }
     }
@@ -482,7 +482,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 method.invoke(target, new Object[]{Boolean.parseBoolean(value)});
             }
         } catch (Exception e) {
-            logger.log(Level.WARNING, e.getMessage(), e);
+            logger.warning(e);
         }
     }
 

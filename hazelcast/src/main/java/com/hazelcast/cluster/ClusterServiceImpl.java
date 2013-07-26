@@ -158,7 +158,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         try {
             return (JoinRequest) nodeEngine.toObject(inv.invoke().get());
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Error during join check!", e);
+            logger.warning("Error during join check!", e);
         }
         return null;
     }
@@ -170,7 +170,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 valid = node.createConfigCheck().isCompatible(joinMessage.getConfigCheck());
             } catch (Exception e) {
                 final String message = "Invalid join request from: " + joinMessage.getAddress() + ", reason:" + e.getMessage();
-                logger.log(Level.WARNING, message);
+                logger.warning(message);
                 node.getSystemLogService().logJoin(message);
                 throw e;
             }
@@ -180,7 +180,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private void logMissingConnection(Address address) {
         String msg = node.getLocalMember() + " has no connection to " + address;
-        logger.log(Level.WARNING, msg);
+        logger.warning(msg);
     }
 
     public final void heartBeater() {
@@ -199,7 +199,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                                 if (deadAddresses == null) {
                                     deadAddresses = new ArrayList<Address>();
                                 }
-                                logger.log(Level.WARNING, "Added " + address + " to list of dead addresses because of timeout since last read");
+                                logger.warning("Added " + address + " to list of dead addresses because of timeout since last read");
                                 deadAddresses.add(address);
                             } else if ((now - memberImpl.getLastRead()) >= 5000 && (now - memberImpl.getLastPing()) >= 5000) {
                                 ping(memberImpl);
@@ -213,7 +213,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                                 if (deadAddresses == null) {
                                     deadAddresses = new ArrayList<Address>();
                                 }
-                                logger.log(Level.WARNING, "Added " + address +
+                                logger.warning("Added " + address +
                                         " to list of dead addresses because it has not sent a master confirmation recently");
                                 deadAddresses.add(address);
                             }
@@ -241,7 +241,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 boolean removed = false;
                 if (masterMember != null) {
                     if ((now - masterMember.getLastRead()) >= (maxNoHeartbeatMillis)) {
-                        logger.log(Level.WARNING, "Master node has timed out its heartbeat and will be removed");
+                        logger.warning("Master node has timed out its heartbeat and will be removed");
                         removeAddress(masterAddress);
                         removed = true;
                     } else if ((now - masterMember.getLastRead()) >= 5000 && (now - masterMember.getLastPing()) >= 5000) {
@@ -273,7 +273,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             public void run() {
                 try {
                     final Address address = memberImpl.getAddress();
-                    logger.log(Level.WARNING, thisAddress + " will ping " + address);
+                    logger.warning(thisAddress + " will ping " + address);
                     for (int i = 0; i < 5; i++) {
                         try {
                             if (address.getInetAddress().isReachable(null, icmpTtl, icmpTimeout)) {
@@ -285,7 +285,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                             // means we cannot connect anymore
                         }
                     }
-                    logger.log(Level.WARNING, thisAddress + " couldn't ping " + address);
+                    logger.warning(thisAddress + " couldn't ping " + address);
                     // not reachable.
                     removeAddress(address);
                 } catch (Throwable ignored) {
@@ -352,7 +352,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
 
     private void doRemoveAddress(Address deadAddress, boolean destroyConnection) {
         if (preparingToMerge.get()) {
-            logger.log(Level.WARNING, "Cluster-merge process is ongoing, won't process member removal: " + deadAddress);
+            logger.warning("Cluster-merge process is ongoing, won't process member removal: " + deadAddress);
             return;
         }
         if (!node.joined()) {
@@ -403,7 +403,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                     newMaster = member;
                 }
             } else {
-                logger.log(Level.WARNING, "Old master is dead and this node is not master " +
+                logger.warning("Old master is dead and this node is not master " +
                         "but member list contains only " + size + " members! -> " + members);
             }
             logger.info("Master " + oldMasterAddress + " left the cluster. Assigning new master " + newMaster);
@@ -449,7 +449,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                     // somehow disconnected and wants to join back.
                     // So drop old member and process join request if this node becomes master.
                     if (node.isMaster() || member.getAddress().equals(node.getMasterAddress())) {
-                        logger.log(Level.WARNING, "New join request has been received from an existing endpoint! => " + member
+                        logger.warning("New join request has been received from an existing endpoint! => " + member
                                 + " Removing old member and processing join request...");
                         // If existing connection of endpoint is different from current connection
                         // destroy it, otherwise keep it.
@@ -526,7 +526,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 if (currentMaster != null && !currentMaster.equals(masterAddress)) {
                     final Connection conn = node.connectionManager.getConnection(currentMaster);
                     if (conn != null && conn.live()) {
-                        logger.log(Level.WARNING, "Ignoring master response from " + masterAddress +
+                        logger.warning("Ignoring master response from " + masterAddress +
                                 ", since this node has an active master: " + currentMaster);
                         return;
                     }
@@ -534,7 +534,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 node.setMasterAddress(masterAddress);
                 node.connectionManager.getOrConnect(masterAddress);
                 if (!sendJoinRequest(masterAddress, true)) {
-                    logger.log(Level.WARNING, "Could not create connection to possible master " + masterAddress);
+                    logger.warning("Could not create connection to possible master " + masterAddress);
                 }
             }
         } finally {
@@ -660,7 +660,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 } catch (TimeoutException ignored) {
                     logger.log(Level.FINEST, "Finalize join call timed-out: " + future);
                 } catch (Exception e) {
-                    logger.log(Level.WARNING, "While waiting finalize join calls...", e);
+                    logger.warning("While waiting finalize join calls...", e);
                 }
             }
         } finally {

@@ -131,7 +131,7 @@ public final class ClientEndpoint implements Client {
     public void setListenerRegistration(String service, String topic, String id) {
         ListenerRegistration reg = registration;
         if (reg != null) {
-            getLogger().log(Level.WARNING, "A listener already exists. De-registering current listener: " + reg);
+            getLogger().warning("A listener already exists. De-registering current listener: " + reg);
             deregisterListener(reg);
         }
         registration = new ListenerRegistration(service, topic, id);
@@ -144,7 +144,7 @@ public final class ClientEndpoint implements Client {
                 deregisterListener(reg);
             } catch (HazelcastInstanceNotActiveException ignored) {
             } catch (Exception e) {
-                getLogger().log(Level.WARNING, e.getMessage(), e);
+                getLogger().warning(e);
             }
             registration = null;
         }
@@ -158,7 +158,7 @@ public final class ClientEndpoint implements Client {
                 context.rollbackTransaction();
             } catch (HazelcastInstanceNotActiveException ignored) {
             } catch (Exception e) {
-                getLogger().log(Level.WARNING, e.getMessage(), e);
+                getLogger().warning(e);
             }
             transactionContext = null;
         }

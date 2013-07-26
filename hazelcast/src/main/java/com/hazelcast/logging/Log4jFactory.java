@@ -64,6 +64,18 @@ public class Log4jFactory extends LoggerFactorySupport implements LoggerFactory 
             log(Level.SEVERE, thrown.getMessage(), thrown);
         }
 
+        public void warning(String message) {
+            log(Level.WARNING,message);
+        }
+
+        public void warning(Throwable thrown) {
+            log(Level.WARNING,thrown.getMessage(),thrown);
+        }
+
+        public void warning(String message, Throwable thrown) {
+            log(Level.WARNING, message,thrown);
+        }
+
         public void severe(String message, Throwable thrown) {
             log(Level.SEVERE, message, thrown);
         }

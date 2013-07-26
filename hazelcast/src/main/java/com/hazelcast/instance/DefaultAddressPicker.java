@@ -159,7 +159,7 @@ class DefaultAddressPicker implements AddressPicker {
                         throw new RuntimeException(msg);
                     } else {
                         if (networkConfig.getJoin().getTcpIpConfig().isEnabled()) {
-                            logger.log(Level.WARNING, "Could not find a matching address to start with! " +
+                            logger.warning("Could not find a matching address to start with! " +
                                     "Picking one of non-loopback addresses.");
                         }
                         addressDef = pickMatchingAddress(null);

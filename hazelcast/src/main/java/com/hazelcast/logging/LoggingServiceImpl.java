@@ -153,6 +153,18 @@ public class LoggingServiceImpl implements LoggingService {
             log(Level.SEVERE,message,thrown);
         }
 
+        public void warning(String message) {
+            log(Level.WARNING,message);
+        }
+
+        public void warning(Throwable thrown) {
+            log(Level.WARNING,thrown.getMessage(),thrown);
+        }
+
+        public void warning(String message, Throwable thrown) {
+            log(Level.WARNING, message,thrown);
+        }
+
         public void log(Level level, String message) {
             log(level, message, null);
         }

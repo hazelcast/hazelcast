@@ -30,6 +30,12 @@ public interface ILogger {
 
     void severe(String message, Throwable thrown);
 
+    void warning(String message);
+
+    void warning(Throwable thrown);
+
+    void warning(String message, Throwable thrown);
+
     void log(Level level, String message);
 
     void log(Level level, String message, Throwable thrown);

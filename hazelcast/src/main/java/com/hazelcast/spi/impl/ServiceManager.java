@@ -180,7 +180,7 @@ final class ServiceManager {
         final ServiceInfo serviceInfo = new ServiceInfo(serviceName, service);
         final ServiceInfo currentServiceInfo = services.putIfAbsent(serviceName, serviceInfo);
         if (currentServiceInfo != null) {
-            logger.log(Level.WARNING, "Replacing " + currentServiceInfo + " with " + serviceInfo);
+            logger.warning("Replacing " + currentServiceInfo + " with " + serviceInfo);
             if (currentServiceInfo.isCoreService()) {
                 throw new HazelcastException("Can not replace a CoreService! Name: " + serviceName
                         + ", Service: " + currentServiceInfo.getService());

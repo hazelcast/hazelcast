@@ -368,7 +368,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     listenMembershipEvents();
                 } catch (Exception e) {
                     if (client.getLifecycleService().isRunning()) {
-                        logger.log(Level.WARNING, "Error while listening cluster events! -> " + conn, e);
+                        logger.warning("Error while listening cluster events! -> " + conn, e);
                     }
                     IOUtil.closeResource(conn);
                     conn = null;
@@ -485,7 +485,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 try {
                     c.close();
                 } catch (IOException e) {
-                    logger.log(Level.WARNING, "Error while closing connection!", e);
+                    logger.warning("Error while closing connection!", e);
                 }
             }
         }
@@ -507,14 +507,14 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     logger.log(Level.FINEST, "IO error during initial connection...", e);
                 } catch (AuthenticationException e) {
                     lastError = e;
-                    logger.log(Level.WARNING, "Authentication error on " + address, e);
+                    logger.warning("Authentication error on " + address, e);
                 }
             }
             if (attempt++ >= connectionAttemptLimit) {
                 break;
             }
             final long remainingTime = nextTry - Clock.currentTimeMillis();
-            logger.log(Level.WARNING,
+            logger.warning(
                     String.format("Unable to get alive cluster connection," +
                             " try in %d ms later, attempt %d of %d.",
                             Math.max(0, remainingTime), attempt, connectionAttemptLimit));

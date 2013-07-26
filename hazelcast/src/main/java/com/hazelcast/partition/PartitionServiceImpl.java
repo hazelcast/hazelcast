@@ -143,7 +143,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             if (event.getReplicaIndex() == 0 && event.getNewAddress() == null && node.isActive() && node.joined()) {
                 final String warning = "Owner of partition is being removed! " +
                         "Possible data loss for partition[" + event.getPartitionId() + "]. " + event;
-                logger.log(Level.WARNING, warning);
+                logger.warning(warning);
                 systemLogService.logWarningPartition(warning);
             }
             if (node.isMaster()) {
@@ -373,7 +373,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             final Address sender = partitionState.getEndpoint();
             final Address master = node.getMasterAddress();
             if (node.isMaster()) {
-                logger.log(Level.WARNING, "This is the master node and received a PartitionRuntimeState from "
+                logger.warning("This is the master node and received a PartitionRuntimeState from "
                         + sender + ". Ignoring incoming state! ");
                 return;
             } else {
@@ -383,7 +383,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                                 " => Sender: " + sender + ", Master: " + master + "! ");
                         return;
                     } else {
-                        logger.log(Level.WARNING, "Received a ClusterRuntimeState, but its sender doesn't seem master!" +
+                        logger.warning("Received a ClusterRuntimeState, but its sender doesn't seem master!" +
                                 " => Sender: " + sender + ", Master: " + master + "! " +
                                 "(Ignore if master node has changed recently.)");
                     }
@@ -417,7 +417,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                     s.append("\n\t").append(address);
                 }
                 s.append("\n}");
-                logger.log(Level.WARNING, s.toString());
+                logger.warning(s.toString());
             }
 
             Collection<MigrationInfo> completedMigrations = partitionState.getCompletedMigrations();
@@ -463,7 +463,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                                 nodeEngine.getOperationService().executeOperation(op);
                             }
                         } catch (Exception e) {
-                            logger.log(Level.WARNING, e.getMessage(), e);
+                            logger.warning(e);
                         } finally {
                             migrationInfo.doneProcessing();
                         }
@@ -617,7 +617,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 nodeEngine.getOperationService().send(syncRequest, target);
             }
         } else {
-            logger.log(Level.WARNING, "Sync replica target is null, no need to sync -> partition: " + partitionId
+            logger.warning("Sync replica target is null, no need to sync -> partition: " + partitionId
                     + ", replica: " + replicaIndex);
         }
     }
@@ -716,7 +716,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             return (Boolean) f.get(1, TimeUnit.MINUTES);
         } catch (InterruptedException ignored) {
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Could not get a response from master about migrations! -> " + e.toString());
+            logger.warning("Could not get a response from master about migrations! -> " + e.toString());
         }
         return false;
     }
@@ -1036,7 +1036,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                     sendPartitionRuntimeState();
 
                     if (lostCount > 0) {
-                        logger.log(Level.WARNING, "Assigning new owners for " + lostCount + " LOST partitions!");
+                        logger.warning("Assigning new owners for " + lostCount + " LOST partitions!");
                     }
 
                     if (migrationCount > 0) {
@@ -1123,7 +1123,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                     }
                 } else {
                     // Partition is lost! Assign new owner and exit.
-                    logger.log(Level.WARNING, "Partition is lost! Assign new owner and exit...");
+                    logger.warning( "Partition is lost! Assign new owner and exit...");
                     result = Boolean.TRUE;
                 }
                 if (Boolean.TRUE.equals(result)) {
@@ -1226,7 +1226,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 migrating = (r instanceof Migrator);
                 r.run();
             } catch (Throwable t) {
-                logger.log(Level.WARNING, t.getMessage(), t);
+                logger.warning( t);
             }
             return true;
         }

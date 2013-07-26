@@ -89,7 +89,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
                     } catch (InterruptedException e) {
                         return;
                     } catch (Throwable t) {
-                        logger.log(Level.WARNING, t.getMessage(), t);
+                        logger.warning(t);
                     }
                 }
             }

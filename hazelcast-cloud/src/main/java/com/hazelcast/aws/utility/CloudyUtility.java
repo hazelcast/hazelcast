@@ -77,7 +77,7 @@ public class CloudyUtility {
             }
             return names;
         } catch (Exception e) {
-            logger.log(Level.WARNING, e.getMessage(), e);
+            logger.warning(e);
         }
         return new ArrayList<String>();
     }

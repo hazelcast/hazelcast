@@ -83,7 +83,7 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
                 if (!configurationFile.exists()) {
                     String msg = "Config file at '" + configurationFile.getAbsolutePath() + "' doesn't exist.";
                     msg += "\nHazelcast will try to use the hazelcast-client.xml config file in the working directory.";
-                    logger.log(Level.WARNING, msg);
+                    logger.warning(msg);
                     configurationFile = null;
                 }
             }
@@ -104,7 +104,7 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
                     String msg = "Having problem reading config file at '" + configFile + "'.";
                     msg += "\nException message: " + e.getMessage();
                     msg += "\nHazelcast will try to use the hazelcast-client.xml config file in classpath.";
-                    logger.log(Level.WARNING, msg);
+                    logger.warning(msg);
                     in = null;
                 }
             }
@@ -454,7 +454,7 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
         } catch (final Exception e) {
             logger.info(parameterName + " parameter value, [" + value
                     + "], is not a proper integer. Default value, [" + defaultValue + "], will be used!");
-            logger.log(Level.WARNING, e.getMessage(), e);
+            logger.warning(e);
             return defaultValue;
         }
     }

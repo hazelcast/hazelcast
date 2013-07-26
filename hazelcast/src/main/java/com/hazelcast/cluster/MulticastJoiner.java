@@ -115,14 +115,14 @@ public class MulticastJoiner extends AbstractJoiner {
                     Thread.sleep(node.groupProperties.WAIT_SECONDS_BEFORE_JOIN.getInteger() * 1000L * 2);
                 }
                 if (shouldMerge(joinInfo)) {
-                    logger.log(Level.WARNING, node.getThisAddress() + " is merging [multicast] to " + joinInfo.getAddress());
+                    logger.warning(node.getThisAddress() + " is merging [multicast] to " + joinInfo.getAddress());
                     startClusterMerge(joinInfo.getAddress());
                 }
             }
         } catch (InterruptedException ignored) {
         } catch (Exception e) {
             if (logger != null) {
-                logger.log(Level.WARNING, e.getMessage(), e);
+                logger.warning(e);
             }
         } finally {
             node.multicastService.removeMulticastListener(listener);
@@ -167,7 +167,7 @@ public class MulticastJoiner extends AbstractJoiner {
             }
         } catch (final Exception e) {
             if (logger != null) {
-                logger.log(Level.WARNING, e.getMessage(), e);
+                logger.warning(e);
             }
         } finally {
             currentTryCount.set(0);

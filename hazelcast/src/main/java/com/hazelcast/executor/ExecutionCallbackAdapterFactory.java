@@ -54,13 +54,13 @@ class ExecutionCallbackAdapterFactory {
         if (members.contains(member)) {
             ValueWrapper current = null;
             if ((current = responses.put(member, new ValueWrapper(response))) != null) {
-                logger.log(Level.WARNING, "Replacing current callback value[" + current.value
+                logger.warning("Replacing current callback value[" + current.value
                         + " with value[" + response + "].");
             }
             try {
                 multiExecutionCallback.onResponse(member, response);
             } catch (Throwable e) {
-                logger.log(Level.WARNING, e.getMessage(), e);
+                logger.warning(e.getMessage(), e);
             }
             if (members.size() == responses.size() && done.compareAndSet(false, true)) {
                 Map<Member, Object> realResponses = new HashMap<Member, Object>(members.size());

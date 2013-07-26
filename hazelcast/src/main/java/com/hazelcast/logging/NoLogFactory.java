@@ -41,6 +41,15 @@ public class NoLogFactory implements LoggerFactory {
         public void severe(String message, Throwable thrown) {
         }
 
+        public void warning(String message) {
+        }
+
+        public void warning(Throwable thrown) {
+        }
+
+        public void warning(String message, Throwable thrown) {
+        }
+
         public void log(Level level, String message) {
         }
 

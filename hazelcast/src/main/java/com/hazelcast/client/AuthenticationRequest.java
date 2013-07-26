@@ -74,7 +74,7 @@ public final class AuthenticationRequest extends CallableClientRequest implement
                 endpoint.setLoginContext(lc);
                 authenticated = true;
             } catch (LoginException e) {
-                logger.log(Level.WARNING, e.getMessage(), e);
+                logger.warning(e);
                 authenticated = false;
             }
         } else {

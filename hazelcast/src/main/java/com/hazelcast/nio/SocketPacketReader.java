@@ -117,7 +117,7 @@ class SocketPacketReader implements SocketReader {
                         size = -1;
                     }
                 } catch (ShortBufferException e) {
-                    logger.log(Level.WARNING, e.getMessage(), e);
+                    logger.warning(e);
                 }
                 cipherBuffer.flip();
                 while (cipherBuffer.hasRemaining()) {

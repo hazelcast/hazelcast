@@ -47,7 +47,7 @@ class HazelcastInstanceLoader implements IHazelcastInstanceLoader {
 
     public HazelcastInstance loadInstance() throws CacheException {
         if (instance != null && instance.getLifecycleService().isRunning()) {
-            logger.log(Level.WARNING, "Current HazelcastInstance is already loaded and running! " +
+            logger.warning("Current HazelcastInstance is already loaded and running! " +
                     "Returning current instance...");
             return instance;
         }
@@ -58,7 +58,7 @@ class HazelcastInstanceLoader implements IHazelcastInstanceLoader {
             try {
                 config = ConfigLoader.load(configResourcePath);
             } catch (IOException e) {
-                logger.log(Level.WARNING, "IOException: " + e.getMessage());
+                logger.warning("IOException: " + e.getMessage());
             }
             if (config == null) {
                 throw new CacheException("Could not find configuration file: " + configResourcePath);
@@ -93,7 +93,7 @@ class HazelcastInstanceLoader implements IHazelcastInstanceLoader {
         }
         final boolean shutDown = CacheEnvironment.shutdownOnStop(props, (instanceName == null));
         if (!shutDown) {
-            logger.log(Level.WARNING, CacheEnvironment.SHUTDOWN_ON_STOP + " property is set to 'false'. " +
+            logger.warning(CacheEnvironment.SHUTDOWN_ON_STOP + " property is set to 'false'. " +
                     "Leaving current HazelcastInstance active! (Warning: Do not disable Hazelcast "
                     + GroupProperties.PROP_SHUTDOWNHOOK_ENABLED + " property!)");
             return;

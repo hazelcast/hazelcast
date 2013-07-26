@@ -350,7 +350,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         }
         if (serverSocketChannel != null) {
             if (socketAcceptorThread != null) {
-                logger.log(Level.WARNING, "SocketAcceptor thread is already live! Shutting down old acceptor...");
+                logger.warning("SocketAcceptor thread is already live! Shutting down old acceptor...");
                 shutdownSocketAcceptor();
             }
             Runnable acceptRunnable = new SocketAcceptor(serverSocketChannel, this);

@@ -79,7 +79,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                 Thread.sleep(3000L);
             }
         } catch (final Exception e) {
-            logger.log(Level.WARNING, e.getMessage(), e);
+            logger.warning( e);
         }
     }
 
@@ -100,7 +100,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                                    && (masterAddress == null || masterAddress.equals(endpoint));
             } else {
                 approvedAsMaster = false;
-                logger.log(Level.WARNING, "This node requires MulticastJoin strategy!");
+                logger.warning("This node requires MulticastJoin strategy!");
             }
             logger.log(Level.FINEST, "Sending '" + approvedAsMaster + "' for master claim of node: " + getCallerAddress());
         }
@@ -258,7 +258,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             if (master != null) {
                 node.clusterService.sendJoinRequest(master, true);
                 if (requestCount++ > node.getGroupProperties().MAX_WAIT_SECONDS_BEFORE_JOIN.getInteger() + 10) {
-                    logger.log(Level.WARNING, "Couldn't join to the master : " + master);
+                    logger.warning("Couldn't join to the master : " + master);
                     return;
                 }
             } else {
@@ -298,7 +298,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                 }
             }
         } catch (final Exception e) {
-            logger.log(Level.WARNING, e.getMessage(), e);
+            logger.warning( e);
         }
         return null;
     }
@@ -370,7 +370,7 @@ public class TcpIpJoiner extends AbstractJoiner {
                     }
                 }
             } catch (UnknownHostException e) {
-                logger.log(Level.WARNING, e.getMessage(), e);
+                logger.warning(e);
             }
         }
         return possibleAddresses;
@@ -439,7 +439,7 @@ public class TcpIpJoiner extends AbstractJoiner {
             if (conn != null) {
                 final JoinRequest response = node.clusterService.checkJoinInfo(possibleAddress);
                 if (response != null && shouldMerge(response)) {
-                    logger.log(Level.WARNING, node.getThisAddress() + " is merging [tcp/ip] to " + possibleAddress);
+                    logger.warning(node.getThisAddress() + " is merging [tcp/ip] to " + possibleAddress);
                     setTargetAddress(possibleAddress);
                     startClusterMerge(possibleAddress);
                     return;

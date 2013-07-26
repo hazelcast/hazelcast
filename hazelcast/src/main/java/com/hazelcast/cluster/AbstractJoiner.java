@@ -68,7 +68,7 @@ public abstract class AbstractJoiner implements Joiner {
             return;
         }
         if (tryCount.incrementAndGet() == 5) {
-            logger.log(Level.WARNING, "Join try count exceed limit, setting this node as master!");
+            logger.warning("Join try count exceed limit, setting this node as master!");
             node.setAsMaster();
         }
         if (!node.isMaster()) {
@@ -96,13 +96,13 @@ public abstract class AbstractJoiner implements Joiner {
             }
             if (!node.joined() || !allConnected) {
                 if (Clock.currentTimeMillis() - getStartTime() < maxJoinMillis) {
-                    logger.log(Level.WARNING, "Failed to connect, node joined= " + node.joined() + ", allConnected= " + allConnected + " to all other members after " + checkCount + " seconds.");
-                    logger.log(Level.WARNING, "Rebooting after 10 seconds.");
+                    logger.warning("Failed to connect, node joined= " + node.joined() + ", allConnected= " + allConnected + " to all other members after " + checkCount + " seconds.");
+                    logger.warning("Rebooting after 10 seconds.");
                     try {
                         Thread.sleep(10000);
                         node.rejoin();
                     } catch (InterruptedException e) {
-                        logger.log(Level.WARNING, e.getMessage(), e);
+                        logger.warning(e);
                         node.shutdown(false, true);
                     }
                 } else {

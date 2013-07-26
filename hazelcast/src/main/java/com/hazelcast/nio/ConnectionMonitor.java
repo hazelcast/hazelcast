@@ -55,7 +55,7 @@ public class ConnectionMonitor {
         if (now - last > minInterval) {
             if (faults++ >= maxFaults) {
                 String removeEndpointMessage = "Removing connection to endpoint " + endPoint + getCauseDescription(t);
-                logger.log(Level.WARNING, removeEndpointMessage);
+                logger.warning(removeEndpointMessage);
                 ioService.getSystemLogService().logConnection(removeEndpointMessage);
                 ioService.removeEndpoint(endPoint);
             }

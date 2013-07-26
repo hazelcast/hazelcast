@@ -208,7 +208,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             if (action == ExceptionAction.RETRY_INVOCATION && localInvokeCount < tryCount) {
                 response = RETRY_RESPONSE;
                 if (localInvokeCount > 99 && localInvokeCount % 10 == 0) {
-                    logger.log(Level.WARNING, "Retrying invocation: " + toString() + ", Reason: " + error);
+                    logger.warning("Retrying invocation: " + toString() + ", Reason: " + error);
                 }
             } else if (action == ExceptionAction.CONTINUE_WAIT) {
                 response = WAIT_RESPONSE;
@@ -363,7 +363,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                         continue;
                     }
                     // TODO: @mm - improve logging (see SystemLogService)
-                    logger.log(Level.WARNING, "No response for " + lastPollTime + " ms. " + toString());
+                    logger.warning("No response for " + lastPollTime + " ms. " + toString());
 
                     boolean executing = isOperationExecuting(target);
                     if (!executing) {
@@ -464,13 +464,13 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                     new IsStillExecuting(op.getCallId()), target, 0, 0, 5000, null);
             Future f = inv.invoke();
             // TODO: @mm - improve logging (see SystemLogService)
-            logger.log(Level.WARNING, "Asking if operation execution has been started: " + toString());
+            logger.warning("Asking if operation execution has been started: " + toString());
             executing = (Boolean) nodeEngine.toObject(f.get(5000, TimeUnit.MILLISECONDS));
         } catch (Exception e) {
-            logger.log(Level.WARNING, "While asking 'is-executing': " + toString(), e);
+            logger.warning("While asking 'is-executing': " + toString(), e);
         }
         // TODO: @mm - improve logging (see SystemLogService)
-        logger.log(Level.WARNING, "'is-executing': " + executing + " -> " + toString());
+        logger.warning("'is-executing': " + executing + " -> " + toString());
         return executing;
     }
 

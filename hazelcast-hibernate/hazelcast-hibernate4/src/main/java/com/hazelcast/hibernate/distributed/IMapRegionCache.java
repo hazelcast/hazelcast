@@ -72,7 +72,7 @@ public class IMapRegionCache implements RegionCache {
     public boolean update(final Object key, final Object value, final Object currentVersion,
                           final Object previousVersion, final SoftLock lock) {
         if (lock == LOCK_FAILURE) {
-            logger.log(Level.WARNING, "Cache lock could not be acquired!");
+            logger.warning("Cache lock could not be acquired!");
             return false;
         }
         if (versionComparator != null && currentVersion != null) {
