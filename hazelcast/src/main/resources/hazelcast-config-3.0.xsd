@@ -584,7 +584,7 @@
             </xs:element>
             <xs:element name="enable-compression" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
             <xs:element name="enable-shared-object" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
-            <xs:element name="allow-unsafe" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
+            <xs:element name="allow-unsafe" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
             <xs:element name="data-serializable-factories" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
                     <xs:sequence>
