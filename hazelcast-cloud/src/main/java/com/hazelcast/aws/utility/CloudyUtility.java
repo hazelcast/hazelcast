@@ -129,14 +129,14 @@ public class CloudyUtility {
 
                  if (ip != null) {
                     if (!"running".equals(state)) {
-                        logger.log(Level.FINE, format("Ignoring EC2 instance [%s][%s] reason: the instance is not running but %s", instanceName,ip, state));
+                        logger.finest(format("Ignoring EC2 instance [%s][%s] reason: the instance is not running but %s", instanceName,ip, state));
                     } else if (!acceptTag(awsConfig, node)) {
-                        logger.log(Level.FINE, format("Ignoring EC2 instance [%s][%s] reason: security-group-name doesn't match", instanceName,ip));
+                        logger.finest(format("Ignoring EC2 instance [%s][%s] reason: security-group-name doesn't match", instanceName,ip));
                     } else if (!acceptGroupName(awsConfig, node)) {
-                        logger.log(Level.FINE, format("Ignoring EC2 instance [%s][%s] reason: tag-key/tag-value don't match", instanceName,ip));
+                        logger.finest( format("Ignoring EC2 instance [%s][%s] reason: tag-key/tag-value don't match", instanceName,ip));
                     } else {
                         list.add(ip);
-                        logger.log(Level.FINE, format("Accepting EC2 instance [%s][%s]",instanceName, ip));
+                        logger.finest(format("Accepting EC2 instance [%s][%s]",instanceName, ip));
                     }
                 }
 
