@@ -186,7 +186,7 @@ public final class SerializationServiceImpl implements SerializationService {
                 }
                 throw new HazelcastInstanceNotActiveException();
             }
-            if (data.type == SerializationConstants.CONSTANT_TYPE_PORTABLE) {
+            if (typeId == SerializationConstants.CONSTANT_TYPE_PORTABLE) {
                 serializationContext.registerClassDefinition(data.classDefinition);
             }
             Object obj = serializer.read(data);
@@ -215,6 +215,12 @@ public final class SerializationServiceImpl implements SerializationService {
                 throw new HazelcastInstanceNotActiveException();
             }
             out.writeInt(serializer.getTypeId());
+            if (obj instanceof Portable) {
+                final Portable portable = (Portable) obj;
+                out.writeInt(portable.getFactoryId());
+                out.writeInt(portable.getClassId());
+                out.writeInt(serializationContext.ctxVersion);
+            }
             serializer.write(out, obj);
         } catch (Throwable e) {
             handleException(e);
@@ -234,6 +240,15 @@ public final class SerializationServiceImpl implements SerializationService {
                     throw new HazelcastSerializationException("There is no suitable de-serializer for type " + typeId);
                 }
                 throw new HazelcastInstanceNotActiveException();
+            }
+            if (typeId == SerializationConstants.CONSTANT_TYPE_PORTABLE && in instanceof PortableContextAwareInputStream) {
+                int factoryId = in.readInt();
+                int classId = in.readInt();
+                int version = in.readInt();
+                PortableContextAwareInputStream ctxIn = (PortableContextAwareInputStream) in;
+                ctxIn.setFactoryId(factoryId);
+                ctxIn.setDataClassId(classId);
+                ctxIn.setDataVersion(version);
             }
             Object obj = serializer.read(in);
             if (managedContext != null) {

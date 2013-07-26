@@ -269,6 +269,15 @@ public class PortableTest {
         Assert.assertEquals(p, serializationService.toObject(data));
     }
 
+    @Test
+    public void testPortableNestedInOthers() {
+        SerializationService serializationService = createSerializationService(1);
+        Object o1 = new ComplexDataSerializable(new NamedPortable("test-portable", 137));
+        Data data = serializationService.toData(o1);
+        Object o2 = serializationService.toObject(data);
+        Assert.assertEquals(o1, o2);
+    }
+
     private class TestPortableFactory implements PortableFactory {
 
         public Portable create(int classId) {
@@ -744,6 +753,53 @@ public class PortableTest {
         @Override
         public int hashCode() {
             return data != null ? Arrays.hashCode(data) : 0;
+        }
+    }
+
+    private static class ComplexDataSerializable implements DataSerializable {
+
+        private NamedPortable portable;
+
+        private ComplexDataSerializable() {
+        }
+
+        private ComplexDataSerializable(NamedPortable portable) {
+            this.portable = portable;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(portable);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            portable = in.readObject();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            ComplexDataSerializable that = (ComplexDataSerializable) o;
+
+            if (portable != null ? !portable.equals(that.portable) : that.portable != null) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return portable != null ? portable.hashCode() : 0;
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder("ComplexDataSerializable{");
+            sb.append("portable=").append(portable);
+            sb.append('}');
+            return sb.toString();
         }
     }
 
