@@ -379,7 +379,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             } else {
                 if (sender == null || !sender.equals(master)) {
                     if (node.clusterService.getMember(sender) == null) {
-                        logger.log(Level.SEVERE, "Received a ClusterRuntimeState from an unknown member!" +
+                        logger.severe( "Received a ClusterRuntimeState from an unknown member!" +
                                 " => Sender: " + sender + ", Master: " + master + "! ");
                         return;
                     } else {
@@ -513,7 +513,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                     final String message = "Something is seriously wrong! There are two migration requests for the same partition!" +
                             " First-> " + currentMigrationInfo + ", Second -> " + migrationInfo;
                     final IllegalStateException error = new IllegalStateException(message);
-                    logger.log(Level.SEVERE, message, error);
+                    logger.severe(message, error);
                     throw error;
                 }
 
@@ -1102,7 +1102,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 MigrationInfo info = migrationInfo;
                 PartitionImpl partition = partitions[info.getPartitionId()];
                 if (!partition.getOwner().equals(info.getSource())) {
-                    logger.log(Level.SEVERE, "ERROR: partition owner is not the source of migration! -> "
+                    logger.severe("ERROR: partition owner is not the source of migration! -> "
                             +  partition + " -VS- " + info);
                 }
                 sendMigrationEvent(migrationInfo, MigrationStatus.STARTED);

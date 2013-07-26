@@ -175,7 +175,7 @@ public class QueueContainer implements DataSerializable {
         QueueItem item = new QueueItem(this, itemId, null);
         Object o = txMap.put(itemId, item);
         if (o != null) {
-            logger.log(Level.SEVERE, "txnOfferBackupReserve operation-> Item exists already at txMap for itemId: " + itemId);
+            logger.severe("txnOfferBackupReserve operation-> Item exists already at txMap for itemId: " + itemId);
         }
     }
 

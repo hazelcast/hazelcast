@@ -106,7 +106,7 @@ class DefaultAddressPicker implements AddressPicker {
                     } else {
                         String msg = "Port [" + port + "] is already in use and auto-increment is " +
                                 "disabled. Hazelcast cannot start.";
-                        logger.log(Level.SEVERE, msg, e);
+                        logger.severe(msg, e);
                         throw e;
                     }
                 }
@@ -127,7 +127,7 @@ class DefaultAddressPicker implements AddressPicker {
                 log(Level.FINEST, "Using public address the same as the bind address. " + publicAddress);
             }
         } catch (Exception e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
+            logger.severe(e.getMessage(), e);
             throw e;
         }
     }
@@ -155,7 +155,7 @@ class DefaultAddressPicker implements AddressPicker {
                     if (networkConfig.getInterfaces().isEnabled()) {
                         String msg = "Hazelcast CANNOT start on this node. No matching network interface found. ";
                         msg += "\nInterface matching must be either disabled or updated in the hazelcast.xml config file.";
-                        logger.log(Level.SEVERE, msg);
+                        logger.severe(msg);
                         throw new RuntimeException(msg);
                     } else {
                         if (networkConfig.getJoin().getTcpIpConfig().isEnabled()) {
@@ -196,7 +196,7 @@ class DefaultAddressPicker implements AddressPicker {
                             addressDomainMap.put(address, s);
                         }
                     } catch (UnknownHostException e) {
-                        logger.log(Level.SEVERE, "Could not resolve address: " + s);
+                        logger.severe( "Could not resolve address: " + s);
                     }
                 }
             }

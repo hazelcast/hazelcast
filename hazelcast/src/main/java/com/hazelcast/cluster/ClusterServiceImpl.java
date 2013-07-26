@@ -222,7 +222,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                             memberImpl.didRead();
                         }
                     } catch (Exception e) {
-                        logger.log(Level.SEVERE, e.getMessage(), e);
+                        logger.severe(e.getMessage(), e);
                     }
                 }
             }
@@ -397,7 +397,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 if (member.getAddress().equals(oldMasterAddress)) {
                     newMaster = iter.next();
                 } else {
-                    logger.log(Level.SEVERE, "Old master " + oldMasterAddress
+                    logger.severe("Old master " + oldMasterAddress
                             + " is dead but the first of member list is a different member " +
                             member + "!");
                     newMaster = member;
@@ -468,7 +468,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                         final Credentials cr = joinMessage.getCredentials();
                         ILogger securityLogger = node.loggingService.getLogger("com.hazelcast.security");
                         if (cr == null) {
-                            securityLogger.log(Level.SEVERE, "Expecting security credentials " +
+                            securityLogger.severe("Expecting security credentials " +
                                     "but credentials could not be found in JoinRequest!");
                             nodeEngine.getOperationService().send(new AuthenticationFailureOperation(), joinMessage.getAddress());
                             return;
@@ -477,7 +477,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                                 LoginContext lc = node.securityContext.createMemberLoginContext(cr);
                                 lc.login();
                             } catch (LoginException e) {
-                                securityLogger.log(Level.SEVERE, "Authentication has failed for " + cr.getPrincipal()
+                                securityLogger.severe("Authentication has failed for " + cr.getPrincipal()
                                         + '@' + cr.getEndpoint() + " => (" + e.getMessage() +
                                         ")");
                                 securityLogger.log(Level.FINEST, e.getMessage(), e);
@@ -593,7 +593,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                         try {
                             f.get();
                         } catch (Exception e) {
-                            logger.log(Level.SEVERE, "While merging...", e);
+                            logger.severe("While merging...", e);
                         }
                     }
                     lifecycleService.fireLifecycleEvent(MERGED);

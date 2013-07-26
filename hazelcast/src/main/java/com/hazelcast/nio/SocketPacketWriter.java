@@ -69,7 +69,7 @@ class SocketPacketWriter implements SocketWriter<Packet> {
             try {
                 c = CipherHelper.createSymmetricWriterCipher(connection.getConnectionManager().ioService);
             } catch (Exception e) {
-                logger.log(Level.SEVERE, "Symmetric Cipher for WriteHandler cannot be initialized.", e);
+                logger.severe("Symmetric Cipher for WriteHandler cannot be initialized.", e);
                 CipherHelper.handleCipherException(e, connection);
             }
             cipher = c;

@@ -283,7 +283,7 @@ final class OperationServiceImpl implements OperationService {
             callKey = new RemoteCallKey(op.getCallerAddress(), op.getCallId());
             RemoteCallKey current;
             if ((current = executingCalls.put(callKey, callKey)) != null) {
-                logger.log(Level.SEVERE, "Duplicate Call record! -> " + callKey + " / " + current + " == " + op.getClass().getName());
+                logger.severe("Duplicate Call record! -> " + callKey + " / " + current + " == " + op.getClass().getName());
             }
         }
         return callKey;
@@ -292,7 +292,7 @@ final class OperationServiceImpl implements OperationService {
     private void afterCallExecution(Operation op, RemoteCallKey callKey) {
         if (callKey != null && op.getCallId() != 0 && op.returnsResponse()) {
             if (executingCalls.remove(callKey) == null) {
-                logger.log(Level.SEVERE, "No Call record has been found: -> " + callKey + " == " + op.getClass().getName());
+                logger.severe("No Call record has been found: -> " + callKey + " == " + op.getClass().getName());
             }
         }
     }
@@ -680,7 +680,7 @@ final class OperationServiceImpl implements OperationService {
                     }
                 }
             } catch (Throwable e) {
-                logger.log(Level.SEVERE, e.getMessage(), e);
+                logger.severe(e.getMessage(), e);
             }
         }
 
@@ -690,7 +690,7 @@ final class OperationServiceImpl implements OperationService {
                 response.run();
                 response.afterRun();
             } catch (Throwable e) {
-                logger.log(Level.SEVERE, "While processing response...", e);
+                logger.severe("While processing response...", e);
             }
         }
     }

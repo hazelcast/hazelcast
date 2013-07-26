@@ -196,7 +196,7 @@ public class Node {
                 mcService.addMulticastListener(new NodeMulticastListener(this));
             }
         } catch (Exception e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
+            logger.severe(e.getMessage(), e);
         }
         this.multicastService = mcService;
         initializeListeners(config);
@@ -210,7 +210,7 @@ public class Node {
                 try {
                     listener = ClassLoaderUtil.newInstance(configClassLoader, listenerCfg.getClassName());
                 } catch (Exception e) {
-                    logger.log(Level.SEVERE, e.getMessage(), e);
+                    logger.severe( e.getMessage(), e);
                 }
             }
             if (listener instanceof HazelcastInstanceAware) {
@@ -520,7 +520,7 @@ public class Node {
                 logger.log(Level.WARNING, "Trying to rejoin: " + e.getMessage());
                 rejoin();
             } else {
-                logger.log(Level.SEVERE, "Could not join cluster, shutting down!", e);
+                logger.severe( "Could not join cluster, shutting down!", e);
                 shutdown(false, true);
             }
         }
@@ -546,7 +546,7 @@ public class Node {
                 systemLogService.logJoin("Creating AWSJoiner");
                 return (Joiner) constructor.newInstance(this);
             } catch (Exception e) {
-                logger.log(Level.SEVERE, "Error while creating AWSJoiner!", e);
+                logger.severe("Error while creating AWSJoiner!", e);
             }
         }
         return null;

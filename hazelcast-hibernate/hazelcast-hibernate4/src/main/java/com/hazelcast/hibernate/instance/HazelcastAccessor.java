@@ -69,7 +69,7 @@ public final class HazelcastAccessor {
         final Settings settings = sessionFactory.getSettings();
         final RegionFactory rf = settings.getRegionFactory();
         if (rf == null) {
-            logger.log(Level.SEVERE, "Hibernate 2nd level cache has not been enabled!");
+            logger.severe("Hibernate 2nd level cache has not been enabled!");
             return null;
         }
         if (rf instanceof AbstractHazelcastCacheRegionFactory) {

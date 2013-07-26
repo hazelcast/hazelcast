@@ -119,7 +119,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             try {
                 start();
             } catch (Exception e) {
-                logger.log(Level.SEVERE, "ManagementCenterService could not be started!", e);
+                logger.severe( "ManagementCenterService could not be started!", e);
             }
         }
     }

@@ -121,7 +121,7 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
                 }
             }
         } catch (final Throwable e) {
-            logger.log(Level.SEVERE, "Error while creating configuration:" + e.getMessage(), e);
+            logger.severe("Error while creating configuration:" + e.getMessage(), e);
         }
     }
 

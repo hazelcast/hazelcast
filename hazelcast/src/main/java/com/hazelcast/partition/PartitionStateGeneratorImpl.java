@@ -70,7 +70,7 @@ final class PartitionStateGeneratorImpl implements PartitionStateGenerator {
             }
         }
         if (result == TestResult.FAIL) {
-            logger.log(Level.SEVERE, "Failed to arrange partitions !!!");
+            logger.severe("Failed to arrange partitions !!!");
         }
         return state;
     }

@@ -124,7 +124,7 @@ final class ServiceManager {
                     final Object configObject = serviceConfigObjects.get(serviceInfo.getName());
                     ((ConfigurableService) service).configure(configObject);
                 } catch (Throwable t) {
-                    logger.log(Level.SEVERE, "Error while configuring service: " + t.getMessage(), t);
+                    logger.severe("Error while configuring service: " + t.getMessage(), t);
                 }
             }
             if (serviceInfo.isManagedService()) {
@@ -133,7 +133,7 @@ final class ServiceManager {
                     final Properties props = serviceProps.get(serviceInfo.getName());
                     ((ManagedService) service).init(nodeEngine, props != null ? props : new Properties());
                 } catch (Throwable t) {
-                    logger.log(Level.SEVERE, "Error while initializing service: " + t.getMessage(), t);
+                    logger.severe("Error while initializing service: " + t.getMessage(), t);
                 }
             }
         }
@@ -150,7 +150,7 @@ final class ServiceManager {
             }
             return ClassLoaderUtil.newInstance(serviceClass);
         } catch (Exception e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
+            logger.severe(e.getMessage(), e);
         }
         return null;
     }
@@ -171,7 +171,7 @@ final class ServiceManager {
             logger.log(Level.FINEST, "Shutting down service -> " + service);
             service.shutdown();
         } catch (Throwable t) {
-            logger.log(Level.SEVERE, "Error while shutting down service[" + service + "]: " + t.getMessage(), t);
+            logger.severe("Error while shutting down service[" + service + "]: " + t.getMessage(), t);
         }
     }
 

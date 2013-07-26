@@ -89,7 +89,7 @@ class SocketPacketReader implements SocketReader {
             try {
                 c = CipherHelper.createSymmetricReaderCipher(connection.getConnectionManager().ioService);
             } catch (Exception e) {
-                logger.log(Level.SEVERE, "Symmetric Cipher for ReadHandler cannot be initialized.", e);
+                logger.severe("Symmetric Cipher for ReadHandler cannot be initialized.", e);
             }
             return c;
         }

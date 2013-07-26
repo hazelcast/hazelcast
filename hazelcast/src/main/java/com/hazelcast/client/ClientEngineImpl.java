@@ -352,12 +352,13 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
                     Exception exception;
                     if (nodeEngine.isActive()) {
                         String message = "Client " + conn + " must authenticate before any operation.";
-                        logger.log(Level.SEVERE, message);
+                        logger.severe(message);
                         exception = new AuthenticationException(message);
                     } else {
                         exception = new HazelcastInstanceNotActiveException();
                     }
                     sendResponse(endpoint, exception);
+
                     removeEndpoint(conn);
                 }
             } catch (Throwable e) {

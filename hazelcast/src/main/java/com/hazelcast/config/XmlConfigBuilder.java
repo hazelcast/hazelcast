@@ -127,7 +127,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 }
             }
         } catch (final Throwable e) {
-            logger.log(Level.SEVERE, "Error while creating configuration:" + e.getMessage(), e);
+            logger.severe("Error while creating configuration:" + e.getMessage(), e);
         }
     }
 

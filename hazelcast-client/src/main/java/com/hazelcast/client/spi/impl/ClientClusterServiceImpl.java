@@ -359,7 +359,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                         try {
                             conn = pickConnection();
                         } catch (Exception e) {
-                            logger.log(Level.SEVERE, "Error while connecting to cluster!", e);
+                            logger.severe("Error while connecting to cluster!", e);
                             client.getLifecycleService().shutdown();
                             return;
                         }

@@ -124,12 +124,12 @@ public class TcpIpConnectionManager implements ConnectionManager {
                 try {
                     implementation = (SocketInterceptor) Class.forName(sic.getClassName()).newInstance();
                 } catch (Throwable e) {
-                    logger.log(Level.SEVERE, "SocketInterceptor class cannot be instantiated!" + sic.getClassName(), e);
+                    logger.severe("SocketInterceptor class cannot be instantiated!" + sic.getClassName(), e);
                 }
             }
             if (implementation != null) {
                 if (!(implementation instanceof MemberSocketInterceptor)) {
-                    logger.log(Level.SEVERE, "SocketInterceptor must be instance of " + MemberSocketInterceptor.class.getName());
+                    logger.severe( "SocketInterceptor must be instance of " + MemberSocketInterceptor.class.getName());
                     implementation = null;
                 } else {
                     logger.log(Level.INFO, "SocketInterceptor is enabled");
