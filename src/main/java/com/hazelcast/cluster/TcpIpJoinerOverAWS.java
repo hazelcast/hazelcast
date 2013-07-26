@@ -48,7 +48,7 @@ public class TcpIpJoinerOverAWS extends TcpIpJoiner {
             logger.log(Level.FINEST, "The list of possible members are: " + list);
             return list;
         } catch (Exception e) {
-            logger.log(Level.WARNING, e.getMessage(), e);
+            logger.warning(e);
             throw ExceptionUtil.rethrow(e);
         }
     }
