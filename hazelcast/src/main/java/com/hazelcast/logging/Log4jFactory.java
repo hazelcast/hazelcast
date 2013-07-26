@@ -29,7 +29,7 @@ public class Log4jFactory extends LoggerFactorySupport implements LoggerFactory 
         return new Log4jLogger(l);
     }
 
-    class Log4jLogger implements ILogger {
+    class Log4jLogger extends AbstractLogger {
         private final Logger logger;
         private final Level level;
 
@@ -46,50 +46,6 @@ public class Log4jFactory extends LoggerFactorySupport implements LoggerFactory 
             } else {
                 level = Level.INFO;
             }
-        }
-
-        public void finest(String message) {
-            log(Level.FINEST, message);
-        }
-
-        public void finest(String message, Throwable thrown) {
-            log(Level.FINEST, message,thrown);
-        }
-
-        public void finest(Throwable thrown) {
-            log(Level.FINEST,thrown.getMessage(),thrown);
-        }
-
-        public boolean isFinestEnabled() {
-            return isLoggable(Level.FINEST);
-        }
-
-        public void info(String message) {
-            log(Level.INFO, message);
-        }
-
-        public void severe(String message) {
-            log(Level.SEVERE, message);
-        }
-
-        public void severe(Throwable thrown) {
-            log(Level.SEVERE, thrown.getMessage(), thrown);
-        }
-
-        public void warning(String message) {
-            log(Level.WARNING,message);
-        }
-
-        public void warning(Throwable thrown) {
-            log(Level.WARNING,thrown.getMessage(),thrown);
-        }
-
-        public void warning(String message, Throwable thrown) {
-            log(Level.WARNING, message,thrown);
-        }
-
-        public void severe(String message, Throwable thrown) {
-            log(Level.SEVERE, message, thrown);
         }
 
         public void log(Level level, String message) {

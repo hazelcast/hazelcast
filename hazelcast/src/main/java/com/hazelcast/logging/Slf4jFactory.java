@@ -29,55 +29,11 @@ public class Slf4jFactory extends LoggerFactorySupport {
         return new Slf4jLogger(l);
     }
 
-    class Slf4jLogger implements ILogger {
+    class Slf4jLogger extends AbstractLogger {
         private final Logger logger;
 
         public Slf4jLogger(Logger logger) {
             this.logger = logger;
-        }
-
-        public void finest(String message) {
-            log(Level.FINEST, message);
-        }
-
-        public void finest(String message, Throwable thrown) {
-            log(Level.FINEST, message,thrown);
-        }
-
-        public void finest(Throwable thrown) {
-            log(Level.FINEST,thrown.getMessage(),thrown);
-        }
-
-        public boolean isFinestEnabled() {
-            return isLoggable(Level.FINEST);
-        }
-
-        public void info(String message) {
-            log(Level.INFO, message);
-        }
-
-        public void severe(String message) {
-            log(Level.SEVERE, message);
-        }
-
-        public void severe(Throwable thrown) {
-            log(Level.SEVERE, thrown.getMessage(), thrown);
-        }
-
-        public void severe(String message, Throwable thrown) {
-            log(Level.SEVERE,message,thrown);
-        }
-
-        public void warning(String message) {
-            log(Level.WARNING,message);
-        }
-
-        public void warning(Throwable thrown) {
-            log(Level.WARNING,thrown.getMessage(),thrown);
-        }
-
-        public void warning(String message, Throwable thrown) {
-            log(Level.WARNING, message,thrown);
         }
 
         public void log(Level level, String message) {
