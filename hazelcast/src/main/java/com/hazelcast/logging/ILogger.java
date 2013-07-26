@@ -22,7 +22,13 @@ public interface ILogger {
 
     void info(String message);
 
-    void debug(String message);
+    void finest(String message);
+
+    void finest(Throwable thrown);
+
+    void finest(String message, Throwable thrown);
+
+    boolean isFinestEnabled();
 
     void severe(String message);
 

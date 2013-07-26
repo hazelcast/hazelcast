@@ -133,8 +133,20 @@ public class LoggingServiceImpl implements LoggingService {
             addToLoggingService = (name.equals(ClusterServiceImpl.class.getName()));
         }
 
-        public void debug(String message) {
-            log(Level.FINE, message);
+        public void finest(String message) {
+            log(Level.FINEST, message);
+        }
+
+        public void finest(String message, Throwable thrown) {
+            log(Level.FINEST, message,thrown);
+        }
+
+        public void finest(Throwable thrown) {
+            log(Level.FINEST,thrown.getMessage(),thrown);
+        }
+
+        public boolean isFinestEnabled() {
+            return isLoggable(Level.FINEST);
         }
 
         public void info(String message) {

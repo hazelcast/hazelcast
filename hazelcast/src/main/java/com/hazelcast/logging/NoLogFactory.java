@@ -26,7 +26,17 @@ public class NoLogFactory implements LoggerFactory {
     }
 
     class NoLogger implements ILogger {
-        public void debug(String message) {
+        public void finest(String message) {
+        }
+
+        public void finest(String message, Throwable thrown) {
+        }
+
+        public void finest(Throwable thrown) {
+        }
+
+        public boolean isFinestEnabled() {
+           return false;
         }
 
         public void info(String message) {
