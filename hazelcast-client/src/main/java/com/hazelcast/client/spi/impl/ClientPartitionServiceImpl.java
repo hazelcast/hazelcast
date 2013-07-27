@@ -103,7 +103,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
         try {
             return clusterService.sendAndReceive(address, new GetPartitionsRequest());
         } catch (IOException e) {
-            logger.log(Level.SEVERE, "Error while fetching cluster partition table!", e);
+            logger.severe("Error while fetching cluster partition table!", e);
         }
         return null;
     }

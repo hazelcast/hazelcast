@@ -38,7 +38,7 @@ class SocketPacketWriter implements SocketWriter<Packet> {
         boolean symmetricEncryptionEnabled = CipherHelper.isSymmetricEncryptionEnabled(ioService);
         if (symmetricEncryptionEnabled) {
             packetWriter = new SymmetricCipherPacketWriter();
-            logger.log(Level.INFO, "Writer started with SymmetricEncryption");
+            logger.info("Writer started with SymmetricEncryption");
         } else {
             packetWriter = new DefaultPacketWriter();
         }
@@ -69,7 +69,7 @@ class SocketPacketWriter implements SocketWriter<Packet> {
             try {
                 c = CipherHelper.createSymmetricWriterCipher(connection.getConnectionManager().ioService);
             } catch (Exception e) {
-                logger.log(Level.SEVERE, "Symmetric Cipher for WriteHandler cannot be initialized.", e);
+                logger.severe("Symmetric Cipher for WriteHandler cannot be initialized.", e);
                 CipherHelper.handleCipherException(e, connection);
             }
             cipher = c;

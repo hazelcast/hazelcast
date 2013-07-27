@@ -57,7 +57,7 @@ public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Obj
             ScheduledEntry<Data, Object> entry = entries.iterator().next();
             Exception exception = tryStore(scheduler, entry);
             if (exception != null) {
-                logger.log(Level.SEVERE, exception.getMessage(), exception);
+                logger.severe(exception);
             }
         } else {   // if entries size > 0, we will call storeAll
             Map map = new HashMap(entries.size());
@@ -77,7 +77,7 @@ public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Obj
                 }
             }
             if (exception != null) {
-                logger.log(Level.SEVERE, exception.getMessage(), exception);
+                logger.severe(exception);
             }
         }
 

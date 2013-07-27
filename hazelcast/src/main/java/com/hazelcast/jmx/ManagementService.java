@@ -45,13 +45,13 @@ public class ManagementService implements DistributedObjectListener {
         logger = instance.getLoggingService().getLogger(getClass());
         this.enabled = instance.node.groupProperties.ENABLE_JMX.getBoolean();
         if (enabled) {
-            logger.log(Level.INFO, "Hazelcast JMX agent enabled.");
+            logger.info("Hazelcast JMX agent enabled.");
             MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
             try {
                 InstanceMBean instanceMBean = new InstanceMBean(instance, this);
                 mbs.registerMBean(instanceMBean, instanceMBean.objectName);
             } catch (Exception e) {
-                logger.log(Level.WARNING, "Unable to start JMX service", e);
+                logger.warning("Unable to start JMX service", e);
             }
             registrationId = instance.addDistributedObjectListener(this);
             for (final DistributedObject distributedObject : instance.getDistributedObjects()) {
@@ -77,7 +77,7 @@ public class ManagementService implements DistributedObjectListener {
                 }
             }
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Error while un-registering MBeans", e);
+            logger.warning("Error while un-registering MBeans", e);
         }
     }
 
@@ -112,7 +112,7 @@ public class ManagementService implements DistributedObjectListener {
                 try {
                     mbs.registerMBean(bean, bean.objectName);
                 } catch (Exception e) {
-                    logger.log(Level.WARNING, "Error while registering " + bean.objectName, e);
+                    logger.warning("Error while registering " + bean.objectName, e);
                 }
             }
         }
@@ -126,7 +126,7 @@ public class ManagementService implements DistributedObjectListener {
                 try {
                     mbs.unregisterMBean(bean.objectName);
                 } catch (Exception e) {
-                    logger.log(Level.WARNING, "Error while un-registering " + bean.objectName, e);
+                    logger.warning( "Error while un-registering " + bean.objectName, e);
                 }
             }
         }

@@ -68,7 +68,7 @@ final class ServiceManager {
     synchronized void start() {
         final Node node = nodeEngine.getNode();
         // register core services
-        logger.log(Level.FINEST, "Registering core services...");
+        logger.finest( "Registering core services...");
         registerService(ClusterServiceImpl.SERVICE_NAME, node.getClusterService());
         registerService(PartitionServiceImpl.SERVICE_NAME, node.getPartitionService());
         registerService(ProxyServiceImpl.SERVICE_NAME, nodeEngine.getProxyService());
@@ -80,7 +80,7 @@ final class ServiceManager {
         final Map<String, Object> serviceConfigObjects;
         if (servicesConfig != null) {
             if (servicesConfig.isEnableDefaults()) {
-                logger.log(Level.FINEST, "Registering default services...");
+                logger.finest( "Registering default services...");
                 registerService(MapService.SERVICE_NAME, new MapService(nodeEngine));
                 registerService(LockService.SERVICE_NAME, new LockServiceImpl(nodeEngine));
                 registerService(QueueService.SERVICE_NAME, new QueueService(nodeEngine));
@@ -120,20 +120,20 @@ final class ServiceManager {
             final Object service = serviceInfo.getService();
             if (serviceInfo.isConfigurableService()) {
                 try {
-                    logger.log(Level.FINEST, "Configuring service -> " + service);
+                    logger.finest( "Configuring service -> " + service);
                     final Object configObject = serviceConfigObjects.get(serviceInfo.getName());
                     ((ConfigurableService) service).configure(configObject);
                 } catch (Throwable t) {
-                    logger.log(Level.SEVERE, "Error while configuring service: " + t.getMessage(), t);
+                    logger.severe("Error while configuring service: " + t.getMessage(), t);
                 }
             }
             if (serviceInfo.isManagedService()) {
                 try {
-                    logger.log(Level.FINEST, "Initializing service -> " + service);
+                    logger.finest( "Initializing service -> " + service);
                     final Properties props = serviceProps.get(serviceInfo.getName());
                     ((ManagedService) service).init(nodeEngine, props != null ? props : new Properties());
                 } catch (Throwable t) {
-                    logger.log(Level.SEVERE, "Error while initializing service: " + t.getMessage(), t);
+                    logger.severe("Error while initializing service: " + t.getMessage(), t);
                 }
             }
         }
@@ -150,13 +150,13 @@ final class ServiceManager {
             }
             return ClassLoaderUtil.newInstance(serviceClass);
         } catch (Exception e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
+            logger.severe(e);
         }
         return null;
     }
 
     synchronized void shutdown() {
-        logger.log(Level.FINEST, "Stopping services...");
+        logger.finest( "Stopping services...");
         final List<ManagedService> managedServices = getServices(ManagedService.class);
         // reverse order to stop CoreServices last.
         Collections.reverse(managedServices);
@@ -168,19 +168,19 @@ final class ServiceManager {
 
     private void shutdownService(final ManagedService service) {
         try {
-            logger.log(Level.FINEST, "Shutting down service -> " + service);
+            logger.finest( "Shutting down service -> " + service);
             service.shutdown();
         } catch (Throwable t) {
-            logger.log(Level.SEVERE, "Error while shutting down service[" + service + "]: " + t.getMessage(), t);
+            logger.severe("Error while shutting down service[" + service + "]: " + t.getMessage(), t);
         }
     }
 
     private synchronized void registerService(String serviceName, Object service) {
-        logger.log(Level.FINEST, "Registering service: '" + serviceName + "'");
+        logger.finest( "Registering service: '" + serviceName + "'");
         final ServiceInfo serviceInfo = new ServiceInfo(serviceName, service);
         final ServiceInfo currentServiceInfo = services.putIfAbsent(serviceName, serviceInfo);
         if (currentServiceInfo != null) {
-            logger.log(Level.WARNING, "Replacing " + currentServiceInfo + " with " + serviceInfo);
+            logger.warning("Replacing " + currentServiceInfo + " with " + serviceInfo);
             if (currentServiceInfo.isCoreService()) {
                 throw new HazelcastException("Can not replace a CoreService! Name: " + serviceName
                         + ", Service: " + currentServiceInfo.getService());

@@ -74,7 +74,7 @@ public abstract class AbstractHazelcastCacheRegionFactory implements RegionFacto
     }
 
     public void start(final Settings settings, final Properties properties) throws CacheException {
-        LOG.log(Level.INFO, "Starting up " + getClass().getSimpleName());
+        LOG.info("Starting up " + getClass().getSimpleName());
         if (instance == null || !instance.getLifecycleService().isRunning()) {
             instanceLoader = HazelcastInstanceFactory.createInstanceLoader(properties);
             instance = instanceLoader.loadInstance();
@@ -83,7 +83,7 @@ public abstract class AbstractHazelcastCacheRegionFactory implements RegionFacto
 
     public void stop() {
         if (instanceLoader != null) {
-            LOG.log(Level.INFO, "Shutting down " + getClass().getSimpleName());
+            LOG.info("Shutting down " + getClass().getSimpleName());
             instanceLoader.unloadInstance();
             instance = null;
             instanceLoader = null;

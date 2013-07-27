@@ -48,14 +48,14 @@ public class ConnectionMonitor {
 
     public synchronized void onError(Throwable t) {
         String errorMessage = "An error occurred on connection to " + endPoint + getCauseDescription(t);
-        logger.log(Level.FINEST, errorMessage);
+        logger.finest( errorMessage);
         ioService.getSystemLogService().logConnection(errorMessage);
         final long now = Clock.currentTimeMillis();
         final long last = lastFaultTime;
         if (now - last > minInterval) {
             if (faults++ >= maxFaults) {
                 String removeEndpointMessage = "Removing connection to endpoint " + endPoint + getCauseDescription(t);
-                logger.log(Level.WARNING, removeEndpointMessage);
+                logger.warning(removeEndpointMessage);
                 ioService.getSystemLogService().logConnection(removeEndpointMessage);
                 ioService.removeEndpoint(endPoint);
             }
@@ -65,7 +65,7 @@ public class ConnectionMonitor {
 
     public synchronized void reset() {
         String resetMessage = "Resetting connection monitor for endpoint " + endPoint;
-        logger.log(Level.FINEST, resetMessage);
+        logger.finest( resetMessage);
         ioService.getSystemLogService().logConnection(resetMessage);
         faults = 0;
         lastFaultTime = 0L;

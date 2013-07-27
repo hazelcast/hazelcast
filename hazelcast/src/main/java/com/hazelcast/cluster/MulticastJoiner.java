@@ -54,7 +54,7 @@ public class MulticastJoiner extends AbstractJoiner {
             node.setMasterAddress(masterAddressNow);
 
             String msg = "Joining to master node: " + node.getMasterAddress();
-            logger.log(Level.FINEST, msg);
+            logger.finest( msg);
             systemLogService.logJoin(msg);
 
             if (node.getMasterAddress() == null || node.getThisAddress().equals(node.getMasterAddress())) {
@@ -85,7 +85,7 @@ public class MulticastJoiner extends AbstractJoiner {
 
     private void doTCP(AtomicBoolean joined) {
         node.setMasterAddress(null);
-        logger.log(Level.FINEST, "Multicast couldn't find cluster. Trying TCP/IP");
+        logger.finest( "Multicast couldn't find cluster. Trying TCP/IP");
         new TcpIpJoiner(node).join(joined);
     }
 
@@ -115,14 +115,14 @@ public class MulticastJoiner extends AbstractJoiner {
                     Thread.sleep(node.groupProperties.WAIT_SECONDS_BEFORE_JOIN.getInteger() * 1000L * 2);
                 }
                 if (shouldMerge(joinInfo)) {
-                    logger.log(Level.WARNING, node.getThisAddress() + " is merging [multicast] to " + joinInfo.getAddress());
+                    logger.warning(node.getThisAddress() + " is merging [multicast] to " + joinInfo.getAddress());
                     startClusterMerge(joinInfo.getAddress());
                 }
             }
         } catch (InterruptedException ignored) {
         } catch (Exception e) {
             if (logger != null) {
-                logger.log(Level.WARNING, e.getMessage(), e);
+                logger.warning(e);
             }
         } finally {
             node.multicastService.removeMulticastListener(listener);
@@ -139,12 +139,12 @@ public class MulticastJoiner extends AbstractJoiner {
             throw new IllegalArgumentException();
         }
         Connection conn = node.connectionManager.getOrConnect(masterAddress);
-        logger.log(Level.FINEST, "Master connection " + conn);
+        logger.finest( "Master connection " + conn);
         systemLogService.logJoin("Master connection " + conn);
         if (conn != null) {
             return node.clusterService.sendJoinRequest(masterAddress, true);
         } else {
-            logger.log(Level.FINEST, "Connecting to master node: " + masterAddress);
+            logger.finest( "Connecting to master node: " + masterAddress);
             return false;
         }
     }
@@ -167,7 +167,7 @@ public class MulticastJoiner extends AbstractJoiner {
             }
         } catch (final Exception e) {
             if (logger != null) {
-                logger.log(Level.WARNING, e.getMessage(), e);
+                logger.warning(e);
             }
         } finally {
             currentTryCount.set(0);

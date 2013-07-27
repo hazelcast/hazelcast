@@ -84,8 +84,8 @@ public final class ReplicaSyncRequest extends Operation implements PartitionAwar
             ReplicaSyncResponse syncResponse = new ReplicaSyncResponse(data, replicaVersions);
             syncResponse.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
             final Address target = getCallerAddress();
-            if (logger.isLoggable(Level.FINEST)) {
-                logger.log(Level.FINEST, "Sending sync response to -> " + target + "; for partition: " + partitionId + ", replica: " + replicaIndex);
+            if (logger.isFinestEnabled()) {
+                logger.finest( "Sending sync response to -> " + target + "; for partition: " + partitionId + ", replica: " + replicaIndex);
             }
             final OperationService operationService = nodeEngine.getOperationService();
             operationService.send(syncResponse, target);

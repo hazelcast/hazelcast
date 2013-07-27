@@ -72,7 +72,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
             return address.getInetAddress();
         } catch (UnknownHostException e) {
             if (logger != null) {
-                logger.log(Level.WARNING, e.getMessage(), e);
+                logger.warning(e);
             }
             return null;
         }
@@ -83,7 +83,7 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
             return address.getInetSocketAddress();
         } catch (UnknownHostException e) {
             if (logger != null) {
-                logger.log(Level.WARNING, e.getMessage(), e);
+                logger.warning(e);
             }
             return null;
         }

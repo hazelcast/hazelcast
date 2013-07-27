@@ -61,8 +61,8 @@ public class ReplicaSyncResponse extends Operation implements PartitionAwareOper
         try {
             if (data != null) {
                 final ILogger logger = nodeEngine.getLogger(getClass());
-                if (logger.isLoggable(Level.FINEST)) {
-                    logger.log(Level.FINEST, "Applying replica sync for partition: " + partitionId + ", replica: " + replicaIndex);
+                if (logger.isFinestEnabled()) {
+                    logger.finest( "Applying replica sync for partition: " + partitionId + ", replica: " + replicaIndex);
                 }
                 final byte[] taskData = IOUtil.decompress(data);
                 in = serializationService.createObjectDataInput(taskData);
@@ -98,7 +98,7 @@ public class ReplicaSyncResponse extends Operation implements PartitionAwareOper
         public void sendResponse(final Object obj) {
             if (obj instanceof Throwable) {
                 Throwable t = (Throwable) obj;
-                logger.log(Level.SEVERE, t.getMessage(), t);
+                logger.severe(t);
             }
         }
     }
