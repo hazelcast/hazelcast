@@ -63,14 +63,6 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         this.in = inputStream;
     }
 
-    public Properties getProperties() {
-        return properties;
-    }
-
-    public void setProperties(Properties properties) {
-        this.properties = properties;
-    }
-
     public XmlConfigBuilder() {
         String configFile = System.getProperty("hazelcast.config");
         try {
@@ -129,6 +121,29 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         } catch (final Throwable e) {
             logger.severe("Error while creating configuration:" + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Gets the current used properties. Can be null if no properties are set.
+     *
+     * @return  the used properties.
+     * @see #setProperties(java.util.Properties)
+     */
+    public Properties getProperties() {
+        return properties;
+    }
+
+    /**
+     * Sets the used properties. Can be null if no properties should be used.
+     *
+     * Properties are used to resolve ${variable} occurrences in the XML file.
+     *
+     * @param properties the new properties.
+     * @return the XmlConfigBuilder
+     */
+    public XmlConfigBuilder setProperties(Properties properties) {
+        this.properties = properties;
+        return this;
     }
 
     public Config build() {
