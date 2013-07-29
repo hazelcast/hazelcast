@@ -16,7 +16,6 @@
 
 package com.hazelcast.cluster;
 
-import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.instance.Node;
@@ -150,7 +149,6 @@ public class MulticastJoiner extends AbstractJoiner {
     }
 
     private final int publishInterval = 100;
-    private final int tryCountCoefficient = 1000 / publishInterval;
 
     private Address findMasterWithMulticast() {
         try {
@@ -178,24 +176,24 @@ public class MulticastJoiner extends AbstractJoiner {
     private int calculateTryCount() {
         final NetworkConfig networkConfig = config.getNetworkConfig();
         int timeoutSeconds = networkConfig.getJoin().getMulticastConfig().getMulticastTimeoutSeconds();
+        int tryCountCoefficient = 1000 / publishInterval;
         int tryCount = timeoutSeconds * tryCountCoefficient;
         String host = node.getThisAddress().getHost();
-        int lastDigits = 0;
+        int lastDigits;
         try {
             lastDigits = Integer.valueOf(host.substring(host.lastIndexOf(".") + 1));
         } catch (NumberFormatException e) {
             lastDigits = (int) (512 * Math.random());
         }
         lastDigits = lastDigits % 100;
-        tryCount += lastDigits + (node.getThisAddress().getPort() - networkConfig.getPort()) * timeoutSeconds * 3;
+        int portDiff = node.getThisAddress().getPort() - networkConfig.getPort();
+        tryCount += lastDigits + portDiff * timeoutSeconds * 3;
         return tryCount;
     }
 
     public void onReceivedJoinRequest(JoinRequest joinRequest) {
-        if (joinRequest.getTryCount() > currentTryCount.get() + 20) {
-            final MulticastConfig multicastConfig = config.getNetworkConfig().getJoin().getMulticastConfig();
-            int tryCount = (multicastConfig.getMulticastTimeoutSeconds() + 4) * tryCountCoefficient;
-            maxTryCount.set(tryCount);
+        if (joinRequest.getUuid().compareTo(node.localMember.getUuid()) < 0) {
+            maxTryCount.incrementAndGet();
         }
     }
 }
