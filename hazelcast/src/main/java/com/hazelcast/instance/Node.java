@@ -181,7 +181,7 @@ public class Node {
                         multicastSocket.setInterface(bindAddress.getInetAddress());
                     }
                 } catch (Exception e) {
-                    logger.log(Level.WARNING, e.getMessage(), e);
+                    logger.warning(e);
                 }
                 multicastSocket.setReceiveBufferSize(64 * 1024);
                 multicastSocket.setSendBufferSize(64 * 1024);
@@ -196,7 +196,7 @@ public class Node {
                 mcService.addMulticastListener(new NodeMulticastListener(this));
             }
         } catch (Exception e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
+            logger.severe(e);
         }
         this.multicastService = mcService;
         initializeListeners(config);
@@ -210,7 +210,7 @@ public class Node {
                 try {
                     listener = ClassLoaderUtil.newInstance(configClassLoader, listenerCfg.getClassName());
                 } catch (Exception e) {
-                    logger.log(Level.SEVERE, e.getMessage(), e);
+                    logger.severe(e);
                 }
             }
             if (listener instanceof HazelcastInstanceAware) {
@@ -228,7 +228,7 @@ public class Node {
             } else if (listener != null) {
                 final String error = "Unknown listener type: " + listener.getClass();
                 Throwable t = new IllegalArgumentException(error);
-                logger.log(Level.WARNING, error, t);
+                logger.warning(error, t);
             }
         }
     }
@@ -242,7 +242,7 @@ public class Node {
     }
 
     public void failedConnection(Address address) {
-        logger.log(Level.FINEST, getThisAddress() + " failed connecting to " + address);
+        logger.finest( getThisAddress() + " failed connecting to " + address);
         failedConnections.add(address);
     }
 
@@ -292,13 +292,13 @@ public class Node {
 
     public void setMasterAddress(final Address master) {
         if (master != null) {
-            logger.log(Level.FINEST, "** setting master address to " + master);
+            logger.finest( "** setting master address to " + master);
         }
         masterAddress = master;
     }
 
     public void start() {
-        logger.log(Level.FINEST, "We are asked to start and completelyShutdown is " + String.valueOf(completelyShutdown));
+        logger.finest( "We are asked to start and completelyShutdown is " + String.valueOf(completelyShutdown));
         if (completelyShutdown) return;
         nodeEngine.start();
         connectionManager.start();
@@ -308,10 +308,10 @@ public class Node {
         }
         setActive(true);
         if (!completelyShutdown) {
-            logger.log(Level.FINEST, "Adding ShutdownHook");
+            logger.finest( "Adding ShutdownHook");
             Runtime.getRuntime().addShutdownHook(shutdownHookThread);
         }
-        logger.log(Level.FINEST, "finished starting threads, calling join");
+        logger.finest( "finished starting threads, calling join");
         join();
         int clusterSize = clusterService.getSize();
         if (config.getNetworkConfig().isPortAutoIncrement()
@@ -321,12 +321,12 @@ public class Node {
             sb.append(" and cluster size is ");
             sb.append(clusterSize);
             sb.append(". Some of the ports seem occupied!");
-            logger.log(Level.WARNING, sb.toString());
+            logger.warning( sb.toString());
         }
         try {
             managementCenterService = new ManagementCenterService(hazelcastInstance);
         } catch (Exception e) {
-            logger.log(Level.WARNING, "ManagementCenterService could not be constructed!", e);
+            logger.warning("ManagementCenterService could not be constructed!", e);
         }
         initializer.afterInitialize(this);
     }
@@ -345,11 +345,11 @@ public class Node {
 
     private void doShutdown(boolean force) {
         long start = Clock.currentTimeMillis();
-        logger.log(Level.FINEST, "** we are being asked to shutdown when active = " + String.valueOf(active));
+        logger.finest( "** we are being asked to shutdown when active = " + String.valueOf(active));
         if (!force && isActive()) {
             final int maxWaitSeconds = groupProperties.GRACEFUL_SHUTDOWN_MAX_WAIT.getInteger();
             if (!partitionService.prepareToSafeShutdown(maxWaitSeconds, TimeUnit.SECONDS)) {
-                logger.log(Level.WARNING, "Graceful shutdown could not be completed in " + maxWaitSeconds + " seconds!");
+                logger.warning("Graceful shutdown could not be completed in " + maxWaitSeconds + " seconds!");
             }
         }
         if (isActive()) {
@@ -369,15 +369,15 @@ public class Node {
             if (managementCenterService != null) {
                 managementCenterService.shutdown();
             }
-            logger.log(Level.FINEST, "Shutting down client command service");
+            logger.finest( "Shutting down client command service");
             clientEngine.shutdown();
-            logger.log(Level.FINEST, "Shutting down node engine");
+            logger.finest( "Shutting down node engine");
             nodeEngine.shutdown();
             if (multicastService != null) {
-                logger.log(Level.FINEST, "Shutting down multicast service");
+                logger.finest( "Shutting down multicast service");
                 multicastService.stop();
             }
-            logger.log(Level.FINEST, "Shutting down connection manager");
+            logger.finest( "Shutting down connection manager");
             connectionManager.shutdown();
             textCommandService.stop();
             masterAddress = null;
@@ -392,13 +392,13 @@ public class Node {
             for (int i = 0; i < numThreads; i++) {
                 Thread thread = threads[i];
                 if (thread.isAlive()) {
-                    logger.log(Level.FINEST, "Shutting down thread " + thread.getName());
+                    logger.finest( "Shutting down thread " + thread.getName());
                     thread.interrupt();
                 }
             }
             failedConnections.clear();
             systemLogService.shutdown();
-            logger.log(Level.INFO, "Hazelcast Shutdown is completed in " + (Clock.currentTimeMillis() - start) + " ms.");
+            logger.info("Hazelcast Shutdown is completed in " + (Clock.currentTimeMillis() - start) + " ms.");
         }
     }
 
@@ -406,7 +406,7 @@ public class Node {
         joined.set(false);
         joiner.reset();
         final String uuid = UuidUtil.createMemberUuid(address);
-        logger.log(Level.FINEST, "Generated new UUID for local member: " + uuid);
+        logger.finest( "Generated new UUID for local member: " + uuid);
         localMember.setUuid(uuid);
     }
 
@@ -458,10 +458,10 @@ public class Node {
                         shutdown(true, true);
                     }
                 } else {
-                    logger.log(Level.FINEST, "shutdown hook - we are not --> active and not completely down so we are not calling shutdown");
+                    logger.finest( "shutdown hook - we are not --> active and not completely down so we are not calling shutdown");
                 }
             } catch (Exception e) {
-                logger.log(Level.WARNING, e.getMessage(), e);
+                logger.warning(e);
             }
         }
     }
@@ -510,17 +510,17 @@ public class Node {
         final long maxJoinMillis = getGroupProperties().MAX_JOIN_SECONDS.getInteger() * 1000;
         try {
             if (joiner == null) {
-                logger.log(Level.WARNING, "No join method is enabled! Starting standalone.");
+                logger.warning("No join method is enabled! Starting standalone.");
                 setAsMaster();
             } else {
                 joiner.join(joined);
             }
         } catch (Exception e) {
             if (Clock.currentTimeMillis() - joinStartTime < maxJoinMillis) {
-                logger.log(Level.WARNING, "Trying to rejoin: " + e.getMessage());
+                logger.warning("Trying to rejoin: " + e.getMessage());
                 rejoin();
             } else {
-                logger.log(Level.SEVERE, "Could not join cluster, shutting down!", e);
+                logger.severe( "Could not join cluster, shutting down!", e);
                 shutdown(false, true);
             }
         }
@@ -549,14 +549,14 @@ public class Node {
                 systemLogService.logJoin("Creating AWSJoiner");
                 return (Joiner) constructor.newInstance(this);
             } catch (Exception e) {
-                logger.log(Level.SEVERE, "Error while creating AWSJoiner!", e);
+                logger.severe("Error while creating AWSJoiner!", e);
             }
         }
         return null;
     }
 
     public void setAsMaster() {
-        logger.log(Level.FINEST, "This node is being set as the master");
+        logger.finest( "This node is being set as the master");
         systemLogService.logJoin("No master node found! Setting this node as the master.");
         masterAddress = address;
         setJoined();

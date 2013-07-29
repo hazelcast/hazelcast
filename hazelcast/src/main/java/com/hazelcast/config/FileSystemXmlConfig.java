@@ -38,7 +38,7 @@ public class FileSystemXmlConfig extends Config {
 
     public FileSystemXmlConfig(File configFile) throws FileNotFoundException {
         super();
-        logger.log(Level.INFO, "Configuring Hazelcast from '" + configFile.getAbsolutePath() + "'.");
+        logger.info("Configuring Hazelcast from '" + configFile.getAbsolutePath() + "'.");
         InputStream in = new FileInputStream(configFile);
         new XmlConfigBuilder(in).build(this);
     }

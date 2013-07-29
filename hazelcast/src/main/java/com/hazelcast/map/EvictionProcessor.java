@@ -61,16 +61,16 @@ public class EvictionProcessor implements ScheduledEntryProcessor<Data, Object>{
                 Future f = invocation.invoke();
                 futures.add(f);
             } catch (Throwable t) {
-                logger.log(Level.WARNING, t.getMessage(), t);
+                logger.warning(t);
             }
         }
         for (Future future : futures) {
             try {
                 future.get(30, TimeUnit.SECONDS);
             } catch (TimeoutException e) {
-                logger.log(Level.FINEST, e.getMessage(), e);
+                logger.finest(e);
             } catch (Exception e) {
-                logger.log(Level.WARNING, e.getMessage(), e);
+                logger.warning(e);
             }
         }
     }

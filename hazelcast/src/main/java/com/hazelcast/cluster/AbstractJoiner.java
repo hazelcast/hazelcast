@@ -68,7 +68,7 @@ public abstract class AbstractJoiner implements Joiner {
             return;
         }
         if (tryCount.incrementAndGet() == 5) {
-            logger.log(Level.WARNING, "Join try count exceed limit, setting this node as master!");
+            logger.warning("Join try count exceed limit, setting this node as master!");
             node.setAsMaster();
         }
         if (!node.isMaster()) {
@@ -96,13 +96,13 @@ public abstract class AbstractJoiner implements Joiner {
             }
             if (!node.joined() || !allConnected) {
                 if (Clock.currentTimeMillis() - getStartTime() < maxJoinMillis) {
-                    logger.log(Level.WARNING, "Failed to connect, node joined= " + node.joined() + ", allConnected= " + allConnected + " to all other members after " + checkCount + " seconds.");
-                    logger.log(Level.WARNING, "Rebooting after 10 seconds.");
+                    logger.warning("Failed to connect, node joined= " + node.joined() + ", allConnected= " + allConnected + " to all other members after " + checkCount + " seconds.");
+                    logger.warning("Rebooting after 10 seconds.");
                     try {
                         Thread.sleep(10000);
                         node.rejoin();
                     } catch (InterruptedException e) {
-                        logger.log(Level.WARNING, e.getMessage(), e);
+                        logger.warning(e);
                         node.shutdown(false, true);
                     }
                 } else {
@@ -115,7 +115,7 @@ public abstract class AbstractJoiner implements Joiner {
             final StringBuilder sb = new StringBuilder();
             sb.append("\n");
             sb.append(node.clusterService.membersString());
-            logger.log(Level.INFO, sb.toString());
+            logger.info(sb.toString());
         }
     }
 
@@ -147,14 +147,14 @@ public abstract class AbstractJoiner implements Joiner {
                 try {
                     validJoinRequest = node.getClusterService().validateJoinMessage(joinRequest);
                 } catch (Exception e) {
-                    logger.log(Level.FINEST, e.getMessage());
+                    logger.finest( e.getMessage());
                     validJoinRequest = false;
                 }
                 if (validJoinRequest) {
                     for (Member member : node.getClusterService().getMembers()) {
                         MemberImpl memberImpl = (MemberImpl) member;
                         if (memberImpl.getAddress().equals(joinRequest.getAddress())) {
-                            logger.log(Level.FINEST, "Should not merge to " + joinRequest.getAddress()
+                            logger.finest( "Should not merge to " + joinRequest.getAddress()
                                     + ", because it is already member of this cluster.");
                             return false;
                         }
@@ -162,28 +162,28 @@ public abstract class AbstractJoiner implements Joiner {
                     int currentMemberCount = node.getClusterService().getMembers().size();
                     if (joinRequest.getMemberCount() > currentMemberCount) {
                         // I should join the other cluster
-                        logger.log(Level.INFO, node.getThisAddress() + " is merging to " + joinRequest.getAddress()
+                        logger.info(node.getThisAddress() + " is merging to " + joinRequest.getAddress()
                                 + ", because : joinRequest.getMemberCount() > currentMemberCount ["
                                 + (joinRequest.getMemberCount() + " > " + currentMemberCount) + "]");
-                        logger.log(Level.FINEST, joinRequest.toString());
+                        logger.finest( joinRequest.toString());
                         shouldMerge = true;
                     } else if (joinRequest.getMemberCount() == currentMemberCount) {
                         // compare the hashes
                         if (node.getThisAddress().hashCode() > joinRequest.getAddress().hashCode()) {
-                            logger.log(Level.INFO, node.getThisAddress() + " is merging to " + joinRequest.getAddress()
+                            logger.info(node.getThisAddress() + " is merging to " + joinRequest.getAddress()
                                     + ", because : node.getThisAddress().hashCode() > joinRequest.address.hashCode() "
                                     + ", this node member count: " + currentMemberCount);
-                            logger.log(Level.FINEST, joinRequest.toString());
+                            logger.finest( joinRequest.toString());
                             shouldMerge = true;
                         } else {
-                            logger.log(Level.FINEST, joinRequest.getAddress() + " should merge to this node "
+                            logger.finest( joinRequest.getAddress() + " should merge to this node "
                                     + ", because : node.getThisAddress().hashCode() < joinRequest.address.hashCode() "
                                     + ", this node member count: " + currentMemberCount);
                         }
                     }
                 }
             } catch (Throwable e) {
-                logger.log(Level.SEVERE, e.getMessage(), e);
+                logger.severe(e);
                 return false;
             }
         }
@@ -194,7 +194,7 @@ public abstract class AbstractJoiner implements Joiner {
         for (Address possibleAddress : colPossibleAddresses) {
             final Connection conn = node.connectionManager.getOrConnect(possibleAddress);
             if (conn != null) {
-                logger.log(Level.FINEST, "sending join request for " + possibleAddress);
+                logger.finest( "sending join request for " + possibleAddress);
                 node.clusterService.sendJoinRequest(possibleAddress, true);
             }
         }
@@ -221,7 +221,7 @@ public abstract class AbstractJoiner implements Joiner {
             try {
                 f.get(1, TimeUnit.SECONDS);
             } catch (Exception e) {
-                logger.log(Level.FINEST, "While waiting merge response...", e);
+                logger.finest( "While waiting merge response...", e);
             }
         }
         final PrepareMergeOperation prepareMergeOperation = new PrepareMergeOperation(targetAddress);

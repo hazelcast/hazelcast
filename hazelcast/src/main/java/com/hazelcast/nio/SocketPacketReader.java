@@ -39,7 +39,7 @@ class SocketPacketReader implements SocketReader {
         boolean symmetricEncryptionEnabled = CipherHelper.isSymmetricEncryptionEnabled(ioService);
         if (symmetricEncryptionEnabled) {
             packetReader = new SymmetricCipherPacketReader();
-            logger.log(Level.INFO, "Reader started with SymmetricEncryption");
+            logger.info("Reader started with SymmetricEncryption");
         } else {
             packetReader = new DefaultPacketReader();
         }
@@ -89,7 +89,7 @@ class SocketPacketReader implements SocketReader {
             try {
                 c = CipherHelper.createSymmetricReaderCipher(connection.getConnectionManager().ioService);
             } catch (Exception e) {
-                logger.log(Level.SEVERE, "Symmetric Cipher for ReadHandler cannot be initialized.", e);
+                logger.severe("Symmetric Cipher for ReadHandler cannot be initialized.", e);
             }
             return c;
         }
@@ -117,7 +117,7 @@ class SocketPacketReader implements SocketReader {
                         size = -1;
                     }
                 } catch (ShortBufferException e) {
-                    logger.log(Level.WARNING, e.getMessage(), e);
+                    logger.warning(e);
                 }
                 cipherBuffer.flip();
                 while (cipherBuffer.hasRemaining()) {

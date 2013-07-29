@@ -62,7 +62,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
             throw new RetryableHazelcastException("Destination of migration could not be found! => " + toString());
         }
         if (destination.equals(source)) {
-            getLogger().log(Level.WARNING, "Source and destination addresses are the same! => " + toString());
+            getLogger().warning("Source and destination addresses are the same! => " + toString());
             success = false;
             return;
         }
@@ -126,13 +126,13 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
                     success = true;
                 }
             } catch (Throwable e) {
-                getLogger().log(Level.WARNING, e.getMessage(), e);
+                getLogger().warning( e);
                 success = false;
             } finally {
                 migrationInfo.doneProcessing();
             }
         } else {
-            getLogger().log(Level.WARNING, "Migration is cancelled -> " + migrationInfo);
+            getLogger().warning("Migration is cancelled -> " + migrationInfo);
             success = false;
         }
     }

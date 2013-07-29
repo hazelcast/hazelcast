@@ -59,7 +59,7 @@ public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implemen
         try {
             return cache.put(key, value, currentVersion);
         } catch (HazelcastException e) {
-            LOG.log(Level.FINEST, "Could not put into Cache[" + hazelcastRegion.getName() + "]: " + e.getMessage());
+            LOG.finest( "Could not put into Cache[" + hazelcastRegion.getName() + "]: " + e.getMessage());
             return false;
         }
     }
@@ -69,7 +69,7 @@ public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implemen
         try {
             return cache.update(key, value, currentVersion, previousVersion, lock);
         } catch (HazelcastException e) {
-            LOG.log(Level.FINEST, "Could not update Cache[" + hazelcastRegion.getName() + "]: " + e.getMessage());
+            LOG.finest( "Could not update Cache[" + hazelcastRegion.getName() + "]: " + e.getMessage());
             return false;
         }
     }
@@ -78,7 +78,7 @@ public abstract class AbstractAccessDelegate<T extends HazelcastRegion> implemen
         try {
             return cache.get(key);
         } catch (HazelcastException e) {
-            LOG.log(Level.FINEST, "Could not read from Cache[" + hazelcastRegion.getName() + "]: " + e.getMessage());
+            LOG.finest( "Could not read from Cache[" + hazelcastRegion.getName() + "]: " + e.getMessage());
             return null;
         }
     }

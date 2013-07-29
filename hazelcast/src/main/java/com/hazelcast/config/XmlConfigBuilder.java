@@ -63,24 +63,16 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         this.in = inputStream;
     }
 
-    public Properties getProperties() {
-        return properties;
-    }
-
-    public void setProperties(Properties properties) {
-        this.properties = properties;
-    }
-
     public XmlConfigBuilder() {
         String configFile = System.getProperty("hazelcast.config");
         try {
             if (configFile != null) {
                 configurationFile = new File(configFile);
-                logger.log(Level.INFO, "Using configuration file at " + configurationFile.getAbsolutePath());
+                logger.info("Using configuration file at " + configurationFile.getAbsolutePath());
                 if (!configurationFile.exists()) {
                     String msg = "Config file at '" + configurationFile.getAbsolutePath() + "' doesn't exist.";
                     msg += "\nHazelcast will try to use the hazelcast.xml config file in the working directory.";
-                    logger.log(Level.WARNING, msg);
+                    logger.warning( msg);
                     configurationFile = null;
                 }
             }
@@ -92,7 +84,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 }
             }
             if (configurationFile != null) {
-                logger.log(Level.INFO, "Using configuration file at " + configurationFile.getAbsolutePath());
+                logger.info("Using configuration file at " + configurationFile.getAbsolutePath());
                 try {
                     in = new FileInputStream(configurationFile);
                     configurationUrl = configurationFile.toURI().toURL();
@@ -101,34 +93,57 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                     String msg = "Having problem reading config file at '" + configFile + "'.";
                     msg += "\nException message: " + e.getMessage();
                     msg += "\nHazelcast will try to use the hazelcast.xml config file in classpath.";
-                    logger.log(Level.WARNING, msg);
+                    logger.warning(msg);
                     in = null;
                 }
             }
             if (in == null) {
-                logger.log(Level.INFO, "Looking for hazelcast.xml config file in classpath.");
+                logger.info("Looking for hazelcast.xml config file in classpath.");
                 configurationUrl = Config.class.getClassLoader().getResource("hazelcast.xml");
                 if (configurationUrl == null) {
                     configurationUrl = Config.class.getClassLoader().getResource("hazelcast-default.xml");
-                    logger.log(Level.WARNING,
+                    logger.warning(
                             "Could not find hazelcast.xml in classpath.\nHazelcast will use hazelcast-default.xml config file in jar.");
                     if (configurationUrl == null) {
-                        logger.log(Level.WARNING, "Could not find hazelcast-default.xml in the classpath!"
+                        logger.warning("Could not find hazelcast-default.xml in the classpath!"
                                 + "\nThis may be due to a wrong-packaged or corrupted jar file.");
                         return;
                     }
                 }
-                logger.log(Level.INFO, "Using configuration file " + configurationUrl.getFile() + " in the classpath.");
+                logger.info("Using configuration file " + configurationUrl.getFile() + " in the classpath.");
                 in = configurationUrl.openStream();
                 if (in == null) {
                     String msg = "Having problem reading config file hazelcast-default.xml in the classpath.";
                     msg += "\nHazelcast will start with default configuration.";
-                    logger.log(Level.WARNING, msg);
+                    logger.warning(msg);
                 }
             }
         } catch (final Throwable e) {
-            logger.log(Level.SEVERE, "Error while creating configuration:" + e.getMessage(), e);
+            logger.severe("Error while creating configuration:" + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Gets the current used properties. Can be null if no properties are set.
+     *
+     * @return  the used properties.
+     * @see #setProperties(java.util.Properties)
+     */
+    public Properties getProperties() {
+        return properties;
+    }
+
+    /**
+     * Sets the used properties. Can be null if no properties should be used.
+     *
+     * Properties are used to resolve ${variable} occurrences in the XML file.
+     *
+     * @param properties the new properties.
+     * @return the XmlConfigBuilder
+     */
+    public XmlConfigBuilder setProperties(Properties properties) {
+        this.properties = properties;
+        return this;
     }
 
     public Config build() {
@@ -162,7 +177,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             String msg = "Having problem parsing the " + msgPart;
             msg += "\nException: " + e.getMessage();
             msg += "\nHazelcast will start with default configuration.";
-            logger.log(Level.WARNING, msg);
+            logger.warning(msg);
             return;
         } finally {
             IOUtil.closeResource(in);
@@ -207,7 +222,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         while (startIndex > -1) {
             endIndex = value.indexOf("}", startIndex);
             if (endIndex == -1) {
-                logger.log(Level.WARNING, "Bad variable syntax. Could not find a closing curly bracket '}' on node: " + node.getLocalName());
+                logger.warning("Bad variable syntax. Could not find a closing curly bracket '}' on node: " + node.getLocalName());
                 break;
             }
 
@@ -217,7 +232,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 sb.append(variableReplacement);
             } else {
                 sb.append(value.substring(startIndex, endIndex + 1));
-                logger.log(Level.WARNING, "Could not find a value for property  '" + variable + "' on node: " + node.getLocalName());
+                logger.warning("Could not find a value for property  '" + variable + "' on node: " + node.getLocalName());
             }
 
             startIndex = value.indexOf("${", endIndex);
@@ -377,9 +392,9 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         try {
             return Integer.parseInt(value);
         } catch (final Exception e) {
-            logger.log(Level.INFO, parameterName + " parameter value, [" + value
+            logger.info( parameterName + " parameter value, [" + value
                     + "], is not a proper integer. Default value, [" + defaultValue + "], will be used!");
-            logger.log(Level.WARNING, e.getMessage(), e);
+            logger.warning(e);
             return defaultValue;
         }
     }
@@ -482,7 +497,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 method.invoke(target, new Object[]{Boolean.parseBoolean(value)});
             }
         } catch (Exception e) {
-            logger.log(Level.WARNING, e.getMessage(), e);
+            logger.warning(e);
         }
     }
 

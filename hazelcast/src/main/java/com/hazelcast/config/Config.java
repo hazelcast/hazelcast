@@ -476,6 +476,9 @@ public class Config {
     }
 
     public Config setUserContext(ConcurrentMap<String, Object> userContext) {
+        if(userContext == null){
+            throw new IllegalArgumentException("userContext can't be null");
+        }
         this.userContext = userContext;
         return this;
     }

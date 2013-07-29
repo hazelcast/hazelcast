@@ -32,7 +32,7 @@ public final class NodeInitializerFactory {
         try {
             initializer = ServiceLoader.load(NodeInitializer.class, FACTORY_ID, classLoader);
         } catch (Exception e) {
-            logger.log(Level.WARNING, "NodeInitializer could not be instantiated! => "
+            logger.warning("NodeInitializer could not be instantiated! => "
                                       + e.getClass().getName() + ": " + e.getMessage());
         }
         return initializer != null ? initializer : createDefault();

@@ -40,7 +40,7 @@ public class MemberRemoveOperation extends AbstractClusterOperation {
         final Address caller = getCallerAddress();
         if (caller != null &&
                 (caller.equals(deadAddress) || caller.equals(clusterService.getMasterAddress()))) {
-            getLogger().log(Level.FINEST, "Removing " + deadAddress + ", called from " + caller);
+            getLogger().finest( "Removing " + deadAddress + ", called from " + caller);
             clusterService.removeAddress(deadAddress);
         }
     }

@@ -48,7 +48,7 @@ public class VersionMismatchLogRequest implements ConsoleRequest {
     public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
         final ILogger logger = mcs.getHazelcastInstance().node.getLogger(VersionMismatchLogRequest.class.getName());
         mcs.setVersionMismatch(true);
-        logger.log(Level.SEVERE, "The version of the management center is " + manCenterVersion);
+        logger.severe("The version of the management center is " + manCenterVersion);
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {

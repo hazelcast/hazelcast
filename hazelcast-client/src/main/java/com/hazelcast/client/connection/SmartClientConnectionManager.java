@@ -106,12 +106,12 @@ public class SmartClientConnectionManager implements ClientConnectionManager {
         try {
             connection = pool.take();
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Error during connection creation... To -> " + address, e);
+            logger.warning("Error during connection creation... To -> " + address, e);
         }
         // Could be that this address is dead and that's why pool is not able to create and give a connection.
         // We will call it again, and hopefully at some time LoadBalancer will give us the right target for the connection.
         if (connection != null && !heartbeat.checkHeartBeat(connection)) {
-            logger.log(Level.WARNING, connection + " failed to heartbeat, closing...");
+            logger.warning(connection + " failed to heartbeat, closing...");
             connection.close();
             connection = null;
         }
@@ -177,7 +177,7 @@ public class SmartClientConnectionManager implements ClientConnectionManager {
         }
 
         public void close() {
-            logger.log(Level.INFO, "Closing connection -> " + connection);
+            logger.info("Closing connection -> " + connection);
             IOUtil.closeResource(connection);
         }
 

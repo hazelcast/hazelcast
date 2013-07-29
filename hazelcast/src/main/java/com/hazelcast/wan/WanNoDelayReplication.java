@@ -79,7 +79,7 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
                             conn.close();
                             conn = null;
                             if (logger != null) {
-                                logger.log(Level.SEVERE, "Invalid groupName or groupPassword! ");
+                                logger.severe("Invalid groupName or groupPassword! ");
                             }
                         }
                     }
@@ -97,7 +97,7 @@ public class WanNoDelayReplication implements Runnable, WanReplicationEndpoint {
                 running = false;
             } catch (Throwable e) {
                 if (logger != null) {
-                    logger.log(Level.WARNING, e.getMessage(), e);
+                    logger.warning(e);
                 }
                 conn = null;
             }

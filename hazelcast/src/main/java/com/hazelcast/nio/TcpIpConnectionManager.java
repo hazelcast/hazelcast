@@ -113,7 +113,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         SSLConfig sslConfig = ioService.getSSLConfig();
         if (sslConfig != null && sslConfig.isEnabled()) {
             socketChannelWrapperFactory = new SSLSocketChannelWrapperFactory(sslConfig);
-            logger.log(Level.INFO, "SSL is enabled");
+            logger.info("SSL is enabled");
         } else {
             socketChannelWrapperFactory = new DefaultSocketChannelWrapperFactory();
         }
@@ -124,15 +124,15 @@ public class TcpIpConnectionManager implements ConnectionManager {
                 try {
                     implementation = (SocketInterceptor) Class.forName(sic.getClassName()).newInstance();
                 } catch (Throwable e) {
-                    logger.log(Level.SEVERE, "SocketInterceptor class cannot be instantiated!" + sic.getClassName(), e);
+                    logger.severe("SocketInterceptor class cannot be instantiated!" + sic.getClassName(), e);
                 }
             }
             if (implementation != null) {
                 if (!(implementation instanceof MemberSocketInterceptor)) {
-                    logger.log(Level.SEVERE, "SocketInterceptor must be instance of " + MemberSocketInterceptor.class.getName());
+                    logger.severe( "SocketInterceptor must be instance of " + MemberSocketInterceptor.class.getName());
                     implementation = null;
                 } else {
-                    logger.log(Level.INFO, "SocketInterceptor is enabled");
+                    logger.info("SocketInterceptor is enabled");
                 }
             }
             if (implementation != null) {
@@ -350,7 +350,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         }
         if (serverSocketChannel != null) {
             if (socketAcceptorThread != null) {
-                logger.log(Level.WARNING, "SocketAcceptor thread is already live! Shutting down old acceptor...");
+                logger.warning("SocketAcceptor thread is already live! Shutting down old acceptor...");
                 shutdownSocketAcceptor();
             }
             Runnable acceptRunnable = new SocketAcceptor(serverSocketChannel, this);
@@ -377,7 +377,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
                     log(Level.FINEST, "Closing server socket channel: " + serverSocketChannel);
                     serverSocketChannel.close();
                 } catch (IOException ignore) {
-                    logger.log(Level.FINEST, ignore.getMessage(), ignore);
+                    logger.finest(ignore);
                 }
             }
         }
@@ -392,14 +392,14 @@ public class TcpIpConnectionManager implements ConnectionManager {
             try {
                 destroyConnection(conn);
             } catch (final Throwable ignore) {
-                logger.log(Level.FINEST, ignore.getMessage(), ignore);
+                logger.finest(ignore);
             }
         }
         for (TcpIpConnection conn : setActiveConnections) {
             try {
                 destroyConnection(conn);
             } catch (final Throwable ignore) {
-                logger.log(Level.FINEST, ignore.getMessage(), ignore);
+                logger.finest(ignore);
             }
         }
         shutdownIOSelectors();

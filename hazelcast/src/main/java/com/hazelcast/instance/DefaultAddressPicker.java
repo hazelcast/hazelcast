@@ -106,7 +106,7 @@ class DefaultAddressPicker implements AddressPicker {
                     } else {
                         String msg = "Port [" + port + "] is already in use and auto-increment is " +
                                 "disabled. Hazelcast cannot start.";
-                        logger.log(Level.SEVERE, msg, e);
+                        logger.severe(msg, e);
                         throw e;
                     }
                 }
@@ -127,7 +127,7 @@ class DefaultAddressPicker implements AddressPicker {
                 log(Level.FINEST, "Using public address the same as the bind address. " + publicAddress);
             }
         } catch (Exception e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
+            logger.severe(e);
             throw e;
         }
     }
@@ -155,11 +155,11 @@ class DefaultAddressPicker implements AddressPicker {
                     if (networkConfig.getInterfaces().isEnabled()) {
                         String msg = "Hazelcast CANNOT start on this node. No matching network interface found. ";
                         msg += "\nInterface matching must be either disabled or updated in the hazelcast.xml config file.";
-                        logger.log(Level.SEVERE, msg);
+                        logger.severe(msg);
                         throw new RuntimeException(msg);
                     } else {
                         if (networkConfig.getJoin().getTcpIpConfig().isEnabled()) {
-                            logger.log(Level.WARNING, "Could not find a matching address to start with! " +
+                            logger.warning("Could not find a matching address to start with! " +
                                     "Picking one of non-loopback addresses.");
                         }
                         addressDef = pickMatchingAddress(null);
@@ -196,7 +196,7 @@ class DefaultAddressPicker implements AddressPicker {
                             addressDomainMap.put(address, s);
                         }
                     } catch (UnknownHostException e) {
-                        logger.log(Level.SEVERE, "Could not resolve address: " + s);
+                        logger.severe( "Could not resolve address: " + s);
                     }
                 }
             }
@@ -210,7 +210,7 @@ class DefaultAddressPicker implements AddressPicker {
                 if (AddressUtil.isIpAddress(configInterface)) {
                     interfaces.add(new InterfaceDefinition(addressDomainMap.get(configInterface), configInterface));
                 } else {
-                    logger.log(Level.INFO, "'" + configInterface
+                    logger.info("'" + configInterface
                             + "' is not an IP address! Removing from interface list.");
                 }
             }
@@ -233,7 +233,7 @@ class DefaultAddressPicker implements AddressPicker {
         for (InetAddress inetAddress : inetAddresses) {
             addresses.add(inetAddress.getHostAddress());
         }
-        logger.log(Level.INFO, "Resolving domain name '" + domainName + "' to address(es): " + addresses);
+        logger.info("Resolving domain name '" + domainName + "' to address(es): " + addresses);
         return addresses;
     }
 

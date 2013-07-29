@@ -35,7 +35,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Level;
 
 import static com.hazelcast.ascii.TextCommandConstants.TextCommandType.*;
 
@@ -273,7 +272,7 @@ public class TextCommandServiceImpl implements TextCommandService, TextCommandCo
                 TextCommandType type = command.getType();
                 textCommandProcessors[type.getValue()].handle(command);
             } catch (Throwable e) {
-                logger.log(Level.WARNING, e.getMessage(), e);
+                logger.warning(e);
             }
         }
     }

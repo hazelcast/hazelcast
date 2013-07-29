@@ -213,8 +213,8 @@ public class NodeEngineImpl implements NodeEngine {
 
         public void run() {
             retries++;
-            if (logger.isLoggable(Level.FINEST)) {
-                logger.log(Level.FINEST, "Retrying[" + retries + "] packet send operation to: " + target);
+            if (logger.isFinestEnabled()) {
+                logger.finest( "Retrying[" + retries + "] packet send operation to: " + target);
             }
             send(packet, target, this);
         }
@@ -241,7 +241,7 @@ public class NodeEngineImpl implements NodeEngine {
         } else if (packet.isHeaderSet(Packet.HEADER_WAN_REPLICATION)) {
             wanReplicationService.handleEvent(packet);
         } else {
-            logger.log(Level.SEVERE, "Unknown packet type! Header: " + packet.getHeader());
+            logger.severe("Unknown packet type! Header: " + packet.getHeader());
         }
     }
 
@@ -318,7 +318,7 @@ public class NodeEngineImpl implements NodeEngine {
             final Operation pjOp = service.getPostJoinOperation();
             if (pjOp != null) {
                 if (pjOp instanceof PartitionAwareOperation) {
-                    logger.log(Level.SEVERE, "Post-join operations cannot implement PartitionAwareOperation!" +
+                    logger.severe("Post-join operations cannot implement PartitionAwareOperation!" +
                             " Service: " + service + ", Operation: " + pjOp);
                     continue;
                 }
@@ -334,7 +334,7 @@ public class NodeEngineImpl implements NodeEngine {
 
     @PrivateApi
     public void shutdown() {
-        logger.log(Level.FINEST, "Shutting down services...");
+        logger.finest( "Shutting down services...");
         waitNotifyService.shutdown();
         proxyService.shutdown();
         serviceManager.shutdown();

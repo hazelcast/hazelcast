@@ -113,7 +113,7 @@ public class SetCommandProcessor extends MemcacheCommandProcessor<SetCommand> {
                     try {
                         entry = new MemcacheEntry(setCommand.getKey(), ByteUtil.concatenate(textCommandService.toByteArray(oldValue), setCommand.getValue()), 0);
                     } catch (Exception e) {
-                        logger.log(Level.WARNING, e.getMessage(), e);
+                        logger.warning(e);
                     }
                 }
                 textCommandService.put(mapName, key, entry, ttl);
@@ -147,7 +147,7 @@ public class SetCommandProcessor extends MemcacheCommandProcessor<SetCommand> {
                     try {
                         entry = new MemcacheEntry(setCommand.getKey(), ByteUtil.concatenate(setCommand.getValue(), textCommandService.toByteArray(oldValue)), 0);
                     } catch (Exception e) {
-                        logger.log(Level.WARNING, e.getMessage(), e);
+                        logger.warning(e);
                     }
                 }
                 textCommandService.put(mapName, key, entry, ttl);

@@ -64,9 +64,8 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
         if (!nodeEngine.getThisAddress().equals(owner)) {
             valid = false;
             final ILogger logger = getLogger();
-            Level level = Level.FINEST;
-            if (logger.isLoggable(level)) {
-                logger.log(level, "Wrong target! " + toString() + " cannot be processed! Target should be: " + owner);
+            if (logger.isFinestEnabled()) {
+                logger.finest("Wrong target! " + toString() + " cannot be processed! Target should be: " + owner);
             }
         }
     }

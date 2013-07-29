@@ -62,7 +62,7 @@ public class ConnectionFactoryImpl implements HazelcastConnectionFactory {
      * @see com.hazelcast.jca.HazelcastConnectionFactory#getConnection()
      */
     public HazelcastConnection getConnection() throws ResourceException {
-        logger.log(Level.FINEST, "getConnection");
+        logger.finest( "getConnection");
         return this.getConnection(null);
     }
 
@@ -70,7 +70,7 @@ public class ConnectionFactoryImpl implements HazelcastConnectionFactory {
      * @see com.hazelcast.jca.HazelcastConnectionFactory#getConnection(javax.resource.cci.ConnectionSpec)
      */
     public HazelcastConnection getConnection(ConnectionSpec connSpec) throws ResourceException {
-    	logger.log(Level.FINEST, "getConnection spec: " + connSpec);
+    	logger.finest( "getConnection spec: " + connSpec);
         return (HazelcastConnectionImpl) cm.allocateConnection(mcf, null);
     }
 

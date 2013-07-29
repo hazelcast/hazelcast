@@ -141,7 +141,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
                 }
             }
         } catch (Throwable t) {
-            logger.log(Level.SEVERE, "Fatal Error at WriteHandler for endPoint: " + connection.getEndPoint(), t);
+            logger.severe("Fatal Error at WriteHandler for endPoint: " + connection.getEndPoint(), t);
             connection.getSystemLogService().logConnection("Fatal Error at WriteHandler for endPoint " +
                     "[" + connection.getEndPoint() + "]: " + t.getMessage());
         } finally {

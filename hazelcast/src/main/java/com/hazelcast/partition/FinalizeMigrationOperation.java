@@ -54,7 +54,7 @@ final class FinalizeMigrationOperation extends AbstractOperation implements Part
                         service.rollbackMigration(event);
                     }
                 } catch (Throwable e) {
-                    getLogger().log(Level.WARNING, "Error while finalizing migration -> " + event, e);
+                    getLogger().warning("Error while finalizing migration -> " + event, e);
                 }
             }
             partitionService.removeActiveMigration(getPartitionId());

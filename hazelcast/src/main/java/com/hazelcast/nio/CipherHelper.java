@@ -42,7 +42,7 @@ final class CipherHelper {
                 Security.addProvider((Provider) Class.forName(provider).newInstance());
             }
         } catch (Exception e) {
-            logger.log(Level.WARNING, e.getMessage(), e);
+            logger.warning(e);
         }
     }
 
@@ -168,7 +168,7 @@ final class CipherHelper {
     }
 
     public static void handleCipherException(Exception e, Connection connection) {
-        logger.log(Level.WARNING, e.getMessage(), e);
+        logger.warning(e);
         connection.close();
     }
 }

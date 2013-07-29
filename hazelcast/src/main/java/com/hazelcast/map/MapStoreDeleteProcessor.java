@@ -58,7 +58,7 @@ public class MapStoreDeleteProcessor implements ScheduledEntryProcessor<Data, Ob
             ScheduledEntry<Data, Object> entry = entries.iterator().next();
             Exception e = tryDelete(scheduler, entry);
             if (e != null) {
-                logger.log(Level.SEVERE, e.getMessage(), e);
+                logger.severe(e);
             }
         } else {
             Set keys = new HashSet();
@@ -78,7 +78,7 @@ public class MapStoreDeleteProcessor implements ScheduledEntryProcessor<Data, Ob
                 }
             }
             if (e != null) {
-                logger.log(Level.SEVERE, e.getMessage(), e);
+                logger.severe(e);
             }
         }
     }

@@ -35,7 +35,7 @@ public class ClasspathXmlConfig extends Config {
 
     public ClasspathXmlConfig(ClassLoader classLoader, String resource) {
         super();
-        logger.log(Level.INFO, "Configuring Hazelcast from '" + resource + "'.");
+        logger.info("Configuring Hazelcast from '" + resource + "'.");
         InputStream in = classLoader.getResourceAsStream(resource);
         if (in == null) {
             throw new NullPointerException("Specified resource '" + resource + "' could not be found!");

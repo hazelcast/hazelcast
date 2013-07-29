@@ -67,7 +67,7 @@ public class SocketAcceptor implements Runnable {
             log(Level.SEVERE, e.getClass().getName() + ": " + e.getMessage(), e);
         } finally {
             try {
-                logger.log(Level.FINEST, "Closing selector " + Thread.currentThread().getName());
+                logger.finest( "Closing selector " + Thread.currentThread().getName());
                 selector.close();
             } catch (final Exception ignored) {
             }
@@ -87,11 +87,11 @@ public class SocketAcceptor implements Runnable {
                 // ClosedChannelException
                 // or AsynchronousCloseException
                 // or ClosedByInterruptException
-                logger.log(Level.FINEST, "Terminating socket acceptor thread...", e);
+                logger.finest( "Terminating socket acceptor thread...", e);
             } else {
                 String error = "Unexpected error while accepting connection! "
                                + e.getClass().getName() + ": " + e.getMessage();
-                logger.log(Level.WARNING, error, e);
+                logger.warning(error, e);
                 connectionManager.ioService.getSystemLogService().logConnection(error);
                 try {
                     serverSocketChannel.close();
