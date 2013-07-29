@@ -75,7 +75,7 @@ public class ReflectionHelper {
     private static Getter createGetter(QueryableEntry entry, String attribute) {
         Object obj = entry.getValue();
         Class clazz = obj.getClass();
-        String cacheKey = clazz.getName() + ":" + attribute;
+        final String cacheKey = clazz.getName() + ":" + attribute;
         Getter getter = getterCache.get(cacheKey);
         if (getter != null) return getter;
         try {
@@ -130,7 +130,9 @@ public class ReflectionHelper {
                 parent = localGetter;
             }
             getter = parent;
-            getterCache.putIfAbsent(cacheKey, getter);
+            if (!(getter instanceof ThisGetter)) {
+                getterCache.putIfAbsent(cacheKey, getter);
+            }
             return getter;
         } catch (Throwable e) {
             throw new QueryException(e);
