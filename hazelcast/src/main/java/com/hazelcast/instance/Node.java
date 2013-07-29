@@ -533,14 +533,17 @@ public class Node {
     Joiner createJoiner() {
         JoinConfig join = config.getNetworkConfig().getJoin();
         if (join.getMulticastConfig().isEnabled() && multicastService != null) {
+            logger.log(Level.INFO, "Creating MulticastJoiner");
             systemLogService.logJoin("Creating MulticastJoiner");
             return new MulticastJoiner(this);
         } else if (join.getTcpIpConfig().isEnabled()) {
+            logger.log(Level.INFO, "Creating TcpIpJoiner");
             systemLogService.logJoin("Creating TcpIpJoiner");
             return new TcpIpJoiner(this);
         } else if (join.getAwsConfig().isEnabled()) {
             Class clazz;
             try {
+                logger.log(Level.INFO, "Creating AWSJoiner");
                 clazz = Class.forName("com.hazelcast.cluster.TcpIpJoinerOverAWS");
                 Constructor constructor = clazz.getConstructor(Node.class);
                 systemLogService.logJoin("Creating AWSJoiner");

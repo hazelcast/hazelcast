@@ -117,6 +117,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
                 return cached;
             }
         }
+        NodeEngine nodeEngine = getNodeEngine();
         // todo action for read-backup true is not well tested.
         if (mapConfig.isReadBackupData()) {
             int backupCount = mapConfig.getTotalBackupCount();
@@ -124,7 +125,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
             for (int i = 0; i <= backupCount; i++) {
                 int partitionId = partitionService.getPartitionId(key);
                 PartitionView partition = partitionService.getPartition(partitionId);
-                if (getNodeEngine().getThisAddress().equals(partition.getReplicaAddress(i))) {
+                if (nodeEngine.getThisAddress().equals(partition.getReplicaAddress(i))) {
                     Object val = mapService.getPartitionContainer(partitionId).getRecordStore(name).get(key);
                     if (val != null) {
                         mapService.interceptAfterGet(name, val);
@@ -136,7 +137,6 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         GetOperation operation = new GetOperation(name, key);
         Data result = (Data) invokeOperation(key, operation);
         if (nearCacheEnabled) {
-            final NodeEngine nodeEngine = getNodeEngine();
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
             if (!nodeEngine.getPartitionService().getPartitionOwner(partitionId).equals(nodeEngine.getClusterService().getThisAddress())) {
                 mapService.putNearCache(name, key, result);
