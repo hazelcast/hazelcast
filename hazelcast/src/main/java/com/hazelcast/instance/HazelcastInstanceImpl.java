@@ -74,7 +74,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
 
     final ThreadGroup threadGroup;
 
-    final ConcurrentMap<String, Object> userContext;
+    final ConcurrentMap<String, Object> userContext = new ConcurrentHashMap<String,Object>();
 
     HazelcastInstanceImpl(String name, Config config, NodeContext nodeContext) throws Exception {
         this.name = name;
@@ -82,8 +82,11 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         threadMonitoringService = new ThreadMonitoringService(threadGroup);
         lifecycleService = new LifecycleServiceImpl(this);
         managedContext = new HazelcastManagedContext(this, config.getManagedContext());
-        final ConcurrentMap<String, Object> cfgUserContext = config.getUserContext();
-        userContext = cfgUserContext != null ? cfgUserContext : new ConcurrentHashMap<String, Object>();
+
+        //we are going to copy the user-context map of the Config so that each HazelcastInstance will get its own
+        //user-context map instance instead of having a shared map instance. So changes made to the user-context map
+        //in one HazelcastInstance will not reflect on other the user-context of other HazelcastInstances.
+        userContext.putAll(config.getUserContext());
         node = new Node(this, config, nodeContext);
         logger = node.getLogger(getClass().getName());
         lifecycleService.fireLifecycleEvent(STARTING);
