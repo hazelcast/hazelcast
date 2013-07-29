@@ -146,7 +146,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
             } catch (InterruptedException ignored) {
             } catch (TimeoutException ignored) {
             } catch (MemberLeftException e){
-                logger.log(Level.FINEST, e.getMessage(), e);
+                logger.log(Level.FINEST, "Member left while registering listener...", e);
             } catch (ExecutionException e) {
                 throw new HazelcastException(e);
             }
@@ -168,6 +168,8 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
                 f.get(5, TimeUnit.SECONDS);
             } catch (InterruptedException ignored) {
             } catch (TimeoutException ignored) {
+            } catch (MemberLeftException e){
+                logger.log(Level.FINEST, "Member left while de-registering listener...", e);
             } catch (ExecutionException e) {
                 throw new HazelcastException(e);
             }
