@@ -28,7 +28,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
 
 /**
  * @author mdogan 1/18/13
@@ -69,7 +68,15 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         if (uuid != null) {
             submittedTasks.put(uuid, processor);
         }
-        executionService.execute(name, processor);
+        try {
+            executionService.execute(name, processor);
+        } catch (RejectedExecutionException e) {
+            getLogger().warning("While executing " + callable + " on Executor[" + name + "]", e);
+            if (uuid != null) {
+                submittedTasks.remove(uuid);
+            }
+            processor.sendResponse(e);
+        }
     }
 
     public boolean cancel(String uuid, boolean interrupt) {
