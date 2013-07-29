@@ -31,6 +31,7 @@ public class DefaultPortableReader implements PortableReader {
     protected final ClassDefinition cd;
     private final PortableSerializer serializer;
     private final BufferObjectDataInput in;
+    private final int finalPosition;
     private final int offset;
     private boolean raw = false;
 
@@ -38,6 +39,11 @@ public class DefaultPortableReader implements PortableReader {
         this.in = in;
         this.serializer = serializer;
         this.cd = cd;
+        try {
+            finalPosition = in.readInt();  // final position after portable is read
+        } catch (IOException e) {
+            throw new HazelcastSerializationException(e);
+        }
         this.offset = in.position();
     }
 
@@ -203,11 +209,11 @@ public class DefaultPortableReader implements PortableReader {
                 final PortableContextAwareInputStream ctxIn = (PortableContextAwareInputStream) in;
                 try {
                     ctxIn.setFactoryId(fd.getFactoryId());
-                    ctxIn.setDataClassId(fd.getClassId());
+                    ctxIn.setClassId(fd.getClassId());
                     return serializer.read(in);
                 } finally {
                     ctxIn.setFactoryId(cd.getFactoryId());
-                    ctxIn.setDataClassId(cd.getClassId());
+                    ctxIn.setClassId(cd.getClassId());
                 }
             }
             return null;
@@ -237,7 +243,7 @@ public class DefaultPortableReader implements PortableReader {
                 final PortableContextAwareInputStream ctxIn = (PortableContextAwareInputStream) in;
                 try {
                     ctxIn.setFactoryId(fd.getFactoryId());
-                    ctxIn.setDataClassId(fd.getClassId());
+                    ctxIn.setClassId(fd.getClassId());
                     for (int i = 0; i < len; i++) {
                         final int start = in.readInt(offset + i * 4);
                         in.position(start);
@@ -245,7 +251,7 @@ public class DefaultPortableReader implements PortableReader {
                     }
                 } finally {
                     ctxIn.setFactoryId(cd.getFactoryId());
-                    ctxIn.setDataClassId(cd.getClassId());
+                    ctxIn.setClassId(cd.getClassId());
                 }
             }
             return portables;
@@ -276,5 +282,9 @@ public class DefaultPortableReader implements PortableReader {
         }
         raw = true;
         return in;
+    }
+
+    void end() throws IOException {
+        in.position(finalPosition);
     }
 }

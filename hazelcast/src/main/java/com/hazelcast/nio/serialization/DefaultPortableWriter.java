@@ -32,6 +32,7 @@ public class DefaultPortableWriter implements PortableWriter {
     private final PortableSerializer serializer;
     private final ClassDefinition cd;
     private final BufferObjectDataOutput out;
+    private final int begin;
     private final int offset;
     private final Set<String> writtenFields;
     private boolean raw = false;
@@ -39,11 +40,13 @@ public class DefaultPortableWriter implements PortableWriter {
     public DefaultPortableWriter(PortableSerializer serializer, BufferObjectDataOutput out, ClassDefinition cd) {
         this.serializer = serializer;
         this.out = out;
-        this.offset = out.position();
         this.cd = cd;
         this.writtenFields = new HashSet<String>(cd.getFieldCount());
-        final int fieldIndexesLength = (cd.getFieldCount() + 1) * 4; // one additional int for raw data
-        this.out.position(offset + fieldIndexesLength);
+        this.begin = out.position();
+        out.position(begin + 4); // room for final offset
+        this.offset = out.position();
+        final int fieldIndexesLength = (cd.getFieldCount() + 1) * 4; // one additional for raw data
+        out.position(offset + fieldIndexesLength);
     }
 
     public int getVersion() {
@@ -104,17 +107,10 @@ public class DefaultPortableWriter implements PortableWriter {
         }
     }
 
-    public void writePortable(String fieldName, int factoryId, int classId, Portable portable) throws IOException {
-        setPosition(fieldName);
-        final boolean NULL = portable == null;
-        out.writeBoolean(NULL);
-        if (!NULL) {
-            serializer.write(out, portable, classId);
-        }
-    }
-
     public void writeNullPortable(String fieldName, int factoryId, int classId) throws IOException {
-        writePortable(fieldName, factoryId, classId, null);
+        setPosition(fieldName);
+        final boolean NULL = true;
+        out.writeBoolean(NULL);
     }
 
     public void writeByteArray(String fieldName, byte[] values) throws IOException {
@@ -193,5 +189,9 @@ public class DefaultPortableWriter implements PortableWriter {
         }
         raw = true;
         return out;
+    }
+
+    void end() throws IOException {
+        out.writeInt(begin, out.position()); // write final offset
     }
 }

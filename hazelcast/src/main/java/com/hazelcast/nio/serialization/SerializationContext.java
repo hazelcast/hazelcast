@@ -33,4 +33,6 @@ public interface SerializationContext {
 
     ClassDefinition registerClassDefinition(ClassDefinition cd);
 
+    ClassDefinition lookupOrRegisterClassDefinition(Portable portable) throws IOException;
+
 }

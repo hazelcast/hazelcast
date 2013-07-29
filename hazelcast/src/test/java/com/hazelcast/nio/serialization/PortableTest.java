@@ -272,9 +272,13 @@ public class PortableTest {
     @Test
     public void testPortableNestedInOthers() {
         SerializationService serializationService = createSerializationService(1);
-        Object o1 = new ComplexDataSerializable(new NamedPortable("test-portable", 137));
+        Object o1 = new ComplexDataSerializable(new NamedPortable("test-portable", 137),
+                new SimpleDataSerializable("test-data-serializable".getBytes()),
+                new SimpleDataSerializable("test-data-serializable-2".getBytes()));
+
         Data data = serializationService.toData(o1);
-        Object o2 = serializationService.toObject(data);
+        SerializationService serializationService2 = createSerializationService(2);
+        Object o2 = serializationService2.toObject(data);
         Assert.assertEquals(o1, o2);
     }
 
@@ -553,6 +557,15 @@ public class PortableTest {
         public int getFactoryId() {
             return FACTORY_ID;
         }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder("NamedPortable{");
+            sb.append("name='").append(name).append('\'');
+            sb.append(", k=").append(k);
+            sb.append('}');
+            return sb.toString();
+        }
     }
 
     private static class NamedPortableV2 extends NamedPortable implements Portable {
@@ -754,27 +767,45 @@ public class PortableTest {
         public int hashCode() {
             return data != null ? Arrays.hashCode(data) : 0;
         }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder("SimpleDataSerializable{");
+            sb.append("data=").append(Arrays.toString(data));
+            sb.append('}');
+            return sb.toString();
+        }
     }
 
     private static class ComplexDataSerializable implements DataSerializable {
 
+        private SimpleDataSerializable ds;
         private NamedPortable portable;
+        private SimpleDataSerializable ds2;
 
         private ComplexDataSerializable() {
         }
 
-        private ComplexDataSerializable(NamedPortable portable) {
+        private ComplexDataSerializable(NamedPortable portable, SimpleDataSerializable ds, SimpleDataSerializable ds2) {
             this.portable = portable;
+            this.ds = ds;
+            this.ds2 = ds2;
         }
 
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
+            ds.writeData(out);
             out.writeObject(portable);
+            ds2.writeData(out);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
+            ds = new SimpleDataSerializable();
+            ds.readData(in);
             portable = in.readObject();
+            ds2 = new SimpleDataSerializable();
+            ds2.readData(in);
         }
 
         @Override
@@ -784,6 +815,8 @@ public class PortableTest {
 
             ComplexDataSerializable that = (ComplexDataSerializable) o;
 
+            if (ds != null ? !ds.equals(that.ds) : that.ds != null) return false;
+            if (ds2 != null ? !ds2.equals(that.ds2) : that.ds2 != null) return false;
             if (portable != null ? !portable.equals(that.portable) : that.portable != null) return false;
 
             return true;
@@ -791,13 +824,18 @@ public class PortableTest {
 
         @Override
         public int hashCode() {
-            return portable != null ? portable.hashCode() : 0;
+            int result = ds != null ? ds.hashCode() : 0;
+            result = 31 * result + (portable != null ? portable.hashCode() : 0);
+            result = 31 * result + (ds2 != null ? ds2.hashCode() : 0);
+            return result;
         }
 
         @Override
         public String toString() {
             final StringBuilder sb = new StringBuilder("ComplexDataSerializable{");
-            sb.append("portable=").append(portable);
+            sb.append("ds=").append(ds);
+            sb.append(", portable=").append(portable);
+            sb.append(", ds2=").append(ds2);
             sb.append('}');
             return sb.toString();
         }

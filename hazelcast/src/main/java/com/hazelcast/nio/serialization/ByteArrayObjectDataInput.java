@@ -40,11 +40,8 @@ class ByteArrayObjectDataInput extends PortableContextAwareInputStream implement
 
     ByteArrayObjectDataInput(Data data, SerializationService service) {
         this(data.buffer, service);
-
         final ClassDefinition cd = data.classDefinition;
-        setFactoryId(cd != null ? cd.getFactoryId() : 0);
-        setDataClassId(cd != null ? cd.getClassId() : -1);
-        setDataVersion(cd != null ? cd.getVersion() : -1);
+        setClassDefinition(cd);
     }
 
     ByteArrayObjectDataInput(byte buffer[], SerializationService service) {

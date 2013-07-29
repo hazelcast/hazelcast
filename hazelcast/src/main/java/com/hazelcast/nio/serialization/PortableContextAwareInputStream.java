@@ -25,9 +25,9 @@ abstract class PortableContextAwareInputStream extends InputStream {
 
     private int factoryId;
 
-    private int dataClassId;
+    private int classId;
 
-    private int dataVersion;
+    private int version;
 
     final int getFactoryId() {
         return factoryId;
@@ -37,20 +37,25 @@ abstract class PortableContextAwareInputStream extends InputStream {
         this.factoryId = factoryId;
     }
 
-    final int getDataClassId() {
-        return dataClassId;
+    final int getClassId() {
+        return classId;
     }
 
-    final void setDataClassId(int classId) {
-        this.dataClassId = classId;
+    final void setClassId(int classId) {
+        this.classId = classId;
     }
 
-    final int getDataVersion() {
-        return dataVersion;
+    final int getVersion() {
+        return version;
     }
 
-    final void setDataVersion(int dataVersion) {
-        this.dataVersion = dataVersion;
+    final void setVersion(int version) {
+        this.version = version;
     }
 
+    final void setClassDefinition(final ClassDefinition cd) {
+        factoryId = cd != null ? cd.getFactoryId() : 0;
+        classId = cd != null ? cd.getClassId() : -1;
+        version = cd != null ? cd.getVersion() : -1;
+    }
 }

@@ -24,7 +24,10 @@ import com.hazelcast.nio.*;
 import com.hazelcast.nio.serialization.ConstantSerializers.*;
 import com.hazelcast.nio.serialization.DefaultSerializers.*;
 
-import java.io.*;
+import java.io.Externalizable;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteOrder;
@@ -33,9 +36,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.zip.DataFormatException;
-import java.util.zip.Deflater;
-import java.util.zip.Inflater;
 
 public final class SerializationServiceImpl implements SerializationService {
 
@@ -71,7 +71,7 @@ public final class SerializationServiceImpl implements SerializationService {
         this.classLoader = classLoader;
         this.managedContext = managedContext;
         PortableHookLoader loader = new PortableHookLoader(portableFactories, classLoader);
-        serializationContext = new SerializationContextImpl(loader.getFactories().keySet(), version);
+        serializationContext = new SerializationContextImpl(this, loader.getFactories().keySet(), version);
         for (ClassDefinition cd : loader.getDefinitions()) {
             serializationContext.registerClassDefinition(cd);
         }
@@ -217,9 +217,8 @@ public final class SerializationServiceImpl implements SerializationService {
             out.writeInt(serializer.getTypeId());
             if (obj instanceof Portable) {
                 final Portable portable = (Portable) obj;
-                out.writeInt(portable.getFactoryId());
-                out.writeInt(portable.getClassId());
-                out.writeInt(serializationContext.ctxVersion);
+                ClassDefinition classDefinition = serializationContext.lookupOrRegisterClassDefinition(portable);
+                classDefinition.writeData(out);
             }
             serializer.write(out, obj);
         } catch (Throwable e) {
@@ -242,13 +241,11 @@ public final class SerializationServiceImpl implements SerializationService {
                 throw new HazelcastInstanceNotActiveException();
             }
             if (typeId == SerializationConstants.CONSTANT_TYPE_PORTABLE && in instanceof PortableContextAwareInputStream) {
-                int factoryId = in.readInt();
-                int classId = in.readInt();
-                int version = in.readInt();
+                ClassDefinition classDefinition = new ClassDefinitionImpl();
+                classDefinition.readData(in);
+                classDefinition = serializationContext.registerClassDefinition(classDefinition);
                 PortableContextAwareInputStream ctxIn = (PortableContextAwareInputStream) in;
-                ctxIn.setFactoryId(factoryId);
-                ctxIn.setDataClassId(classId);
-                ctxIn.setDataVersion(version);
+                ctxIn.setClassDefinition(classDefinition);
             }
             Object obj = serializer.read(in);
             if (managedContext != null) {
@@ -339,7 +336,8 @@ public final class SerializationServiceImpl implements SerializationService {
             s = new ByteArraySerializerAdapter((ByteArraySerializer) serializer);
         } else {
             throw new IllegalArgumentException("Serializer must be instance of either StreamSerializer or ByteArraySerializer!");
-        } return s;
+        }
+        return s;
     }
 
     public SerializerAdapter serializerFor(final Class type) {
@@ -464,156 +462,7 @@ public final class SerializationServiceImpl implements SerializationService {
         outputPool.clear();
     }
 
-    private class SerializationContextImpl implements SerializationContext {
-
-        final int ctxVersion;
-        final Map<Integer, PortableContext> portableContextMap;
-
-        private SerializationContextImpl(Collection<Integer> portableFactories, int version) {
-            this.ctxVersion = version;
-            final Map<Integer, PortableContext> portableMap = new HashMap<Integer, PortableContext>();
-            for (int factoryId : portableFactories) {
-                portableMap.put(factoryId, new PortableContext());
-            }
-            portableContextMap = portableMap; // do not modify!
-        }
-
-        public ClassDefinition lookup(int factoryId, int classId) {
-            return getPortableContext(factoryId).lookup(classId, ctxVersion);
-        }
-
-        public ClassDefinition lookup(int factoryId, int classId, int version) {
-            return getPortableContext(factoryId).lookup(classId, version);
-        }
-
-        public ClassDefinition createClassDefinition(int factoryId, final byte[] compressedBinary) throws IOException {
-            return getPortableContext(factoryId).createClassDefinition(compressedBinary);
-        }
-
-        public ClassDefinition registerClassDefinition(final ClassDefinition cd) {
-            return getPortableContext(cd.getFactoryId()).registerClassDefinition(cd);
-        }
-
-        private void registerNestedDefinitions(ClassDefinitionImpl cd) {
-            Collection<ClassDefinition> nestedDefinitions = cd.getNestedClassDefinitions();
-            for (ClassDefinition classDefinition : nestedDefinitions) {
-                final ClassDefinitionImpl nestedCD = (ClassDefinitionImpl) classDefinition;
-                registerClassDefinition(nestedCD);
-                registerNestedDefinitions(nestedCD);
-            }
-        }
-
-        private PortableContext getPortableContext(int factoryId) {
-            final PortableContext ctx = portableContextMap.get(factoryId);
-            if (ctx == null) {
-                throw new HazelcastSerializationException("Could not find PortableFactory for factoryId: " + factoryId);
-            }
-            return ctx;
-        }
-
-        public int getVersion() {
-            return ctxVersion;
-        }
-    }
-
-    private class PortableContext {
-
-        final ConcurrentMap<Long, ClassDefinitionImpl> versionedDefinitions = new ConcurrentHashMap<Long,
-                ClassDefinitionImpl>();
-
-        ClassDefinition lookup(int classId, int version) {
-            return versionedDefinitions.get(combineToLong(classId, version));
-        }
-
-        ClassDefinition createClassDefinition(byte[] compressedBinary) throws IOException {
-            final BufferObjectDataOutput out = pop();
-            final byte[] binary;
-            try {
-                decompress(compressedBinary, out);
-                binary = out.toByteArray();
-            } finally {
-                push(out);
-            }
-            final ClassDefinitionImpl cd = new ClassDefinitionImpl();
-            cd.readData(inputOutputFactory.createInput(binary, SerializationServiceImpl.this));
-            cd.setBinary(compressedBinary);
-            final ClassDefinitionImpl currentCD = versionedDefinitions.putIfAbsent(combineToLong(cd.classId,
-                    serializationContext.getVersion()), cd);
-            if (currentCD == null) {
-                serializationContext.registerNestedDefinitions(cd);
-                return cd;
-            } else {
-                return currentCD;
-            }
-        }
-
-        ClassDefinition registerClassDefinition(ClassDefinition cd) {
-            if (cd == null) return null;
-            final ClassDefinitionImpl cdImpl = (ClassDefinitionImpl) cd;
-            if (cdImpl.getVersion() < 0) {
-                cdImpl.version = serializationContext.getVersion();
-            }
-            final long versionedClassId = combineToLong(cdImpl.getClassId(), cdImpl.getVersion());
-            final ClassDefinitionImpl currentClassDef = versionedDefinitions.putIfAbsent(versionedClassId, cdImpl);
-            if (currentClassDef == null) {
-                serializationContext.registerNestedDefinitions(cdImpl);
-                if (cdImpl.getBinary() == null) {
-                    final BufferObjectDataOutput out = pop();
-                    try {
-                        cdImpl.writeData(out);
-                        final byte[] binary = out.toByteArray();
-                        out.clear();
-                        compress(binary, out);
-                        cdImpl.setBinary(out.toByteArray());
-                    } catch (IOException e) {
-                        throw new HazelcastSerializationException(e);
-                    } finally {
-                        push(out);
-                    }
-                }
-                return cd;
-            }
-            return currentClassDef;
-        }
-    }
-
     public ClassLoader getClassLoader() {
         return classLoader;
-    }
-
-    private static void compress(byte[] input, DataOutput out) throws IOException {
-        Deflater deflater = new Deflater();
-        deflater.setLevel(Deflater.BEST_COMPRESSION);
-        deflater.setInput(input);
-        deflater.finish();
-        byte[] buf = new byte[input.length / 10];
-        while (!deflater.finished()) {
-            int count = deflater.deflate(buf);
-            out.write(buf, 0, count);
-        }
-        deflater.end();
-    }
-
-    private static void decompress(byte[] compressedData, DataOutput out) throws IOException {
-        Inflater inflater = new Inflater();
-        inflater.setInput(compressedData);
-        byte[] buf = new byte[1024];
-        while (!inflater.finished()) {
-            try {
-                int count = inflater.inflate(buf);
-                out.write(buf, 0, count);
-            } catch (DataFormatException e) {
-                throw new IOException(e);
-            }
-        }
-        inflater.end();
-    }
-
-    private static long combineToLong(int x, int y) {
-        return ((long) x << 32) | ((long) y & 0xFFFFFFFL);
-    }
-
-    private static int extractInt(long value, boolean lowerBits) {
-        return (lowerBits) ? (int) value : (int) (value >> 32);
     }
 }

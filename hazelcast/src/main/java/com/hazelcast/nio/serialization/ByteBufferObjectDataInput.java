@@ -35,11 +35,8 @@ final class ByteBufferObjectDataInput extends PortableContextAwareInputStream im
 
     ByteBufferObjectDataInput(Data data, SerializationService service, ByteOrder order) {
         this(data.buffer, service, order);
-
         final ClassDefinition cd = data.classDefinition;
-        setFactoryId(cd != null ? cd.getFactoryId() : 0);
-        setDataClassId(cd != null ? cd.getClassId() : -1);
-        setDataVersion(cd != null ? cd.getVersion() : -1);
+        setClassDefinition(cd);
     }
 
     ByteBufferObjectDataInput(byte buffer[], SerializationService service, ByteOrder order) {
