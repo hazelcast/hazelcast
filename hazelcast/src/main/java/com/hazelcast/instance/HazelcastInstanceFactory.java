@@ -29,7 +29,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.STARTED;
 
@@ -88,7 +87,6 @@ public final class HazelcastInstanceFactory {
             final HazelcastInstanceImpl hazelcastInstance = new HazelcastInstanceImpl(instanceName, config, nodeContext);
             OutOfMemoryErrorDispatcher.register(hazelcastInstance);
             proxy = new HazelcastInstanceProxy(hazelcastInstance);
-            INSTANCE_MAP.put(instanceName, proxy);
             final Node node = hazelcastInstance.node;
             final Iterator<Member> iter = node.getClusterService().getMembers().iterator();
             final boolean firstMember = (iter.hasNext() && iter.next().localMember());
@@ -122,6 +120,7 @@ public final class HazelcastInstanceFactory {
                 hazelcastInstance.logger.info("HazelcastInstance starting after waiting for cluster size of "
                         + initialMinClusterSize);
             }
+            INSTANCE_MAP.put(instanceName, proxy);
             hazelcastInstance.lifecycleService.fireLifecycleEvent(STARTED);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
