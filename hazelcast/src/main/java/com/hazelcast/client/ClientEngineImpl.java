@@ -18,7 +18,10 @@ package com.hazelcast.client;
 
 import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.Config;
-import com.hazelcast.core.*;
+import com.hazelcast.core.Client;
+import com.hazelcast.core.ClientListener;
+import com.hazelcast.core.ClientService;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
@@ -39,10 +42,7 @@ import com.hazelcast.util.UuidUtil;
 
 import javax.security.auth.login.LoginException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.logging.Level;
 
 /**
@@ -285,18 +285,22 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
             return;
         }
         final String uuid = event.getMember().getUuid();
-        nodeEngine.getExecutionService().schedule(new Runnable() {
-            public void run() {
-                final Iterator<ClientEndpoint> iter = endpoints.values().iterator();
-                while (iter.hasNext()) {
-                    final ClientEndpoint endpoint = iter.next();
-                    if (uuid.equals(endpoint.getPrincipal().getOwnerUuid())) {
-                        iter.remove();
-                        destroyEndpoint(endpoint, true);
+        try {
+            nodeEngine.getExecutionService().schedule(new Runnable() {
+                public void run() {
+                    final Iterator<ClientEndpoint> iter = endpoints.values().iterator();
+                    while (iter.hasNext()) {
+                        final ClientEndpoint endpoint = iter.next();
+                        if (uuid.equals(endpoint.getPrincipal().getOwnerUuid())) {
+                            iter.remove();
+                            destroyEndpoint(endpoint, true);
+                        }
                     }
                 }
-            }
-        }, 10, TimeUnit.SECONDS);
+            }, 10, TimeUnit.SECONDS);
+        } catch (RejectedExecutionException e) {
+            // means node is shutting down...
+        }
     }
 
     String addClientListener(ClientListener clientListener) {
