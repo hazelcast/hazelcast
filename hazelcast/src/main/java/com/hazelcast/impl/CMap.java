@@ -40,6 +40,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -52,6 +53,9 @@ import static com.hazelcast.impl.ClusterOperation.*;
 import static com.hazelcast.nio.IOUtil.toData;
 
 public class CMap {
+    private static final long EVICTION_TRACKER_CLEANUP_PERIOD_MILLIS = 1000 * 60; // Cleanup check every 60 seconds
+    private static final long EVICTION_TRACKER_WARN_IF_OLDER = 1000 * 60 * 2; // Warn of entries older than 2 mins
+    private static final long EVICTION_TRACKER_REMOVAL_TTL = 1000 * 60 * 5; // Remove entries older than 5 mins
 
     private static final Comparator<MapEntry> LRU_COMPARATOR = new LRUMapEntryComparator();
     private static final Comparator<MapEntry> LFU_COMPARATOR = new LFUMapEntryComparator();
@@ -160,6 +164,14 @@ public class CMap {
     final MergePolicy wanMergePolicy;
 
     final ConcurrentMap<Data, LocalLock> mapLocalLocks = new ConcurrentHashMap<Data, LocalLock>(10000);
+
+    /** Track outstanding eviction requests. Map of Record.key->timestamp. */
+    ConcurrentMap<Object, Long> evictionTracker;
+
+    private AtomicLong totalEvictionRequests = new AtomicLong();
+    private AtomicLong totalSuppressedEvictionRequests = new AtomicLong();
+
+    private volatile long lastEvictionTrackerCleanup = Clock.currentTimeMillis();
 
     CMap(ConcurrentMapManager concurrentMapManager, String name) {
         this.concurrentMapManager = concurrentMapManager;
@@ -367,6 +379,18 @@ public class CMap {
             }
         }
         evictionRate = mapConfig.getEvictionPercentage() / 100f;
+
+        int evictionTrackerSize = -1;
+        // Attempt to size eviction tracker proportionally to largest eviction batch
+        if (maxSizePolicy != null && maxSizePolicy instanceof MaxSizePerJVMPolicy) {
+            MaxSizePerJVMPolicy asJVMPolicy = (MaxSizePerJVMPolicy) maxSizePolicy;
+            evictionTrackerSize = (int) (asJVMPolicy.getMaxSize() * evictionRate);
+        }
+        // If the cache size was large/unbounded/undefined, pick a default size for eviction tracker
+        if(evictionTrackerSize < 0 || evictionTrackerSize > 10000) {
+            evictionTrackerSize = (int) (10000 * evictionRate);
+        }
+        evictionTracker = new ConcurrentHashMap<Object, Long>(evictionTrackerSize);
     }
 
     public MapConfig getRuntimeConfig() {
@@ -1491,9 +1515,63 @@ public class CMap {
 
     private void executeEviction(Collection<Record> lsRecordsToEvict) {
         if (lsRecordsToEvict != null && lsRecordsToEvict.size() > 0) {
-            logger.log(Level.FINEST, lsRecordsToEvict.size() + " evicting");
+            int numAsyncEvicts = 0;
             for (final Record recordToEvict : lsRecordsToEvict) {
-                concurrentMapManager.evictAsync(name, recordToEvict.getKeyData());
+                // Avoid multiple requests to evict same record if its eviction is already underway
+                if(evictAsyncIfNotAlreadyPending(recordToEvict)) {
+                    numAsyncEvicts++;
+                }
+            }
+            logger.log(Level.FINEST, numAsyncEvicts + " evicting");
+        }
+    }
+
+    private boolean evictAsyncIfNotAlreadyPending(Record recordToEvict) {
+        totalEvictionRequests.incrementAndGet();
+        periodicEvictionTrackerCleanup();
+        Long previous = evictionTracker.putIfAbsent(recordToEvict.getKey(), Clock.currentTimeMillis());
+        if (previous == null) {
+            concurrentMapManager.evictAsync(name, recordToEvict.getKeyData());
+            return true;
+        } else {
+            totalSuppressedEvictionRequests.incrementAndGet();
+            return false;
+        }
+    }
+
+    private void periodicEvictionTrackerCleanup() {
+        long elapsedSinceLastCleanup = Clock.currentTimeMillis() - lastEvictionTrackerCleanup;
+        if (elapsedSinceLastCleanup > EVICTION_TRACKER_CLEANUP_PERIOD_MILLIS) {
+            lastEvictionTrackerCleanup = Clock.currentTimeMillis();
+            int numEntriesForAgeWarning = 0;
+            int numEntriesRemoved = 0;
+
+            for (Iterator<Entry<Object, Long>> evictTrackEntryIter = evictionTracker.entrySet().iterator();
+                 evictTrackEntryIter.hasNext(); ) {
+                Entry<Object, Long> trackerEntry = evictTrackEntryIter.next();
+                long age = Clock.currentTimeMillis() - trackerEntry.getValue();
+                if (age > EVICTION_TRACKER_WARN_IF_OLDER) {
+                    numEntriesForAgeWarning++;
+                }
+                if (age > EVICTION_TRACKER_REMOVAL_TTL) {
+                    evictTrackEntryIter.remove();
+                    numEntriesRemoved++;
+                }
+            }
+            if (numEntriesRemoved > 0) {
+                logger.log(Level.WARNING,
+                           numEntriesRemoved + " entries removed from eviction tracker due to age. " +
+                                   "Total pending evictions: " + evictionTracker.size() + ". " +
+                                   "Total eviction requests: " + totalEvictionRequests.get() + ". " +
+                                   "Total suppressed: " + totalSuppressedEvictionRequests.get());
+            }
+            if (numEntriesForAgeWarning > 0) {
+                logger.log(Level.WARNING,
+                           numEntriesForAgeWarning + " entries older than " +
+                                   EVICTION_TRACKER_WARN_IF_OLDER + "ms counted in eviction tracker. " +
+                                   "Total pending evictions: " + evictionTracker.size() + ". " +
+                                   "Total eviction requests: " + totalEvictionRequests.get() + ". " +
+                                   "Total suppressed: " + totalSuppressedEvictionRequests.get());
             }
         }
     }
@@ -1589,6 +1667,7 @@ public class CMap {
             req.clearForResponse();
             req.version = record.getVersion();
             lastEvictionTime = now;
+            evictionTracker.remove(record.getKey());
             return true;
         }
         return false;
