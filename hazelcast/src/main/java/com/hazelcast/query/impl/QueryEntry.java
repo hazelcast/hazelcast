@@ -68,7 +68,7 @@ public class QueryEntry implements QueryableEntry {
 
     public Comparable getAttribute(String attributeName) throws QueryException {
         final Data data = getValueData();
-        if (data != null && data.isPortable()) {
+        if (data != null && data.isPortable() && data.getClassDefinition().get(attributeName) != null) {
             PortableReader reader = getOrCreatePortableReader();
             return extractor.extract(reader, attributeName, data.getClassDefinition().get(attributeName).getType().getId());
         }
@@ -88,9 +88,8 @@ public class QueryEntry implements QueryableEntry {
 
     public AttributeType getAttributeType(String attributeName) {
         final Data data = getValueData();
-        if (data != null && data.isPortable()) {
+        if (data != null && data.isPortable() && data.getClassDefinition().get(attributeName) != null) {
             FieldDefinition fd = data.getClassDefinition().get(attributeName);
-            if (fd == null) throw new QueryException("Unknown Attribute: " + attributeName);
             return AttributeType.getAttributeType(fd.getType().getId());
         }
         return getAttributeTypeViaReflection(attributeName);
