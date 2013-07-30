@@ -30,13 +30,13 @@ public final class BinaryClassDefinitionProxy extends BinaryClassDefinition impl
     public BinaryClassDefinitionProxy(int factoryId, int classId, int version, byte[] binary) {
         this.classId = classId;
         this.version = version;
-        this.binary = binary;
         this.factoryId = factoryId;
+        setBinary(binary);
     }
 
     public ClassDefinition toReal(SerializationContext context) throws IOException {
         final ClassDefinition cd = context.lookup(factoryId, classId, version);
-        return cd != null ? cd : context.createClassDefinition(factoryId, binary);
+        return cd != null ? cd : context.createClassDefinition(factoryId, getBinary());
     }
 
     public FieldDefinition get(String name) {

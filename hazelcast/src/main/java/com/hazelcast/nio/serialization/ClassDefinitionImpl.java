@@ -27,10 +27,10 @@ import java.util.*;
  */
 public class ClassDefinitionImpl extends BinaryClassDefinition implements ClassDefinition {
 
-    private List<FieldDefinition> fieldDefinitions = new ArrayList<FieldDefinition>();
-    private Map<String, FieldDefinition> fieldDefinitionsMap = new HashMap<String,
+    private final List<FieldDefinition> fieldDefinitions = new ArrayList<FieldDefinition>();
+    private final Map<String, FieldDefinition> fieldDefinitionsMap = new HashMap<String,
             FieldDefinition>();
-    private Set<ClassDefinition> nestedClassDefinitions = new HashSet<ClassDefinition>();
+    private final Set<ClassDefinition> nestedClassDefinitions = new HashSet<ClassDefinition>();
 
     public ClassDefinitionImpl() {
     }
@@ -121,18 +121,6 @@ public class ClassDefinitionImpl extends BinaryClassDefinition implements ClassD
         return fieldDefinitions.size();
     }
 
-    public int getClassId() {
-        return classId;
-    }
-
-    public int getVersion() {
-        return version;
-    }
-
-    void setBinary(byte[] binary) {
-        this.binary = binary;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -157,7 +145,8 @@ public class ClassDefinitionImpl extends BinaryClassDefinition implements ClassD
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         sb.append("ClassDefinition");
-        sb.append("{classId=").append(classId);
+        sb.append("{factoryId=").append(factoryId);
+        sb.append(", classId=").append(classId);
         sb.append(", version=").append(version);
         sb.append(", fieldDefinitions=").append(fieldDefinitions);
         sb.append('}');
