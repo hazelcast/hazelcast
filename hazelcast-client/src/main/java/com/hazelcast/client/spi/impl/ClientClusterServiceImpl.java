@@ -46,7 +46,6 @@ import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.logging.Level;
 
 import static com.hazelcast.util.ExceptionUtil.fixRemoteStackTrace;
 
@@ -261,11 +260,9 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     if (logger.isFinestEnabled()) {
                         logger.finest( "Error on connection... conn: " + conn + ", error: " + e);
                     }
+                }
+                if (conn != null) {
                     IOUtil.closeResource(conn);
-                } else {
-                    if (conn != null) {
-                        conn.release();
-                    }
                 }
                 if (ErrorHandler.isRetryable(e)) {
                     if (redoOperation || obj instanceof RetryableRequest) {
@@ -368,7 +365,11 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     listenMembershipEvents();
                 } catch (Exception e) {
                     if (client.getLifecycleService().isRunning()) {
-                        logger.warning("Error while listening cluster events! -> " + conn, e);
+                        if (logger.isFinestEnabled()) {
+                            logger.warning("Error while listening cluster events! -> " + conn, e);
+                        } else {
+                            logger.warning("Error while listening cluster events! -> " + conn + ", Error: " + e.toString());
+                        }
                     }
                     IOUtil.closeResource(conn);
                     conn = null;
