@@ -88,7 +88,6 @@ public class ClientIssueTest {
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         final ILock lock = client.getLock("lock");
-        //Scanner s = new Scanner(System.in);
 
         for (int k = 0; k < 10; k++) {
             lock.lock();

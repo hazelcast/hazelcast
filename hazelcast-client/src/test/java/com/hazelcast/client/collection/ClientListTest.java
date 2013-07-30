@@ -214,7 +214,6 @@ public class ClientListTest {
             }
         };
         String registrationId = tempList.addItemListener(listener, true);
-        System.err.println("reg: " + registrationId);
 
         new Thread(){
             public void run() {

@@ -177,7 +177,6 @@ public class ClientSetTest {
             }
         };
         String registrationId = tempSet.addItemListener(listener, true);
-        System.err.println("reg: " + registrationId);
 
         new Thread(){
             public void run() {

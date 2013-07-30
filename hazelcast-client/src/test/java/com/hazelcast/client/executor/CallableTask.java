@@ -38,7 +38,6 @@ public class CallableTask implements Callable<String>, DataSerializable {
     }
 
     public String call() throws Exception {
-//        System.err.println("calling with pararm: " + param);
         return param + ":result";
     }
 

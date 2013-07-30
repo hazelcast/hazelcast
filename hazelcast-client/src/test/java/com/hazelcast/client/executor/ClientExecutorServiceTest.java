@@ -20,11 +20,13 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.*;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.SerialTest;
-import org.junit.*;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -63,27 +65,6 @@ public class ClientExecutorServiceTest {
         Hazelcast.shutdownAll();
     }
 
-    @Before
-    @After
-    public void clear() throws IOException {
-    }
-
-    @Test
-    public void testIsShutdown() throws Exception {
-
-//        CallableTask task = new CallableTask("naber");
-//
-//        while (true){
-//            final Map<Member, Future<String>> map = service.submitToAllMembers(task);
-//            for (Member member : map.keySet()) {
-//                final Future<String> future = map.get(member);
-//                final String s = future.get();
-//                System.err.println("m: " + member + "  s: " + s);
-//            }
-//        }
-
-    }
-
     @Test
     public void submitCallable1() throws Exception {
 
@@ -100,8 +81,6 @@ public class ClientExecutorServiceTest {
             public void onResponse(String response) {
                 if (response.equals("naber:result")){
                     latch.countDown();
-                } else {
-                    System.err.println("problem!!!");
                 }
             }
             public void onFailure(Throwable t) {
@@ -115,7 +94,6 @@ public class ClientExecutorServiceTest {
     public void submitCallable3() throws Exception {
         final Map<Member, Future<String>> map = service.submitToAllMembers(new CallableTask("asd"));
         for (Member member : map.keySet()) {
-            System.err.println("member: " + member);
             final Future<String> future = map.get(member);
             String s = future.get();
             assertEquals("asd:result", s);
@@ -127,7 +105,6 @@ public class ClientExecutorServiceTest {
         final CountDownLatch latch = new CountDownLatch(4);
         service.submitToAllMembers(new CallableTask("asd"),new MultiExecutionCallback() {
             public void onResponse(Member member, Object value) {
-                System.err.println("member: " + member);
                 if (value.equals("asd:result")){
                     latch.countDown();
                 }
@@ -135,7 +112,6 @@ public class ClientExecutorServiceTest {
 
             public void onComplete(Map<Member, Object> values) {
                 for (Member member : values.keySet()) {
-                    System.err.println("member: " + member);
                     Object value = values.get(member);
                     if (value.equals("asd:result")){
                         latch.countDown();
