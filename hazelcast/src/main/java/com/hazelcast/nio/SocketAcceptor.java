@@ -28,7 +28,6 @@ import java.util.logging.Level;
 public class SocketAcceptor implements Runnable {
     private final ServerSocketChannel serverSocketChannel;
     private final TcpIpConnectionManager connectionManager;
-    private Selector selector;
     private final ILogger logger;
 
     public SocketAcceptor(ServerSocketChannel serverSocketChannel, TcpIpConnectionManager connectionManager) {
@@ -38,6 +37,7 @@ public class SocketAcceptor implements Runnable {
     }
 
     public void run() {
+        Selector selector = null;
         try {
             log(Level.FINEST, "Starting SocketAcceptor on " + serverSocketChannel);
             selector = Selector.open();
@@ -66,6 +66,12 @@ public class SocketAcceptor implements Runnable {
         } catch (IOException e) {
             log(Level.SEVERE, e.getClass().getName() + ": " + e.getMessage(), e);
         } finally {
+            closeSelector(selector);
+        }
+    }
+
+    private void closeSelector(Selector selector) {
+        if (selector != null) {
             try {
                 logger.finest( "Closing selector " + Thread.currentThread().getName());
                 selector.close();
@@ -102,33 +108,37 @@ public class SocketAcceptor implements Runnable {
         }
         if (socketChannelWrapper != null) {
             final SocketChannelWrapper socketChannel = socketChannelWrapper;
-            connectionManager.ioService.executeAsync(new Runnable() {
-                public void run() {
-                    String message = socketChannel.socket().getLocalPort()
-                                     + " is accepting socket connection from "
-                                     + socketChannel.socket().getRemoteSocketAddress();
-                    log(Level.INFO, message);
-                    try {
-                        MemberSocketInterceptor memberSocketInterceptor = connectionManager
-                                .getMemberSocketInterceptor();
-                        if (memberSocketInterceptor != null) {
-                            log(Level.FINEST, "Calling member socket interceptor: " + memberSocketInterceptor
-                                              + " for " + socketChannel);
-                            memberSocketInterceptor.onAccept(socketChannel.socket());
-                        }
-                        socketChannel.configureBlocking(false);
-                        connectionManager.initSocket(socketChannel.socket());
-                        connectionManager.assignSocketChannel(socketChannel);
-                    } catch (Exception e) {
-                        log(Level.WARNING, e.getClass().getName() + ": " + e.getMessage(), e);
+            log(Level.INFO, "Accepting socket connection from " + socketChannel.socket().getRemoteSocketAddress());
+
+            final MemberSocketInterceptor memberSocketInterceptor = connectionManager.getMemberSocketInterceptor();
+            if (memberSocketInterceptor == null) {
+                try {
+                    initializeSocketChannel(socketChannel);
+                } catch (Exception e) {
+                    log(Level.WARNING, e.getClass().getName() + ": " + e.getMessage(), e);
+                    IOUtil.closeResource(socketChannel);
+                }
+            } else {
+                connectionManager.ioService.executeAsync(new Runnable() {
+                    public void run() {
                         try {
-                            socketChannel.close();
-                        } catch (IOException ignored) {
+                            log(Level.FINEST, "Calling member socket interceptor: " + memberSocketInterceptor + " for " + socketChannel);
+                            memberSocketInterceptor.onAccept(socketChannel.socket());
+                            initializeSocketChannel(socketChannel);
+                        } catch (Exception e) {
+                            log(Level.WARNING, e.getClass().getName() + ": " + e.getMessage(), e);
+                            IOUtil.closeResource(socketChannel);
                         }
                     }
-                }
-            });
+                });
+            }
         }
+    }
+
+    private void initializeSocketChannel(SocketChannelWrapper socketChannel) throws Exception {
+        socketChannel.configureBlocking(false);
+        connectionManager.initSocket(socketChannel.socket());
+        connectionManager.assignSocketChannel(socketChannel);
     }
 
     private void log(Level level, String message) {

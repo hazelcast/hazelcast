@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.ByteBuffer;
@@ -24,7 +25,7 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 
-public interface SocketChannelWrapper {
+public interface SocketChannelWrapper extends Closeable {
 
     boolean isBlocking();
 

@@ -106,8 +106,7 @@ public class SocketConnector implements Runnable {
             log(Level.FINEST, "Successfully connected to: " + address + " using socket " + socketChannel.socket());
             MemberSocketInterceptor memberSocketInterceptor = connectionManager.getMemberSocketInterceptor();
             if (memberSocketInterceptor != null) {
-                log(Level.FINEST, "Calling member socket interceptor: " + memberSocketInterceptor
-                   + " for " + socketChannel);
+                log(Level.FINEST, "Calling member socket interceptor: " + memberSocketInterceptor + " for " + socketChannel);
                 memberSocketInterceptor.onConnect(socketChannel.socket());
             }
             socketChannel.configureBlocking(false);

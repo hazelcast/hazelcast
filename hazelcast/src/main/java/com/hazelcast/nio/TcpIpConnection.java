@@ -24,7 +24,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.util.logging.Level;
 
 public final class TcpIpConnection implements Connection {
 

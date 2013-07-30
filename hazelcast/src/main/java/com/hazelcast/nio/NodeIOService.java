@@ -190,9 +190,6 @@ public class NodeIOService implements IOService {
         return node.groupProperties.CONNECTION_MONITOR_MAX_FAULTS.getInteger();
     }
 
-    public void onShutdown() {
-    }
-
     public void executeAsync(final Runnable runnable) {
         nodeEngine.getExecutionService().execute("hz:io", runnable);
     }
