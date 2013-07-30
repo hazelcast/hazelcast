@@ -38,7 +38,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
 
 /**
  * @author mdogan 5/17/13
@@ -446,7 +445,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public int size() {
         MapSizeRequest request = new MapSizeRequest(name);
         Integer result = invoke(request);
-        return result;
+        return result != null ? result : 0;
     }
 
     public boolean isEmpty() {

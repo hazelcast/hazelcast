@@ -16,10 +16,9 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -55,20 +54,23 @@ public class ConnectionTest {
         c.getNetworkConfig().setPort(port).setPortAutoIncrement(false);
 
         if (withSocketInterceptor) {
-            c.getNetworkConfig().setSocketInterceptorConfig(new SocketInterceptorConfig().setEnabled(true).setImplementation(new MemberSocketInterceptor() {
-                public void init(SocketInterceptorConfig socketInterceptorConfig) {
-                }
-                public void onAccept(Socket acceptedSocket) throws IOException {
-                }
-                public void onConnect(Socket connectedSocket) throws IOException {
-                }
-            }));
+            c.getNetworkConfig().setSocketInterceptorConfig(new SocketInterceptorConfig().setEnabled(true)
+                    .setImplementation(new MemberSocketInterceptor() {
+                        public void init(SocketInterceptorConfig socketInterceptorConfig) {
+                        }
+
+                        public void onAccept(Socket acceptedSocket) throws IOException {
+                        }
+
+                        public void onConnect(Socket connectedSocket) throws IOException {
+                        }
+                    }));
         }
 
         final HazelcastInstance hz = Hazelcast.newHazelcastInstance(c);
 
         final ExecutorService ex = Executors.newCachedThreadPool();
-        final int count = Runtime.getRuntime().availableProcessors() * 25;
+        final int count = Math.min(Runtime.getRuntime().availableProcessors() * 25, 200);
         final CountDownLatch latch = new CountDownLatch(count);
         final CountDownLatch ll = new CountDownLatch(1);
         final AtomicInteger cc = new AtomicInteger();
@@ -83,6 +85,7 @@ public class ConnectionTest {
             }
         }.start();
 
+        final Collection<Socket> sockets = Collections.newSetFromMap(new ConcurrentHashMap<Socket, Boolean>());
         for (int i = 0; i < count; i++) {
             ex.execute(new Runnable() {
                 public void run() {
@@ -91,6 +94,7 @@ public class ConnectionTest {
                             ll.countDown();
                         }
                         Socket socket = new Socket();
+                        sockets.add(socket);
                         socket.connect(new InetSocketAddress(port));
                         socket.getOutputStream().write(Protocols.CLUSTER.getBytes());
                         socket.getInputStream().read();
@@ -105,6 +109,12 @@ public class ConnectionTest {
         try {
             Assert.assertTrue(latch.await(1, TimeUnit.MINUTES));
         } finally {
+            for (Socket socket : sockets) {
+                try {
+                    socket.close();
+                } catch (Exception e) {
+                }
+            }
             ex.shutdownNow();
         }
     }
