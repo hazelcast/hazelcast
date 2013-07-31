@@ -76,12 +76,12 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
             if (response == null){
                 throw new ConcurrentModificationException("Transaction couldn't obtain lock " + getThreadId());
             }
-            log = new MultiMapTransactionLog(key, proxyId, ttl, getThreadId(), version);
-            tx.addTransactionLog(log);
             recordId = response.getNextRecordId();
             version = response.getTxVersion();
             coll =  createCollection(response.getRecordCollection(getNodeEngine()));
             txMap.put(key, coll);
+            log = new MultiMapTransactionLog(key, proxyId, ttl, getThreadId(), version);
+            tx.addTransactionLog(log);
         } else {
             log = (MultiMapTransactionLog)tx.getTransactionLog(getTxLogKey(key));
         }
@@ -110,11 +110,11 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
             if (response == null){
                 throw new ConcurrentModificationException("Transaction couldn't obtain lock " + getThreadId());
             }
-            log = new MultiMapTransactionLog(key, proxyId, ttl, getThreadId(), version);
-            tx.addTransactionLog(log);
             version = response.getTxVersion();
             coll =  createCollection(response.getRecordCollection(getNodeEngine()));
             txMap.put(key, coll);
+            log = new MultiMapTransactionLog(key, proxyId, ttl, getThreadId(), version);
+            tx.addTransactionLog(log);
         } else {
             log = (MultiMapTransactionLog)tx.getTransactionLog(getTxLogKey(key));
         }
@@ -148,9 +148,10 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
             if (response == null){
                 throw new ConcurrentModificationException("Transaction couldn't obtain lock " + getThreadId());
             }
-            log = new MultiMapTransactionLog(key, proxyId, ttl, getThreadId(), version);
             version = response.getTxVersion();
             coll =  createCollection(response.getRecordCollection(getNodeEngine()));
+            log = new MultiMapTransactionLog(key, proxyId, ttl, getThreadId(), version);
+            tx.addTransactionLog(log);
         } else {
             log = (MultiMapTransactionLog)tx.getTransactionLog(getTxLogKey(key));
         }
