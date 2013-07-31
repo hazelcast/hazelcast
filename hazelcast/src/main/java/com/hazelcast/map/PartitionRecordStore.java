@@ -163,6 +163,10 @@ public class PartitionRecordStore implements RecordStore {
         return lockStore == null || lockStore.canAcquireLock(key, caller, threadId);
     }
 
+    public String getLockOwnerInfo(Data key) {
+        return lockStore != null ? lockStore.getOwnerInfo(key) : null;
+    }
+
     public Set<Map.Entry<Data, Object>> entrySetObject() {
         Map<Data, Object> temp = new HashMap<Data, Object>(records.size());
         for (Data key : records.keySet()) {

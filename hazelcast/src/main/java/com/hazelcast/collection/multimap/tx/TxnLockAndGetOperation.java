@@ -52,7 +52,7 @@ public class TxnLockAndGetOperation extends CollectionKeyBasedOperation implemen
     public void run() throws Exception {
         CollectionContainer container =  getOrCreateContainer();
         if (!container.txnLock(dataKey, getCallerUuid(), threadId, ttl)) {
-            throw new TransactionException("Lock failed.");
+            throw new TransactionException("Transaction couldn't obtain lock!");
         }
         CollectionWrapper wrapper = getOrCreateCollectionWrapper();
 

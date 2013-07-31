@@ -49,7 +49,7 @@ public class UnlockOperation extends BaseLockOperation implements Notifier, Back
             response = unlocked;
             if (!unlocked) {
                 throw new IllegalMonitorStateException("Current thread is not owner of the lock! " +
-                        "-> Owner: " + lockStore.getLockOwnerString(key));
+                        "-> Owner: " + lockStore.getOwnerInfo(key));
             }
         }
     }
