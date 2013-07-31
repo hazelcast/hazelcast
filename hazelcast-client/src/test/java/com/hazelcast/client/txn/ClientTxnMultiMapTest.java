@@ -30,9 +30,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.junit.Assert.*;
 
 /**
  * @author ali 6/10/13
@@ -62,18 +66,41 @@ public class ClientTxnMultiMapTest {
     @Test
     public void testPutGetRemove() throws Exception {
         final MultiMap mm = hz.getMultiMap(name);
-        mm.put("key1", "value1");
+        final int threads = 10;
+        final ExecutorService ex = Executors.newFixedThreadPool(threads);
+        final CountDownLatch latch = new CountDownLatch(threads);
+        final AtomicReference<Throwable> error = new AtomicReference<Throwable>(null);
 
-        final TransactionContext context = hz.newTransactionContext();
-        context.beginTransaction();
-        final TransactionalMultiMap multiMap = context.getMultiMap(name);
-        assertFalse(multiMap.put("key1", "value1"));
-        assertTrue(multiMap.put("key1", "value2"));
-        assertEquals(2, multiMap.size());
+        for (int i = 0; i < threads; i++) {
+            final int finalI = i;
+            ex.execute(new Runnable() {
+                public void run() {
+                    final String key = finalI + "key";
+                    hz.getMultiMap(name).put(key, "value");
+                    final TransactionContext context = hz.newTransactionContext();
+                    try {
+                        context.beginTransaction();
+                        final TransactionalMultiMap multiMap = context.getMultiMap(name);
+                        assertFalse(multiMap.put(key, "value"));
+                        assertTrue(multiMap.put(key, "value1"));
+                        assertTrue(multiMap.put(key, "value2"));
+                        assertEquals(3, multiMap.get(key).size());
+                        context.commitTransaction();
 
-        context.commitTransaction();
-
-        assertEquals(2, mm.size());
-
+                        assertEquals(3, mm.get(key).size());
+                    } catch (Exception e) {
+                        error.compareAndSet(null, e);
+                    } finally {
+                        latch.countDown();
+                    }
+                }
+            });
+        }
+        try {
+            latch.await(1, TimeUnit.MINUTES);
+            assertNull(error.get());
+        } finally {
+            ex.shutdownNow();
+        }
     }
 }

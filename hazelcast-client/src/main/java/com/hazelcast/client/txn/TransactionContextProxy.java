@@ -18,7 +18,6 @@ package com.hazelcast.client.txn;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.connection.Connection;
-import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.txn.proxy.*;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionProxyType;
@@ -112,11 +111,12 @@ public class TransactionContextProxy implements TransactionContext {
                 } else if (proxyId.getType().equals(CollectionProxyType.SET)) {
                     obj = new ClientTxnSetProxy(proxyId, this);
                 }
-            } else {
+            }
+            if (obj == null) {
                 throw new IllegalArgumentException("Service[" + serviceName + "] is not transactional!");
             }
+            txnObjectMap.put(key, obj);
         }
-
         return (T) obj;
     }
 
@@ -126,9 +126,6 @@ public class TransactionContextProxy implements TransactionContext {
 
     public HazelcastClient getClient() {
         return client;
-    }
-
-    private void initProxy(ClientProxy proxy) {
     }
 
     private Connection connect() {

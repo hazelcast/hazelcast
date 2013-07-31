@@ -48,7 +48,7 @@ public class TxnRollbackBackupOperation extends CollectionKeyBasedOperation impl
     public void run() throws Exception {
         CollectionContainer container = getOrCreateContainer();
         if (container.isLocked(dataKey) && !container.unlock(dataKey, caller, threadId)){
-            throw new TransactionException("Lock is not owned by the transaction! Owner: " + container.getLockOwnerInfo(dataKey));
+            throw new TransactionException("Lock is not owned by the transaction! -> " + container.getLockOwnerInfo(dataKey));
         }
     }
 
