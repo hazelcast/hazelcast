@@ -73,6 +73,8 @@ public interface RecordStore {
 
     boolean canAcquireLock(Data key, String caller, int threadId);
 
+    String getLockOwnerInfo(Data key);
+
     boolean containsValue(Object testValue);
 
     Object evict(Data key);

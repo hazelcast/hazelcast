@@ -92,6 +92,10 @@ public class CollectionContainer {
         return lockStore != null && lockStore.extendLeaseTime(key, caller, threadId, ttl);
     }
 
+    public String getLockOwnerInfo(Data dataKey) {
+        return lockStore != null ? lockStore.getOwnerInfo(dataKey) : null;
+    }
+
     public long nextId() {
         return idGen.getAndIncrement();
     }
@@ -228,6 +232,4 @@ public class CollectionContainer {
     public long getLockedCount() {
         return lockStore.getLockedKeys().size();
     }
-
-
 }

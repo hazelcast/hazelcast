@@ -16,9 +16,9 @@
 
 package com.hazelcast.map.tx;
 
+import com.hazelcast.map.MapService;
 import com.hazelcast.map.operation.ContainsKeyOperation;
 import com.hazelcast.map.operation.GetOperation;
-import com.hazelcast.map.MapService;
 import com.hazelcast.map.operation.SizeOperationFactory;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;
@@ -51,8 +51,8 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         this.tx = transaction;
     }
 
-    protected void checkTransactionState(){
-        if(!tx.getState().equals(Transaction.State.ACTIVE)) {
+    protected void checkTransactionState() {
+        if (!tx.getState().equals(Transaction.State.ACTIVE)) {
             throw new TransactionNotActiveException("Transaction is not active!");
         }
     }
@@ -86,7 +86,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
             Invocation invocation = nodeEngine.getOperationService()
                     .createInvocationBuilder(MapService.SERVICE_NAME, operation, partitionId).build();
             Future f = invocation.invoke();
-            return (Data) f.get();
+            return f.get();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -112,7 +112,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     public Data putInternal(Data key, Data value) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         if (versionedValue == null) {
-            throw new TransactionException("Transaction couldn't obtain lock " + ThreadUtil.getThreadId());
+            throw new TransactionException("Transaction couldn't obtain lock!");
         }
         tx.addTransactionLog(new MapTransactionLog(name, key, new TxnSetOperation(name, key, value, -1, versionedValue.version), versionedValue.version));
         return versionedValue.value;
@@ -121,9 +121,9 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     public Data putIfAbsentInternal(Data key, Data value) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         if (versionedValue == null) {
-            throw new TransactionException("Transaction couldn't obtain lock " + ThreadUtil.getThreadId());
+            throw new TransactionException("Transaction couldn't obtain lock!");
         }
-        if(versionedValue.value != null)
+        if (versionedValue.value != null)
             return versionedValue.value;
 
         tx.addTransactionLog(new MapTransactionLog(name, key, new TxnSetOperation(name, key, value, -1, versionedValue.version), versionedValue.version));
@@ -133,9 +133,9 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     public Data replaceInternal(Data key, Data value) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         if (versionedValue == null) {
-            throw new TransactionException("Transaction couldn't obtain lock " + ThreadUtil.getThreadId());
+            throw new TransactionException("Transaction couldn't obtain lock!");
         }
-        if(versionedValue.value == null)
+        if (versionedValue.value == null)
             return null;
         tx.addTransactionLog(new MapTransactionLog(name, key, new TxnSetOperation(name, key, value, -1, versionedValue.version), versionedValue.version));
         return versionedValue.value;
@@ -144,9 +144,9 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     public boolean replaceIfSameInternal(Data key, Object oldValue, Data newValue) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         if (versionedValue == null) {
-            throw new TransactionException("Transaction couldn't obtain lock " + ThreadUtil.getThreadId());
+            throw new TransactionException("Transaction couldn't obtain lock!");
         }
-        if(!getService().compare(name, oldValue, versionedValue.value))
+        if (!getService().compare(name, oldValue, versionedValue.value))
             return false;
         tx.addTransactionLog(new MapTransactionLog(name, key, new TxnSetOperation(name, key, newValue, -1, versionedValue.version), versionedValue.version));
         return true;
@@ -155,7 +155,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     public Data removeInternal(Data key) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         if (versionedValue == null) {
-            throw new TransactionException("Transaction couldn't obtain lock " + ThreadUtil.getThreadId());
+            throw new TransactionException("Transaction couldn't obtain lock!");
         }
         tx.addTransactionLog(new MapTransactionLog(name, key, new TxnDeleteOperation(name, key, versionedValue.version), versionedValue.version));
         return versionedValue.value;
@@ -164,9 +164,9 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
     public boolean removeIfSameInternal(Data key, Object value) {
         VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
         if (versionedValue == null) {
-            throw new TransactionException("Transaction couldn't obtain lock " + ThreadUtil.getThreadId());
+            throw new TransactionException("Transaction couldn't obtain lock!");
         }
-        if(!getService().compare(name, versionedValue.value, value)){
+        if (!getService().compare(name, versionedValue.value, value)) {
             return false;
         }
         tx.addTransactionLog(new MapTransactionLog(name, key, new TxnDeleteOperation(name, key, versionedValue.version), versionedValue.version));

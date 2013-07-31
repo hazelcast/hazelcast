@@ -207,8 +207,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         log(Level.FINEST, "Binding " + connection + " to " + remoteEndPoint + ", replyBack is " + replyBack);
         final Address thisAddress = ioService.getThisAddress();
         if (!connection.isClient() && !thisAddress.equals(localEndpoint)) {
-            log(Level.WARNING, "Wrong bind request from " + remoteEndPoint
-                               + "! This node is not requested endpoint: " + localEndpoint);
+            log(Level.WARNING, "Wrong bind request from " + remoteEndPoint + "! This node is not requested endpoint: " + localEndpoint);
             connection.close();
             return false;
         }
@@ -219,7 +218,8 @@ public class TcpIpConnectionManager implements ConnectionManager {
         final Connection existingConnection = connectionsMap.get(remoteEndPoint);
         if (existingConnection != null && existingConnection.live()) {
             if (existingConnection != connection) {
-                log(Level.INFO, existingConnection + " is already bound  to " + remoteEndPoint + ", new one is " + connection);
+                log(Level.FINEST, existingConnection + " is already bound  to " + remoteEndPoint + ", new one is " + connection);
+                activeConnections.add(connection);
             }
             return false;
         }
@@ -494,7 +494,6 @@ public class TcpIpConnectionManager implements ConnectionManager {
             return port;
         }
     }
-
 
     @Override
     public String toString() {
