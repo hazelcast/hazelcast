@@ -17,8 +17,6 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.config.Config;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import org.junit.Ignore;
@@ -34,11 +32,12 @@ public class SimpleMapTestFromClient {
     public static int ENTRY_COUNT = 10 * 1000;
     public static int VALUE_SIZE = 1000;
     public static final int STATS_SECONDS = 10;
-    public static int GET_PERCENTAGE = 0;
-    public static int PUT_PERCENTAGE = 100;
+    public static int GET_PERCENTAGE = 40;
+    public static int PUT_PERCENTAGE = 40;
 
     public static void main(String[] args) {
         final ClientConfig clientConfig = new ClientConfig();
+//        clientConfig.addNearCacheConfig("*", new NearCacheConfig().setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT).setInvalidateOnChange(false));
         final HazelcastInstance hazelcast = HazelcastClient.newHazelcastClient(clientConfig);
         final Stats stats = new Stats();
         if (args != null && args.length > 0) {

@@ -28,15 +28,13 @@ import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.SerialTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Random;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @ali 7/3/13
@@ -134,40 +132,38 @@ public class ClientIssueTest {
     }
 
     @Test
-    @Ignore
-    public void testIssue584() throws InterruptedException {
+    public void testNearCache(){
         final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
         final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();
 
         final ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setSmart(false);
+
         clientConfig.addNearCacheConfig("map*", new NearCacheConfig().setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT));
 
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
-        final Random random = new Random(System.currentTimeMillis());
+        final IMap map = client.getMap("map1");
 
-        for (int i = 0; i < 12; i++) {
-            new Thread() {
-                public void run() {
-
-                    final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
-                    final IMap<Object, Object> map = client.getMap("map" + random.nextInt(3));
-
-                    while (true) {
-                        final int r1 = random.nextInt(2);
-                        final int r2 = random.nextInt(1000);
-                        if (r1 == 0) {
-                            map.put("key" + r2, "value" + r2);
-                        } else {
-                            map.get("key" + r2);
-                        }
-                    }
-                }
-            }.start();
-
+        for (int i=0; i<10*1000; i++){
+            map.put("key"+i, "value"+i);
         }
 
-        Thread.sleep(50 * 1000);
+        long begin = System.currentTimeMillis();
+        for (int i=0; i<1000; i++){
+            map.get("key"+i);
+        }
+
+        long firstRead = System.currentTimeMillis() - begin;
+
+
+        begin = System.currentTimeMillis();
+        for (int i=0; i<1000; i++){
+            map.get("key"+i);
+        }
+        long secondRead = System.currentTimeMillis() - begin;
+
+        assertTrue(secondRead < firstRead);
 
     }
-
 }
