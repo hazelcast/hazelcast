@@ -84,9 +84,12 @@ public class NodeIOService implements IOService {
     }
 
     public void handleMemberPacket(final Packet packet) {
-        final MemberImpl member = node.clusterService.getMember(packet.getConn().getEndPoint());
-        if (member != null) {
-            member.didRead();
+        final Address endPoint = packet.getConn().getEndPoint();
+        if (endPoint != null) {
+            final MemberImpl member = node.clusterService.getMember(endPoint);
+            if (member != null) {
+                member.didRead();
+            }
         }
         nodeEngine.handlePacket(packet);
     }
