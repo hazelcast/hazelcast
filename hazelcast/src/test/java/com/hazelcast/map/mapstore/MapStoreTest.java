@@ -258,7 +258,7 @@ public class MapStoreTest extends HazelcastTestSupport {
         Config config = newConfig(testMapStore, 2);
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance h1 = nodeFactory.newHazelcastInstance(config);
-        IMap map = h1.getMap("default");
+        IMap map = h1.getMap("testOneMemberWriteBehindWithEvictions");
         assertEquals(TestEventBasedMapStore.STORE_EVENTS.LOAD_ALL_KEYS, testMapStore.waitForEvent(20));
         for (int i = 0; i < 100; i++) {
             map.put(i, "value" + i);

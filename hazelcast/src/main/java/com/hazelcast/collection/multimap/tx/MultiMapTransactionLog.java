@@ -49,13 +49,12 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
     public MultiMapTransactionLog() {
     }
 
-    public MultiMapTransactionLog(Data key, CollectionProxyId proxyId, long ttl, int threadId, long version, Operation op) {
+    public MultiMapTransactionLog(Data key, CollectionProxyId proxyId, long ttl, int threadId, long version) {
         this.key = key;
         this.proxyId = proxyId;
         this.ttl = ttl;
         this.threadId = threadId;
         this.txVersion = version;
-        opList.add(op);
     }
 
     public Future prepare(NodeEngine nodeEngine) {

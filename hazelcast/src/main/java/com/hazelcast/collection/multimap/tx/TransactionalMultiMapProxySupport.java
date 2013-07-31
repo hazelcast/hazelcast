@@ -28,7 +28,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
@@ -58,8 +57,8 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         this.config = config;
     }
 
-    protected void checkTransactionState() {
-        if (!tx.getState().equals(Transaction.State.ACTIVE)) {
+    protected void checkTransactionState(){
+        if(!tx.getState().equals(Transaction.State.ACTIVE)) {
             throw new TransactionNotActiveException("Transaction is not active!");
         }
     }
@@ -70,31 +69,30 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         Collection<CollectionRecord> coll = txMap.get(key);
         long recordId = -1;
         long timeout = tx.getTimeoutMillis();
-        long ttl = timeout * 3 / 2;
-        if (coll == null) {
+        long ttl = timeout*3/2;
+        final MultiMapTransactionLog log;
+        if (coll == null){
             CollectionResponse response = lockAndGet(key, timeout, ttl);
-            if (response == null) {
-                throw new TransactionException("Transaction couldn't obtain lock!");
+            if (response == null){
+                throw new ConcurrentModificationException("Transaction couldn't obtain lock " + getThreadId());
             }
+            log = new MultiMapTransactionLog(key, proxyId, ttl, getThreadId(), version);
+            tx.addTransactionLog(log);
             recordId = response.getNextRecordId();
             version = response.getTxVersion();
-            coll = createCollection(response.getRecordCollection(getNodeEngine()));
+            coll =  createCollection(response.getRecordCollection(getNodeEngine()));
             txMap.put(key, coll);
+        } else {
+            log = (MultiMapTransactionLog)tx.getTransactionLog(getTxLogKey(key));
         }
         CollectionRecord record = new CollectionRecord(config.isBinary() ? value : getNodeEngine().toObject(value));
-        if (coll.add(record)) {
-            if (recordId == -1) {
+        if (coll.add(record)){
+            if (recordId == -1){
                 recordId = nextId(key);
             }
             record.setRecordId(recordId);
             TxnPutOperation operation = new TxnPutOperation(proxyId, key, value, recordId);
-            MultiMapTransactionLog log = (MultiMapTransactionLog) tx.getTransactionLog(getTxLogKey(key));
-            if (log != null) {
-                log.addOperation(operation);
-            } else {
-                log = new MultiMapTransactionLog(key, proxyId, ttl, getThreadId(), version, operation);
-                tx.addTransactionLog(log);
-            }
+            log.addOperation(operation);
             return true;
         }
         return false;
@@ -105,71 +103,67 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         throwExceptionIfNull(value);
         Collection<CollectionRecord> coll = txMap.get(key);
         long timeout = tx.getTimeoutMillis();
-        long ttl = timeout * 3 / 2;
-        if (coll == null) {
+        long ttl = timeout*3/2;
+        final MultiMapTransactionLog log;
+        if (coll == null){
             CollectionResponse response = lockAndGet(key, timeout, ttl);
-            if (response == null) {
-                throw new TransactionException("Transaction couldn't obtain lock!");
+            if (response == null){
+                throw new ConcurrentModificationException("Transaction couldn't obtain lock " + getThreadId());
             }
+            log = new MultiMapTransactionLog(key, proxyId, ttl, getThreadId(), version);
+            tx.addTransactionLog(log);
             version = response.getTxVersion();
-            coll = createCollection(response.getRecordCollection(getNodeEngine()));
+            coll =  createCollection(response.getRecordCollection(getNodeEngine()));
             txMap.put(key, coll);
+        } else {
+            log = (MultiMapTransactionLog)tx.getTransactionLog(getTxLogKey(key));
         }
         CollectionRecord record = new CollectionRecord(config.isBinary() ? value : getNodeEngine().toObject(value));
         Iterator<CollectionRecord> iterator = coll.iterator();
         long recordId = -1;
-        while (iterator.hasNext()) {
+        while (iterator.hasNext()){
             CollectionRecord r = iterator.next();
-            if (r.equals(record)) {
+            if (r.equals(record)){
                 iterator.remove();
                 recordId = r.getRecordId();
                 break;
             }
         }
-        if (version != -1 || recordId != -1) {
+        if (version != -1 || recordId != -1){
             TxnRemoveOperation operation = new TxnRemoveOperation(proxyId, key, recordId, value);
-            MultiMapTransactionLog log = (MultiMapTransactionLog) tx.getTransactionLog(getTxLogKey(key));
-            if (log != null) {
-                log.addOperation(operation);
-            } else {
-                log = new MultiMapTransactionLog(key, proxyId, ttl, getThreadId(), version, operation);
-                tx.addTransactionLog(log);
-            }
+            log.addOperation(operation);
             return recordId != -1;
         }
         return false;
     }
 
-    protected Collection<CollectionRecord> removeAllInternal(Data key) {
+    protected Collection<CollectionRecord> removeAllInternal(Data key){
         throwExceptionIfNull(key);
         long timeout = tx.getTimeoutMillis();
-        long ttl = timeout * 3 / 2;
+        long ttl = timeout*3/2;
         Collection<CollectionRecord> coll = txMap.get(key);
-        if (coll == null) {
+        final MultiMapTransactionLog log;
+        if (coll == null){
             CollectionResponse response = lockAndGet(key, timeout, ttl);
-            if (response == null) {
-                throw new TransactionException("Transaction couldn't obtain lock!");
+            if (response == null){
+                throw new ConcurrentModificationException("Transaction couldn't obtain lock " + getThreadId());
             }
+            log = new MultiMapTransactionLog(key, proxyId, ttl, getThreadId(), version);
             version = response.getTxVersion();
-            coll = createCollection(response.getRecordCollection(getNodeEngine()));
+            coll =  createCollection(response.getRecordCollection(getNodeEngine()));
+        } else {
+            log = (MultiMapTransactionLog)tx.getTransactionLog(getTxLogKey(key));
         }
         txMap.put(key, createCollection());
         TxnRemoveAllOperation operation = new TxnRemoveAllOperation(proxyId, key, coll);
-
-        MultiMapTransactionLog log = (MultiMapTransactionLog) tx.getTransactionLog(getTxLogKey(key));
-        if (log != null) {
-            log.addOperation(operation);
-        } else {
-            log = new MultiMapTransactionLog(key, proxyId, ttl, getThreadId(), version, operation);
-            tx.addTransactionLog(log);
-        }
+        log.addOperation(operation);
         return coll;
     }
 
-    protected Collection<CollectionRecord> getInternal(Data key) {
+    protected Collection<CollectionRecord> getInternal(Data key){
         throwExceptionIfNull(key);
         Collection<CollectionRecord> coll = txMap.get(key);
-        if (coll == null) {
+        if (coll == null){
             GetAllOperation operation = new GetAllOperation(proxyId, key);
             try {
                 int partitionId = getNodeEngine().getPartitionService().getPartitionId(key);
@@ -186,10 +180,10 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         return coll;
     }
 
-    protected int valueCountInternal(Data key) {
+    protected int valueCountInternal(Data key){
         throwExceptionIfNull(key);
         Collection<CollectionRecord> coll = txMap.get(key);
-        if (coll == null) {
+        if (coll == null){
             CountOperation operation = new CountOperation(proxyId, key);
             try {
                 int partitionId = getNodeEngine().getPartitionService().getPartitionId(key);
@@ -204,7 +198,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         return coll.size();
     }
 
-    public int size() {
+    public int size(){
         checkTransactionState();
         try {
             final Map<Integer, Object> results = getNodeEngine().getOperationService().invokeOnAllPartitions(CollectionService.SERVICE_NAME,
@@ -218,8 +212,8 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
                 size += result;
             }
             for (Data key : txMap.keySet()) {
-                MultiMapTransactionLog log = (MultiMapTransactionLog) tx.getTransactionLog(getTxLogKey(key));
-                if (log != null) {
+                MultiMapTransactionLog log = (MultiMapTransactionLog)tx.getTransactionLog(getTxLogKey(key));
+                if (log != null){
                     size += log.size();
                 }
             }
@@ -270,7 +264,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         }
     }
 
-    private long nextId(Data key) {
+    private long nextId(Data key){
         final NodeEngine nodeEngine = getNodeEngine();
         TxnGenerateRecordIdOperation operation = new TxnGenerateRecordIdOperation(proxyId, key);
         try {
@@ -284,19 +278,21 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         }
     }
 
-    private Collection<CollectionRecord> createCollection() {
-        if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.SET)) {
+    private Collection<CollectionRecord> createCollection(){
+        if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.SET)){
             return new HashSet<CollectionRecord>();
-        } else if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.LIST)) {
+        }
+        else if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.LIST)){
             return new ArrayList<CollectionRecord>();
         }
         return null;
     }
 
-    private Collection<CollectionRecord> createCollection(Collection<CollectionRecord> coll) {
-        if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.SET)) {
+    private Collection<CollectionRecord> createCollection(Collection<CollectionRecord> coll){
+        if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.SET)){
             return new HashSet<CollectionRecord>(coll);
-        } else if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.LIST)) {
+        }
+        else if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.LIST)){
             return new ArrayList<CollectionRecord>(coll);
         }
         return null;
