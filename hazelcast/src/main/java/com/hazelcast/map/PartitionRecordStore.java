@@ -351,9 +351,14 @@ public class PartitionRecordStore implements RecordStore {
                 }
             }
         }
+
         // because of a get optimization (see above), there may be a record with a null value,
         // which means map-store returned null while loading the key.
-        return record != null && record.getValue() != null;
+        boolean contains = record != null && record.getValue() != null;
+        if(contains) {
+            accessRecord(record);
+        }
+        return contains;
     }
 
     public void put(Map.Entry<Data, Object> entry) {

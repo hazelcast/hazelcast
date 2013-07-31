@@ -668,6 +668,27 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     /**
+     * Test for issue 614
+     * @throws InterruptedException
+     */
+    @Test
+    public void testContainsKeyShouldDelayEviction() throws InterruptedException {
+        Config cfg = new Config();
+        String mapname = "testContainsKeyShouldDelayEviction";
+        cfg.getMapConfig(mapname).setMaxIdleSeconds(3);
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        HazelcastInstance instance = factory.newHazelcastInstance(cfg);
+        IMap<Object, Object> map = instance.getMap(mapname);
+        map.put(1, 1);
+        for (int i = 0; i < 10; i++) {
+            map.containsKey(1);
+            assertEquals(1, map.size());
+            Thread.sleep(1000);
+        }
+    }
+
+
+    /**
      * Test for the issue 537.
      * Eviction event is fired for an object already removed
      *
