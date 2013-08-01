@@ -1412,4 +1412,29 @@ public class QueryTest extends HazelcastTestSupport {
         assertArrayEquals(indexes, expectedValues);
     }
 
+    /**
+     * see pull request 616
+     */
+    @Test
+    public void testIndexingEnumAttributeWithSqlIssue597() {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
+        final IMap<Integer, Value> map = instance.getMap("default");
+        map.addIndex("state", true);
+        for (int i = 0; i < 4; i++) {
+            final Value v = new Value(i % 2 == 0 ? State.STATE1 : State.STATE2, new ValueType(), i);
+            map.put(i, v);
+        }
+
+        final Collection<Value> values = map.values(new SqlPredicate("state = 'STATE1'"));
+        final int[] expectedValues = new int[]{0, 2};
+        assertEquals(expectedValues.length, values.size());
+        final int[] indexes = new int[2];
+        int index = 0;
+        for (final Value configObject : values) {
+            indexes[index++] = configObject.getIndex();
+        }
+        Arrays.sort(indexes);
+        assertArrayEquals(indexes, expectedValues);
+    }
 }
