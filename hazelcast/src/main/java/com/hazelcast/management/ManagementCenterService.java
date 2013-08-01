@@ -261,22 +261,25 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         map.put("runtime.threadCount", Integer.valueOf(threadMxBean.getThreadCount()).longValue());
         map.put("runtime.peakThreadCount", Integer.valueOf(threadMxBean.getPeakThreadCount()).longValue());
         map.put("runtime.daemonThreadCount", Integer.valueOf(threadMxBean.getDaemonThreadCount()).longValue());
-        memberState.setRuntimeProps(map);
 
         OperatingSystemMXBean osMxBean = ManagementFactory.getOperatingSystemMXBean();
-        map.put("os.freePhysicalMemorySize", get(osMxBean,"getFreePhysicalMemorySize",0L));
-        map.put("os.committedVirtualMemorySize", get(osMxBean,"getCommittedVirtualMemorySize",0L));
-        map.put("os.freeSwapSpaceSize", get(osMxBean,"getFreeSwapSpaceSize",0L));
+        map.put("osMemory.freePhysicalMemory", get(osMxBean,"getFreePhysicalMemorySize",0L));
+        map.put("osMemory.committedVirtualMemory", get(osMxBean,"getCommittedVirtualMemorySize",0L));
+        map.put("osMemory.totalPhysicalMemory", get(osMxBean,"getTotalPhysicalMemorySize",0L));
+
+        map.put("osSwap.freeSwapSpace", get(osMxBean,"getFreeSwapSpaceSize",0L));
+        map.put("osSwap.totalSwapSpace", get(osMxBean,"getTotalSwapSpaceSize",0L));
         map.put("os.maxFileDescriptorCount", get(osMxBean,"getMaxFileDescriptorCount",0L));
-        map.put("os.openFileDescriptorCount", get(osMxBean,"getOpenFileDescriptorCount",0L));
+        map.put("os.openFileDescriptorCount", get(osMxBean,"getOpenFileDescriptorCount",0L))
+        ;
         map.put("os.processCpuLoad", get(osMxBean, "getProcessCpuLoad", -1L));
         map.put("os.systemLoadAverage", get(osMxBean, "getSystemLoadAverage", -1L));
         map.put("os.systemCpuLoad", get(osMxBean, "getSystemCpuLoad", -1L));
-
-        map.put("os.totalPhysicalMemorySize", get(osMxBean,"getTotalPhysicalMemorySize",0L));
         map.put("os.processCpuTime", get(osMxBean,"getProcessCpuTime",0L));
-        map.put("os.totalSwapSpaceSize", get(osMxBean,"getTotalSwapSpaceSize",0L));
+
         map.put("os.availableProcessors", get(osMxBean,"getAvailableProcessors",0L));
+
+        memberState.setRuntimeProps(map);
     }
 
     private static Long get(OperatingSystemMXBean mbean, String methodName, Long defaultValue){
