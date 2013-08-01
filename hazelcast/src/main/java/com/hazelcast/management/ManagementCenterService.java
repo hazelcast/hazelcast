@@ -44,6 +44,8 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.management.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.*;
@@ -260,6 +262,50 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         map.put("runtime.peakThreadCount", Integer.valueOf(threadMxBean.getPeakThreadCount()).longValue());
         map.put("runtime.daemonThreadCount", Integer.valueOf(threadMxBean.getDaemonThreadCount()).longValue());
         memberState.setRuntimeProps(map);
+
+        OperatingSystemMXBean osMxBean = ManagementFactory.getOperatingSystemMXBean();
+        map.put("os.freePhysicalMemorySize", get(osMxBean,"getFreePhysicalMemorySize",0L));
+        map.put("os.committedVirtualMemorySize", get(osMxBean,"getCommittedVirtualMemorySize",0L));
+        map.put("os.freeSwapSpaceSize", get(osMxBean,"getFreeSwapSpaceSize",0L));
+        map.put("os.maxFileDescriptorCount", get(osMxBean,"getMaxFileDescriptorCount",0L));
+        map.put("os.openFileDescriptorCount", get(osMxBean,"getOpenFileDescriptorCount",0L));
+        map.put("os.processCpuLoad", get(osMxBean, "getProcessCpuLoad", -1L));
+        map.put("os.systemLoadAverage", get(osMxBean, "getSystemLoadAverage", -1L));
+        map.put("os.systemCpuLoad", get(osMxBean, "getSystemCpuLoad", -1L));
+
+        map.put("os.totalPhysicalMemorySize", get(osMxBean,"getTotalPhysicalMemorySize",0L));
+        map.put("os.processCpuTime", get(osMxBean,"getProcessCpuTime",0L));
+        map.put("os.totalSwapSpaceSize", get(osMxBean,"getTotalSwapSpaceSize",0L));
+        map.put("os.availableProcessors", get(osMxBean,"getAvailableProcessors",0L));
+    }
+
+    private static Long get(OperatingSystemMXBean mbean, String methodName, Long defaultValue){
+        try {
+            Method method = mbean.getClass().getMethod(methodName);
+            method.setAccessible(true);
+
+            Object value =  method.invoke(mbean);
+            if(value == null){
+                return defaultValue;
+            }
+
+            if(value instanceof Integer){
+                return (long) (Integer) value;
+            }
+
+            if(value instanceof Double){
+               double v = (Double)value;
+               return Math.round(v * 100);
+            }
+
+            if(value instanceof Long){
+                return (Long)value;
+            }
+
+            return defaultValue;
+        } catch (Exception e) {
+            return defaultValue;
+        }
     }
 
     private void createMemState(MemberStateImpl memberState,
