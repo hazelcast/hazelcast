@@ -51,7 +51,8 @@ public class ClusterMembershipTest extends HazelcastTestSupport {
         final int nodeCount = 10;
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(nodeCount);
 
-        final CountDownLatch latch = new CountDownLatch(nodeCount - 1);
+        final CountDownLatch eventLatch = new CountDownLatch(nodeCount - 1);
+        final CountDownLatch nodeLatch = new CountDownLatch(nodeCount);
         config.addListenerConfig(new ListenerConfig().setImplementation(new MembershipListener() {
 
             final AtomicBoolean flag = new AtomicBoolean(false);
@@ -60,7 +61,7 @@ public class ClusterMembershipTest extends HazelcastTestSupport {
                 if (flag.compareAndSet(false, true)) {
                     try {
                         Thread.sleep((long) (Math.random() * 500) + 50);
-                        latch.countDown();
+                        eventLatch.countDown();
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     } finally {
@@ -78,12 +79,14 @@ public class ClusterMembershipTest extends HazelcastTestSupport {
             ex.execute(new Runnable() {
                 public void run() {
                     factory.newHazelcastInstance(config);
+                    nodeLatch.countDown();
                 }
             });
         }
 
         try {
-            assertTrue(latch.await(30, TimeUnit.SECONDS));
+            assertTrue(nodeLatch.await(30, TimeUnit.SECONDS));
+            assertTrue(eventLatch.await(30, TimeUnit.SECONDS));
         } finally {
             ex.shutdownNow();
         }
