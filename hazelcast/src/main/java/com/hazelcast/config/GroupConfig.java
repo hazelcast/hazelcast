@@ -16,6 +16,12 @@
 
 package com.hazelcast.config;
 
+/**
+ * Contains the configuration for Hazelcast groups.
+ *
+ * With groups it is possible to create multiple clusters where each cluster has its own group and doesn't
+ * interfere with other clusters.
+ */
 public final class GroupConfig {
 
     public static final String DEFAULT_GROUP_PASSWORD = "dev-pass";
@@ -24,13 +30,29 @@ public final class GroupConfig {
     private String name = DEFAULT_GROUP_NAME;
     private String password = DEFAULT_GROUP_PASSWORD;
 
+    /**
+     * Creates a GroupConfig with default group-name and group-password.
+     */
     public GroupConfig() {
     }
 
+    /**
+     * Creates a GroupConfig with the given group-name and default group-password
+     *
+     * @param name  the name of the group
+     * @throws NullPointerException if name is null.
+     */
     public GroupConfig(final String name) {
         setName(name);
     }
 
+    /**
+     * Creates a GroupConfig with the given group-name and group-password
+     *
+     * @param name  the name of the group
+     * @param password the password of the group
+     * @throws NullPointerException if name or password is null.
+     */
     public GroupConfig(final String name, final String password) {
         setName(name);
         setPassword(password);
@@ -44,7 +66,11 @@ public final class GroupConfig {
     }
 
     /**
+     * Sets the group name.
+     *
      * @param name the name to set
+     * @return the updated GroupConfig.
+     * @throws NullPointerException if name isnull.
      */
     public GroupConfig setName(final String name) {
         if (name == null) {
@@ -62,7 +88,11 @@ public final class GroupConfig {
     }
 
     /**
+     * Sets the password.
+     *
      * @param password the password to set
+     * @return the updated GroupConfig.
+     * @throws NullPointerException if password is null.
      */
     public GroupConfig setPassword(final String password) {
         if (password == null) {
