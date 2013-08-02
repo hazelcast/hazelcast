@@ -67,13 +67,12 @@ if (task != null) {
         fail-safety. Valid numbers are 0 (no backup), 1, 2 ... 6.
         Default is 1.
         -->
-        <backup-count>0</backup-count>
+        <backup-count>1</backup-count>
 
         <!--
             Number of async backups. 0 means no backup.
         -->
         <async-backup-count>0</async-backup-count>
-
 
         <!--
             QueueStore implementation to persist items.
@@ -90,8 +89,6 @@ if (task != null) {
             </properties>
         </queue-store>
     </queue>
-
-
 </hazelcast>
 ]]></programlisting>
     </para>
