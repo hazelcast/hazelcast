@@ -24,6 +24,7 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.*;
 import com.hazelcast.spi.AbstractDistributedObject;
+import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.SerializableCollection;
@@ -38,7 +39,7 @@ import java.util.concurrent.Future;
  * Date: 11/14/12
  * Time: 12:47 AM
  */
-abstract class QueueProxySupport extends AbstractDistributedObject<QueueService> {
+abstract class QueueProxySupport extends AbstractDistributedObject<QueueService> implements InitializingObject {
 
     final String name;
     final int partitionId;
@@ -49,10 +50,11 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
         this.name = name;
         this.partitionId = nodeEngine.getPartitionService().getPartitionId(nodeEngine.toData(name));
         this.config = nodeEngine.getConfig().getQueueConfig(name);
-        initializeListeners(nodeEngine);
     }
 
-    private void initializeListeners(NodeEngine nodeEngine) {
+    @Override
+    public void initialize() {
+        final NodeEngine nodeEngine = getNodeEngine();
         final List<ItemListenerConfig> itemListenerConfigs = config.getItemListenerConfigs();
         for (ItemListenerConfig itemListenerConfig : itemListenerConfigs) {
             ItemListener listener = itemListenerConfig.getImplementation();

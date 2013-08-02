@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.InitializingRequest;
 import com.hazelcast.concurrent.lock.client.AbstractUnlockRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;

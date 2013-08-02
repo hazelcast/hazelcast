@@ -16,12 +16,8 @@
 
 package com.hazelcast.core;
 
-import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
-
-import java.io.IOException;
+import java.util.EventObject;
+import java.util.Set;
 
 /**
  * Membership event fired when a new member is added
@@ -29,24 +25,51 @@ import java.io.IOException;
  *
  * @see MembershipListener
  */
-public class MembershipEvent implements DataSerializable {
+public class MembershipEvent extends EventObject {
 
     private static final long serialVersionUID = -2010865371829087371L;
 
     public static final int MEMBER_ADDED = 1;
 
-    public static final int MEMBER_REMOVED = 3;
+    public static final int MEMBER_REMOVED = 2;
 
-    private Member member;
+    private final Member member;
 
-    private int eventType;
+    private final int eventType;
 
-    public MembershipEvent() {
-    }
+    private final Set<Member> members;
 
-    public MembershipEvent(Member member, int eventType) {
+    public MembershipEvent(Cluster cluster, Member member, int eventType, Set<Member> members) {
+        super(cluster);
         this.member = member;
         this.eventType = eventType;
+        this.members = members;
+    }
+
+    /**
+     * Returns a consistent view of the the members exactly after this MembershipEvent has been processed. So if a
+     * member is removed, the returned set will not include this member. And if a member is added it will include
+     * this member.
+     *
+     * The problem with calling the {@link com.hazelcast.core.Cluster#getMembers()} is that the content could already
+     * have changed while processing this event so it becomes very difficult to write a deterministic algorithm since
+     * you can't get a deterministic view of the members. This method solves that problem.
+     *
+     * The set is immutable and ordered. For more information see {@link com.hazelcast.core.Cluster#getMembers()}.
+     *
+     * @return the members at the moment after this event.
+     */
+    public Set<Member> getMembers() {
+        return members;
+    }
+
+    /**
+     * Returns the cluster of the event.
+     *
+     * @return
+     */
+    public Cluster getCluster() {
+        return (Cluster) getSource();
     }
 
     /**
@@ -65,17 +88,6 @@ public class MembershipEvent implements DataSerializable {
      */
     public Member getMember() {
         return member;
-    }
-
-    public void writeData(ObjectDataOutput out) throws IOException {
-        member.writeData(out);
-        out.writeInt(eventType);
-    }
-
-    public void readData(ObjectDataInput in) throws IOException {
-        member = new MemberImpl();
-        member.readData(in);
-        eventType = in.readInt();
     }
 
     @Override

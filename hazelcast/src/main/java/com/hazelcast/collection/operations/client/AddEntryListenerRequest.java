@@ -19,7 +19,7 @@ package com.hazelcast.collection.operations.client;
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngine;
-import com.hazelcast.client.InitializingRequest;
+import com.hazelcast.client.InitializingObjectRequest;
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionService;
@@ -39,7 +39,7 @@ import java.io.IOException;
 /**
  * @author ali 5/10/13
  */
-public class AddEntryListenerRequest extends CallableClientRequest implements Portable, InitializingRequest {
+public class AddEntryListenerRequest extends CallableClientRequest implements Portable, InitializingObjectRequest {
 
     CollectionProxyId proxyId;
     Data key;

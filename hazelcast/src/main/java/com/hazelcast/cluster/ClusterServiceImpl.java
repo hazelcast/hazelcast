@@ -39,7 +39,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.logging.Level;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGED;
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.MERGING;
@@ -760,12 +759,12 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         logger.finest( "Updating members -> " + Arrays.toString(members));
         lock.lock();
         try {
-            Collection<MemberImpl> newMembers = new LinkedList<MemberImpl>();
             Map<Address, MemberImpl> oldMemberMap = membersRef.get();
             if (oldMemberMap == null) {
                 oldMemberMap = Collections.emptyMap();
             }
             final Map<Address, MemberImpl> memberMap = new LinkedHashMap<Address, MemberImpl>();  // ! ORDERED !
+            final Collection<MemberImpl> newMembers = new LinkedList<MemberImpl>();
             for (MemberImpl member : members) {
                 MemberImpl currentMember = oldMemberMap.get(member.getAddress());
                 if (currentMember == null) {
@@ -775,9 +774,21 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 memberMap.put(member.getAddress(), member);
             }
             setMembersRef(memberMap);
-            for (MemberImpl member : newMembers) {
-                node.getPartitionService().memberAdded(member); // sync call
-                sendMembershipEventNotifications(member, true); // async events
+
+            if (!newMembers.isEmpty()) {
+                Set<Member> eventMembers = new LinkedHashSet<Member>(oldMemberMap.values());
+                if (newMembers.size() == 1) {
+                    MemberImpl newMember = newMembers.iterator().next();
+                    node.getPartitionService().memberAdded(newMember); // sync call
+                    eventMembers.add(newMember);
+                    sendMembershipEventNotifications(newMember, Collections.unmodifiableSet(eventMembers), true); // async events
+                } else {
+                    for (MemberImpl newMember : newMembers) {
+                        node.getPartitionService().memberAdded(newMember); // sync call
+                        eventMembers.add(newMember);
+                        sendMembershipEventNotifications(newMember, Collections.unmodifiableSet(new LinkedHashSet<Member>(eventMembers)), true); // async events
+                    }
+                }
             }
         } finally {
             lock.unlock();
@@ -796,7 +807,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
                 setMembersRef(newMembers);
                 node.getPartitionService().memberRemoved(deadMember); // sync call
                 nodeEngine.onMemberLeft(deadMember);                  // sync call
-                sendMembershipEventNotifications(deadMember, false); // async events
+                sendMembershipEventNotifications(deadMember, Collections.unmodifiableSet(new LinkedHashSet<Member>(newMembers.values())), false); // async events
                 if (node.isMaster()) {
                     logger.finest( deadMember + " is dead. Sending remove to all other members.");
                     invokeMemberRemoveOperation(deadMember.getAddress());
@@ -820,12 +831,12 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         invokeMemberRemoveOperation(thisAddress);
     }
 
-    private void sendMembershipEventNotifications(final MemberImpl member, final boolean added) {
+    private void sendMembershipEventNotifications(final MemberImpl member, Set<Member> members, final boolean added) {
         final int eventType = added ? MembershipEvent.MEMBER_ADDED : MembershipEvent.MEMBER_REMOVED;
-        final MembershipEvent membershipEvent = new MembershipEvent(member, eventType);
+        final MembershipEvent membershipEvent = new MembershipEvent(getClusterProxy(), member, eventType, members);
         final Collection<MembershipAwareService> membershipAwareServices = nodeEngine.getServices(MembershipAwareService.class);
         if (membershipAwareServices != null && !membershipAwareServices.isEmpty()) {
-            final MembershipServiceEvent event = new MembershipServiceEvent(member, eventType);
+            final MembershipServiceEvent event = new MembershipServiceEvent(membershipEvent);
             for (final MembershipAwareService service : membershipAwareServices) {
                 // service events should not block each other
                 nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
@@ -841,7 +852,9 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
         }
         final EventService eventService = nodeEngine.getEventService();
         Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, SERVICE_NAME);
-        eventService.publishEvent(SERVICE_NAME, registrations, membershipEvent, member.hashCode());
+        for (EventRegistration reg : registrations) {
+            eventService.publishEvent(SERVICE_NAME, reg, membershipEvent, reg.getId().hashCode());
+        }
     }
 
     protected MemberImpl createMember(Address address, String nodeUuid, String ipV6ScopeId) {
@@ -933,8 +946,19 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
     }
 
     public String addMembershipListener(MembershipListener listener) {
-        final EventRegistration registration = nodeEngine.getEventService().registerLocalListener(SERVICE_NAME, SERVICE_NAME, listener);
-        return registration.getId();
+        if (listener instanceof InitialMembershipListener) {
+            lock.lock();
+            try {
+                ((InitialMembershipListener) listener).init(new InitialMembershipEvent(getClusterProxy(), getMembers()));
+                final EventRegistration registration = nodeEngine.getEventService().registerLocalListener(SERVICE_NAME, SERVICE_NAME, listener);
+                return registration.getId();
+            } finally {
+                lock.unlock();
+            }
+        }  else {
+            final EventRegistration registration = nodeEngine.getEventService().registerLocalListener(SERVICE_NAME, SERVICE_NAME, listener);
+            return registration.getId();
+        }
     }
 
     public boolean removeMembershipListener(final String registrationId) {

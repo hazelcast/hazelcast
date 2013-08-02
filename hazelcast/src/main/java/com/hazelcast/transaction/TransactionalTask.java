@@ -17,10 +17,26 @@
 package com.hazelcast.transaction;
 
 /**
+ * Contains the logic that is going to be executed within a transaction. In practice the
+ * implementation will be an anonymous inner task.
+ *
+ * Unlike the {@link Runnable} and {@link java.util.concurrent.Callable} the {@link TransactionalTask}
+ * will run on the caller thread.
+ *
  * @author mdogan 3/6/13
+ * @see com.hazelcast.core.HazelcastInstance#executeTransaction(TransactionalTask)
+ * @see com.hazelcast.core.HazelcastInstance#executeTransaction(TransactionOptions, TransactionalTask)
  */
 public interface TransactionalTask<T> {
 
+    /**
+     * Executes the transactional logic.
+     *
+     * @param context the TransactionalTaskContext that provides access to the transaction and to the
+     *                transactional resourcs like the {@link com.hazelcast.core.TransactionalMap}.
+     * @return the result of the task
+     * @throws TransactionException if transaction error happens while executing this task.
+     */
     T execute(TransactionalTaskContext context) throws TransactionException;
 
 }

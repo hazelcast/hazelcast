@@ -285,59 +285,5 @@ Set<Employee> employees = (Set<Employee>) map.values(predicate);
 
 ]]></programlisting>
     </para>
-    <para>
-        <emphasis role="bold">Indexing</emphasis>
-    </para>
-    <para>Hazelcast distributed queries will run on each member in parallel and only results
-        will return the conn. When a query runs on a member, Hazelcast will iterate through
-        the entire owned entries and find the matching ones. Can we make this even faster? Yes
-        by indexing the mostly queried fields. Just like you would do for your database. Of
-        course, indexing will add overhead for each
-        <literal>write</literal>
-        operation but
-        queries will be a lot faster. If you are querying your map a lot then make sure to add
-        indexes for most frequently queried fields. So if your
-        <literal>active and age &lt;
-            30
-        </literal>
-        query, for example, is used a lot then make sure you add index for
-        <literal>active</literal>
-        and
-        <literal>age</literal>
-        fields. Here is how:
-        <programlisting language="java"><![CDATA[IMap imap = Hazelcast.getMap("employees");
-imap.addIndex("age", true);        // ordered, since we have ranged queries for this field
-imap.addIndex("active", false);    // not ordered, because boolean field cannot have range
-]]></programlisting>
-        API
-        <literal>IMap.addIndex(fieldName, ordered)</literal>
-        is used for adding
-        index. For a each indexed field, if you have -ranged- queries such
-        as<literal>age&gt;30</literal>,
-        <literal>age BETWEEN 40 AND 60</literal>
-        then
-        <literal>ordered</literal>
-        parameter should be<literal>true</literal>, otherwise set
-        it to<literal>false</literal>.
-    </para>
-    <para>
-        <emphasis role="bold">Continuous Query</emphasis>
-    </para>
-    <para>
-        One of the new features of version 3.0 is the continuous query.
-        You can listen map entry events providing a predicate and so event will be fired for each entry validated by your query.
-        IMap has a single method for listening map providing query.
-        <programlisting language="java"><![CDATA[
-    /**
-     * Adds an continuous entry listener for this map. Listener will get notified
-     * for map add/remove/update/evict events filtered by given predicate.
-     *
-     * @param listener  entry listener
-     * @param predicate predicate for filtering entries
-     */
-    void addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue);
-                ]]></programlisting>
-    </para>
-
 
 </sect2>

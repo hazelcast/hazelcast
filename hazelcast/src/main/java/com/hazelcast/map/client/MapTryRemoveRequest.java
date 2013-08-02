@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.InitializingRequest;
+import com.hazelcast.client.InitializingObjectRequest;
 import com.hazelcast.client.KeyBasedClientRequest;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
@@ -31,7 +31,7 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public class MapTryRemoveRequest extends KeyBasedClientRequest implements Portable, InitializingRequest {
+public class MapTryRemoveRequest extends KeyBasedClientRequest implements Portable, InitializingObjectRequest {
 
     protected String name;
     protected Data key;

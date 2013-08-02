@@ -44,6 +44,9 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.logging.Level;
 
+/**
+ * A XML {@link ConfigBuilder} implementation.
+ */
 public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigBuilder {
 
     private final static ILogger logger = Logger.getLogger(XmlConfigBuilder.class);
@@ -55,14 +58,32 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     private Properties properties = System.getProperties();
     boolean usingSystemConfig = false;
 
+    /**
+     * Constructs a XmlConfigBuilder that reads from the provided file.
+     *
+     * @param xmlFileName  the name of the XML file
+     * @throws FileNotFoundException if the file can't be found.
+     */
     public XmlConfigBuilder(String xmlFileName) throws FileNotFoundException {
         this(new FileInputStream(xmlFileName));
     }
 
+    /**
+     * Constructs a XmlConfigBuilder that reads from the given InputStream.
+     *
+     * @param inputStream  the InputStream containing the XML configuration.
+     * @throws IllegalArgumentException if inputStream is null.
+     */
     public XmlConfigBuilder(InputStream inputStream) {
+        if(inputStream == null){
+            throw new IllegalArgumentException("inputStream can't be null");
+        }
         this.in = inputStream;
     }
 
+    /**
+     * Constructs a XmlConfigBuilder that tries to find a usable XML configuration file.
+     */
     public XmlConfigBuilder() {
         String configFile = System.getProperty("hazelcast.config");
         try {

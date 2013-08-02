@@ -330,9 +330,10 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
         public void run() {
             final Connection conn = packet.getConn();
             final ClientEndpoint endpoint = getEndpoint(conn);
+            ClientRequest request = null;
             try {
                 final Data data = packet.getData();
-                final ClientRequest request = (ClientRequest) serializationService.toObject(data);
+                request = (ClientRequest) serializationService.toObject(data);
                 if (endpoint.isAuthenticated() || request instanceof AuthenticationRequest) {
                     request.setEndpoint(endpoint);
                     final String serviceName = request.getServiceName();
@@ -345,8 +346,8 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
                             throw new HazelcastInstanceNotActiveException();
                         }
                         request.setService(service);
-                        if (request instanceof InitializingRequest) {
-                            Object objectId = ((InitializingRequest) request).getObjectId();
+                        if (request instanceof InitializingObjectRequest) {
+                            Object objectId = ((InitializingObjectRequest) request).getObjectId();
                             nodeEngine.getProxyService().initializeDistributedObject(serviceName, objectId);
                         }
                     }
@@ -367,7 +368,10 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
                 }
             } catch (Throwable e) {
                 final Level level = nodeEngine.isActive() ? Level.SEVERE : Level.FINEST;
-                logger.log(level, e.getMessage(), e);
+                String message = request != null
+                        ? "While executing request: " + request + " -> " + e.getMessage()
+                        : e.getMessage();
+                logger.log(level, message, e);
                 sendResponse(endpoint, e);
             }
         }

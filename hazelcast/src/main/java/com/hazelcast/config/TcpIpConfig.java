@@ -20,6 +20,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
 
+/**
+ * Contains the configuration for the tcp-ip join mechanism.
+ */
 public class TcpIpConfig {
 
     private int connectionTimeoutSeconds = 5;
@@ -30,11 +33,29 @@ public class TcpIpConfig {
 
     private String requiredMember = null;
 
+    /**
+     * Adds a 'well known' member.
+     *
+     * Each HazelcastInstance will try to connect to at least one of the members to find all other members
+     * and create a cluster.
+     *
+     * @param member the member to add.
+     * @return the updated configuration.
+     * @see #getMembers()
+     */
     public TcpIpConfig addMember(final String member) {
         this.members.add(member);
         return this;
     }
 
+    /**
+     * Removes all members.
+     *
+     * Can safely be called when there are no members.
+     *
+     * @return the updated configuration.
+     * @see #addMember(String)
+     */
     public TcpIpConfig clear() {
         members.clear();
         return this;

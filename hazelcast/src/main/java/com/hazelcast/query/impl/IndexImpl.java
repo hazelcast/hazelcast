@@ -59,6 +59,9 @@ public class IndexImpl implements Index {
             newValue = NULL;
         }
         recordValues.put(key, newValue);
+        if (newValue.getClass().isEnum()) {
+            newValue = TypeConverters.ENUM_CONVERTER.convert(newValue);
+        }
         if (oldValue == null) {
             // new
             indexStore.newIndex(newValue, e);
@@ -104,7 +107,6 @@ public class IndexImpl implements Index {
 
     private Comparable convert(Comparable value) {
         if (attributeType == null) return value;
-        if (attributeType == AttributeType.ENUM) return value;
         return attributeType.getConverter().convert(value);
     }
 

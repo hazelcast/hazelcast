@@ -24,6 +24,7 @@ import com.hazelcast.monitor.LocalTopicStats;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;
+import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.topic.TopicEvent;
 import com.hazelcast.topic.TopicService;
@@ -36,17 +37,17 @@ import java.util.List;
  * Date: 2/26/13
  * Time: 11:44 AM
  */
-abstract class TopicProxySupport extends AbstractDistributedObject<TopicService> {
+abstract class TopicProxySupport extends AbstractDistributedObject<TopicService> implements InitializingObject {
 
     private final String name;
 
     TopicProxySupport(String name, NodeEngine nodeEngine, TopicService service) {
         super(nodeEngine, service);
         this.name = name;
-        initializeListeners(nodeEngine);
     }
 
-    private void initializeListeners(NodeEngine nodeEngine) {
+    public void initialize() {
+        final NodeEngine nodeEngine = getNodeEngine();
         TopicConfig config = nodeEngine.getConfig().getTopicConfig(name);
         final List<ListenerConfig> messageListenerConfigs = config.getMessageListenerConfigs();
         for (ListenerConfig listenerConfig : messageListenerConfigs) {

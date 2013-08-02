@@ -16,8 +16,12 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.core.Cluster;
+import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.instance.MemberImpl;
+
+import java.util.Set;
 
 /**
  * Membership event fired when a new member is added
@@ -27,11 +31,12 @@ import com.hazelcast.instance.MemberImpl;
  */
 public class MembershipServiceEvent extends MembershipEvent {
 
-    public MembershipServiceEvent() {
+    public MembershipServiceEvent(Cluster cluster, Member member, int eventType, Set<Member> members) {
+        super(cluster, member, eventType, members);
     }
 
-    public MembershipServiceEvent(MemberImpl member, int eventType) {
-        super(member, eventType);
+    public MembershipServiceEvent(MembershipEvent e) {
+        super(e.getCluster(), e.getMember(), e.getEventType(), e.getMembers());
     }
 
     /**

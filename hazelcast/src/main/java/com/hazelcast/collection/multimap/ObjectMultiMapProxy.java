@@ -28,6 +28,7 @@ import com.hazelcast.core.MultiMap;
 import com.hazelcast.monitor.LocalMultiMapStats;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -37,15 +38,15 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author ali 1/2/13
  */
-public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements CollectionProxy, MultiMap<K, V> {
+public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements CollectionProxy, MultiMap<K, V>, InitializingObject {
 
     public ObjectMultiMapProxy(CollectionService service, NodeEngine nodeEngine, CollectionProxyId proxyId) {
         super(service, nodeEngine, nodeEngine.getConfig().getMultiMapConfig(proxyId.getName()), proxyId);
-
-        initializeListeners(nodeEngine);
     }
 
-    private void initializeListeners(NodeEngine nodeEngine) {
+    @Override
+    public void initialize() {
+        final NodeEngine nodeEngine = getNodeEngine();
         List<EntryListenerConfig> listenerConfigs = config.getEntryListenerConfigs();
         for (EntryListenerConfig listenerConfig : listenerConfigs) {
             EntryListener listener = null;
