@@ -26,6 +26,9 @@ public interface Cluster {
     /**
      * Adds MembershipListener to listen for membership updates.
      *
+     * If the MembershipListener implements the {@link InitialMembershipListener} interface, it will also receive
+     * the {@link InitialMembershipEvent}.
+     *
      * @param listener membership listener
      *
      * @return returns registration id.

@@ -19,18 +19,61 @@ package com.hazelcast.cluster.client;
 import com.hazelcast.cluster.ClusterDataSerializerHook;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipEvent;
+import com.hazelcast.instance.MemberImpl;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+
+import java.io.IOException;
 
 /**
  * @author mdogan 5/15/13
  */
-public final class ClientMembershipEvent extends MembershipEvent implements IdentifiedDataSerializable {
+public final class ClientMembershipEvent implements IdentifiedDataSerializable {
+
+    public static final int MEMBER_ADDED = MembershipEvent.MEMBER_ADDED;
+
+    public static final int MEMBER_REMOVED = MembershipEvent.MEMBER_REMOVED;
+
+    private Member member;
+
+    private int eventType;
 
     public ClientMembershipEvent() {
     }
 
     public ClientMembershipEvent(Member member, int eventType) {
-        super(member, eventType);
+        this.member = member;
+        this.eventType = eventType;
+    }
+
+    /**
+     * Returns the membership event type; #MEMBER_ADDED or #MEMBER_REMOVED
+     *
+     * @return the membership event type
+     */
+    public int getEventType() {
+        return eventType;
+    }
+
+    /**
+     * Returns the removed or added member.
+     *
+     * @return member which is removed/added
+     */
+    public Member getMember() {
+        return member;
+    }
+
+    public void writeData(ObjectDataOutput out) throws IOException {
+        member.writeData(out);
+        out.writeInt(eventType);
+    }
+
+    public void readData(ObjectDataInput in) throws IOException {
+        member = new MemberImpl();
+        member.readData(in);
+        eventType = in.readInt();
     }
 
     @Override
