@@ -23,15 +23,21 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.logging.Level;
 
+/**
+ * Creates a {@link Config} loaded from an in memory Hazelcast XML String.
+ */
 public class InMemoryXmlConfig extends Config {
 
     private final static ILogger logger = Logger.getLogger(InMemoryXmlConfig.class);
 
-    public InMemoryXmlConfig() {
-    }
-
+    /**
+     * Creates a Config from the provided XML
+     *
+     * @param xml the XML content
+     * @throws IllegalArgumentException if the XML is null or empty.
+     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
+     */
     public InMemoryXmlConfig(String xml) {
-        super();
         logger.info("Configuring Hazelcast from 'in-memory xml'.");
         if (xml == null || "".equals(xml.trim())) {
             throw new IllegalArgumentException("XML configuration is null or empty! Please use a well-structured xml.");

@@ -22,23 +22,48 @@ import com.hazelcast.logging.Logger;
 import java.io.InputStream;
 import java.util.logging.Level;
 
+/**
+ * A {@link Config} which is initialized by loading an XML configuration file from the classpath.
+ *
+ * @see FileSystemXmlConfig
+ */
 public class ClasspathXmlConfig extends Config {
 
     private final static ILogger logger = Logger.getLogger(ClasspathXmlConfig.class);
 
-    public ClasspathXmlConfig() {
-    }
-
+    /**
+     * Creates a config which is loaded from a classpath resource using the
+     * Thread.currentThread contextClassLoader.
+     *
+     * @param resource the xml resource.
+     * @throws IllegalArgumentException if the resource could not be found.
+     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
+     */
     public ClasspathXmlConfig(String resource) {
         this(Thread.currentThread().getContextClassLoader(), resource);
     }
 
+    /**
+     * Creates a config which is loaded from a classpath resource.
+     *
+     * @param classLoader the ClassLoader used to load the resource.
+     * @param resource the classpath resource
+     * @throws IllegalArgumentException if classLoader or resource is null, or if the resource is not found.
+     * @throws com.hazelcast.core.HazelcastException if the XML content is invalid
+     */
     public ClasspathXmlConfig(ClassLoader classLoader, String resource) {
-        super();
+        if(classLoader == null){
+            throw new IllegalArgumentException("classLoader can't be null");
+        }
+
+        if(resource == null){
+            throw new IllegalArgumentException("resource can't be null");
+        }
+
         logger.info("Configuring Hazelcast from '" + resource + "'.");
         InputStream in = classLoader.getResourceAsStream(resource);
         if (in == null) {
-            throw new NullPointerException("Specified resource '" + resource + "' could not be found!");
+            throw new IllegalArgumentException("Specified resource '" + resource + "' could not be found!");
         }
         new XmlConfigBuilder(in).build(this);
     }
