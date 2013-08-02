@@ -25,8 +25,7 @@
     <title>Indexing</title>
 
     <para>
-        Map entries can be indexed to be able to query faster. These indexes can be created using IMap API.
-        <br/>Hazelcast distributed queries will run on each member in parallel and only results
+        Hazelcast distributed queries will run on each member in parallel and only results
         will return the conn. When a query runs on a member, Hazelcast will iterate through
         the entire owned entries and find the matching ones. Can we make this even faster? Yes
         by indexing the mostly queried fields. Just like you would do for your database. Of

@@ -285,8 +285,5 @@ Set<Employee> employees = (Set<Employee>) map.values(predicate);
 
 ]]></programlisting>
     </para>
-    <para>
-        <emphasis role="bold">Indexing</emphasis>
-    </para>
 
 </sect2>
