@@ -142,12 +142,44 @@ public interface HazelcastInstance {
      */
     IExecutorService getExecutorService(String name);
 
+    /**
+     * Executes given transactional task in current thread using default options
+     * and returns the result of the task.
+     *
+     * @param task task to be executed
+     * @param <T> return type of task
+     * @return returns result of transactional task
+     *
+     * @throws TransactionException if an error occurs during transaction.
+     */
     <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException;
 
+    /**
+     * Executes given transactional task in current thread using given options
+     * and returns the result of the task.
+     *
+     * @param options options for this transactional task
+     * @param task task to be executed
+     * @param <T> return type of task
+     * @return returns result of transactional task
+     *
+     * @throws TransactionException if an error occurs during transaction.
+     */
     <T> T executeTransaction(TransactionOptions options, TransactionalTask<T> task) throws TransactionException;
 
+    /**
+     * Creates a new TransactionContext associated with the current thread using default options.
+     *
+     * @return new TransactionContext
+     */
     TransactionContext newTransactionContext();
 
+    /**
+     * Creates a new TransactionContext associated with the current thread with given options.
+     *
+     * @param options options for this transaction
+     * @return new TransactionContext
+     */
     TransactionContext newTransactionContext(TransactionOptions options);
 
     /**
