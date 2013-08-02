@@ -112,11 +112,12 @@ public boolean removeCustomer (Customer customer) {
     <xi:include href="map/MapEviction.xml"/>
     <xi:include href="map/MapPersistence.xml"/>
     <xi:include href="map/MapQuery.xml"/>
+    <xi:include href="map/MapIndex.xml"/>
+    <xi:include href="map/MapContinuousQuery.xml"/>
     <xi:include href="map/MapEntryProcessor.xml"/>
     <xi:include href="map/MapInterceptor.xml"/>
     <xi:include href="map/MapNearCache.xml"/>
     <xi:include href="map/MapEntry.xml"/>
-    <xi:include href="map/MapIndex.xml"/>
     <xi:include href="map/MapInMemoryFormat.xml"/>
 
     <xi:include href="../WildcardConfigurationLink.xml"/>

@@ -1,0 +1,40 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+  ~ Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<sect2 xml:id="MapContinuousQuery" version="5.0" xmlns="http://docbook.org/ns/docbook"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd">
+    <title>Continuous Query</title>
+
+    <para>
+        One of the new features of version 3.0 is the continuous query.
+        You can listen map entry events providing a predicate and so event will be fired for each entry validated by your query.
+        IMap has a single method for listening map providing query.
+        <programlisting language="java"><![CDATA[
+    /**
+     * Adds an continuous entry listener for this map. Listener will get notified
+     * for map add/remove/update/evict events filtered by given predicate.
+     *
+     * @param listener  entry listener
+     * @param predicate predicate for filtering entries
+     */
+    void addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue);
+                ]]></programlisting>
+    </para>
+
+
+</sect2>

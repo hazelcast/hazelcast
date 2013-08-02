@@ -95,7 +95,7 @@ if (task != null) {
 </hazelcast>
 ]]></programlisting>
     </para>
-    <sect2>
+    <sect2 xml:id="QueuePersistence">
         <title>Persistence</title>
         <para>Hazelcast allows you to load and store the distributed queue entries from/to a
             persistent datastore such as relational database via a queue-store.

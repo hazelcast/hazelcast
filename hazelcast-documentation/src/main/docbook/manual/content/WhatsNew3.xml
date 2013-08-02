@@ -65,17 +65,16 @@
             <listitem>
 
                 <link xlink:href="#MapEntryProcessor">Entry Processor</link>
-
                 :
                 Executing an EntryProcessor on the key or on all entries. Hazelcast
                 implicitly locks the entree and guarantees no migration while the execution of the Processor.
             </listitem>
             <listitem>
-                Storage Stype
+                <link xlink:href="#MapInMemoryFormat">In Memory Format</link>
                 : Support for storing entries in Binary, Object and Cached format.
             </listitem>
             <listitem>
-                Continuous Query
+                <link xlink:href="#MapContinuousQuery">Continuous Query</link>
                 : Support for listeners that register with a query and are notified when
                 there is a change on the Map that matches the Query.
             </listitem>
@@ -101,7 +100,8 @@
                 Scales really well as you have thousands of separate queues.
             </listitem>
             <listitem>
-                Persistence: Support for persistence with QueueStore.
+                <link xlink:href="#QueuePersistence">Persistence</link>
+                Support for persistence with QueueStore.
             </listitem>
         </itemizedlist>
     </para>
