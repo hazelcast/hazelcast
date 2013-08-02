@@ -16,7 +16,6 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Callback;
@@ -43,17 +42,14 @@ final class RemoteCall {
         callback.notify(response);
     }
 
-    void onMemberLeft(MemberImpl leftMember) {
+    boolean isCallTarget(MemberImpl leftMember) {
         boolean notify;
         if (uuid != null) {
             notify = leftMember.getUuid().equals(uuid);
         } else {
             notify = leftMember.getAddress().equals(target);
         }
-
-        if (notify) {
-            callback.notify(new MemberLeftException(leftMember));
-        }
+        return notify;
     }
 
     @Override

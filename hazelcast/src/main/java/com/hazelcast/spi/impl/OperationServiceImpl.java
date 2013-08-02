@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
@@ -26,9 +27,9 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.nio.Packet;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.PartitionView;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.partition.PartitionServiceImpl;
+import com.hazelcast.partition.PartitionView;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.exception.CallTimeoutException;
@@ -47,7 +48,6 @@ import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Level;
 
 /**
  * @author mdogan 12/14/12
@@ -611,8 +611,13 @@ final class OperationServiceImpl implements OperationService {
         // postpone notifying calls since real response may arrive in the mean time.
         nodeEngine.getExecutionService().schedule(new Runnable() {
             public void run() {
-                for (RemoteCall call : remoteCalls.values()) {
-                    call.onMemberLeft(member);
+                final Iterator<RemoteCall> iter = remoteCalls.values().iterator();
+                while (iter.hasNext()) {
+                    final RemoteCall call = iter.next();
+                    if (call.isCallTarget(member)) {
+                        iter.remove();
+                        call.offerResponse(new MemberLeftException(member));
+                    }
                 }
             }
         }, 1111, TimeUnit.MILLISECONDS);

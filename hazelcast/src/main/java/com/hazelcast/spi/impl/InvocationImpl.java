@@ -35,7 +35,6 @@ import com.hazelcast.util.executor.ScheduledTaskRunner;
 
 import java.io.IOException;
 import java.util.concurrent.*;
-import java.util.logging.Level;
 
 abstract class InvocationImpl implements Invocation, Callback<Object> {
 
@@ -156,10 +155,11 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
 
                 if (thisAddress.equals(invTarget)) {
                     remote = false;
-                    final long prevCallId = op.getCallId();
-                    if (prevCallId != 0) {
-                        operationService.deregisterRemoteCall(prevCallId);
-                    }
+                    // OperationService.onMemberLeft handles removing call
+//                    final long prevCallId = op.getCallId();
+//                    if (prevCallId != 0) {
+//                        operationService.deregisterRemoteCall(prevCallId);
+//                    }
                     if (callback == null && op instanceof BackupAwareOperation) {
                         final long callId = operationService.newCallId();
                         registerBackups((BackupAwareOperation) op, callId);
@@ -181,6 +181,8 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                     OperationAccessor.setCallId(op, callId);
                     boolean sent = operationService.send(op, invTarget);
                     if (!sent) {
+                        operationService.deregisterRemoteCall(callId);
+                        operationService.deregisterBackupCall(callId);
                         notify(new RetryableIOException("Packet not sent to -> " + invTarget));
                     }
                 }

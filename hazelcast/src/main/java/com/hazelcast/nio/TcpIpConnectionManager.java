@@ -320,7 +320,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         if (endPoint != null) {
             connectionsInProgress.remove(endPoint);
             final Connection existingConn = connectionsMap.get(endPoint);
-            if (existingConn == connection) {
+            if (existingConn == connection && live) {
                 connectionsMap.remove(endPoint);
                 for (ConnectionListener listener : connectionListeners) {
                     listener.connectionRemoved(connection);

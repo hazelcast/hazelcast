@@ -445,7 +445,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public int size() {
         MapSizeRequest request = new MapSizeRequest(name);
         Integer result = invoke(request);
-        return result != null ? result : 0;
+        return result;
     }
 
     public boolean isEmpty() {

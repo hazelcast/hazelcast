@@ -202,7 +202,7 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
                 try {
                     connection.close();
                 } catch (Throwable e) {
-                    logger.warning("While closing client connection: " + e.toString());
+                    logger.warning("While closing client connection: " + connection , e);
                 }
             } else {
                 nodeEngine.getExecutionService().schedule(new Runnable() {
@@ -225,7 +225,7 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
     }
 
     public void connectionRemoved(Connection connection) {
-        if (connection.isClient() && connection instanceof TcpIpConnection) {
+        if (connection.isClient() && connection instanceof TcpIpConnection && nodeEngine.isActive()) {
             final ClientEndpoint endpoint = endpoints.get(connection);
             if (endpoint != null && node.getLocalMember().getUuid().equals(endpoint.getPrincipal().getOwnerUuid())) {
                 removeEndpoint(connection, true);

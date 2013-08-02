@@ -39,11 +39,6 @@ public class MapReplaceIfSameRequest extends MapPutRequest {
         this.testValue = testValue;
     }
 
-    @Override
-    protected Object filter(Object response) {
-        return super.filter(response);
-    }
-
     public int getClassId() {
         return MapPortableHook.REPLACE_IF_SAME;
     }
