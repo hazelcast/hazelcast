@@ -56,9 +56,9 @@
     <chapter xml:id="DDS">
         <title>Distributed Data Structures</title>
         <xi:include href="dds/DDS.xml"/>
+        <xi:include href="dds/Map.xml"/>
         <xi:include href="dds/Queue.xml"/>
         <xi:include href="dds/Topic.xml"/>
-        <xi:include href="dds/Map.xml"/>
         <xi:include href="dds/MultiMap.xml"/>
         <xi:include href="dds/Set.xml"/>
         <xi:include href="dds/List.xml"/>
