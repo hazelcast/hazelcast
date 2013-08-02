@@ -16,13 +16,37 @@
 
 package com.hazelcast.transaction;
 
+/**
+ * Provides a context to do transactional operations; so beginning/committing transactions, but also retrieving
+ * transactional data-structures like the {@link com.hazelcast.core.TransactionalMap}.
+ */
 public interface TransactionContext extends TransactionalTaskContext {
 
+    /**
+     * Begins a transaction.
+     *
+     * @throws IllegalStateException if a transaction already is active.
+     */
     void beginTransaction();
 
+    /**
+     * Commits a transaction.
+     *
+     * @throws TransactionException if no transaction is active or the transaction could not be committed.
+     */
     void commitTransaction() throws TransactionException;
 
+    /**
+     * Rollback of the current transaction.
+     *
+     * @throws IllegalStateException if no there is no active transaction.
+     */
     void rollbackTransaction();
 
+    /**
+     * Gets the id that uniquely identifies the transaction.
+     *
+     * @return the transaction id.
+     */
     String getTxnId();
 }

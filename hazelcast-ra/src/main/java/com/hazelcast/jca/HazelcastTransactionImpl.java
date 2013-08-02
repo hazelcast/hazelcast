@@ -71,7 +71,7 @@ public class HazelcastTransactionImpl extends JcaBase implements HazelcastTransa
 			factory.logHzConnectionEvent(this, HzConnectionEvent.TX_START);
 
             this.txContext=getHazelcastInstance().newTransactionContext();
-
+            this.connection.getTx().setTxContext(txContext);
 
             log(Level.FINEST, "begin");
             txContext.beginTransaction();
@@ -127,8 +127,6 @@ public class HazelcastTransactionImpl extends JcaBase implements HazelcastTransa
     public static TransactionContext createTransaction(int timeout,HazelcastInstance hazelcastInstance) throws XAException {
         final TransactionOptions transactionOptions=TransactionOptions.getDefault().setTimeout(timeout, TimeUnit.SECONDS);
         return hazelcastInstance.newTransactionContext(transactionOptions);
-        //final TransactionContext txContext = ((HazelcastInstanceImpl)hazelcastInstance).node.nodeEngine.getTransactionManagerService().newClientTransactionContext(transactionOptions, UuidUtil.createClientUuid(null));
-        //return TransactionAccessor.getTransaction(txContext);
     }
 
 }

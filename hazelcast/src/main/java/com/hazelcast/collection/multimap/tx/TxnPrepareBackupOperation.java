@@ -49,7 +49,7 @@ public class TxnPrepareBackupOperation extends CollectionKeyBasedOperation imple
     public void run() throws Exception {
         CollectionContainer container = getOrCreateContainer();
         if (!container.txnLock(dataKey, caller, threadId, ttl + 10000L)){
-            throw new TransactionException("Lock is not owned by the transaction !");
+            throw new TransactionException("Lock is not owned by the transaction! -> " + container.getLockOwnerInfo(dataKey));
         }
     }
 

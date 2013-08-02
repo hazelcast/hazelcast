@@ -73,7 +73,6 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
         }
     };
 
-    @Override
     public void initializeDistributedObject(String serviceName, Object objectId) {
         if (serviceName == null) {
             throw new NullPointerException("Service name is required!");
@@ -216,6 +215,13 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
                 proxy = service.createDistributedObject(objectId);
                 DistributedObject current = proxies.putIfAbsent(objectId, proxy);
                 if (current == null) {
+                    if (proxy instanceof InitializingObject) {
+                        try {
+                            ((InitializingObject) proxy).initialize();
+                        } catch (Exception e) {
+                            logger.warning("Error while initializing proxy: " + proxy, e);
+                        }
+                    }
                     final DistributedObjectEvent event = createEvent(objectId, CREATED);
                     publish(event);
                     nodeEngine.eventService.executeEvent(new StripedRunnable() {

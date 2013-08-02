@@ -33,7 +33,7 @@
     <resourceadapter-version>3.0.0-SNAPSHOT</resourceadapter-version>
 
     <license>
-        <description>Copyright (c) Hazelcast.com</description>
+        <description>Copyright (c) 2008-2013, Hazelcast, Inc.</description>
         <license-required>true</license-required>
     </license>
     <resourceadapter>
@@ -48,15 +48,14 @@
             <connection-definition>
                 <managedconnectionfactory-class>com.hazelcast.jca.ManagedConnectionFactoryImpl</managedconnectionfactory-class>
 				<config-property>
-					<description>Comma separated list of FACTORY_INIT, CREATE, TX_START, TX_COMPLETE, CLEANUP and DESTROY to
-					trace connection events</description>
+					<description>Comma separated list of FACTORY_INIT, CREATE, TX_START, TX_COMPLETE, CLEANUP and DESTROY to trace connection events</description>
 					<config-property-name>connectionTracingEvents</config-property-name>
 					<config-property-type>java.lang.String</config-property-type>
 					<config-property-value>FACTORY_INIT</config-property-value>
 				</config-property>
                 
                 <config-property>
-                	<description>Shows a stacktrace for all loged connectionTracingEvents</description>
+                	<description>Shows a stacktrace for all logged connectionTracingEvents</description>
                 	<config-property-name>connectionTracingDetail</config-property-name>
                 	<config-property-type>java.lang.Boolean</config-property-type>
                 	<config-property-value>false</config-property-value>

@@ -64,9 +64,10 @@ public class XAResourceImpl implements XAResource {
                 }
 
                 final TransactionContext transactionContext = HazelcastTransactionImpl.createTransaction(this.getTransactionTimeout(), managedConnection.getHazelcastInstance());
-                final Transaction tx = TransactionAccessor.getTransaction(transactionContext);
                 //setting related managedconnection transactionContext
                 this.managedConnection.getTx().setTxContext(transactionContext);
+
+                final Transaction tx = TransactionAccessor.getTransaction(transactionContext);
                 try {
                     tx.begin();
                     putTransaction(xid, tx);

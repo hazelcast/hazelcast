@@ -46,4 +46,6 @@ public interface LockStore {
     Set<Data> getLockedKeys();
 
     boolean forceUnlock(Data dataKey);
+
+    String getOwnerInfo(Data dataKey);
 }

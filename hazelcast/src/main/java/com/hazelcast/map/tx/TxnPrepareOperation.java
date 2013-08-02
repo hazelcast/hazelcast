@@ -34,7 +34,7 @@ public class TxnPrepareOperation extends KeyBasedMapOperation implements BackupA
     @Override
     public void run() throws Exception {
         if (!recordStore.extendLock(getKey(), getCallerUuid(), getThreadId(), 10000L)) {
-            throw new TransactionException("Lock is not owned by the transaction! " + mapService.toObject(getKey()));
+            throw new TransactionException("Lock is not owned by the transaction! Owner: " + recordStore.getLockOwnerInfo(getKey()));
         }
     }
 

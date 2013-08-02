@@ -222,7 +222,7 @@ final class LockStoreImpl implements DataSerializable, LockStore {
         return lock != null ? lock.pollExpiredAwaitOp() : null;
     }
 
-    public String getLockOwnerString(Data dataKey) {
+    public String getOwnerInfo(Data dataKey) {
         final LockResource lock = locks.get(dataKey);
         return lock != null ? "Owner: " + lock.getOwner() + ", thread-id: " + lock.getThreadId()
                 : "<not-locked>";

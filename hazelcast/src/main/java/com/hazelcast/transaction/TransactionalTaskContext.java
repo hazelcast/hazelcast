@@ -18,6 +18,9 @@ package com.hazelcast.transaction;
 
 import com.hazelcast.core.*;
 
+/**
+ * Provides a context to access transactional data-structures like the {@link TransactionalMap}.
+ */
 public interface TransactionalTaskContext {
 
     /**

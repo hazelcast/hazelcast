@@ -17,7 +17,7 @@
 package com.hazelcast.map.client;
 
 import com.hazelcast.client.AllPartitionsClientRequest;
-import com.hazelcast.client.InitializingRequest;
+import com.hazelcast.client.InitializingObjectRequest;
 import com.hazelcast.map.MapEntrySet;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.operation.MapPutAllOperationFactory;
@@ -34,7 +34,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 
-public class MapPutAllRequest extends AllPartitionsClientRequest implements Portable, InitializingRequest {
+public class MapPutAllRequest extends AllPartitionsClientRequest implements Portable, InitializingObjectRequest {
 
     protected String name;
     private MapEntrySet entrySet;

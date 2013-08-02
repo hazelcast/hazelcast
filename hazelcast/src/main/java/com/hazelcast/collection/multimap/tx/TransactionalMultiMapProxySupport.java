@@ -70,6 +70,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         long recordId = -1;
         long timeout = tx.getTimeoutMillis();
         long ttl = timeout*3/2;
+        final MultiMapTransactionLog log;
         if (coll == null){
             CollectionResponse response = lockAndGet(key, timeout, ttl);
             if (response == null){
@@ -79,6 +80,10 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
             version = response.getTxVersion();
             coll =  createCollection(response.getRecordCollection(getNodeEngine()));
             txMap.put(key, coll);
+            log = new MultiMapTransactionLog(key, proxyId, ttl, getThreadId(), version);
+            tx.addTransactionLog(log);
+        } else {
+            log = (MultiMapTransactionLog)tx.getTransactionLog(getTxLogKey(key));
         }
         CollectionRecord record = new CollectionRecord(config.isBinary() ? value : getNodeEngine().toObject(value));
         if (coll.add(record)){
@@ -87,14 +92,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
             }
             record.setRecordId(recordId);
             TxnPutOperation operation = new TxnPutOperation(proxyId, key, value, recordId);
-            MultiMapTransactionLog log = (MultiMapTransactionLog)tx.getTransactionLog(getTxLogKey(key));
-            if (log != null){
-                log.addOperation(operation);
-            }
-            else {
-                log = new MultiMapTransactionLog(key, proxyId, ttl, getThreadId(), version, operation);
-                tx.addTransactionLog(log);
-            }
+            log.addOperation(operation);
             return true;
         }
         return false;
@@ -106,6 +104,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         Collection<CollectionRecord> coll = txMap.get(key);
         long timeout = tx.getTimeoutMillis();
         long ttl = timeout*3/2;
+        final MultiMapTransactionLog log;
         if (coll == null){
             CollectionResponse response = lockAndGet(key, timeout, ttl);
             if (response == null){
@@ -114,6 +113,10 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
             version = response.getTxVersion();
             coll =  createCollection(response.getRecordCollection(getNodeEngine()));
             txMap.put(key, coll);
+            log = new MultiMapTransactionLog(key, proxyId, ttl, getThreadId(), version);
+            tx.addTransactionLog(log);
+        } else {
+            log = (MultiMapTransactionLog)tx.getTransactionLog(getTxLogKey(key));
         }
         CollectionRecord record = new CollectionRecord(config.isBinary() ? value : getNodeEngine().toObject(value));
         Iterator<CollectionRecord> iterator = coll.iterator();
@@ -128,14 +131,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         }
         if (version != -1 || recordId != -1){
             TxnRemoveOperation operation = new TxnRemoveOperation(proxyId, key, recordId, value);
-            MultiMapTransactionLog log = (MultiMapTransactionLog)tx.getTransactionLog(getTxLogKey(key));
-            if (log != null){
-                log.addOperation(operation);
-            }
-            else {
-                log = new MultiMapTransactionLog(key, proxyId, ttl, getThreadId(), version, operation);
-                tx.addTransactionLog(log);
-            }
+            log.addOperation(operation);
             return recordId != -1;
         }
         return false;
@@ -146,6 +142,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         long timeout = tx.getTimeoutMillis();
         long ttl = timeout*3/2;
         Collection<CollectionRecord> coll = txMap.get(key);
+        final MultiMapTransactionLog log;
         if (coll == null){
             CollectionResponse response = lockAndGet(key, timeout, ttl);
             if (response == null){
@@ -153,18 +150,14 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
             }
             version = response.getTxVersion();
             coll =  createCollection(response.getRecordCollection(getNodeEngine()));
+            log = new MultiMapTransactionLog(key, proxyId, ttl, getThreadId(), version);
+            tx.addTransactionLog(log);
+        } else {
+            log = (MultiMapTransactionLog)tx.getTransactionLog(getTxLogKey(key));
         }
         txMap.put(key, createCollection());
         TxnRemoveAllOperation operation = new TxnRemoveAllOperation(proxyId, key, coll);
-
-        MultiMapTransactionLog log = (MultiMapTransactionLog)tx.getTransactionLog(getTxLogKey(key));
-        if (log != null){
-            log.addOperation(operation);
-        }
-        else {
-            log = new MultiMapTransactionLog(key, proxyId, ttl, getThreadId(), version, operation);
-            tx.addTransactionLog(log);
-        }
+        log.addOperation(operation);
         return coll;
     }
 

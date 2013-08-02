@@ -25,7 +25,7 @@ import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.PartitionView;
-import com.hazelcast.queue.proxy.ObjectQueueProxy;
+import com.hazelcast.queue.proxy.QueueProxyImpl;
 import com.hazelcast.queue.tx.TransactionalQueueProxy;
 import com.hazelcast.spi.*;
 import com.hazelcast.transaction.impl.TransactionSupport;
@@ -160,8 +160,8 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         getLocalQueueStatsImpl(event.name).incrementReceivedEvents();
     }
 
-    public ObjectQueueProxy createDistributedObject(Object objectId) {
-        return new ObjectQueueProxy(String.valueOf(objectId), this, nodeEngine);
+    public QueueProxyImpl createDistributedObject(Object objectId) {
+        return new QueueProxyImpl(String.valueOf(objectId), this, nodeEngine);
     }
 
     public void destroyDistributedObject(Object objectId) {

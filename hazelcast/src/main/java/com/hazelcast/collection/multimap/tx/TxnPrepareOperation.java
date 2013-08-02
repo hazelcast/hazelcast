@@ -46,7 +46,7 @@ public class TxnPrepareOperation extends CollectionBackupAwareOperation {
     public void run() throws Exception {
         CollectionContainer container = getOrCreateContainer();
         if (!container.extendLock(dataKey, getCallerUuid(), threadId, 10000L)){
-            throw new TransactionException("Lock is not owned by the transaction !" + getNodeEngine().toObject(dataKey));
+            throw new TransactionException("Lock is not owned by the transaction! -> " + container.getLockOwnerInfo(dataKey));
         }
         response = true;
     }

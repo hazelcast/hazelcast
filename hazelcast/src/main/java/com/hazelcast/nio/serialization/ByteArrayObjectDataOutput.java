@@ -47,7 +47,7 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
 
     public void write(int b) {
         ensureAvailable(1);
-        writeDirect(b);
+        buffer[pos++] = (byte) (b);
     }
 
     public void write(int position, int b) {
@@ -86,14 +86,14 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
         final int len = s.length();
         ensureAvailable(len);
         for (int i = 0; i < len; i++) {
-            writeDirect((byte) s.charAt(i));
+            buffer[pos++] = (byte) s.charAt(i);
         }
     }
 
     public void writeChar(final int v) throws IOException {
         ensureAvailable(2);
-        writeDirect((v >>> 8) & 0xFF);
-        writeDirect((v) & 0xFF);
+        buffer[pos++] = (byte) ((v >>> 8) & 0xFF);
+        buffer[pos++] = (byte) ((v) & 0xFF);
     }
 
     public void writeChar(int position, final int v) throws IOException {
@@ -129,10 +129,10 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
 
     public void writeInt(final int v) throws IOException {
         ensureAvailable(4);
-        writeDirect((v >>> 24) & 0xFF);
-        writeDirect((v >>> 16) & 0xFF);
-        writeDirect((v >>> 8) & 0xFF);
-        writeDirect((v) & 0xFF);
+        buffer[pos++] = (byte) ((v >>> 24) & 0xFF);
+        buffer[pos++] = (byte) ((v >>> 16) & 0xFF);
+        buffer[pos++] = (byte) ((v >>> 8) & 0xFF);
+        buffer[pos++] = (byte) ((v) & 0xFF);
     }
 
     public void writeInt(int position, int v) throws IOException {
@@ -144,14 +144,14 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
 
     public void writeLong(final long v) throws IOException {
         ensureAvailable(8);
-        writeDirect((int) (v >>> 56));
-        writeDirect((int) (v >>> 48));
-        writeDirect((int) (v >>> 40));
-        writeDirect((int) (v >>> 32));
-        writeDirect((int) (v >>> 24));
-        writeDirect((int) (v >>> 16));
-        writeDirect((int) (v >>> 8));
-        writeDirect((int) (v));
+        buffer[pos++] = (byte) (v >>> 56);
+        buffer[pos++] = (byte) (v >>> 48);
+        buffer[pos++] = (byte) (v >>> 40);
+        buffer[pos++] = (byte) (v >>> 32);
+        buffer[pos++] = (byte) (v >>> 24);
+        buffer[pos++] = (byte) (v >>> 16);
+        buffer[pos++] = (byte) (v >>> 8);
+        buffer[pos++] = (byte) (v);
     }
 
     public void writeLong(int position, final long v) throws IOException {
@@ -167,8 +167,8 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
 
     public void writeShort(final int v) throws IOException {
         ensureAvailable(2);
-        writeDirect((v >>> 8) & 0xFF);
-        writeDirect((v) & 0xFF);
+        buffer[pos++] = (byte) ((v >>> 8) & 0xFF);
+        buffer[pos++] = (byte) ((v) & 0xFF);
     }
 
     public void writeShort(int position, final int v) throws IOException {
@@ -178,10 +178,6 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
 
     public void writeUTF(final String str) throws IOException {
         UTFUtil.writeUTF(this, str);
-    }
-
-    private void writeDirect(int b) {
-        buffer[pos++] = (byte) b;
     }
 
     public void writeCharArray(char[] chars) throws IOException {
