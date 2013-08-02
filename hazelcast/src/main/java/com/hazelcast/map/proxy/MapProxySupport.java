@@ -51,7 +51,7 @@ import static com.hazelcast.map.MapService.SERVICE_NAME;
 /**
  * @author enesakar 1/17/13
  */
-abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
+abstract class MapProxySupport extends AbstractDistributedObject<MapService> implements InitializingObject {
 
     protected static final String NULL_KEY_IS_NOT_ALLOWED = "Null key is not allowed!";
     protected static final String NULL_VALUE_IS_NOT_ALLOWED = "Null value is not allowed!";
@@ -67,8 +67,11 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         mapConfig = service.getMapContainer(name).getMapConfig();
         localMapStats = service.getLocalMapStatsImpl(name);
         lockSupport = new LockProxySupport(new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
+    }
 
-        initializeListeners(nodeEngine);
+    @Override
+    public void initialize() {
+        initializeListeners();
         initializeIndexes();
     }
 
@@ -80,7 +83,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> {
         }
     }
 
-    private void initializeListeners(NodeEngine nodeEngine) {
+    private void initializeListeners() {
+        final NodeEngine nodeEngine = getNodeEngine();
         List<EntryListenerConfig> listenerConfigs = mapConfig.getEntryListenerConfigs();
         for (EntryListenerConfig listenerConfig : listenerConfigs) {
             EntryListener listener = null;

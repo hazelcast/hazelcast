@@ -16,7 +16,7 @@
 
 package com.hazelcast.queue.client;
 
-import com.hazelcast.client.InitializingRequest;
+import com.hazelcast.client.InitializingObjectRequest;
 import com.hazelcast.client.PartitionClientRequest;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
@@ -29,7 +29,7 @@ import java.io.IOException;
 /**
  * @author ali 5/8/13
  */
-public abstract class QueueRequest extends PartitionClientRequest implements Portable, InitializingRequest {
+public abstract class QueueRequest extends PartitionClientRequest implements Portable, InitializingObjectRequest {
 
     protected String name;
 

@@ -17,7 +17,7 @@
 package com.hazelcast.collection.operations.client;
 
 import com.hazelcast.client.CallableClientRequest;
-import com.hazelcast.client.InitializingRequest;
+import com.hazelcast.client.InitializingObjectRequest;
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionProxyType;
@@ -32,7 +32,7 @@ import java.io.IOException;
 /**
  * @author ali 6/10/13
  */
-public abstract class TxnMultiMapRequest extends CallableClientRequest implements Portable, InitializingRequest {
+public abstract class TxnMultiMapRequest extends CallableClientRequest implements Portable, InitializingObjectRequest {
 
     String name;
 

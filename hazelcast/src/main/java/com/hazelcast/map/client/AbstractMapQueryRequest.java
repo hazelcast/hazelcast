@@ -17,7 +17,7 @@
 package com.hazelcast.map.client;
 
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.InitializingRequest;
+import com.hazelcast.client.InitializingObjectRequest;
 import com.hazelcast.client.InvocationClientRequest;
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.instance.MemberImpl;
@@ -41,7 +41,7 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.map.MapService.SERVICE_NAME;
 
-abstract class AbstractMapQueryRequest extends InvocationClientRequest implements Portable, RetryableRequest, InitializingRequest {
+abstract class AbstractMapQueryRequest extends InvocationClientRequest implements Portable, RetryableRequest, InitializingObjectRequest {
 
     private String name;
     private IterationType iterationType;

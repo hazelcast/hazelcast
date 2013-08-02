@@ -19,7 +19,7 @@ package com.hazelcast.map.client;
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngine;
-import com.hazelcast.client.InitializingRequest;
+import com.hazelcast.client.InitializingObjectRequest;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.map.EntryEventFilter;
@@ -38,7 +38,7 @@ import com.hazelcast.spi.impl.PortableEntryEvent;
 
 import java.io.IOException;
 
-public class MapAddEntryListenerRequest extends CallableClientRequest implements Portable, InitializingRequest {
+public class MapAddEntryListenerRequest extends CallableClientRequest implements Portable, InitializingObjectRequest {
 
     private String name;
     private Data key;

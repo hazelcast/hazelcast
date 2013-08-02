@@ -2,7 +2,7 @@ package com.hazelcast.queue.client;
 
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.InitializingRequest;
+import com.hazelcast.client.InitializingObjectRequest;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author ali 6/7/13
  */
-public class TxnPollRequest extends CallableClientRequest implements Portable, InitializingRequest {
+public class TxnPollRequest extends CallableClientRequest implements Portable, InitializingObjectRequest {
 
     String name;
     long timeout;

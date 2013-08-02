@@ -16,7 +16,7 @@
 
 package com.hazelcast.topic.client;
 
-import com.hazelcast.client.InitializingRequest;
+import com.hazelcast.client.InitializingObjectRequest;
 import com.hazelcast.client.PartitionClientRequest;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -34,7 +34,7 @@ import java.io.IOException;
 /**
  * @author ali 5/14/13
  */
-public class PublishRequest extends PartitionClientRequest implements Portable, InitializingRequest {
+public class PublishRequest extends PartitionClientRequest implements Portable, InitializingObjectRequest {
 
     String name;
 

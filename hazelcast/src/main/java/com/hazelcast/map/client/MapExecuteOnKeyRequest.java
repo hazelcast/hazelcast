@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.InitializingRequest;
+import com.hazelcast.client.InitializingObjectRequest;
 import com.hazelcast.client.KeyBasedClientRequest;
 import com.hazelcast.map.operation.EntryOperation;
 import com.hazelcast.map.EntryProcessor;
@@ -32,7 +32,7 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
-public class MapExecuteOnKeyRequest extends KeyBasedClientRequest implements Portable, InitializingRequest {
+public class MapExecuteOnKeyRequest extends KeyBasedClientRequest implements Portable, InitializingObjectRequest {
 
     private String name;
     private Data key;

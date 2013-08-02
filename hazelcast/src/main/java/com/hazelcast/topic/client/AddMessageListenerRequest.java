@@ -19,7 +19,7 @@ package com.hazelcast.topic.client;
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngine;
-import com.hazelcast.client.InitializingRequest;
+import com.hazelcast.client.InitializingObjectRequest;
 import com.hazelcast.core.Message;
 import com.hazelcast.core.MessageListener;
 import com.hazelcast.nio.serialization.Data;
@@ -34,7 +34,7 @@ import java.io.IOException;
 /**
  * @author ali 5/24/13
  */
-public class AddMessageListenerRequest extends CallableClientRequest implements Portable, InitializingRequest {
+public class AddMessageListenerRequest extends CallableClientRequest implements Portable, InitializingObjectRequest {
 
     private String name;
 

@@ -16,9 +16,11 @@
 
 package com.hazelcast.queue.proxy;
 
+import com.hazelcast.core.IQueue;
 import com.hazelcast.monitor.LocalQueueStats;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.QueueService;
+import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.NodeEngine;
 
 import java.util.*;
@@ -29,9 +31,9 @@ import java.util.concurrent.TimeUnit;
  * Date: 11/14/12
  * Time: 13:23 AM
  */
-public class ObjectQueueProxy<E> extends QueueProxySupport implements QueueProxy<E> {
+public class QueueProxyImpl<E> extends QueueProxySupport implements IQueue<E>, InitializingObject {
 
-    public ObjectQueueProxy(String name, QueueService queueService, NodeEngine nodeEngine) {
+    public QueueProxyImpl(String name, QueueService queueService, NodeEngine nodeEngine) {
         super(name, queueService, nodeEngine);
     }
 
