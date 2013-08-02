@@ -18,6 +18,10 @@ package com.hazelcast.transaction;
 
 import com.hazelcast.core.HazelcastException;
 
+/**
+ * A {@link HazelcastException} that is thrown when something goes wrong while dealing with transactions and transactional
+ * data-structures.
+ */
 public class TransactionException extends HazelcastException {
 
     public TransactionException() {

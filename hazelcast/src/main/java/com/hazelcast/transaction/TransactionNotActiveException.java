@@ -18,6 +18,9 @@ package com.hazelcast.transaction;
 
 import com.hazelcast.core.HazelcastException;
 
+/**
+ * A {@link HazelcastException} thrown when an a transactional operation is executed without an active transaction.
+ */
 public class TransactionNotActiveException extends HazelcastException {
 
     public TransactionNotActiveException() {
