@@ -18,21 +18,26 @@ package com.hazelcast.cluster;
 
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.Node;
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.Address;
 import com.hazelcast.util.AddressUtil;
 
 import java.util.Set;
 import java.util.logging.Level;
 
+import static java.lang.String.format;
+
 public class NodeMulticastListener implements MulticastListener {
 
     final Node node;
     final Set<String> trustedInterfaces;
+    final ILogger logger;
 
     public NodeMulticastListener(Node node) {
         this.node = node;
         this.trustedInterfaces = node.getConfig().getNetworkConfig()
                 .getJoin().getMulticastConfig().getTrustedInterfaces();
+        this.logger = node.getLogger("NodeMulticastListener");
     }
 
     public void onMessage(Object msg) {
@@ -56,7 +61,7 @@ public class NodeMulticastListener implements MulticastListener {
                                 node.multicastService.send(response);
 
                             } else if (isMasterNode(joinMessage.getAddress()) && !checkMasterUuid(joinMessage.getUuid())) {
-                                node.getLogger("NodeMulticastListener").warning(
+                                logger.warning(
                                         "New join request has been received from current master. "
                                         + "Removing " + node.getMasterAddress());
                                 node.getClusterService().removeAddress(node.getMasterAddress());
@@ -69,6 +74,11 @@ public class NodeMulticastListener implements MulticastListener {
                                 if (trustedInterfaces.isEmpty() ||
                                     AddressUtil.matchAnyInterface(masterHost, trustedInterfaces)) {
                                     node.setMasterAddress(new Address(joinMessage.getAddress()));
+                                }else{
+                                    if (logger.isFinestEnabled()) {
+                                        logger.finest(format(
+                                                "JoinMessage from %s is dropped because its sender is not a trusted interface", masterHost));
+                                    }
                                 }
                             }
                         } else if (joinMessage instanceof JoinRequest) {
