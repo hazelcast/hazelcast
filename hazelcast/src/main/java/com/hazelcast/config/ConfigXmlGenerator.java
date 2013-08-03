@@ -90,8 +90,9 @@ public class ConfigXmlGenerator {
         if (netCfg.getPublicAddress() != null) {
             xml.append("<public-address>").append(netCfg.getPublicAddress()).append("</public-address>");
         }
-        xml.append("<port auto-increment=\"").append(config.getNetworkConfig().isPortAutoIncrement()).append("\">")
-                .append(config.getNetworkConfig().getPort()).append("</port>");
+        xml.append("<port port-count=\"").append(netCfg.getPortCount()).append("\" ")
+                .append("auto-increment=\"").append(netCfg.isPortAutoIncrement()).append("\">")
+                .append(netCfg.getPort()).append("</port>");
         final JoinConfig join = netCfg.getJoin();
         xml.append("<join>");
         final MulticastConfig mcast = join.getMulticastConfig();
