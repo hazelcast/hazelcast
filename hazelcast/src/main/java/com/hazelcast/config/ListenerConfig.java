@@ -18,41 +18,96 @@ package com.hazelcast.config;
 
 import java.util.EventListener;
 
+import static com.hazelcast.util.ValidationUtil.hasText;
+import static com.hazelcast.util.ValidationUtil.isNotNull;
+
+/**
+ * Contains the configuration for an {@link EventListener}. The configuration contains either the classname
+ * of the EventListener implementation, or the actual EventListener instance.
+ */
 public class ListenerConfig {
 
     protected String className = null;
 
     protected EventListener implementation = null;
 
+    /**
+     * Creates a ListenerConfig without className/implementation.
+     */
     public ListenerConfig() {
-        super();
     }
 
+    /**
+     * Creates a ListenerConfig with the given className.
+     *
+     * @param className the name of the EventListener class.
+     * @throws IllegalArgumentException if className is null or an empty String.
+     */
     public ListenerConfig(String className) {
-        super();
-        this.className = className;
+       setClassName(className);
     }
 
+    /**
+     * Creates a ListenerConfig with the given implementation.
+     *
+     * @param implementation the implementation to use as EventListener.
+     * @throws  IllegalArgumentException if the implementation is null.
+     */
     public ListenerConfig(EventListener implementation) {
-        super();
-        this.implementation = implementation;
+        this.implementation = isNotNull(implementation,"implementation");
     }
 
+    /**
+     * Returns the name of the class of the EventListener. If no class is specified, null is returned.
+     *
+     * @return the class name of the EventListener.
+     * @see #setClassName(String)
+     */
     public String getClassName() {
         return className;
     }
 
+    /**
+     * Sets the class name of the EventListener.
+     *
+     * If a implementation was set, it will be removed.
+     *
+     * @param className the name of the class of the EventListener.
+     * @return the updated ListenerConfig.
+     * @throws IllegalArgumentException if className is null or an empty String.
+     * @see #setImplementation(java.util.EventListener)
+     * @see #getClassName()
+     */
     public ListenerConfig setClassName(String className) {
-        this.className = className;
+        this.className = hasText(className, "className");
+        this.implementation = null;
         return this;
     }
 
+    /**
+     * Returns the EventListener implementation. If none has been specified, null is returned.
+     *
+     * @return the EventListener implementation.
+     * @see #setImplementation(java.util.EventListener)
+     */
     public EventListener getImplementation() {
         return implementation;
     }
 
+    /**
+     * Sets the EventListener implementation.
+     *
+     * If a className was set, it will be removed.
+     *
+     * @param implementation the EventListener implementation.
+     * @return the updated ListenerConfig.
+     * @throws IllegalArgumentException the implementation is null.
+     * @see #setClassName(String)
+     * @see #getImplementation()
+     */
     public ListenerConfig setImplementation(EventListener implementation) {
-        this.implementation = implementation;
+        this.implementation = isNotNull(implementation,"implementation");
+        this.className = null;
         return this;
     }
 
