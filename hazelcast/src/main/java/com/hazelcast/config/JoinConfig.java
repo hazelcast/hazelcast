@@ -16,6 +16,9 @@
 
 package com.hazelcast.config;
 
+/**
+ * Contains the 3 different join configurations; tcp-ip/multicast/aws. Only one of them should be enabled!
+ */
 public class JoinConfig {
 
     private MulticastConfig multicastConfig = new MulticastConfig();
