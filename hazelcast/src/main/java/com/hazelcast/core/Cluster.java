@@ -63,7 +63,7 @@ public interface Cluster {
     Member getLocalMember();
 
     /**
-     * Returns the cluster-wide time.
+     * Returns the cluster-wide time in milliseconds.
      * <p/>
      * Cluster tries to keep a cluster-wide time which is
      * might be different than the member's own system time.
