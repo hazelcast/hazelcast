@@ -7,7 +7,7 @@ import static java.lang.String.format;
  */
 public class ValidationUtil {
 
-    public static <E> E argNotNull(E argument, String argName){
+    public static <E> E isNotNull(E argument, String argName){
         if(argument == null){
            throw new IllegalArgumentException(format("argument '%s' can't be null",argName));
         }
