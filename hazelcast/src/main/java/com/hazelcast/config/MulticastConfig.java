@@ -19,6 +19,9 @@ package com.hazelcast.config;
 import java.util.HashSet;
 import java.util.Set;
 
+import static com.hazelcast.util.ValidationUtil.hasText;
+import static com.hazelcast.util.ValidationUtil.isNotNull;
+
 /**
  * Contains the configuration for the multicast join mechanism.
  */
@@ -66,9 +69,10 @@ public class MulticastConfig {
 
     /**
      * @param multicastGroup the multicastGroup to set
+     * @throws IllegalArgumentException if multicastGroup is null or empty.
      */
     public MulticastConfig setMulticastGroup(String multicastGroup) {
-        this.multicastGroup = multicastGroup;
+        this.multicastGroup = hasText(multicastGroup, "multicastGroup");
         return this;
     }
 
@@ -126,9 +130,8 @@ public class MulticastConfig {
      * @see IllegalArgumentException if interfaces is null.
      */
     public MulticastConfig setTrustedInterfaces(Set<String> interfaces) {
-        if(interfaces == null){
-            throw new IllegalArgumentException("interfaces is null");
-        }
+        isNotNull(interfaces,"interfaces");
+
         trustedInterfaces.clear();
         trustedInterfaces.addAll(interfaces);
         return this;
@@ -143,10 +146,7 @@ public class MulticastConfig {
      * @see #setTrustedInterfaces(java.util.Set)
      */
     public MulticastConfig addTrustedInterface(final String ip) {
-        if(ip == null){
-            throw new IllegalArgumentException("ip can't be null");
-        }
-        trustedInterfaces.add(ip);
+        trustedInterfaces.add(isNotNull(ip,"ip"));
         return this;
     }
 
