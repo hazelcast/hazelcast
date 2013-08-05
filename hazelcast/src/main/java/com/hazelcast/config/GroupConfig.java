@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import static com.hazelcast.util.ValidationUtil.isNotNull;
+
 /**
  * Contains the configuration for Hazelcast groups.
  *
@@ -40,7 +42,7 @@ public final class GroupConfig {
      * Creates a GroupConfig with the given group-name and default group-password
      *
      * @param name  the name of the group
-     * @throws NullPointerException if name is null.
+     * @throws IllegalArgumentException if name is null.
      */
     public GroupConfig(final String name) {
         setName(name);
@@ -51,7 +53,7 @@ public final class GroupConfig {
      *
      * @param name  the name of the group
      * @param password the password of the group
-     * @throws NullPointerException if name or password is null.
+     * @throws IllegalArgumentException if name or password is null.
      */
     public GroupConfig(final String name, final String password) {
         setName(name);
@@ -72,11 +74,8 @@ public final class GroupConfig {
      * @return the updated GroupConfig.
      * @throws NullPointerException if name isnull.
      */
-    public GroupConfig setName(final String name) {
-        if (name == null) {
-            throw new NullPointerException("group name cannot be null");
-        }
-        this.name = name;
+    public GroupConfig setName(final String name){
+        this.name = isNotNull(name,"group name");
         return this;
     }
 
@@ -95,10 +94,7 @@ public final class GroupConfig {
      * @throws NullPointerException if password is null.
      */
     public GroupConfig setPassword(final String password) {
-        if (password == null) {
-            throw new NullPointerException("group password cannot be null");
-        }
-        this.password = password;
+        this.password = isNotNull(password,"group password");
         return this;
     }
 
