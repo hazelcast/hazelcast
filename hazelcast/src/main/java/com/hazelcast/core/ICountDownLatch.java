@@ -19,14 +19,14 @@ package com.hazelcast.core;
 import java.util.concurrent.TimeUnit;
 
 /**
- * ICountDownLatch is a backed-up distributed implementation of
+ * ICountDownLatch is a backed-up distributed alternative to the
  * {@link java.util.concurrent.CountDownLatch java.util.concurrent.CountDownLatch}.
  * <p/>
  * ICountDownLatch is a cluster-wide synchronization aid
  * that allows one or more threads to wait until a set of operations being
  * performed in other threads completes.
  * <p/>
- * Unlike Java's implementation, ICountDownLatch count can be re-set using {@link #trySetCount(int)}
+ * Unlike Java's CountDownLatch, the ICountDownLatch count can be re-set using {@link #trySetCount(int)}
  * after a countdown has finished but not during an active count. This allows the same
  * latch instance to be reused.
  */
