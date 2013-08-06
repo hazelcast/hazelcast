@@ -53,6 +53,22 @@ import static com.hazelcast.util.ValidationUtil.isNotNull;
  * You can define as many groups as you want, Hazelcast will prevent that in a multi member cluster, backups are
  * going to be stored in the same group as the primary.
  *
+ * You need to be careful with selecting overlapping groups, e.g.
+ * <code>
+ *     <partition-group enabled="true" group-type="CUSTOM">
+ *          <member-group>
+ *              <interface>10.10.1.1</interface>
+ *              <interface>10.10.1.2</interface>
+ *          </member-group>
+ *          <member-group>
+ *              <interface>10.10.1.1</interface>
+ *              <interface>10.10.1.3</interface>
+ *          </member-group>
+ *      </partition-group>
+ * </code>
+ * In this example there are 2 groups, but because interface 10.10.1.1 is shared between the 2 groups, there is still
+ * a chance that this member is going to store primary and backups.
+ *
  * In the previous example we made use of custom group; we creates the groups manually and we configured the
  * interfaces for these groups. There also is another option that doesn't give you the same fine grained control,
  * but can prevent that on a single machine, running multiple HazelcastInstances, a primary and backup are going
