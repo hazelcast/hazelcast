@@ -19,7 +19,7 @@ package com.hazelcast.core;
 import java.util.concurrent.TimeUnit;
 
 /**
- * ISemaphore is a backed-up distributed implementation of {@link java.util.concurrent.Semaphore java.util.concurrent.Semaphore}.
+ * ISemaphore is a backed-up distributed alternative to the {@link java.util.concurrent.Semaphore}.
  * <p/>
  * ISemaphore is a cluster-wide counting semaphore.  Conceptually,
  * it maintains a set of permits.  Each {@link #acquire()} blocks if necessary until
