@@ -21,25 +21,67 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import static com.hazelcast.util.ValidationUtil.hasText;
+import static com.hazelcast.util.ValidationUtil.isNotNull;
+
+/**
+ * Contains the configuration for a single member group.
+ *
+ * See the {@link PartitionGroupConfig} for more information.
+ */
 public class MemberGroupConfig {
 
     private final Set<String> interfaces = new HashSet<String>();
 
+    /**
+     * Adds an interface to the member group. Duplicate elements are ignored.
+     *
+     * @param ip the ip address of the interface.
+     * @return the updated MemberGroupConfig
+     * @throws IllegalArgumentException if ip is null or empty.
+     * @see #getInterfaces()
+     * @see #clear()
+     */
     public MemberGroupConfig addInterface(final String ip) {
-        interfaces.add(ip);
+        interfaces.add(hasText(ip, "ip"));
         return this;
     }
 
+    /**
+     * Removes all interfaces from the member group.
+     *
+     * If no members are in the group, the call is ignored.
+     *
+     * @return the updated MemberGroupConfig
+     */
     public MemberGroupConfig clear() {
         interfaces.clear();
         return this;
     }
 
+    /**
+     * Gets an unmodifiable collection containing all interfaces.
+     *
+     * @return the collection of interfaces.
+     * @see #setInterfaces(java.util.Collection)
+     */
     public Collection<String> getInterfaces() {
         return Collections.unmodifiableCollection(interfaces);
     }
 
+    /**
+     * Sets the interfaces that are part of a group.
+     *
+     * If the interfaces is empty, it will have the same effect as calling {@link #clear()}.
+     *
+     * @param interfaces the interfaces to set.
+     * @return the updated MemberGroupConfig
+     * @see #getInterfaces()
+     * @see #clear()
+     * @throws IllegalArgumentException if interfaces is null.
+     */
     public MemberGroupConfig setInterfaces(final Collection<String> interfaces) {
+        isNotNull(interfaces,"interfaces");
         clear();
         this.interfaces.addAll(interfaces);
         return this;
