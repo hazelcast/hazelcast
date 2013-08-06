@@ -131,7 +131,6 @@ public class FactoryImpl implements HazelcastInstance {
         FactoryImpl factory = null;
         try {
             factory = new FactoryImpl(instanceName, config);
-            factories.put(instanceName, factory);
             boolean firstMember = (factory.node.getClusterImpl().getMembers().iterator().next().localMember());
             int initialWaitSeconds = factory.node.groupProperties.INITIAL_WAIT_SECONDS.getInteger();
             if (initialWaitSeconds > 0) {
@@ -172,6 +171,7 @@ public class FactoryImpl implements HazelcastInstance {
                 factory.logger.log(Level.INFO, "HazelcastInstance starting after waiting for cluster size of "
                         + initialMinClusterSize);
             }
+            factories.put(instanceName, factory);
             factory.lifecycleService.fireLifecycleEvent(STARTED);
             return factory.hazelcastInstanceProxy;
         } catch (Throwable t) {

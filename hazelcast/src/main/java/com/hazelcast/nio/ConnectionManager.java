@@ -215,9 +215,9 @@ public class ConnectionManager {
             sendBindRequest(connection, remoteEndPoint, false);
         }
         final Connection existingConnection = mapConnections.get(remoteEndPoint);
-        if (existingConnection != null) {
+        if (existingConnection != null && existingConnection.live()) {
             if (existingConnection != connection) {
-                log(Level.WARNING, existingConnection + " is already bound  to " + remoteEndPoint);
+                log(Level.WARNING, existingConnection + " is already bound  to " + remoteEndPoint + ", new one is " + connection);
             }
             return false;
         }

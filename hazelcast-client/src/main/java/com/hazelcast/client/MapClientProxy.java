@@ -50,7 +50,7 @@ public class MapClientProxy<K, V> implements IMap<K, V>, EntryHolder {
         this.name = name;
         this.proxyHelper = new ProxyHelper(name, client);
         Config config = (Config) proxyHelper.doOp(ClusterOperation.GET_CONFIG, null, null);
-        MapConfig mapConfig = config.getMapConfig(name);
+        MapConfig mapConfig = config.getMapConfig(name.substring(Prefix.MAP.length()));
         NearCacheConfig ncc = mapConfig.getNearCacheConfig();
 
         boolean nearCacheEnabled = "true".equalsIgnoreCase(System.getProperty(PROP_CLIENT_NEAR_CACHE_CONFIG_ENABLED, "false"));
