@@ -19,6 +19,12 @@ package com.hazelcast.config;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.util.ValidationUtil.hasText;
+import static com.hazelcast.util.ValidationUtil.isNotNull;
+
+/**
+ * Contains the configuration for a {@link com.hazelcast.core.ITopic}.
+ */
 public final class TopicConfig {
 
     public final static boolean DEFAULT_GLOBAL_ORDERING_ENABLED = false;
@@ -28,16 +34,27 @@ public final class TopicConfig {
     private boolean statisticsEnabled = true;
     private List<ListenerConfig> listenerConfigs;
 
+    /**
+     * Creates a TopicConfig.
+     */
     public TopicConfig() {
     }
 
+    /**
+     * Creates a  {@link TopicConfig} by cloning another TopicConfig.
+     *
+     * @param config
+     */
     public TopicConfig(TopicConfig config) {
+        isNotNull(config,"config");
         this.name = config.name;
         this.globalOrderingEnabled = config.globalOrderingEnabled;
         this.listenerConfigs = new ArrayList<ListenerConfig>(config.getMessageListenerConfigs());
     }
 
     /**
+     * Gets the name of the topic, null if nothing is set.
+     *
      * @return the name
      */
     public String getName() {
@@ -45,10 +62,14 @@ public final class TopicConfig {
     }
 
     /**
+     * Sets the name of the topic.
+     *
      * @param name the name to set
+     * @return the updated TopicConfig
+     * @throws IllegalArgumentException if name is null or an empty string.
      */
     public TopicConfig setName(String name) {
-        this.name = name;
+        this.name = hasText(name,"name");
         return this;
     }
 
@@ -84,10 +105,20 @@ public final class TopicConfig {
         return this;
     }
 
+    /**
+     * Checks if statistics are enabled.
+     *
+     * @return true if enabled, false otherwise.
+     */
     public boolean isStatisticsEnabled() {
         return statisticsEnabled;
     }
 
+    /**
+     *
+     * @param statisticsEnabled
+     * @return
+     */
     public TopicConfig setStatisticsEnabled(boolean statisticsEnabled) {
         this.statisticsEnabled = statisticsEnabled;
         return this;
