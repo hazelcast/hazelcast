@@ -26,7 +26,7 @@ import com.hazelcast.core.MessageListener;
  *
  * @author Marco Ferrante, DISI - University of Genoa
  */
-@JMXDescription("A distributed queue")
+@JMXDescription("A distributed topic")
 public class TopicMBean extends AbstractMBean<ITopic<?>> {
 
     @SuppressWarnings("unchecked")

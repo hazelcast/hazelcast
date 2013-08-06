@@ -22,7 +22,7 @@ import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
 
 /**
- * Management bean for Hazelcst Queue
+ * Management bean for Hazelcast Queue
  *
  * @author Marco Ferrante, DISI - University of Genoa
  */

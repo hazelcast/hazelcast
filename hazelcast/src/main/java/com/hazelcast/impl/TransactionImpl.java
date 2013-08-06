@@ -79,6 +79,7 @@ public class TransactionImpl implements Transaction {
             rec.value = value;
             rec.removed = false;
             rec.index = index;
+            rec.getRecord = false;
             return old;
         }
     }
