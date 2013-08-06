@@ -195,7 +195,6 @@ public class MulticastJoiner extends AbstractJoiner {
         }
         lastDigits = lastDigits % 100;
         tryCount += lastDigits + (node.address.getPort() - networkConfig.getPort()) * timeoutSeconds * 3;
-        System.out.println("tcount:"+tryCount + " p1:" + node.address.getPort() + " p2:"+ networkConfig.getPort() + " ld:"+lastDigits);
         return tryCount;
     }
 
