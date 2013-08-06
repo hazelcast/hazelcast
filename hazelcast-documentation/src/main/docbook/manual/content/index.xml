@@ -65,8 +65,6 @@
         <xi:include href="dds/Lock.xml"/>
         <xi:include href="dds/Events.xml"/>
     </chapter>
-
-
     <chapter xml:id="Serialization">
         <title>Serialization</title>
         <xi:include href="serialization/Serialization.xml"/>
