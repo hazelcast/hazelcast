@@ -38,7 +38,7 @@ public /*final*/ class DataRecord extends AbstractRecord<Data> implements Record
 
     @Override
     public long getCost() {
-        return key.totalSize() + value.totalSize();
+        return key.totalSize() + (value == null ? 0 : value.totalSize());
     }
 
     public Data getValue() {
