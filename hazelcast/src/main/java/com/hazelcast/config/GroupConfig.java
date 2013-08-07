@@ -61,6 +61,8 @@ public final class GroupConfig {
     }
 
     /**
+     * Gets the name of the group.
+     *
      * @return the name
      */
     public String getName() {
@@ -72,7 +74,7 @@ public final class GroupConfig {
      *
      * @param name the name to set
      * @return the updated GroupConfig.
-     * @throws NullPointerException if name isnull.
+     * @throws IllegalArgumentException if name is null.
      */
     public GroupConfig setName(final String name){
         this.name = isNotNull(name,"group name");
@@ -80,6 +82,8 @@ public final class GroupConfig {
     }
 
     /**
+     * Gets the password to connec to to the group.
+     *
      * @return the password
      */
     public String getPassword() {
@@ -91,7 +95,7 @@ public final class GroupConfig {
      *
      * @param password the password to set
      * @return the updated GroupConfig.
-     * @throws NullPointerException if password is null.
+     * @throws IllegalArgumentException if password is null.
      */
     public GroupConfig setPassword(final String password) {
         this.password = isNotNull(password,"group password");
