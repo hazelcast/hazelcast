@@ -128,12 +128,12 @@ public class CloudyUtility {
                 final String instanceName = getInstanceName(nodeHolder);
 
                  if (ip != null) {
-                    if (!"running".equals(state)) {
-                        logger.finest(format("Ignoring EC2 instance [%s][%s] reason: the instance is not running but %s", instanceName,ip, state));
+                    if (!acceptState(state)) {
+                        logger.finest(format("Ignoring EC2 instance [%s][%s] reason: the instance is not running but %s", instanceName, ip, state));
                     } else if (!acceptTag(awsConfig, node)) {
-                        logger.finest(format("Ignoring EC2 instance [%s][%s] reason: security-group-name doesn't match", instanceName,ip));
+                        logger.finest(format("Ignoring EC2 instance [%s][%s] reason: tag-key/tag-value don't match", instanceName, ip));
                     } else if (!acceptGroupName(awsConfig, node)) {
-                        logger.finest( format("Ignoring EC2 instance [%s][%s] reason: tag-key/tag-value don't match", instanceName,ip));
+                        logger.finest(format("Ignoring EC2 instance [%s][%s] reason: security-group-name doesn't match", instanceName, ip));
                     } else {
                         list.add(ip);
                         logger.finest(format("Accepting EC2 instance [%s][%s]",instanceName, ip));
@@ -142,6 +142,10 @@ public class CloudyUtility {
 
             }
             return list;
+        }
+
+        private boolean acceptState(String state) {
+            return "running".equals(state);
         }
 
         private static String getState(NodeHolder nodeHolder) {

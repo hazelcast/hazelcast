@@ -204,6 +204,8 @@
     </xs:simpleType>
     <xs:complexType name="queue">
         <xs:sequence>
+            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1"
+                        default="true"/>
             <xs:element name="max-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0">
                 <xs:annotation>
                     <xs:documentation>
@@ -232,6 +234,8 @@
     </xs:complexType>
     <xs:complexType name="multimap">
         <xs:sequence>
+            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1"
+                        default="true"/>
             <xs:element name="value-collection-type" minOccurs="0" maxOccurs="1">
                 <xs:simpleType>
                     <xs:restriction base="non-space-string">
@@ -256,6 +260,8 @@
     </xs:complexType>
     <xs:complexType name="topic">
         <xs:sequence>
+            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1"
+                        default="true"/>
             <xs:element name="message-listeners" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
                     <xs:sequence>
@@ -397,6 +403,8 @@
     </xs:complexType>
     <xs:complexType name="executor-service">
         <xs:sequence>
+            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1"
+                        default="true"/>
             <xs:element name="pool-size" type="xs:unsignedShort" minOccurs="0" maxOccurs="1" default="8"/>
             <xs:element name="queue-capacity" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0">
                 <xs:annotation>
