@@ -16,11 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-
-import java.io.IOException;
-
 public class ExecutorConfig {
 
     public final static int DEFAULT_POOL_SIZE = 8;
