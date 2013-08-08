@@ -53,14 +53,22 @@ public class NetworkConfig {
     }
 
     /**
-     * @return the port
+     * Returns the port the Hazelcast member is going to try to bind on.
+     *
+     * @return the port the port to bind on.
+     * @see #setPort(int)
      */
     public int getPort() {
         return port;
     }
 
     /**
-     * @param port the port to set
+     * Sets the port the Hazelcast member is going to try to bind on.
+     *
+     * @param port the port to bind on.
+     * @return NetworkConfig the updated NetworkConfig
+     * @see #getPort()
+     * @see #setPortAutoIncrement(boolean) for more information.
      */
     public NetworkConfig setPort(int port) {
         this.port = port;
@@ -68,29 +76,56 @@ public class NetworkConfig {
     }
 
     /**
-     * @return the maximum number of ports allowed to use.
+     * Returns the maximum number of ports allowed to try to bind on.
+     *
+     * @return the maximum number of ports allowed to try.
+     * @see #setPortCount(int)
+     * @see #setPortAutoIncrement(boolean) for more information.
      */
     public int getPortCount() {
         return portCount;
     }
 
-
     /**
+     * The maxmim number of ports to try.
+     *
      * @param portCount the maximum number of ports allowed to use.
+     * @see #setPortAutoIncrement(boolean) for more information.
      */
     public void setPortCount(int portCount) {
+        if(portCount<1){
+           throw new IllegalArgumentException("port count can't be smaller than 0");
+        }
         this.portCount = portCount;
     }
 
     /**
+     * Checks if a Hazelcast member is allowed find a free port by incrementing the port number when it encounters
+     * an occupied port.
+     *
      * @return the portAutoIncrement
+     * @see #setPortAutoIncrement(boolean)
      */
     public boolean isPortAutoIncrement() {
         return portAutoIncrement;
     }
 
     /**
+     * Sets if a Hazelcast member is allowed to find a free port by incrementing the port number when it encounters
+     * an occupied port.
+     *
+     * If you explicitly want to control the port the a Hazelcast member is going to use, you probably want to set
+     * portAutoincrement to false. In this case, the Hazelcast member is going to try to the port {@link #setPort(int)}
+     * and if the port is not free, the member will not start and throw an exception.
+     *
+     * If this value is set to true, Hazelcast will start at the port specified by {@link #setPort(int)} and will try
+     * until it finds a free port, or until it runs out of ports to try {@link #setPortCount(int)}.
+     *
      * @param portAutoIncrement the portAutoIncrement to set
+     * @return the updated NetworkConfig
+     * @see #isPortAutoIncrement()
+     * @see #setPortCount(int)
+     * @see #setPort(int)
      */
     public NetworkConfig setPortAutoIncrement(boolean portAutoIncrement) {
         this.portAutoIncrement = portAutoIncrement;
@@ -156,6 +191,8 @@ public class NetworkConfig {
     }
 
     /**
+     * Returns the {@link JoinConfig}.
+     *
      * @return the join
      */
     public JoinConfig getJoin() {
@@ -171,36 +208,76 @@ public class NetworkConfig {
     }
     
     public String getPublicAddress() {
-		return publicAddress;
-	}
+        return publicAddress;
+    }
     
     public NetworkConfig setPublicAddress(String publicAddress) {
-		this.publicAddress = publicAddress;
+        this.publicAddress = publicAddress;
         return this;
-	}
+    }
 
+    /**
+     * Gets the {@link SocketInterceptorConfig}. The value can be null if no socket interception is needed.
+     *
+     * @return  the SocketInterceptorConfig
+     * @see #setSocketInterceptorConfig(SocketInterceptorConfig)
+     */
+    public SocketInterceptorConfig getSocketInterceptorConfig() {
+        return socketInterceptorConfig;
+    }
+
+    /**
+     * Sets the {@link SocketInterceptorConfig}. The value can be null if no socket interception is needed.
+     *
+     * @param socketInterceptorConfig the SocketInterceptorConfig
+     * @return the updated NetworkConfig
+     */
     public NetworkConfig setSocketInterceptorConfig(SocketInterceptorConfig socketInterceptorConfig) {
         this.socketInterceptorConfig = socketInterceptorConfig;
         return this;
     }
 
-    public SocketInterceptorConfig getSocketInterceptorConfig() {
-        return socketInterceptorConfig;
-    }
-
+    /**
+     * Gets the {@link SymmetricEncryptionConfig}. The value can be null which means that no symmetric encryption should
+     * be used.
+     *
+     * @return the SymmetricEncryptionConfig
+     * @see
+     */
     public SymmetricEncryptionConfig getSymmetricEncryptionConfig() {
         return symmetricEncryptionConfig;
     }
 
+    /**
+     * Sets the {@link SymmetricEncryptionConfig}. The value can be null if no symmetric encryption should be used.
+     *
+     * @param symmetricEncryptionConfig  the SymmetricEncryptionConfig
+     * @return the updated NetworkConfig.
+     * @see #getSymmetricEncryptionConfig()
+     */
     public NetworkConfig setSymmetricEncryptionConfig(final SymmetricEncryptionConfig symmetricEncryptionConfig) {
         this.symmetricEncryptionConfig = symmetricEncryptionConfig;
         return this;
     }
 
+    /**
+     * Returns the current {@link SSLConfig}. It is possible that null is returned if no SSLConfig has been
+     * set.
+     *
+     * @return the SSLConfig.
+     * @see #setSSLConfig(SSLConfig)
+     */
     public SSLConfig getSSLConfig() {
         return sslConfig;
     }
 
+    /**
+     * Sets the {@link SSLConfig}. null value indicates that no SSLConfig should be used.
+     *
+     * @param sslConfig the SSLConfig.
+     * @return the updated NetworkConfig.
+     * @see #getSSLConfig()
+     */
     public NetworkConfig setSSLConfig(SSLConfig sslConfig) {
         this.sslConfig = sslConfig;
         return this;
@@ -222,6 +299,4 @@ public class NetworkConfig {
         sb.append('}');
         return sb.toString();
     }
-
-
 }

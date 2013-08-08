@@ -21,6 +21,64 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
+import static com.hazelcast.util.ValidationUtil.isNotNull;
+
+/**
+ * With the PartitionGroupConfig you can control how primary and backups are going to be split up. In a
+ * multi member cluster, Hazelcast will place the backup partition on the same member as the primary partition
+ * to prevent data loss.
+ *
+ * But in some cases this is not good enough; imagine that you have a 4 member cluster. And imagine that member1
+ * and member2 run in datacenter-1 and member3/member5 in datacenter-2. If you want high availability, you want to
+ * all backups of the primary partitions in datacenter-1 or stored in datacenter-2. And you want the same high
+ * availability for the primary partitions in data center2.
+ *
+ * With the PartitionGroupConfig this behavior can be controlled. Imagine that members in datacenter-1 have ip
+ * address 10.10.1.* and ip addresses of datacenter-2 is 10.10.2.* then you can make the following configuration:
+ *
+ * <code>
+ *     <partition-group enabled="true" group-type="CUSTOM">
+ *          <member-group>
+ *              <interface>10.10.1.*</interface>
+ *          </member-group>
+ *          <member-group>
+ *              <interface>10.10.2.*</interface>
+ *          </member-group>
+ *      </partition-group>
+ * </code>
+ *
+ * The interfaces can be configured with wildcards '*' and ranges e.g. '10-20'. Each member-group can have as many
+ * interfaces as you want.
+ *
+ * You can define as many groups as you want, Hazelcast will prevent that in a multi member cluster, backups are
+ * going to be stored in the same group as the primary.
+ *
+ * You need to be careful with selecting overlapping groups, e.g.
+ * <code>
+ *     <partition-group enabled="true" group-type="CUSTOM">
+ *          <member-group>
+ *              <interface>10.10.1.1</interface>
+ *              <interface>10.10.1.2</interface>
+ *          </member-group>
+ *          <member-group>
+ *              <interface>10.10.1.1</interface>
+ *              <interface>10.10.1.3</interface>
+ *          </member-group>
+ *      </partition-group>
+ * </code>
+ * In this example there are 2 groups, but because interface 10.10.1.1 is shared between the 2 groups, there is still
+ * a chance that this member is going to store primary and backups.
+ *
+ * In the previous example we made use of custom group; we creates the groups manually and we configured the
+ * interfaces for these groups. There also is another option that doesn't give you the same fine grained control,
+ * but can prevent that on a single machine, running multiple HazelcastInstances, a primary and backup are going
+ * to be stored. This can be done using the HOST_AWARE group-type:
+ *
+ * <code>
+ *     <partition-group enabled="true" group-type="HOST_AWARE"/>
+ * </code>
+ *
+ */
 public class PartitionGroupConfig {
 
     private boolean enabled = false;
@@ -33,39 +91,99 @@ public class PartitionGroupConfig {
         HOST_AWARE, CUSTOM
     }
 
+    /**
+     * Checks if this PartitionGroupConfig is enabled.
+     *
+     * @return true if enabled, false otherwise.
+     */
     public boolean isEnabled() {
         return enabled;
     }
 
+    /**
+     * Enables or disables this PartitionGroupConfig.
+     *
+     * @param enabled true if enabled, false if disabled.
+     * @return the updated PartitionGroupConfig.
+     */
     public PartitionGroupConfig setEnabled(final boolean enabled) {
         this.enabled = enabled;
         return this;
     }
 
+    /**
+     * Returns the MemberGroupType configured. Could be null if no MemberGroupType has been configured.
+     *
+     * @return the MemberGroupType.
+     */
     public MemberGroupType getGroupType() {
         return groupType;
     }
 
-    public PartitionGroupConfig setGroupType(MemberGroupType policyType) {
-        this.groupType = policyType;
+    /**
+     * Sets the MemberGroupType. A @{link MemberGroupType#CUSTOM} indicates that custom groups are created.
+     * With the {@link MemberGroupType#HOST_AWARE} group type, Hazelcast makes a group for every host, that prevent
+     * a single host is going to contain primary and backup. See the {@see MemberGroupConfig} for more information.
+     *
+     * @param memberGroupType the MemberGroupType to set.
+     * @return the updated PartitionGroupConfig
+     * @throws IllegalArgumentException if memberGroupType is null.
+     * @see #getGroupType()
+      */
+    public PartitionGroupConfig setGroupType(MemberGroupType memberGroupType) {
+        this.groupType = isNotNull(memberGroupType,"memberGroupType");
         return this;
     }
 
-    public PartitionGroupConfig addMemberGroupConfig(MemberGroupConfig config) {
-        memberGroupConfigs.add(config);
+    /**
+     * Adds a {@link MemberGroupConfig}. Duplicate elements are not filtered.
+     *
+     * @param memberGroupConfig the MemberGroupConfig to add.
+     * @return the updated PartitionGroupConfig
+     * @throws IllegalArgumentException if memberGroupConfig is null.
+     * @see #addMemberGroupConfig(MemberGroupConfig)
+     */
+    public PartitionGroupConfig addMemberGroupConfig(MemberGroupConfig memberGroupConfig) {
+        memberGroupConfigs.add(isNotNull(memberGroupConfig,"MemberGroupConfig"));
         return this;
     }
 
+    /**
+     * Returns an unmodifiable collection containing all {@link MemberGroupConfig} elements.
+     *
+     * @return the MemberGroupConfig elements.
+     * @see #setMemberGroupConfigs(java.util.Collection)
+     */
     public Collection<MemberGroupConfig> getMemberGroupConfigs() {
         return Collections.unmodifiableCollection(memberGroupConfigs);
     }
 
+    /**
+     * Removes all the {@link MemberGroupType} instances.
+     *
+     * @return the updated PartitionGroupConfig.
+     * @see #setMemberGroupConfigs(java.util.Collection)
+     */
     public PartitionGroupConfig clear() {
         memberGroupConfigs.clear();
         return this;
     }
 
+    /**
+     * Adds a MemberGroupConfig. This MemberGroupConfig only has meaning when the group-type is set the
+     * {@link MemberGroupType#CUSTOM}. See the {@link PartitionGroupConfig} for more information and examples
+     * of how this mechanism works.
+     *
+     * @param memberGroupConfigs the collection of MemberGroupConfig to add.
+     * @return the updated PartitionGroupConfig
+     * @throws IllegalArgumentException if memberGroupConfigs is null.
+     * @see #getMemberGroupConfigs()
+     * @see #clear()
+     * @see #addMemberGroupConfig(MemberGroupConfig)
+     */
     public PartitionGroupConfig setMemberGroupConfigs(Collection<MemberGroupConfig> memberGroupConfigs) {
+        isNotNull(memberGroupConfigs,"memberGroupConfigs");
+
         this.memberGroupConfigs.clear();
         this.memberGroupConfigs.addAll(memberGroupConfigs);
         return this;
