@@ -1356,16 +1356,23 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
     }
 
     private static MemberGroupFactory newMemberGroupFactory(PartitionGroupConfig partitionGroupConfig) {
+        PartitionGroupConfig.MemberGroupType memberGroupType;
+
         if (partitionGroupConfig == null || !partitionGroupConfig.isEnabled()) {
-            return new SingleMemberGroupFactory();
+            memberGroupType = PartitionGroupConfig.MemberGroupType.PER_MEMBER;
+        }else{
+            memberGroupType = partitionGroupConfig.getGroupType();
         }
-        switch (partitionGroupConfig.getGroupType()) {
+
+        switch (memberGroupType) {
             case HOST_AWARE:
                 return new HostAwareMemberGroupFactory();
             case CUSTOM:
                 return new ConfigMemberGroupFactory(partitionGroupConfig.getMemberGroupConfigs());
-            default:
+            case PER_MEMBER:
                 return new SingleMemberGroupFactory();
+            default:
+                throw new RuntimeException("Unknown MemberGroupType:"+memberGroupType);
         }
     }
 

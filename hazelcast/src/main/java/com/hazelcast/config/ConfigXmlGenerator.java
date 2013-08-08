@@ -167,7 +167,7 @@ public class ConfigXmlGenerator {
         xml.append("</network>");
 
         final PartitionGroupConfig pg = config.getPartitionGroupConfig();
-        if (pg != null && pg.getGroupType() != null) {
+        if (pg != null) {
             xml.append("<partition-group enabled=\"").append(pg.isEnabled())
                     .append("\" group-type=\"").append(pg.getGroupType()).append("\" />");
         }
