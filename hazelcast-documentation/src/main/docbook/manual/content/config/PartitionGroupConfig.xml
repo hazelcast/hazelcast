@@ -35,8 +35,9 @@
         We call these groups <literal>partition groups</literal>. This way partitions are assigned to those partition groups instead of single nodes. And backups of these partitions are located in another partition group.
     </para>
 
-    <para>When you enable partition grouping, Hazelcast presents two choices to configure partition groups at the moments.
+    <para>When you enable partition grouping, Hazelcast presents three choices to configure partition groups at the moments.
         <itemizedlist>
+
             <listitem>
                 <para>
                 First one is to group nodes automatically using IP addresses of nodes, so nodes sharing same network interface will be grouped together.
@@ -79,6 +80,18 @@ memberGroupConfig2.addInterface("10.10.10.10-100")
 
 partitionGroupConfig.addMemberGroupConfig(memberGroupConfig);
 partitionGroupConfig.addMemberGroupConfig(memberGroupConfig2);</programlisting>
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    Third one is to give every member their own group. This gives the least amount of protection and is
+                    the default configuration for a Hazelcast cluster.
+                    <programlisting language="xml"><![CDATA[
+<partition-group enabled="true" group-type="PER_MEMBER" />]]></programlisting>
+                    <programlisting language="java">
+                        Config config = ...;
+                        PartitionGroupConfig partitionGroupConfig = config.getPartitionGroupConfig();
+                        partitionGroupConfig.setEnabled(true).setGroupType(MemberGroupType.PER_MEMBER);</programlisting>
                 </para>
             </listitem>
         </itemizedlist>
