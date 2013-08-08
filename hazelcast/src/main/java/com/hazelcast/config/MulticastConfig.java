@@ -23,7 +23,13 @@ import static com.hazelcast.util.ValidationUtil.hasText;
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 
 /**
- * Contains the configuration for the multicast join mechanism.
+ * Contains the configuration for the multicast discovery mechanism.
+ *
+ * With the multicast discovery mechanism Hazelcast allows Hazelcast members to find each other using multicast. So
+ * Hazelcast members do not need to know concrete addresses of members, they just multicast to everyone listening.
+ *
+ * It depends on your environment if multicast is possible or allowed; otherwise you need to have a look at the
+ * tcp/ip cluster: {@link TcpIpConfig}.
  */
 public class MulticastConfig {
 
@@ -46,6 +52,8 @@ public class MulticastConfig {
     private final Set<String> trustedInterfaces = new HashSet<String>();
 
     /**
+     * Check if the multicast discovery mechanism has been enabled.
+     *
      * @return the enabled
      */
     public boolean isEnabled() {
@@ -53,7 +61,10 @@ public class MulticastConfig {
     }
 
     /**
-     * @param enabled the enabled to set
+     * Enables or disables the multicast discovery mechanism
+     *
+     * @param enabled the enabled to set true when disabled, false when disabled.
+     * @return the updated MulticastConfig
      */
     public MulticastConfig setEnabled(boolean enabled) {
         this.enabled = enabled;
@@ -61,6 +72,8 @@ public class MulticastConfig {
     }
 
     /**
+     * Gets the multicast group.
+     *
      * @return the multicastGroup
      */
     public String getMulticastGroup() {
@@ -68,8 +81,13 @@ public class MulticastConfig {
     }
 
     /**
+     * Sets the multicast-group.
+     *
      * @param multicastGroup the multicastGroup to set
+     * @return the updated MulticastConfig
      * @throws IllegalArgumentException if multicastGroup is null or empty.
+     * @see #getMulticastGroup()
+     * @see #setMulticastPort(int)
      */
     public MulticastConfig setMulticastGroup(String multicastGroup) {
         this.multicastGroup = hasText(multicastGroup, "multicastGroup");
@@ -77,29 +95,52 @@ public class MulticastConfig {
     }
 
     /**
+     * Gets the multicast port.
+     *
      * @return the multicastPort
+     * @see #setMulticastPort(int)
      */
     public int getMulticastPort() {
         return multicastPort;
     }
 
     /**
+     * Sets the multicast port.
+     *
      * @param multicastPort the multicastPort to set
+     * @return the updated MulticastConfig
+     * @see #getMulticastPort()
+     * @see #setMulticastGroup(String)
+     * @throws IllegalArgumentException if multicastPort is smaller than 0.
      */
     public MulticastConfig setMulticastPort(int multicastPort) {
+        if(multicastPort<0){
+            throw new IllegalArgumentException("multicastPort can't be smaller than 0");
+        }
         this.multicastPort = multicastPort;
         return this;
     }
 
     /**
+     * Gets the multicast timeout in seconds.
+     *
      * @return the multicastTimeoutSeconds
+     * @see #setMulticastTimeoutSeconds(int)
      */
     public int getMulticastTimeoutSeconds() {
         return multicastTimeoutSeconds;
     }
 
     /**
+     * Specifies the time in seconds that a node should wait for a valid multicast response from another node running
+     * in the network before declaring itself as master node and creating its own cluster. This applies only to the startup
+     * of nodes where no master has been assigned yet. If you specify a high value, e.g. 60 seconds, it means until a master
+     * is selected, each node is going to wait 60 seconds before continuing, so be careful with providing a high value. If
+     * the value is set too low, it might be that nodes are giving up too early and will create their own cluster.
+     *
      * @param multicastTimeoutSeconds the multicastTimeoutSeconds to set
+     * @returns the updated MulticastConfig
+     * @see #getMulticastTimeoutSeconds()
      */
     public MulticastConfig setMulticastTimeoutSeconds(int multicastTimeoutSeconds) {
         this.multicastTimeoutSeconds = multicastTimeoutSeconds;
