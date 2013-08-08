@@ -993,7 +993,9 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         final boolean enabled = enabledNode != null ? checkTrue(getTextContent(enabledNode)) : false;
         config.getPartitionGroupConfig().setEnabled(enabled);
         final Node groupTypeNode = atts.getNamedItem("group-type");
-        final MemberGroupType groupType = groupTypeNode != null ? MemberGroupType.valueOf(getTextContent(groupTypeNode).toUpperCase()) : null;
+        final MemberGroupType groupType = groupTypeNode != null
+                ? MemberGroupType.valueOf(getTextContent(groupTypeNode).toUpperCase())
+                : MemberGroupType.PER_MEMBER;
         config.getPartitionGroupConfig().setGroupType(groupType);
         for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
             if ("member-group".equals(cleanNodeName(child))) {

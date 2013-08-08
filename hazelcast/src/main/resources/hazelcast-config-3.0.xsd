@@ -566,6 +566,7 @@
                 <xs:restriction base="non-space-string">
                     <xs:enumeration value="HOST_AWARE"/>
                     <xs:enumeration value="CUSTOM"/>
+                    <xs:enumeration value="PER_MEMBER"/>
                 </xs:restriction>
             </xs:simpleType>
         </xs:attribute>
