@@ -489,10 +489,13 @@ public class Node {
         final PartitionGroupConfig partitionGroupConfig = config.getPartitionGroupConfig();
         final boolean partitionGroupEnabled = partitionGroupConfig != null && partitionGroupConfig.isEnabled();
 
+        PartitionGroupConfig.MemberGroupType memberGroupType = partitionGroupEnabled
+                ? partitionGroupConfig.getGroupType()
+                : PartitionGroupConfig.MemberGroupType.PER_MEMBER;
         configCheck.setGroupName(groupConfig.getName()).setGroupPassword(groupConfig.getPassword())
                 .setJoinerType(joiner != null ? joiner.getType() : "")
                 .setPartitionGroupEnabled(partitionGroupEnabled)
-                .setMemberGroupType(partitionGroupEnabled ? partitionGroupConfig.getGroupType() : null);
+                .setMemberGroupType(memberGroupType);
         return configCheck;
     }
 

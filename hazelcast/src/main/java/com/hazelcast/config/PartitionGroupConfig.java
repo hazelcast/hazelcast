@@ -25,12 +25,12 @@ public class PartitionGroupConfig {
 
     private boolean enabled = false;
 
-    private MemberGroupType groupType = null;
+    private MemberGroupType groupType = MemberGroupType.PER_MEMBER;
 
     private final List<MemberGroupConfig> memberGroupConfigs = new LinkedList<MemberGroupConfig>();
 
     public enum MemberGroupType {
-        HOST_AWARE, CUSTOM
+        HOST_AWARE, CUSTOM, PER_MEMBER
     }
 
     public boolean isEnabled() {
@@ -47,6 +47,9 @@ public class PartitionGroupConfig {
     }
 
     public PartitionGroupConfig setGroupType(MemberGroupType policyType) {
+        if(policyType == null){
+            throw new NullPointerException("policyType can't be null");
+        }
         this.groupType = policyType;
         return this;
     }
