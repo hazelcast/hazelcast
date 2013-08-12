@@ -81,7 +81,8 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         this.threadGroup = new ThreadGroup(name);
         threadMonitoringService = new ThreadMonitoringService(threadGroup);
         lifecycleService = new LifecycleServiceImpl(this);
-        managedContext = new HazelcastManagedContext(this, config.getManagedContext());
+        ManagedContext configuredManagedContext = config.getManagedContext();
+        managedContext = new HazelcastManagedContext(this, configuredManagedContext);
 
         //we are going to copy the user-context map of the Config so that each HazelcastInstance will get its own
         //user-context map instance instead of having a shared map instance. So changes made to the user-context map
@@ -96,6 +97,12 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
             throw new IllegalStateException("Node failed to start!");
         }
         managementService = new ManagementService(this);
+
+        if(configuredManagedContext!=null){
+            if(configuredManagedContext instanceof HazelcastInstanceAware){
+                ((HazelcastInstanceAware)configuredManagedContext).setHazelcastInstance(this);
+            }
+        }
     }
 
     public ThreadMonitoringService getThreadMonitoringService() {
