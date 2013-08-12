@@ -108,6 +108,10 @@ public final class SerializationServiceImpl implements SerializationService {
         registerClassDefinitions(classDefinitions, checkClassDefErrors);
     }
 
+    public ManagedContext getManagedContext(){
+        return managedContext;
+    }
+
     private void registerClassDefinitions(final Collection<ClassDefinition> classDefinitions, boolean checkClassDefErrors) {
         final Map<Integer, ClassDefinition> classDefMap = new HashMap<Integer, ClassDefinition>(classDefinitions.size());
         for (ClassDefinition cd : classDefinitions) {
