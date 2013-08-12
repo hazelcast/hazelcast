@@ -56,6 +56,67 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         return instance.getExecutorService(name);
     }
 
+    @Test
+    public void testManagedContextAndLocal()throws Exception{
+        final Config config = new Config();
+        config.addExecutorConfig(new ExecutorConfig("test", 1));
+        config.setManagedContext(new ManagedContext(){
+            @Override
+            public Object initialize(Object obj) {
+                if(obj instanceof Runnable){
+                    System.out.println(obj);
+                }
+
+                if(obj instanceof RunnableWithManagedContext){
+                    RunnableWithManagedContext task = (RunnableWithManagedContext)obj;
+                    task.initializeCalled=true;
+                }
+                return obj;
+            }
+        });
+
+        final HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance(config);
+        IExecutorService executor = instance.getExecutorService("test");
+
+        RunnableWithManagedContext task = new RunnableWithManagedContext();
+        executor.submit(task).get();
+        assertTrue("The task should have been initialized by the ManagedContext",task.initializeCalled);
+    }
+
+    static class RunnableWithManagedContext implements Runnable{
+        private volatile boolean initializeCalled = false;
+
+        @Override
+        public void run() {
+        }
+    }
+
+    @Test
+    public void hazelcastInstanceAwareAndLocal()throws Exception{
+        final Config config = new Config();
+        config.addExecutorConfig(new ExecutorConfig("test", 1));
+        final HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance(config);
+        IExecutorService executor = instance.getExecutorService("test");
+
+        HazelcastInstanceAwareRunnable task = new HazelcastInstanceAwareRunnable();
+        executor.submit(task).get();
+        assertTrue("The setHazelcastInstance should have been called",task.initializeCalled);
+    }
+
+    static class HazelcastInstanceAwareRunnable implements Runnable,HazelcastInstanceAware{
+        private volatile boolean initializeCalled = false;
+
+        @Override
+        public void run() {
+        }
+
+        @Override
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            initializeCalled = true;
+        }
+    }
+
+
     /**
      * Submit a null task must raise a NullPointerException
      */

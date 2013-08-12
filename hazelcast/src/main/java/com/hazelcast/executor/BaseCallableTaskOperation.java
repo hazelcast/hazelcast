@@ -17,8 +17,11 @@
 package com.hazelcast.executor;
 
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.core.ManagedContext;
+import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
@@ -44,8 +47,19 @@ abstract class BaseCallableTaskOperation extends Operation {
 
     @Override
     public final void beforeRun() throws Exception {
+        HazelcastInstanceImpl hazelcastInstance = (HazelcastInstanceImpl)getNodeEngine().getHazelcastInstance();
+        SerializationServiceImpl serializationService = (SerializationServiceImpl) hazelcastInstance.getSerializationService();
+        ManagedContext managedContext = serializationService.getManagedContext();
+
+        if(callable instanceof RunnableAdapter){
+            RunnableAdapter adapter = (RunnableAdapter)callable;
+            adapter.setRunnable((Runnable)managedContext.initialize(adapter.getRunnable()));
+        } else{
+            callable = (Callable)managedContext.initialize(callable);
+        }
+
         if (callable instanceof HazelcastInstanceAware) {
-            ((HazelcastInstanceAware) callable).setHazelcastInstance(getNodeEngine().getHazelcastInstance());
+            ((HazelcastInstanceAware) callable).setHazelcastInstance(hazelcastInstance);
         }
     }
 
