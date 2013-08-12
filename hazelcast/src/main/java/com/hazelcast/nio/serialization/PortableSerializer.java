@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.core.ManagedContext;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.ObjectDataInput;
@@ -90,6 +91,12 @@ final class PortableSerializer implements StreamSerializer<Portable> {
         portable.readPortable(reader);
         reader.end();
         return portable;
+    }
+
+    Portable readAndInitialize(BufferObjectDataInput in) throws IOException {
+        Portable p = read(in);
+        final ManagedContext managedContext = context.getManagedContext();
+        return managedContext != null ? (Portable) managedContext.initialize(p) : p;
     }
 
     public void destroy() {

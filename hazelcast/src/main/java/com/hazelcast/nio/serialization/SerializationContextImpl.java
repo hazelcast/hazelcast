@@ -1,5 +1,6 @@
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.core.ManagedContext;
 import com.hazelcast.nio.BufferObjectDataOutput;
 
 import java.io.DataOutput;
@@ -77,6 +78,10 @@ final class SerializationContextImpl implements SerializationContext {
 
     public int getVersion() {
         return version;
+    }
+
+    public ManagedContext getManagedContext() {
+        return serializationService.getManagedContext();
     }
 
     private class PortableContext {

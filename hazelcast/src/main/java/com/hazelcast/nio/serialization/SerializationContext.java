@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.core.ManagedContext;
+
 import java.io.IOException;
 
 /**
@@ -34,5 +36,7 @@ public interface SerializationContext {
     ClassDefinition registerClassDefinition(ClassDefinition cd);
 
     ClassDefinition lookupOrRegisterClassDefinition(Portable portable) throws IOException;
+
+    ManagedContext getManagedContext();
 
 }

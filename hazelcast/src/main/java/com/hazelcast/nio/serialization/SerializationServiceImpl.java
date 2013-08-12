@@ -469,4 +469,8 @@ public final class SerializationServiceImpl implements SerializationService {
     public ClassLoader getClassLoader() {
         return classLoader;
     }
+
+    public ManagedContext getManagedContext() {
+        return managedContext;
+    }
 }

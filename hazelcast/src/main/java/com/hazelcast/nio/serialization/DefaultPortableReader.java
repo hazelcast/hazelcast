@@ -210,7 +210,7 @@ public class DefaultPortableReader implements PortableReader {
                 try {
                     ctxIn.setFactoryId(fd.getFactoryId());
                     ctxIn.setClassId(fd.getClassId());
-                    return serializer.read(in);
+                    return serializer.readAndInitialize(in);
                 } finally {
                     ctxIn.setFactoryId(cd.getFactoryId());
                     ctxIn.setClassId(cd.getClassId());
@@ -247,7 +247,7 @@ public class DefaultPortableReader implements PortableReader {
                     for (int i = 0; i < len; i++) {
                         final int start = in.readInt(offset + i * 4);
                         in.position(start);
-                        portables[i] = serializer.read(in);
+                        portables[i] = serializer.readAndInitialize(in);
                     }
                 } finally {
                     ctxIn.setFactoryId(cd.getFactoryId());
