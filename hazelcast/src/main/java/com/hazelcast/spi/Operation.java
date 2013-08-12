@@ -32,6 +32,10 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import java.io.IOException;
 import java.util.logging.Level;
 
+/**
+ * An operation could be compared the a {@link Runnable}. So it contains logic that is going to be executed; this logic
+ * will be placed in the {@link #run()} method.
+ */
 public abstract class Operation implements DataSerializable {
 
     // serialized
