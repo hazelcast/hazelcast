@@ -19,10 +19,17 @@ package com.hazelcast.spi;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 /**
+ * A Factory for creating {@link Operation} instances.
+ *
  * @author mdogan 1/17/13
  */
 public interface OperationFactory extends DataSerializable {
 
+    /**
+     * Creates the operation.
+     *
+     * @return the created operation.
+     */
     Operation createOperation();
 
 }
