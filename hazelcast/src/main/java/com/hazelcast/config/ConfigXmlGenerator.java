@@ -33,21 +33,42 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.logging.Level;
 
+import static com.hazelcast.util.ValidationUtil.isNotNull;
+
+/**
+ * The ConfigXmlGenerator is responsible for transforming a {@link Config} to a Hazelcast XML string.
+ */
 public class ConfigXmlGenerator {
 
     private static final ILogger logger = Logger.getLogger(ConfigXmlGenerator.class);
 
     private final boolean formatted;
 
+    /**
+     * Creates a ConfigXmlGenerator that will format the code.
+     */
     public ConfigXmlGenerator() {
         this(true);
     }
 
+    /**
+     * Creates a ConfigXmlGenerator.
+     *
+     * @param formatted true if the XML should be formatted, false otherwise.
+     */
     public ConfigXmlGenerator(boolean formatted) {
         this.formatted = formatted;
     }
 
+    /**
+     * Generates the XML string based on some Config.
+     *
+     * @param config the configuration.
+     * @return the XML string.
+     */
     public String generate(Config config) {
+        isNotNull(config,"Config");
+
         final StringBuilder xml = new StringBuilder();
         xml.append("<hazelcast ")
                 .append("xmlns=\"http://www.hazelcast.com/schema/config\"\n")

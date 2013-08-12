@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import static com.hazelcast.util.ValidationUtil.isNotNull;
+
 /**
  * Contains the 3 different join configurations; tcp-ip/multicast/aws. Only one of them should be enabled!
  */
@@ -36,9 +38,10 @@ public class JoinConfig {
 
     /**
      * @param multicastConfig the multicastConfig to set
+     * @throws IllegalArgumentException if multicastConfig is null.
      */
     public JoinConfig setMulticastConfig(final MulticastConfig multicastConfig) {
-        this.multicastConfig = multicastConfig;
+        this.multicastConfig = isNotNull(multicastConfig, "multicastConfig");
         return this;
     }
 
@@ -51,9 +54,10 @@ public class JoinConfig {
 
     /**
      * @param tcpIpConfig the tcpIpConfig to set
+     * @throws IllegalArgumentException if tcpIpConfig is null.
      */
     public JoinConfig setTcpIpConfig(final TcpIpConfig tcpIpConfig) {
-        this.tcpIpConfig = tcpIpConfig;
+        this.tcpIpConfig = isNotNull(tcpIpConfig,"tcpIpConfig");
         return this;
     }
 
@@ -66,9 +70,10 @@ public class JoinConfig {
 
     /**
      * @param awsConfig the AwsConfig to set
+     * @throws IllegalArgumentException if awsConfig is null.
      */
     public JoinConfig setAwsConfig(final AwsConfig awsConfig) {
-        this.awsConfig = awsConfig;
+        this.awsConfig = isNotNull(awsConfig,"awsConfig");
         return this;
     }
 
