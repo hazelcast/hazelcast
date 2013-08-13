@@ -203,6 +203,13 @@ public class OutRunnable extends IORunnable {
         temp.remove(RECONNECT_CALL);
         reconnectionCalls.addAll(client.getListenerManager().getListenerCalls());
         queue.addAll(reconnectionCalls);
+        if (q.size() > 0) {
+	        Call call = q.poll();
+	        while (call != null) {
+	        	queue.offer(call);
+	        	call = q.poll();
+	        }
+        }
         temp.drainTo(queue);
         queue.addAll(callMap.values());
     }
