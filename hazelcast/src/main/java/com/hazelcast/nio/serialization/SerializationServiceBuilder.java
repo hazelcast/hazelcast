@@ -19,6 +19,8 @@ package com.hazelcast.nio.serialization;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.nio.ClassLoaderUtil;
 
@@ -55,6 +57,7 @@ public final class SerializationServiceBuilder {
     private boolean enableSharedObject = false;
 
     private boolean allowUnsafe = false;
+    private HazelcastInstance hazelcastInstance;
 
     public SerializationServiceBuilder setVersion(int version) {
         if (version < 0) {
@@ -118,6 +121,11 @@ public final class SerializationServiceBuilder {
         return this;
     }
 
+    public SerializationServiceBuilder setHazelcastInstance(HazelcastInstance hazelcastInstance){
+        this.hazelcastInstance = hazelcastInstance;
+        return this;
+    }
+
     public SerializationServiceBuilder setEnableCompression(boolean enableCompression) {
         this.enableCompression = enableCompression;
         return this;
@@ -158,6 +166,11 @@ public final class SerializationServiceBuilder {
                         throw new HazelcastSerializationException(e);
                     }
                 }
+
+                if(serializer instanceof HazelcastInstanceAware){
+                    ((HazelcastInstanceAware)serializer).setHazelcastInstance(hazelcastInstance);
+                }
+
                 ss.registerGlobal(serializer);
             }
 
@@ -171,6 +184,11 @@ public final class SerializationServiceBuilder {
                         throw new HazelcastSerializationException(e);
                     }
                 }
+
+                if(serializer instanceof HazelcastInstanceAware){
+                    ((HazelcastInstanceAware)serializer).setHazelcastInstance(hazelcastInstance);
+                }
+
                 Class typeClass = serializerConfig.getTypeClass();
                 if (typeClass == null) {
                     try {
@@ -201,64 +219,85 @@ public final class SerializationServiceBuilder {
         return new ByteBufferInputOutputFactory(byteOrder);
     }
 
-    private static void addConfigDataSerializableFactories(final Map<Integer, DataSerializableFactory> dataSerializableFactories,
+    private void addConfigDataSerializableFactories(final Map<Integer, DataSerializableFactory> dataSerializableFactories,
                                                            SerializationConfig config, ClassLoader cl) {
 
         for (Map.Entry<Integer, DataSerializableFactory> entry : config.getDataSerializableFactories().entrySet()) {
-            if (entry.getKey() <= 0 ) {
-                throw new IllegalArgumentException("DataSerializableFactory factoryId must be positive! -> " + entry.getValue());
+            Integer factoryId = entry.getKey();
+            DataSerializableFactory factory = entry.getValue();
+            if (factoryId <= 0 ) {
+                throw new IllegalArgumentException("DataSerializableFactory factoryId must be positive! -> " + factory);
             }
-            if (dataSerializableFactories.containsKey(entry.getKey())) {
-                throw new IllegalArgumentException("DataSerializableFactory with factoryId '" + entry.getKey() + "' is already registered!");
+            if (dataSerializableFactories.containsKey(factoryId)) {
+                throw new IllegalArgumentException("DataSerializableFactory with factoryId '" + factoryId + "' is already registered!");
             }
-            dataSerializableFactories.put(entry.getKey(), entry.getValue());
+            dataSerializableFactories.put(factoryId, factory);
         }
 
         for (Map.Entry<Integer, String> entry : config.getDataSerializableFactoryClasses().entrySet()) {
-            if (entry.getKey() <= 0 ) {
-                throw new IllegalArgumentException("DataSerializableFactory factoryId must be positive! -> " + entry.getValue());
+            Integer factoryId = entry.getKey();
+            String factoryClassName = entry.getValue();
+            if (factoryId <= 0 ) {
+                throw new IllegalArgumentException("DataSerializableFactory factoryId must be positive! -> " + factoryClassName);
             }
-            if (dataSerializableFactories.containsKey(entry.getKey())) {
-                throw new IllegalArgumentException("DataSerializableFactory with factoryId '" + entry.getKey() + "' is already registered!");
+            if (dataSerializableFactories.containsKey(factoryId)) {
+                throw new IllegalArgumentException("DataSerializableFactory with factoryId '" + factoryId + "' is already registered!");
             }
-            DataSerializableFactory f;
+            DataSerializableFactory factory;
             try {
-                f = ClassLoaderUtil.newInstance(cl, entry.getValue());
+                factory = ClassLoaderUtil.newInstance(cl, factoryClassName);
             } catch (Exception e) {
                 throw new HazelcastSerializationException(e);
             }
-            dataSerializableFactories.put(entry.getKey(), f);
+
+            dataSerializableFactories.put(factoryId, factory);
+        }
+
+        for(DataSerializableFactory f: dataSerializableFactories.values()){
+            if(f instanceof HazelcastInstanceAware){
+                ((HazelcastInstanceAware)f).setHazelcastInstance(hazelcastInstance);
+            }
         }
     }
 
-    private static void addConfigPortableFactories(final Map<Integer, PortableFactory> portableFactories,
+    private void addConfigPortableFactories(final Map<Integer, PortableFactory> portableFactories,
                                                    SerializationConfig config, ClassLoader cl) {
 
         for (Map.Entry<Integer, PortableFactory> entry : config.getPortableFactories().entrySet()) {
-            if (entry.getKey() <= 0 ) {
-                throw new IllegalArgumentException("PortableFactory factoryId must be positive! -> " + entry.getValue());
+            Integer factoryId = entry.getKey();
+            PortableFactory factory = entry.getValue();
+            if (factoryId <= 0 ) {
+                throw new IllegalArgumentException("PortableFactory factoryId must be positive! -> " + factory);
             }
-            if (portableFactories.containsKey(entry.getKey())) {
-                throw new IllegalArgumentException("PortableFactory with factoryId '" + entry.getKey() + "' is already registered!");
+            if (portableFactories.containsKey(factoryId)) {
+                throw new IllegalArgumentException("PortableFactory with factoryId '" + factoryId + "' is already registered!");
             }
-            portableFactories.put(entry.getKey(), entry.getValue());
+            portableFactories.put(factoryId, factory);
         }
 
         final Map<Integer, String> portableFactoryClasses = config.getPortableFactoryClasses();
         for (Map.Entry<Integer, String> entry : portableFactoryClasses.entrySet()) {
-            if (entry.getKey() <= 0 ) {
-                throw new IllegalArgumentException("PortableFactory factoryId must be positive! -> " + entry.getValue());
+            Integer factoryId = entry.getKey();
+            String factoryClassName = entry.getValue();
+            if (factoryId <= 0 ) {
+                throw new IllegalArgumentException("PortableFactory factoryId must be positive! -> " + factoryClassName);
             }
-            if (portableFactories.containsKey(entry.getKey())) {
-                throw new IllegalArgumentException("PortableFactory with factoryId '" + entry.getKey() + "' is already registered!");
+            if (portableFactories.containsKey(factoryId)) {
+                throw new IllegalArgumentException("PortableFactory with factoryId '" + factoryId + "' is already registered!");
             }
-            PortableFactory f;
+            PortableFactory factory;
             try {
-                f = ClassLoaderUtil.newInstance(cl, entry.getValue());
+                factory = ClassLoaderUtil.newInstance(cl, factoryClassName);
             } catch (Exception e) {
                 throw new HazelcastSerializationException(e);
             }
-            portableFactories.put(entry.getKey(), f);
+            portableFactories.put(factoryId, factory);
+        }
+
+        for(PortableFactory f: portableFactories.values()){
+            if(f instanceof HazelcastInstanceAware){
+                ((HazelcastInstanceAware)f).setHazelcastInstance(hazelcastInstance);
+            }
         }
     }
 }
