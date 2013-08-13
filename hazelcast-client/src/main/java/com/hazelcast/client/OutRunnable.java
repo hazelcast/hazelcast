@@ -54,7 +54,7 @@ public class OutRunnable extends IORunnable {
         }
         try {
             boolean written = false;
-            if (queue.size() > 0 || q.size() > 0) {
+            if ((queue.size() > 0 || q.size() > 0) && reconnectionCalls.size() < q.remainingCapacity()) {
                 queue.drainTo(q, q.remainingCapacity());
                 Call call = q.poll();
                 while (call != null) {
@@ -66,6 +66,7 @@ public class OutRunnable extends IORunnable {
             try {
                 if (written) {
                     writer.flush(connection);
+                    if (reconnectionCalls.size() > 0) checkOnReconnect(null);
                 }
             } catch (IOException e) {
                 clusterIsDown(connection);
@@ -79,7 +80,7 @@ public class OutRunnable extends IORunnable {
                     clusterIsDown(connection);
                 }
             }
-            if (reconnectionCalls.size() > 0) {
+            if (reconnectionCalls.size() > 0 && call != RECONNECT_CALL) {
                 checkOnReconnect(call);
             }
         } catch (Throwable e) {
@@ -91,7 +92,9 @@ public class OutRunnable extends IORunnable {
         try {
             Connection oldConnection = connection;
             connection = client.getConnectionManager().getConnection();
+
             if (restoredConnection(oldConnection, connection)) {
+
                 queue.offer(call);
                 resubscribe(oldConnection);
                 if (reconnectionCalls.size() == 0) {
@@ -108,10 +111,6 @@ public class OutRunnable extends IORunnable {
             } else {
                 queue.offer(call);
                 clusterIsDown(oldConnection);
-                return;
-            }
-            if (reconnectionCalls.size() > 0) {
-                checkOnReconnect(call);
             }
         } catch (Exception e) {
             queue.offer(call);
