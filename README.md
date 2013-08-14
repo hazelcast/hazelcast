@@ -20,8 +20,8 @@ enterprise-ready and developer-friendly in-memory data grid solution.
 * Support for cluster info and membership events
 * Dynamic discovery, scaling, partitioning with backups and fail-over
 
-#### Hazelcast 3.0
-Switch to 3.0 branch to see upcoming [Hazelcast 3.0](https://github.com/hazelcast/hazelcast/tree/3.0)
+#### Hazelcast 3
+Switch to 3.x branch to see next version [Hazelcast 3.x](https://github.com/hazelcast/hazelcast/tree/master)
 
 ### Getting Started
 
