@@ -1433,7 +1433,7 @@ public class HazelcastTest {
     public void testIssue670PutTtl() throws Exception {
         Config config = new Config();
         MapConfig mapConfig = new MapConfig("ttl-test");
-        mapConfig.setTimeToLiveSeconds(5);
+        mapConfig.setTimeToLiveSeconds(1);
         config.addMapConfig(mapConfig);
         
         HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
@@ -1443,13 +1443,15 @@ public class HazelcastTest {
         putAllEntries.put(2, false);
         imap.putAll(putAllEntries);
         imap.put(3, true);
-        imap.put(4, false, 5, TimeUnit.SECONDS);
+        imap.put(4, false, 2, TimeUnit.SECONDS);
         imap.put(5, false, 35, TimeUnit.SECONDS);
         imap.put(6, false, 0, TimeUnit.SECONDS);
-        Thread.sleep(10000);
-        assertTrue("putAll entries should have been evicted", !imap.containsKey(1));
-        assertTrue("put entry should have been evicted", !imap.containsKey(3));
-        assertTrue("put entry with ttl should have been evicted", !imap.containsKey(4));
+        Thread.sleep(5000);
+
+        assertFalse("putAll entries should have been evicted", imap.containsKey(1));
+        assertFalse("putAll entries should have been evicted", imap.containsKey(2));
+        assertFalse("put entry should have been evicted", imap.containsKey(3));
+        assertFalse("put entry with ttl should have been evicted", imap.containsKey(4));
         assertTrue("put entry with long ttl should not have been evicted", imap.containsKey(5));
         assertTrue("put entry with zero ttl should not have been evicted", imap.containsKey(6));
         h.getLifecycleService().shutdown();
