@@ -676,10 +676,10 @@ public class MapService implements ManagedService, MigrationAwareService,
         switch (inMemoryFormat){
             case BINARY:
                 return toData(value1).equals(toData(value2));
+            case CACHED:
+                return toData(value1).equals(toData(value2));
             case OBJECT:
                 return toObject(value1).equals(toObject(value2));
-            case CACHED:
-                return value1.equals(value2);
             default:
                 throw new IllegalStateException("Unrecognized InMemoryFormat: "+inMemoryFormat);
         }
