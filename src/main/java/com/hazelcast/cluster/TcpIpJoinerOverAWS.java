@@ -45,7 +45,11 @@ public class TcpIpJoinerOverAWS extends TcpIpJoiner {
     protected Collection<String> getMembers() {
         try {
             List<String> list = aws.getPrivateIpAddresses();
-            logger.finest( "The list of possible members are: " + list);
+            if(list.isEmpty()){
+                logger.warning("No EC2 instances found!");
+            }else{
+                logger.finest( "The list of possible members are: " + list);
+            }
             return list;
         } catch (Exception e) {
             logger.warning(e);
