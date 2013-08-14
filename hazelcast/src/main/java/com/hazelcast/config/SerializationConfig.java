@@ -23,6 +23,8 @@ import com.hazelcast.nio.serialization.PortableFactory;
 import java.nio.ByteOrder;
 import java.util.*;
 
+import static com.hazelcast.util.ValidationUtil.isNotNull;
+
 public class SerializationConfig {
 
     private int portableVersion = 0;
@@ -112,6 +114,11 @@ public class SerializationConfig {
         return this;
     }
 
+    public SerializationConfig addDataSerializableFactoryClass(int factoryId, Class<? extends DataSerializableFactory> dataSerializableFactoryClass) {
+       String factoryClassName = isNotNull(dataSerializableFactoryClass, "dataSerializableFactoryClass").getName();
+       return addDataSerializableFactoryClass(factoryId, factoryClassName);
+    }
+
     public Map<Integer, DataSerializableFactory> getDataSerializableFactories() {
         if (dataSerializableFactories == null) {
             dataSerializableFactories = new HashMap<Integer, DataSerializableFactory>();
@@ -139,6 +146,11 @@ public class SerializationConfig {
     public SerializationConfig setPortableFactoryClasses(Map<Integer, String> portableFactoryClasses) {
         this.portableFactoryClasses = portableFactoryClasses;
         return this;
+    }
+
+    public SerializationConfig addPortableFactoryClass(int factoryId, Class<? extends PortableFactory> portableFactoryClass) {
+        String portableFactoryClassName = isNotNull(portableFactoryClass, "portableFactoryClass").getName();
+        return addPortableFactoryClass(factoryId, portableFactoryClassName);
     }
 
     public SerializationConfig addPortableFactoryClass(int factoryId, String portableFactoryClass) {
