@@ -40,14 +40,14 @@
 
     //getters setters..
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(street);
         out.writeInt(zipCode);
         out.writeUTF(city);
         out.writeUTF(state);
     }
 
-    public void readData (DataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         street    = in.readUTF();
         zipCode = in.readInt();
         city    = in.readUTF();
@@ -69,7 +69,7 @@
 
     //getters setters..
 
-    public void writeData(DataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(firstName);
         out.writeUTF(lastName);
         out.writeInt(age);
@@ -77,7 +77,7 @@
         address.writeData (out);
     }
 
-    public void readData (DataInput in) throws IOException {
+    public void readData (ObjectDataInput in) throws IOException {
         firstName = in.readUTF();
         lastName  = in.readUTF();
         age       = in.readInt();
