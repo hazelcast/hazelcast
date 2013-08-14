@@ -123,8 +123,12 @@ public class Node {
         this.groupProperties = new GroupProperties(config);
         SerializationService ss;
         try {
-            ss = new SerializationServiceBuilder().setClassLoader(configClassLoader)
-                .setConfig(config.getSerializationConfig()).setManagedContext(hazelcastInstance.managedContext).build();
+            ss = new SerializationServiceBuilder()
+                    .setClassLoader(configClassLoader)
+                    .setConfig(config.getSerializationConfig())
+                    .setManagedContext(hazelcastInstance.managedContext)
+                    .setHazelcastInstance(hazelcastInstance)
+                    .build();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
