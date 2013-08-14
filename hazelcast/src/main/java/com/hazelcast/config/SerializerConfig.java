@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.nio.serialization.ByteArraySerializer;
+import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.Serializer;
 import com.hazelcast.nio.serialization.StreamSerializer;
 
@@ -36,6 +37,11 @@ public class SerializerConfig {
 
     public String getClassName() {
         return className;
+    }
+
+    public SerializerConfig setClass(final Class<? extends Serializer> clazz) {
+        String className = clazz == null?null:clazz.getName();
+        return setClassName(className);
     }
 
     public SerializerConfig setClassName(final String className) {
