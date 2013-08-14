@@ -21,6 +21,8 @@ import com.hazelcast.map.merge.PutIfAbsentMapMergePolicy;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.util.ValidationUtil.isNotNull;
+
 public class MapConfig {
 
     public final static int MIN_BACKUP_COUNT = 0;
@@ -141,9 +143,10 @@ public class MapConfig {
      * CACHED: object form of values will be cached
      *
      * @param inMemoryFormat the record type to set
+     * @throws IllegalArgumentException if inMemoryFormat is null.
      */
     public MapConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
-        this.inMemoryFormat = inMemoryFormat;
+        this.inMemoryFormat = isNotNull(inMemoryFormat,"inMemoryFormat");
         return this;
     }
 
