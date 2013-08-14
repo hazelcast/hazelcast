@@ -94,12 +94,12 @@ public class IMapRegionCache implements RegionCache {
                     return false;
                 }
             } else if (previousVersion == null || versionComparator.compare(currentVersion, previousVersion) > 0) {
-                map.set(key, value, 0, TimeUnit.MILLISECONDS);
+                map.set(key, value);
                 return true;
             }
             return false;
         } else {
-            map.set(key, value, 0, TimeUnit.MILLISECONDS);
+            map.set(key, value);
             return true;
         }
     }
