@@ -57,7 +57,7 @@ public class HazelcastCache implements Cache {
 
     public void put(final Object key, final Object value) {
         if (key != null) {
-            map.set(key, toStoreValue(value), 0, TimeUnit.SECONDS);
+            map.set(key, toStoreValue(value));
         }
     }
 

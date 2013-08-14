@@ -63,7 +63,7 @@ public class PutAllCallable implements Callable<Boolean>, HazelcastInstanceAware
             for (KeyValue keyValue : pairs.getKeyValues()) {
                 Object value = (cmap.getMapIndexService().hasIndexedAttributes()) ?
                         keyValue.getValue() : keyValue.getValueData();
-                map.set(keyValue.getKeyData(), value, 0, TimeUnit.SECONDS);
+                map.set(keyValue.getKeyData(), value);
             }
         }
         return Boolean.TRUE;
