@@ -62,4 +62,13 @@ public class TopicEvent implements DataSerializable {
         publishingMember = in.readObject();
         data = IOUtil.readNullableData(in);
     }
+
+    @Override
+    public String toString() {
+        return "TopicEvent{" +
+                "name='" + name + '\'' +
+                ", publishTime=" + publishTime +
+                ", publishingMember=" + publishingMember +
+                '}';
+    }
 }

@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
@@ -30,6 +31,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.topic.TopicEvent;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.StripedExecutor;
@@ -52,13 +54,16 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
     private final NodeEngineImpl nodeEngine;
     private final ConcurrentMap<String, EventServiceSegment> segments;
     private final StripedExecutor eventExecutor;
+    private final int eventQueueTimeoutMs;
 
     EventServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         logger = nodeEngine.getLogger(EventService.class.getName());
         final Node node = nodeEngine.getNode();
-        int eventThreadCount = node.getGroupProperties().EVENT_THREAD_COUNT.getInteger();
-        int eventQueueCapacity = node.getGroupProperties().EVENT_QUEUE_CAPACITY.getInteger();
+        GroupProperties groupProperties = node.getGroupProperties();
+        int eventThreadCount = groupProperties.EVENT_THREAD_COUNT.getInteger();
+        int eventQueueCapacity = groupProperties.EVENT_QUEUE_CAPACITY.getInteger();
+        eventQueueTimeoutMs = groupProperties.EVENT_QUEUE_TIMEOUT_MILLIS.getInteger();
         eventExecutor = new StripedExecutor(nodeEngine.executionService.getCachedExecutor(), eventThreadCount,eventQueueCapacity);
         segments = new ConcurrentHashMap<String, EventServiceSegment>();
     }
@@ -236,9 +241,9 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
     private void executeLocal(String serviceName, Object event, Registration reg, int orderKey) {
         if (nodeEngine.isActive()) {
             try {
-                eventExecutor.execute(new LocalEventDispatcher(serviceName, event, reg.listener, orderKey,5000));
+                eventExecutor.execute(new LocalEventDispatcher(serviceName, event, reg.listener, orderKey,eventQueueTimeoutMs));
             } catch (RejectedExecutionException e) {
-                logger.warning(e.toString());
+                logger.warning("EventQueue overloaded! " + event + " failed to publish to " + reg.serviceName + ":" + reg.topic);
             }
         }
     }
