@@ -379,17 +379,21 @@ public class MapService implements ManagedService, MigrationAwareService,
         MapContainer mapContainer = getMapContainer(name);
         final MapConfig.InMemoryFormat inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
         boolean statisticsEnabled = mapContainer.getMapConfig().isStatisticsEnabled();
-        if (inMemoryFormat == MapConfig.InMemoryFormat.BINARY) {
-            record = new DataRecord(dataKey, toData(value), statisticsEnabled);
-        } else if (inMemoryFormat == MapConfig.InMemoryFormat.OBJECT) {
-            record = new ObjectRecord(dataKey, toObject(value), statisticsEnabled);
-        } else if (inMemoryFormat == MapConfig.InMemoryFormat.CACHED) {
-            record = new CachedDataRecord(dataKey, toData(value), statisticsEnabled);
-        } else {
-            throw new IllegalArgumentException("Should not happen!");
+        switch (inMemoryFormat){
+            case BINARY:
+                record = new DataRecord(dataKey, toData(value), statisticsEnabled);
+                break;
+            case OBJECT:
+                record = new ObjectRecord(dataKey, toObject(value), statisticsEnabled);
+                break;
+            case CACHED:
+                record = new CachedDataRecord(dataKey, toData(value), statisticsEnabled);
+                break;
+            default:
+                throw new IllegalArgumentException("Unrecognized InMemoryFormat: "+inMemoryFormat);
         }
 
-        if (shouldSchedule) {
+       if (shouldSchedule) {
             if (ttl < 0 && mapContainer.getMapConfig().getTimeToLiveSeconds() > 0) {
                 scheduleTtlEviction(name, record, mapContainer.getMapConfig().getTimeToLiveSeconds() * 1000);
             }
@@ -668,13 +672,18 @@ public class MapService implements ManagedService, MigrationAwareService,
         }
 
         MapContainer mapContainer = getMapContainer(mapName);
-        if (mapContainer.getMapConfig().getInMemoryFormat().equals(MapConfig.InMemoryFormat.BINARY)) {
-            return toData(value1).equals(toData(value2));
-        } else if (mapContainer.getMapConfig().getInMemoryFormat().equals(MapConfig.InMemoryFormat.OBJECT)) {
-            return toObject(value1).equals(toObject(value2));
+        MapConfig.InMemoryFormat inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
+        switch (inMemoryFormat){
+            case BINARY:
+                return toData(value1).equals(toData(value2));
+            case CACHED:
+                return toData(value1).equals(toData(value2));
+            case OBJECT:
+                return toObject(value1).equals(toObject(value2));
+            default:
+                throw new IllegalStateException("Unrecognized InMemoryFormat: "+inMemoryFormat);
         }
-        return value1.equals(value2);
-    }
+     }
 
     @SuppressWarnings("unchecked")
     public void dispatchEvent(EventData eventData, EntryListener listener) {
