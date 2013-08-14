@@ -25,6 +25,7 @@ public class GroupProperties {
     public static final String PROP_IO_THREAD_COUNT = "hazelcast.io.thread.count";
     public static final String PROP_OPERATION_THREAD_COUNT = "hazelcast.operation.thread.count";
     public static final String PROP_EVENT_THREAD_COUNT = "hazelcast.event.thread.count";
+    public static final String PROP_EVENT_QUEUE_CAPACITY = "hazelcast.event.queue.capacity";
     public static final String PROP_CONNECT_ALL_WAIT_SECONDS = "hazelcast.connect.all.wait.seconds";
     public static final String PROP_MEMCACHE_ENABLED = "hazelcast.memcache.enabled";
     public static final String PROP_REST_ENABLED = "hazelcast.rest.enabled";
@@ -80,6 +81,8 @@ public class GroupProperties {
     public final GroupProperty OPERATION_THREAD_COUNT;
 
     public final GroupProperty EVENT_THREAD_COUNT;
+
+    public final GroupProperty EVENT_QUEUE_CAPACITY;
 
     public final GroupProperty PREFER_IPv4_STACK;
 
@@ -187,6 +190,7 @@ public class GroupProperties {
         IO_THREAD_COUNT = new GroupProperty(config, PROP_IO_THREAD_COUNT, "3");
         OPERATION_THREAD_COUNT = new GroupProperty(config, PROP_OPERATION_THREAD_COUNT, "-1");
         EVENT_THREAD_COUNT = new GroupProperty(config, PROP_EVENT_THREAD_COUNT, "5");
+        EVENT_QUEUE_CAPACITY = new GroupProperty(config, PROP_EVENT_QUEUE_CAPACITY, "1000000");
         CONNECT_ALL_WAIT_SECONDS = new GroupProperty(config, PROP_CONNECT_ALL_WAIT_SECONDS, "120");
         MEMCACHE_ENABLED = new GroupProperty(config, PROP_MEMCACHE_ENABLED, "true");
         REST_ENABLED = new GroupProperty(config, PROP_REST_ENABLED, "true");

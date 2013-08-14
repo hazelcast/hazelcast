@@ -35,7 +35,14 @@ public final class StripedExecutor implements Executor {
 
     private volatile boolean live = true;
 
+    private int maximumQueueSize;
+
     public StripedExecutor(Executor executor, int workerCount) {
+        this(executor, workerCount, Integer.MAX_VALUE);
+    }
+
+    public StripedExecutor(Executor executor, int workerCount, int maximumQueueSize) {
+        this.maximumQueueSize = maximumQueueSize;
         size = workerCount;
         this.executor = executor;
         workers = new Worker[workerCount];
@@ -61,23 +68,50 @@ public final class StripedExecutor implements Executor {
     public void shutdown() {
         live = false;
         for (Worker worker : workers) {
-            worker.clear();
+            worker.workQueue.clear();
         }
     }
 
-    private class Worker extends ConcurrentLinkedQueue<Runnable> implements Executor, Runnable {
+    private class Worker implements Executor, Runnable {
 
         private final AtomicBoolean scheduled = new AtomicBoolean(false);
 
+        private final BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<Runnable>(maximumQueueSize);
+
         public void execute(Runnable command) {
-            if (!offer(command)) {
-                throw new RejectedExecutionException("Worker queue is full!"); // not possible atm.
+            long timeout = 0;
+            TimeUnit timeUnit = TimeUnit.SECONDS;
+            if(command instanceof TimeoutRunnable){
+                TimeoutRunnable timeoutRunnable = ((TimeoutRunnable)command);
+                timeout = timeoutRunnable.getTimeout();
+                timeUnit = timeoutRunnable.getTimeUnit();
             }
+
+            boolean offered;
+            try {
+                if(timeout == 0){
+                    offered = workQueue.offer(command);
+                } else{
+                     offered = workQueue.offer(command, timeout, timeUnit);
+                }
+            } catch (InterruptedException e) {
+                throw new RejectedExecutionException("Thread is interrupted while offering work");
+            }
+
+            if (!offered) {
+                throw new RejectedExecutionException("Worker queue is full!");
+            }
+
             schedule();
         }
 
         private void schedule() {
-            if (!isEmpty() && scheduled.compareAndSet(false, true)) {
+            //if it is already scheduled, we don't need to schedule it again.
+            if(scheduled.get()){
+                return;
+            }
+
+            if (!workQueue.isEmpty() && scheduled.compareAndSet(false, true)) {
                 try {
                     executor.execute(this);
                 } catch (RejectedExecutionException e) {
@@ -91,7 +125,7 @@ public final class StripedExecutor implements Executor {
             try {
                 Runnable r;
                 do {
-                    r = poll();
+                    r = workQueue.poll();
                     if (r != null) {
                         r.run();
                     }

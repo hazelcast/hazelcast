@@ -34,6 +34,7 @@ import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.StripedExecutor;
 import com.hazelcast.util.executor.StripedRunnable;
+import com.hazelcast.util.executor.TimeoutRunnable;
 
 import java.io.IOException;
 import java.util.*;
@@ -44,7 +45,6 @@ import java.util.logging.Level;
 /**
  * @author mdogan 12/14/12
  */
-
 public class EventServiceImpl implements EventService, PostJoinAwareService {
     private static final EventRegistration[] EMPTY_REGISTRATIONS = new EventRegistration[0];
 
@@ -58,7 +58,8 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         logger = nodeEngine.getLogger(EventService.class.getName());
         final Node node = nodeEngine.getNode();
         int eventThreadCount = node.getGroupProperties().EVENT_THREAD_COUNT.getInteger();
-        eventExecutor = new StripedExecutor(nodeEngine.executionService.getCachedExecutor(), eventThreadCount);
+        int eventQueueCapacity = node.getGroupProperties().EVENT_QUEUE_CAPACITY.getInteger();
+        eventExecutor = new StripedExecutor(nodeEngine.executionService.getCachedExecutor(), eventThreadCount,eventQueueCapacity);
         segments = new ConcurrentHashMap<String, EventServiceSegment>();
     }
 
@@ -235,7 +236,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
     private void executeLocal(String serviceName, Object event, Registration reg, int orderKey) {
         if (nodeEngine.isActive()) {
             try {
-                eventExecutor.execute(new LocalEventDispatcher(serviceName, event, reg.listener, orderKey));
+                eventExecutor.execute(new LocalEventDispatcher(serviceName, event, reg.listener, orderKey,5000));
             } catch (RejectedExecutionException e) {
                 logger.warning(e.toString());
             }
@@ -461,17 +462,27 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         }
     }
 
-    private class LocalEventDispatcher implements StripedRunnable {
+    private class LocalEventDispatcher implements StripedRunnable,TimeoutRunnable {
         final String serviceName;
         final Object event;
         final Object listener;
         final int orderKey;
+        final long timeoutMs;
 
-        private LocalEventDispatcher(String serviceName, Object event, Object listener, int orderKey) {
+        private LocalEventDispatcher(String serviceName, Object event, Object listener, int orderKey, long timeoutMs) {
             this.serviceName = serviceName;
             this.event = event;
             this.listener = listener;
             this.orderKey = orderKey;
+            this.timeoutMs = timeoutMs;
+        }
+
+        public long getTimeout() {
+            return timeoutMs;
+        }
+
+        public TimeUnit getTimeUnit() {
+            return TimeUnit.MILLISECONDS;
         }
 
         public final void run() {
