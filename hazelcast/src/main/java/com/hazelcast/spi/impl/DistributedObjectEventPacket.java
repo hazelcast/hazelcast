@@ -16,54 +16,39 @@
 
 package com.hazelcast.spi.impl;
 
-import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.DistributedObjectEvent;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 
-public final class DistributedObjectEventImpl implements DataSerializable, HazelcastInstanceAware, DistributedObjectEvent {
+import static com.hazelcast.core.DistributedObjectEvent.EventType;
+
+public final class DistributedObjectEventPacket implements DataSerializable {
 
     private EventType eventType;
     private String serviceName;
     private Object objectId;
-    private transient HazelcastInstance hazelcastInstance;
 
-    public DistributedObjectEventImpl() {
+    public DistributedObjectEventPacket() {
     }
 
-    public DistributedObjectEventImpl(EventType eventType, String serviceName, Object objectId) {
+    public DistributedObjectEventPacket(EventType eventType, String serviceName, Object objectId) {
         this.eventType = eventType;
         this.serviceName = serviceName;
         this.objectId = objectId;
     }
 
-    @Override
     public String getServiceName() {
         return serviceName;
     }
 
-    @Override
     public EventType getEventType() {
         return eventType;
     }
 
-    @Override
     public Object getObjectId() {
         return objectId;
-    }
-
-    @Override
-    public DistributedObject getDistributedObject() {
-        return hazelcastInstance != null ? hazelcastInstance.getDistributedObject(serviceName, objectId) : null;
-    }
-
-    public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-        this.hazelcastInstance = hazelcastInstance;
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {

@@ -74,7 +74,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
 
     final ThreadGroup threadGroup;
 
-    final ConcurrentMap<String, Object> userContext = new ConcurrentHashMap<String,Object>();
+    final ConcurrentMap<String, Object> userContext = new ConcurrentHashMap<String, Object>();
 
     HazelcastInstanceImpl(String name, Config config, NodeContext nodeContext) throws Exception {
         this.name = name;
@@ -98,9 +98,9 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         }
         managementService = new ManagementService(this);
 
-        if(configuredManagedContext!=null){
-            if(configuredManagedContext instanceof HazelcastInstanceAware){
-                ((HazelcastInstanceAware)configuredManagedContext).setHazelcastInstance(this);
+        if (configuredManagedContext != null) {
+            if (configuredManagedContext instanceof HazelcastInstanceAware) {
+                ((HazelcastInstanceAware) configuredManagedContext).setHazelcastInstance(this);
             }
         }
     }

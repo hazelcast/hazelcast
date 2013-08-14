@@ -7,37 +7,67 @@ package com.hazelcast.core;
  * @see DistributedObject
  * @see DistributedObjectListener
  */
-public interface DistributedObjectEvent {
+public class DistributedObjectEvent {
+
+    private EventType eventType;
+
+    private String serviceName;
+
+    private DistributedObject distributedObject;
+
+    public DistributedObjectEvent(EventType eventType, String serviceName, DistributedObject distributedObject) {
+        this.eventType = eventType;
+        this.serviceName = serviceName;
+        this.distributedObject = distributedObject;
+    }
 
     /**
      * Returns service name of related DistributedObject
      *
      * @return service name of DistributedObject
      */
-    String getServiceName();
+    public String getServiceName() {
+        return serviceName;
+    }
 
     /**
      * Returns type of this event; one of {@link EventType#CREATED} or {@link EventType#DESTROYED}
      *
      * @return eventType
      */
-    EventType getEventType();
+    public EventType getEventType() {
+        return eventType;
+    }
 
     /**
      * Returns identifier of related DistributedObject
      *
      * @return identifier of DistributedObject
      */
-    Object getObjectId();
+    public Object getObjectId() {
+        return distributedObject.getId();
+    }
 
     /**
      * Returns DistributedObject instance
      *
      * @return DistributedObject
      */
-    DistributedObject getDistributedObject();
+    public DistributedObject getDistributedObject() {
+        return distributedObject;
+    }
 
     public enum EventType {
         CREATED, DESTROYED
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("DistributedObjectEvent{");
+        sb.append("eventType=").append(eventType);
+        sb.append(", serviceName='").append(serviceName).append('\'');
+        sb.append(", distributedObject=").append(distributedObject);
+        sb.append('}');
+        return sb.toString();
     }
 }
