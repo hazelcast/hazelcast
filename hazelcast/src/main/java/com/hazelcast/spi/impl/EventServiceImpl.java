@@ -146,7 +146,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
             } catch (InterruptedException ignored) {
             } catch (TimeoutException ignored) {
             } catch (MemberLeftException e){
-                logger.log(Level.FINEST, "Member left while registering listener...", e);
+                logger.finest("Member left while registering listener...", e);
             } catch (ExecutionException e) {
                 throw new HazelcastException(e);
             }
@@ -169,7 +169,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
             } catch (InterruptedException ignored) {
             } catch (TimeoutException ignored) {
             } catch (MemberLeftException e){
-                logger.log(Level.FINEST, "Member left while de-registering listener...", e);
+                logger.finest("Member left while de-registering listener...", e);
             } catch (ExecutionException e) {
                 throw new HazelcastException(e);
             }
@@ -237,7 +237,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
             try {
                 eventExecutor.execute(new LocalEventDispatcher(serviceName, event, reg.listener, orderKey));
             } catch (RejectedExecutionException e) {
-                logger.log(Level.WARNING, e.toString());
+                logger.warning(e.toString());
             }
         }
     }
@@ -278,7 +278,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
             try {
                 eventExecutor.execute(eventRunnable);
             } catch (RejectedExecutionException e) {
-                logger.log(Level.WARNING, e.toString());
+                logger.warning(e.toString());
             }
         }
     }
@@ -288,7 +288,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         try {
             eventExecutor.execute(new RemoteEventPacketProcessor(packet));
         } catch (RejectedExecutionException e) {
-            logger.log(Level.WARNING, e.toString());
+            logger.warning(e.toString());
         }
     }
 
@@ -305,7 +305,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
     }
 
     void shutdown() {
-        logger.log(Level.FINEST, "Stopping event executor...");
+        logger.finest("Stopping event executor...");
         eventExecutor.shutdown();
         for (EventServiceSegment segment : segments.values()) {
             segment.clear();
@@ -421,21 +421,21 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
             final String serviceName = eventPacket.serviceName;
             EventPublishingService<Object, Object> service = nodeEngine.getService(serviceName);
             if (service == null) {
-                logger.log(Level.WARNING, "There is no service named: " + serviceName);
+                logger.warning("There is no service named: " + serviceName);
                 return;
             }
             EventServiceSegment segment = getSegment(serviceName, false);
             if (segment == null) {
-                logger.log(Level.WARNING, "No service registration found for " + serviceName);
+                logger.warning("No service registration found for " + serviceName);
                 return;
             }
             Registration registration = segment.registrationIdMap.get(eventPacket.id);
             if (registration == null) {
-                logger.log(Level.WARNING, "No registration found for " + serviceName + " / " + eventPacket.id);
+                logger.warning("No registration found for " + serviceName + " / " + eventPacket.id);
                 return;
             }
             if (!registration.isLocal()) {
-                logger.log(Level.WARNING, "Invalid target for  " + registration);
+                logger.warning("Invalid target for  " + registration);
                 return;
             }
             service.dispatchEvent(eventObject, registration.listener);
