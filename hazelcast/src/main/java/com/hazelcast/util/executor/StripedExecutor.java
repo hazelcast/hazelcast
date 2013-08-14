@@ -81,18 +81,18 @@ public final class StripedExecutor implements Executor {
         public void execute(Runnable command) {
             long timeout = 0;
             TimeUnit timeUnit = TimeUnit.SECONDS;
-            if(command instanceof TimeoutRunnable){
-                TimeoutRunnable timeoutRunnable = ((TimeoutRunnable)command);
+            if (command instanceof TimeoutRunnable) {
+                TimeoutRunnable timeoutRunnable = ((TimeoutRunnable) command);
                 timeout = timeoutRunnable.getTimeout();
                 timeUnit = timeoutRunnable.getTimeUnit();
             }
 
             boolean offered;
             try {
-                if(timeout == 0){
+                if (timeout == 0) {
                     offered = workQueue.offer(command);
-                } else{
-                     offered = workQueue.offer(command, timeout, timeUnit);
+                } else {
+                    offered = workQueue.offer(command, timeout, timeUnit);
                 }
             } catch (InterruptedException e) {
                 throw new RejectedExecutionException("Thread is interrupted while offering work");
@@ -107,7 +107,7 @@ public final class StripedExecutor implements Executor {
 
         private void schedule() {
             //if it is already scheduled, we don't need to schedule it again.
-            if(scheduled.get()){
+            if (scheduled.get()) {
                 return;
             }
 

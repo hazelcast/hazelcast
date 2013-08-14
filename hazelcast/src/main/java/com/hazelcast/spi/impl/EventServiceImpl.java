@@ -22,16 +22,12 @@ import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.Packet;
+import com.hazelcast.nio.*;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
-import com.hazelcast.topic.TopicEvent;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.StripedExecutor;
@@ -42,7 +38,6 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 
 /**
  * @author mdogan 12/14/12
@@ -64,7 +59,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         int eventThreadCount = groupProperties.EVENT_THREAD_COUNT.getInteger();
         int eventQueueCapacity = groupProperties.EVENT_QUEUE_CAPACITY.getInteger();
         eventQueueTimeoutMs = groupProperties.EVENT_QUEUE_TIMEOUT_MILLIS.getInteger();
-        eventExecutor = new StripedExecutor(nodeEngine.executionService.getCachedExecutor(), eventThreadCount,eventQueueCapacity);
+        eventExecutor = new StripedExecutor(nodeEngine.executionService.getCachedExecutor(), eventThreadCount, eventQueueCapacity);
         segments = new ConcurrentHashMap<String, EventServiceSegment>();
     }
 
@@ -151,7 +146,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
                 f.get(5, TimeUnit.SECONDS);
             } catch (InterruptedException ignored) {
             } catch (TimeoutException ignored) {
-            } catch (MemberLeftException e){
+            } catch (MemberLeftException e) {
                 logger.finest("Member left while registering listener...", e);
             } catch (ExecutionException e) {
                 throw new HazelcastException(e);
@@ -174,7 +169,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
                 f.get(5, TimeUnit.SECONDS);
             } catch (InterruptedException ignored) {
             } catch (TimeoutException ignored) {
-            } catch (MemberLeftException e){
+            } catch (MemberLeftException e) {
                 logger.finest("Member left while de-registering listener...", e);
             } catch (ExecutionException e) {
                 throw new HazelcastException(e);
@@ -241,7 +236,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
     private void executeLocal(String serviceName, Object event, Registration reg, int orderKey) {
         if (nodeEngine.isActive()) {
             try {
-                eventExecutor.execute(new LocalEventDispatcher(serviceName, event, reg.listener, orderKey,eventQueueTimeoutMs));
+                eventExecutor.execute(new LocalEventDispatcher(serviceName, event, reg.listener, orderKey, eventQueueTimeoutMs));
             } catch (RejectedExecutionException e) {
                 logger.warning("EventQueue overloaded! " + event + " failed to publish to " + reg.serviceName + ":" + reg.topic);
             }
@@ -284,7 +279,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
             try {
                 eventExecutor.execute(eventRunnable);
             } catch (RejectedExecutionException e) {
-                logger.warning(e.toString());
+                logger.warning("EventQueue overloaded! Failed to execute event process: "  + eventRunnable);
             }
         }
     }
@@ -294,7 +289,9 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         try {
             eventExecutor.execute(new RemoteEventPacketProcessor(packet));
         } catch (RejectedExecutionException e) {
-            logger.warning(e.toString());
+            final Connection conn = packet.getConn();
+            String endpoint = conn.getEndPoint() != null ? conn.getEndPoint().toString() : conn.toString();
+            logger.warning("EventQueue overloaded! Failed to process event packet sent from: "  + endpoint);
         }
     }
 
@@ -450,6 +447,13 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         public int getKey() {
             return orderKey;
         }
+
+        public String toString() {
+            final StringBuilder sb = new StringBuilder("EventPacketProcessor{");
+            sb.append("eventPacket=").append(eventPacket);
+            sb.append('}');
+            return sb.toString();
+        }
     }
 
     private class RemoteEventPacketProcessor extends EventPacketProcessor implements StripedRunnable {
@@ -467,7 +471,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         }
     }
 
-    private class LocalEventDispatcher implements StripedRunnable,TimeoutRunnable {
+    private class LocalEventDispatcher implements StripedRunnable, TimeoutRunnable {
         final String serviceName;
         final Object event;
         final Object listener;
@@ -640,9 +644,19 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         public int getId() {
             return SpiDataSerializerHook.EVENT_PACKET;
         }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder("EventPacket{");
+            sb.append("id='").append(id).append('\'');
+            sb.append(", serviceName='").append(serviceName).append('\'');
+            sb.append(", event=").append(event);
+            sb.append('}');
+            return sb.toString();
+        }
     }
 
-    public static  final class EmptyFilter implements EventFilter, DataSerializable {
+    public static final class EmptyFilter implements EventFilter, DataSerializable {
         public boolean eval(Object arg) {
             return true;
         }
