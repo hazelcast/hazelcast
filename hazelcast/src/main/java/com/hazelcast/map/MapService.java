@@ -464,7 +464,6 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     public void destroyDistributedObject(Object objectId) {
-        logger.warning("Destroying object: " + objectId);
         final String name = String.valueOf(objectId);
         mapContainers.remove(name);
         final PartitionContainer[] containers = partitionContainers;

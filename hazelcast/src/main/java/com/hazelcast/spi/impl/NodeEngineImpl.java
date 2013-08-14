@@ -42,7 +42,6 @@ import com.hazelcast.wan.WanReplicationService;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 
 public class NodeEngineImpl implements NodeEngine {
 
@@ -50,8 +49,8 @@ public class NodeEngineImpl implements NodeEngine {
     private final ILogger logger;
 
     private final ServiceManager serviceManager;
-    private final ProxyServiceImpl proxyService;
     private final TransactionManagerServiceImpl transactionManagerService;
+    private final ProxyServiceImpl proxyService;
     private final WanReplicationService wanReplicationService;
 
     final OperationServiceImpl operationService;
@@ -309,9 +308,13 @@ public class NodeEngineImpl implements NodeEngine {
     @PrivateApi
     public Operation[] getPostJoinOperations() {
         final Collection<Operation> postJoinOps = new LinkedList<Operation>();
-        final Operation eventPostJoinOp = eventService.getPostJoinOperation();
+        Operation eventPostJoinOp = eventService.getPostJoinOperation();
         if (eventPostJoinOp != null) {
             postJoinOps.add(eventPostJoinOp);
+        }
+        Operation proxyPostJoinOp = proxyService.getPostJoinOperation();
+        if (proxyPostJoinOp != null) {
+            postJoinOps.add(proxyPostJoinOp);
         }
         Collection<PostJoinAwareService> services = getServices(PostJoinAwareService.class);
         for (PostJoinAwareService service : services) {

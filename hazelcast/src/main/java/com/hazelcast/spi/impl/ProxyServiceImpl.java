@@ -31,30 +31,27 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.executor.StripedRunnable;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 
+import static com.hazelcast.core.DistributedObjectEvent.EventType;
 import static com.hazelcast.core.DistributedObjectEvent.EventType.CREATED;
 import static com.hazelcast.core.DistributedObjectEvent.EventType.DESTROYED;
 
 /**
  * @author mdogan 1/11/13
  */
-public class ProxyServiceImpl implements ProxyService, EventPublishingService<DistributedObjectEvent, Object> {
+public class ProxyServiceImpl implements ProxyService, PostJoinAwareService,
+        EventPublishingService<DistributedObjectEventPacket, Object> {
 
     static final String SERVICE_NAME = "hz:core:proxyService";
 
     private final NodeEngineImpl nodeEngine;
     private final ConcurrentMap<String, ProxyRegistry> registries = new ConcurrentHashMap<String, ProxyRegistry>();
-    private final ConcurrentMap<String, DistributedObjectListener> listeners
-            = new ConcurrentHashMap<String, DistributedObjectListener>();
+    private final ConcurrentMap<String, DistributedObjectListener> listeners = new ConcurrentHashMap<String, DistributedObjectListener>();
     private final ILogger logger;
 
     ProxyServiceImpl(NodeEngineImpl nodeEngine) {
@@ -91,7 +88,7 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
             throw new NullPointerException("Object id is required!");
         }
         ProxyRegistry registry = ConcurrencyUtil.getOrPutIfAbsent(registries, serviceName, registryConstructor);
-        return registry.getProxy(objectId);
+        return registry.getProxy(objectId, true);
     }
 
     public void destroyDistributedObject(String serviceName, Object objectId) {
@@ -121,7 +118,7 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
         }
         ProxyRegistry registry = registries.get(serviceName);
         if (registry != null) {
-            registry.destroyProxy(objectId);
+            registry.destroyProxy(objectId, true);
         }
     }
 
@@ -163,29 +160,34 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
         return listeners.remove(registrationId) != null;
     }
 
-    public void dispatchEvent(final DistributedObjectEvent event, Object ignore) {
-        final String serviceName = event.getServiceName();
-        if (event.getEventType() == CREATED) {
+    public void dispatchEvent(final DistributedObjectEventPacket eventPacket, Object ignore) {
+        final String serviceName = eventPacket.getServiceName();
+        if (eventPacket.getEventType() == CREATED) {
             try {
                 final ProxyRegistry registry = ConcurrencyUtil.getOrPutIfAbsent(registries, serviceName, registryConstructor);
-                registry.getProxy(event.getObjectId());
-
-                if (!registry.contains(event.getObjectId())) {
-                    for (DistributedObjectListener listener : listeners.values()) {
-                        listener.distributedObjectCreated(event);
-                    }
+                if (!registry.contains(eventPacket.getObjectId())) {
+                    registry.getProxy(eventPacket.getObjectId(), false); // listeners will be called if proxy is created here.
                 }
             } catch (HazelcastInstanceNotActiveException ignored) {
             }
         } else {
             final ProxyRegistry registry = registries.get(serviceName);
             if (registry != null) {
-                registry.removeProxy(event.getObjectId());
-            }
-            for (DistributedObjectListener listener : listeners.values()) {
-                listener.distributedObjectDestroyed(event);
+                registry.destroyProxy(eventPacket.getObjectId(), false);
             }
         }
+    }
+
+    public Operation getPostJoinOperation() {
+        Collection<ProxyInfo> proxies = new LinkedList<ProxyInfo>();
+        for (ProxyRegistry registry : registries.values()) {
+            for (DistributedObject distributedObject : registry.proxies.values()) {
+                if (distributedObject instanceof InitializingObject) {
+                    proxies.add(new ProxyInfo(registry.serviceName, distributedObject.getId()));
+                }
+            }
+        }
+        return proxies.isEmpty() ? null : new PostJoinProxyOperation(proxies);
     }
 
     private class ProxyRegistry {
@@ -206,7 +208,7 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
             }
         }
 
-        DistributedObject getProxy(final Object objectId) {
+        DistributedObject getProxy(final Object objectId, boolean publishEvent) {
             DistributedObject proxy = proxies.get(objectId);
             if (proxy == null) {
                 if (!nodeEngine.isActive()) {
@@ -222,18 +224,10 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
                             logger.warning("Error while initializing proxy: " + proxy, e);
                         }
                     }
-                    final DistributedObjectEvent event = createEvent(objectId, CREATED);
-                    publish(event);
-                    nodeEngine.eventService.executeEvent(new StripedRunnable() {
-                        public void run() {
-                            for (DistributedObjectListener listener : listeners.values()) {
-                                listener.distributedObjectCreated(event);
-                            }
-                        }
-                        public int getKey() {
-                            return objectId.hashCode();
-                        }
-                    });
+                    nodeEngine.eventService.executeEvent(new ProxyEventProcessor(CREATED, serviceName, proxy));
+                    if (publishEvent) {
+                        publish(new DistributedObjectEventPacket(CREATED, serviceName, objectId));
+                    }
                 } else {
                     proxy = current;
                 }
@@ -241,27 +235,20 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
             return proxy;
         }
 
-        void destroyProxy(Object objectId) {
-            if (proxies.remove(objectId) != null) {
-                final DistributedObjectEvent event = createEvent(objectId, DESTROYED);
-                publish(event);
+        void destroyProxy(Object objectId, boolean publishEvent) {
+            final DistributedObject proxy;
+            if ((proxy = proxies.remove(objectId)) != null) {
+                nodeEngine.eventService.executeEvent(new ProxyEventProcessor(DESTROYED, serviceName, proxy));
+                if (publishEvent) {
+                    publish(new DistributedObjectEventPacket(DESTROYED, serviceName, objectId));
+                }
             }
         }
 
-        void removeProxy(Object objectId) {
-            proxies.remove(objectId);
-        }
-
-        private void publish(DistributedObjectEvent event) {
+        private void publish(DistributedObjectEventPacket event) {
             final EventService eventService = nodeEngine.getEventService();
             final Collection<EventRegistration> registrations = eventService.getRegistrations(SERVICE_NAME, SERVICE_NAME);
             eventService.publishEvent(SERVICE_NAME, registrations, event, event.getObjectId().hashCode());
-        }
-
-        private DistributedObjectEvent createEvent(Object objectId, DistributedObjectEventImpl.EventType type) {
-            final DistributedObjectEventImpl event = new DistributedObjectEventImpl(type, serviceName, objectId);
-            event.setHazelcastInstance(nodeEngine.getNode().hazelcastInstance);
-            return event;
         }
 
         private boolean contains(Object objectId) {
@@ -275,6 +262,30 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
                 }
             }
             proxies.clear();
+        }
+    }
+
+    private class ProxyEventProcessor implements StripedRunnable {
+
+        final EventType type;
+        final String serviceName;
+        final DistributedObject object;
+
+        private ProxyEventProcessor(EventType eventType, String serviceName, DistributedObject object) {
+            this.type = eventType;
+            this.serviceName = serviceName;
+            this.object = object;
+        }
+
+        public void run() {
+            DistributedObjectEvent event = new DistributedObjectEvent(type, serviceName, object);
+            for (DistributedObjectListener listener : listeners.values()) {
+                listener.distributedObjectCreated(event);
+            }
+        }
+
+        public int getKey() {
+            return object.getId().hashCode();
         }
     }
 
@@ -295,7 +306,7 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
             ProxyServiceImpl proxyService = getService();
             ProxyRegistry registry = proxyService.registries.get(serviceName);
             if (registry != null) {
-                registry.removeProxy(objectId);
+                registry.destroyProxy(objectId, false);
             }
             proxyService.destroyLocalDistributedObject(serviceName, objectId);
         }
@@ -320,6 +331,70 @@ public class ProxyServiceImpl implements ProxyService, EventPublishingService<Di
             super.readInternal(in);
             serviceName = in.readUTF();
             objectId = in.readObject();
+        }
+    }
+
+    public static class PostJoinProxyOperation extends AbstractOperation {
+
+        private Collection<ProxyInfo> proxies;
+
+        public PostJoinProxyOperation() {
+        }
+
+        public PostJoinProxyOperation(Collection<ProxyInfo> proxies) {
+            this.proxies = proxies;
+        }
+
+        @Override
+        public void run() throws Exception {
+            if (proxies != null && proxies.size() > 0) {
+                NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
+                ProxyService proxyService = nodeEngine.getProxyService();
+                for (ProxyInfo proxy : proxies) {
+                    proxyService.getDistributedObject(proxy.serviceName, proxy.objectId);
+                }
+            }
+        }
+
+        @Override
+        public boolean returnsResponse() {
+            return false;
+        }
+
+        @Override
+        protected void writeInternal(ObjectDataOutput out) throws IOException {
+            super.writeInternal(out);
+            int len = proxies != null ? proxies.size() : 0;
+            out.writeInt(len);
+            if (len > 0) {
+                for (ProxyInfo proxy : proxies) {
+                    out.writeUTF(proxy.serviceName);
+                    out.writeObject(proxy.objectId);
+                }
+            }
+        }
+
+        @Override
+        protected void readInternal(ObjectDataInput in) throws IOException {
+            super.readInternal(in);
+            int len = in.readInt();
+            if (len > 0) {
+                proxies = new ArrayList<ProxyInfo>(len);
+                for (int i = 0; i < len; i++) {
+                    ProxyInfo proxy = new ProxyInfo(in.readUTF(), in.readObject());
+                    proxies.add(proxy);
+                }
+            }
+        }
+    }
+
+    private static class ProxyInfo {
+        final String serviceName;
+        final Object objectId;
+
+        private ProxyInfo(String serviceName, Object objectId) {
+            this.serviceName = serviceName;
+            this.objectId = objectId;
         }
     }
 
