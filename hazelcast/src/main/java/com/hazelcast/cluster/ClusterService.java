@@ -96,9 +96,9 @@ public final class ClusterService implements Runnable, Constants {
                 } catch (InterruptedException e) {
                 }
 
-                logger.log(Level.SEVERE, "packetQueue.size:" + packetQueue.size());
-                logger.log(Level.SEVERE, "processableQueue.size:" + processableQueue.size());
-                logger.log(Level.SEVERE, "processablePriorityQueue.size:" + processablePriorityQueue.size());
+                logger.log(Level.INFO, "packetQueue.size:" + packetQueue.size());
+                logger.log(Level.INFO, "processableQueue.size:" + processableQueue.size());
+                logger.log(Level.INFO, "processablePriorityQueue.size:" + processablePriorityQueue.size());
             }
         }
     };
