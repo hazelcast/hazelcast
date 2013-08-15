@@ -167,10 +167,6 @@ public final class ClusterService implements Runnable, Constants {
     }
 
     public void enqueueAndReturn(Processable processable) {
-        if(processableQueue.size()>5000000 && processable instanceof TopicManager.TopicPublishProcess){
-            return;
-        }
-
         processableQueue.offer(processable);
         unpark();
     }
