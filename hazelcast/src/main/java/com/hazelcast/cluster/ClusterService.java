@@ -70,6 +70,23 @@ public final class ClusterService implements Runnable, Constants {
         MAX_IDLE_MILLIS = node.groupProperties.MAX_NO_HEARTBEAT_SECONDS.getInteger() * 1000L;
         RESTART_ON_MAX_IDLE = node.groupProperties.RESTART_ON_MAX_IDLE.getBoolean();
         serviceThread = new Thread(node.threadGroup, this, node.getThreadNamePrefix("ServiceThread"));
+
+        Thread t = new Thread(){
+            public void run(){
+                for (; ; ) {
+
+                    try {
+                        Thread.sleep(10000);
+                    } catch (InterruptedException e) {
+                    }
+
+                    logger.log(Level.SEVERE, "packetQueue.size:" + packetQueue.size());
+                    logger.log(Level.SEVERE, "processableQueue.size:" + processableQueue.size());
+                    logger.log(Level.SEVERE, "processablePriorityQueue.size:" + processablePriorityQueue.size());
+                }
+            }
+        };
+        t.start();
     }
 
     public Thread getServiceThread() {
@@ -136,6 +153,10 @@ public final class ClusterService implements Runnable, Constants {
     }
 
     public void enqueueAndReturn(Processable processable) {
+        if(processableQueue.size()>5000000 && processable instanceof TopicManager.TopicPublishProcess){
+            return;
+        }
+
         processableQueue.offer(processable);
         unpark();
     }
