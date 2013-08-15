@@ -20,17 +20,18 @@ import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipListener;
 
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class RoundRobinLB extends AbstractLoadBalancer implements LoadBalancer, MembershipListener {
 
-    private final AtomicLong index = new AtomicLong(0);
+    private final AtomicInteger index = new AtomicInteger(0);
 
     public Member next() {
         final Member[] members = getMembers();
         if (members == null || members.length == 0) {
             return null;
         }
-        return members[(int) (index.getAndAdd(1) % members.length)];
+        final int length = members.length;
+        return members[(index.getAndAdd(1) % length + length) % length];
     }
 }
