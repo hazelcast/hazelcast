@@ -100,11 +100,19 @@ public class SocketConnector implements Runnable {
         log(Level.FINEST, message);
         try {
             socketChannel.configureBlocking(true);
-            if (timeout > 0) {
-                socketChannel.socket().connect(socketAddress, timeout);
-            } else {
-                socketChannel.connect(socketAddress);
+            try{
+                if (timeout > 0) {
+                    socketChannel.socket().connect(socketAddress, timeout);
+                } else {
+                    socketChannel.connect(socketAddress);
+                }
+            }catch(SocketException ex){
+                //we want to include the socketAddress in the exception.
+                SocketException newEx = new SocketException(ex.getMessage()+" to address "+socketAddress);
+                newEx.setStackTrace(ex.getStackTrace());
+                throw newEx;
             }
+
             log(Level.FINEST, "Successfully connected to: " + address + " using socket " + socketChannel.socket());
             MemberSocketInterceptor memberSocketInterceptor = connectionManager.getMemberSocketInterceptor();
             if (memberSocketInterceptor != null) {
