@@ -347,7 +347,12 @@ public final class HazelcastClient implements HazelcastInstance {
         return threadGroup;
     }
 
-    void shutdown() {
+    @Override
+    public void shutdown() {
+        getLifecycleService().shutdown();
+    }
+
+    void doShutdown() {
         CLIENTS.remove(id);
         executionService.shutdown();
         partitionService.stop();

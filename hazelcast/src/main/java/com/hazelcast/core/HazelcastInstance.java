@@ -265,7 +265,7 @@ public interface HazelcastInstance {
      * Returns the client service of this Hazelcast instance.
      * Client service allows you to get information about connected clients.
      *
-     * @return
+     * @return the ClientService.
      */
     ClientService getClientService();
 
@@ -303,4 +303,9 @@ public interface HazelcastInstance {
      * @return the user context.
      */
     ConcurrentMap<String, Object> getUserContext();
+
+    /**
+     * Shuts down this HazelcastInstance. For more information see {@link com.hazelcast.core.LifecycleService#shutdown()}.
+     */
+    void shutdown();
 }
