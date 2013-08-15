@@ -29,12 +29,15 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 import java.util.logging.Level;
 
 import static com.hazelcast.impl.base.SystemLogService.Level.INFO;
 
 public final class ClusterService implements Runnable, Constants {
+
+    public final static AtomicInteger CLUSTER_MONITOR_THREAD_ID_GENERATOR = new AtomicInteger();
 
     private static final int PACKET_BULK_SIZE = 64;
 
@@ -64,13 +67,41 @@ public final class ClusterService implements Runnable, Constants {
 
     private final Thread serviceThread;
 
-    public ClusterService(Node node) {
+    public ClusterService(final Node node) {
         this.node = node;
         this.logger = node.getLogger(ClusterService.class.getName());
-        MAX_IDLE_MILLIS = node.groupProperties.MAX_NO_HEARTBEAT_SECONDS.getInteger() * 1000L;
-        RESTART_ON_MAX_IDLE = node.groupProperties.RESTART_ON_MAX_IDLE.getBoolean();
+        GroupProperties groupProperties = node.groupProperties;
+        MAX_IDLE_MILLIS = groupProperties.MAX_NO_HEARTBEAT_SECONDS.getInteger() * 1000L;
+        RESTART_ON_MAX_IDLE = groupProperties.RESTART_ON_MAX_IDLE.getBoolean();
         serviceThread = new Thread(node.threadGroup, this, node.getThreadNamePrefix("ServiceThread"));
+
+        if(groupProperties.CLUSTER_SERVER_MONITOR_ENABLED.getBoolean()){
+            new ClusterMonitor().start();
+        }
     }
+
+    class ClusterMonitor extends Thread{
+        public ClusterMonitor(){
+            setName("ClusterMonitorThread-"+CLUSTER_MONITOR_THREAD_ID_GENERATOR.incrementAndGet());
+        }
+
+        public void run(){
+            for (; ; ) {
+                if(!running){
+                    return;
+                }
+
+                try {
+                    Thread.sleep(10000);
+                } catch (InterruptedException e) {
+                }
+
+                logger.log(Level.SEVERE, "packetQueue.size:" + packetQueue.size());
+                logger.log(Level.SEVERE, "processableQueue.size:" + processableQueue.size());
+                logger.log(Level.SEVERE, "processablePriorityQueue.size:" + processablePriorityQueue.size());
+            }
+        }
+    };
 
     public Thread getServiceThread() {
         return serviceThread;
@@ -136,6 +167,10 @@ public final class ClusterService implements Runnable, Constants {
     }
 
     public void enqueueAndReturn(Processable processable) {
+        if(processableQueue.size()>5000000 && processable instanceof TopicManager.TopicPublishProcess){
+            return;
+        }
+
         processableQueue.offer(processable);
         unpark();
     }

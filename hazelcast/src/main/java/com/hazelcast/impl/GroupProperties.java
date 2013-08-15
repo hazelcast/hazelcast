@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 
 public class GroupProperties {
 
+    public static final String PROP_CLUSTER_SERVER_MONITOR_ENABLED = "hazelcast.cluster.server.monitor.enabled";
     public static final String PROP_VERSION_CHECK_ENABLED = "hazelcast.version.check.enabled";
     public static final String PROP_PREFER_IPv4_STACK = "hazelcast.prefer.ipv4.stack";
     public static final String PROP_IO_THREAD_COUNT = "hazelcast.io.thread.count";
@@ -109,6 +110,8 @@ public class GroupProperties {
     public static final GroupProperty SERIALIZER_SHARED = new GroupProperty(null, PROP_SERIALIZER_SHARED, "false");
 
     public static final GroupProperty PACKET_VERSION = new GroupProperty(null, PROP_PACKET_VERSION, "8");
+
+    public final GroupProperty CLUSTER_SERVER_MONITOR_ENABLED;
 
     public final GroupProperty IO_THREAD_COUNT;
 
@@ -270,6 +273,7 @@ public class GroupProperties {
 
 
     public GroupProperties(Config config) {
+        CLUSTER_SERVER_MONITOR_ENABLED = new GroupProperty(config, PROP_CLUSTER_SERVER_MONITOR_ENABLED,"false");
         VERSION_CHECK_ENABLED = new GroupProperty(config, PROP_VERSION_CHECK_ENABLED, "true");
         PREFER_IPv4_STACK = new GroupProperty(config, PROP_PREFER_IPv4_STACK, "true");
         IO_THREAD_COUNT = new GroupProperty(config, PROP_IO_THREAD_COUNT, "3");
