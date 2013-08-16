@@ -18,6 +18,7 @@ package com.hazelcast.client.txn.proxy;
 
 import com.hazelcast.client.txn.TransactionContextProxy;
 import com.hazelcast.collection.CollectionProxyId;
+import com.hazelcast.collection.CollectionService;
 import com.hazelcast.collection.operations.client.*;
 import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.nio.serialization.Data;
@@ -97,6 +98,11 @@ public class ClientTxnMultiMapProxy<K, V> extends ClientTxnProxy implements Tran
     public String getName() {
         final CollectionProxyId proxyId = (CollectionProxyId)getId();
         return proxyId.getName();
+    }
+
+    @Override
+    public String getServiceName() {
+        return CollectionService.SERVICE_NAME;
     }
 
     void onDestroy() {

@@ -53,7 +53,7 @@ public final class GenericError implements Portable {
     }
 
     public int getClassId() {
-        return 1;
+        return ClientPortableHook.GENERIC_ERROR;
     }
 
     public String getMessage() {

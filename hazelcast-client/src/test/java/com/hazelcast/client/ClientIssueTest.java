@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.ILock;
-import com.hazelcast.core.IMap;
+import com.hazelcast.core.*;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.SerialTest;
 import org.junit.After;
@@ -32,9 +29,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import java.util.Collection;
+
+import static org.junit.Assert.*;
 
 /**
  * @ali 7/3/13
@@ -132,7 +129,7 @@ public class ClientIssueTest {
     }
 
     @Test
-    public void testNearCache(){
+    public void testNearCache() {
         final HazelcastInstance hz1 = Hazelcast.newHazelcastInstance();
         final HazelcastInstance hz2 = Hazelcast.newHazelcastInstance();
 
@@ -145,25 +142,37 @@ public class ClientIssueTest {
 
         final IMap map = client.getMap("map1");
 
-        for (int i=0; i<10*1000; i++){
-            map.put("key"+i, "value"+i);
+        for (int i = 0; i < 10 * 1000; i++) {
+            map.put("key" + i, "value" + i);
         }
 
         long begin = System.currentTimeMillis();
-        for (int i=0; i<1000; i++){
-            map.get("key"+i);
+        for (int i = 0; i < 1000; i++) {
+            map.get("key" + i);
         }
 
         long firstRead = System.currentTimeMillis() - begin;
 
 
         begin = System.currentTimeMillis();
-        for (int i=0; i<1000; i++){
-            map.get("key"+i);
+        for (int i = 0; i < 1000; i++) {
+            map.get("key" + i);
         }
         long secondRead = System.currentTimeMillis() - begin;
 
         assertTrue(secondRead < firstRead);
 
     }
+
+    @Test
+    public void testGetDistributedObjectsIssue678() {
+        final HazelcastInstance hz = Hazelcast.newHazelcastInstance();
+        hz.getQueue("queue");
+        hz.getMap("map");
+        hz.getSemaphore("s");
+        final HazelcastInstance instance = HazelcastClient.newHazelcastClient();
+        final Collection<DistributedObject> distributedObjects = instance.getDistributedObjects();
+        assertEquals(3, distributedObjects.size());
+    }
+
 }
