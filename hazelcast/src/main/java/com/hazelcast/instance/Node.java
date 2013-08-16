@@ -38,10 +38,7 @@ import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.ProxyServiceImpl;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.UuidUtil;
-import com.hazelcast.util.VersionCheck;
+import com.hazelcast.util.*;
 
 import java.lang.reflect.Constructor;
 import java.net.InetAddress;
@@ -333,6 +330,12 @@ public class Node {
             logger.warning("ManagementCenterService could not be constructed!", e);
         }
         initializer.afterInitialize(this);
+
+        HealthMonitorLevel healthLevel = HealthMonitorLevel.valueOf(getGroupProperties().HEALTH_MONITORING_LEVEL.getString());
+        if(healthLevel!=HealthMonitorLevel.OFF){
+            logger.finest("Starting health monitor");
+            new HealthMonitor(this,healthLevel).start();
+        }
     }
 
     public void shutdown(final boolean force, final boolean now) {
