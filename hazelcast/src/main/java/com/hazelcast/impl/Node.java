@@ -215,10 +215,6 @@ public class Node {
         wanReplicationService = new WanReplicationService(this);
         initializeListeners(config);
         joiner = createJoiner();
-<<<<<<< HEAD
-=======
-
->>>>>>> Upgraded to health monitor so also include cpu metrics + introduced health monitor level off, silent, noisy
     }
 
     private void initializeListeners(Config config) {
