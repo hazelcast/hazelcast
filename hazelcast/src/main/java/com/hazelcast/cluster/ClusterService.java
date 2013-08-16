@@ -29,6 +29,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 import java.util.logging.Level;
 
@@ -64,13 +65,47 @@ public final class ClusterService implements Runnable, Constants {
 
     private final Thread serviceThread;
 
-    public ClusterService(Node node) {
+    public ClusterService(final Node node) {
         this.node = node;
         this.logger = node.getLogger(ClusterService.class.getName());
-        MAX_IDLE_MILLIS = node.groupProperties.MAX_NO_HEARTBEAT_SECONDS.getInteger() * 1000L;
-        RESTART_ON_MAX_IDLE = node.groupProperties.RESTART_ON_MAX_IDLE.getBoolean();
+        GroupProperties groupProperties = node.groupProperties;
+        MAX_IDLE_MILLIS = groupProperties.MAX_NO_HEARTBEAT_SECONDS.getInteger() * 1000L;
+        RESTART_ON_MAX_IDLE = groupProperties.RESTART_ON_MAX_IDLE.getBoolean();
         serviceThread = new Thread(node.threadGroup, this, node.getThreadNamePrefix("ServiceThread"));
+
+        if(groupProperties.LOG_STATE.getBoolean()){
+            new ClusterMonitor().start();
+        }
     }
+
+    class ClusterMonitor extends Thread{
+
+        public ClusterMonitor(){
+            super(node.threadGroup, node.getThreadNamePrefix("ClusterMonitor"));
+            setDaemon(true);
+        }
+
+        public void run(){
+            for (; ; ) {
+                if(!running){
+                    return;
+                }
+
+                StringBuilder sb = new StringBuilder();
+                sb.append("packetQ.size=").append(packetQueue.size()).append(" ");
+                sb.append("processableQ.size=").append(processableQueue.size()).append(" ");
+                sb.append("processablePriorityQ.size=").append(processablePriorityQueue.size());
+
+                logger.log(Level.INFO, sb.toString());
+
+                try {
+                    Thread.sleep(10000);
+                } catch (InterruptedException e) {
+                    return;
+                }
+            }
+        }
+    };
 
     public Thread getServiceThread() {
         return serviceThread;
