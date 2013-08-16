@@ -202,10 +202,6 @@ public class Node {
         this.multicastService = mcService;
         initializeListeners(config);
         joiner = nodeContext.createJoiner(this);
-
-        if(getGroupProperties().HEALTH_MONITORING_ENABLED.getBoolean()){
-            new MemoryMonitor(this).start();
-        }
     }
 
     private void initializeListeners(Config config) {
@@ -334,6 +330,11 @@ public class Node {
             logger.warning("ManagementCenterService could not be constructed!", e);
         }
         initializer.afterInitialize(this);
+
+        if(getGroupProperties().HEALTH_MONITORING_ENABLED.getBoolean()){
+            logger.finest("Starting memory monitor");
+            new MemoryMonitor(this).start();
+        }
     }
 
     public void shutdown(final boolean force, final boolean now) {
