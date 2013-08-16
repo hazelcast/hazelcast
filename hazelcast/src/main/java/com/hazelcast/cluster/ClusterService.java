@@ -37,8 +37,6 @@ import static com.hazelcast.impl.base.SystemLogService.Level.INFO;
 
 public final class ClusterService implements Runnable, Constants {
 
-    public final static AtomicInteger CLUSTER_MONITOR_THREAD_ID_GENERATOR = new AtomicInteger();
-
     private static final int PACKET_BULK_SIZE = 64;
 
     private static final int PROCESSABLE_BULK_SIZE = 64;
@@ -75,14 +73,16 @@ public final class ClusterService implements Runnable, Constants {
         RESTART_ON_MAX_IDLE = groupProperties.RESTART_ON_MAX_IDLE.getBoolean();
         serviceThread = new Thread(node.threadGroup, this, node.getThreadNamePrefix("ServiceThread"));
 
-        if(groupProperties.CLUSTER_SERVER_MONITOR_ENABLED.getBoolean()){
+        if(groupProperties.LOG_STATE.getBoolean()){
             new ClusterMonitor().start();
         }
     }
 
     class ClusterMonitor extends Thread{
+
         public ClusterMonitor(){
-            setName("ClusterMonitorThread-"+CLUSTER_MONITOR_THREAD_ID_GENERATOR.incrementAndGet());
+            super(node.threadGroup, node.getThreadNamePrefix("MemoryMonitor"));
+            setDaemon(true);
         }
 
         public void run(){
@@ -91,14 +91,18 @@ public final class ClusterService implements Runnable, Constants {
                     return;
                 }
 
+                StringBuilder sb = new StringBuilder();
+                sb.append("packetQ.size=").append(packetQueue.size()).append(" ");
+                sb.append("processableQ.size=").append(processableQueue.size()).append(" ");
+                sb.append("processablePriorityQ.size=").append(processablePriorityQueue.size());
+
+                logger.log(Level.INFO, sb.toString());
+
                 try {
                     Thread.sleep(10000);
                 } catch (InterruptedException e) {
+                    return;
                 }
-
-                logger.log(Level.INFO, "packetQueue.size:" + packetQueue.size());
-                logger.log(Level.INFO, "processableQueue.size:" + processableQueue.size());
-                logger.log(Level.INFO, "processablePriorityQueue.size:" + processablePriorityQueue.size());
             }
         }
     };
