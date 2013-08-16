@@ -81,7 +81,7 @@ public final class ClusterService implements Runnable, Constants {
     class ClusterMonitor extends Thread{
 
         public ClusterMonitor(){
-            super(node.threadGroup, node.getThreadNamePrefix("MemoryMonitor"));
+            super(node.threadGroup, node.getThreadNamePrefix("ClusterMonitor"));
             setDaemon(true);
         }
 
