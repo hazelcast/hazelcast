@@ -218,10 +218,6 @@ public class Node {
         wanReplicationService = new WanReplicationService(this);
         initializeListeners(config);
         joiner = createJoiner();
-
-        if(getGroupProperties().LOG_STATE.getBoolean()){
-            new MemoryMonitor(this).start();
-        }
     }
 
     private void initializeListeners(Config config) {
@@ -438,6 +434,9 @@ public class Node {
         if (!completelyShutdown) {
             logger.log(Level.FINEST, "Adding ShutdownHook");
             Runtime.getRuntime().addShutdownHook(shutdownHookThread);
+        }
+        if (groupProperties.LOG_STATE.getBoolean()) {
+            new MemoryMonitor(this).start();
         }
         logger.log(Level.FINEST, "finished starting threads, calling join");
         join();
