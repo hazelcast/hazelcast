@@ -333,7 +333,7 @@ public class Node {
 
         HealthMonitorLevel healthLevel = HealthMonitorLevel.valueOf(getGroupProperties().HEALTH_MONITORING_LEVEL.getString());
         if(healthLevel!=HealthMonitorLevel.OFF){
-            logger.finest("Starting memory monitor");
+            logger.finest("Starting health monitor");
             new HealthMonitor(this,healthLevel).start();
         }
     }
