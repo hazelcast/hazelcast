@@ -18,10 +18,14 @@ package com.hazelcast.client.txn.proxy;
 
 import com.hazelcast.client.txn.TransactionContextProxy;
 import com.hazelcast.collection.CollectionProxyId;
+import com.hazelcast.collection.CollectionService;
 import com.hazelcast.collection.operations.client.TxnListAddRequest;
 import com.hazelcast.collection.operations.client.TxnListRemoveRequest;
 import com.hazelcast.collection.operations.client.TxnListSizeRequest;
+import com.hazelcast.core.ICollection;
 import com.hazelcast.core.TransactionalList;
+
+import java.util.Collection;
 
 /**
  * @author ali 6/11/13
@@ -53,6 +57,11 @@ public class ClientTxnListProxy<E> extends ClientTxnProxy implements Transaction
     public String getName() {
         final CollectionProxyId proxyId = (CollectionProxyId)getId();
         return proxyId.getKeyName();
+    }
+
+    @Override
+    public String getServiceName() {
+        return CollectionService.SERVICE_NAME;
     }
 
     void onDestroy() {

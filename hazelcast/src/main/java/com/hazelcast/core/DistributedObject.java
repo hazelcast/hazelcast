@@ -44,6 +44,11 @@ public interface DistributedObject {
     String getName();
 
     /**
+     * Returns the service name for this object.
+     */
+    String getServiceName();
+
+    /**
      * Destroys this object cluster-wide.
      * Clears and releases all resources for this object.
      */
