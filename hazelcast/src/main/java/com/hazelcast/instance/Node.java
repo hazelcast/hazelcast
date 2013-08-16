@@ -331,9 +331,10 @@ public class Node {
         }
         initializer.afterInitialize(this);
 
-        if(getGroupProperties().HEALTH_MONITORING_ENABLED.getBoolean()){
+        HealthMonitorLevel healthLevel = HealthMonitorLevel.valueOf(getGroupProperties().HEALTH_MONITORING_LEVEL.getString());
+        if(healthLevel!=HealthMonitorLevel.OFF){
             logger.finest("Starting memory monitor");
-            new MemoryMonitor(this).start();
+            new HealthMonitor(this,healthLevel).start();
         }
     }
 
