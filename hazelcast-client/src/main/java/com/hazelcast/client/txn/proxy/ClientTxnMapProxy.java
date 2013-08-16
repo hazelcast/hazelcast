@@ -18,6 +18,7 @@ package com.hazelcast.client.txn.proxy;
 
 import com.hazelcast.client.txn.TransactionContextProxy;
 import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.map.MapService;
 import com.hazelcast.map.client.TxnMapRequest;
 
 /**
@@ -94,6 +95,11 @@ public class ClientTxnMapProxy<K,V> extends ClientTxnProxy implements Transactio
 
     public String getName() {
         return (String)getId();
+    }
+
+    @Override
+    public String getServiceName() {
+        return MapService.SERVICE_NAME;
     }
 
     void onDestroy() {

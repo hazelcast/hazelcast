@@ -25,6 +25,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.ProxyService;
 import com.hazelcast.transaction.TransactionManagerService;
 
 /**
@@ -41,6 +42,8 @@ public interface ClientEngine {
     EventService getEventService();
 
     TransactionManagerService getTransactionManagerService();
+
+    ProxyService getProxyService();
 
     Config getConfig();
 

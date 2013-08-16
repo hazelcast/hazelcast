@@ -56,9 +56,9 @@ import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.util.ExceptionUtil;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -269,11 +269,17 @@ public final class HazelcastClient implements HazelcastInstance {
 
     @Override
     public Collection<DistributedObject> getDistributedObjects() {
-        Collection<DistributedObject> objects = new LinkedList<DistributedObject>();
-        for (ClientProxy clientProxy : proxyManager.getProxies()) {
-            objects.add(clientProxy);
+        ArrayList<DistributedObject> coll = new ArrayList<DistributedObject>();
+        try {
+            GetDistributedObjectsRequest request = new GetDistributedObjectsRequest();
+            final DistributedObjectInfos dos = (DistributedObjectInfos) invocationService.invokeOnRandomTarget(request);
+            for (DistributedObjectInfo distributedObjectInfo : dos.getDistributedObjectInfoArray()) {
+                coll.add(getDistributedObject(distributedObjectInfo.getServiceName(), distributedObjectInfo.getId()));
+            }
+            return coll;
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
         }
-        return objects;
     }
 
     @Override

@@ -96,6 +96,10 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
         return nodeEngine.getEventService();
     }
 
+    public ProxyService getProxyService() {
+        return nodeEngine.getProxyService();
+    }
+
     void sendOperation(Operation op, Address target) {
         nodeEngine.getOperationService().send(op, target);
     }
