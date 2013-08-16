@@ -25,11 +25,12 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 
 /**
  * @author ali 1/4/13
  */
-public final class SerializableCollection implements IdentifiedDataSerializable {
+public final class SerializableCollection implements IdentifiedDataSerializable, Iterable<Data> {
 
     private Collection<Data> collection;
 
@@ -72,5 +73,27 @@ public final class SerializableCollection implements IdentifiedDataSerializable 
 
     public int getId() {
         return SpiDataSerializerHook.COLLECTION;
+    }
+
+    @Override
+    public Iterator<Data> iterator() {
+        final Iterator<Data> iterator = collection == null ? null : collection.iterator();
+        return new Iterator<Data>() {
+            public boolean hasNext() {
+                return iterator == null ? false : iterator.hasNext();
+            }
+
+            public Data next() {
+                return iterator.next();
+            }
+
+            public void remove() {
+                iterator.remove();
+            }
+        };
+    }
+
+    public int size() {
+        return collection == null ? 0 : collection.size();
     }
 }

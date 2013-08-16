@@ -28,13 +28,9 @@ import java.util.concurrent.atomic.AtomicLong;
 public class IdGeneratorProxy implements IdGenerator {
 
     private static final int BLOCK_SIZE = 10000;
-
     final String name;
-
     final IAtomicLong atomicLong;
-
     AtomicInteger residue;
-
     AtomicLong local;
 
     public IdGeneratorProxy(IAtomicLong atomicLong, String name) {
@@ -51,10 +47,10 @@ public class IdGeneratorProxy implements IdGenerator {
         long step = (id / BLOCK_SIZE);
 
         synchronized (this) {
-            boolean init = atomicLong.compareAndSet(0, step+1);
-            if (init){
+            boolean init = atomicLong.compareAndSet(0, step + 1);
+            if (init) {
                 local.set(step);
-                residue.set((int)(id % BLOCK_SIZE)+1);
+                residue.set((int) (id % BLOCK_SIZE) + 1);
             }
             return init;
         }
@@ -82,6 +78,11 @@ public class IdGeneratorProxy implements IdGenerator {
 
     public String getName() {
         return name;
+    }
+
+    @Override
+    public String getServiceName() {
+        return IdGeneratorService.SERVICE_NAME;
     }
 
     public void destroy() {

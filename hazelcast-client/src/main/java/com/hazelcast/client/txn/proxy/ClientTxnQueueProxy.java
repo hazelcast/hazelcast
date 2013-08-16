@@ -18,7 +18,9 @@ package com.hazelcast.client.txn.proxy;
 
 import com.hazelcast.client.txn.TransactionContextProxy;
 import com.hazelcast.core.TransactionalQueue;
+import com.hazelcast.map.MapService;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.queue.QueueService;
 import com.hazelcast.queue.client.TxnOfferRequest;
 import com.hazelcast.queue.client.TxnPollRequest;
 import com.hazelcast.queue.client.TxnSizeRequest;
@@ -70,6 +72,11 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
 
     public String getName() {
         return (String)getId();
+    }
+
+    @Override
+    public String getServiceName() {
+        return QueueService.SERVICE_NAME;
     }
 
     void onDestroy() {
