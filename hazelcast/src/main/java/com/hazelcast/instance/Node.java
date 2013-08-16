@@ -38,10 +38,7 @@ import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.ProxyServiceImpl;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.UuidUtil;
-import com.hazelcast.util.VersionCheck;
+import com.hazelcast.util.*;
 
 import java.lang.reflect.Constructor;
 import java.net.InetAddress;
@@ -205,6 +202,10 @@ public class Node {
         this.multicastService = mcService;
         initializeListeners(config);
         joiner = nodeContext.createJoiner(this);
+
+        if(getGroupProperties().HEALTH_MONITORING_ENABLED.getBoolean()){
+            new MemoryMonitor(this).start();
+        }
     }
 
     private void initializeListeners(Config config) {

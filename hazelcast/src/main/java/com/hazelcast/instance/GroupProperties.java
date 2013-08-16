@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 
 public class GroupProperties {
 
+    public static final String PROP_HEALTH_MONITORING_ENABLED = "hazelcast.health.monitoring.enabled";
     public static final String PROP_VERSION_CHECK_ENABLED = "hazelcast.version.check.enabled";
     public static final String PROP_PREFER_IPv4_STACK = "hazelcast.prefer.ipv4.stack";
     public static final String PROP_IO_THREAD_COUNT = "hazelcast.io.thread.count";
@@ -76,6 +77,8 @@ public class GroupProperties {
     public static final String PROP_ELASTIC_MEMORY_CHUNK_SIZE = "hazelcast.elastic.memory.chunk.size";
     public static final String PROP_ELASTIC_MEMORY_SHARED_STORAGE = "hazelcast.elastic.memory.shared.storage";
     public static final String PROP_ENTERPRISE_LICENSE_KEY = "hazelcast.enterprise.license.key";
+
+    public final GroupProperty HEALTH_MONITORING_ENABLED;
 
     public final GroupProperty IO_THREAD_COUNT;
 
@@ -188,6 +191,7 @@ public class GroupProperties {
     public final GroupProperty ENTERPRISE_LICENSE_KEY;
 
     public GroupProperties(Config config) {
+        HEALTH_MONITORING_ENABLED = new GroupProperty(config,PROP_HEALTH_MONITORING_ENABLED,"false");
         VERSION_CHECK_ENABLED = new GroupProperty(config, PROP_VERSION_CHECK_ENABLED, "true");
         PREFER_IPv4_STACK = new GroupProperty(config, PROP_PREFER_IPv4_STACK, "true");
         IO_THREAD_COUNT = new GroupProperty(config, PROP_IO_THREAD_COUNT, "3");
