@@ -26,14 +26,20 @@ public class ClientPortableFactory implements PortableFactory {
 
     public Portable create(int classId) {
         switch (classId) {
-            case 1:
+            case ClientPortableHook.GENERIC_ERROR:
                 return new GenericError();
 
-            case 2:
+            case ClientPortableHook.AUTH:
                 return new AuthenticationRequest();
 
             case ClientPortableHook.PRINCIPAL:
                 return new ClientPrincipal();
+
+            case ClientPortableHook.GET_DISTRIBUTED_OBJECT_INFO:
+                return new GetDistributedObjectsRequest();
+
+            case ClientPortableHook.DISTRIBUTED_OBJECT_INFO:
+                return new DistributedObjectInfo();
         }
         return null;
     }
