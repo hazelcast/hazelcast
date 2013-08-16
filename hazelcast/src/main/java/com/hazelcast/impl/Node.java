@@ -34,6 +34,7 @@ import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ConcurrentHashSet;
+import com.hazelcast.util.MemoryMonitor;
 import com.hazelcast.util.SimpleBoundedQueue;
 
 import java.lang.reflect.Constructor;
@@ -217,6 +218,10 @@ public class Node {
         wanReplicationService = new WanReplicationService(this);
         initializeListeners(config);
         joiner = createJoiner();
+
+        if(getGroupProperties().LOG_STATE.getBoolean()){
+            new MemoryMonitor(this).start();
+        }
     }
 
     private void initializeListeners(Config config) {
