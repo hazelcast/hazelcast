@@ -248,6 +248,11 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         return lifecycleService;
     }
 
+    @Override
+    public void shutdown() {
+        getLifecycleService().shutdown();
+    }
+
     public <S extends DistributedObject> S getDistributedObject(final String serviceName, Object id) {
         return (S) node.nodeEngine.getProxyService().getDistributedObject(serviceName, id);
     }
