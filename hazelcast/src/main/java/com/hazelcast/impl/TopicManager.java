@@ -100,7 +100,7 @@ public class TopicManager extends BaseManager {
         enqueueAndReturn(new TopicPublishProcess(name, dataMsg));
     }
 
-    class TopicPublishProcess implements Processable {
+    public class TopicPublishProcess implements Processable {
         final Data dataMsg;
         final String name;
 
