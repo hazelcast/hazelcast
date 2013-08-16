@@ -32,10 +32,7 @@ import com.hazelcast.nio.*;
 import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
-import com.hazelcast.util.Clock;
-import com.hazelcast.util.ConcurrentHashSet;
-import com.hazelcast.util.MemoryMonitor;
-import com.hazelcast.util.SimpleBoundedQueue;
+import com.hazelcast.util.*;
 
 import java.lang.reflect.Constructor;
 import java.net.InetAddress;
@@ -218,6 +215,10 @@ public class Node {
         wanReplicationService = new WanReplicationService(this);
         initializeListeners(config);
         joiner = createJoiner();
+<<<<<<< HEAD
+=======
+
+>>>>>>> Upgraded to health monitor so also include cpu metrics + introduced health monitor level off, silent, noisy
     }
 
     private void initializeListeners(Config config) {
@@ -435,9 +436,6 @@ public class Node {
             logger.log(Level.FINEST, "Adding ShutdownHook");
             Runtime.getRuntime().addShutdownHook(shutdownHookThread);
         }
-        if (groupProperties.LOG_STATE.getBoolean()) {
-            new MemoryMonitor(this).start();
-        }
         logger.log(Level.FINEST, "finished starting threads, calling join");
         join();
         int clusterSize = clusterImpl.getMembers().size();
@@ -455,6 +453,11 @@ public class Node {
             logger.log(Level.WARNING, "ManagementCenterService could not be created!", e);
         }
         initializer.afterInitialize(this);
+
+        HealthMonitorLevel level = HealthMonitorLevel.valueOf(getGroupProperties().HEALTH_MONITORING_LEVEL.getString());
+        if(level!=HealthMonitorLevel.OFF){
+            new HealthMonitor(this,level).start();
+        }
     }
 
     public void onRestart() {
