@@ -38,9 +38,6 @@ public class ClientPortableFactory implements PortableFactory {
             case ClientPortableHook.GET_DISTRIBUTED_OBJECT_INFO:
                 return new GetDistributedObjectsRequest();
 
-            case ClientPortableHook.DISTRIBUTED_OBJECTS_INFO:
-                return new DistributedObjectInfos();
-
             case ClientPortableHook.DISTRIBUTED_OBJECT_INFO:
                 return new DistributedObjectInfo();
         }

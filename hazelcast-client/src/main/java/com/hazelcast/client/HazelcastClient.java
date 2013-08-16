@@ -46,9 +46,11 @@ import com.hazelcast.core.*;
 import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.MapService;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.queue.QueueService;
+import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.topic.TopicService;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
@@ -74,7 +76,6 @@ public final class HazelcastClient implements HazelcastInstance {
 
     private final static AtomicInteger CLIENT_ID = new AtomicInteger();
     private final static ConcurrentMap<Integer, HazelcastClientProxy> CLIENTS = new ConcurrentHashMap<Integer, HazelcastClientProxy>(5);
-
     private final int id = CLIENT_ID.getAndIncrement();
     private final String name;
     private final ClientConfig config;
@@ -123,20 +124,6 @@ public final class HazelcastClient implements HazelcastInstance {
         partitionService = new ClientPartitionServiceImpl(this);
     }
 
-    private void start(){
-        lifecycleService.setStarted();
-
-        try{
-            clusterService.start();
-        }catch(IllegalStateException e){
-            //there was an authentication failure (todo: perhaps use an AuthenticationException
-            // ??)
-            lifecycleService.shutdown();
-            throw e;
-        }
-        partitionService.start();
-    }
-
     public static HazelcastInstance newHazelcastClient() {
          return newHazelcastClient(new XmlClientConfigBuilder().build());
     }
@@ -150,6 +137,35 @@ public final class HazelcastClient implements HazelcastInstance {
         final HazelcastClientProxy proxy = new HazelcastClientProxy(client);
         CLIENTS.put(client.id, proxy);
         return proxy;
+    }
+
+    public static Collection<HazelcastInstance> getAllHazelcastClients() {
+        return Collections.<HazelcastInstance>unmodifiableCollection(CLIENTS.values());
+    }
+
+    public static void shutdownAll() {
+        for (HazelcastClientProxy proxy : CLIENTS.values()) {
+            try {
+                proxy.client.getLifecycleService().shutdown();
+            } catch (Exception ignored) {
+            }
+            proxy.client = null;
+        }
+        CLIENTS.clear();
+    }
+
+    private void start(){
+        lifecycleService.setStarted();
+
+        try{
+            clusterService.start();
+        }catch(IllegalStateException e){
+            //there was an authentication failure (todo: perhaps use an AuthenticationException
+            // ??)
+            lifecycleService.shutdown();
+            throw e;
+        }
+        partitionService.start();
     }
 
     public Config getConfig() {
@@ -269,12 +285,13 @@ public final class HazelcastClient implements HazelcastInstance {
 
     @Override
     public Collection<DistributedObject> getDistributedObjects() {
-        ArrayList<DistributedObject> coll = new ArrayList<DistributedObject>();
         try {
             GetDistributedObjectsRequest request = new GetDistributedObjectsRequest();
-            final DistributedObjectInfos dos = (DistributedObjectInfos) invocationService.invokeOnRandomTarget(request);
-            for (DistributedObjectInfo distributedObjectInfo : dos.getDistributedObjectInfoArray()) {
-                coll.add(getDistributedObject(distributedObjectInfo.getServiceName(), distributedObjectInfo.getId()));
+            final SerializableCollection serializableCollection = (SerializableCollection) invocationService.invokeOnRandomTarget(request);
+            final ArrayList<DistributedObject> coll = new ArrayList<DistributedObject>(serializableCollection.size());
+            for (Data data : serializableCollection) {
+                final DistributedObjectInfo o = (DistributedObjectInfo) serializationService.toObject(data);
+                coll.add(getDistributedObject(o.getServiceName(), o.getId()));
             }
             return coll;
         } catch (Exception e) {
@@ -359,20 +376,6 @@ public final class HazelcastClient implements HazelcastInstance {
         partitionService.stop();
         clusterService.stop();
         connectionManager.shutdown();
-    }
-
-    public static Collection<HazelcastInstance> getAllHazelcastClients() {
-        return Collections.<HazelcastInstance>unmodifiableCollection(CLIENTS.values());
-    }
-
-    public static void shutdownAll() {
-        for (HazelcastClientProxy proxy : CLIENTS.values()) {
-            try {
-                proxy.client.getLifecycleService().shutdown();
-            } catch (Exception ignored) {
-            }
-            proxy.client = null;
-        }
-        CLIENTS.clear();
+        proxyManager.destroy();
     }
 }
