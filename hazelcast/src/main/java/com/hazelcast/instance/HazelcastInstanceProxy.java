@@ -154,7 +154,7 @@ public final class HazelcastInstanceProxy implements HazelcastInstance {
         return getOriginal().getUserContext();
     }
 
-    // to be able destroy instance bean from Spring
+    @Override
     public final void shutdown() {
         getLifecycleService().shutdown();
     }
