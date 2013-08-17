@@ -72,40 +72,7 @@ public final class ClusterService implements Runnable, Constants {
         MAX_IDLE_MILLIS = groupProperties.MAX_NO_HEARTBEAT_SECONDS.getInteger() * 1000L;
         RESTART_ON_MAX_IDLE = groupProperties.RESTART_ON_MAX_IDLE.getBoolean();
         serviceThread = new Thread(node.threadGroup, this, node.getThreadNamePrefix("ServiceThread"));
-
-        if(groupProperties.LOG_STATE.getBoolean()){
-            new ClusterMonitor().start();
-        }
     }
-
-    class ClusterMonitor extends Thread{
-
-        public ClusterMonitor(){
-            super(node.threadGroup, node.getThreadNamePrefix("ClusterMonitor"));
-            setDaemon(true);
-        }
-
-        public void run(){
-            for (; ; ) {
-                if(!running){
-                    return;
-                }
-
-                StringBuilder sb = new StringBuilder();
-                sb.append("packetQ.size=").append(packetQueue.size()).append(" ");
-                sb.append("processableQ.size=").append(processableQueue.size()).append(" ");
-                sb.append("processablePriorityQ.size=").append(processablePriorityQueue.size());
-
-                logger.log(Level.INFO, sb.toString());
-
-                try {
-                    Thread.sleep(10000);
-                } catch (InterruptedException e) {
-                    return;
-                }
-            }
-        }
-    };
 
     public int getPacketQueueSize(){
         return packetQueue.size();
