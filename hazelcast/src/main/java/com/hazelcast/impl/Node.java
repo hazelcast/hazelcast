@@ -243,6 +243,10 @@ public class Node {
         }
     }
 
+    public ClusterService getClusterService() {
+        return clusterService;
+    }
+
     public ManagementCenterService getManagementCenterService() {
         return managementCenterService;
     }
@@ -450,9 +454,10 @@ public class Node {
         }
         initializer.afterInitialize(this);
 
-        HealthMonitorLevel level = HealthMonitorLevel.valueOf(getGroupProperties().HEALTH_MONITORING_LEVEL.getString());
+        HealthMonitorLevel level = HealthMonitorLevel.valueOf(groupProperties.HEALTH_MONITORING_LEVEL.getString());
         if(level!=HealthMonitorLevel.OFF){
-            new HealthMonitor(this,level).start();
+            int delaySeconds = groupProperties.HEALTH_MONITORING_DELAY_SECONDS.getInteger();
+            new HealthMonitor(this,level,delaySeconds).start();
         }
     }
 

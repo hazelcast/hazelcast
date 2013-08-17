@@ -1,11 +1,19 @@
 package com.hazelcast.util;
 
+import com.hazelcast.cluster.ClusterService;
+import com.hazelcast.config.Config;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.impl.Node;
 import com.hazelcast.logging.ILogger;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
+import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import static java.lang.String.format;
@@ -18,24 +26,31 @@ public class HealthMonitor extends Thread {
     private final Runtime runtime;
     private final OperatingSystemMXBean osMxBean;
     private final HealthMonitorLevel logLevel;
+    private final int delaySeconds;
+    private final ThreadMXBean threadMxBean;
     private double treshold = 70;
 
-    public HealthMonitor(Node node, HealthMonitorLevel logLevel) {
+    public HealthMonitor(Node node, HealthMonitorLevel logLevel, int delaySeconds) {
         super(node.threadGroup, node.getThreadNamePrefix("HealthMonitor"));
         setDaemon(true);
+        this.delaySeconds = delaySeconds;
         this.node = node;
         this.logger = node.getLogger(HealthMonitor.class.getName());
         this.runtime = Runtime.getRuntime();
         this.osMxBean = ManagementFactory.getOperatingSystemMXBean();
         this.logLevel = logLevel;
+        threadMxBean = ManagementFactory.getThreadMXBean();
+
     }
 
     public void run() {
+        if(logLevel == HealthMonitorLevel.OFF){
+            return;
+        }
+
         while (node.isActive()) {
             HealthMetrics metrics;
             switch (logLevel) {
-                case OFF:
-                    break;
                 case NOISY:
                     metrics = new HealthMetrics();
                     logger.log(Level.INFO, metrics.toString());
@@ -51,7 +66,7 @@ public class HealthMonitor extends Thread {
             }
 
             try {
-                Thread.sleep(10000);
+                Thread.sleep(TimeUnit.SECONDS.toMillis(delaySeconds));
             } catch (InterruptedException e) {
                 return;
             }
@@ -59,16 +74,22 @@ public class HealthMonitor extends Thread {
     }
 
     public class HealthMetrics {
-        long memoryFree;
-        long memoryTotal;
-        long memoryUsed;
-        long memoryMax;
-        double memoryUsedOfTotalPercentage;
-        double memoryUsedOfMaxPercentage;
+        final long memoryFree;
+        final long memoryTotal;
+        final long memoryUsed;
+        final long memoryMax;
+        final double memoryUsedOfTotalPercentage;
+        final double memoryUsedOfMaxPercentage;
         //following three load variables are always between 0 and 100.
-        double processCpuLoad;
-        double systemLoadAverage;
-        double systemCpuLoad;
+        final double processCpuLoad;
+        final double systemLoadAverage;
+        final double systemCpuLoad;
+
+        final int packetQueueSize;
+        final int processableQueueSize;
+        final int processablePriorityQueueSize;
+        final int threadCount;
+        final int peakThreadCount;
 
         public HealthMetrics() {
             memoryFree = runtime.freeMemory();
@@ -80,6 +101,14 @@ public class HealthMonitor extends Thread {
             processCpuLoad = get(osMxBean, "getProcessCpuLoad", -1L);
             systemLoadAverage = get(osMxBean, "getSystemLoadAverage", -1L);
             systemCpuLoad = get(osMxBean, "getSystemCpuLoad", -1L);
+
+            ClusterService clusterService = node.getClusterService();
+            this.packetQueueSize = clusterService.getPacketQueueSize();
+            this.processableQueueSize = clusterService.getProcessableQueueSize();
+            this.processablePriorityQueueSize = clusterService.getProcessablePriorityQueueSize();
+
+            this.threadCount = threadMxBean.getThreadCount();
+            this.peakThreadCount = threadMxBean.getPeakThreadCount();
         }
 
         public boolean exceedsTreshold() {
@@ -104,18 +133,20 @@ public class HealthMonitor extends Thread {
 
         public String toString() {
             StringBuilder sb = new StringBuilder();
-            sb.append("\nmemory ");
-            sb.append("used=").append(bytesToString(memoryUsed)).append(", ");
-            sb.append("free=").append(bytesToString(memoryFree)).append(", ");
-            sb.append("total=").append(bytesToString(memoryTotal)).append(", ");
-            sb.append("max=").append(bytesToString(memoryMax)).append(", ");
-            sb.append("used/total=").append(percentageString(memoryUsedOfTotalPercentage)).append(" ");
-            sb.append("used/max=").append(percentageString(memoryUsedOfMaxPercentage));
-            sb.append("\n");
-            sb.append("cpu ");
-            sb.append("process-load=").append(format("%.2f", processCpuLoad)).append("%, ");
-            sb.append("system-load=").append(format("%.2f", systemCpuLoad)).append("%, ");
-            sb.append("system-loadaverage=").append(format("%.2f", systemLoadAverage)).append("%");
+            sb.append("memory.used=").append(bytesToString(memoryUsed)).append(", ");
+            sb.append("memory.free=").append(bytesToString(memoryFree)).append(", ");
+            sb.append("memory.total=").append(bytesToString(memoryTotal)).append(", ");
+            sb.append("memory.max=").append(bytesToString(memoryMax)).append(", ");
+            sb.append("memory.used/total=").append(percentageString(memoryUsedOfTotalPercentage)).append(" ");
+            sb.append("memory.used/max=").append(percentageString(memoryUsedOfMaxPercentage)).append(" ");
+            sb.append("load.process=").append(format("%.2f", processCpuLoad)).append("%, ");
+            sb.append("load.system=").append(format("%.2f", systemCpuLoad)).append("%, ");
+            sb.append("load.systemAverage=").append(format("%.2f", systemLoadAverage)).append("% ");
+            sb.append("q.packet.size=").append(packetQueueSize).append(", ");
+            sb.append("q.processable.size=").append(processableQueueSize).append(", ");
+            sb.append("q.processablePriority.size=").append(processablePriorityQueueSize).append(", ");
+            sb.append("thread.count=").append(threadCount).append(", ");
+            sb.append("thread.peakCount=").append(peakThreadCount);
             return sb.toString();
         }
     }
