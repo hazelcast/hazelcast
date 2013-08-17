@@ -44,11 +44,13 @@ public class HealthMonitor extends Thread {
     }
 
     public void run() {
+        if(logLevel == HealthMonitorLevel.OFF){
+            return;
+        }
+
         while (node.isActive()) {
             HealthMetrics metrics;
             switch (logLevel) {
-                case OFF:
-                    break;
                 case NOISY:
                     metrics = new HealthMetrics();
                     logger.log(Level.INFO, metrics.toString());
