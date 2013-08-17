@@ -110,9 +110,9 @@ public class HealthMonitor extends Thread {
             sb.append("memory.max=").append(bytesToString(memoryMax)).append(", ");
             sb.append("memory.used/total=").append(percentageString(memoryUsedOfTotalPercentage)).append(" ");
             sb.append("memory.used/max=").append(percentageString(memoryUsedOfMaxPercentage));
-            sb.append("process-load=").append(format("%.2f", processCpuLoad)).append("%, ");
-            sb.append("system-load=").append(format("%.2f", systemCpuLoad)).append("%, ");
-            sb.append("system-loadaverage=").append(format("%.2f", systemLoadAverage)).append("%");
+            sb.append("load.process=").append(format("%.2f", processCpuLoad)).append("%, ");
+            sb.append("load.system=").append(format("%.2f", systemCpuLoad)).append("%, ");
+            sb.append("load.systemAverage=").append(format("%.2f", systemLoadAverage)).append("%");
             return sb.toString();
         }
     }
