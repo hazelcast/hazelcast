@@ -104,15 +104,12 @@ public class HealthMonitor extends Thread {
 
         public String toString() {
             StringBuilder sb = new StringBuilder();
-            sb.append("\nmemory ");
-            sb.append("used=").append(bytesToString(memoryUsed)).append(", ");
-            sb.append("free=").append(bytesToString(memoryFree)).append(", ");
-            sb.append("total=").append(bytesToString(memoryTotal)).append(", ");
-            sb.append("max=").append(bytesToString(memoryMax)).append(", ");
-            sb.append("used/total=").append(percentageString(memoryUsedOfTotalPercentage)).append(" ");
-            sb.append("used/max=").append(percentageString(memoryUsedOfMaxPercentage));
-            sb.append("\n");
-            sb.append("cpu ");
+            sb.append("memory.used=").append(bytesToString(memoryUsed)).append(", ");
+            sb.append("memory.free=").append(bytesToString(memoryFree)).append(", ");
+            sb.append("memory.total=").append(bytesToString(memoryTotal)).append(", ");
+            sb.append("memory.max=").append(bytesToString(memoryMax)).append(", ");
+            sb.append("memory.used/total=").append(percentageString(memoryUsedOfTotalPercentage)).append(" ");
+            sb.append("memory.used/max=").append(percentageString(memoryUsedOfMaxPercentage));
             sb.append("process-load=").append(format("%.2f", processCpuLoad)).append("%, ");
             sb.append("system-load=").append(format("%.2f", systemCpuLoad)).append("%, ");
             sb.append("system-loadaverage=").append(format("%.2f", systemLoadAverage)).append("%");
