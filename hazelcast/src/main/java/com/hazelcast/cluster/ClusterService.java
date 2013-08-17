@@ -107,6 +107,18 @@ public final class ClusterService implements Runnable, Constants {
         }
     };
 
+    public int getPacketQueueSize(){
+        return packetQueue.size();
+    }
+
+    public int getProcessableQueueSize(){
+        return processableQueue.size();
+    }
+
+    public int getProcessablePriorityQueueSize(){
+        return processablePriorityQueue.size();
+    }
+
     public Thread getServiceThread() {
         return serviceThread;
     }

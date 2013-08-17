@@ -243,6 +243,10 @@ public class Node {
         }
     }
 
+    public ClusterService getClusterService() {
+        return clusterService;
+    }
+
     public ManagementCenterService getManagementCenterService() {
         return managementCenterService;
     }

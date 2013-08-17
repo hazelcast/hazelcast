@@ -1,5 +1,6 @@
 package com.hazelcast.util;
 
+import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.impl.Node;
 import com.hazelcast.logging.ILogger;
 
@@ -59,16 +60,20 @@ public class HealthMonitor extends Thread {
     }
 
     public class HealthMetrics {
-        long memoryFree;
-        long memoryTotal;
-        long memoryUsed;
-        long memoryMax;
-        double memoryUsedOfTotalPercentage;
-        double memoryUsedOfMaxPercentage;
+        final long memoryFree;
+        final long memoryTotal;
+        final long memoryUsed;
+        final long memoryMax;
+        final double memoryUsedOfTotalPercentage;
+        final double memoryUsedOfMaxPercentage;
         //following three load variables are always between 0 and 100.
-        double processCpuLoad;
-        double systemLoadAverage;
-        double systemCpuLoad;
+        final double processCpuLoad;
+        final double systemLoadAverage;
+        final double systemCpuLoad;
+
+        final int packetQueueSize;
+        final int processableQueueSize;
+        final int processablePriorityQueueSize;
 
         public HealthMetrics() {
             memoryFree = runtime.freeMemory();
@@ -80,6 +85,11 @@ public class HealthMonitor extends Thread {
             processCpuLoad = get(osMxBean, "getProcessCpuLoad", -1L);
             systemLoadAverage = get(osMxBean, "getSystemLoadAverage", -1L);
             systemCpuLoad = get(osMxBean, "getSystemCpuLoad", -1L);
+
+            ClusterService clusterService = node.getClusterService();
+            this.packetQueueSize = clusterService.getPacketQueueSize();
+            this.processableQueueSize = clusterService.getProcessableQueueSize();
+            this.processablePriorityQueueSize = clusterService.getProcessablePriorityQueueSize();
         }
 
         public boolean exceedsTreshold() {
@@ -113,6 +123,9 @@ public class HealthMonitor extends Thread {
             sb.append("load.process=").append(format("%.2f", processCpuLoad)).append("%, ");
             sb.append("load.system=").append(format("%.2f", systemCpuLoad)).append("%, ");
             sb.append("load.systemAverage=").append(format("%.2f", systemLoadAverage)).append("%");
+            sb.append("q.packet.size=").append(packetQueueSize).append(", ");
+            sb.append("q.processable.size=").append(processableQueueSize).append(", ");
+            sb.append("q.processablePriority.size=").append(processablePriorityQueueSize);
             return sb.toString();
         }
     }
