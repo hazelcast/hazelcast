@@ -35,7 +35,7 @@ public class MySocketInterceptor implements MemberSocketInterceptor {
         // initialize interceptor
     }
 
-    void onConnect(Socket connectedSocket) throws IOException {
+    public void onConnect(Socket connectedSocket) throws IOException {
         // do something meaningful when connected
     }
 
@@ -65,7 +65,7 @@ public class MySocketInterceptor implements MemberSocketInterceptor {
 <programlisting language="java"><![CDATA[
 
 public class MyClientSocketInterceptor implements SocketInterceptor {
-    void onConnect(Socket connectedSocket) throws IOException {
+    public void onConnect(Socket connectedSocket) throws IOException {
         // do something meaningful when connected
     }
 }
