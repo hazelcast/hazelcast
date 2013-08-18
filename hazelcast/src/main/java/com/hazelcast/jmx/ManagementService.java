@@ -21,16 +21,21 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.logging.ILogger;
 
 import javax.management.MBeanServer;
+import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
+import java.util.Hashtable;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * @author ali 1/31/13
  */
 public class ManagementService implements DistributedObjectListener {
+
+    public static final String DOMAIN = "com.hazelcast";
 
     final HazelcastInstanceImpl instance;
 
@@ -70,7 +75,7 @@ public class ManagementService implements DistributedObjectListener {
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         try {
             Set<ObjectName> entries = mbs.queryNames(new ObjectName(
-                    HazelcastMBean.DOMAIN + ":instance=" + instance.getName() + ",*"), null);
+                    DOMAIN + ":instance=" + quote(instance.getName()) + ",*"), null);
             for (ObjectName name : entries) {
                 if (mbs.isRegistered(name)) {
                     mbs.unregisterMBean(name);
@@ -84,7 +89,7 @@ public class ManagementService implements DistributedObjectListener {
     public static void shutdownAll() {
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         try {
-            Set<ObjectName> entries = mbs.queryNames(new ObjectName(HazelcastMBean.DOMAIN + ":*"), null);
+            Set<ObjectName> entries = mbs.queryNames(new ObjectName(DOMAIN + ":*"), null);
             for (ObjectName name : entries) {
                 if (mbs.isRegistered(name)) {
                     mbs.unregisterMBean(name);
@@ -119,14 +124,15 @@ public class ManagementService implements DistributedObjectListener {
     }
 
     private void unregisterDistributedObject(DistributedObject distributedObject){
-        HazelcastMBean bean = createHazelcastBean(distributedObject);
-        if (bean != null){
+        final String objectType = getObjectType(distributedObject);
+        if (objectType != null){
+            ObjectName objectName = createObjectName(objectType, distributedObject.getName());
             MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-            if (mbs.isRegistered(bean.objectName)) {
+            if (mbs.isRegistered(objectName)) {
                 try {
-                    mbs.unregisterMBean(bean.objectName);
+                    mbs.unregisterMBean(objectName);
                 } catch (Exception e) {
-                    logger.warning( "Error while un-registering " + bean.objectName, e);
+                    logger.warning( "Error while un-registering " + objectName, e);
                 }
             }
         }
@@ -167,5 +173,61 @@ public class ManagementService implements DistributedObjectListener {
         } catch (HazelcastInstanceNotActiveException ignored) {
         }
         return null;
+    }
+
+    private String getObjectType(DistributedObject distributedObject){
+        if (distributedObject instanceof IList){
+            return "List";
+        }
+        if (distributedObject instanceof IAtomicLong){
+            return "AtomicLong";
+        }
+        if (distributedObject instanceof ICountDownLatch){
+            return "CountDownLatch";
+        }
+        if (distributedObject instanceof ILock){
+            return "Lock";
+        }
+        if (distributedObject instanceof IMap){
+            return "Map";
+        }
+        if (distributedObject instanceof MultiMap){
+            return "MultiMap";
+        }
+        if (distributedObject instanceof IQueue){
+            return "Queue";
+        }
+        if (distributedObject instanceof ISemaphore){
+            return "Semaphore";
+        }
+        if (distributedObject instanceof ISet){
+            return "ISet";
+        }
+        if (distributedObject instanceof ITopic){
+            return "ITopic";
+        }
+        return null;
+    }
+
+    protected ObjectName createObjectName(String type, String name){
+        Hashtable<String, String> properties = new Hashtable<String, String>(3);
+        properties.put("instance", quote(instance.getName()));
+        if (type != null){
+            properties.put("type", quote(type));
+        }
+        if (name != null){
+            properties.put("name", quote(name));
+        }
+        try {
+            return new ObjectName(DOMAIN, properties);
+        } catch (MalformedObjectNameException e) {
+            throw new IllegalArgumentException();
+        }
+    }
+
+    private String quote(String text){
+        return Pattern.compile("[:\",=*?]")
+                .matcher(text)
+                .find() ? ObjectName.quote(text) : text;
     }
 }
