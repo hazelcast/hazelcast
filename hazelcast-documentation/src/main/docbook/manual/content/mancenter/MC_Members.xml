@@ -38,7 +38,7 @@
         <title>Monitoring</title>
 
         <para>
-            In members page there are 4 inner tab pages to monitor meber's state and properties.
+            In members page there are 4 inner tab pages to monitor member's state and properties.
             Runtime: Runtime properties about memory, threads are given. This data updates dynamically.
             Properties: System properties are displayed.
             Configuration: Configuration xml initially set can be viewed here.

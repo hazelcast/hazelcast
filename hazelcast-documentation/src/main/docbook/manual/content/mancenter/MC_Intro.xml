@@ -54,7 +54,7 @@
                     Zip contains
                     <literal>mancenter.war</literal>
                     file. Deploy it to your web server (Tomcat, Jetty etc.)
-                    Let's say it is running at<literal>http://localhost:8080/mancenter</literal>.
+                    Let's say it is running at <literal>http://localhost:8080/mancenter</literal>.
                 </para>
             </listitem>
 
@@ -66,7 +66,7 @@
             </listitem>
 
             <listitem>
-                <para>Configure your Hazelcast nodes by adding the URL of your web app to your<literal>
+                <para>Configure your Hazelcast nodes by adding the URL of your web app to your <literal>
                     hazelcast.xml</literal>.
                     Hazelcast nodes will send their states to this URL.
                     <programlisting language="xml"><![CDATA[
@@ -118,7 +118,7 @@
 
     <sect2 xml:id="MC_ToolOverview" version="5.0" xmlns="http://docbook.org/ns/docbook">
         <title>Tool Overview</title>
-        <para>The starter page of the tool is<literal>Cluster Home</literal>. Here you can see cluster's main properties
+        <para>The starter page of the tool is <literal>Cluster Home</literal>. Here you can see cluster's main properties
             such as uptime,
             memory. Also with pie chart, you can see the distribution of partitions over cluster members. You can come
             back to this page, by clicking the
@@ -126,7 +126,7 @@
             icon on the top-right toolbar.
             On the left panel you see the Map/Queue/Topic instances in the cluster. At the bottom-left corner, members
             of the cluster are listed.
-            On top menu bar, you can change the current tab to<literal>Scripting, Docs</literal>,
+            On top menu bar, you can change the current tab to <literal>Scripting, Docs</literal>,
             user<literal>Administration</literal>. Note that Administration tab is viewable only for admin users.
             Also
             <literal>Scripting</literal>

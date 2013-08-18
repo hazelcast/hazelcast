@@ -46,7 +46,7 @@
         <para>
             With multiversion support, you can have two nodes where each of them having different versions of the same
             Object and Hazelcast will store both meta information and use the correct one to serialize and de-serialize
-            Portable objects depending on the node. This is very helpfull when you are doing a rolling upgrade without
+            Portable objects depending on the node. This is very helpful when you are doing a rolling upgrade without
             shutting down the cluster.
         </para>
         <para>
