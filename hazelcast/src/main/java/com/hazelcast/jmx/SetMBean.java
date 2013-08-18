@@ -25,15 +25,18 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * @author ali 2/11/13
  */
+@ManagedDescription("ISet")
 public class SetMBean extends HazelcastMBean<ISet> {
 
     private AtomicLong totalAddedItemCount = new AtomicLong();
 
     private AtomicLong totalRemovedItemCount = new AtomicLong();
 
+    private final String registrationId;
+
     protected SetMBean(ISet managedObject, ManagementService service) {
         super(managedObject, service);
-        objectName = createObjectName("Set", managedObject.getName());
+        objectName = service.createObjectName("ISet", managedObject.getName());
         ItemListener itemListener = new ItemListener() {
             public void itemAdded(ItemEvent item) {
                 totalAddedItemCount.incrementAndGet();
@@ -43,10 +46,11 @@ public class SetMBean extends HazelcastMBean<ISet> {
                 totalRemovedItemCount.incrementAndGet();
             }
         };
+        registrationId = managedObject.addItemListener(itemListener, false);
     }
 
     @ManagedAnnotation(value = "clear", operation = true)
-    @ManagedDescription("Clear List")
+    @ManagedDescription("Clear Set")
     public void clear() {
         managedObject.clear();
     }
@@ -69,5 +73,6 @@ public class SetMBean extends HazelcastMBean<ISet> {
 
     public void preDeregister() throws Exception {
         super.preDeregister();
+        managedObject.removeItemListener(registrationId);
     }
 }

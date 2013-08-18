@@ -36,7 +36,7 @@ public class QueueMBean extends HazelcastMBean<IQueue> {
 
     protected QueueMBean(IQueue managedObject, ManagementService service) {
         super(managedObject, service);
-        objectName = createObjectName("Queue", managedObject.getName());
+        objectName = service.createObjectName("IQueue", managedObject.getName());
         ItemListener itemListener = new ItemListener() {
             public void itemAdded(ItemEvent item) {
                 totalAddedItemCount.incrementAndGet();
