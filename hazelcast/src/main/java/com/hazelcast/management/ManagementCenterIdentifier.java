@@ -20,6 +20,8 @@ import java.io.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static java.lang.String.format;
+
 /**
  * User: sancar
  * Date: 6/6/13
@@ -53,7 +55,7 @@ public class ManagementCenterIdentifier implements Serializable {
             }
             return version;
         }
-        throw new IllegalArgumentException("version string is not valid");
+        throw new IllegalArgumentException(format("version string '%s' is not valid",versionString));
     }
 
     public static String convertVersionToString(int version) {
