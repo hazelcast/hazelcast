@@ -19,15 +19,11 @@ package com.hazelcast.jmx;
 import javax.management.*;
 import java.lang.reflect.Method;
 import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.regex.Pattern;
 
 /**
  * @author ali 1/30/13
  */
 public abstract class HazelcastMBean<T> implements DynamicMBean, MBeanRegistration {
-
-    public static final String DOMAIN = "com.hazelcast";
 
     protected HashMap<String, BeanInfo> attributeMap = new HashMap<String, BeanInfo>();
     protected HashMap<String, BeanInfo> operationMap = new HashMap<String, BeanInfo>();
@@ -140,28 +136,6 @@ public abstract class HazelcastMBean<T> implements DynamicMBean, MBeanRegistrati
             array[i++] = beanInfo.getOperationInfo();
         }
         return array;
-    }
-
-    ObjectName createObjectName(String type, String name){
-        Hashtable<String, String> properties = new Hashtable<String, String>(3);
-        properties.put("instance", quote(service.instance.getName()));
-        if (type != null){
-            properties.put("type", quote(type));
-        }
-        if (name != null){
-            properties.put("name", quote(name));
-        }
-        try {
-            return new ObjectName(DOMAIN, properties);
-        } catch (MalformedObjectNameException e) {
-            throw new IllegalArgumentException();
-        }
-    }
-
-    private String quote(String text){
-        return Pattern.compile("[:\",=*?]")
-                .matcher(text)
-                .find() ? ObjectName.quote(text) : text;
     }
 
     private class BeanInfo {
