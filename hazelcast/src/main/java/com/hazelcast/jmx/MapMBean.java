@@ -45,7 +45,7 @@ public class MapMBean extends HazelcastMBean<IMap> {
 
     protected MapMBean(IMap managedObject, ManagementService service) {
         super(managedObject, service);
-        objectName = createObjectName("Map", managedObject.getName());
+        objectName = service.createObjectName("IMap", managedObject.getName());
         EntryListener entryListener = new EntryListener() {
             public void entryAdded(EntryEvent event) {
                 totalAddedEntryCount.incrementAndGet();

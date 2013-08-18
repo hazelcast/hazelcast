@@ -36,7 +36,7 @@ public class ListMBean extends HazelcastMBean<IList<?>> {
 
     protected ListMBean(IList<?> managedObject, ManagementService service) {
         super(managedObject, service);
-        objectName = createObjectName("List", managedObject.getName());
+        objectName = service.createObjectName("IList", managedObject.getName());
         ItemListener itemListener = new ItemListener() {
             public void itemAdded(ItemEvent item) {
                 totalAddedItemCount.incrementAndGet();

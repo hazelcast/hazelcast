@@ -38,7 +38,7 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstance> {
 
     protected InstanceMBean(HazelcastInstance managedObject, ManagementService service) {
         super(managedObject, service);
-        objectName = createObjectName(null, null);
+        objectName = service.createObjectName(null, null);
         config = managedObject.getConfig();
         cluster = managedObject.getCluster();
     }

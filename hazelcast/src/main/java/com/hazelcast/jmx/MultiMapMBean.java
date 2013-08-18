@@ -26,7 +26,7 @@ public class MultiMapMBean extends HazelcastMBean<MultiMap> {
 
     protected MultiMapMBean(MultiMap managedObject, ManagementService service) {
         super(managedObject, service);
-        objectName = createObjectName("MultiMap", managedObject.getName());
+        objectName = service.createObjectName("MultiMap", managedObject.getName());
     }
 
     @ManagedAnnotation("name")

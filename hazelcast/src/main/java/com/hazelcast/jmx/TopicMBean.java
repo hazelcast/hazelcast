@@ -33,7 +33,7 @@ public class TopicMBean extends HazelcastMBean<ITopic> {
 
     protected TopicMBean(ITopic managedObject, ManagementService service) {
         super(managedObject, service);
-        objectName = createObjectName("Topic", managedObject.getName());
+        objectName = service.createObjectName("ITopic", managedObject.getName());
         MessageListener messageListener = new MessageListener() {
             public void onMessage(Message message) {
                 totalMessageCount.incrementAndGet();
