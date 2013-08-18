@@ -22,6 +22,7 @@ import com.hazelcast.util.HealthMonitorLevel;
 public class GroupProperties {
 
     public static final String PROP_HEALTH_MONITORING_LEVEL = "hazelcast.health.monitoring.level";
+    public static final String PROP_HEALTH_MONITORING_DELAY_SECONDS = "hazelcast.health.monitoring.delay.seconds";
     public static final String PROP_VERSION_CHECK_ENABLED = "hazelcast.version.check.enabled";
     public static final String PROP_PREFER_IPv4_STACK = "hazelcast.prefer.ipv4.stack";
     public static final String PROP_IO_THREAD_COUNT = "hazelcast.io.thread.count";
@@ -113,6 +114,8 @@ public class GroupProperties {
     public static final GroupProperty PACKET_VERSION = new GroupProperty(null, PROP_PACKET_VERSION, "8");
 
     public final GroupProperty HEALTH_MONITORING_LEVEL;
+
+    public final GroupProperty HEALTH_MONITORING_DELAY_SECONDS;
 
     public final GroupProperty IO_THREAD_COUNT;
 
@@ -275,6 +278,7 @@ public class GroupProperties {
 
     public GroupProperties(Config config) {
         HEALTH_MONITORING_LEVEL = new GroupProperty(config,PROP_HEALTH_MONITORING_LEVEL, HealthMonitorLevel.SILENT.toString());
+        HEALTH_MONITORING_DELAY_SECONDS = new GroupProperty(config, PROP_HEALTH_MONITORING_DELAY_SECONDS, "30");
         VERSION_CHECK_ENABLED = new GroupProperty(config, PROP_VERSION_CHECK_ENABLED, "true");
         PREFER_IPv4_STACK = new GroupProperty(config, PROP_PREFER_IPv4_STACK, "true");
         IO_THREAD_COUNT = new GroupProperty(config, PROP_IO_THREAD_COUNT, "3");
