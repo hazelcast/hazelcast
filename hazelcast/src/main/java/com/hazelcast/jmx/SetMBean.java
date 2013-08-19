@@ -73,6 +73,8 @@ public class SetMBean extends HazelcastMBean<ISet> {
 
     public void preDeregister() throws Exception {
         super.preDeregister();
-        managedObject.removeItemListener(registrationId);
+        if (service.isRunning()){
+            managedObject.removeItemListener(registrationId);
+        }
     }
 }
