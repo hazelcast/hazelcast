@@ -68,7 +68,10 @@ public class MapMBean extends HazelcastMBean<IMap> {
 
     public void preDeregister() throws Exception {
         super.preDeregister();
-        managedObject.removeEntryListener(listenerId);
+        try {
+            managedObject.removeEntryListener(listenerId);
+        } catch (Exception ignored) {
+        }
     }
 
     @ManagedAnnotation(value = "clear", operation = true)
