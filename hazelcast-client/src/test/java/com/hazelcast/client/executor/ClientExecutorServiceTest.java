@@ -66,6 +66,14 @@ public class ClientExecutorServiceTest {
     }
 
     @Test
+    public void testSubmitWithResult() throws ExecutionException, InterruptedException {
+        final Integer res = new Integer(5);
+        final Future<Integer> future = service.submit(new RunnableTask("task"), res);
+        final Integer integer = future.get();
+        assertEquals(res, integer);
+    }
+
+    @Test
     public void submitCallable1() throws Exception {
 
         final Future<String> future = service.submitToKeyOwner(new CallableTask("naber"), "key");
