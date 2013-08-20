@@ -212,7 +212,7 @@
         <itemizedlist>
             <listitem>
                 <para>
-                    <emphasis role="italic">If sticky-session is not used, whenever a session a attribute
+                    <emphasis role="italic">If sticky-session is not used, whenever a session attribute
                     is updated in a node (in both node local session and clustered cache),
                     that attribute should be invalidated in all other nodes' local sessions,
                     because now they have dirty value. So when a request arrives one of those other nodes

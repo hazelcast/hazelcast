@@ -181,17 +181,7 @@ public final class ProxyManager {
                 client.getClientPartitionService(), client.getInvocationService(), client.getClientExecutionService(), this, client.getClientConfig()));
     }
 
-    public Collection<ClientProxy> getProxies() {
-        return proxies.values();
-    }
-
     public void destroy() {
-        for (ClientProxy proxy : getProxies()) {
-            try {
-                proxy.destroy();
-            } catch (Exception ignored) {
-            }
-        }
         proxies.clear();
         listeners.clear();
     }

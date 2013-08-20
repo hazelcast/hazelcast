@@ -90,7 +90,7 @@ public final class LifecycleServiceImpl implements LifecycleService {
         active.set(false);
         synchronized (lifecycleLock) {
             fireLifecycleEvent(SHUTTING_DOWN);
-            client.shutdown();
+            client.doShutdown();
             fireLifecycleEvent(SHUTDOWN);
         }
     }

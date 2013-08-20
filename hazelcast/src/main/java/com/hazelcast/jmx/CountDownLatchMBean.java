@@ -26,7 +26,7 @@ public class CountDownLatchMBean extends HazelcastMBean<ICountDownLatch> {
 
     protected CountDownLatchMBean(ICountDownLatch managedObject, ManagementService service) {
         super(managedObject, service);
-        objectName = createObjectName("CountDownLatch", managedObject.getName());
+        objectName = service.createObjectName("ICountDownLatch", managedObject.getName());
     }
 
     @ManagedAnnotation("name")

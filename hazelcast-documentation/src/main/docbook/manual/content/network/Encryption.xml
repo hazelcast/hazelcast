@@ -62,6 +62,6 @@
     ...
 </hazelcast>
 ]]></programlisting>
-        Also see<link xlink:href="#SSL">SSL Encryption</link>.
+        Also see <link xlink:href="#SSL">SSL Encryption</link>.
     </para>
 </sect2>

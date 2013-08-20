@@ -140,7 +140,7 @@ public final class AuthenticationRequest extends CallableClientRequest implement
 
     @Override
     public int getClassId() {
-        return 2;
+        return ClientPortableHook.AUTH;
     }
 
     public void setReAuth(boolean reAuth) {

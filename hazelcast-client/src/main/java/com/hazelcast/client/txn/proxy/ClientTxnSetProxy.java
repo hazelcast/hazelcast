@@ -18,6 +18,7 @@ package com.hazelcast.client.txn.proxy;
 
 import com.hazelcast.client.txn.TransactionContextProxy;
 import com.hazelcast.collection.CollectionProxyId;
+import com.hazelcast.collection.CollectionService;
 import com.hazelcast.collection.operations.client.TxnSetAddRequest;
 import com.hazelcast.collection.operations.client.TxnSetRemoveRequest;
 import com.hazelcast.collection.operations.client.TxnSetSizeRequest;
@@ -53,6 +54,11 @@ public class ClientTxnSetProxy<E> extends ClientTxnProxy implements Transactiona
     public String getName() {
         final CollectionProxyId proxyId = (CollectionProxyId)getId();
         return proxyId.getKeyName();
+    }
+
+    @Override
+    public String getServiceName() {
+        return CollectionService.SERVICE_NAME;
     }
 
     void onDestroy() {
