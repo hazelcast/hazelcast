@@ -73,6 +73,9 @@ public class ListMBean extends HazelcastMBean<IList<?>> {
 
     public void preDeregister() throws Exception {
         super.preDeregister();
-        managedObject.removeItemListener(registrationId);
+        try {
+            managedObject.removeItemListener(registrationId);
+        } catch (Exception ignored) {
+        }
     }
 }
