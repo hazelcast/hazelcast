@@ -327,6 +327,7 @@ public class PartitionRecordStore implements RecordStore {
                 if (value != null) {
                     record = mapService.createRecord(name, dataKey, value, -1);
                     records.put(dataKey, record);
+                    saveIndex(record);
                 }
                 // below is an optimization. if the record does not exist the next get will return null without looking at mapStore.
                 if (value == null) {
@@ -499,6 +500,7 @@ public class PartitionRecordStore implements RecordStore {
             setRecordValue(record, value);
             updateTtl(record, ttl);
         }
+        saveIndex(record);
     }
 
     public boolean tryPut(Data dataKey, Object value, long ttl) {
