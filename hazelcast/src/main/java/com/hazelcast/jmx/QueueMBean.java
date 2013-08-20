@@ -79,7 +79,10 @@ public class QueueMBean extends HazelcastMBean<IQueue> {
 
     public void preDeregister() throws Exception {
         super.preDeregister();
-        managedObject.removeItemListener(registrationId);
+        try {
+            managedObject.removeItemListener(registrationId);
+        } catch (Exception ignored) {
+        }
     }
 
 
