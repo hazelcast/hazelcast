@@ -45,6 +45,5 @@ public class RunnableTask implements Runnable, DataSerializable {
     }
 
     public void run() {
-        System.err.println("param: " + param);
     }
 }
