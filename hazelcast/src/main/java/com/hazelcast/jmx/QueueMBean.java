@@ -79,7 +79,9 @@ public class QueueMBean extends HazelcastMBean<IQueue> {
 
     public void preDeregister() throws Exception {
         super.preDeregister();
-        managedObject.removeItemListener(registrationId);
+        if (service.isRunning()){
+            managedObject.removeItemListener(registrationId);
+        }
     }
 
 
