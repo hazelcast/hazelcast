@@ -86,10 +86,6 @@ public class ManagementService implements DistributedObjectListener {
         }
     }
 
-    public boolean isRunning(){
-        return instance.getLifecycleService().isRunning();
-    }
-
     public static void shutdownAll() {
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         try {

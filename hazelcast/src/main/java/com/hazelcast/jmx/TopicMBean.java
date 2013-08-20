@@ -61,8 +61,9 @@ public class TopicMBean extends HazelcastMBean<ITopic> {
 
     public void preDeregister() throws Exception {
         super.preDeregister();
-        if (service.isRunning()){
+        try {
             managedObject.removeMessageListener(registrationId);
+        } catch (Exception ignored) {
         }
     }
 
