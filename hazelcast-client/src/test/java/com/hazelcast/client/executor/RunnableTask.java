@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,24 +21,19 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
-import java.util.concurrent.Callable;
 
 /**
- * @author ali 5/27/13
+ * @ali 8/20/13
  */
-public class CallableTask implements Callable<String>, DataSerializable {
+public class RunnableTask implements Runnable, DataSerializable {
 
-    private String param;
+    String param;
 
-    public CallableTask() {
+    public RunnableTask() {
     }
 
-    public CallableTask(String param) {
+    public RunnableTask(String param) {
         this.param = param;
-    }
-
-    public String call() throws Exception {
-        return param + ":result";
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
@@ -49,4 +44,6 @@ public class CallableTask implements Callable<String>, DataSerializable {
         param = in.readUTF();
     }
 
+    public void run() {
+    }
 }
