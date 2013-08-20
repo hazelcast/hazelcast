@@ -31,6 +31,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.CompletedFuture;
+import com.hazelcast.util.executor.DelegatingFuture;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -59,7 +60,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     public <T> Future<T> submit(Runnable command, T result) {
         Data key = getTaskPartitionKey(command);
         Callable<T> callable = createRunnableAdapter(command);
-        return submitToKeyOwnerInternal(callable, key);
+        return new DelegatingFuture<T>(submitToKeyOwnerInternal(callable, key), null, result);
     }
 
     public void execute(Runnable command) {
