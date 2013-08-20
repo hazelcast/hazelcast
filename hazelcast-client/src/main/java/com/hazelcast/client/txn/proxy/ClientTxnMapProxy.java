@@ -72,7 +72,7 @@ public class ClientTxnMapProxy<K,V> extends ClientTxnProxy implements Transactio
     }
 
     public boolean replace(K key, V oldValue, V newValue) {
-        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.REPLACE, toData(key), toData(oldValue), toData(newValue));
+        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.REPLACE_IF_SAME, toData(key), toData(oldValue), toData(newValue));
         Boolean result = invoke(request);
         return result;
     }
