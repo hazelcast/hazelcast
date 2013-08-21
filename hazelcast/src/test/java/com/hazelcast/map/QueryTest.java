@@ -131,6 +131,22 @@ public class QueryTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void issue685RemoveIndexesOnClear() {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
+        final IMap<String, Value> map = instance.getMap("default");
+        map.addIndex("name", true);
+        for (int i = 0; i < 4; i++) {
+            final Value v = new Value("name" + i);
+            map.put("" + i, v);
+        }
+        map.clear();
+        final Predicate predicate = new SqlPredicate("name='name0'");
+        final Collection<Value> values = map.values(predicate);
+        assertEquals(0, values.size());
+    }
+
+    @Test
     public void issue393SqlIn() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());

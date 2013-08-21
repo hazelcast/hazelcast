@@ -62,8 +62,8 @@ public class PartitionContainer {
     }
 
     void clear() {
-        for (PartitionRecordStore store : maps.values()) {
-            store.clear();
+        for (PartitionRecordStore recordStore : maps.values()) {
+            recordStore.clear();
         }
         maps.clear();
     }

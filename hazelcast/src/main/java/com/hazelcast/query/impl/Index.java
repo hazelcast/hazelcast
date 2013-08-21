@@ -21,9 +21,11 @@ import com.hazelcast.nio.serialization.Data;
 import java.util.Set;
 
 public interface Index {
-    void removeEntryIndex(Data indexKey);
-
     void saveEntryIndex(QueryableEntry e) throws QueryException;
+
+    void clear();
+
+    void removeEntryIndex(Data indexKey);
 
     Set<QueryableEntry> getRecords(Comparable[] values);
 
