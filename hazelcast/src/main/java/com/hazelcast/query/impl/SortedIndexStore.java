@@ -92,6 +92,11 @@ public class SortedIndexStore implements IndexStore {
         return mapRecords.get(indexValue);
     }
 
+    public void clear() {
+        mapRecords.clear();
+        sortedSet.clear();
+    }
+
     public void removeIndex(Comparable oldValue, Data indexKey) {
         ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(oldValue);
         if (records != null) {
