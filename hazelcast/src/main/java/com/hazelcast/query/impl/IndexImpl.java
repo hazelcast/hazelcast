@@ -47,6 +47,11 @@ public class IndexImpl implements Index {
         }
     }
 
+    public void clear() {
+        recordValues.clear();
+        indexStore.clear();
+    }
+
     ConcurrentMap<Data, QueryableEntry> getRecordMap(Comparable indexValue) {
         return indexStore.getRecordMap(indexValue);
     }
