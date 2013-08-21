@@ -109,6 +109,10 @@ public class PartitionRecordStore implements RecordStore {
             lockService.clearLockStore(partitionContainer.getPartitionId(), new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
         }
         records.clear();
+        final IndexService indexService = mapContainer.getIndexService();
+        if (indexService.hasIndex()) {
+            indexService.clear();
+        }
     }
 
     public int size() {
@@ -233,13 +237,14 @@ public class PartitionRecordStore implements RecordStore {
         keysToDelete.removeAll(lockRecords.keySet());
 
         final MapStoreWrapper store = mapContainer.getStore();
+        Set<Object> keysObject = new HashSet<Object>();
+        for (Data key : keysToDelete) {
+            // todo ea have a clear(Keys) method for optimizations
+            removeIndex(key);
+            keysObject.add(mapService.toObject(key));
+        }
+
         if (store != null) {
-            Set<Object> keysObject = new HashSet<Object>();
-            for (Data key : keysToDelete) {
-                // todo ea have a removeAllIndexes(Keys) method for optimizations
-                removeIndex(key);
-                keysObject.add(mapService.toObject(key));
-            }
             store.deleteAll(keysObject);
             toBeRemovedKeys.clear();
         }

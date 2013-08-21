@@ -122,6 +122,11 @@ public class UnsortedIndexStore implements IndexStore {
     }
 
     @Override
+    public void clear() {
+        mapRecords.clear();
+    }
+
+    @Override
     public String toString() {
         return "UnsortedIndexStore{" +
                 "mapRecords=" + mapRecords.size() +
