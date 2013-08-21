@@ -30,6 +30,8 @@ public interface IndexStore {
 
     void getRecords(MultiResultSet results, Set<Comparable> values);
 
+    void clear();
+
     void removeIndex(Comparable oldValue, Data indexKey);
 
     void newIndex(Comparable newValue, QueryableEntry entry);
