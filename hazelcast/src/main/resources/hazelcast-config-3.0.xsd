@@ -21,6 +21,7 @@
            elementFormDefault="qualified"
            attributeFormDefault="unqualified">
 
+    <xs:include schemaLocation="hazelcast-common-config-3.0.xsd"/>
     <xs:element name="hazelcast">
         <xs:complexType>
             <xs:sequence>
@@ -47,10 +48,8 @@
     </xs:element>
     <xs:complexType name="map">
         <xs:sequence>
-            <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" maxOccurs="1"
-                        default="BINARY"/>
-            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1"
-                        default="true"/>
+            <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" maxOccurs="1" default="BINARY"/>
+            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
             <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="1">
                 <xs:annotation>
                     <xs:documentation>
@@ -171,13 +170,7 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
-            <xs:element name="entry-listeners" minOccurs="0" maxOccurs="1">
-                <xs:complexType>
-                    <xs:sequence>
-                        <xs:element name="entry-listener" type="entry-listener" minOccurs="0" maxOccurs="unbounded"/>
-                    </xs:sequence>
-                </xs:complexType>
-            </xs:element>
+            <xs:element name="entry-listeners" type="entry-listeners" minOccurs="0" maxOccurs="1"/>
             <xs:element name="storage-type" type="xs:string" minOccurs="0" maxOccurs="1">
                 <xs:annotation>
                     <xs:documentation>
@@ -195,13 +188,7 @@
             </xs:simpleType>
         </xs:attribute>
     </xs:complexType>
-    <xs:simpleType name="in-memory-format">
-        <xs:restriction base="non-space-string">
-            <xs:enumeration value="BINARY"/>
-            <xs:enumeration value="OBJECT"/>
-            <xs:enumeration value="CACHED"/>
-        </xs:restriction>
-    </xs:simpleType>
+
     <xs:complexType name="queue">
         <xs:sequence>
             <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1"
@@ -234,8 +221,7 @@
     </xs:complexType>
     <xs:complexType name="multimap">
         <xs:sequence>
-            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1"
-                        default="true"/>
+            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
             <xs:element name="value-collection-type" minOccurs="0" maxOccurs="1">
                 <xs:simpleType>
                     <xs:restriction base="non-space-string">
@@ -244,13 +230,7 @@
                     </xs:restriction>
                 </xs:simpleType>
             </xs:element>
-            <xs:element name="entry-listeners" minOccurs="0" maxOccurs="1">
-                <xs:complexType>
-                    <xs:sequence>
-                        <xs:element name="entry-listener" type="entry-listener" minOccurs="0" maxOccurs="unbounded"/>
-                    </xs:sequence>
-                </xs:complexType>
-            </xs:element>
+            <xs:element name="entry-listeners" type="entry-listeners" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
         <xs:attribute name="name" use="required">
             <xs:simpleType>
@@ -383,12 +363,6 @@
         </xs:sequence>
         <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
     </xs:complexType>
-    <xs:complexType name="cluster-group">
-        <xs:sequence>
-            <xs:element name="name" type="xs:string" minOccurs="0" maxOccurs="1" default="dev"/>
-            <xs:element name="password" type="xs:string" minOccurs="0" maxOccurs="1" default="dev-pass"/>
-        </xs:sequence>
-    </xs:complexType>
     <xs:complexType name="property">
         <xs:simpleContent>
             <xs:extension base="xs:string">
@@ -416,13 +390,7 @@
         </xs:sequence>
         <xs:attribute name="name" type="xs:string" use="optional" default="default"/>
     </xs:complexType>
-    <xs:simpleType name="eviction-policy">
-        <xs:restriction base="xs:string">
-            <xs:enumeration value="NONE"/>
-            <xs:enumeration value="LRU"/>
-            <xs:enumeration value="LFU"/>
-        </xs:restriction>
-    </xs:simpleType>
+
     <xs:simpleType name="backup-count">
         <xs:restriction base="xs:byte">
             <xs:minInclusive value="0"/>
@@ -509,32 +477,18 @@
         </xs:sequence>
         <xs:attribute name="enabled" default="false" type="xs:boolean"/>
     </xs:complexType>
-    <xs:simpleType name="non-space-string">
-        <xs:restriction base="xs:string">
-            <xs:pattern value="\S.*"/>
-        </xs:restriction>
-    </xs:simpleType>
-    <xs:complexType name="listeners">
-        <xs:sequence>
-            <xs:element name="listener" type="listener-base" minOccurs="0" maxOccurs="unbounded">
-                <xs:annotation>
-                    <xs:documentation>One of membership-listener, instance-listener or migration-listener
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
-        </xs:sequence>
-    </xs:complexType>
-    <xs:complexType name="listener-base">
-        <xs:simpleContent>
-            <xs:extension base="xs:string"/>
-        </xs:simpleContent>
-    </xs:complexType>
+
     <xs:complexType name="item-listener">
         <xs:simpleContent>
             <xs:extension base="listener-base">
                 <xs:attribute name="include-value" type="xs:boolean" use="optional" default="true"/>
             </xs:extension>
         </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="entry-listeners">
+        <xs:sequence>
+            <xs:element name="entry-listener" type="entry-listener" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
     </xs:complexType>
     <xs:complexType name="entry-listener">
         <xs:simpleContent>

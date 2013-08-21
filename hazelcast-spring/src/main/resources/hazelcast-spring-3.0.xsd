@@ -171,29 +171,7 @@
                                 </xs:sequence>
                             </xs:complexType>
                         </xs:element>
-                        <xs:element name="serialization" minOccurs="0" maxOccurs="1">
-                            <xs:complexType>
-                                <xs:sequence>
-                                    <xs:element ref="data-serializable-factories" minOccurs="0" maxOccurs="1" />
-                                    <xs:element ref="portable-factories" minOccurs="0" maxOccurs="1" />
-                                    <xs:element ref="serializers" minOccurs="0" maxOccurs="1" />
-                                </xs:sequence>
-                                <xs:attribute name="use-native-byte-order" use="optional" type="xs:string" default="false"/>
-                                <xs:attribute name="byte-order" use="optional" default="BIG_ENDIAN">
-                                    <xs:simpleType>
-                                        <xs:restriction base="non-space-string">
-                                            <xs:enumeration value="BIG_ENDIAN"/>
-                                            <xs:enumeration value="LITTLE_ENDIAN"/>
-                                        </xs:restriction>
-                                    </xs:simpleType>
-                                </xs:attribute>
-                                <xs:attribute name="portable-version" use="optional" type="xs:string"/>
-                                <xs:attribute name="check-class-def-errors" use="optional" type="xs:string" default="false"/>
-                                <xs:attribute name="enable-compression" use="optional" type="xs:string" default="false"/>
-                                <xs:attribute name="enable-shared-object" use="optional" type="xs:string" default="false"/>
-                                <xs:attribute name="allow-unsafe" use="optional" type="xs:string" default="false"/>
-                            </xs:complexType>
-                        </xs:element>
+                        <xs:element name="serialization" type="serialization" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="security" type="security" minOccurs="0" maxOccurs="1"/>
                     </xs:sequence>
                 </xs:extension>
@@ -260,11 +238,16 @@
             <xs:complexContent>
                 <xs:extension base="hazelcast-bean">
                     <xs:sequence>
-                        <xs:element name="member" type="member" minOccurs="0"
-                                    maxOccurs="unbounded"/>
+                        <xs:element name="group" type="group" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="network" type="network" minOccurs="0" maxOccurs="1"/>
+
+                        <xs:element name="member" type="member" minOccurs="0" maxOccurs="unbounded"/>
+                        <xs:element name="serialization" type="serialization" minOccurs="0" maxOccurs="unbounded"/>
                     </xs:sequence>
+                    <!--group-->
                     <xs:attribute name="group-name" type="xs:string" use="optional"/>
                     <xs:attribute name="group-password" type="xs:string" use="optional"/>
+                    <!--network-->
                     <xs:attribute name="connection-attempt-limit" type="xs:string" use="optional"/>
                     <xs:attribute name="connection-timeout" type="xs:string" use="optional"/>
                     <xs:attribute name="connection-attempt-period" type="xs:string" use="optional"/>
@@ -272,6 +255,8 @@
                     <xs:attribute name="smart" type="xs:string" use="optional"/>
                     <xs:attribute name="redo-operation" type="xs:string" use="optional"/>
                     <xs:attribute name="pool-size" type="xs:string" use="optional"/>
+                    <xs:attribute name="executor-pool-size" type="xs:int" use="optional"/>
+
                 </xs:extension>
             </xs:complexContent>
         </xs:complexType>
@@ -850,4 +835,25 @@
         </xs:sequence>
     </xs:complexType>
 
+    <xs:complexType name="serialization">
+        <xs:sequence>
+            <xs:element ref="data-serializable-factories" minOccurs="0" maxOccurs="1" />
+            <xs:element ref="portable-factories" minOccurs="0" maxOccurs="1" />
+            <xs:element ref="serializers" minOccurs="0" maxOccurs="1" />
+        </xs:sequence>
+        <xs:attribute name="use-native-byte-order" use="optional" type="xs:string" default="false"/>
+        <xs:attribute name="byte-order" use="optional" default="BIG_ENDIAN">
+            <xs:simpleType>
+                <xs:restriction base="non-space-string">
+                    <xs:enumeration value="BIG_ENDIAN"/>
+                    <xs:enumeration value="LITTLE_ENDIAN"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="portable-version" use="optional" type="xs:string"/>
+        <xs:attribute name="check-class-def-errors" use="optional" type="xs:string" default="false"/>
+        <xs:attribute name="enable-compression" use="optional" type="xs:string" default="false"/>
+        <xs:attribute name="enable-shared-object" use="optional" type="xs:string" default="false"/>
+        <xs:attribute name="allow-unsafe" use="optional" type="xs:string" default="false"/>
+    </xs:complexType>
 </xs:schema>
