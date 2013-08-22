@@ -470,7 +470,9 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         if (nearCacheListenerId != null){
             removeEntryListener(nearCacheListenerId);
         }
-        nearCache.clear();
+        if (nearCache != null){
+            nearCache.clear();
+        }
         MapDestroyRequest request = new MapDestroyRequest(name);
         invoke(request);
     }
