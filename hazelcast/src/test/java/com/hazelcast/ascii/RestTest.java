@@ -57,6 +57,16 @@ public class RestTest {
             communicator.put(name, String.valueOf(i), String.valueOf(i * 10));
         }
 
+        communicator.deleteAll(name);
+
+        for (int i = 0; i < 100; i++) {
+            Assert.assertEquals("q2", communicator.get(name, String.valueOf(i)));
+        }
+
+        for (int i = 0; i < 100; i++) {
+            communicator.put(name, String.valueOf(i), String.valueOf(i * 10));
+        }
+
         for (int i = 0; i < 100; i++) {
             Assert.assertEquals(String.valueOf(i * 10), communicator.get(name, String.valueOf(i)));
         }
@@ -177,6 +187,30 @@ public class RestTest {
             writer.write(value);
             writer.close();
             out.close();
+
+            /** read the response back from the posted data */
+            BufferedReader reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
+            StringBuilder builder = new StringBuilder(100);
+            String line;
+            while ((line = reader.readLine()) != null) {
+                builder.append(line);
+            }
+            reader.close();
+
+            return builder.toString();
+        }
+
+        public String deleteAll(String mapName) throws IOException {
+
+            String url = address + "maps/" + mapName;
+            /** set up the http connection parameters */
+            HttpURLConnection urlConnection = (HttpURLConnection) (new URL(url)).openConnection();
+            urlConnection.setRequestMethod("DELETE");
+            urlConnection.setDoOutput(true);
+            urlConnection.setDoInput(true);
+            urlConnection.setUseCaches(false);
+            urlConnection.setAllowUserInteraction(false);
+            urlConnection.setRequestProperty("Content-type", "text/xml; charset=" + "UTF-8");
 
             /** read the response back from the posted data */
             BufferedReader reader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
