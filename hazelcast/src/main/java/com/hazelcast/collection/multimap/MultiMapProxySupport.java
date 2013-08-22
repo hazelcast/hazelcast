@@ -18,10 +18,12 @@ package com.hazelcast.collection.multimap;
 
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionService;
+import com.hazelcast.collection.PartitionAwareKey;
 import com.hazelcast.collection.operations.*;
 import com.hazelcast.collection.operations.MultiMapOperationFactory.OperationFactoryType;
 import com.hazelcast.concurrent.lock.proxy.LockProxySupport;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.util.PartitionKeyUtil;
 import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.*;
@@ -34,6 +36,9 @@ import java.util.concurrent.Future;
  * @author ali 1/2/13
  */
 public abstract class MultiMapProxySupport extends AbstractDistributedObject<CollectionService> {
+
+    public static final String COLLECTION_LIST_NAME = "hz:list:";
+    public static final String COLLECTION_SET_NAME = "hz:set:";
 
     protected final MultiMapConfig config;
     protected final CollectionProxyId proxyId;
@@ -325,4 +330,24 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
         return ThreadUtil.getThreadId();
     }
 
+    public static MultiMapConfig createConfig(CollectionProxyId proxyId) {
+        switch (proxyId.getType()) {
+            case MULTI_MAP:
+                return new MultiMapConfig().setName(proxyId.getName());
+            case LIST:
+                return new MultiMapConfig().setName(COLLECTION_LIST_NAME + proxyId.getKeyName())
+                    .setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST);
+            case SET:
+                return new MultiMapConfig().setName(COLLECTION_SET_NAME + proxyId.getKeyName())
+                        .setValueCollectionType(MultiMapConfig.ValueCollectionType.SET);
+            default:
+                throw new IllegalArgumentException("Illegal proxy type: " + proxyId.getType());
+        }
+    }
+
+    public static Object createCollectionKey(CollectionProxyId proxyId) {
+        String name = proxyId.getKeyName();
+        String baseName = PartitionKeyUtil.getBaseName(name);
+        return name.equals(baseName) ? name : new PartitionAwareKey(baseName, PartitionKeyUtil.getPartitionKey(name));
+    }
 }

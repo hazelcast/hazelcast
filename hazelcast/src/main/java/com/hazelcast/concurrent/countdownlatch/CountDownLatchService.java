@@ -144,6 +144,11 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
         return latches.get(name);
     }
 
+    // need for testing..
+    public boolean containsLatch(String name) {
+        return latches.containsKey(name);
+    }
+
     public void add(CountDownLatchInfo latch) {
         latches.put(latch.getName(), latch);
     }

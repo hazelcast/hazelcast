@@ -24,6 +24,7 @@ import com.hazelcast.core.ILock;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.PartitionKeyUtil;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
@@ -34,37 +35,40 @@ import java.util.concurrent.locks.Condition;
 public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implements ILock {
 
     final Data key;
+    final Data partitionKey;
     final InternalLockNamespace namespace = new InternalLockNamespace();
     private final LockProxySupport lockSupport;
 
-    public LockProxy(NodeEngine nodeEngine, LockServiceImpl lockService, Data key) {
+    public LockProxy(NodeEngine nodeEngine, LockServiceImpl lockService, final Object actualKey) {
         super(nodeEngine, lockService);
-        this.key = key;
+        key = nodeEngine.toData(actualKey);
+        Object _partitionKey = PartitionKeyUtil.getPartitionKey(actualKey);
+        partitionKey = _partitionKey == actualKey ? key : nodeEngine.toData(_partitionKey);
         lockSupport = new LockProxySupport(namespace);
     }
 
     public boolean isLocked() {
-        return lockSupport.isLocked(getNodeEngine(), key);
+        return lockSupport.isLocked(getNodeEngine(), key, partitionKey);
     }
 
     public boolean isLockedByCurrentThread() {
-        return lockSupport.isLockedByCurrentThread(getNodeEngine(), key);
+        return lockSupport.isLockedByCurrentThread(getNodeEngine(), key, partitionKey);
     }
 
     public int getLockCount() {
-        return lockSupport.getLockCount(getNodeEngine(), key);
+        return lockSupport.getLockCount(getNodeEngine(), key, partitionKey);
     }
 
     public long getRemainingLeaseTime() {
-        return lockSupport.getRemainingLeaseTime(getNodeEngine(), key);
+        return lockSupport.getRemainingLeaseTime(getNodeEngine(), key, partitionKey);
     }
 
     public void lock() {
-        lockSupport.lock(getNodeEngine(), key);
+        lockSupport.lock(getNodeEngine(), key, partitionKey);
     }
 
     public void lock(long ttl, TimeUnit timeUnit) {
-        lockSupport.lock(getNodeEngine(), key, timeUnit.toMillis(ttl));
+        lockSupport.lock(getNodeEngine(), key, partitionKey, timeUnit.toMillis(ttl));
     }
 
     public void lockInterruptibly() throws InterruptedException {
@@ -72,19 +76,19 @@ public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implem
     }
 
     public boolean tryLock() {
-        return lockSupport.tryLock(getNodeEngine(), key);
+        return lockSupport.tryLock(getNodeEngine(), key, partitionKey);
     }
 
     public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
-        return lockSupport.tryLock(getNodeEngine(), key, time, unit);
+        return lockSupport.tryLock(getNodeEngine(), key, time, unit, partitionKey);
     }
 
     public void unlock() {
-        lockSupport.unlock(getNodeEngine(), key);
+        lockSupport.unlock(getNodeEngine(), key, partitionKey);
     }
 
     public void forceUnlock() {
-        lockSupport.forceUnlock(getNodeEngine(), key);
+        lockSupport.forceUnlock(getNodeEngine(), key, partitionKey);
     }
 
     public Condition newCondition() {
