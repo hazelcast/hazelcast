@@ -121,16 +121,8 @@ public class PartitionRecordStore implements RecordStore {
 
     public boolean containsValue(Object value) {
         for (Record record : records.values()) {
-            Object testValue;
-            if (record instanceof DataRecord) {
-                testValue = mapService.toData(value);
-            } else {
-                testValue = mapService.toObject(value);
-            }
-
-            if (record.getValue().equals(testValue)) {
+            if( mapService.compare(name, value, record.getValue()) )
                 return true;
-            }
         }
         return false;
     }
