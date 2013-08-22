@@ -41,8 +41,8 @@ public final class LockProxySupport {
         this.namespace = namespace;
     }
 
-    public boolean isLocked(NodeEngine nodeEngine, Data key) {
-        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+    public boolean isLocked(NodeEngine nodeEngine, Data key, Data partitionKey) {
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(partitionKey);
         IsLockedOperation operation = new IsLockedOperation(namespace, key);
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
@@ -54,8 +54,8 @@ public final class LockProxySupport {
         }
     }
 
-    public boolean isLockedByCurrentThread(NodeEngine nodeEngine, Data key) {
-        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+    public boolean isLockedByCurrentThread(NodeEngine nodeEngine, Data key, Data partitionKey) {
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(partitionKey);
         IsLockedOperation operation = new IsLockedOperation(namespace, key, ThreadUtil.getThreadId());
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
@@ -67,8 +67,8 @@ public final class LockProxySupport {
         }
     }
 
-    public int getLockCount(NodeEngine nodeEngine, Data key) {
-        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+    public int getLockCount(NodeEngine nodeEngine, Data key, Data partitionKey) {
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(partitionKey);
         Operation operation = new GetLockCountOperation(namespace, key);
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
@@ -80,8 +80,8 @@ public final class LockProxySupport {
         }
     }
 
-    public long getRemainingLeaseTime(NodeEngine nodeEngine, Data key) {
-        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+    public long getRemainingLeaseTime(NodeEngine nodeEngine, Data key, Data partitionKey) {
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(partitionKey);
         Operation operation = new GetRemainingLeaseTimeOperation(namespace, key);
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
@@ -93,12 +93,13 @@ public final class LockProxySupport {
         }
     }
 
-    public void lock(NodeEngine nodeEngine, Data key) {
-        lock(nodeEngine, key, -1);
+
+    public void lock(NodeEngine nodeEngine, Data key, Data partitionKey) {
+        lock(nodeEngine, key, partitionKey, -1);
     }
 
-    public void lock(NodeEngine nodeEngine, Data key, long ttl) {
-        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+    public void lock(NodeEngine nodeEngine, Data key, Data partitionKey, long ttl) {
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(partitionKey);
         LockOperation operation = new LockOperation(namespace, key, ThreadUtil.getThreadId(), ttl, -1);
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
@@ -113,16 +114,16 @@ public final class LockProxySupport {
         }
     }
 
-    public boolean tryLock(NodeEngine nodeEngine, Data key) {
+    public boolean tryLock(NodeEngine nodeEngine, Data key, Data partitionKey) {
         try {
-            return tryLock(nodeEngine, key, 0, TimeUnit.MILLISECONDS);
+            return tryLock(nodeEngine, key, 0, TimeUnit.MILLISECONDS, partitionKey);
         } catch (InterruptedException e) {
             return false;
         }
     }
 
-    public boolean tryLock(NodeEngine nodeEngine, Data key, long timeout, TimeUnit timeunit) throws InterruptedException {
-        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+    public boolean tryLock(NodeEngine nodeEngine, Data key, long timeout, TimeUnit timeunit, Data partitionKey) throws InterruptedException {
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(partitionKey);
         LockOperation operation = new LockOperation(namespace, key, ThreadUtil.getThreadId(),
                 getTimeInMillis(timeout, timeunit));
         try {
@@ -139,8 +140,8 @@ public final class LockProxySupport {
         return timeunit != null ? timeunit.toMillis(time) : time;
     }
 
-    public void unlock(NodeEngine nodeEngine, Data key) {
-        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+    public void unlock(NodeEngine nodeEngine, Data key, Data partitionKey) {
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(partitionKey);
         UnlockOperation operation = new UnlockOperation(namespace, key, ThreadUtil.getThreadId());
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)
@@ -152,8 +153,8 @@ public final class LockProxySupport {
         }
     }
 
-    public void forceUnlock(NodeEngine nodeEngine, Data key) {
-        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+    public void forceUnlock(NodeEngine nodeEngine, Data key, Data partitionKey) {
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(partitionKey);
         UnlockOperation operation = new UnlockOperation(namespace, key, -1, true);
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId)

@@ -18,6 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.util.PartitionKeyUtil;
 
 import java.io.File;
 import java.net.URL;
@@ -134,7 +135,8 @@ public class Config {
         return this;
     }
 
-    public MapConfig getMapConfig(final String name) {
+    public MapConfig getMapConfig(String name) {
+        name = PartitionKeyUtil.getBaseName(name);
         MapConfig config;
         if ((config = lookupByPattern(mapConfigs, name)) != null) return config;
         MapConfig defConfig = mapConfigs.get("default");
@@ -173,7 +175,8 @@ public class Config {
         return this;
     }
 
-    public QueueConfig getQueueConfig(final String name) {
+    public QueueConfig getQueueConfig(String name) {
+        name = PartitionKeyUtil.getBaseName(name);
         QueueConfig config;
         if ((config = lookupByPattern(queueConfigs, name)) != null) return config;
         QueueConfig defConfig = queueConfigs.get("default");
@@ -209,7 +212,8 @@ public class Config {
         return this;
     }
 
-    public MultiMapConfig getMultiMapConfig(final String name) {
+    public MultiMapConfig getMultiMapConfig(String name) {
+        name = PartitionKeyUtil.getBaseName(name);
         MultiMapConfig config;
         if ((config = lookupByPattern(multiMapConfigs, name)) != null) return config;
         MultiMapConfig defConfig = multiMapConfigs.get("default");
@@ -242,7 +246,8 @@ public class Config {
         return this;
     }
 
-    public TopicConfig getTopicConfig(final String name) {
+    public TopicConfig getTopicConfig(String name) {
+        name = PartitionKeyUtil.getBaseName(name);
         TopicConfig config;
         if ((config = lookupByPattern(topicConfigs, name)) != null) {
             return config;
@@ -290,6 +295,7 @@ public class Config {
      * @return ExecutorConfig
      */
     public ExecutorConfig getExecutorConfig(String name) {
+        name = PartitionKeyUtil.getBaseName(name);
         ExecutorConfig ec = lookupByPattern(executorConfigs, name);
         if (ec != null) {
             return ec;
@@ -337,6 +343,7 @@ public class Config {
      * @return SemaphoreConfig
      */
     public SemaphoreConfig getSemaphoreConfig(String name) {
+        name = PartitionKeyUtil.getBaseName(name);
         SemaphoreConfig sc = lookupByPattern(semaphoreConfigs, name);
         if (sc != null) {
             return sc;
@@ -523,6 +530,7 @@ public class Config {
     }
 
     private static <T> T lookupByPattern(Map<String, T> map, String name) {
+        name = PartitionKeyUtil.getBaseName(name);
         T t = map.get(name);
         if (t == null) {
             final Set<String> tNames = map.keySet();

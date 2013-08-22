@@ -162,7 +162,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         if (key == null) {
             throw new NullPointerException("Retrieving a lock instance with a null key is not allowed!");
         }
-        return getDistributedObject(LockService.SERVICE_NAME, node.getSerializationService().toData(key));
+        return getDistributedObject(LockService.SERVICE_NAME, key);
     }
 
     public <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException {
