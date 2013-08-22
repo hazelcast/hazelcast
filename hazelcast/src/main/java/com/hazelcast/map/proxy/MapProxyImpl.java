@@ -205,14 +205,15 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         }
         NodeEngine nodeEngine = getNodeEngine();
         Data k = getService().toData(key);
-        lockSupport.lock(nodeEngine, k);
+        lockSupport.lock(nodeEngine, k, k);
     }
 
     public void lock(final Object key, final long leaseTime, final TimeUnit timeUnit) {
         if (key == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
-        lockSupport.lock(getNodeEngine(), getService().toData(key), timeUnit.toMillis(leaseTime));
+        Data k = getService().toData(key);
+        lockSupport.lock(getNodeEngine(), k, k, timeUnit.toMillis(leaseTime));
     }
 
     public void unlock(final K key) {
@@ -221,7 +222,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         }
         NodeEngine nodeEngine = getNodeEngine();
         Data k = getService().toData(key);
-        lockSupport.unlock(nodeEngine, k);
+        lockSupport.unlock(nodeEngine, k, k);
     }
 
     public boolean tryRemove(final K key, final long timeout, final TimeUnit timeunit) {
@@ -247,7 +248,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         }
         Data key = getService().toData(k);
         NodeEngine nodeEngine = getNodeEngine();
-        return lockSupport.isLocked(nodeEngine, key);
+        return lockSupport.isLocked(nodeEngine, key, key);
     }
 
     public Future putAsync(final K key, final V value) {
@@ -298,7 +299,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
         final NodeEngine nodeEngine = getNodeEngine();
-        return lockSupport.tryLock(nodeEngine, getService().toData(key));
+        Data k = getService().toData(key);
+        return lockSupport.tryLock(nodeEngine, k, k);
     }
 
     public boolean tryLock(final K key, final long time, final TimeUnit timeunit) throws InterruptedException {
@@ -306,7 +308,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
         final NodeEngine nodeEngine = getNodeEngine();
-        return lockSupport.tryLock(nodeEngine, getService().toData(key), time, timeunit);
+        Data k = getService().toData(key);
+        return lockSupport.tryLock(nodeEngine, k, time, timeunit, k);
     }
 
     public void forceUnlock(final K key) {
@@ -315,7 +318,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         }
         final NodeEngine nodeEngine = getNodeEngine();
         Data k = getService().toData(key);
-        lockSupport.forceUnlock(nodeEngine, k);
+        lockSupport.forceUnlock(nodeEngine, k, k);
     }
 
     public String addInterceptor(MapInterceptor interceptor) {

@@ -59,6 +59,11 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
         return ConcurrencyUtil.getOrPutIfAbsent(permitMap, name, permitConstructor);
     }
 
+    // need for testing..
+    public boolean containsSemaphore(String name) {
+        return permitMap.containsKey(name);
+    }
+
     public void init(NodeEngine nodeEngine, Properties properties) {
     }
 

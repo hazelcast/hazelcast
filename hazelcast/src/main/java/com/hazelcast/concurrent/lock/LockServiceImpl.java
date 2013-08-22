@@ -122,11 +122,11 @@ public final class LockServiceImpl implements ManagedService, RemoteService, Mem
         scheduler.cancel(key);
     }
 
-    LockStoreContainer getLockContainer(int partitionId) {
+    public LockStoreContainer getLockContainer(int partitionId) {
         return containers[partitionId];
     }
 
-    LockStoreImpl getLockStore(int partitionId, ObjectNamespace namespace) {
+    public LockStoreImpl getLockStore(int partitionId, ObjectNamespace namespace) {
         return getLockContainer(partitionId).getOrCreateLockStore(namespace);
     }
 
@@ -203,7 +203,7 @@ public final class LockServiceImpl implements ManagedService, RemoteService, Mem
     }
 
     public DistributedObject createDistributedObject(Object objectId) {
-        return new LockProxy(nodeEngine, this, nodeEngine.getSerializationService().toData(objectId));
+        return new LockProxy(nodeEngine, this, objectId);
     }
 
     public void destroyDistributedObject(Object objectId) {

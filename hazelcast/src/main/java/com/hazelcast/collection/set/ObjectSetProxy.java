@@ -21,7 +21,6 @@ import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.collection.multimap.MultiMapProxySupport;
 import com.hazelcast.collection.operations.CollectionResponse;
-import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.ISet;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.serialization.Data;
@@ -34,18 +33,11 @@ import java.util.*;
  */
 public class ObjectSetProxy<E> extends MultiMapProxySupport implements ISet<E>, CollectionProxy {
 
-    public static final String COLLECTION_SET_NAME = "hz:set:";
-
     final Data key;
 
     public ObjectSetProxy(CollectionService service, NodeEngine nodeEngine, CollectionProxyId proxyId) {
         super(service, nodeEngine, createConfig(proxyId), proxyId);
-        this.key = nodeEngine.toData(proxyId.getKeyName());
-    }
-
-    private static MultiMapConfig createConfig(CollectionProxyId proxyId) {
-        return new MultiMapConfig().setName(COLLECTION_SET_NAME + proxyId.getKeyName())
-                .setValueCollectionType(MultiMapConfig.ValueCollectionType.SET);
+        key = nodeEngine.toData(createCollectionKey(proxyId));
     }
 
     public String getName() {

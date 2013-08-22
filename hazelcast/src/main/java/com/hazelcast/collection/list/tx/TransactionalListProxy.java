@@ -18,8 +18,8 @@ package com.hazelcast.collection.list.tx;
 
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionService;
+import com.hazelcast.collection.multimap.MultiMapProxySupport;
 import com.hazelcast.collection.multimap.tx.TransactionalMultiMapProxySupport;
-import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.TransactionalList;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
@@ -33,9 +33,8 @@ public class TransactionalListProxy<E> extends TransactionalMultiMapProxySupport
     final Data key;
 
     public TransactionalListProxy(NodeEngine nodeEngine, CollectionService service, CollectionProxyId proxyId, TransactionSupport tx) {
-        super(nodeEngine, service, proxyId, tx,
-                nodeEngine.getConfig().getMultiMapConfig("list:" + proxyId.getKeyName()).setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST));
-        this.key = nodeEngine.toData(proxyId.getKeyName());
+        super(nodeEngine, service, proxyId, tx, MultiMapProxySupport.createConfig(proxyId));
+        key = nodeEngine.toData(MultiMapProxySupport.createCollectionKey(proxyId));
     }
 
     public boolean add(E e) {
