@@ -20,8 +20,14 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
+import com.hazelcast.instance.HazelcastInstanceImpl;
 
+import javax.management.InstanceAlreadyExistsException;
+import javax.management.MBeanRegistrationException;
+import javax.management.MBeanServer;
+import javax.management.NotCompliantMBeanException;
 import java.io.File;
+import java.lang.management.ManagementFactory;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,16 +37,24 @@ import java.util.Set;
  * @author ali 2/1/13
  */
 @ManagedDescription("HazelcastInstance")
-public class InstanceMBean extends HazelcastMBean<HazelcastInstance> {
+public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
 
     final Config config;
     final Cluster cluster;
 
-    protected InstanceMBean(HazelcastInstance managedObject, ManagementService service) {
-        super(managedObject, service);
+    protected InstanceMBean(HazelcastInstanceImpl hazelcastInstance, ManagementService service) {
+        super(hazelcastInstance, service);
         objectName = service.createObjectName(null, null);
-        config = managedObject.getConfig();
-        cluster = managedObject.getCluster();
+        config = hazelcastInstance.getConfig();
+        cluster = hazelcastInstance.getCluster();
+
+        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+        NodeMBean nodeMBean = new NodeMBean(hazelcastInstance.node,service);
+        try {
+            mbs.registerMBean(nodeMBean, objectName);
+        } catch (Exception e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
     }
 
     @ManagedAnnotation("name")
