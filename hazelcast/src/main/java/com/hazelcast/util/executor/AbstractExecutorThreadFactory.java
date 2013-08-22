@@ -30,7 +30,8 @@ public abstract class AbstractExecutorThreadFactory implements ThreadFactory {
 
     public final Thread newThread(Runnable r) {
         final Thread t = createThread(r);
-        t.setContextClassLoader(classLoader);
+        ClassLoader cl = classLoader != null ? classLoader : Thread.currentThread().getContextClassLoader();
+        t.setContextClassLoader(cl);
         if (t.isDaemon()) {
             t.setDaemon(false);
         }

@@ -34,7 +34,7 @@ public class Config {
 
     private File configurationFile;
 
-    private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+    private ClassLoader classLoader;
 
     private Properties properties = new Properties();
 
@@ -79,10 +79,30 @@ public class Config {
     public Config() {
     }
 
+    /**
+     * Returns the class-loader that will be used in serialization.
+     * <p> If null, then thread context class-loader will be used instead.
+     *
+     * @return the class-loader
+     */
     public ClassLoader getClassLoader() {
         return classLoader;
     }
 
+    /**
+     * Sets the class-loader to be used during de-serialization
+     * and as context class-loader of Hazelcast internal threads.
+     *
+     * <p>
+     * If not set (or set to null); thread context class-loader
+     * will be used in required places.
+     *
+     * <p>
+     * Default value is null.
+     *
+     * @param classLoader class-loader to be used during de-serialization
+     * @return Config instance
+     */
     public Config setClassLoader(ClassLoader classLoader) {
         this.classLoader = classLoader;
         return this;
