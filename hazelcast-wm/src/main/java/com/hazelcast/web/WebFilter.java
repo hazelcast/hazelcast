@@ -18,11 +18,13 @@ package com.hazelcast.web;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.util.Clock;
 
 import javax.servlet.*;
 import javax.servlet.http.*;
@@ -288,12 +290,10 @@ public class WebFilter implements Filter {
             final ServletRequest original = getRequest();
             return new RequestDispatcher() {
                 public void forward(ServletRequest servletRequest, ServletResponse servletResponse) throws ServletException, IOException {
-//                    original.getRequestDispatcher(path).forward(original, servletResponse);
                     original.getRequestDispatcher(path).forward(RequestWrapper.this, servletResponse);
                 }
 
                 public void include(ServletRequest servletRequest, ServletResponse servletResponse) throws ServletException, IOException {
-//                    original.getRequestDispatcher(path).include(original, servletResponse);
                     original.getRequestDispatcher(path).include(RequestWrapper.this, servletResponse);
                 }
             };
@@ -405,13 +405,10 @@ public class WebFilter implements Filter {
 
         final WebFilter webFilter;
 
-        private final IAtomicLong timestamp;
-
         public HazelcastHttpSession(WebFilter webFilter, final String sessionId, HttpSession originalSession) {
             this.webFilter = webFilter;
             this.id = sessionId;
             this.originalSession = originalSession;
-            timestamp = hazelcastInstance.getAtomicLong(clusterMapName + "_" + id);
         }
 
         public Object getAttribute(final String name) {
@@ -513,20 +510,10 @@ public class WebFilter implements Filter {
 
         void destroy() {
             valid = false;
-            timestamp.destroy();
         }
 
         public boolean isValid() {
             return valid;
-        }
-
-        void setAccessed() {
-            timestamp.set(Clock.currentTimeMillis());
-        }
-
-        long getLastAccessed() {
-            return hazelcastInstance.getLifecycleService().isRunning()
-                    ? timestamp.get() : 0L;
         }
     }// END of HazelSession
 
@@ -601,7 +588,6 @@ public class WebFilter implements Filter {
             req = null; // for easy debugging. reqWrapper should be used
             HazelcastHttpSession session = reqWrapper.getSession(false);
             if (session != null && session.isValid()) {
-                session.setAccessed();
                 final Enumeration<String> attNames = session.getAttributeNames();
                 Map mapData = null;
                 while (attNames.hasMoreElements()) {
