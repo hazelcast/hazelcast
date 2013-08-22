@@ -676,7 +676,7 @@ public class MapService implements ManagedService, MigrationAwareService,
             case BINARY:
                 return toData(value1).equals(toData(value2));
             case CACHED:
-                return toData(value1).equals(toData(value2));
+                return toObject(value1).equals(toObject(value2));
             case OBJECT:
                 return toObject(value1).equals(toObject(value2));
             default:
