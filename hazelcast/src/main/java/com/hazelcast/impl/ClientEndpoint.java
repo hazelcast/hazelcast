@@ -46,6 +46,8 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
     final ConcurrentHashSet<ClientRequestHandler> currentRequests = new ConcurrentHashSet<ClientRequestHandler>();
     final Node node;
     final Map<String, AtomicInteger> attachedSemaphorePermits = new ConcurrentHashMap<String, AtomicInteger>();
+    final SocketAddress socketAddress;
+
     volatile boolean authenticated = false;
 
     LoginContext loginContext = null;
@@ -53,6 +55,7 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
     ClientEndpoint(Node node, Connection conn) {
         this.node = node;
         this.conn = conn;
+        socketAddress = conn.getSocketChannelWrapper().socket().getRemoteSocketAddress();
     }
 
     public CallContext getCallContext(int threadId) {
@@ -375,7 +378,7 @@ public class ClientEndpoint implements EntryListener, InstanceListener, Membersh
     }
 
     public SocketAddress getSocketAddress() {
-        return conn.getSocketChannelWrapper().socket().getRemoteSocketAddress();
+        return socketAddress;
     }
 
     public ClientType getClientType() {
