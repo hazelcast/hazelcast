@@ -104,7 +104,7 @@ public interface HazelcastInstance {
      * by this dead member will be removed so that these locks can be
      * available for live members immediately.
      * <pre>
-     * Lock lock = Hazelcast.getLock("PROCESS_LOCK");
+     * Lock lock = hazelcastInstance.getLock("PROCESS_LOCK");
      * lock.lock();
      * try {
      *   // process
