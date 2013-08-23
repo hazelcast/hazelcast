@@ -420,12 +420,15 @@ public class QueryTest extends HazelcastTestSupport {
             imap.putAll(temp);
         }
         assertEquals(50000, imap.size());
+        Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active=true and age>44"));
+        assertEquals(6400, entries.size());
+
         HazelcastInstance h2 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance h3 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance h4 = nodeFactory.newHazelcastInstance(cfg);
         long startNow = Clock.currentTimeMillis();
         while ((Clock.currentTimeMillis() - startNow) < 10000) {
-            Set<Map.Entry> entries = imap.entrySet(new SqlPredicate("active=true and age>44"));
+            entries = imap.entrySet(new SqlPredicate("active=true and age>44"));
             assertEquals(6400, entries.size());
         }
     }

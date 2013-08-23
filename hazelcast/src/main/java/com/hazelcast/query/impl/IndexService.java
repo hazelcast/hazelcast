@@ -53,12 +53,6 @@ public class IndexService {
         return indexes.get();
     }
 
-    public void clear() {
-        for (Index index : indexes.get()) {
-            index.clear();
-        }
-    }
-
     public void removeEntryIndex(Data indexKey) throws QueryException {
         for (Index index : indexes.get()) {
             index.removeEntryIndex(indexKey);
