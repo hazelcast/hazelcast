@@ -52,7 +52,7 @@
                 <multicast-group>224.2.2.3</multicast-group>
                 <multicast-port>54327</multicast-port>
                 <multicast-timeout-seconds>2</multicast-timeout-seconds>
-                <multicast-time-to-live-seconds>32</multicast-time-to-live-seconds>
+                <multicast-time-to-live>32</multicast-time-to-live>
                 <trusted-interfaces>
                     <interface>10.10.1.*</interface>
                     <interface>10.10.2.*</interface>

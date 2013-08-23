@@ -346,7 +346,7 @@
             <xs:element name="multicast-group" type="xs:string" minOccurs="0" maxOccurs="1" default="224.2.2.3"/>
             <xs:element name="multicast-port" type="xs:unsignedShort" minOccurs="0" maxOccurs="1" default="54327"/>
             <xs:element name="multicast-timeout-seconds" type="xs:int" minOccurs="0" maxOccurs="1" default="2"/>
-            <xs:element name="multicast-time-to-live-seconds" type="xs:int" minOccurs="0" maxOccurs="1" default="32"/>
+            <xs:element name="multicast-time-to-live" type="xs:int" minOccurs="0" maxOccurs="1" default="32"/>
             <xs:element name="trusted-interfaces" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
                     <xs:sequence>
