@@ -162,7 +162,7 @@
     first three (<emphasis role="bold">read-only</emphasis>, 
     	<emphasis role="bold">read-write</emphasis>, 
     	<emphasis role="bold">nonstrict-read-write</emphasis>) of these four strategies. 
-    	Hazelcast has no support for<emphasis>transactional</emphasis> strategy yet.
+       Hazelcast has no support for <emphasis>transactional</emphasis> strategy yet.
     <itemizedlist>
         <listitem>
             <para>If you are using xml based class configurations, you should add a

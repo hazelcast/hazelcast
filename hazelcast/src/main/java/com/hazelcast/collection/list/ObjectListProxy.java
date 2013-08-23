@@ -21,7 +21,6 @@ import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.collection.multimap.MultiMapProxySupport;
 import com.hazelcast.collection.operations.CollectionResponse;
-import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.serialization.Data;
@@ -34,18 +33,12 @@ import java.util.*;
  */
 public class ObjectListProxy<E> extends MultiMapProxySupport implements CollectionProxy, IList<E> {
 
-    public static final String COLLECTION_LIST_NAME = "hz:list:";
 
     final Data key;
 
     public ObjectListProxy(CollectionService service, NodeEngine nodeEngine, CollectionProxyId proxyId) {
         super(service, nodeEngine, createConfig(proxyId), proxyId);
-        key = nodeEngine.toData(proxyId.getKeyName());
-    }
-
-    private static MultiMapConfig createConfig(CollectionProxyId proxyId) {
-        return new MultiMapConfig().setName(COLLECTION_LIST_NAME + proxyId.getKeyName())
-                .setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST);
+        key = nodeEngine.toData(createCollectionKey(proxyId));
     }
 
     public String getName() {

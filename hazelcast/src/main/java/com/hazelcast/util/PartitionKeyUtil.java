@@ -14,24 +14,27 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.util;
+package com.hazelcast.util;
 
-import com.hazelcast.client.LoadBalancer;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MembershipListener;
+public class PartitionKeyUtil {
 
-import java.util.concurrent.atomic.AtomicInteger;
+    public static String getBaseName(String name){
+        if(name == null)return null;
+        int indexOf = name.indexOf('@');
+        if(indexOf == -1) return name;
+        return name.substring(0,indexOf);
+    }
 
-public class RoundRobinLB extends AbstractLoadBalancer implements LoadBalancer, MembershipListener {
+    public static Object getPartitionKey(Object key) {
+        if (key == null) return null;
+        if (!(key instanceof String)) return key;
 
-    private final AtomicInteger index = new AtomicInteger(0);
-
-    public Member next() {
-        final Member[] members = getMembers();
-        if (members == null || members.length == 0) {
-            return null;
+        String s = (String) key;
+        int firstIndexOf = s.indexOf('@');
+        if (firstIndexOf > -1) {
+            key = s.substring(firstIndexOf + 1);
         }
-        final int length = members.length;
-        return members[(index.getAndAdd(1) % length + length) % length];
+
+        return key;
     }
 }

@@ -50,6 +50,11 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
         return ConcurrencyUtil.getOrPutIfAbsent(numbers, name, atomicLongConstructorFunction);
     }
 
+    // need for testing..
+    public boolean containsAtomicLong(String name) {
+        return numbers.containsKey(name);
+    }
+
     public void init(NodeEngine nodeEngine, Properties properties) {
         this.nodeEngine = nodeEngine;
     }

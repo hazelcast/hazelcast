@@ -107,6 +107,11 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         containerMap.put(name, container);
     }
 
+    // need for testing..
+    public boolean containsQueue(String name) {
+        return containerMap.containsKey(name);
+    }
+
     public void beforeMigration(PartitionMigrationEvent partitionMigrationEvent) {
     }
 

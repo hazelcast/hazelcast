@@ -59,6 +59,11 @@ public class CollectionPartitionContainer {
         return container;
     }
 
+    // need for testing..
+    public boolean containsCollection(CollectionProxyId id) {
+        return containerMap.containsKey(id);
+    }
+
     void destroyCollection(CollectionProxyId collectionProxyId) {
         final CollectionContainer container = containerMap.remove(collectionProxyId);
         if (container != null) {
