@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -42,6 +43,33 @@ public class ListenerTest {
     public void cleanup() throws Exception {
         Hazelcast.shutdownAll();
         HazelcastClient.shutdownAll();
+    }
+
+    @Test
+    public void testClientListenerIssue756() throws InterruptedException {
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        final CountDownLatch latch = new CountDownLatch(2);
+        instance.getClientService().addClientListener(new ClientListener() {
+            public void clientConnected(Client client) {
+                countDown(client);
+            }
+
+            public void clientDisconnected(Client client) {
+                countDown(client);
+            }
+
+            void countDown(Client client){
+                if (client.getSocketAddress() != null){
+                    latch.countDown();
+                }
+            }
+        });
+
+        final HazelcastClient client = HazelcastClient.newHazelcastClient(new ClientConfig());
+        client.shutdown();
+
+        Assert.assertTrue(latch.await(5, TimeUnit.SECONDS));
+
     }
 
     /* github issue #183 */
