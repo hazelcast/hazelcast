@@ -382,10 +382,10 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                 Map<Integer, MapEntrySet> entryMap = new HashMap<Integer, MapEntrySet>();
                 for (Entry entry : entries.entrySet()) {
                     int partitionId = partitionService.getPartitionId(entry.getKey());
-                    if(!entryMap.containsKey(partitionId)) {
+                    if (!entryMap.containsKey(partitionId)) {
                         entryMap.put(partitionId, new MapEntrySet());
                     }
-                    entryMap.get(partitionId).add(new AbstractMap.SimpleImmutableEntry<Data,Data>(mapService.toData(entry.getKey()), mapService.toData(entry.getValue())));
+                    entryMap.get(partitionId).add(new AbstractMap.SimpleImmutableEntry<Data, Data>(mapService.toData(entry.getKey()), mapService.toData(entry.getValue())));
                 }
 
                 for (Integer partitionId : entryMap.keySet()) {
@@ -400,8 +400,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
             } else {
                 for (Entry entry : entries.entrySet()) {
-                    if(entry.getValue() == null){
-                            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
+                    if (entry.getValue() == null) {
+                        throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
                     }
                     putInternal(mapService.toData(entry.getKey()), mapService.toData(entry.getValue()), -1, TimeUnit.SECONDS);
                 }
@@ -666,6 +666,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         Set<Integer> plist = new HashSet<Integer>(partitionCount);
         QueryResultSet result = new QueryResultSet(nodeEngine.getSerializationService(), iterationType, dataResult);
+        List<Integer> missingList = new ArrayList<Integer>();
         try {
             List<Future> flist = new ArrayList<Future>();
             for (MemberImpl member : members) {
@@ -687,12 +688,21 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             if (plist.size() == partitionCount) {
                 return result;
             }
-            List<Integer> missingList = new ArrayList<Integer>();
             for (int i = 0; i < partitionCount; i++) {
                 if (!plist.contains(i)) {
                     missingList.add(i);
                 }
             }
+        } catch (Throwable t) {
+            missingList.clear();
+            for (int i = 0; i < partitionCount; i++) {
+                if (!plist.contains(i)) {
+                    missingList.add(i);
+                }
+            }
+        }
+
+        try {
             List<Future> futures = new ArrayList<Future>(missingList.size());
             for (Integer pid : missingList) {
                 QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(name, predicate);
