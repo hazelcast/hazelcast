@@ -12,7 +12,6 @@ public class Main {
         config.setProperty(GroupProperties.PROP_ENABLE_JMX,"true");
 
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
-
         instance.getMap("foo").put("1","1");
        Hazelcast.newHazelcastInstance(config);
        Hazelcast.newHazelcastInstance(config);
