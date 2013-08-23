@@ -107,8 +107,6 @@ public class SmartClientConnectionManager implements ClientConnectionManager {
         } catch (Exception e) {
             if (logger.isFinestEnabled()) {
                 logger.warning("Error during connection creation... To -> " + address, e);
-            } else {
-                logger.warning("Error during connection creation... To -> " + address + ", Error: " + e.toString());
             }
         }
         // Could be that this address is dead and that's why pool is not able to create and give a connection.
