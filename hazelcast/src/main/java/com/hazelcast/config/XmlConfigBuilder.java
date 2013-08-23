@@ -617,6 +617,10 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             } else if ("multicast-timeout-seconds".equals(cleanNodeName(n.getNodeName()))) {
                 multicastConfig.setMulticastTimeoutSeconds(Integer.parseInt(value));
             } else if ("multicast-time-to-live-seconds".equals(cleanNodeName(n.getNodeName()))) {
+                //we need this line for the time being to prevent not reading the multicast-time-to-live-seconds property
+                //for more info see: https://github.com/hazelcast/hazelcast/issues/752
+                multicastConfig.setMulticastTimeToLive(Integer.parseInt(value));
+            } else if ("multicast-time-to-live".equals(cleanNodeName(n.getNodeName()))) {
                 multicastConfig.setMulticastTimeToLive(Integer.parseInt(value));
             } else if ("trusted-interfaces".equals(cleanNodeName(n.getNodeName()))) {
                 for (org.w3c.dom.Node child : new IterableNodeList(n.getChildNodes())) {
