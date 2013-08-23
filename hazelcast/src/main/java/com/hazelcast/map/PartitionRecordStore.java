@@ -108,11 +108,13 @@ public class PartitionRecordStore implements RecordStore {
         if (lockService != null) {
             lockService.clearLockStore(partitionContainer.getPartitionId(), new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
         }
-        records.clear();
         final IndexService indexService = mapContainer.getIndexService();
         if (indexService.hasIndex()) {
-            indexService.clear();
+            for (Data key : records.keySet()) {
+                indexService.removeEntryIndex(key);
+            }
         }
+        records.clear();
     }
 
     public int size() {
