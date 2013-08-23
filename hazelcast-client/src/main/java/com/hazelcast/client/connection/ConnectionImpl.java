@@ -53,7 +53,11 @@ final class ConnectionImpl implements Connection {
 
     public ConnectionImpl(Address address, SocketOptions options, SerializationService serializationService) throws IOException {
         final InetSocketAddress isa = address.getInetSocketAddress();
-        final Socket socket = new Socket();
+        SocketFactory socketFactory = options.getSocketFactory();
+        if (socketFactory == null) {
+            socketFactory = new DefaultSocketFactory();
+        }
+        final Socket socket = socketFactory.createSocket();
         try {
             socket.setKeepAlive(options.isSocketKeepAlive());
             socket.setTcpNoDelay(options.isSocketTcpNoDelay());
