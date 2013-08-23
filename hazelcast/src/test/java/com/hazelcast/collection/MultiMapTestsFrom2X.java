@@ -222,6 +222,7 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
     @Test
     public void testContains() throws Exception {
         final HazelcastInstance instance = createHazelcastInstanceFactory(1).newHazelcastInstance(new Config());
+        instance.getConfig().addMultiMapConfig(new MultiMapConfig().setName("testContains").setBinary(false));
 
         MultiMap<String, ComplexValue> multiMap = instance.getMultiMap("testContains");
         // Now MultiMap
@@ -237,10 +238,7 @@ public class MultiMapTestsFrom2X extends HazelcastTestSupport {
         assertTrue(multiMap.containsEntry("1", new ComplexValue("text", 2)));
         assertTrue(multiMap.remove("1", new ComplexValue("text", 1)));
         //Now MultiMap List
-        MultiMapConfig multiMapConfigList = new MultiMapConfig();
-        multiMapConfigList.setName("testContains.list");
-        multiMapConfigList.setValueCollectionType("LIST");
-        instance.getConfig().addMultiMapConfig(multiMapConfigList);
+        instance.getConfig().addMultiMapConfig(new MultiMapConfig().setName("testContains.list").setValueCollectionType("LIST").setBinary(false));
         MultiMap<String, ComplexValue> mmList = instance.getMultiMap("testContains.list");
         assertTrue(mmList.put("1", new ComplexValue("text", 1)));
         assertTrue(mmList.put("1", new ComplexValue("text", 1)));
