@@ -39,14 +39,18 @@ public final class ClientEndpoint implements Client {
     private LoginContext loginContext = null;
     private ClientPrincipal principal;
     private boolean firstConnection = false;
+    private final SocketAddress socketAddress;
 
     private volatile boolean authenticated = false;
     private volatile TransactionContext transactionContext;
     private volatile ListenerRegistration registration;
 
+
     ClientEndpoint(ClientEngine clientEngine, Connection conn, String uuid) {
         this.clientEngine = clientEngine;
         this.conn = conn;
+        socketAddress = conn instanceof TcpIpConnection ?
+                ((TcpIpConnection) conn).getSocketChannelWrapper().socket().getRemoteSocketAddress() : null;
         this.uuid = uuid;
     }
 
@@ -90,10 +94,7 @@ public final class ClientEndpoint implements Client {
     }
 
     public SocketAddress getSocketAddress() {
-        if (conn instanceof TcpIpConnection) {
-            return ((TcpIpConnection) conn).getSocketChannelWrapper().socket().getRemoteSocketAddress();
-        }
-        return null;
+        return socketAddress;
     }
 
     public ClientType getClientType() {
