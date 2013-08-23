@@ -28,10 +28,17 @@ public class HttpDeleteCommandProcessor extends HttpCommandProcessor<HttpDeleteC
         String uri = command.getURI();
         if (uri.startsWith(URI_MAPS)) {
             int indexEnd = uri.indexOf('/', URI_MAPS.length());
-            String mapName = uri.substring(URI_MAPS.length(), indexEnd);
-            String key = uri.substring(indexEnd + 1);
-            Object value = textCommandService.delete(mapName, key);
-            command.send204();
+            if (indexEnd == -1) {
+                String mapName = uri.substring(URI_MAPS.length(), uri.length());
+                textCommandService.deleteAll(mapName);
+                command.send204();
+
+            } else {
+                String mapName = uri.substring(URI_MAPS.length(), indexEnd);
+                String key = uri.substring(indexEnd + 1);
+                Object value = textCommandService.delete(mapName, key);
+                command.send204();
+            }
         } else if (uri.startsWith(URI_QUEUES)) {
             // Poll an item from the default queue in 3 seconds
             // http://127.0.0.1:5701/hazelcast/rest/queues/default/3
