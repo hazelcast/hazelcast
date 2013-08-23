@@ -30,7 +30,6 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.net.SocketAddress;
-import java.util.logging.Level;
 
 public final class ClientEndpoint implements Client {
 
@@ -92,7 +91,7 @@ public final class ClientEndpoint implements Client {
 
     public SocketAddress getSocketAddress() {
         if (conn instanceof TcpIpConnection) {
-            ((TcpIpConnection) conn).getSocketChannelWrapper().socket().getRemoteSocketAddress();
+            return ((TcpIpConnection) conn).getSocketChannelWrapper().socket().getRemoteSocketAddress();
         }
         return null;
     }
