@@ -43,6 +43,16 @@ public interface PartitionService {
     Partition getPartition(Object key);
 
     /**
+     * Generates a random partition key. This is useful if you want to partition data in the same partition,
+     * but don't care which partition it is going to be.
+     *
+     * The returned value will never be null.
+     *
+     * @return the random partition key.
+     */
+    String randomPartitionKey();
+
+    /**
      * @param migrationListener listener
      * @return returns registration id.
      */

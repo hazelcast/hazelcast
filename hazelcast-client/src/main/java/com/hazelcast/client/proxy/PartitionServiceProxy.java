@@ -23,6 +23,7 @@ import com.hazelcast.core.PartitionService;
 import com.hazelcast.util.PartitionKeyUtil;
 
 import java.util.LinkedHashSet;
+import java.util.Random;
 import java.util.Set;
 
 /**
@@ -31,9 +32,15 @@ import java.util.Set;
 public final class PartitionServiceProxy implements PartitionService {
 
     private final ClientPartitionService partitionService;
+    private final Random random = new Random();
 
     public PartitionServiceProxy(ClientPartitionService partitionService) {
         this.partitionService = partitionService;
+    }
+
+    @Override
+    public String randomPartitionKey() {
+        return Integer.toString(random.nextInt(partitionService.getPartitionCount()));
     }
 
     @Override
