@@ -46,7 +46,6 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -245,7 +244,6 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
         }
     }
 
-    //we need to make sure that a map entry can be stored to the same partition of a distributed object with a specific partition
     @Test
     public void testObjectWithPartitionKeyAndMap() throws Exception {
         HazelcastInstance instance = instances[0];
@@ -271,13 +269,13 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
     }
 
     private static class ContainsSemaphoreAndMapEntryTask implements Callable<Boolean>, HazelcastInstanceAware, Serializable {
-        private final String entryName;
+        private final String mapKey;
         private transient HazelcastInstance hz;
         private final String semaphoreName;
 
-        private ContainsSemaphoreAndMapEntryTask(String semaphoreName, String entryName) {
+        private ContainsSemaphoreAndMapEntryTask(String semaphoreName, String mapKey) {
             this.semaphoreName = semaphoreName;
-            this.entryName = entryName;
+            this.mapKey = mapKey;
         }
 
         @Override
@@ -291,12 +289,16 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
             SemaphoreService service = nodeEngine.getService(SemaphoreService.SERVICE_NAME);
 
             IMap map = hz.getMap("map");
-            if (map.localKeySet().contains(entryName)) {
+            if (map.localKeySet().contains(mapKey)) {
                 return service.containsSemaphore(semaphoreName);
-           } else {
+            } else {
                 return false;
             }
-
         }
     }
 }
+
+
+    interface PartitionStrategy<K>{
+        Object getPartitionKey(K k);
+    }
