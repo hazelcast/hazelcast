@@ -77,6 +77,10 @@ public final class HazelcastClientProxy implements HazelcastInstance {
         return getClient().getLock(key);
     }
 
+    public ILock getLock(String key) {
+        return getClient().getLock(key);
+    }
+
     public Cluster getCluster() {
         return getClient().getCluster();
     }
@@ -148,6 +152,11 @@ public final class HazelcastClientProxy implements HazelcastInstance {
 
     public <T extends DistributedObject> T getDistributedObject(String serviceName, Object id) {
         return getClient().getDistributedObject(serviceName, id);
+    }
+
+    @Override
+    public <T extends DistributedObject> T getDistributedObject(String serviceName, String name) {
+        return getClient().getDistributedObject(serviceName, name);
     }
 
     public ConcurrentMap<String, Object> getUserContext() {

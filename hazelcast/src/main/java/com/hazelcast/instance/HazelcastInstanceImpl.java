@@ -25,6 +25,7 @@ import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockService;
+import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
@@ -34,6 +35,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.management.ThreadMonitoringService;
 import com.hazelcast.map.MapService;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.ProxyService;
@@ -159,6 +161,18 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     public ILock getLock(Object key) {
+        //this method will be deleted in the near future.
+        String name;
+        if(key instanceof String){
+            name = (String)key;
+        } else{
+            Data data = getSerializationService().toData(key);
+            name = Integer.toString(data.hashCode());
+        }
+        return getLock(name);
+    }
+
+    public ILock getLock(String key) {
         if (key == null) {
             throw new NullPointerException("Retrieving a lock instance with a null key is not allowed!");
         }
@@ -253,7 +267,19 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         getLifecycleService().shutdown();
     }
 
-    public <S extends DistributedObject> S getDistributedObject(final String serviceName, Object id) {
+    @Override
+    public <T extends DistributedObject> T getDistributedObject(String serviceName, Object id) {
+        //this method will be deleted in the near future.
+        if(LockServiceImpl.SERVICE_NAME.equals(serviceName)){
+            if(!(id instanceof String)){
+                Data data = getSerializationService().toData(id);
+                id = Integer.toString(data.hashCode());
+            }
+        }
+        return (T) node.nodeEngine.getProxyService().getDistributedObject(serviceName, id);
+    }
+
+    public <S extends DistributedObject> S getDistributedObject(final String serviceName, String id) {
         return (S) node.nodeEngine.getProxyService().getDistributedObject(serviceName, id);
     }
 

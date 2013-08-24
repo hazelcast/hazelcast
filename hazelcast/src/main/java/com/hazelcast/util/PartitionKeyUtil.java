@@ -37,4 +37,7 @@ public class PartitionKeyUtil {
 
         return key;
     }
+
+    //we don't want any instances
+    private PartitionKeyUtil(){}
 }
