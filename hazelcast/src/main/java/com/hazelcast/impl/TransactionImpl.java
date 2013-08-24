@@ -25,7 +25,6 @@ import com.hazelcast.nio.Data;
 import com.hazelcast.util.Clock;
 
 import java.util.*;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 
 import static com.hazelcast.nio.IOUtil.toObject;
@@ -36,7 +35,8 @@ public class TransactionImpl implements Transaction {
 
     private final long id;
     private final FactoryImpl factory;
-    private final List<TransactionRecord> transactionRecords = new CopyOnWriteArrayList<TransactionRecord>();
+    private final List<TransactionRecord> transactionRecords = new ArrayList<TransactionRecord>();
+    private final Map<TransactionRecordKey, List<TransactionRecord>> recordMap = new HashMap<TransactionRecordKey, List<TransactionRecord>>();
 
     private int status = TXN_STATUS_NO_TXN;
     private final ILogger logger;
@@ -47,12 +47,23 @@ public class TransactionImpl implements Transaction {
         this.logger = factory.getLoggingService().getLogger(this.getClass().getName());
     }
 
+    private void putRecord(String name, Object key, TransactionRecord record){
+        final TransactionRecordKey recordKey = new TransactionRecordKey(name, key);
+        List<TransactionRecord> list = recordMap.get(recordKey);
+        if (list == null){
+            list = new LinkedList<TransactionRecord>();
+            recordMap.put(recordKey, list);
+        }
+        list.add(record);
+        transactionRecords.add(record);
+    }
+
     public Data attachPutOp(String name, Object key, Data value, boolean newRecord) {
         return attachPutOp(name, key, value, 0, -1, newRecord, -1);
     }
 
     public void attachPutMultiOp(String name, Object key, Data value) {
-        transactionRecords.add(new TransactionRecord(name, key, value, true));
+        putRecord(name, key, new TransactionRecord(name, key, value, true));
     }
 
     public Data attachPutOp(String name, Object key, Data value, int timeout, long ttl, boolean newRecord) {
@@ -72,7 +83,7 @@ public class TransactionImpl implements Transaction {
             rec.timeout = timeout;
             rec.ttl = ttl;
             rec.index = index;
-            transactionRecords.add(rec);
+            putRecord(name, key, rec);
             return null;
         } else {
             Data old = rec.value;
@@ -85,11 +96,10 @@ public class TransactionImpl implements Transaction {
     }
 
     public void attachGetOp(String name, Object key, Data value) {
-        Instance.InstanceType instanceType = ConcurrentMapManager.getInstanceType(name);
         TransactionRecord rec = findTransactionRecord(name, key);
         if (rec == null) {
             rec = new TransactionRecord(name, key, value);
-            transactionRecords.add(rec);
+            putRecord(name, key, rec);
         } else {
             rec.value = value;
         }
@@ -107,7 +117,7 @@ public class TransactionImpl implements Transaction {
         Data oldValue = null;
         if (rec == null) {
             rec = new TransactionRecord(name, key, value, newRecord);
-            transactionRecords.add(rec);
+            putRecord(name, key, rec);
         } else {
             oldValue = rec.value;
             rec.value = value;
@@ -209,38 +219,34 @@ public class TransactionImpl implements Transaction {
     }
 
     private TransactionRecord findTransactionRecord(String name, Object key) {
-        for (TransactionRecord transactionRecord : transactionRecords) {
-            if (transactionRecord.name.equals(name)) {
-                if (transactionRecord.key != null) {
-                    if (transactionRecord.key.equals(key)) {
-                        return transactionRecord;
-                    }
-                }
-            }
+        final List<TransactionRecord> list = recordMap.get(new TransactionRecordKey(name, key));
+        if (list == null){
+            return null;
         }
-        return null;
+        if (list.size() != 1){
+            System.err.println("fatal list size : " + list.size());
+        }
+        return list.get(0);
     }
 
     private TransactionRecord findTransactionRecord(String name, Object key, Object value) {
-        for (TransactionRecord transactionRecord : transactionRecords) {
-            if (transactionRecord.name.equals(name)) {
-                if (transactionRecord.key != null) {
-                    if (transactionRecord.key.equals(key)) {
-                        final Object txValue = toObject(transactionRecord.value);
-                        if (transactionRecord.instanceType.isMultiMap()) {
-                            if (value == null && txValue == null) {
-                                return transactionRecord;
-                            } else if (value != null && value.equals(txValue)) {
-                                return transactionRecord;
-                            }
-                        } else {
-                            if (value == null) {
-                                return transactionRecord;
-                            } else if (value.equals(txValue)) {
-                                return transactionRecord;
-                            }
-                        }
-                    }
+        final List<TransactionRecord> list = recordMap.get(new TransactionRecordKey(name, key));
+        if (list == null){
+            return null;
+        }
+        for (TransactionRecord transactionRecord : list) {
+            final Object txValue = toObject(transactionRecord.value);
+            if (transactionRecord.instanceType.isMultiMap()) {
+                if (value == null && txValue == null) {
+                    return transactionRecord;
+                } else if (value != null && value.equals(txValue)) {
+                    return transactionRecord;
+                }
+            } else {
+                if (value == null) {
+                    return transactionRecord;
+                } else if (value.equals(txValue)) {
+                    return transactionRecord;
                 }
             }
         }
@@ -329,19 +335,20 @@ public class TransactionImpl implements Transaction {
     }
 
     public void getMulti(String name, Object key, Collection col) {
-        for (TransactionRecord transactionRecord : transactionRecords) {
-            if (transactionRecord.name.equals(name)) {
-                if (key.equals(transactionRecord.key)) {
-                    if (!transactionRecord.removed && transactionRecord.newRecord) {
-                        col.add(toObject(transactionRecord.value));
-                    } else if (transactionRecord.removed) {
-                        if (transactionRecord.value == null) {
-                            col.clear();
-                            return;
-                        } else {
-                            col.remove(toObject(transactionRecord.value));
-                        }
-                    }
+        final List<TransactionRecord> list = recordMap.get(new TransactionRecordKey(name, key));
+        if (list == null){
+            return;
+        }
+
+        for (TransactionRecord transactionRecord : list) {
+            if (!transactionRecord.removed && transactionRecord.newRecord) {
+                col.add(toObject(transactionRecord.value));
+            } else if (transactionRecord.removed) {
+                if (transactionRecord.value == null) {
+                    col.clear();
+                    return;
+                } else {
+                    col.remove(toObject(transactionRecord.value));
                 }
             }
         }
@@ -373,6 +380,7 @@ public class TransactionImpl implements Transaction {
 
     private void finalizeTxn() {
         transactionRecords.clear();
+        recordMap.clear();
         status = TXN_STATUS_NO_TXN;
         ThreadContext.get().finalizeTxn();
     }
@@ -503,6 +511,38 @@ public class TransactionImpl implements Transaction {
                     ", lastAccess=" + lastAccess +
                     ", valueCount=" + valueCount +
                     '}';
+        }
+    }
+
+    private class TransactionRecordKey {
+
+        private final String name;
+
+        private final Object key;
+
+        private TransactionRecordKey(String name, Object key) {
+            this.name = name;
+            this.key = key;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof TransactionRecordKey)) return false;
+
+            TransactionRecordKey that = (TransactionRecordKey) o;
+
+            if (!key.equals(that.key)) return false;
+            if (!name.equals(that.name)) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = name.hashCode();
+            result = 31 * result + key.hashCode();
+            return result;
         }
     }
 }
