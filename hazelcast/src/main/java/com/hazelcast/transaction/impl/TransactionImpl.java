@@ -29,7 +29,6 @@ import com.hazelcast.util.ExceptionUtil;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 
 import static com.hazelcast.transaction.TransactionOptions.TransactionType;
 import static com.hazelcast.transaction.impl.Transaction.State.*;
@@ -98,7 +97,9 @@ final class TransactionImpl implements Transaction, TransactionSupport {
         if (transactionLog instanceof KeyAwareTransactionLog) {
             KeyAwareTransactionLog keyAwareTransactionLog = (KeyAwareTransactionLog) transactionLog;
             TransactionLog removed = txLogMap.remove(keyAwareTransactionLog.getKey());
-            txLogs.remove(removed);
+            if (removed != null){
+                txLogs.remove(removed);
+            }
         }
 
         txLogs.add(transactionLog);
