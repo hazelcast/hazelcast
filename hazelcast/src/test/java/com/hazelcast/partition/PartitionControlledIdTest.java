@@ -21,7 +21,6 @@ import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionProxyType;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.collection.list.ObjectListProxy;
-import com.hazelcast.collection.set.ObjectSetProxy;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.lock.InternalLockNamespace;
@@ -31,6 +30,7 @@ import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.Node;
+import com.hazelcast.instance.TestUtil;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
@@ -41,6 +41,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.io.Serializable;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -203,5 +209,94 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
 
         CountDownLatchService service = getNodeEngine(hz).getService(CountDownLatchService.SERVICE_NAME);
         assertTrue(service.containsLatch(countDownLatch.getName()));
+    }
+
+    //we need to make sure that a task can be send to the same partition of a distributed object with a specific partition
+    @Test
+    public void testObjectWithPartitionKeyAndTask() throws Exception {
+        HazelcastInstance instance = instances[0];
+        IExecutorService executorServices = instance.getExecutorService("executor");
+        String partitionKey = "hazelcast";
+        ISemaphore semaphore = instance.getSemaphore("s@" + partitionKey);
+        semaphore.release();
+        ContainsSemaphoreTask task = new ContainsSemaphoreTask(semaphore.getName());
+        Future<Boolean> f = executorServices.submitToKeyOwner(task, semaphore.getPartitionKey());
+        assertTrue(f.get());
+    }
+
+    private static class ContainsSemaphoreTask implements Callable<Boolean>, HazelcastInstanceAware, Serializable {
+        private transient HazelcastInstance hz;
+        private final String semaphoreName;
+
+        private ContainsSemaphoreTask(String semaphoreName) {
+            this.semaphoreName = semaphoreName;
+        }
+
+        @Override
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            this.hz = hazelcastInstance;
+        }
+
+        @Override
+        public Boolean call() {
+            NodeEngineImpl nodeEngine = TestUtil.getNode(hz).nodeEngine;
+            SemaphoreService service = nodeEngine.getService(SemaphoreService.SERVICE_NAME);
+            return service.containsSemaphore(semaphoreName);
+        }
+    }
+
+    //we need to make sure that a map entry can be stored to the same partition of a distributed object with a specific partition
+    @Test
+    public void testObjectWithPartitionKeyAndMap() throws Exception {
+        HazelcastInstance instance = instances[0];
+        IExecutorService executorServices = instance.getExecutorService("executor");
+        String partitionKey = "hazelcast";
+        String mapKey = partitionKey;
+        IMap map = instance.getMap("map");
+
+        map.put(mapKey, "foobar");
+
+        ISemaphore semaphore = instance.getSemaphore("s@" + partitionKey);
+        semaphore.release();
+
+        ContainsSemaphoreAndMapEntryTask task = new ContainsSemaphoreAndMapEntryTask(semaphore.getName(), mapKey);
+        Map<Member, Future<Boolean>> futures = executorServices.submitToAllMembers(task);
+
+        int count = 0;
+        for (Future<Boolean> f : futures.values()) {
+            count += f.get() ? 1 : 0;
+        }
+
+        assertEquals(1, count);
+    }
+
+    private static class ContainsSemaphoreAndMapEntryTask implements Callable<Boolean>, HazelcastInstanceAware, Serializable {
+        private final String entryName;
+        private transient HazelcastInstance hz;
+        private final String semaphoreName;
+
+        private ContainsSemaphoreAndMapEntryTask(String semaphoreName, String entryName) {
+            this.semaphoreName = semaphoreName;
+            this.entryName = entryName;
+        }
+
+        @Override
+        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
+            this.hz = hazelcastInstance;
+        }
+
+        @Override
+        public Boolean call() {
+            NodeEngineImpl nodeEngine = TestUtil.getNode(hz).nodeEngine;
+            SemaphoreService service = nodeEngine.getService(SemaphoreService.SERVICE_NAME);
+
+            IMap map = hz.getMap("map");
+            if (map.localKeySet().contains(entryName)) {
+                return service.containsSemaphore(semaphoreName);
+           } else {
+                return false;
+            }
+
+        }
     }
 }
