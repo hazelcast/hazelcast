@@ -320,11 +320,9 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     public void commitMigration(PartitionMigrationEvent event) {
+        migrateIndex(event);
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
-            migrateIndex(event);
             clearPartitionData(event.getPartitionId());
-        } else {
-            migrateIndex(event);
         }
         ownedPartitions.set(nodeEngine.getPartitionService().getMemberPartitions(nodeEngine.getThisAddress()));
     }
