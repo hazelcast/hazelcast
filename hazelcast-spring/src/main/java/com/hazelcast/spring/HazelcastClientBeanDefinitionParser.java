@@ -98,5 +98,43 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             configBuilder.addPropertyValue("addresses", members);
             builder.addConstructorArgValue(configBuilder.getBeanDefinition());
         }
+       public void handleClient(Element element) {
+            handleCommonBeanAttributes(element, builder, parserContext);
+            final NamedNodeMap attrs = element.getAttributes();
+            if (attrs != null) {
+                for (int a = 0; a < attrs.getLength(); a++) {
+                    final org.w3c.dom.Node att = attrs.item(a);
+                    final String name = att.getNodeName();
+                    final String value = att.getNodeValue();
+                    if ("group-name".equals(name)) {
+                        groupConfigBuilder.addPropertyValue("name", value);
+                    } else if ("group-password".equals(name)) {
+                        groupConfigBuilder.addPropertyValue("password", value);
+                    } else if ("redo-operation".equals(name)) {
+                        configBuilder.addPropertyValue("redoOperation", value);
+                    } else if ("smart".equals(name)) {
+                        configBuilder.addPropertyValue("smart", value);
+                    } else if ("connection-attempt-limit".equals(name)) {
+                        configBuilder.addPropertyValue("connectionAttemptLimit", value);
+                    } else if ("connection-timeout".equals(name)) {
+                        configBuilder.addPropertyValue("connectionTimeout", value);
+                    } else if ("connection-attempt-period".equals(name)) {
+                        configBuilder.addPropertyValue("connectionAttemptPeriod", value);
+                    } else if ("credentials-ref".equals(name)) {
+                        configBuilder.addPropertyReference("credentials", value);
+                    }
+                }
+            }
+            for (org.w3c.dom.Node node : new IterableNodeList(element, Node.ELEMENT_NODE)) {
+                final String nodeName = cleanNodeName(node.getNodeName());
+                if ("member".equals(nodeName)) {
+                    members.add(getTextContent(node));
+                } else if ("group".equals(nodeName)) {
+                    //handleGroup(node);
+                }
+            }
+            configBuilder.addPropertyValue("addresses", members);
+            builder.addConstructorArgValue(configBuilder.getBeanDefinition());
+        }
     }
 }
