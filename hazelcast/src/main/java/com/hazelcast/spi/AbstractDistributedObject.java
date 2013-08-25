@@ -18,6 +18,7 @@ package com.hazelcast.spi;
 
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.util.PartitionKeyUtil;
 
 /**
  * @author mdogan 1/14/13
@@ -30,6 +31,11 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
     protected AbstractDistributedObject(NodeEngine nodeEngine, S service) {
         this.nodeEngine = nodeEngine;
         this.service = service;
+    }
+
+    @Override
+    public String getPartitionKey() {
+        return (String) PartitionKeyUtil.getPartitionKey(getName());
     }
 
     public final void destroy() {

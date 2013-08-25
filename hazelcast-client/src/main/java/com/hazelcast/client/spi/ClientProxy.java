@@ -19,6 +19,7 @@ package com.hazelcast.client.spi;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.util.PartitionKeyUtil;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -75,6 +76,11 @@ public abstract class ClientProxy implements DistributedObject {
 
     public final Object getId() {
         return objectId;
+    }
+
+    @Override
+    public String getPartitionKey() {
+        return (String) PartitionKeyUtil.getPartitionKey(getName());
     }
 
     public final String getServiceName() {

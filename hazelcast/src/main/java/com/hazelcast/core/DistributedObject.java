@@ -35,10 +35,22 @@ public interface DistributedObject {
      * Returns the unique id for this object.
      *
      * @return id the of this instance
+     * @deprecated  will be removed in Hazelcast 3.1. Use {@link #getName} instead.
      */
     Object getId();
 
     /**
+     * Returns the key of partition this DistributedObject is assigned to. The returned value only has meaning
+     * for a non partitioned data-structure like an IAtomicLong. For a partitioned data-structure like an IMap
+     * the returned value will not be null, but otherwise undefined.
+     *
+     * @return the partition key.
+     */
+    String getPartitionKey();
+
+    /**
+     * Returns the name that uniquely identifies this DistributedObject. Returned value will never be null.
+     *
      * @return the name for this object.
      */
     String getName();

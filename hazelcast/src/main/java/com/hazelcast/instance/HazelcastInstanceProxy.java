@@ -73,6 +73,10 @@ public final class HazelcastInstanceProxy implements HazelcastInstance {
         return getOriginal().getLock(key);
     }
 
+    public ILock getLock(String key) {
+        return getOriginal().getLock(key);
+    }
+
     public IExecutorService getExecutorService(String name) {
         return getOriginal().getExecutorService(name);
     }
@@ -140,6 +144,11 @@ public final class HazelcastInstanceProxy implements HazelcastInstance {
 
     public <S extends DistributedObject> S getDistributedObject(String serviceName, Object id) {
         return getOriginal().getDistributedObject(serviceName, id);
+    }
+
+    @Override
+    public <T extends DistributedObject> T getDistributedObject(String serviceName, String name) {
+        return getOriginal().getDistributedObject(serviceName, name);
     }
 
     public String addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {

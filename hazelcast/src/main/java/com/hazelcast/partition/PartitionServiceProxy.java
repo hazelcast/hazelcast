@@ -21,6 +21,7 @@ import com.hazelcast.core.MigrationListener;
 import com.hazelcast.core.Partition;
 import com.hazelcast.nio.Address;
 
+import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,6 +32,7 @@ public class PartitionServiceProxy implements com.hazelcast.core.PartitionServic
     private final PartitionServiceImpl partitionService;
     private final ConcurrentMap<Integer, PartitionProxy> mapPartitions = new ConcurrentHashMap<Integer, PartitionProxy>();
     private final Set<Partition> partitions = new TreeSet<Partition>();
+    private final Random random = new Random();
 
     public PartitionServiceProxy(PartitionServiceImpl partitionService) {
         this.partitionService = partitionService;
@@ -39,6 +41,11 @@ public class PartitionServiceProxy implements com.hazelcast.core.PartitionServic
             partitions.add(partitionProxy);
             mapPartitions.put(i, partitionProxy);
         }
+    }
+
+    @Override
+    public String randomPartitionKey() {
+        return Integer.toString(random.nextInt(partitionService.getPartitionCount()));
     }
 
     public Set<Partition> getPartitions() {
