@@ -211,8 +211,22 @@ public final class HazelcastClient implements HazelcastInstance {
     }
 
     @Override
-    public ILock getLock(Object key) {
+    public ILock getLock(String key) {
         return getDistributedObject(LockServiceImpl.SERVICE_NAME, key);
+    }
+
+    @Override
+    public ILock getLock(Object key) {
+        //this method will be deleted in the near future.
+        String name;
+        if(key instanceof String){
+            name = (String)key;
+        } else{
+            Data data = getSerializationService().toData(key);
+            name = Integer.toString(data.hashCode());
+        }
+
+        return getDistributedObject(LockServiceImpl.SERVICE_NAME, name);
     }
 
     @Override
@@ -226,7 +240,7 @@ public final class HazelcastClient implements HazelcastInstance {
     }
 
     @Override
-    public <T> T executeTransaction(TransactionalTask<T> task) throws TransactionException {
+    public <T> T executeTransaction(TransactionalTask <T> task) throws TransactionException {
         return executeTransaction(TransactionOptions.getDefault(), task);
     }
 
@@ -330,6 +344,17 @@ public final class HazelcastClient implements HazelcastInstance {
 
     @Override
     public <T extends DistributedObject> T getDistributedObject(String serviceName, Object id) {
+        if(LockServiceImpl.SERVICE_NAME.equals(serviceName)){
+            if(!(id instanceof String)){
+                Data data = getSerializationService().toData(id);
+                id = Integer.toString(data.hashCode());
+            }
+        }
+        return (T) proxyManager.getProxy(serviceName, id);
+    }
+
+    @Override
+    public <T extends DistributedObject> T getDistributedObject(String serviceName, String name) {
         return (T) proxyManager.getProxy(serviceName, id);
     }
 

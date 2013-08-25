@@ -18,6 +18,7 @@ package com.hazelcast.concurrent.idgen;
 
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IdGenerator;
+import com.hazelcast.util.PartitionKeyUtil;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -78,6 +79,11 @@ public class IdGeneratorProxy implements IdGenerator {
 
     public String getName() {
         return name;
+    }
+
+    @Override
+    public String getPartitionKey() {
+        return (String) PartitionKeyUtil.getPartitionKey(name);
     }
 
     @Override
