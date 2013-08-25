@@ -224,7 +224,7 @@ public class TransactionImpl implements Transaction {
             return null;
         }
         if (list.size() != 1){
-            System.err.println("fatal list size : " + list.size());
+            logger.log(Level.WARNING, "Multiple record for name: " + name + ", key: " + key);
         }
         return list.get(0);
     }
