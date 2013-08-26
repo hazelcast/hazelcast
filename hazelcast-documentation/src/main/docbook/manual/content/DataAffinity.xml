@@ -193,10 +193,12 @@ public static int removeOrder(long customerId, long orderId) throws Exception {
     return remainingOrders;
 }
 
-public static class OrderDeletionTask implements Callable<Integer>, PartitionAware, Serializable {
+public static class OrderDeletionTask
+   implements Callable<Integer>, PartitionAware, Serializable, HazelcastInstanceAware {
 
    private long customerId;
    private long orderId;
+   private transient HazelcastInstance hz;
 
    public OrderDeletionTask() {
    }
@@ -206,7 +208,7 @@ public static class OrderDeletionTask implements Callable<Integer>, PartitionAwa
        this.orderId = orderId;
    }
    public Integer call () {
-       IMap<Long, Customer> mapCustomers = Hazelcast.getMap("customers");
+       IMap<Long, Customer> mapCustomers = hz.getMap("customers");
        mapCustomers.lock (customerId);
        Customer customer = mapCustomers. get(customerId);
        customer.removeOrder (orderId);
@@ -214,7 +216,9 @@ public static class OrderDeletionTask implements Callable<Integer>, PartitionAwa
        mapCustomers.unlock(customerId);
        return customer.getOrderCount();
    }
-
+   public void setHazelcastInstance(HazelcastInstance hz) {
+       this.hz = hz;
+   }
    public Object getPartitionKey() {
        return customerId;
    }
