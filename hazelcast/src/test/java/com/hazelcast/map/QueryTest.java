@@ -22,10 +22,7 @@ import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.instance.GroupProperties;
-import com.hazelcast.query.EntryObject;
-import com.hazelcast.query.Predicate;
-import com.hazelcast.query.PredicateBuilder;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.*;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -209,6 +206,24 @@ public class QueryTest extends HazelcastTestSupport {
             Collection<ValueType> values = map.values(predicate);
             assertEquals(2, values.size());
         }
+    }
+
+    @Test
+    public void testInstanceofPredicate() {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(new Config());
+        final IMap<String, Object> map = instance.getMap("testInstanceofPredicate");
+
+        LinkedList linkedList = new LinkedList();
+
+        final Predicate linkedListPredicate = Predicates.instanceOf(LinkedList.class);
+        map.put("1","somestring");
+        map.put("2",new ArrayList());
+        map.put("3",linkedList);
+
+        Collection<Object> values = map.values(linkedListPredicate);
+        assertEquals(1, values.size());
+        assertTrue(values.contains(linkedList));
     }
 
     @Test
