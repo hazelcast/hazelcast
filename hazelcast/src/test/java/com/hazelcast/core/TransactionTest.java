@@ -45,31 +45,6 @@ public class TransactionTest {
     }
 
     @Test
-    @Ignore
-    public void testTransactionPutMany(){
-        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
-        final Transaction transaction = instance.getTransaction();
-        transaction.begin();
-
-        final IMap<Object, Object> map = instance.getMap("map");
-
-        int len = 100*1000;
-
-
-        final long begin = System.currentTimeMillis();
-        for (int i=0; i<len; i++){
-            map.put("key"+i, "value"+i);
-        }
-        long elapsed = System.currentTimeMillis() - begin;
-        System.err.println("fatal elapsed: : " + (elapsed));
-
-        transaction.commit();
-
-
-
-    }
-
-    @Test
     public void testMapGetSimple() {
         TransactionalMap txnMap = newTransactionalMapProxy("testMapGetSimple");
         txnMap.put("1", "value");

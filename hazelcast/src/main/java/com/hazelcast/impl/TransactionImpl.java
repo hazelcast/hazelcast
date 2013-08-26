@@ -47,10 +47,10 @@ public class TransactionImpl implements Transaction {
         this.logger = factory.getLoggingService().getLogger(this.getClass().getName());
     }
 
-    private void putRecord(String name, Object key, TransactionRecord record){
+    private void putRecord(String name, Object key, TransactionRecord record) {
         final TransactionRecordKey recordKey = new TransactionRecordKey(name, key);
         List<TransactionRecord> list = recordMap.get(recordKey);
-        if (list == null){
+        if (list == null) {
             list = new LinkedList<TransactionRecord>();
             recordMap.put(recordKey, list);
         }
@@ -220,18 +220,18 @@ public class TransactionImpl implements Transaction {
 
     private TransactionRecord findTransactionRecord(String name, Object key) {
         final List<TransactionRecord> list = recordMap.get(new TransactionRecordKey(name, key));
-        if (list == null){
+        if (list == null || list.isEmpty()) {
             return null;
         }
-        if (list.size() != 1){
-            logger.log(Level.WARNING, "Multiple record for name: " + name + ", key: " + key);
+        if (list.size() != 1) {
+            logger.log(Level.WARNING, "Multiple records for name: " + name + ", key: " + key);
         }
         return list.get(0);
     }
 
     private TransactionRecord findTransactionRecord(String name, Object key, Object value) {
         final List<TransactionRecord> list = recordMap.get(new TransactionRecordKey(name, key));
-        if (list == null){
+        if (list == null || list.isEmpty()) {
             return null;
         }
         for (TransactionRecord transactionRecord : list) {
@@ -336,7 +336,7 @@ public class TransactionImpl implements Transaction {
 
     public void getMulti(String name, Object key, Collection col) {
         final List<TransactionRecord> list = recordMap.get(new TransactionRecordKey(name, key));
-        if (list == null){
+        if (list == null || list.isEmpty()) {
             return;
         }
 
@@ -464,7 +464,7 @@ public class TransactionImpl implements Transaction {
                 if (instanceType.isMultiMap()) {
                     factory.node.concurrentMapManager.new MPutMulti().put(name, key, value);
                 } else {
-                    if(getRecord) {
+                    if (getRecord) {
                         factory.node.concurrentMapManager.new MLock().unlock(name, key, -1);
                     } else if (value != null) {
                         factory.node.concurrentMapManager.new MPut().putAfterCommit(name, key, value, ttl, id);
