@@ -208,11 +208,8 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     }
 
     public void shutdown() {
-        final Collection<MemberImpl> memberList = getContext().getClusterService().getMemberList();
-        for (MemberImpl member : memberList) {
-            ShutdownRequest request = new ShutdownRequest(name, member.getAddress());
-            invoke(request, member.getAddress());
-        }
+        ShutdownRequest request = new ShutdownRequest(name);
+        invoke(request);
     }
 
     public List<Runnable> shutdownNow() {

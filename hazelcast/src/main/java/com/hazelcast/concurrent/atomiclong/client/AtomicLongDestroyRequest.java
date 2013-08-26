@@ -41,8 +41,7 @@ public class AtomicLongDestroyRequest extends CallableClientRequest implements P
     }
 
     public Object call() throws Exception {
-        final AtomicLongService service = getService();
-        service.destroyDistributedObject(name);
+        getClientEngine().getProxyService().destroyDistributedObject(getServiceName(), name);
         return null;
     }
 

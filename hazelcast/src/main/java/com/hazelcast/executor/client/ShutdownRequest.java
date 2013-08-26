@@ -16,33 +16,33 @@
 
 package com.hazelcast.executor.client;
 
+import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.RetryableRequest;
-import com.hazelcast.client.TargetClientRequest;
 import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.executor.ExecutorDataSerializerHook;
-import com.hazelcast.executor.ShutdownOperation;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
 /**
  * @author ali 5/27/13
  */
-public class ShutdownRequest extends TargetClientRequest implements IdentifiedDataSerializable, RetryableRequest {
+public class ShutdownRequest extends CallableClientRequest implements IdentifiedDataSerializable, RetryableRequest {
 
     String name;
-    Address target;
 
     public ShutdownRequest() {
     }
 
-    public ShutdownRequest(String name, Address target) {
+    public ShutdownRequest(String name) {
         this.name = name;
-        this.target = target;
+    }
+
+    public Object call() throws Exception {
+        getClientEngine().getProxyService().destroyDistributedObject(getServiceName(), name);
+        return null;
     }
 
     public String getServiceName() {
@@ -65,11 +65,4 @@ public class ShutdownRequest extends TargetClientRequest implements IdentifiedDa
         name = in.readUTF();
     }
 
-    protected Operation prepareOperation() {
-        return new ShutdownOperation(name);
-    }
-
-    public Address getTarget() {
-        return target;
-    }
 }
