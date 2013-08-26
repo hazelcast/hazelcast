@@ -63,10 +63,6 @@ public class ExecutorServiceTest extends HazelcastTestSupport {
         config.setManagedContext(new ManagedContext(){
             @Override
             public Object initialize(Object obj) {
-                if(obj instanceof Runnable){
-                    System.out.println(obj);
-                }
-
                 if(obj instanceof RunnableWithManagedContext){
                     RunnableWithManagedContext task = (RunnableWithManagedContext)obj;
                     task.initializeCalled=true;
