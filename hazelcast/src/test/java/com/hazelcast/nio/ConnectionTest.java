@@ -86,7 +86,7 @@ public class ConnectionTest {
         final HazelcastInstance hz = Hazelcast.newHazelcastInstance(c);
 
         final ExecutorService ex = Executors.newCachedThreadPool();
-        final int count = Math.min(Runtime.getRuntime().availableProcessors() * 25, 200);
+        final int count = 100;
         final CountDownLatch latch = new CountDownLatch(count);
         final CountDownLatch ll = new CountDownLatch(1);
         final AtomicInteger cc = new AtomicInteger();
@@ -106,7 +106,7 @@ public class ConnectionTest {
             ex.execute(new Runnable() {
                 public void run() {
                     try {
-                        if (cc.incrementAndGet() == count / 25) {
+                        if (cc.incrementAndGet() == count / 10) {
                             ll.countDown();
                         }
                         Socket socket = new Socket();
