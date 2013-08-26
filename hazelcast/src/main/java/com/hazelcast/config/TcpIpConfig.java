@@ -140,8 +140,8 @@ public class TcpIpConfig {
      * @throws IllegalArgumentException if member is null or empty.
      * @see #getMembers()
      */
-    public TcpIpConfig addMember(final String member) {
-        this.members.add(hasText(member,"member"));
+    public TcpIpConfig addMember(String member) {
+        member = hasText(member,"member");
 
         StringTokenizer tokenizer = new StringTokenizer(member, ",");
         while (tokenizer.hasMoreTokens()) {
