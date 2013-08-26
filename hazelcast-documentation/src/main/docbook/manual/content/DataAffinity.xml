@@ -186,7 +186,7 @@ public static int removeOrder(long customerId, long orderId) throws Exception {
     Here is a sample code:
     <programlisting language="java"><![CDATA[
 public static int removeOrder(long customerId, long orderId) throws Exception {
-    ExecutorService es = instance.getExecutorService();
+    ExecutorService es = instance.getExecutorService("orderexecutor");
     OrderDeletionTask task = new OrderDeletionTask(customerId, orderId);
     Future future = es.submit(task);
     int remainingOrders = future.get();
