@@ -41,8 +41,7 @@ public class SemaphoreDestroyRequest extends CallableClientRequest implements Po
     }
 
     public Object call() throws Exception {
-        SemaphoreService service = getService();
-        service.destroyDistributedObject(name);
+        getClientEngine().getProxyService().destroyDistributedObject(getServiceName(), name);
         return null;
     }
 
