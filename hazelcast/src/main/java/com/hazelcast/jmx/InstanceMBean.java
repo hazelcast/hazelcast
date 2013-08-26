@@ -58,6 +58,9 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
         register(new NodeMBean(hazelcastInstance,node,managementService));
         register(new ConnectionManagerMBean(hazelcastInstance,node.connectionManager,service));
         register(new EventServiceMBean(hazelcastInstance,node.nodeEngine.getEventService(),service));
+        register(new OperationServiceMBean(hazelcastInstance,node.nodeEngine.getOperationService(),service));
+        register(new ProxyServiceMBean(hazelcastInstance,node.nodeEngine.getProxyService(),service));
+        register(new ClientEngineMBean(hazelcastInstance,node.clientEngine ,service));
     }
 
     public HazelcastInstance getHazelcastInstance(){

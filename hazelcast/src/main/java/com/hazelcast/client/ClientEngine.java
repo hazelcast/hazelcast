@@ -33,6 +33,8 @@ import com.hazelcast.transaction.TransactionManagerService;
  */
 public interface ClientEngine {
 
+    int getClientEndpointCount();
+
     PartitionService getPartitionService();
 
     ClusterService getClusterService();

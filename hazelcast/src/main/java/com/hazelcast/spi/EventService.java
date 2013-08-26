@@ -27,7 +27,7 @@ public interface EventService {
 
     int getEventQueueCapacity();
 
-    int getUnprocessedEventCount();
+    int getEventQueueSize();
 
     EventRegistration registerLocalListener(String serviceName, String topic, Object listener);
 

@@ -34,6 +34,14 @@ import java.util.Map;
  */
 public interface OperationService {
 
+    int getResponseQueueSize();
+
+    int getOperationExecutorQueueSize();
+
+    int getRunningOperationsCount();
+
+    int getRemoteOperationsCount();
+
     /**
      * Runs operation in calling thread.
      *

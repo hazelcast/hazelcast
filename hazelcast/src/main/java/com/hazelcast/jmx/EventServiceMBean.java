@@ -33,10 +33,10 @@ public class EventServiceMBean extends HazelcastMBean<EventService> {
         return managedObject.getEventQueueCapacity();
     }
 
-    @ManagedAnnotation("unprocessedEventCount")
-    @ManagedDescription("The number of unprocessed events")
-    public int getUnprocessedEventCount() {
-        return managedObject.getUnprocessedEventCount();
+    @ManagedAnnotation("eventQueueSize")
+    @ManagedDescription("The size of the event queue")
+    public int getEventQueueSize() {
+        return managedObject.getEventQueueSize();
     }
 }
 

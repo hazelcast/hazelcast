@@ -76,7 +76,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
     }
 
     @Override
-    public int getUnprocessedEventCount() {
+    public int getEventQueueSize() {
         return eventExecutor.getWorkQueueSize();
     }
 
