@@ -24,7 +24,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
-import java.util.AbstractMap;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -45,14 +44,13 @@ public class GetAllOperation extends AbstractMapOperation implements PartitionAw
         int partitionId = getPartitionId();
         RecordStore recordStore = mapService.getRecordStore(partitionId, name);
         entrySet = new MapEntrySet();
+        Set<Data> partitionKeySet = new HashSet<Data>();
         for (Data key : keys) {
             if (partitionId == getNodeEngine().getPartitionService().getPartitionId(key)) {
-                Object value = recordStore.get(key);
-                if(value != null) {
-                    entrySet.add(new AbstractMap.SimpleImmutableEntry(key, mapService.toData(value)));
-                }
+                partitionKeySet.add(key);
             }
         }
+        entrySet = recordStore.getAll(partitionKeySet);
     }
 
     @Override

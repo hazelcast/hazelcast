@@ -33,6 +33,8 @@ public interface RecordStore {
 
     Object get(Data dataKey);
 
+    MapEntrySet getAll(Set<Data> keySet);
+
     boolean containsKey(Data dataKey);
 
     Object put(Data dataKey, Object dataValue, long ttl);
