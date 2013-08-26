@@ -42,8 +42,7 @@ public class CollectionDestroyRequest extends CallableClientRequest implements P
     }
 
     public Object call() throws Exception {
-        final CollectionService service = getService();
-        service.destroyDistributedObject(proxyId);
+        getClientEngine().getProxyService().destroyDistributedObject(getServiceName(), proxyId);
         return null;
     }
 

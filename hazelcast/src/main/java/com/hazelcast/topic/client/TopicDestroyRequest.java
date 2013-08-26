@@ -41,8 +41,7 @@ public class TopicDestroyRequest extends CallableClientRequest implements Portab
     }
 
     public Object call() throws Exception {
-        final TopicService service = getService();
-        service.destroyDistributedObject(name);
+        getClientEngine().getProxyService().destroyDistributedObject(getServiceName(), name);
         return null;
     }
 
