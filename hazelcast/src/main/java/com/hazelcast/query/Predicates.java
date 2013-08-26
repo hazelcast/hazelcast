@@ -19,6 +19,7 @@ package com.hazelcast.query;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.query.impl.*;
 import com.hazelcast.query.impl.QueryException;
 
@@ -359,6 +360,11 @@ public final class Predicates {
         }
     }
 
+    public static Predicate instanceOf(final Class klass) {
+        return new InstanceOfPredicate(klass);
+    }
+
+
     public static class OrPredicate implements IndexAwarePredicate, DataSerializable {
 
         private Predicate[] predicates;
@@ -680,5 +686,40 @@ public final class Predicates {
 
     public static Predicate in(String attribute, Comparable... values) {
         return new InPredicate(attribute, values);
+    }
+
+    private static class InstanceOfPredicate implements Predicate, DataSerializable {
+        private Class klass;
+
+        public InstanceOfPredicate(Class klass) {
+            this.klass = klass;
+        }
+
+        @Override
+        public boolean apply(Map.Entry mapEntry) {
+            Object value = mapEntry.getValue();
+            if (value == null) return false;
+            return klass.isAssignableFrom(value.getClass());
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeUTF(klass.getName());
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            String klassName = in.readUTF();
+            try {
+                klass = in.getClassLoader().loadClass(klassName);
+            } catch (ClassNotFoundException e) {
+                throw new HazelcastSerializationException("Failed to load class: "+klass,e);
+            }
+        }
+
+        @Override
+        public String toString() {
+            return " instanceOf (" + klass.getName() + ")";
+        }
     }
 }
