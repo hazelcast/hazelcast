@@ -27,6 +27,7 @@ import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.IAtomicLong;
@@ -37,10 +38,7 @@ import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.topic.TopicService;
 
-import java.util.Collection;
-import java.util.EventListener;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -179,6 +177,10 @@ public final class ProxyManager {
     private void initialize(ClientProxy clientProxy) {
         clientProxy.setContext(new ClientContext(client.getSerializationService(), client.getClientClusterService(),
                 client.getClientPartitionService(), client.getInvocationService(), client.getClientExecutionService(), this, client.getClientConfig()));
+    }
+
+    public Collection<? extends DistributedObject> getDistributedObjects(){
+        return Collections.unmodifiableCollection(proxies.values());
     }
 
     public void destroy() {

@@ -41,6 +41,7 @@ public class CountDownLatchDestroyRequest extends CallableClientRequest implemen
     }
 
     public Object call() throws Exception {
+        getClientEngine().getProxyService().destroyDistributedObject(getServiceName(), name);
         return null;
     }
 

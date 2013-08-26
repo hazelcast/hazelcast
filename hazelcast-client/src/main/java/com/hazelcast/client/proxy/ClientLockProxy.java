@@ -110,7 +110,7 @@ public class ClientLockProxy extends ClientProxy implements ILock {
     }
 
     protected void onDestroy() {
-        LockDestroyRequest request = new LockDestroyRequest(getKeyData());
+        LockDestroyRequest request = new LockDestroyRequest(getId());
         invoke(request);
     }
 

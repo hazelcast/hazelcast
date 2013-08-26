@@ -39,8 +39,7 @@ public class MapDestroyRequest extends CallableClientRequest implements Portable
 
     @Override
     public Object call() {
-        final MapService mapService = getService();
-        mapService.destroyDistributedObject(name);
+        getClientEngine().getProxyService().destroyDistributedObject(getServiceName(), name);
         return true;
     }
 

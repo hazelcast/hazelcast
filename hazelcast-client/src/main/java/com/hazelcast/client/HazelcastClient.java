@@ -58,7 +58,6 @@ import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
@@ -288,12 +287,11 @@ public final class HazelcastClient implements HazelcastInstance {
         try {
             GetDistributedObjectsRequest request = new GetDistributedObjectsRequest();
             final SerializableCollection serializableCollection = (SerializableCollection) invocationService.invokeOnRandomTarget(request);
-            final ArrayList<DistributedObject> coll = new ArrayList<DistributedObject>(serializableCollection.size());
             for (Data data : serializableCollection) {
                 final DistributedObjectInfo o = (DistributedObjectInfo) serializationService.toObject(data);
-                coll.add(getDistributedObject(o.getServiceName(), o.getId()));
+                getDistributedObject(o.getServiceName(), o.getId());
             }
-            return coll;
+            return (Collection<DistributedObject>) proxyManager.getDistributedObjects();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
