@@ -359,6 +359,22 @@ public final class Predicates {
         }
     }
 
+    public static Predicate instanceOf(final Class klass) {
+        return new Predicate() {
+            public boolean apply(Map.Entry mapEntry) {
+                Object value = mapEntry.getValue();
+                if (value == null) return false;
+                return klass.isAssignableFrom(value.getClass());
+            }
+
+            @Override
+            public String toString() {
+                return " instanceOf (" + klass.getName() + ")";
+            }
+        };
+    }
+
+
     public static class OrPredicate implements IndexAwarePredicate, DataSerializable {
 
         private Predicate[] predicates;
