@@ -195,6 +195,11 @@ public class TcpIpConnectionManager implements ConnectionManager {
         return ioService;
     }
 
+    @Override
+    public int getActiveConnectionCount() {
+        return activeConnections.size();
+    }
+
     public MemberSocketInterceptor getMemberSocketInterceptor() {
         return memberSocketInterceptor;
     }

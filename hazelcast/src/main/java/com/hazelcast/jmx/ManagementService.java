@@ -47,23 +47,26 @@ public class ManagementService implements DistributedObjectListener {
 
     public ManagementService(HazelcastInstanceImpl instance) {
         this.instance = instance;
-        logger = instance.getLoggingService().getLogger(getClass());
+        this.logger = instance.getLoggingService().getLogger(getClass());
         this.enabled = instance.node.groupProperties.ENABLE_JMX.getBoolean();
-        if (enabled) {
-            logger.info("Hazelcast JMX agent enabled.");
-            MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-            try {
-                InstanceMBean instanceMBean = new InstanceMBean(instance, this);
-                mbs.registerMBean(instanceMBean, instanceMBean.objectName);
-            } catch (Exception e) {
-                logger.warning("Unable to start JMX service", e);
-            }
-            registrationId = instance.addDistributedObjectListener(this);
-            for (final DistributedObject distributedObject : instance.getDistributedObjects()) {
-                registerDistributedObject(distributedObject);
-            }
-        } else {
-            registrationId = null;
+        if (!enabled) {
+            this.registrationId = null;
+            return;
+        }
+
+        logger.info("Hazelcast JMX agent enabled.");
+        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+        try {
+            InstanceMBean instanceMBean = new InstanceMBean(instance, this);
+            mbs.registerMBean(instanceMBean, instanceMBean.objectName);
+        } catch (Exception e) {
+            logger.warning("Unable to start JMX service", e);
+        }
+        this.registrationId = null;
+
+        instance.addDistributedObjectListener(this);
+        for (final DistributedObject distributedObject : instance.getDistributedObjects()) {
+            registerDistributedObject(distributedObject);
         }
     }
 
@@ -225,7 +228,7 @@ public class ManagementService implements DistributedObjectListener {
         }
     }
 
-    private String quote(String text){
+    public static String quote(String text){
         return Pattern.compile("[:\",=*?]")
                 .matcher(text)
                 .find() ? ObjectName.quote(text) : text;

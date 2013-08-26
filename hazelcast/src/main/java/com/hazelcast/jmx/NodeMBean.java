@@ -1,29 +1,41 @@
 package com.hazelcast.jmx;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.Node;
+import com.hazelcast.nio.Address;
 
 import javax.management.MBeanServer;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
+import java.util.Hashtable;
 
-@ManagedDescription("Node")
+import static com.hazelcast.jmx.ManagementService.quote;
+
+@ManagedDescription("HazelcastInstance.Node")
 public class NodeMBean extends HazelcastMBean<Node> {
 
-    public NodeMBean(Node node, ManagementService service) {
+    public NodeMBean(HazelcastInstance hazelcastInstance, Node node, ManagementService service) {
         super(node, service);
-        objectName = service.createObjectName("Node", "Node-"+node.getThisAddress().getId());
 
-        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-        ConnectionManagerMBean nodeMBean = new ConnectionManagerMBean(node.connectionManager,service);
-        try {
-            mbs.registerMBean(nodeMBean, objectName);
-        } catch (Exception e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-        }
+        Hashtable<String, String> properties = new Hashtable<String, String>(3);
+        properties.put("type", quote("HazelcastInstance.Node"));
+        properties.put("name", quote("node"+node.address));
+        properties.put("HazelcastInstance", quote(hazelcastInstance.getName()));
+
+        setObjectName(properties);
     }
 
     @ManagedAnnotation("address")
     @ManagedDescription("Address of the node")
     public String getName() {
         return managedObject.address.toString();
+    }
+
+    @ManagedAnnotation("masterAddress")
+    @ManagedDescription("The master address of the cluster")
+    public String getMasterAddress() {
+        Address a =  managedObject.getMasterAddress();
+        return a == null?null:a.toString();
     }
 }

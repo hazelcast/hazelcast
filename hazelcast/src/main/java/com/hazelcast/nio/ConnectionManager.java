@@ -42,4 +42,5 @@ public interface ConnectionManager {
 
     int getAllTextConnections();
 
+    int getActiveConnectionCount();
 }

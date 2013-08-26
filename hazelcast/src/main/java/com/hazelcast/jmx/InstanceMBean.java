@@ -21,17 +21,18 @@ import com.hazelcast.core.Cluster;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.HazelcastInstanceImpl;
+import com.hazelcast.instance.Node;
 
-import javax.management.InstanceAlreadyExistsException;
-import javax.management.MBeanRegistrationException;
-import javax.management.MBeanServer;
-import javax.management.NotCompliantMBeanException;
+import javax.management.*;
 import java.io.File;
 import java.lang.management.ManagementFactory;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
+
+import static com.hazelcast.jmx.ManagementService.quote;
 
 /**
  * @author ali 2/1/13
@@ -42,19 +43,25 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
     final Config config;
     final Cluster cluster;
 
-    protected InstanceMBean(HazelcastInstanceImpl hazelcastInstance, ManagementService service) {
-        super(hazelcastInstance, service);
-        objectName = service.createObjectName(null, null);
+    protected InstanceMBean(HazelcastInstanceImpl hazelcastInstance, ManagementService managementService) {
+        super(hazelcastInstance, managementService);
+
+        Hashtable<String, String> properties = new Hashtable<String, String>(3);
+        properties.put("type", quote("HazelcastInstance"));
+        properties.put("name", quote(hazelcastInstance.getName()));
+        setObjectName(properties);
+
         config = hazelcastInstance.getConfig();
         cluster = hazelcastInstance.getCluster();
 
-        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-        NodeMBean nodeMBean = new NodeMBean(hazelcastInstance.node,service);
-        try {
-            mbs.registerMBean(nodeMBean, objectName);
-        } catch (Exception e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-        }
+        Node node = hazelcastInstance.node;
+        register(new NodeMBean(hazelcastInstance,node,managementService));
+        register(new ConnectionManagerMBean(hazelcastInstance,node.connectionManager,service));
+        register(new EventServiceMBean(hazelcastInstance,node.nodeEngine.getEventService(),service));
+    }
+
+    public HazelcastInstance getHazelcastInstance(){
+        return managedObject;
     }
 
     @ManagedAnnotation("name")
