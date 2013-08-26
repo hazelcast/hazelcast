@@ -20,8 +20,6 @@ import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.concurrent.lock.LockPortableHook;
 import com.hazelcast.concurrent.lock.LockService;
-import com.hazelcast.concurrent.lock.LockServiceImpl;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
@@ -33,18 +31,17 @@ import java.io.IOException;
  */
 public class LockDestroyRequest extends CallableClientRequest implements Portable, RetryableRequest {
 
-    Data keyData;
+    Object objectId;
 
     public LockDestroyRequest() {
     }
 
-    public LockDestroyRequest(Data keyData) {
-        this.keyData = keyData;
+    public LockDestroyRequest(Object objectId) {
+        this.objectId = objectId;
     }
 
     public Object call() throws Exception {
-        final LockServiceImpl service = getService();
-        service.destroyDistributedObject(keyData);
+        getClientEngine().getProxyService().destroyDistributedObject(getServiceName(), objectId);
         return null;
     }
 
@@ -61,11 +58,10 @@ public class LockDestroyRequest extends CallableClientRequest implements Portabl
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
-        keyData.writeData(writer.getRawDataOutput());
+        writer.getRawDataOutput().writeObject(objectId);
     }
 
     public void readPortable(PortableReader reader) throws IOException {
-        keyData = new Data();
-        keyData.readData(reader.getRawDataInput());
+        objectId = reader.getRawDataInput().readObject();
     }
 }

@@ -41,8 +41,7 @@ public class QueueDestroyRequest extends CallableClientRequest implements Portab
     }
 
     public Object call() throws Exception {
-        final QueueService service = getService();
-        service.destroyDistributedObject(name);
+        getClientEngine().getProxyService().destroyDistributedObject(getServiceName(), name);
         return null;
     }
 
