@@ -18,8 +18,6 @@ package com.hazelcast.config;
 
 import java.util.Properties;
 
-import com.hazelcast.core.MapStoreFactory;
-
 /**
  * MapStore configuration
  */
@@ -139,7 +137,7 @@ public final class MapStoreConfig {
      * @param factoryImplementation factory implementation object
      * @return this MapStoreConfig instance
      */
-    public <K, V> MapStoreConfig setFactoryImplementation(MapStoreFactory<K, V> factoryImplementation) {
+    public MapStoreConfig setFactoryImplementation(Object factoryImplementation) {
         this.factoryImplementation = factoryImplementation;
         return this;
     }
