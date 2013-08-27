@@ -101,6 +101,7 @@ final class TransactionContextImpl implements TransactionContext {
         if (obj == null) {
             final Object service = nodeEngine.getService(serviceName);
             if (service instanceof TransactionalService) {
+                nodeEngine.getProxyService().initializeDistributedObject(serviceName, id);
                 obj = ((TransactionalService) service).createTransactionalObject(id, transaction);
                 txnObjectMap.put(key, obj);
             } else {
