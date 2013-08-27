@@ -712,6 +712,20 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *
      * @param listener  entry listener
      * @param predicate predicate for filtering entries
+     * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
+     *                     contain the value.
+     */
+    String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, boolean includeValue);
+
+    /**
+     * Adds an continuous entry listener for this map. Listener will get notified
+     * for map add/remove/update/evict events filtered by given predicate.
+     *
+     * @param listener  entry listener
+     * @param predicate predicate for filtering entries
+     * @param key          key to listen
+     * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
+     *                     contain the value.
      */
     String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue);
 
