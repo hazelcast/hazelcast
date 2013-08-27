@@ -36,6 +36,7 @@ public class CommitTransactionRequest extends CallableClientRequest implements P
     public Object call() throws Exception {
         final ClientEndpoint endpoint = getEndpoint();
         endpoint.getTransactionContext().commitTransaction();
+        endpoint.setTransactionContext(null);
         return null;
     }
 
