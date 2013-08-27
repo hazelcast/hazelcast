@@ -293,6 +293,12 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         return listen(request, keyData, handler);
     }
 
+    public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, boolean includeValue) {
+        MapAddEntryListenerRequest request = new MapAddEntryListenerRequest(name, null, includeValue, predicate);
+        EventHandler<PortableEntryEvent> handler = createHandler(listener, includeValue);
+        return listen(request, null, handler);
+    }
+
     public EntryView<K, V> getEntryView(K key) {
         final Data keyData = toData(key);
         MapGetEntryViewRequest request = new MapGetEntryViewRequest(name, keyData);
