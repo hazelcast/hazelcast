@@ -121,6 +121,12 @@ public class QueueMBean extends HazelcastMBean<IQueue> {
         return managedObject.getName();
     }
 
+    @ManagedAnnotation("partitionKey")
+    @ManagedDescription("the partitionKey")
+    public String getPartitionKey() {
+        return managedObject.getPartitionKey();
+    }
+
     @ManagedAnnotation("config")
     @ManagedDescription("QueueConfig")
     public String getConfig(){
