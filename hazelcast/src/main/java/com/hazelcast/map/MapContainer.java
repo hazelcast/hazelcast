@@ -181,8 +181,6 @@ public class MapContainer {
                 return;
             }
             Map<Data, Object> chunk = new HashMap<Data, Object>();
-
-
             List<Map<Data, Object>> chunkList = new ArrayList<Map<Data, Object>>();
             for (Object key : keys) {
                 Data dataKey = mapService.toData(key);
