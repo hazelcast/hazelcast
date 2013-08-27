@@ -61,6 +61,19 @@ public final class ManagedExecutorService implements ExecutorService {
         return executedCount.get();
     }
 
+    public int maxPoolSize() {
+        return maxPoolSize;
+    }
+
+    public int poolSize() {
+        return size;
+    }
+
+    public int queueSize() {
+        return taskQ.size();  // LBQ size handled by an atomic int
+    }
+
+
     public void execute(Runnable command) {
         if (!taskQ.offer(command)) {
             throw new RejectedExecutionException("Executor[" + name + "] is overloaded!");
@@ -102,15 +115,7 @@ public final class ManagedExecutorService implements ExecutorService {
         }
     }
 
-    public int poolSize() {
-        return size;
-    }
-
-    public int queueSize() {
-        return taskQ.size();  // LBQ size handled by an atomic int
-    }
-
-    public void shutdown() {
+       public void shutdown() {
         taskQ.clear();
     }
 

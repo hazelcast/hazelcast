@@ -8,14 +8,14 @@ import java.util.Hashtable;
 import static com.hazelcast.jmx.ManagementService.quote;
 
 @ManagedDescription("HazelcastInstance.ManagedExecutorService")
-public class ManagedExecutionServiceMBean extends HazelcastMBean<ManagedExecutorService> {
+public class ManagedExecutorServiceMBean extends HazelcastMBean<ManagedExecutorService> {
 
-    public ManagedExecutionServiceMBean(HazelcastInstance hazelcastInstance, ManagedExecutorService executorService, ManagementService service) {
+    public ManagedExecutorServiceMBean(HazelcastInstance hazelcastInstance, ManagedExecutorService executorService, ManagementService service) {
         super(executorService, service);
 
         Hashtable<String, String> properties = new Hashtable<String, String>(3);
         properties.put("type", quote("HazelcastInstance.ManagedExecutorService"));
-        properties.put("name", quote("executionService" + executorService.getName()));
+        properties.put("name", quote(executorService.getName()));
         properties.put("HazelcastInstance", quote(hazelcastInstance.getName()));
 
         setObjectName(properties);
@@ -28,15 +28,21 @@ public class ManagedExecutionServiceMBean extends HazelcastMBean<ManagedExecutor
     }
 
     @ManagedAnnotation("queueSize")
-    @ManagedDescription("The queue size")
-    public int getResponseQueueSize() {
+    @ManagedDescription("The work queue size")
+    public int getQueueSize() {
         return managedObject.queueSize();
     }
 
     @ManagedAnnotation("poolSize")
-    @ManagedDescription("The pool size")
+    @ManagedDescription("The current number of thread in the threadpool")
     public int getPoolSize() {
         return managedObject.poolSize();
+    }
+
+    @ManagedAnnotation("maxPoolSize")
+    @ManagedDescription("The maximum number of thread in the threadpool")
+    public int getMaxPoolSize() {
+        return managedObject.maxPoolSize();
     }
 
     @ManagedAnnotation("isShutdown")

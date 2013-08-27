@@ -44,30 +44,40 @@ public class ManagementService implements DistributedObjectListener {
     private final ILogger logger;
 
     private final String registrationId;
+    private final InstanceMBean instanceMBean;
 
     public ManagementService(HazelcastInstanceImpl instance) {
         this.instance = instance;
         this.logger = instance.getLoggingService().getLogger(getClass());
         this.enabled = instance.node.groupProperties.ENABLE_JMX.getBoolean();
         if (!enabled) {
+            this.instanceMBean = null;
             this.registrationId = null;
             return;
         }
 
         logger.info("Hazelcast JMX agent enabled.");
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+        InstanceMBean instanceMBean;
         try {
-            InstanceMBean instanceMBean = new InstanceMBean(instance, this);
+            instanceMBean = new InstanceMBean(instance, this);
             mbs.registerMBean(instanceMBean, instanceMBean.objectName);
         } catch (Exception e) {
+            instanceMBean = null;
             logger.warning("Unable to start JMX service", e);
+
         }
+        this.instanceMBean = instanceMBean;
         this.registrationId = null;
 
         instance.addDistributedObjectListener(this);
         for (final DistributedObject distributedObject : instance.getDistributedObjects()) {
             registerDistributedObject(distributedObject);
         }
+    }
+
+    public InstanceMBean getInstanceMBean() {
+        return instanceMBean;
     }
 
     public void destroy() {

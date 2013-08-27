@@ -28,7 +28,9 @@ import com.hazelcast.util.executor.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.*;
 import java.util.logging.Level;
 
@@ -73,6 +75,10 @@ public final class ExecutionServiceImpl implements ExecutionService {
         register(ASYNC_EXECUTOR, coreSize * 10, coreSize * 10000);
         register(CLIENT_EXECUTOR, coreSize * 10, coreSize * 10000);
         scheduledManagedExecutor = register(SCHEDULED_EXECUTOR, coreSize * 5, coreSize * 10000);
+    }
+
+    public Set<String> getExecutorNames(){
+        return new HashSet<String>(executors.keySet());
     }
 
     private void enableRemoveOnCancelIfAvailable() {

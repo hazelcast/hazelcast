@@ -29,6 +29,7 @@ import com.hazelcast.logging.SystemLogService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationContext;
 import com.hazelcast.nio.serialization.SerializationService;
+import com.hazelcast.spi.ExecutionService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.util.Collection;
@@ -111,7 +112,7 @@ public class NodeIOService implements IOService {
     }
 
     public void removeEndpoint(final Address endPoint) {
-        nodeEngine.getExecutionService().execute("hz:io", new Runnable() {
+        nodeEngine.getExecutionService().execute(ExecutionService.IO_EXECUTOR, new Runnable() {
             public void run() {
                 node.clusterService.removeAddress(endPoint);
             }
@@ -194,7 +195,7 @@ public class NodeIOService implements IOService {
     }
 
     public void executeAsync(final Runnable runnable) {
-        nodeEngine.getExecutionService().execute("hz:io", runnable);
+        nodeEngine.getExecutionService().execute(ExecutionService.IO_EXECUTOR, runnable);
     }
 
     public Data toData(Object obj) {

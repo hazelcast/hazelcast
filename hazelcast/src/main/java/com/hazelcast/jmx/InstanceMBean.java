@@ -24,9 +24,7 @@ import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.spi.ExecutionService;
 
-import javax.management.*;
 import java.io.File;
-import java.lang.management.ManagementFactory;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -43,6 +41,19 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
 
     final Config config;
     final Cluster cluster;
+    private final NodeMBean nodeMBean;
+    private final ConnectionManagerMBean connectionManagerMBean;
+    private final EventServiceMBean eventServiceMBean;
+    private final OperationServiceMBean operationServiceMBean;
+    private final ProxyServiceMBean proxyServiceMBean;
+    private final ClientEngineMBean clientEngineMBean;
+    private final ManagedExecutorServiceMBean systemExecutorMBean;
+    private final ManagedExecutorServiceMBean operationExecutorMBean;
+    private final ManagedExecutorServiceMBean asyncExecutorMBean;
+    private final ManagedExecutorServiceMBean scheduledExecutorMBean;
+    private final ManagedExecutorServiceMBean clientExecutorMBean;
+    private final ManagedExecutorServiceMBean queryExecutorMBean;
+    private final ManagedExecutorServiceMBean ioExecutorMBean;
 
     protected InstanceMBean(HazelcastInstanceImpl hazelcastInstance, ManagementService managementService) {
         super(hazelcastInstance, managementService);
@@ -58,18 +69,103 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
         Node node = hazelcastInstance.node;
         ExecutionService executionService = node.nodeEngine.getExecutionService();
 
-        register(new NodeMBean(hazelcastInstance,node,managementService));
-        register(new ConnectionManagerMBean(hazelcastInstance,node.connectionManager,service));
-        register(new EventServiceMBean(hazelcastInstance,node.nodeEngine.getEventService(),service));
-        register(new OperationServiceMBean(hazelcastInstance,node.nodeEngine.getOperationService(),service));
-        register(new ProxyServiceMBean(hazelcastInstance,node.nodeEngine.getProxyService(),service));
-        register(new ClientEngineMBean(hazelcastInstance,node.clientEngine ,service));
-        register(new ManagedExecutionServiceMBean(hazelcastInstance,executionService.getExecutor(ExecutionService.SYSTEM_EXECUTOR) ,service));
-        register(new ManagedExecutionServiceMBean(hazelcastInstance,executionService.getExecutor(ExecutionService.OPERATION_EXECUTOR) ,service));
-        register(new ManagedExecutionServiceMBean(hazelcastInstance,executionService.getExecutor(ExecutionService.ASYNC_EXECUTOR) ,service));
-        register(new ManagedExecutionServiceMBean(hazelcastInstance,executionService.getExecutor(ExecutionService.SCHEDULED_EXECUTOR) ,service));
-        register(new ManagedExecutionServiceMBean(hazelcastInstance,executionService.getExecutor(ExecutionService.CLIENT_EXECUTOR) ,service));
-        register(new ManagedExecutionServiceMBean(hazelcastInstance,executionService.getExecutor(ExecutionService.QUERY_EXECUTOR) ,service));
+        nodeMBean = new NodeMBean(hazelcastInstance, node, managementService);
+        register(nodeMBean);
+
+        connectionManagerMBean = new ConnectionManagerMBean(hazelcastInstance, node.connectionManager, service);
+        register(connectionManagerMBean);
+
+        eventServiceMBean = new EventServiceMBean(hazelcastInstance, node.nodeEngine.getEventService(), service);
+        register(eventServiceMBean);
+
+        operationServiceMBean = new OperationServiceMBean(hazelcastInstance, node.nodeEngine.getOperationService(), service);
+        register(operationServiceMBean);
+
+        proxyServiceMBean = new ProxyServiceMBean(hazelcastInstance, node.nodeEngine.getProxyService(), service);
+        register(proxyServiceMBean);
+
+        clientEngineMBean = new ClientEngineMBean(hazelcastInstance, node.clientEngine, service);
+        register(clientEngineMBean);
+
+        systemExecutorMBean = new ManagedExecutorServiceMBean(
+                hazelcastInstance, executionService.getExecutor(ExecutionService.SYSTEM_EXECUTOR), service);
+        register(systemExecutorMBean);
+
+        operationExecutorMBean = new ManagedExecutorServiceMBean(
+                hazelcastInstance, executionService.getExecutor(ExecutionService.OPERATION_EXECUTOR), service);
+        register(operationExecutorMBean);
+
+        asyncExecutorMBean = new ManagedExecutorServiceMBean(
+                hazelcastInstance, executionService.getExecutor(ExecutionService.ASYNC_EXECUTOR), service);
+        register(asyncExecutorMBean);
+
+        scheduledExecutorMBean = new ManagedExecutorServiceMBean(
+                hazelcastInstance, executionService.getExecutor(ExecutionService.SCHEDULED_EXECUTOR), service);
+        register(scheduledExecutorMBean);
+
+        clientExecutorMBean = new ManagedExecutorServiceMBean(
+                hazelcastInstance, executionService.getExecutor(ExecutionService.CLIENT_EXECUTOR), service);
+        register(clientExecutorMBean);
+
+        queryExecutorMBean = new ManagedExecutorServiceMBean(
+                hazelcastInstance, executionService.getExecutor(ExecutionService.QUERY_EXECUTOR), service);
+        register(queryExecutorMBean);
+
+        ioExecutorMBean = new ManagedExecutorServiceMBean(
+                hazelcastInstance, executionService.getExecutor(ExecutionService.IO_EXECUTOR), service);
+        register(ioExecutorMBean);
+    }
+
+    public ManagedExecutorServiceMBean getSystemExecutorMBean() {
+        return systemExecutorMBean;
+    }
+
+    public ManagedExecutorServiceMBean getOperationExecutorMBean() {
+        return operationExecutorMBean;
+    }
+
+    public ManagedExecutorServiceMBean getAsyncExecutorMBean() {
+        return asyncExecutorMBean;
+    }
+
+    public ManagedExecutorServiceMBean getScheduledExecutorMBean() {
+        return scheduledExecutorMBean;
+    }
+
+    public ManagedExecutorServiceMBean getClientExecutorMBean() {
+        return clientExecutorMBean;
+    }
+
+    public ManagedExecutorServiceMBean getQueryExecutorMBean() {
+        return queryExecutorMBean;
+    }
+
+    public ManagedExecutorServiceMBean getIoExecutorMBean() {
+        return ioExecutorMBean;
+    }
+
+    public OperationServiceMBean getOperationServiceMBean() {
+        return operationServiceMBean;
+    }
+
+    public ProxyServiceMBean getProxyServiceMBean() {
+        return proxyServiceMBean;
+    }
+
+    public ClientEngineMBean getClientEngineMBean() {
+        return clientEngineMBean;
+    }
+
+    public ConnectionManagerMBean getConnectionManagerMBean() {
+        return connectionManagerMBean;
+    }
+
+    public EventServiceMBean getEventServiceMBean() {
+        return eventServiceMBean;
+    }
+
+    public NodeMBean getNodeMBean() {
+        return nodeMBean;
     }
 
     public HazelcastInstance getHazelcastInstance(){

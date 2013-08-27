@@ -36,4 +36,10 @@ public class ConnectionManagerMBean  extends HazelcastMBean<ConnectionManager> {
     public int getActiveConnectionCount() {
         return getConnectionManager().getActiveConnectionCount();
     }
+
+    @ManagedAnnotation("connectionCount")
+    @ManagedDescription("Current number of connections")
+    public int getConnectionCount() {
+        return getConnectionManager().getConnectionCount();
+    }
 }

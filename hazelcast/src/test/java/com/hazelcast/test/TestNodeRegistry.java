@@ -152,6 +152,11 @@ final class TestNodeRegistry {
                 return 0;
             }
 
+            @Override
+            public int getConnectionCount() {
+                return 0;
+            }
+
             public int getAllTextConnections() {
                 return 0;
             }

@@ -45,6 +45,8 @@ import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
+import com.hazelcast.util.HealthMonitor;
+import com.hazelcast.util.HealthMonitorLevel;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
@@ -105,6 +107,17 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
                 ((HazelcastInstanceAware) configuredManagedContext).setHazelcastInstance(this);
             }
         }
+
+        HealthMonitorLevel healthLevel = HealthMonitorLevel.valueOf(node.getGroupProperties().HEALTH_MONITORING_LEVEL.getString());
+        if(healthLevel!=HealthMonitorLevel.OFF){
+            logger.finest("Starting health monitor");
+            int delaySeconds = node.getGroupProperties().HEALTH_MONITORING_DELAY_SECONDS.getInteger();
+            new HealthMonitor(this,healthLevel,delaySeconds).start();
+        }
+    }
+
+    public ManagementService getManagementService(){
+        return managementService;
     }
 
     public ThreadMonitoringService getThreadMonitoringService() {
