@@ -57,5 +57,9 @@ public class SemaphoreMBean extends HazelcastMBean<ISemaphore> {
         managedObject.release(permits);
     }
 
-
+    @ManagedAnnotation("partitionKey")
+    @ManagedDescription("the partitionKey")
+    public String getPartitionKey() {
+        return managedObject.getPartitionKey();
+    }
 }

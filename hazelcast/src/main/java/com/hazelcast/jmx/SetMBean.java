@@ -61,6 +61,12 @@ public class SetMBean extends HazelcastMBean<ISet> {
         return managedObject.getName();
     }
 
+    @ManagedAnnotation("partitionKey")
+    @ManagedDescription("the partitionKey")
+    public String getPartitionKey() {
+        return managedObject.getPartitionKey();
+    }
+
     @ManagedAnnotation("totalAddedItemCount")
     public long getTotalAddedItemCount() {
         return totalAddedItemCount.get();

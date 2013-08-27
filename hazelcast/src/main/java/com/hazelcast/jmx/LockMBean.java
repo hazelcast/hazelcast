@@ -42,5 +42,10 @@ public class LockMBean extends  HazelcastMBean<ILock> {
         return lockObject == null ? null : lockObject.toString();
     }
 
+    @ManagedAnnotation("partitionKey")
+    @ManagedDescription("the partitionKey")
+    public String getPartitionKey() {
+        return managedObject.getPartitionKey();
+    }
 
 }
