@@ -18,9 +18,9 @@ package com.hazelcast.client.txn.proxy;
 
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.txn.TransactionContextProxy;
-import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.PartitionKeyUtil;
 
@@ -29,7 +29,7 @@ import java.io.IOException;
 /**
  * @author ali 6/10/13
  */
-abstract class ClientTxnProxy {
+abstract class ClientTxnProxy implements TransactionalObject {
 
     final Object id;
     final TransactionContextProxy proxy;
@@ -60,11 +60,8 @@ abstract class ClientTxnProxy {
     }
 
     public String getPartitionKey() {
-        final CollectionProxyId proxyId = (CollectionProxyId)getId();
-        String name =  proxyId.getKeyName();
-        return (String)PartitionKeyUtil.getPartitionKey(name);
+        return PartitionKeyUtil.getPartitionKey(getName());
     }
-
 
     Data toData(Object obj){
         return proxy.getClient().getSerializationService().toData(obj);

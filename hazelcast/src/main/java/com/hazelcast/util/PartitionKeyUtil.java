@@ -25,16 +25,13 @@ public class PartitionKeyUtil {
         return name.substring(0,indexOf);
     }
 
-    public static Object getPartitionKey(Object key) {
+    public static String getPartitionKey(String key) {
         if (key == null) return null;
-        if (!(key instanceof String)) return key;
 
-        String s = (String) key;
-        int firstIndexOf = s.indexOf('@');
+        int firstIndexOf = key.indexOf('@');
         if (firstIndexOf > -1) {
-            key = s.substring(firstIndexOf + 1);
+            key = key.substring(firstIndexOf + 1);
         }
-
         return key;
     }
 

@@ -15,7 +15,7 @@
   ~ limitations under the License.
   -->
 
-<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.0.xsd"
+<hazelcast xsi:schemaLocation="http://www.hazelcast.com/schema/config hazelcast-config-3.1.xsd"
            xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <group>
@@ -101,9 +101,8 @@
             Number of async backups. 0 means no backup.
         -->
         <async-backup-count>0</async-backup-count>
+
         <empty-queue-ttl>-1</empty-queue-ttl>
-
-
     </queue>
     <map name="default">
         <!--
@@ -179,17 +178,12 @@
         <merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy>
 
     </map>
-    <semaphore name="def">
-        <initial-permits>100</initial-permits>
+
+    <semaphore name="default">
+        <initial-permits>0</initial-permits>
         <backup-count>1</backup-count>
         <async-backup-count>0</async-backup-count>
     </semaphore>
-
-    <!-- Add your own semaphore configurations here:
-        <semaphore name="default">
-            <initial-permits>10</initial-permits>
-        </semaphore>
-    -->
 
     <serialization>
         <portable-version>0</portable-version>

@@ -116,7 +116,7 @@ public final class ProxyManager {
         });
         register(LockServiceImpl.SERVICE_NAME, new ClientProxyFactory() {
             public ClientProxy create(Object id) {
-                return new ClientLockProxy(DistributedExecutorService.SERVICE_NAME, id);
+                return new ClientLockProxy(LockServiceImpl.SERVICE_NAME, id);
             }
         });
 
@@ -124,7 +124,7 @@ public final class ProxyManager {
             public ClientProxy create(Object id) {
                 String name = String.valueOf(id);
                 IAtomicLong atomicLong = client.getAtomicLong(IdGeneratorService.ATOMIC_LONG_NAME + name);
-                return new ClientIdGeneratorProxy(DistributedExecutorService.SERVICE_NAME, name, atomicLong);
+                return new ClientIdGeneratorProxy(IdGeneratorService.SERVICE_NAME, name, atomicLong);
             }
         });
 

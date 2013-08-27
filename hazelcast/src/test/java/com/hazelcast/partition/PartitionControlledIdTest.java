@@ -28,9 +28,11 @@ import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.PartitionStrategyConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
+import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitionStrategy;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
@@ -64,6 +66,7 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
     public void setUp() throws InterruptedException {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(4);
         Config config = new Config();
+        config.getMapConfig("default").setPartitionStrategyConfig(new PartitionStrategyConfig(new StringAndPartitionAwarePartitionStrategy()));
         instances = factory.newInstances(config);
         warmUpPartitions(instances);
     }
@@ -210,7 +213,6 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
         assertTrue(service.containsLatch(countDownLatch.getName()));
     }
 
-    //we need to make sure that a task can be send to the same partition of a distributed object with a specific partition
     @Test
     public void testObjectWithPartitionKeyAndTask() throws Exception {
         HazelcastInstance instance = instances[0];
@@ -249,7 +251,7 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
         HazelcastInstance instance = instances[0];
         IExecutorService executorServices = instance.getExecutorService("executor");
         String partitionKey = "hazelcast";
-        String mapKey = partitionKey;
+        String mapKey = "key@" + partitionKey;
         IMap map = instance.getMap("map");
 
         map.put(mapKey, "foobar");
@@ -297,8 +299,3 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
         }
     }
 }
-
-
-    interface PartitionStrategy<K>{
-        Object getPartitionKey(K k);
-    }

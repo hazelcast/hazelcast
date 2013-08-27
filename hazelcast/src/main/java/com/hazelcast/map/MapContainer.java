@@ -18,10 +18,12 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
+import com.hazelcast.config.PartitionStrategyConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.MapLoaderLifecycleSupport;
 import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.core.Member;
+import com.hazelcast.core.PartitionStrategy;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.operation.MapInitialLoadOperation;
@@ -64,6 +66,7 @@ public class MapContainer {
     private final EntryTaskScheduler mapStoreDeleteScheduler;
     private final WanReplicationPublisher wanReplicationPublisher;
     private final MapMergePolicy wanMergePolicy;
+    private final PartitionStrategy partitionStrategy;
     private volatile boolean mapReady = false;
 
     public MapContainer(String name, MapConfig mapConfig, MapService mapService) {
@@ -163,6 +166,20 @@ public class MapContainer {
         interceptors = new CopyOnWriteArrayList<MapInterceptor>();
         interceptorMap = new ConcurrentHashMap<String, MapInterceptor>();
         nearCacheEnabled = mapConfig.getNearCacheConfig() != null;
+
+        PartitionStrategy strategy = null;
+        PartitionStrategyConfig partitionStrategyConfig = mapConfig.getPartitionStrategyConfig();
+        if (partitionStrategyConfig != null) {
+            strategy = partitionStrategyConfig.getPartitionStrategy();
+            if (strategy == null && partitionStrategyConfig.getPartitionStrategyClass() != null) {
+                try {
+                    strategy = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), partitionStrategyConfig.getPartitionStrategyClass());
+                } catch (Exception e) {
+                    throw ExceptionUtil.rethrow(e);
+                }
+            }
+        }
+        partitionStrategy = strategy;
     }
 
     public boolean isMapReady() {
@@ -183,7 +200,7 @@ public class MapContainer {
             Map<Data, Object> chunk = new HashMap<Data, Object>();
             List<Map<Data, Object>> chunkList = new ArrayList<Map<Data, Object>>();
             for (Object key : keys) {
-                Data dataKey = mapService.toData(key);
+                Data dataKey = mapService.toData(key, partitionStrategy);
                 int partitionId = nodeEngine.getPartitionService().getPartitionId(dataKey);
                 Address partitionOwner = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
                 while (partitionOwner == null) {
@@ -301,6 +318,10 @@ public class MapContainer {
 
     public MapStoreWrapper getStore() {
         return storeWrapper;
+    }
+
+    public PartitionStrategy getPartitionStrategy() {
+        return partitionStrategy;
     }
 
     private class MapLoadAllTask implements Runnable {

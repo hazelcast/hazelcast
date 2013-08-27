@@ -20,10 +20,7 @@ import com.hazelcast.concurrent.lock.proxy.LockProxySupport;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
-import com.hazelcast.core.EntryListener;
-import com.hazelcast.core.EntryView;
-import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.Member;
+import com.hazelcast.core.*;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.*;
 import com.hazelcast.map.operation.*;
@@ -60,11 +57,13 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     protected final MapConfig mapConfig;
     protected final LocalMapStatsImpl localMapStats;
     protected final LockProxySupport lockSupport;
+    protected final PartitionStrategy partitionStrategy;
 
     protected MapProxySupport(final String name, final MapService service, NodeEngine nodeEngine) {
         super(nodeEngine, service);
         this.name = name;
         mapConfig = service.getMapContainer(name).getMapConfig();
+        partitionStrategy = service.getMapContainer(name).getPartitionStrategy();
         localMapStats = service.getLocalMapStatsImpl(name);
         lockSupport = new LockProxySupport(new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
     }
@@ -385,7 +384,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                     if (!entryMap.containsKey(partitionId)) {
                         entryMap.put(partitionId, new MapEntrySet());
                     }
-                    entryMap.get(partitionId).add(new AbstractMap.SimpleImmutableEntry<Data, Data>(mapService.toData(entry.getKey()), mapService.toData(entry.getValue())));
+                    entryMap.get(partitionId).add(new AbstractMap.SimpleImmutableEntry<Data, Data>(mapService.toData(entry.getKey(), partitionStrategy),
+                            mapService.toData(entry.getValue())));
                 }
 
                 for (Integer partitionId : entryMap.keySet()) {
@@ -403,7 +403,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                     if (entry.getValue() == null) {
                         throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
                     }
-                    putInternal(mapService.toData(entry.getKey()), mapService.toData(entry.getValue()), -1, TimeUnit.SECONDS);
+                    putInternal(mapService.toData(entry.getKey(), partitionStrategy), mapService.toData(entry.getValue()), -1, TimeUnit.SECONDS);
                 }
             }
         } catch (Exception e) {

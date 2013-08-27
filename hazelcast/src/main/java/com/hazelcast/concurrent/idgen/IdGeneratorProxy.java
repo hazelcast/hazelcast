@@ -16,6 +16,7 @@
 
 package com.hazelcast.concurrent.idgen;
 
+import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IdGenerator;
 import com.hazelcast.util.PartitionKeyUtil;
@@ -83,7 +84,7 @@ public class IdGeneratorProxy implements IdGenerator {
 
     @Override
     public String getPartitionKey() {
-        return (String) PartitionKeyUtil.getPartitionKey(name);
+        return PartitionKeyUtil.getPartitionKey(name);
     }
 
     @Override
@@ -95,5 +96,27 @@ public class IdGeneratorProxy implements IdGenerator {
         atomicLong.destroy();
         residue = null;
         local = null;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        DistributedObject that = (DistributedObject) o;
+        Object id = getId();
+        if (id != null ? !id.equals(that.getId()) : that.getId() != null) return false;
+
+        String serviceName = getServiceName();
+        if (serviceName != null ? !serviceName.equals(that.getServiceName()) : that.getServiceName() != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = getServiceName() != null ? getServiceName().hashCode() : 0;
+        result = 31 * result + (getId() != null ? getId().hashCode() : 0);
+        return result;
     }
 }

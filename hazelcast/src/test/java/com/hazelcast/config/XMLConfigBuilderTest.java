@@ -199,7 +199,7 @@ public class XMLConfigBuilderTest {
 
     private void testXSDConfigXML(String xmlFileName) throws SAXException, IOException {
         SchemaFactory factory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");
-        final InputStream schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResourceAsStream("hazelcast-config-3.0.xsd");
+        final InputStream schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResourceAsStream("hazelcast-config-3.1.xsd");
         final InputStream xmlResource = XMLConfigBuilderTest.class.getClassLoader().getResourceAsStream(xmlFileName);
         Schema schema = factory.newSchema(new StreamSource(schemaResource));
         Source source = new StreamSource(xmlResource);

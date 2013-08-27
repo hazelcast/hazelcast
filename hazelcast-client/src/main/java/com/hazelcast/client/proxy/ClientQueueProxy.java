@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
 public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
 
     private final String name;
-    private Data key;
+    private volatile Data key;
 
     public ClientQueueProxy(String serviceName, String name) {
         super(serviceName, name);

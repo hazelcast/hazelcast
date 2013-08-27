@@ -80,7 +80,7 @@ public abstract class ClientProxy implements DistributedObject {
 
     @Override
     public String getPartitionKey() {
-        return (String) PartitionKeyUtil.getPartitionKey(getName());
+        return PartitionKeyUtil.getPartitionKey(getName());
     }
 
     public final String getServiceName() {

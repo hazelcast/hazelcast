@@ -31,6 +31,7 @@ public class MultiMapConfig {
     private int syncBackupCount = DEFAULT_SYNC_BACKUP_COUNT;
     private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
     private boolean statisticsEnabled = true;
+//    private PartitionStrategyConfig partitionStrategyConfig;
 
     public MultiMapConfig() {
     }
@@ -43,6 +44,7 @@ public class MultiMapConfig {
         this.asyncBackupCount = defConfig.asyncBackupCount;
         this.statisticsEnabled = defConfig.statisticsEnabled;
         this.listenerConfigs = new ArrayList<EntryListenerConfig>(defConfig.getEntryListenerConfigs());
+//        this.partitionStrategyConfig = defConfig.getPartitionStrategyConfig();
     }
 
     public enum ValueCollectionType {
@@ -128,6 +130,15 @@ public class MultiMapConfig {
         this.statisticsEnabled = statisticsEnabled;
         return this;
     }
+
+//    public PartitionStrategyConfig getPartitionStrategyConfig() {
+//        return partitionStrategyConfig;
+//    }
+//
+//    public MultiMapConfig setPartitionStrategyConfig(PartitionStrategyConfig partitionStrategyConfig) {
+//        this.partitionStrategyConfig = partitionStrategyConfig;
+//        return this;
+//    }
 
     public String toString() {
         final StringBuilder sb = new StringBuilder();

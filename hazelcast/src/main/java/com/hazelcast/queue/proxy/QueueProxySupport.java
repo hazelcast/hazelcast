@@ -48,7 +48,7 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
     QueueProxySupport(final String name, final QueueService queueService, NodeEngine nodeEngine) {
         super(nodeEngine, queueService);
         this.name = name;
-        this.partitionId = nodeEngine.getPartitionService().getPartitionId(name);
+        this.partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
         this.config = nodeEngine.getConfig().getQueueConfig(name);
     }
 

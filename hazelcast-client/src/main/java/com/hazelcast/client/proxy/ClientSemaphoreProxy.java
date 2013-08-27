@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
 public class ClientSemaphoreProxy extends ClientProxy implements ISemaphore {
 
     private final String name;
-    private Data key;
+    private volatile Data key;
 
     public ClientSemaphoreProxy(String serviceName, String objectId) {
         super(serviceName, objectId);

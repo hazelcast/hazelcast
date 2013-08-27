@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.core.PartitionStrategy;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.ObjectDataInput;
@@ -31,6 +32,8 @@ import java.nio.ByteOrder;
 public interface SerializationService {
 
     Data toData(Object obj);
+
+    Data toData(Object obj, PartitionStrategy strategy);
 
     Object toObject(Data data);
 
