@@ -16,6 +16,8 @@
 
 package com.hazelcast.spi;
 
+import com.hazelcast.util.executor.ManagedExecutorService;
+
 import java.util.concurrent.*;
 
 /**
@@ -36,7 +38,7 @@ public interface ExecutionService {
 
     <T> Future<T> submit(String name, Callable<T> task);
 
-    ExecutorService getExecutor(String name);
+    ManagedExecutorService getExecutor(String name);
 
     void shutdownExecutor(String name);
 

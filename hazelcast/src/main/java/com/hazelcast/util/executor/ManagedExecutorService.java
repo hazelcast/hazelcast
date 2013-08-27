@@ -19,6 +19,7 @@ package com.hazelcast.util.executor;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -27,6 +28,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public final class ManagedExecutorService implements ExecutorService {
 
+    private final AtomicLong executedCount = new AtomicLong();
     private final String name;
     private final int maxPoolSize;
     private final ExecutorService cachedExecutor;
@@ -49,6 +51,14 @@ public final class ManagedExecutorService implements ExecutorService {
         this.maxPoolSize = maxPoolSize;
         this.cachedExecutor = cachedExecutor;
         this.taskQ = new LinkedBlockingQueue<Runnable>(queueCapacity);
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public long getExecutedCount() {
+        return executedCount.get();
     }
 
     public void execute(Runnable command) {
@@ -146,6 +156,7 @@ public final class ManagedExecutorService implements ExecutorService {
                     r = taskQ.poll(1, TimeUnit.MILLISECONDS);
                     if (r != null) {
                         r.run();
+                        executedCount.incrementAndGet();
                     }
                 }
                 while (r != null);

@@ -22,6 +22,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.spi.ExecutionService;
 
 import javax.management.*;
 import java.io.File;
@@ -55,12 +56,20 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
         cluster = hazelcastInstance.getCluster();
 
         Node node = hazelcastInstance.node;
+        ExecutionService executionService = node.nodeEngine.getExecutionService();
+
         register(new NodeMBean(hazelcastInstance,node,managementService));
         register(new ConnectionManagerMBean(hazelcastInstance,node.connectionManager,service));
         register(new EventServiceMBean(hazelcastInstance,node.nodeEngine.getEventService(),service));
         register(new OperationServiceMBean(hazelcastInstance,node.nodeEngine.getOperationService(),service));
         register(new ProxyServiceMBean(hazelcastInstance,node.nodeEngine.getProxyService(),service));
         register(new ClientEngineMBean(hazelcastInstance,node.clientEngine ,service));
+        register(new ManagedExecutionServiceMBean(hazelcastInstance,executionService.getExecutor(ExecutionService.SYSTEM_EXECUTOR) ,service));
+        register(new ManagedExecutionServiceMBean(hazelcastInstance,executionService.getExecutor(ExecutionService.OPERATION_EXECUTOR) ,service));
+        register(new ManagedExecutionServiceMBean(hazelcastInstance,executionService.getExecutor(ExecutionService.ASYNC_EXECUTOR) ,service));
+        register(new ManagedExecutionServiceMBean(hazelcastInstance,executionService.getExecutor(ExecutionService.SCHEDULED_EXECUTOR) ,service));
+        register(new ManagedExecutionServiceMBean(hazelcastInstance,executionService.getExecutor(ExecutionService.CLIENT_EXECUTOR) ,service));
+        register(new ManagedExecutionServiceMBean(hazelcastInstance,executionService.getExecutor(ExecutionService.QUERY_EXECUTOR) ,service));
     }
 
     public HazelcastInstance getHazelcastInstance(){
