@@ -344,6 +344,53 @@ public class PartitionRecordStore implements RecordStore {
         return value;
     }
 
+    public MapEntrySet getAll(Set<Data> keySet) {
+        final MapEntrySet mapEntrySet = new MapEntrySet();
+        Map<Object, Data> keyMapForLoader = null;
+        if (mapContainer.getStore() != null) {
+            keyMapForLoader = new HashMap<Object, Data>();
+        }
+        for (Data dataKey : keySet) {
+            Record record = records.get(dataKey);
+            if (record == null) {
+                if (mapContainer.getStore() != null) {
+                    keyMapForLoader.put(mapService.toObject(dataKey), dataKey);
+                }
+            } else {
+                accessRecord(record);
+                Object value = record.getValue();
+                value = mapService.interceptGet(name, value);
+                if (value != null){
+                    mapEntrySet.add(new AbstractMap.SimpleImmutableEntry(dataKey, mapService.toData(value)));
+                }
+            }
+        }
+        if (mapContainer.getStore() == null || keyMapForLoader.size() == 0){
+            return mapEntrySet;
+        }
+        final Map<Object,Object> loaded = mapContainer.getStore().loadAll(keyMapForLoader.keySet());
+        for (Map.Entry entry : loaded.entrySet()) {
+            final Object objectKey = entry.getKey();
+            Object value = entry.getValue();
+            Data dataKey = keyMapForLoader.get(objectKey);
+            if (value != null) {
+                Record record = mapService.createRecord(name, dataKey, value, -1);
+                records.put(dataKey, record);
+                saveIndex(record);
+            }
+            // below is an optimization. if the record does not exist the next get will return null without looking at mapStore.
+            else {
+                Record record = mapService.createRecord(name, dataKey, null, 100);
+                records.put(dataKey, record);
+            }
+            value = mapService.interceptGet(name, value);
+            if (value != null){
+                mapEntrySet.add(new AbstractMap.SimpleImmutableEntry(dataKey, mapService.toData(value)));
+            }
+        }
+        return mapEntrySet;
+    }
+
     public boolean containsKey(Data dataKey) {
         Record record = records.get(dataKey);
         if (record == null) {
