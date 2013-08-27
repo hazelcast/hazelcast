@@ -123,7 +123,7 @@ public class PartitionRecordStore implements RecordStore {
 
     public boolean containsValue(Object value) {
         for (Record record : records.values()) {
-            if( mapService.compare(name, value, record.getValue()) )
+            if (mapService.compare(name, value, record.getValue()))
                 return true;
         }
         return false;
@@ -330,8 +330,11 @@ public class PartitionRecordStore implements RecordStore {
                 }
                 // below is an optimization. if the record does not exist the next get will return null without looking at mapStore.
                 if (value == null) {
-                    record = mapService.createRecord(name, dataKey, null, 100);
-                    records.put(dataKey, record);
+                    int ttlForNull = mapService.getNodeEngine().getGroupProperties().CACHED_NULL_TTL_SECONDS.getInteger();
+                    if (ttlForNull > 0) {
+                        record = mapService.createRecord(name, dataKey, null, ttlForNull * 1000);
+                        records.put(dataKey, record);
+                    }
                 }
             }
 
@@ -344,7 +347,7 @@ public class PartitionRecordStore implements RecordStore {
         return value;
     }
 
-    public MapEntrySet getAll(Set<Data> keySet){
+    public MapEntrySet getAll(Set<Data> keySet) {
         final MapEntrySet mapEntrySet = new MapEntrySet();
         Map<Object, Data> keyMapForLoader = null;
         if (mapContainer.getStore() != null) {
@@ -360,15 +363,15 @@ public class PartitionRecordStore implements RecordStore {
                 accessRecord(record);
                 Object value = record.getValue();
                 value = mapService.interceptGet(name, value);
-                if (value != null){
+                if (value != null) {
                     mapEntrySet.add(new AbstractMap.SimpleImmutableEntry(dataKey, mapService.toData(value)));
                 }
             }
         }
-        if (mapContainer.getStore() == null || keyMapForLoader.size() == 0){
+        if (mapContainer.getStore() == null || keyMapForLoader.size() == 0) {
             return mapEntrySet;
         }
-        final Map<Object,Object> loaded = mapContainer.getStore().loadAll(keyMapForLoader.keySet());
+        final Map<Object, Object> loaded = mapContainer.getStore().loadAll(keyMapForLoader.keySet());
         for (Map.Entry entry : loaded.entrySet()) {
             final Object objectKey = entry.getKey();
             Object value = entry.getValue();
@@ -380,11 +383,14 @@ public class PartitionRecordStore implements RecordStore {
             }
             // below is an optimization. if the record does not exist the next get will return null without looking at mapStore.
             else {
-                Record record = mapService.createRecord(name, dataKey, null, 100);
-                records.put(dataKey, record);
+                int ttlForNull = mapService.getNodeEngine().getGroupProperties().CACHED_NULL_TTL_SECONDS.getInteger();
+                if (ttlForNull > 0) {
+                    Record record = mapService.createRecord(name, dataKey, null, ttlForNull*1000);
+                    records.put(dataKey, record);
+                }
             }
             value = mapService.interceptGet(name, value);
-            if (value != null){
+            if (value != null) {
                 mapEntrySet.add(new AbstractMap.SimpleImmutableEntry(dataKey, mapService.toData(value)));
             }
         }
@@ -406,7 +412,7 @@ public class PartitionRecordStore implements RecordStore {
         // because of a get optimization (see above), there may be a record with a null value,
         // which means map-store returned null while loading the key.
         boolean contains = record != null && record.getValue() != null;
-        if(contains) {
+        if (contains) {
             accessRecord(record);
         }
         return contains;

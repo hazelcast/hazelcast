@@ -33,6 +33,7 @@ public class GroupProperties {
     public static final String PROP_MEMCACHE_ENABLED = "hazelcast.memcache.enabled";
     public static final String PROP_REST_ENABLED = "hazelcast.rest.enabled";
     public static final String PROP_MAP_LOAD_CHUNK_SIZE = "hazelcast.map.load.chunk.size";
+    public static final String PROP_CACHED_NULL_TTL_SECONDS = "hazelcast.cached.null.ttl.seconds";
     public static final String PROP_MERGE_FIRST_RUN_DELAY_SECONDS = "hazelcast.merge.first.run.delay.seconds";
     public static final String PROP_MERGE_NEXT_RUN_DELAY_SECONDS = "hazelcast.merge.next.run.delay.seconds";
     public static final String PROP_OPERATION_CALL_TIMEOUT_MILLIS = "hazelcast.operation.call.timeout.millis";
@@ -101,6 +102,8 @@ public class GroupProperties {
     public final GroupProperty REST_ENABLED;
 
     public final GroupProperty MAP_LOAD_CHUNK_SIZE;
+
+    public final GroupProperty CACHED_NULL_TTL_SECONDS;
 
     public final GroupProperty MERGE_FIRST_RUN_DELAY_SECONDS;
 
@@ -203,6 +206,7 @@ public class GroupProperties {
         MEMCACHE_ENABLED = new GroupProperty(config, PROP_MEMCACHE_ENABLED, "true");
         REST_ENABLED = new GroupProperty(config, PROP_REST_ENABLED, "true");
         MAP_LOAD_CHUNK_SIZE = new GroupProperty(config, PROP_MAP_LOAD_CHUNK_SIZE, "1000");
+        CACHED_NULL_TTL_SECONDS = new GroupProperty(config, PROP_CACHED_NULL_TTL_SECONDS, "1");
         MERGE_FIRST_RUN_DELAY_SECONDS = new GroupProperty(config, PROP_MERGE_FIRST_RUN_DELAY_SECONDS, "300");
         MERGE_NEXT_RUN_DELAY_SECONDS = new GroupProperty(config, PROP_MERGE_NEXT_RUN_DELAY_SECONDS, "120");
         OPERATION_CALL_TIMEOUT_MILLIS = new GroupProperty(config, PROP_OPERATION_CALL_TIMEOUT_MILLIS, "60000");
