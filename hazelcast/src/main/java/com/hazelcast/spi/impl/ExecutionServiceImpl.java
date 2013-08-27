@@ -28,7 +28,9 @@ import com.hazelcast.util.executor.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.*;
 import java.util.logging.Level;
 
@@ -43,7 +45,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
     private final ExecutorService scheduledManagedExecutor;
     private final ILogger logger;
 
-    private final ConcurrentMap<String, ExecutorService> executors = new ConcurrentHashMap<String, ExecutorService>();
+    private final ConcurrentMap<String, ManagedExecutorService> executors = new ConcurrentHashMap<String, ManagedExecutorService>();
 
     public ExecutionServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -75,6 +77,10 @@ public final class ExecutionServiceImpl implements ExecutionService {
         scheduledManagedExecutor = register(SCHEDULED_EXECUTOR, coreSize * 5, coreSize * 10000);
     }
 
+    public Set<String> getExecutorNames(){
+        return new HashSet<String>(executors.keySet());
+    }
+
     private void enableRemoveOnCancelIfAvailable() {
         try {
             final Method m = scheduledExecutorService.getClass().getMethod("setRemoveOnCancelPolicy", boolean.class);
@@ -99,8 +105,8 @@ public final class ExecutionServiceImpl implements ExecutionService {
         return executor;
     }
 
-    private final ConstructorFunction<String, ExecutorService> constructor =
-            new ConstructorFunction<String, ExecutorService>() {
+    private final ConstructorFunction<String, ManagedExecutorService> constructor =
+            new ConstructorFunction<String, ManagedExecutorService>() {
                 public ManagedExecutorService createNew(String name) {
                     final ExecutorConfig cfg = nodeEngine.getConfig().getExecutorConfig(name);
                     final int queueCapacity = cfg.getQueueCapacity() <= 0 ? Integer.MAX_VALUE : cfg.getQueueCapacity();
@@ -108,7 +114,7 @@ public final class ExecutionServiceImpl implements ExecutionService {
                 }
             };
 
-    public ExecutorService getExecutor(String name) {
+    public ManagedExecutorService getExecutor(String name) {
         return ConcurrencyUtil.getOrPutIfAbsent(executors, name, constructor);
     }
 

@@ -51,6 +51,14 @@ public final class StripedExecutor implements Executor {
         }
     }
 
+    public int getWorkQueueSize(){
+        int size = 0;
+        for(Worker worker: workers){
+            size+=worker.workQueue.size();
+        }
+        return size;
+    }
+
     public void execute(Runnable command) {
         final int key;
         if (command instanceof StripedRunnable) {

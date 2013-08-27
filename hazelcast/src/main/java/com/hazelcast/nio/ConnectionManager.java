@@ -40,6 +40,9 @@ public interface ConnectionManager {
 
     int getCurrentClientConnections();
 
+    int getConnectionCount();
+
     int getAllTextConnections();
 
+    int getActiveConnectionCount();
 }

@@ -54,12 +54,16 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 final class OperationServiceImpl implements OperationService {
 
+    private final AtomicLong executedOperationsCount = new AtomicLong();
+
     private final NodeEngineImpl nodeEngine;
     private final Node node;
     private final ILogger logger;
     private final AtomicLong callIdGen = new AtomicLong(0);
     private final ConcurrentMap<Long, RemoteCall> remoteCalls;
     private final ExecutorService[] operationExecutors;
+    private final BlockingQueue[] operationExecutorQueues;
+
     private final ExecutorService defaultOperationExecutor;
     private final ExecutorService responseExecutor;
     private final long defaultCallTimeout;
@@ -67,6 +71,7 @@ final class OperationServiceImpl implements OperationService {
     private final ConcurrentMap<Long, Semaphore> backupCalls;
     private final int operationThreadCount;
     private final EntryTaskScheduler<Object, ScheduledBackup> backupScheduler;
+    private final BlockingQueue<Runnable> responseWorkQueue = new LinkedBlockingQueue<Runnable>();
 
     OperationServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -80,16 +85,61 @@ final class OperationServiceImpl implements OperationService {
         final int opThreadCount = node.getGroupProperties().OPERATION_THREAD_COUNT.getInteger();
         operationThreadCount =  opThreadCount > 0 ? opThreadCount : coreSize * 2;
         operationExecutors = new ExecutorService[operationThreadCount];
+        operationExecutorQueues = new BlockingQueue[operationThreadCount];
         for (int i = 0; i < operationExecutors.length; i++) {
-            operationExecutors[i] = Executors.newSingleThreadExecutor(new OperationThreadFactory(i));
+            BlockingQueue<Runnable> q = new LinkedBlockingQueue<Runnable>();
+            operationExecutorQueues[i]=q;
+            operationExecutors[i] =  new ThreadPoolExecutor(1, 1,
+                    0L, TimeUnit.MILLISECONDS,
+                    q,
+                    new OperationThreadFactory(i));
         }
         defaultOperationExecutor = nodeEngine.getExecutionService().getExecutor(ExecutionService.OPERATION_EXECUTOR);
-        responseExecutor = Executors.newSingleThreadExecutor(new SingleExecutorThreadFactory(node.threadGroup,
-                node.getConfigClassLoader(), node.getThreadNamePrefix("response")));
+
+        responseExecutor = new ThreadPoolExecutor(1, 1,
+                0L, TimeUnit.MILLISECONDS,
+                responseWorkQueue,
+                new SingleExecutorThreadFactory(node.threadGroup,
+                        node.getConfigClassLoader(), node.getThreadNamePrefix("response")));
+
         executingCalls = new ConcurrentHashMap<RemoteCallKey, RemoteCallKey>(1000, 0.75f, concurrencyLevel);
         backupCalls = new ConcurrentHashMap<Long, Semaphore>(1000, 0.75f, concurrencyLevel);
         backupScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(),
                 new ScheduledBackupProcessor(), false);
+    }
+
+    @Override
+    public int getOperationThreadCount(){
+        return operationThreadCount;
+    }
+
+    @Override
+    public int getRunningOperationsCount(){
+        return executingCalls.size();
+    }
+
+    @Override
+    public long getExecutedOperationCount(){
+        return executedOperationsCount.get();
+    }
+
+    @Override
+    public int getRemoteOperationsCount(){
+        return remoteCalls.size();
+    }
+
+    @Override
+    public int getResponseQueueSize() {
+        return responseWorkQueue.size();
+    }
+
+    @Override
+    public int getOperationExecutorQueueSize() {
+        int size = 0;
+        for(BlockingQueue q: operationExecutorQueues){
+            size+=q.size();
+        }
+        return size;
     }
 
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, final int partitionId) {
@@ -180,6 +230,8 @@ final class OperationServiceImpl implements OperationService {
      * Runs operation in calling thread.
      */
     private void doRunOperation(final Operation op) {
+        executedOperationsCount.incrementAndGet();
+
         RemoteCallKey callKey = null;
         try {
             if (isCallTimedOut(op)) {

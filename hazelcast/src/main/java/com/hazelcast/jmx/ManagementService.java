@@ -44,27 +44,38 @@ public class ManagementService implements DistributedObjectListener {
     private final ILogger logger;
 
     private final String registrationId;
+    private final InstanceMBean instanceMBean;
 
     public ManagementService(HazelcastInstanceImpl instance) {
         this.instance = instance;
-        logger = instance.getLoggingService().getLogger(getClass());
+        this.logger = instance.getLoggingService().getLogger(getClass());
         this.enabled = instance.node.groupProperties.ENABLE_JMX.getBoolean();
-        if (enabled) {
-            logger.info("Hazelcast JMX agent enabled.");
-            MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-            try {
-                InstanceMBean instanceMBean = new InstanceMBean(instance, this);
-                mbs.registerMBean(instanceMBean, instanceMBean.objectName);
-            } catch (Exception e) {
-                logger.warning("Unable to start JMX service", e);
-            }
-            registrationId = instance.addDistributedObjectListener(this);
-            for (final DistributedObject distributedObject : instance.getDistributedObjects()) {
-                registerDistributedObject(distributedObject);
-            }
-        } else {
-            registrationId = null;
+        if (!enabled) {
+            this.instanceMBean = null;
+            this.registrationId = null;
+            return;
         }
+
+        logger.info("Hazelcast JMX agent enabled.");
+        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+        InstanceMBean instanceMBean;
+        try {
+            instanceMBean = new InstanceMBean(instance, this);
+            mbs.registerMBean(instanceMBean, instanceMBean.objectName);
+        } catch (Exception e) {
+            instanceMBean = null;
+            logger.warning("Unable to start JMX service", e);
+
+        }
+        this.instanceMBean = instanceMBean;
+        this.registrationId =  instance.addDistributedObjectListener(this);
+        for (final DistributedObject distributedObject : instance.getDistributedObjects()) {
+            registerDistributedObject(distributedObject);
+        }
+    }
+
+    public InstanceMBean getInstanceMBean() {
+        return instanceMBean;
     }
 
     public void destroy() {
@@ -225,7 +236,7 @@ public class ManagementService implements DistributedObjectListener {
         }
     }
 
-    private String quote(String text){
+    public static String quote(String text){
         return Pattern.compile("[:\",=*?]")
                 .matcher(text)
                 .find() ? ObjectName.quote(text) : text;

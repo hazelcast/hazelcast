@@ -16,9 +16,13 @@
 
 package com.hazelcast.jmx;
 
+import com.hazelcast.instance.Node;
+
 import javax.management.*;
+import java.lang.management.ManagementFactory;
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.Hashtable;
 
 /**
  * @author ali 1/30/13
@@ -39,6 +43,15 @@ public abstract class HazelcastMBean<T> implements DynamicMBean, MBeanRegistrati
     protected HazelcastMBean(T managedObject, ManagementService service) {
         this.managedObject = managedObject;
         this.service = service;
+    }
+
+    public void register(HazelcastMBean mbean){
+        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+        try {
+            mbs.registerMBean(mbean, mbean.objectName);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void scan() throws Exception {
@@ -78,6 +91,14 @@ public abstract class HazelcastMBean<T> implements DynamicMBean, MBeanRegistrati
             return info.method.invoke(this);
         } catch (Exception e) {
             throw new ReflectionException(e);
+        }
+    }
+
+    public void setObjectName(Hashtable<String,String> properties){
+        try {
+            objectName = new ObjectName(ManagementService.DOMAIN, properties);
+        } catch (MalformedObjectNameException e) {
+            throw new IllegalArgumentException("Failed to create an ObjectName",e);
         }
     }
 
