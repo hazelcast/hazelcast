@@ -24,7 +24,7 @@ public class OperationServiceMBean extends HazelcastMBean<OperationService> {
     @ManagedAnnotation("responseQueueSize")
     @ManagedDescription("The size of the response queue")
     public int getResponseQueueSize(){
-           return managedObject.getResponseQueueSize();
+        return managedObject.getResponseQueueSize();
     }
 
     @ManagedAnnotation("operationExecutorQueueSize")
@@ -43,5 +43,17 @@ public class OperationServiceMBean extends HazelcastMBean<OperationService> {
     @ManagedDescription("The number of remote operations")
     public int getRemoteOperationsCount(){
         return managedObject.getRemoteOperationsCount();
+    }
+
+    @ManagedAnnotation("executedOperationCount")
+    @ManagedDescription("The number of executed operations")
+    public long getExecutedOperationCount(){
+        return managedObject.getExecutedOperationCount();
+    }
+
+    @ManagedAnnotation("operationThreadCount")
+    @ManagedDescription("Number of threads executing operations")
+    public long getOperationThreadCount(){
+        return managedObject.getOperationThreadCount();
     }
 }

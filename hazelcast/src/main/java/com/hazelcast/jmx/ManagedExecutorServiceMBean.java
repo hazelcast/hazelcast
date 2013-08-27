@@ -29,19 +29,25 @@ public class ManagedExecutorServiceMBean extends HazelcastMBean<ManagedExecutorS
 
     @ManagedAnnotation("queueSize")
     @ManagedDescription("The work queue size")
-    public int getQueueSize() {
+    public int queueSize() {
         return managedObject.queueSize();
     }
 
     @ManagedAnnotation("poolSize")
     @ManagedDescription("The current number of thread in the threadpool")
-    public int getPoolSize() {
+    public int poolSize() {
         return managedObject.poolSize();
+    }
+
+    @ManagedAnnotation("queueRemainingCapacity")
+    @ManagedDescription("The remaining capacity on the work queue")
+    public int queueRemainingCapacity() {
+        return managedObject.queueRemainingCapacity();
     }
 
     @ManagedAnnotation("maxPoolSize")
     @ManagedDescription("The maximum number of thread in the threadpool")
-    public int getMaxPoolSize() {
+    public int maxPoolSize() {
         return managedObject.maxPoolSize();
     }
 

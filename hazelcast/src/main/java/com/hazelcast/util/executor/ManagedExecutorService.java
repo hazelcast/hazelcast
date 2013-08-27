@@ -73,6 +73,9 @@ public final class ManagedExecutorService implements ExecutorService {
         return taskQ.size();  // LBQ size handled by an atomic int
     }
 
+    public int queueRemainingCapacity() {
+        return taskQ.remainingCapacity();
+    }
 
     public void execute(Runnable command) {
         if (!taskQ.offer(command)) {

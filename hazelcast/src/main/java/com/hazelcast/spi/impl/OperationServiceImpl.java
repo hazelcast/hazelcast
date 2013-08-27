@@ -54,6 +54,8 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 final class OperationServiceImpl implements OperationService {
 
+    private final AtomicLong executedOperationsCount = new AtomicLong();
+
     private final NodeEngineImpl nodeEngine;
     private final Node node;
     private final ILogger logger;
@@ -107,8 +109,18 @@ final class OperationServiceImpl implements OperationService {
     }
 
     @Override
+    public int getOperationThreadCount(){
+        return operationThreadCount;
+    }
+
+    @Override
     public int getRunningOperationsCount(){
         return executingCalls.size();
+    }
+
+    @Override
+    public long getExecutedOperationCount(){
+        return executedOperationsCount.get();
     }
 
     @Override
@@ -218,6 +230,8 @@ final class OperationServiceImpl implements OperationService {
      * Runs operation in calling thread.
      */
     private void doRunOperation(final Operation op) {
+        executedOperationsCount.incrementAndGet();
+
         RemoteCallKey callKey = null;
         try {
             if (isCallTimedOut(op)) {

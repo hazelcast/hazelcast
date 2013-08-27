@@ -42,6 +42,10 @@ public interface OperationService {
 
     int getRemoteOperationsCount();
 
+    int getOperationThreadCount();
+
+    long  getExecutedOperationCount();
+
     /**
      * Runs operation in calling thread.
      *

@@ -23,13 +23,11 @@ import com.hazelcast.core.Member;
 import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.util.VersionCheck;
 
 import java.io.File;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static com.hazelcast.jmx.ManagementService.quote;
 
@@ -54,6 +52,7 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
     private final ManagedExecutorServiceMBean clientExecutorMBean;
     private final ManagedExecutorServiceMBean queryExecutorMBean;
     private final ManagedExecutorServiceMBean ioExecutorMBean;
+    private final PartitionServiceMBean partitionServiceMBean;
 
     protected InstanceMBean(HazelcastInstanceImpl hazelcastInstance, ManagementService managementService) {
         super(hazelcastInstance, managementService);
@@ -83,6 +82,10 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
 
         proxyServiceMBean = new ProxyServiceMBean(hazelcastInstance, node.nodeEngine.getProxyService(), service);
         register(proxyServiceMBean);
+
+        partitionServiceMBean = new PartitionServiceMBean(hazelcastInstance, node.partitionService,service);
+        register(partitionServiceMBean);
+
 
         clientEngineMBean = new ClientEngineMBean(hazelcastInstance, node.clientEngine, service);
         register(clientEngineMBean);
@@ -114,6 +117,10 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
         ioExecutorMBean = new ManagedExecutorServiceMBean(
                 hazelcastInstance, executionService.getExecutor(ExecutionService.IO_EXECUTOR), service);
         register(ioExecutorMBean);
+    }
+
+    public PartitionServiceMBean getPartitionServiceMBean() {
+        return partitionServiceMBean;
     }
 
     public ManagedExecutorServiceMBean getSystemExecutorMBean() {
@@ -176,6 +183,18 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
     @ManagedDescription("Name of the Instance")
     public String getName() {
         return managedObject.getName();
+    }
+
+    @ManagedAnnotation("version")
+    @ManagedDescription("The Hazelcast version")
+    public String getVersion() {
+        return managedObject.node.initializer.getVersion();
+    }
+
+    @ManagedAnnotation("build")
+    @ManagedDescription("The Hazelcast build")
+    public String getBuild() {
+        return managedObject.node.initializer.getBuild();
     }
 
     @ManagedAnnotation("config")
