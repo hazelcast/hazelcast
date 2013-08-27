@@ -18,6 +18,7 @@ package com.hazelcast.map.mapstore;
 
 import com.hazelcast.config.*;
 import com.hazelcast.core.*;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.instance.HazelcastInstanceProxy;
 import com.hazelcast.instance.TestUtil;
 import com.hazelcast.monitor.LocalMapStats;
@@ -48,12 +49,12 @@ import static org.junit.Assert.*;
 public class MapStoreTest extends HazelcastTestSupport {
 
     @Test
-    public void testMapGetAll(){
+    public void testMapGetAll() {
 
         final Map<String, String> _map = new HashMap<String, String>();
-        _map.put("key1","value1");
-        _map.put("key2","value2");
-        _map.put("key3","value3");
+        _map.put("key1", "value1");
+        _map.put("key2", "value2");
+        _map.put("key3", "value3");
 
         final AtomicBoolean loadAllCalled = new AtomicBoolean(false);
         final AtomicBoolean loadCalled = new AtomicBoolean(false);
@@ -741,6 +742,25 @@ public class MapStoreTest extends HazelcastTestSupport {
         map.clear();
         assertEquals(0, map.size());
         assertEquals(0, store.loadAllKeys().size());
+    }
+
+    @Test
+    public void testIssue806CustomTTLForNull() {
+        final ConcurrentMap<String, String> store = new ConcurrentHashMap<String, String>();
+        final MapStore<String, String> myMapStore = new SimpleMapStore<String, String>(store);
+        Config config = new Config();
+        config.setProperty(GroupProperties.PROP_CACHED_NULL_TTL_SECONDS, "0");
+        config
+                .getMapConfig("testIssue806CustomTTLForNull")
+                .setMapStoreConfig(new MapStoreConfig()
+                        .setImplementation(myMapStore));
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        HazelcastInstance hc = nodeFactory.newHazelcastInstance(config);
+        IMap<Object, Object> map = hc.getMap("testIssue806CustomTTLForNull");
+        map.get("key");
+        assertNull(map.get("key"));
+        store.put("key", "value");
+        assertEquals("value", map.get("key"));
     }
 
     public static Config newConfig(Object storeImpl, int writeDelaySeconds) {
