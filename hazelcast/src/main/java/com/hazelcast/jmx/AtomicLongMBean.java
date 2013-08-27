@@ -89,5 +89,10 @@ public class AtomicLongMBean extends HazelcastMBean<IAtomicLong> {
         return managedObject.incrementAndGet();
     }
 
+    @ManagedAnnotation("partitionKey")
+    @ManagedDescription("the partitionKey")
+    public String getPartitionKey() {
+        return managedObject.getPartitionKey();
+    }
 
 }

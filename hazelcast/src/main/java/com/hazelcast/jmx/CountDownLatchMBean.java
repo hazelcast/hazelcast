@@ -47,4 +47,9 @@ public class CountDownLatchMBean extends HazelcastMBean<ICountDownLatch> {
         managedObject.countDown();
     }
 
+    @ManagedAnnotation("partitionKey")
+    @ManagedDescription("the partitionKey")
+    public String getPartitionKey() {
+        return managedObject.getPartitionKey();
+    }
 }
