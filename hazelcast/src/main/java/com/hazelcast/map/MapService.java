@@ -874,9 +874,9 @@ public class MapService implements ManagedService, MigrationAwareService,
                 long total = Runtime.getRuntime().totalMemory();
                 long used = (total - Runtime.getRuntime().freeMemory());
                 if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.USED_HEAP_SIZE) {
-                    return maxSize > (used / 1024 / 1024);
+                    return maxSize < (used / 1024 / 1024);
                 } else {
-                    return maxSize > (used / total);
+                    return maxSize < (used / total);
                 }
             }
             return false;
