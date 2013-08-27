@@ -16,7 +16,7 @@ public class ManagedExecutorServiceMBean extends HazelcastMBean<ManagedExecutorS
         Hashtable<String, String> properties = new Hashtable<String, String>(3);
         properties.put("type", quote("HazelcastInstance.ManagedExecutorService"));
         properties.put("name", quote(executorService.getName()));
-        properties.put("HazelcastInstance", quote(hazelcastInstance.getName()));
+        properties.put("instance", quote(hazelcastInstance.getName()));
 
         setObjectName(properties);
     }

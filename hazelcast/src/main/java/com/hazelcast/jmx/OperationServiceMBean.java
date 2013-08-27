@@ -16,7 +16,7 @@ public class OperationServiceMBean extends HazelcastMBean<OperationService> {
         Hashtable<String, String> properties = new Hashtable<String, String>(3);
         properties.put("type", quote("HazelcastInstance.OperationService"));
         properties.put("name", quote("operationService" + hazelcastInstance.getName()));
-        properties.put("HazelcastInstance", quote(hazelcastInstance.getName()));
+        properties.put("instance", quote(hazelcastInstance.getName()));
 
         setObjectName(properties);
     }

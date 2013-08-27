@@ -68,9 +68,7 @@ public class ManagementService implements DistributedObjectListener {
 
         }
         this.instanceMBean = instanceMBean;
-        this.registrationId = null;
-
-        instance.addDistributedObjectListener(this);
+        this.registrationId =  instance.addDistributedObjectListener(this);
         for (final DistributedObject distributedObject : instance.getDistributedObjects()) {
             registerDistributedObject(distributedObject);
         }

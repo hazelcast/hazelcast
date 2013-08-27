@@ -13,8 +13,11 @@ public class Main {
 
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         instance.getMap("somemap").put("1","1");
-       Hazelcast.newHazelcastInstance(config);
-       //Hazelcast.newHazelcastInstance(config);
+
+        for(int k=0;k<10;k++){
+            HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+            hz.shutdown();
+        }
 
     }
 }

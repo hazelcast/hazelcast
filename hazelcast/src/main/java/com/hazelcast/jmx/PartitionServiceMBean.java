@@ -22,7 +22,7 @@ public class PartitionServiceMBean  extends HazelcastMBean<PartitionService> {
         Hashtable<String, String> properties = new Hashtable<String, String>(3);
         properties.put("type", quote("HazelcastInstance.PartitionServiceMBean"));
         properties.put("name", quote(hazelcastInstance.getName()));
-        properties.put("HazelcastInstance", quote(hazelcastInstance.getName()));
+        properties.put("instance", quote(hazelcastInstance.getName()));
 
         setObjectName(properties);
     }

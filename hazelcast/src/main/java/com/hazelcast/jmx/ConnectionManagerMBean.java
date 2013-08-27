@@ -16,7 +16,7 @@ public class ConnectionManagerMBean  extends HazelcastMBean<ConnectionManager> {
 
         Hashtable<String, String> properties = new Hashtable<String, String>(3);
         properties.put("type", quote("HazelcastInstance.ConnectionManager"));
-        properties.put("HazelcastInstance", quote(hazelcastInstance.getName()));
+        properties.put("instance", quote(hazelcastInstance.getName()));
         properties.put("name", hazelcastInstance.getName());
         setObjectName(properties);
     }

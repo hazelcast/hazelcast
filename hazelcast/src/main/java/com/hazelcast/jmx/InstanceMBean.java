@@ -59,6 +59,7 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
 
         Hashtable<String, String> properties = new Hashtable<String, String>(3);
         properties.put("type", quote("HazelcastInstance"));
+        properties.put("instance", quote(hazelcastInstance.getName()));
         properties.put("name", quote(hazelcastInstance.getName()));
         setObjectName(properties);
 
@@ -85,7 +86,6 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
 
         partitionServiceMBean = new PartitionServiceMBean(hazelcastInstance, node.partitionService,service);
         register(partitionServiceMBean);
-
 
         clientEngineMBean = new ClientEngineMBean(hazelcastInstance, node.clientEngine, service);
         register(clientEngineMBean);

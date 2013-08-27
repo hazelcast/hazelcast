@@ -21,7 +21,7 @@ public class NodeMBean extends HazelcastMBean<Node> {
         Hashtable<String, String> properties = new Hashtable<String, String>(3);
         properties.put("type", quote("HazelcastInstance.Node"));
         properties.put("name", quote("node"+node.address));
-        properties.put("HazelcastInstance", quote(hazelcastInstance.getName()));
+        properties.put("instance", quote(hazelcastInstance.getName()));
 
         setObjectName(properties);
     }
