@@ -43,7 +43,6 @@ public class GetAllOperation extends AbstractMapOperation implements PartitionAw
     public void run() {
         int partitionId = getPartitionId();
         RecordStore recordStore = mapService.getRecordStore(partitionId, name);
-        entrySet = new MapEntrySet();
         Set<Data> partitionKeySet = new HashSet<Data>();
         for (Data key : keys) {
             if (partitionId == getNodeEngine().getPartitionService().getPartitionId(key)) {
