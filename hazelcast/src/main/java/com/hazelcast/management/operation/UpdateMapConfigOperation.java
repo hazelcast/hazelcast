@@ -64,7 +64,7 @@ public class UpdateMapConfigOperation extends Operation {
     }
 
     public boolean returnsResponse() {
-        return false;
+        return true;
     }
 
     public Object getResponse() {
