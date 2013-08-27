@@ -164,6 +164,9 @@ public class ManagementService implements DistributedObjectListener {
             if (distributedObject instanceof ISemaphore){
                 return new SemaphoreMBean((ISemaphore)distributedObject, this);
             }
+            if (distributedObject instanceof IExecutorService){
+                return new ExecutorServiceMBean((IExecutorService)distributedObject, this);
+            }
             if (distributedObject instanceof ISet){
                 return new SetMBean((ISet)distributedObject, this);
             }
@@ -205,6 +208,9 @@ public class ManagementService implements DistributedObjectListener {
         }
         if (distributedObject instanceof ITopic){
             return "ITopic";
+        }
+        if (distributedObject instanceof IExecutorService){
+            return "IExecutorService";
         }
         return null;
     }
