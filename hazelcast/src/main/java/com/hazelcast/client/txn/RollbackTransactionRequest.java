@@ -36,6 +36,7 @@ public class RollbackTransactionRequest extends CallableClientRequest implements
     public Object call() throws Exception {
         final ClientEndpoint endpoint = getEndpoint();
         endpoint.getTransactionContext().rollbackTransaction();
+        endpoint.setTransactionContext(null);
         return null;
     }
 

@@ -124,7 +124,11 @@ final class TransactionProxy {
 
     private void closeConnection(){
         threadFlag.set(null);
-        IOUtil.closeResource(connection);
+        try {
+            connection.release();
+        } catch (IOException e) {
+            IOUtil.closeResource(connection);
+        }
     }
 
     private void checkThread() {
