@@ -48,6 +48,63 @@ import static org.junit.Assert.*;
 public class MapStoreTest extends HazelcastTestSupport {
 
     @Test
+    public void testMapGetAll() {
+
+        final Map<String, String> _map = new HashMap<String, String>();
+        _map.put("key1","value1");
+        _map.put("key2","value2");
+        _map.put("key3","value3");
+
+        final AtomicBoolean loadAllCalled = new AtomicBoolean(false);
+        final AtomicBoolean loadCalled = new AtomicBoolean(false);
+
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setImplementation(new MapLoader<String, String>() {
+
+            public String load(String key) {
+                loadCalled.set(true);
+                System.err.println("fatal key: " + key);
+                return _map.get(key);
+            }
+
+            public Map<String, String> loadAll(Collection<String> keys) {
+                loadAllCalled.set(true);
+                final HashMap<String, String> temp = new HashMap<String, String>();
+                for (String key : keys) {
+                    temp.put(key, _map.get(key));
+                }
+                return temp;
+            }
+
+            public Set<String> loadAllKeys() {
+                return _map.keySet();
+            }
+        });
+        cfg.getMapConfig("testMapGetAll").setMapStoreConfig(mapStoreConfig);
+
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+
+        IMap map = instance1.getMap("testMapGetAll");
+
+        final HashSet<String> keys = new HashSet<String>();
+        keys.add("key1");
+        keys.add("key3");
+        keys.add("key4");
+
+        final Map subMap = map.getAll(keys);
+        assertEquals(2, subMap.size());
+        assertEquals("value1", subMap.get("key1"));
+        assertEquals("value3", subMap.get("key3"));
+
+        assertTrue(loadAllCalled.get());
+        assertFalse(loadCalled.get());
+    }
+
+    @Test
     public void testMapInitialLoad() throws InterruptedException {
         int size = 100000;
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
