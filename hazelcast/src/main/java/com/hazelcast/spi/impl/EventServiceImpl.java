@@ -50,17 +50,34 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
     private final ConcurrentMap<String, EventServiceSegment> segments;
     private final StripedExecutor eventExecutor;
     private final int eventQueueTimeoutMs;
+    private final int eventThreadCount;
+    private final int eventQueueCapacity;
 
     EventServiceImpl(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         logger = nodeEngine.getLogger(EventService.class.getName());
         final Node node = nodeEngine.getNode();
         GroupProperties groupProperties = node.getGroupProperties();
-        int eventThreadCount = groupProperties.EVENT_THREAD_COUNT.getInteger();
-        int eventQueueCapacity = groupProperties.EVENT_QUEUE_CAPACITY.getInteger();
+        eventThreadCount = groupProperties.EVENT_THREAD_COUNT.getInteger();
+        eventQueueCapacity = groupProperties.EVENT_QUEUE_CAPACITY.getInteger();
         eventQueueTimeoutMs = groupProperties.EVENT_QUEUE_TIMEOUT_MILLIS.getInteger();
         eventExecutor = new StripedExecutor(nodeEngine.executionService.getCachedExecutor(), eventThreadCount, eventQueueCapacity);
         segments = new ConcurrentHashMap<String, EventServiceSegment>();
+    }
+
+    @Override
+    public int getEventThreadCount(){
+        return eventThreadCount;
+    }
+
+    @Override
+    public int getEventQueueCapacity() {
+        return eventQueueCapacity;
+    }
+
+    @Override
+    public int getEventQueueSize() {
+        return eventExecutor.getWorkQueueSize();
     }
 
     public EventRegistration registerLocalListener(String serviceName, String topic, Object listener) {

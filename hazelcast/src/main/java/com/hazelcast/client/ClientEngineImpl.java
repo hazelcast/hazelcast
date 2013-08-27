@@ -68,6 +68,11 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
         logger = node.getLogger(ClientEngine.class);
     }
 
+    @Override
+    public int getClientEndpointCount() {
+        return endpoints.size();
+    }
+
     public void handlePacket(ClientPacket packet) {
         executor.execute(new ClientPacketProcessor(packet));
     }

@@ -143,7 +143,17 @@ final class TestNodeRegistry {
             public void restart() {
             }
 
+            @Override
+            public int getActiveConnectionCount() {
+                return 0;
+            }
+
             public int getCurrentClientConnections() {
+                return 0;
+            }
+
+            @Override
+            public int getConnectionCount() {
                 return 0;
             }
 

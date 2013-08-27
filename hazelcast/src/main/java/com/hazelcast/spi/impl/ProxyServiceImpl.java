@@ -70,6 +70,16 @@ public class ProxyServiceImpl implements ProxyService, PostJoinAwareService,
         }
     };
 
+    @Override
+    public int getProxyCount() {
+        int count = 0;
+        for (ProxyRegistry registry : registries.values()) {
+            count += registry.getProxyCount();
+        }
+
+        return count;
+    }
+
     public void initializeDistributedObject(String serviceName, Object objectId) {
         if (serviceName == null) {
             throw new NullPointerException("Service name is required!");
@@ -262,6 +272,10 @@ public class ProxyServiceImpl implements ProxyService, PostJoinAwareService,
                 }
             }
             proxies.clear();
+        }
+
+        public int getProxyCount() {
+            return proxies.size();
         }
     }
 

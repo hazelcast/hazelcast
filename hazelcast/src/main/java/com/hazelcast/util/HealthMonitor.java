@@ -15,12 +15,27 @@
  */
 
 package com.hazelcast.util;
+import com.hazelcast.client.ClientEngineImpl;
+import com.hazelcast.config.Config;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+import com.hazelcast.instance.GroupProperties;
+import com.hazelcast.instance.HazelcastInstanceImpl;
 import com.hazelcast.instance.Node;
+import com.hazelcast.jmx.InstanceMBean;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.ConnectionManager;
+import com.hazelcast.spi.EventService;
+import com.hazelcast.spi.ExecutionService;
+import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.ProxyService;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
+import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Method;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
 import static java.lang.String.format;
@@ -33,24 +48,46 @@ public class HealthMonitor extends Thread {
     private final Runtime runtime;
     private final OperatingSystemMXBean osMxBean;
     private final HealthMonitorLevel logLevel;
+    private final HazelcastInstanceImpl hazelcastInstance;
+    private final InstanceMBean instanceMBean;
+    private final int delaySeconds;
+    private final ExecutionService executionService;
+    private final EventService eventService;
+    private final OperationService operationService;
+    private final ProxyService proxyService;
+    private final ConnectionManager connectionManager;
+    private final ClientEngineImpl clientEngine;
+    private final ThreadMXBean threadMxBean;
     private double treshold = 70;
 
-    public HealthMonitor(Node node, HealthMonitorLevel logLevel) {
-        super(node.threadGroup, node.getThreadNamePrefix("HealthMonitor"));
+    public HealthMonitor(HazelcastInstanceImpl hazelcastInstance, HealthMonitorLevel logLevel, int delaySeconds) {
+        super(hazelcastInstance.node.threadGroup, hazelcastInstance.node.getThreadNamePrefix("HealthMonitor"));
         setDaemon(true);
-        this.node = node;
+        this.hazelcastInstance = hazelcastInstance;
+        this.node = hazelcastInstance.node;
         this.logger = node.getLogger(HealthMonitor.class.getName());
         this.runtime = Runtime.getRuntime();
         this.osMxBean = ManagementFactory.getOperatingSystemMXBean();
         this.logLevel = logLevel;
+        this.instanceMBean = hazelcastInstance.getManagementService().getInstanceMBean();
+        this.delaySeconds = delaySeconds;
+        this.threadMxBean = ManagementFactory.getThreadMXBean();
+        this.executionService = node.nodeEngine.getExecutionService();
+        this.eventService = node.nodeEngine.getEventService();
+        this.operationService = node.nodeEngine.getOperationService();
+        this.proxyService = node.nodeEngine.getProxyService();
+        this.clientEngine = node.clientEngine;
+        this.connectionManager = node.connectionManager;
     }
 
     public void run() {
+        if(logLevel == HealthMonitorLevel.OFF){
+            return;
+        }
+
         while (node.isActive()) {
             HealthMetrics metrics;
             switch (logLevel) {
-                case OFF:
-                    break;
                 case NOISY:
                     metrics = new HealthMetrics();
                     logger.log(Level.INFO, metrics.toString());
@@ -66,24 +103,41 @@ public class HealthMonitor extends Thread {
             }
 
             try {
-                Thread.sleep(10000);
+                Thread.sleep(TimeUnit.SECONDS.toMillis(delaySeconds));
             } catch (InterruptedException e) {
                 return;
             }
         }
     }
-
     public class HealthMetrics {
-        long memoryFree;
-        long memoryTotal;
-        long memoryUsed;
-        long memoryMax;
-        double memoryUsedOfTotalPercentage;
-        double memoryUsedOfMaxPercentage;
+        private final long memoryFree;
+        private final long memoryTotal;
+        private final long memoryUsed;
+        private final long memoryMax;
+        private final double memoryUsedOfTotalPercentage;
+        private final double memoryUsedOfMaxPercentage;
         //following three load variables are always between 0 and 100.
-        double processCpuLoad;
-        double systemLoadAverage;
-        double systemCpuLoad;
+        private final double processCpuLoad;
+        private final double systemLoadAverage;
+        private final double systemCpuLoad;
+        private final int threadCount;
+        private final int peakThreadCount;
+        private final int asyncExecutorQueueSize;
+        private final int clientExecutorQueueSize;
+        private final int operationExecutorQueueSize;
+        private final int queryExecutorQueueSize;
+        private final int scheduledExecutorQueueSize;
+        private final int systemExecutorQueueSize;
+        private final int eventQueueSize;
+        private final int operationServiceOperationExecutorQueueSize;
+        private final int operationServiceOperationResponseQueueSize;
+        private final int runningOperationsCount;
+        private final int remoteOperationsCount;
+        private final int proxyCount;
+        private final int clientEndpointCount;
+        private final int activeConnectionCount;
+        private final int connectionCount;
+        private final int ioExecutorQueueSize;
 
         public HealthMetrics() {
             memoryFree = runtime.freeMemory();
@@ -95,6 +149,24 @@ public class HealthMonitor extends Thread {
             processCpuLoad = get(osMxBean, "getProcessCpuLoad", -1L);
             systemLoadAverage = get(osMxBean, "getSystemLoadAverage", -1L);
             systemCpuLoad = get(osMxBean, "getSystemCpuLoad", -1L);
+            threadCount = threadMxBean.getThreadCount();
+            peakThreadCount = threadMxBean.getPeakThreadCount();
+            asyncExecutorQueueSize = executionService.getExecutor(ExecutionService.ASYNC_EXECUTOR).queueSize();
+            clientExecutorQueueSize = executionService.getExecutor(ExecutionService.CLIENT_EXECUTOR).queueSize();
+            operationExecutorQueueSize = executionService.getExecutor(ExecutionService.OPERATION_EXECUTOR).queueSize();
+            queryExecutorQueueSize = executionService.getExecutor(ExecutionService.QUERY_EXECUTOR).queueSize();
+            scheduledExecutorQueueSize = executionService.getExecutor(ExecutionService.SCHEDULED_EXECUTOR).queueSize();
+            systemExecutorQueueSize = executionService.getExecutor(ExecutionService.SYSTEM_EXECUTOR).queueSize();
+            ioExecutorQueueSize = executionService.getExecutor(ExecutionService.IO_EXECUTOR).queueSize();
+             eventQueueSize = eventService.getEventQueueSize();
+            operationServiceOperationExecutorQueueSize = operationService.getOperationExecutorQueueSize();
+            operationServiceOperationResponseQueueSize = operationService.getResponseQueueSize();
+            runningOperationsCount = operationService.getRunningOperationsCount();
+            remoteOperationsCount = operationService.getRemoteOperationsCount();
+            proxyCount = proxyService.getProxyCount();
+            clientEndpointCount = clientEngine.getClientEndpointCount();
+            activeConnectionCount = connectionManager.getActiveConnectionCount();
+            connectionCount = connectionManager.getConnectionCount();
         }
 
         public boolean exceedsTreshold() {
@@ -119,20 +191,52 @@ public class HealthMonitor extends Thread {
 
         public String toString() {
             StringBuilder sb = new StringBuilder();
-            sb.append("\nmemory ");
-            sb.append("used=").append(bytesToString(memoryUsed)).append(", ");
-            sb.append("free=").append(bytesToString(memoryFree)).append(", ");
-            sb.append("total=").append(bytesToString(memoryTotal)).append(", ");
-            sb.append("max=").append(bytesToString(memoryMax)).append(", ");
-            sb.append("used/total=").append(percentageString(memoryUsedOfTotalPercentage)).append(" ");
-            sb.append("used/max=").append(percentageString(memoryUsedOfMaxPercentage));
-            sb.append("\n");
-            sb.append("cpu ");
-            sb.append("process-load=").append(format("%.2f", processCpuLoad)).append("%, ");
-            sb.append("system-load=").append(format("%.2f", systemCpuLoad)).append("%, ");
-            sb.append("system-loadaverage=").append(format("%.2f", systemLoadAverage)).append("%");
+            sb.append("memory.used=").append(bytesToString(memoryUsed)).append(", ");
+            sb.append("memory.free=").append(bytesToString(memoryFree)).append(", ");
+            sb.append("memory.total=").append(bytesToString(memoryTotal)).append(", ");
+            sb.append("memory.max=").append(bytesToString(memoryMax)).append(", ");
+            sb.append("memory.used/total=").append(percentageString(memoryUsedOfTotalPercentage)).append(", ");
+            sb.append("memory.used/max=").append(percentageString(memoryUsedOfMaxPercentage)).append((", "));
+            sb.append("load.process=").append(format("%.2f", processCpuLoad)).append("%, ");
+            sb.append("load.system=").append(format("%.2f", systemCpuLoad)).append("%, ");
+            sb.append("load.systemAverage=").append(format("%.2f", systemLoadAverage)).append("%, ");
+            sb.append("thread.count=").append(threadCount).append(", ");
+            sb.append("thread.peakCount=").append(peakThreadCount).append(", ");
+            sb.append("event.q.size=").append(eventQueueSize).append(", ");
+            sb.append("executor.q.async.size=").append(asyncExecutorQueueSize).append(", ");
+            sb.append("executor.q.client.size=").append(clientExecutorQueueSize).append(", ");
+            sb.append("executor.q.operation.size=").append(operationExecutorQueueSize).append(", ");
+            sb.append("executor.q.query.size=").append(queryExecutorQueueSize).append(", ");
+            sb.append("executor.q.scheduled.size=").append(scheduledExecutorQueueSize).append(", ");
+            sb.append("executor.q.io.size=").append(ioExecutorQueueSize).append(", ");
+            sb.append("executor.q.system.size=").append(systemExecutorQueueSize).append(", ");
+            sb.append("executor.q.operation.size=").append(operationServiceOperationExecutorQueueSize).append(", ");
+            sb.append("executor.q.response.size=").append(operationServiceOperationResponseQueueSize).append(", ");
+            sb.append("operations.remote.size=").append(remoteOperationsCount).append(", ");
+            sb.append("operations.running.size=").append(runningOperationsCount).append(", ");
+            sb.append("proxy.count=").append(proxyCount).append(", ");
+            sb.append("clientEndpoint.count=").append(clientEndpointCount).append(", ");
+            sb.append("connection.active.count=").append(activeConnectionCount).append(", ");
+            sb.append("connection.count=").append(connectionCount);
             return sb.toString();
         }
+    }
+
+    public static void main(String[] args)throws Exception{
+        Config config = new Config();
+        config.setProperty(GroupProperties.PROP_HEALTH_MONITORING_LEVEL,HealthMonitorLevel.NOISY.name());
+        config.setProperty(GroupProperties.PROP_HEALTH_MONITORING_DELAY_SECONDS,"10");
+
+        HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(config);
+
+        IMap map =  hz1.getMap("foo");
+        for(int k=0;k<1000000000;k++){
+            map.putAsync("1","2");
+        }
+
+        System.out.println("Finished");
+        Thread.sleep(10000000);
     }
 
     private static final String[] UNITS = new String[]{"", "K", "M", "G", "T", "P", "E"};
@@ -177,4 +281,5 @@ public class HealthMonitor extends Thread {
         }
         return Long.toString(bytes);
     }
+
 }

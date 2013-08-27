@@ -149,6 +149,24 @@ public class TcpIpConnectionManager implements ConnectionManager {
         serializationContext = ioService.getSerializationContext();
     }
 
+    @Override
+    public int getActiveConnectionCount() {
+        return activeConnections.size();
+    }
+
+    public int getAllTextConnections() {
+        return allTextConnections.get();
+    }
+
+    @Override
+    public int getConnectionCount() {
+        return connectionsMap.size();
+    }
+
+    public void incrementTextConnections() {
+        allTextConnections.incrementAndGet();
+    }
+
     public SerializationContext getSerializationContext() {
         return serializationContext;
     }
@@ -195,7 +213,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         return ioService;
     }
 
-    public MemberSocketInterceptor getMemberSocketInterceptor() {
+     public MemberSocketInterceptor getMemberSocketInterceptor() {
         return memberSocketInterceptor;
     }
 
@@ -455,15 +473,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
         return count;
     }
 
-    public int getAllTextConnections() {
-        return allTextConnections.get();
-    }
-
-    public void incrementTextConnections() {
-        allTextConnections.incrementAndGet();
-    }
-
-    public boolean isLive() {
+      public boolean isLive() {
         return live;
     }
 
