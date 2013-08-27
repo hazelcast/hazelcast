@@ -49,7 +49,7 @@ for (Customer customer : colCustomers) {
     // process customer
 }
 ]]></programlisting>
-        <literal>Hazelcast.getMap()</literal>
+        <literal>HazelcastInstance.getMap()</literal>
         actually returns
         <literal>com.hazelcast.core.IMap</literal>
         which extends
@@ -64,7 +64,7 @@ for (Customer customer : colCustomers) {
 import java.util.concurrent.ConcurrentMap;
 
 Customer getCustomer (String id) {
-    ConcurrentMap<String, Customer> map = Hazelcast.getMap("customers");
+    ConcurrentMap<String, Customer> map = hz.getMap("customers");
     Customer customer = map.get(id);
     if (customer == null) {
         customer = new Customer (id);
@@ -74,12 +74,12 @@ Customer getCustomer (String id) {
 }               
 
 public boolean updateCustomer (Customer customer) {
-    ConcurrentMap<String, Customer> map = Hazelcast.getMap("customers");
+    ConcurrentMap<String, Customer> map = hz.getMap("customers");
     return (map.replace(customer.getId(), customer) != null);            
 }
                 
 public boolean removeCustomer (Customer customer) {
-    ConcurrentMap<String, Customer> map = Hazelcast.getMap("customers");
+    ConcurrentMap<String, Customer> map = hz.getMap("customers");
     return map.remove(customer.getId(), customer) );           
 }                                  
         

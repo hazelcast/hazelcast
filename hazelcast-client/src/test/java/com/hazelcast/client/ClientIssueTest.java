@@ -176,11 +176,18 @@ public class ClientIssueTest {
     }
 
     @Test
-    public void testMapDestroyIssue726() throws Exception {
+    public void testMapDestroyIssue764() throws Exception {
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
+
+        assertEquals(0, client.getDistributedObjects().size());
+
         IMap map = client.getMap("m");
+
+        assertEquals(1, client.getDistributedObjects().size());
         map.destroy();
+
+        assertEquals(0, client.getDistributedObjects().size());
 
 
     }

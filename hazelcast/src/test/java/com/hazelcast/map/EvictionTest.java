@@ -680,10 +680,9 @@ public class EvictionTest extends HazelcastTestSupport {
         HazelcastInstance instance = factory.newHazelcastInstance(cfg);
         IMap<Object, Object> map = instance.getMap(mapname);
         map.put(1, 1);
-        for (int i = 0; i < 10; i++) {
-            map.containsKey(1);
-            assertEquals(1, map.size());
-            Thread.sleep(1000);
+        for (int i = 0; i < 20; i++) {
+            assertTrue(map.containsKey(1));
+            Thread.sleep(500);
         }
     }
 

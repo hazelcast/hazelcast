@@ -359,6 +359,16 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         return addEntryListenerInternal(listener, predicate, getService().toData(key), includeValue);
     }
 
+    public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, boolean includeValue) {
+        if (listener == null) {
+            throw new NullPointerException("Listener should not be null!");
+        }
+        if (predicate == null) {
+            throw new NullPointerException("Predicate should not be null!");
+        }
+        return addEntryListenerInternal(listener, predicate, null, includeValue);
+    }
+
     public boolean removeEntryListener(String id) {
         if (id == null) {
             throw new NullPointerException("Listener id should not be null!");
