@@ -184,6 +184,12 @@ public class ManagementService implements DistributedObjectListener {
             if (distributedObject instanceof ITopic){
                 return new TopicMBean((ITopic)distributedObject, this);
             }
+            if (distributedObject instanceof TransactionalMap){
+                return new TransactionalMapMBean((TransactionalMap)distributedObject, this);
+            }
+            if (distributedObject instanceof TransactionalMultiMap){
+                return new TransactionalMultiMapMBean((TransactionalMultiMap)distributedObject, this);
+            }
         } catch (HazelcastInstanceNotActiveException ignored) {
         }
         return null;
@@ -222,6 +228,12 @@ public class ManagementService implements DistributedObjectListener {
         }
         if (distributedObject instanceof IExecutorService){
             return "IExecutorService";
+        }
+        if (distributedObject instanceof TransactionalMap){
+            return "TransactionalMap";
+        }
+        if (distributedObject instanceof TransactionalMultiMap){
+            return "TransactionalMultiMap";
         }
         return null;
     }
