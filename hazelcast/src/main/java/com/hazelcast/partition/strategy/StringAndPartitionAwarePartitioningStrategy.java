@@ -26,8 +26,7 @@ public class StringAndPartitionAwarePartitioningStrategy implements Partitioning
 
     public Object getPartitionKey(Object key) {
         if (key instanceof String) {
-            String partitionKey = StringPartitioningStrategy.getPartitionKey((String) key);
-            return partitionKey != key ? partitionKey : null;
+            return StringPartitioningStrategy.getPartitionKey((String) key);
         } else if (key instanceof PartitionAware) {
             return ((PartitionAware) key).getPartitionKey();
         }

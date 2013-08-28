@@ -180,7 +180,7 @@ public final class SerializationServiceImpl implements SerializationService {
             }
             if (strategy != null) {
                 Object pk = strategy.getPartitionKey(obj);
-                if (pk != null) {
+                if (pk != null && pk != obj) {
                     final Data partitionKey = toData(pk, EMPTY_PARTITIONING_STRATEGY);
                     data.partitionHash = (partitionKey == null) ? -1 : partitionKey.getPartitionHash();
                 }
