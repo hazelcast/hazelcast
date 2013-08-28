@@ -18,10 +18,7 @@ package com.hazelcast.collection.operations.client;
 
 import com.hazelcast.client.AllPartitionsClientRequest;
 import com.hazelcast.collection.CollectionPortableHook;
-import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionService;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
@@ -33,13 +30,13 @@ import java.io.IOException;
  */
 public abstract class CollectionAllPartitionRequest extends AllPartitionsClientRequest implements Portable {
 
-    CollectionProxyId proxyId;
+    String name;
 
     protected CollectionAllPartitionRequest() {
     }
 
-    protected CollectionAllPartitionRequest(CollectionProxyId proxyId) {
-        this.proxyId = proxyId;
+    protected CollectionAllPartitionRequest(String name) {
+        this.name = name;
     }
 
     public String getServiceName() {
@@ -51,13 +48,10 @@ public abstract class CollectionAllPartitionRequest extends AllPartitionsClientR
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
-        final ObjectDataOutput out = writer.getRawDataOutput();
-        proxyId.writeData(out);
+        writer.writeUTF("n", name);
     }
 
     public void readPortable(PortableReader reader) throws IOException {
-        final ObjectDataInput in = reader.getRawDataInput();
-        proxyId = new CollectionProxyId();
-        proxyId.readData(in);
+        name = reader.readUTF("n");
     }
 }

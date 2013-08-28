@@ -19,7 +19,6 @@ package com.hazelcast.collection.operations.client;
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.collection.CollectionPortableHook;
-import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
@@ -32,17 +31,17 @@ import java.io.IOException;
  */
 public class CollectionDestroyRequest extends CallableClientRequest implements Portable, RetryableRequest {
 
-    private CollectionProxyId proxyId;
+    private String name;
 
     public CollectionDestroyRequest() {
     }
 
-    public CollectionDestroyRequest(CollectionProxyId proxyId) {
-        this.proxyId = proxyId;
+    public CollectionDestroyRequest(String name) {
+        this.name = name;
     }
 
     public Object call() throws Exception {
-        getClientEngine().getProxyService().destroyDistributedObject(getServiceName(), proxyId);
+        getClientEngine().getProxyService().destroyDistributedObject(getServiceName(), name);
         return null;
     }
 
@@ -59,11 +58,10 @@ public class CollectionDestroyRequest extends CallableClientRequest implements P
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
-        proxyId.writeData(writer.getRawDataOutput());
+        writer.writeUTF("n", name);
     }
 
     public void readPortable(PortableReader reader) throws IOException {
-        proxyId = new CollectionProxyId();
-        proxyId.readData(reader.getRawDataInput());
+        name = reader.readUTF("n");
     }
 }

@@ -78,36 +78,36 @@ public class CollectionPortableHook implements PortableHook {
 
     public PortableFactory createFactory() {
         ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[TXN_SET_SIZE +1];
-        constructors[ADD_ALL] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new AddAllRequest();
-            }
-        };
+//        constructors[ADD_ALL] = new ConstructorFunction<Integer, Portable>() {
+//            public Portable createNew(Integer arg) {
+//                return new AddAllRequest();
+//            }
+//        };
         constructors[CLEAR] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
                 return new ClearRequest();
             }
         };
-        constructors[COMPARE_AND_REMOVE] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new CompareAndRemoveRequest();
-            }
-        };
-        constructors[CONTAINS_ALL] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new ContainsAllRequest();
-            }
-        };
+//        constructors[COMPARE_AND_REMOVE] = new ConstructorFunction<Integer, Portable>() {
+//            public Portable createNew(Integer arg) {
+//                return new CompareAndRemoveRequest();
+//            }
+//        };
+//        constructors[CONTAINS_ALL] = new ConstructorFunction<Integer, Portable>() {
+//            public Portable createNew(Integer arg) {
+//                return new ContainsAllRequest();
+//            }
+//        };
         constructors[CONTAINS_ENTRY] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
                 return new ContainsEntryRequest();
             }
         };
-        constructors[CONTAINS] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new ContainsRequest();
-            }
-        };
+//        constructors[CONTAINS] = new ConstructorFunction<Integer, Portable>() {
+//            public Portable createNew(Integer arg) {
+//                return new ContainsRequest();
+//            }
+//        };
         constructors[COUNT] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
                 return new CountRequest();
@@ -123,16 +123,16 @@ public class CollectionPortableHook implements PortableHook {
                 return new GetAllRequest();
             }
         };
-        constructors[GET] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new GetRequest();
-            }
-        };
-        constructors[INDEX_OF] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new IndexOfRequest();
-            }
-        };
+//        constructors[GET] = new ConstructorFunction<Integer, Portable>() {
+//            public Portable createNew(Integer arg) {
+//                return new GetRequest();
+//            }
+//        };
+//        constructors[INDEX_OF] = new ConstructorFunction<Integer, Portable>() {
+//            public Portable createNew(Integer arg) {
+//                return new IndexOfRequest();
+//            }
+//        };
         constructors[KEY_SET] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
                 return new KeySetRequest();
@@ -148,21 +148,21 @@ public class CollectionPortableHook implements PortableHook {
                 return new RemoveAllRequest();
             }
         };
-        constructors[REMOVE_INDEX] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new RemoveIndexRequest();
-            }
-        };
+//        constructors[REMOVE_INDEX] = new ConstructorFunction<Integer, Portable>() {
+//            public Portable createNew(Integer arg) {
+//                return new RemoveIndexRequest();
+//            }
+//        };
         constructors[REMOVE] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
                 return new RemoveRequest();
             }
         };
-        constructors[SET] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new SetRequest();
-            }
-        };
+//        constructors[SET] = new ConstructorFunction<Integer, Portable>() {
+//            public Portable createNew(Integer arg) {
+//                return new SetRequest();
+//            }
+//        };
         constructors[SIZE] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
                 return new SizeRequest();
@@ -198,11 +198,11 @@ public class CollectionPortableHook implements PortableHook {
                 return new MultiMapIsLockedRequest();
             }
         };
-        constructors[ADD_ITEM_LISTENER] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new AddItemListenerRequest();
-            }
-        };
+//        constructors[ADD_ITEM_LISTENER] = new ConstructorFunction<Integer, Portable>() {
+//            public Portable createNew(Integer arg) {
+//                return new AddItemListenerRequest();
+//            }
+//        };
         constructors[DESTROY] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
                 return new CollectionDestroyRequest();

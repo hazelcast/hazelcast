@@ -17,15 +17,14 @@
 package com.hazelcast.collection;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IList;
-import com.hazelcast.core.ItemEvent;
-import com.hazelcast.core.ItemListener;
+import com.hazelcast.core.*;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ClientCompatibleTest;
 import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.transaction.TransactionContext;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -38,12 +37,14 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author ali 3/6/13
  */
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
+@Ignore
 public class ListTest extends HazelcastTestSupport {
 
     @Test
@@ -131,6 +132,36 @@ public class ListTest extends HazelcastTestSupport {
         assertTrue(latchAdd.await(5, TimeUnit.SECONDS));
         assertTrue(latchRemove.await(5, TimeUnit.SECONDS));
 
+    }
+
+    @Test
+    public void testPutRemoveList(){
+        Config config = new Config();
+        final String name = "defList";
+
+        final int insCount = 4;
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
+        final HazelcastInstance[] instances = factory.newInstances(config);
+        TransactionContext context = instances[0].newTransactionContext();
+        try {
+            context.beginTransaction();
+
+            TransactionalList mm = context.getList(name);
+            assertEquals(0, mm.size());
+            assertTrue(mm.add("value1"));
+            assertTrue(mm.add("value1"));
+            assertEquals(2, mm.size());
+            assertFalse(mm.remove("value2"));
+            assertTrue(mm.remove("value1"));
+
+            context.commitTransaction();
+        } catch (Exception e){
+            fail(e.getMessage());
+            context.rollbackTransaction();
+        }
+
+        assertEquals(1, instances[1].getList(name).size());
+        assertTrue(instances[2].getList(name).add("value1"));
     }
 
     private IList getList(HazelcastInstance[] instances, String name){

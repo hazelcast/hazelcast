@@ -23,6 +23,7 @@ import com.hazelcast.test.annotation.SerialTest;
 import com.hazelcast.transaction.TransactionContext;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -34,6 +35,7 @@ import static org.junit.Assert.*;
  */
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(SerialTest.class)
+@Ignore
 public class ClientTxnSetTest {
 
     static final String name = "test";

@@ -18,7 +18,6 @@ package com.hazelcast.collection.operations.client;
 
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.collection.CollectionPortableHook;
-import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.operations.EntrySetResponse;
 import com.hazelcast.collection.operations.MultiMapOperationFactory;
 import com.hazelcast.nio.serialization.Data;
@@ -36,12 +35,12 @@ public class EntrySetRequest extends CollectionAllPartitionRequest implements Re
     public EntrySetRequest() {
     }
 
-    public EntrySetRequest(CollectionProxyId proxyId) {
-        super(proxyId);
+    public EntrySetRequest(String name) {
+        super(name);
     }
 
     protected OperationFactory createOperationFactory() {
-        return new MultiMapOperationFactory(proxyId, MultiMapOperationFactory.OperationFactoryType.ENTRY_SET);
+        return new MultiMapOperationFactory(name, MultiMapOperationFactory.OperationFactoryType.ENTRY_SET);
     }
 
     protected Object reduce(Map<Integer, Object> map) {

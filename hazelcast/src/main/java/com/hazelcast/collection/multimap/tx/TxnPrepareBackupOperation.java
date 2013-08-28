@@ -18,7 +18,6 @@ package com.hazelcast.collection.multimap.tx;
 
 import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionDataSerializerHook;
-import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.operations.CollectionKeyBasedOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -40,8 +39,8 @@ public class TxnPrepareBackupOperation extends CollectionKeyBasedOperation imple
     public TxnPrepareBackupOperation() {
     }
 
-    public TxnPrepareBackupOperation(CollectionProxyId proxyId, Data dataKey, String caller, int threadId) {
-        super(proxyId, dataKey);
+    public TxnPrepareBackupOperation(String name, Data dataKey, String caller, int threadId) {
+        super(name, dataKey);
         this.caller = caller;
         this.threadId = threadId;
     }

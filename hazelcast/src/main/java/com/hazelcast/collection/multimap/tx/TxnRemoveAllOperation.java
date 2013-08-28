@@ -42,8 +42,8 @@ public class TxnRemoveAllOperation extends CollectionKeyBasedOperation {
     public TxnRemoveAllOperation() {
     }
 
-    public TxnRemoveAllOperation(CollectionProxyId proxyId, Data dataKey, Collection<CollectionRecord> records) {
-        super(proxyId, dataKey);
+    public TxnRemoveAllOperation(String name, Data dataKey, Collection<CollectionRecord> records) {
+        super(name, dataKey);
         this.recordIds = new ArrayList<Long>();
         for (CollectionRecord record: records){
             recordIds.add(record.getRecordId());
@@ -83,7 +83,7 @@ public class TxnRemoveAllOperation extends CollectionKeyBasedOperation {
     public void afterRun() throws Exception {
         long elapsed = Math.max(0, Clock.currentTimeMillis()-begin);
         final CollectionService service = getService();
-        service.getLocalMultiMapStatsImpl(proxyId).incrementRemoves(elapsed);
+        service.getLocalMultiMapStatsImpl(name).incrementRemoves(elapsed);
         if (removed != null) {
             getOrCreateContainer().update();
             for (CollectionRecord record : removed) {

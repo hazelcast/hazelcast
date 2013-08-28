@@ -42,8 +42,8 @@ public class RemoveOperation extends CollectionBackupAwareOperation {
     public RemoveOperation() {
     }
 
-    public RemoveOperation(CollectionProxyId proxyId, Data dataKey, int threadId, Data value) {
-        super(proxyId, dataKey, threadId);
+    public RemoveOperation(String name, Data dataKey, int threadId, Data value) {
+        super(name, dataKey, threadId);
         this.value = value;
     }
 
@@ -83,7 +83,7 @@ public class RemoveOperation extends CollectionBackupAwareOperation {
     }
 
     public Operation getBackupOperation() {
-        return new RemoveBackupOperation(proxyId, dataKey, recordId);
+        return new RemoveBackupOperation(name, dataKey, recordId);
     }
 
     public void onWaitExpire() {

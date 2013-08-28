@@ -18,7 +18,6 @@ package com.hazelcast.collection.operations.client;
 
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.collection.CollectionPortableHook;
-import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.operations.MultiMapOperationFactory;
 import com.hazelcast.spi.OperationFactory;
 
@@ -32,12 +31,12 @@ public class SizeRequest extends CollectionAllPartitionRequest implements Retrya
     public SizeRequest() {
     }
 
-    public SizeRequest(CollectionProxyId proxyId) {
-        super(proxyId);
+    public SizeRequest(String name) {
+        super(name);
     }
 
     protected OperationFactory createOperationFactory() {
-        return new MultiMapOperationFactory(proxyId, MultiMapOperationFactory.OperationFactoryType.SIZE);
+        return new MultiMapOperationFactory(name, MultiMapOperationFactory.OperationFactoryType.SIZE);
     }
 
     protected Object reduce(Map<Integer, Object> map) {

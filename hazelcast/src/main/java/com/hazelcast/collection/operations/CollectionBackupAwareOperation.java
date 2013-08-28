@@ -16,14 +16,13 @@
 
 package com.hazelcast.collection.operations;
 
-import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionService;
-import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.WaitNotifyKey;
 import com.hazelcast.spi.WaitSupport;
 
@@ -39,8 +38,8 @@ public abstract class CollectionBackupAwareOperation extends CollectionKeyBasedO
     protected CollectionBackupAwareOperation() {
     }
 
-    protected CollectionBackupAwareOperation(CollectionProxyId proxyId, Data dataKey, int threadId) {
-        super(proxyId, dataKey);
+    protected CollectionBackupAwareOperation(String name, Data dataKey, int threadId) {
+        super(name, dataKey);
         this.threadId = threadId;
     }
 
@@ -59,7 +58,7 @@ public abstract class CollectionBackupAwareOperation extends CollectionKeyBasedO
     }
 
     public WaitNotifyKey getWaitKey() {
-        return new LockWaitNotifyKey(new DefaultObjectNamespace(CollectionService.SERVICE_NAME, proxyId), dataKey);
+        return new LockWaitNotifyKey(new DefaultObjectNamespace(CollectionService.SERVICE_NAME, name), dataKey);
     }
 
     public boolean shouldWait() {

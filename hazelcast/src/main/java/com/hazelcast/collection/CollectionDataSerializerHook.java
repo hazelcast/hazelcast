@@ -76,16 +76,16 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
 
     public DataSerializableFactory createFactory() {
         ConstructorFunction<Integer, IdentifiedDataSerializable> constructors[] = new ConstructorFunction[39];
-        constructors[ADD_ALL_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new AddAllBackupOperation();
-            }
-        };
-        constructors[ADD_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new AddAllOperation();
-            }
-        };
+//        constructors[ADD_ALL_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+//            public IdentifiedDataSerializable createNew(Integer arg) {
+//                return new AddAllBackupOperation();
+//            }
+//        };
+//        constructors[ADD_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+//            public IdentifiedDataSerializable createNew(Integer arg) {
+//                return new AddAllOperation();
+//            }
+//        };
         constructors[CLEAR_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new ClearBackupOperation();
@@ -95,31 +95,32 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new ClearOperation();
             }
-        };constructors[COMPARE_AND_REMOVE_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CompareAndRemoveBackupOperation();
-            }
         };
-        constructors[COMPARE_AND_REMOVE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CompareAndRemoveOperation();
-            }
-        };
-        constructors[CONTAINS_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ContainsAllOperation();
-            }
-        };
+//        constructors[COMPARE_AND_REMOVE_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+//            public IdentifiedDataSerializable createNew(Integer arg) {
+//                return new CompareAndRemoveBackupOperation();
+//            }
+//        };
+//        constructors[COMPARE_AND_REMOVE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+//            public IdentifiedDataSerializable createNew(Integer arg) {
+//                return new CompareAndRemoveOperation();
+//            }
+//        };
+//        constructors[CONTAINS_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+//            public IdentifiedDataSerializable createNew(Integer arg) {
+//                return new ContainsAllOperation();
+//            }
+//        };
         constructors[CONTAINS_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new ContainsEntryOperation();
             }
         };
-        constructors[CONTAINS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ContainsOperation();
-            }
-        };
+//        constructors[CONTAINS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+//            public IdentifiedDataSerializable createNew(Integer arg) {
+//                return new ContainsOperation();
+//            }
+//        };
         constructors[COUNT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new CountOperation();
@@ -135,16 +136,16 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
                 return new GetAllOperation();
             }
         };
-        constructors[GET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new GetOperation();
-            }
-        };
-        constructors[INDEX_OF] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new IndexOfOperation();
-            }
-        };
+//        constructors[GET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+//            public IdentifiedDataSerializable createNew(Integer arg) {
+//                return new GetOperation();
+//            }
+//        };
+//        constructors[INDEX_OF] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+//            public IdentifiedDataSerializable createNew(Integer arg) {
+//                return new IndexOfOperation();
+//            }
+//        };
         constructors[KEY_SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new KeySetOperation();
@@ -180,26 +181,26 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
                 return new RemoveOperation();
             }
         };
-        constructors[REMOVE_INDEX_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new RemoveIndexBackupOperation();
-            }
-        };
-        constructors[REMOVE_INDEX] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new RemoveIndexOperation();
-            }
-        };
-        constructors[SET_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new SetBackupOperation();
-            }
-        };
-        constructors[SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new SetOperation();
-            }
-        };
+//        constructors[REMOVE_INDEX_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+//            public IdentifiedDataSerializable createNew(Integer arg) {
+//                return new RemoveIndexBackupOperation();
+//            }
+//        };
+//        constructors[REMOVE_INDEX] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+//            public IdentifiedDataSerializable createNew(Integer arg) {
+//                return new RemoveIndexOperation();
+//            }
+//        };
+//        constructors[SET_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+//            public IdentifiedDataSerializable createNew(Integer arg) {
+//                return new SetBackupOperation();
+//            }
+//        };
+//        constructors[SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+//            public IdentifiedDataSerializable createNew(Integer arg) {
+//                return new SetOperation();
+//            }
+//        };
         constructors[SIZE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new SizeOperation();
@@ -269,11 +270,11 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
             }
         };
 
-        constructors[COLLECTION_PROXY_ID] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new CollectionProxyId();
-            }
-        };
+//        constructors[COLLECTION_PROXY_ID] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+//            public IdentifiedDataSerializable createNew(Integer arg) {
+//                return new CollectionProxyId();
+//            }
+//        };
         return new ArrayDataSerializableFactory(constructors);
     }
 }

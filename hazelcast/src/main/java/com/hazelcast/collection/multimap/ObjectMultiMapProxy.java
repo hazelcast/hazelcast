@@ -17,7 +17,6 @@
 package com.hazelcast.collection.multimap;
 
 import com.hazelcast.collection.CollectionProxy;
-import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.collection.operations.CollectionResponse;
 import com.hazelcast.collection.operations.EntrySetResponse;
@@ -40,12 +39,12 @@ import java.util.concurrent.TimeUnit;
  */
 public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements CollectionProxy, MultiMap<K, V>, InitializingObject {
 
-    public ObjectMultiMapProxy(CollectionService service, NodeEngine nodeEngine, CollectionProxyId proxyId) {
-        super(service, nodeEngine, nodeEngine.getConfig().getMultiMapConfig(proxyId.getName()), proxyId);
+    public ObjectMultiMapProxy(CollectionService service, NodeEngine nodeEngine, String name) {
+        super(service, nodeEngine, name);
     }
 
     public String getName() {
-        return proxyId.getName();
+        return name;
     }
 
     @Override
@@ -170,21 +169,21 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     }
 
     public String addLocalEntryListener(EntryListener<K, V> listener) {
-        return getService().addListener(proxyId.getName(), listener, null, false, true);
+        return getService().addListener(name, listener, null, false, true);
     }
 
     public String addEntryListener(EntryListener<K, V> listener, boolean includeValue) {
-        return getService().addListener(proxyId.getName(), listener, null, includeValue, false);
+        return getService().addListener(name, listener, null, includeValue, false);
     }
 
     public boolean removeEntryListener(String registrationId) {
-        return getService().removeListener(proxyId.getName(), registrationId);
+        return getService().removeListener(name, registrationId);
     }
 
     public String addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue) {
         final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
-        return getService().addListener(proxyId.getName(), listener, dataKey, includeValue, false);
+        return getService().addListener(name, listener, dataKey, includeValue, false);
     }
 
     public void lock(K key) {
@@ -232,7 +231,7 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     }
 
     public LocalMultiMapStats getLocalMultiMapStats() {
-        return (LocalMultiMapStats) getService().createStats(proxyId);
+        return (LocalMultiMapStats) getService().createStats(name);
     }
 
     private Set<K> toObjectSet(Set<Data> dataSet) {

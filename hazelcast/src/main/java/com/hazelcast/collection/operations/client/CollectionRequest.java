@@ -18,10 +18,7 @@ package com.hazelcast.collection.operations.client;
 
 import com.hazelcast.client.PartitionClientRequest;
 import com.hazelcast.collection.CollectionPortableHook;
-import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionService;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
@@ -33,13 +30,13 @@ import java.io.IOException;
  */
 public abstract class CollectionRequest extends PartitionClientRequest implements Portable {
 
-    CollectionProxyId proxyId;
+    String name;
 
     protected CollectionRequest() {
     }
 
-    protected CollectionRequest(CollectionProxyId proxyId) {
-        this.proxyId = proxyId;
+    protected CollectionRequest(String name) {
+        this.name = name;
     }
 
     protected int getReplicaIndex() {
@@ -51,7 +48,7 @@ public abstract class CollectionRequest extends PartitionClientRequest implement
     }
 
     public Object getObjectId() {
-        return proxyId;
+        return name;
     }
 
     public int getFactoryId() {
@@ -59,13 +56,10 @@ public abstract class CollectionRequest extends PartitionClientRequest implement
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
-        final ObjectDataOutput out = writer.getRawDataOutput();
-        proxyId.writeData(out);
+        writer.writeUTF("n", name);
     }
 
     public void readPortable(PortableReader reader) throws IOException {
-        final ObjectDataInput in = reader.getRawDataInput();
-        proxyId = new CollectionProxyId();
-        proxyId.readData(in);
+        name = reader.readUTF("n");
     }
 }

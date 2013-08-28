@@ -27,13 +27,13 @@ public class CountOperation extends CollectionKeyBasedOperation {
     public CountOperation() {
     }
 
-    public CountOperation(CollectionProxyId proxyId, Data dataKey) {
-        super(proxyId, dataKey);
+    public CountOperation(String name, Data dataKey) {
+        super(name, dataKey);
     }
 
     public void run() throws Exception {
         CollectionContainer container = getOrCreateContainer();
-        ((CollectionService) getService()).getLocalMultiMapStatsImpl(proxyId).incrementOtherOperations();
+        ((CollectionService) getService()).getLocalMultiMapStatsImpl(name).incrementOtherOperations();
         CollectionWrapper wrapper = container.getCollectionWrapper(dataKey);
         response = wrapper == null ? 0 : wrapper.getCollection().size();
     }

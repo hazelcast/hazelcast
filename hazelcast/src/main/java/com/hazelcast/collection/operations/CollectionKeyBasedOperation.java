@@ -16,7 +16,6 @@
 
 package com.hazelcast.collection.operations;
 
-import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.collection.CollectionWrapper;
 import com.hazelcast.nio.ObjectDataInput;
@@ -37,8 +36,8 @@ public abstract class CollectionKeyBasedOperation extends CollectionOperation im
     protected CollectionKeyBasedOperation() {
     }
 
-    protected CollectionKeyBasedOperation(CollectionProxyId proxyId, Data dataKey) {
-        super(proxyId);
+    protected CollectionKeyBasedOperation(String name, Data dataKey) {
+        super(name);
         this.dataKey = dataKey;
     }
 

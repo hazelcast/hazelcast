@@ -32,7 +32,7 @@ import java.util.Collection;
  */
 public abstract class CollectionOperation extends Operation implements PartitionAwareOperation, IdentifiedDataSerializable{
 
-    protected CollectionProxyId proxyId;
+    protected String name;
 
     private transient CollectionContainer container;
 
@@ -41,8 +41,8 @@ public abstract class CollectionOperation extends Operation implements Partition
     protected CollectionOperation() {
     }
 
-    protected CollectionOperation(CollectionProxyId proxyId) {
-        this.proxyId = proxyId;
+    protected CollectionOperation(String name) {
+        this.name = name;
     }
 
     public final Object getResponse() {
@@ -65,20 +65,20 @@ public abstract class CollectionOperation extends Operation implements Partition
 
     public final boolean hasListener() {
         EventService eventService = getNodeEngine().getEventService();
-        Collection<EventRegistration> registrations = eventService.getRegistrations(getServiceName(), proxyId.getName());
+        Collection<EventRegistration> registrations = eventService.getRegistrations(getServiceName(), name);
         return registrations.size() > 0;
     }
 
     public final void publishEvent(EntryEventType eventType, Data key, Object value) {
         NodeEngine engine = getNodeEngine();
         EventService eventService = engine.getEventService();
-        Collection<EventRegistration> registrations = eventService.getRegistrations(CollectionService.SERVICE_NAME, proxyId.getName());
+        Collection<EventRegistration> registrations = eventService.getRegistrations(CollectionService.SERVICE_NAME, name);
         for (EventRegistration registration : registrations) {
             CollectionEventFilter filter = (CollectionEventFilter) registration.getFilter();
             if (filter.getKey() == null || filter.getKey().equals(key)) {
                 Data dataValue = filter.isIncludeValue() ? engine.toData(value) : null;
-                CollectionEvent event = new CollectionEvent(proxyId, key, dataValue, eventType, engine.getThisAddress());
-                eventService.publishEvent(CollectionService.SERVICE_NAME, registration, event, proxyId.hashCode());
+                CollectionEvent event = new CollectionEvent(name, key, dataValue, eventType, engine.getThisAddress());
+                eventService.publishEvent(CollectionService.SERVICE_NAME, registration, event, name.hashCode());
             }
         }
     }
@@ -94,7 +94,7 @@ public abstract class CollectionOperation extends Operation implements Partition
     public final CollectionContainer getOrCreateContainer() {
         if (container == null) {
             CollectionService service = getService();
-            container = service.getOrCreateCollectionContainer(getPartitionId(), proxyId);
+            container = service.getOrCreateCollectionContainer(getPartitionId(), name);
         }
         return container;
     }
@@ -112,12 +112,11 @@ public abstract class CollectionOperation extends Operation implements Partition
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
-        proxyId.writeData(out);
+        out.writeUTF(name);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
-        proxyId = new CollectionProxyId();
-        proxyId.readData(in);
+        name = in.readUTF();
     }
 
     public int getFactoryId() {

@@ -18,7 +18,6 @@ package com.hazelcast.collection.operations.client;
 
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.collection.CollectionPortableHook;
-import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.collection.operations.CollectionResponse;
 import com.hazelcast.collection.operations.GetAllOperation;
@@ -37,12 +36,12 @@ public class GetAllRequest extends CollectionKeyBasedRequest implements Retryabl
     public GetAllRequest() {
     }
 
-    public GetAllRequest(CollectionProxyId proxyId, Data key) {
-        super(proxyId, key);
+    public GetAllRequest(String name, Data key) {
+        super(name, key);
     }
 
     protected Operation prepareOperation() {
-        return new GetAllOperation(proxyId, key);
+        return new GetAllOperation(name, key);
     }
 
     public int getClassId() {

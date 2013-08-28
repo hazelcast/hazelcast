@@ -31,12 +31,12 @@ public class CollectionPartitionContainer {
 
     final CollectionService service;
 
-    final ConcurrentMap<CollectionProxyId, CollectionContainer> containerMap = new ConcurrentHashMap<CollectionProxyId, CollectionContainer>(1000);
+    final ConcurrentMap<String, CollectionContainer> containerMap = new ConcurrentHashMap<String, CollectionContainer>(1000);
 
-    private final ConstructorFunction<CollectionProxyId, CollectionContainer> collectionConstructor
-            = new ConstructorFunction<CollectionProxyId, CollectionContainer>() {
-        public CollectionContainer createNew(CollectionProxyId proxyId) {
-            return new CollectionContainer(proxyId, service, partitionId);
+    private final ConstructorFunction<String, CollectionContainer> collectionConstructor
+            = new ConstructorFunction<String, CollectionContainer>() {
+        public CollectionContainer createNew(String name) {
+            return new CollectionContainer(name, service, partitionId);
         }
     };
 
@@ -45,14 +45,14 @@ public class CollectionPartitionContainer {
         this.partitionId = partitionId;
     }
 
-    public CollectionContainer getOrCreateCollectionContainer(CollectionProxyId proxyId) {
-        CollectionContainer container = ConcurrencyUtil.getOrPutIfAbsent(containerMap, proxyId, collectionConstructor);
+    public CollectionContainer getOrCreateCollectionContainer(String name) {
+        CollectionContainer container = ConcurrencyUtil.getOrPutIfAbsent(containerMap, name, collectionConstructor);
         container.access();
         return container;
     }
 
-    public CollectionContainer getCollectionContainer(CollectionProxyId proxyId){
-        CollectionContainer container = containerMap.get(proxyId);
+    public CollectionContainer getCollectionContainer(String name){
+        CollectionContainer container = containerMap.get(name);
         if (container != null){
             container.access();
         }
@@ -60,12 +60,12 @@ public class CollectionPartitionContainer {
     }
 
     // need for testing..
-    public boolean containsCollection(CollectionProxyId id) {
-        return containerMap.containsKey(id);
+    public boolean containsCollection(String name) {
+        return containerMap.containsKey(name);
     }
 
-    void destroyCollection(CollectionProxyId collectionProxyId) {
-        final CollectionContainer container = containerMap.remove(collectionProxyId);
+    void destroyCollection(String name) {
+        final CollectionContainer container = containerMap.remove(name);
         if (container != null) {
             container.destroy();
         }

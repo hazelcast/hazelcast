@@ -17,16 +17,15 @@
 package com.hazelcast.collection;
 
 import com.hazelcast.cluster.ClusterServiceImpl;
-import com.hazelcast.collection.list.ObjectListProxy;
-import com.hazelcast.collection.list.tx.TransactionalListProxy;
 import com.hazelcast.collection.multimap.ObjectMultiMapProxy;
 import com.hazelcast.collection.multimap.tx.TransactionalMultiMapProxy;
-import com.hazelcast.collection.set.ObjectSetProxy;
-import com.hazelcast.collection.set.tx.TransactionalSetProxy;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStoreInfo;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.core.*;
+import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryEventType;
+import com.hazelcast.core.EntryListener;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.monitor.impl.LocalMultiMapStatsImpl;
 import com.hazelcast.nio.Address;
@@ -54,9 +53,9 @@ public class CollectionService implements ManagedService, RemoteService,
     public static final String SERVICE_NAME = "hz:impl:collectionService";
     private final NodeEngine nodeEngine;
     private final CollectionPartitionContainer[] partitionContainers;
-    private final ConcurrentMap<CollectionProxyId, LocalMultiMapStatsImpl> statsMap = new ConcurrentHashMap<CollectionProxyId, LocalMultiMapStatsImpl>(1000);
-    private final ConstructorFunction<CollectionProxyId, LocalMultiMapStatsImpl> localMultiMapStatsConstructorFunction = new ConstructorFunction<CollectionProxyId, LocalMultiMapStatsImpl>() {
-        public LocalMultiMapStatsImpl createNew(CollectionProxyId key) {
+    private final ConcurrentMap<String, LocalMultiMapStatsImpl> statsMap = new ConcurrentHashMap<String, LocalMultiMapStatsImpl>(1000);
+    private final ConstructorFunction<String, LocalMultiMapStatsImpl> localMultiMapStatsConstructorFunction = new ConstructorFunction<String, LocalMultiMapStatsImpl>() {
+        public LocalMultiMapStatsImpl createNew(String key) {
             return new LocalMultiMapStatsImpl();
         }
     };
@@ -69,15 +68,15 @@ public class CollectionService implements ManagedService, RemoteService,
 
     public void init(final NodeEngine nodeEngine, Properties properties) {
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
-        for (int i = 0; i < partitionCount; i++) {
-            partitionContainers[i] = new CollectionPartitionContainer(this, i);
+        for (int partition = 0; partition < partitionCount; partition++) {
+            partitionContainers[partition] = new CollectionPartitionContainer(this, partition);
         }
         final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         if (lockService != null) {
             lockService.registerLockStoreConstructor(SERVICE_NAME, new ConstructorFunction<ObjectNamespace, LockStoreInfo>() {
                 public LockStoreInfo createNew(final ObjectNamespace key) {
-                    CollectionProxyId id = (CollectionProxyId) key.getObjectId();
-                    final MultiMapConfig multiMapConfig = nodeEngine.getConfig().getMultiMapConfig(id.getName());
+                    String name = (String)key.getObjectId();
+                    final MultiMapConfig multiMapConfig = nodeEngine.getConfig().getMultiMapConfig(name);
 
                     return new LockStoreInfo() {
                         public ObjectNamespace getObjectNamespace() {
@@ -112,52 +111,42 @@ public class CollectionService implements ManagedService, RemoteService,
         }
     }
 
-    public CollectionContainer getOrCreateCollectionContainer(int partitionId, CollectionProxyId proxyId) {
-        return partitionContainers[partitionId].getOrCreateCollectionContainer(proxyId);
+    public CollectionContainer getOrCreateCollectionContainer(int partitionId, String name) {
+        return partitionContainers[partitionId].getOrCreateCollectionContainer(name);
     }
 
     public CollectionPartitionContainer getPartitionContainer(int partitionId) {
         return partitionContainers[partitionId];
     }
 
-    <V> Collection<V> createNew(CollectionProxyId proxyId) {
-        CollectionProxy proxy = (CollectionProxy) nodeEngine.getProxyService().getDistributedObject(SERVICE_NAME, proxyId);
+    <V> Collection<V> createNew(String name) {
+        CollectionProxy proxy = (CollectionProxy) nodeEngine.getProxyService().getDistributedObject(SERVICE_NAME, name);
         return proxy.createNew();
     }
 
     public DistributedObject createDistributedObject(Object objectId) {
-        CollectionProxyId collectionProxyId = (CollectionProxyId) objectId;
-        final CollectionProxyType type = collectionProxyId.type;
-        switch (type) {
-            case MULTI_MAP:
-                return new ObjectMultiMapProxy(this, nodeEngine, collectionProxyId);
-            case LIST:
-                return new ObjectListProxy(this, nodeEngine, collectionProxyId);
-            case SET:
-                return new ObjectSetProxy(this, nodeEngine, collectionProxyId);
-            case QUEUE:
-                return null;
-        }
-        throw new IllegalArgumentException();
+        String name = (String) objectId;
+        return new ObjectMultiMapProxy(this, nodeEngine, name);
+
     }
 
     public void destroyDistributedObject(Object objectId) {
-        CollectionProxyId collectionProxyId = (CollectionProxyId) objectId;
+        String name = (String) objectId;
         for (CollectionPartitionContainer container : partitionContainers) {
             if (container != null) {
-                container.destroyCollection(collectionProxyId);
+                container.destroyCollection(name);
             }
         }
     }
 
-    public Set<Data> localKeySet(CollectionProxyId proxyId) {
+    public Set<Data> localKeySet(String name) {
         Set<Data> keySet = new HashSet<Data>();
         ClusterServiceImpl clusterService = (ClusterServiceImpl) nodeEngine.getClusterService();
         Address thisAddress = clusterService.getThisAddress();
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
             PartitionView partition = nodeEngine.getPartitionService().getPartition(i);
             CollectionPartitionContainer partitionContainer = getPartitionContainer(i);
-            CollectionContainer collectionContainer = partitionContainer.getCollectionContainer(proxyId);
+            CollectionContainer collectionContainer = partitionContainer.getCollectionContainer(name);
             if (collectionContainer == null) {
                 continue;
             }
@@ -165,7 +154,7 @@ public class CollectionService implements ManagedService, RemoteService,
                 keySet.addAll(collectionContainer.keySet());
             }
         }
-        getLocalMultiMapStatsImpl(proxyId).incrementOtherOperations();
+        getLocalMultiMapStatsImpl(name).incrementOtherOperations();
         return keySet;
     }
 
@@ -194,26 +183,15 @@ public class CollectionService implements ManagedService, RemoteService,
     }
 
     public void dispatchEvent(CollectionEvent event, EventListener listener) {
-        if (listener instanceof EntryListener) {
-            EntryListener entryListener = (EntryListener) listener;
-            EntryEvent entryEvent = new EntryEvent(event.getProxyId().getName(), nodeEngine.getClusterService().getMember(event.getCaller()),
-                    event.getEventType().getType(), nodeEngine.toObject(event.getKey()), nodeEngine.toObject(event.getValue()));
-            if (event.eventType.equals(EntryEventType.ADDED)) {
-                entryListener.entryAdded(entryEvent);
-            } else if (event.eventType.equals(EntryEventType.REMOVED)) {
-                entryListener.entryRemoved(entryEvent);
-            }
-            getLocalMultiMapStatsImpl(event.getProxyId()).incrementReceivedEvents();
-        } else if (listener instanceof ItemListener) {
-            ItemListener itemListener = (ItemListener) listener;
-            ItemEvent itemEvent = new ItemEvent(event.getProxyId().getName(), event.eventType.getType(), nodeEngine.toObject(event.getValue()),
-                    nodeEngine.getClusterService().getMember(event.getCaller()));
-            if (event.eventType.getType() == ItemEventType.ADDED.getType()) {
-                itemListener.itemAdded(itemEvent);
-            } else {
-                itemListener.itemRemoved(itemEvent);
-            }
+        EntryListener entryListener = (EntryListener) listener;
+        EntryEvent entryEvent = new EntryEvent(event.getName(), nodeEngine.getClusterService().getMember(event.getCaller()),
+                event.getEventType().getType(), nodeEngine.toObject(event.getKey()), nodeEngine.toObject(event.getValue()));
+        if (event.getEventType().equals(EntryEventType.ADDED)) {
+            entryListener.entryAdded(entryEvent);
+        } else if (event.getEventType().equals(EntryEventType.REMOVED)) {
+            entryListener.entryRemoved(entryEvent);
         }
+        getLocalMultiMapStatsImpl(event.getName()).incrementReceivedEvents();
     }
 
     public void beforeMigration(PartitionMigrationEvent partitionMigrationEvent) {
@@ -225,14 +203,14 @@ public class CollectionService implements ManagedService, RemoteService,
         if (partitionContainer == null) {
             return null;
         }
-        Map<CollectionProxyId, Map> map = new HashMap<CollectionProxyId, Map>(partitionContainer.containerMap.size());
-        for (Map.Entry<CollectionProxyId, CollectionContainer> entry : partitionContainer.containerMap.entrySet()) {
-            CollectionProxyId proxyId = entry.getKey();
+        Map<String, Map> map = new HashMap<String, Map>(partitionContainer.containerMap.size());
+        for (Map.Entry<String, CollectionContainer> entry : partitionContainer.containerMap.entrySet()) {
+            String name = entry.getKey();
             CollectionContainer container = entry.getValue();
             if (container.config.getTotalBackupCount() < replicaIndex) {
                 continue;
             }
-            map.put(proxyId, container.collections);
+            map.put(name, container.collections);
         }
         if (map.isEmpty()) {
             return null;
@@ -240,10 +218,10 @@ public class CollectionService implements ManagedService, RemoteService,
         return new CollectionMigrationOperation(map);
     }
 
-    public void insertMigratedData(int partitionId, Map<CollectionProxyId, Map> map) {
-        for (Map.Entry<CollectionProxyId, Map> entry : map.entrySet()) {
-            CollectionProxyId proxyId = entry.getKey();
-            CollectionContainer container = getOrCreateCollectionContainer(partitionId, proxyId);
+    public void insertMigratedData(int partitionId, Map<String, Map> map) {
+        for (Map.Entry<String, Map> entry : map.entrySet()) {
+            String name = entry.getKey();
+            CollectionContainer container = getOrCreateCollectionContainer(partitionId, name);
             Map<Data, CollectionWrapper> collections = entry.getValue();
             container.collections.putAll(collections);
         }
@@ -268,8 +246,8 @@ public class CollectionService implements ManagedService, RemoteService,
         clearMigrationData(partitionId);
     }
 
-    public LocalMapStats createStats(CollectionProxyId proxyId) {
-        LocalMultiMapStatsImpl stats = getLocalMultiMapStatsImpl(proxyId);
+    public LocalMapStats createStats(String name) {
+        LocalMultiMapStatsImpl stats = getLocalMultiMapStatsImpl(name);
         long ownedEntryCount = 0;
         long backupEntryCount = 0;
         long dirtyCount = 0;
@@ -284,7 +262,7 @@ public class CollectionService implements ManagedService, RemoteService,
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
             PartitionView partition = nodeEngine.getPartitionService().getPartition(i);
             CollectionPartitionContainer partitionContainer = getPartitionContainer(i);
-            CollectionContainer collectionContainer = partitionContainer.getCollectionContainer(proxyId);
+            CollectionContainer collectionContainer = partitionContainer.getCollectionContainer(name);
             if (collectionContainer == null) {
                 continue;
             }
@@ -327,23 +305,12 @@ public class CollectionService implements ManagedService, RemoteService,
     }
 
 
-    public LocalMultiMapStatsImpl getLocalMultiMapStatsImpl(CollectionProxyId name) {
+    public LocalMultiMapStatsImpl getLocalMultiMapStatsImpl(String name) {
         return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, localMultiMapStatsConstructorFunction);
     }
 
     public <T extends TransactionalObject> T createTransactionalObject(Object id, TransactionSupport transaction) {
-        CollectionProxyId collectionProxyId = (CollectionProxyId) id;
-        final CollectionProxyType type = collectionProxyId.type;
-        switch (type) {
-            case MULTI_MAP:
-                return (T) new TransactionalMultiMapProxy(nodeEngine, this, collectionProxyId, transaction);
-            case LIST:
-                return (T) new TransactionalListProxy(nodeEngine, this, collectionProxyId, transaction);
-            case SET:
-                return (T) new TransactionalSetProxy(nodeEngine, this, collectionProxyId, transaction);
-            case QUEUE:
-                return null;
-        }
-        throw new IllegalArgumentException();
+        String name = (String) id;
+        return (T) new TransactionalMultiMapProxy(nodeEngine, this, name, transaction);
     }
 }

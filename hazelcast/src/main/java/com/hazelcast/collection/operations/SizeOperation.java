@@ -18,7 +18,7 @@ package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionDataSerializerHook;
-import com.hazelcast.collection.CollectionProxyId;
+import com.hazelcast.collection.CollectionService;
 
 /**
  * @author ali 1/9/13
@@ -28,13 +28,14 @@ public class SizeOperation extends CollectionOperation {
     public SizeOperation() {
     }
 
-    public SizeOperation(CollectionProxyId proxyId) {
-        super(proxyId);
+    public SizeOperation(String name) {
+        super(name);
     }
 
     public void run() throws Exception {
         CollectionContainer container = getOrCreateContainer();
         response = container.size();
+        ((CollectionService) getService()).getLocalMultiMapStatsImpl(name).incrementOtherOperations();
     }
 
     public int getId() {

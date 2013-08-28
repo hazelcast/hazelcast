@@ -18,7 +18,6 @@ package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionDataSerializerHook;
-import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.IOUtil;
@@ -47,8 +46,8 @@ public class PutOperation extends CollectionBackupAwareOperation {
     public PutOperation() {
     }
 
-    public PutOperation(CollectionProxyId proxyId, Data dataKey, int threadId, Data value, int index) {
-        super(proxyId, dataKey, threadId);
+    public PutOperation(String name, Data dataKey, int threadId, Data value, int index) {
+        super(name, dataKey, threadId);
         this.value = value;
         this.index = index;
     }
@@ -79,7 +78,7 @@ public class PutOperation extends CollectionBackupAwareOperation {
     }
 
     public Operation getBackupOperation() {
-        return new PutBackupOperation(proxyId, dataKey, value, recordId, index);
+        return new PutBackupOperation(name, dataKey, value, recordId, index);
     }
 
     public boolean shouldBackup() {

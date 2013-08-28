@@ -18,7 +18,6 @@ package com.hazelcast.collection.operations.client;
 
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.collection.CollectionPortableHook;
-import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.operations.MultiMapOperationFactory;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -43,14 +42,14 @@ public class ContainsEntryRequest extends CollectionAllPartitionRequest implemen
     public ContainsEntryRequest() {
     }
 
-    public ContainsEntryRequest(CollectionProxyId proxyId, Data key, Data value) {
-        super(proxyId);
+    public ContainsEntryRequest(String name, Data key, Data value) {
+        super(name);
         this.key = key;
         this.value = value;
     }
 
     protected OperationFactory createOperationFactory() {
-        return new MultiMapOperationFactory(proxyId, MultiMapOperationFactory.OperationFactoryType.CONTAINS, key, value);
+        return new MultiMapOperationFactory(name, MultiMapOperationFactory.OperationFactoryType.CONTAINS, key, value);
     }
 
     protected Object reduce(Map<Integer, Object> map) {
@@ -67,16 +66,16 @@ public class ContainsEntryRequest extends CollectionAllPartitionRequest implemen
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
+        super.writePortable(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();
         IOUtil.writeNullableData(out, key);
         IOUtil.writeNullableData(out, value);
-        super.writePortable(writer);
     }
 
     public void readPortable(PortableReader reader) throws IOException {
+        super.readPortable(reader);
         final ObjectDataInput in = reader.getRawDataInput();
         key = IOUtil.readNullableData(in);
         value = IOUtil.readNullableData(in);
-        super.readPortable(reader);
     }
 }

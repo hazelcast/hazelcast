@@ -17,7 +17,6 @@
 package com.hazelcast.collection.operations.client;
 
 import com.hazelcast.collection.CollectionPortableHook;
-import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.concurrent.lock.client.AbstractLockRequest;
 import com.hazelcast.nio.serialization.Data;
@@ -33,34 +32,33 @@ import java.io.IOException;
  */
 public class MultiMapLockRequest extends AbstractLockRequest {
 
-    CollectionProxyId proxyId;
+    String name;
 
     public MultiMapLockRequest() {
     }
 
-    public MultiMapLockRequest(Data key, int threadId, CollectionProxyId proxyId) {
+    public MultiMapLockRequest(Data key, int threadId, String name) {
         super(key, threadId);
-        this.proxyId = proxyId;
+        this.name = name;
     }
 
-    public MultiMapLockRequest(Data key, int threadId, long ttl, long timeout, CollectionProxyId proxyId) {
+    public MultiMapLockRequest(Data key, int threadId, long ttl, long timeout, String name) {
         super(key, threadId, ttl, timeout);
-        this.proxyId = proxyId;
+        this.name = name;
     }
 
     protected ObjectNamespace getNamespace() {
-        return new DefaultObjectNamespace(CollectionService.SERVICE_NAME, proxyId);
+        return new DefaultObjectNamespace(CollectionService.SERVICE_NAME, name);
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
+        writer.writeUTF("n", name);
         super.writePortable(writer);
-        proxyId.writeData(writer.getRawDataOutput());
     }
 
     public void readPortable(PortableReader reader) throws IOException {
+        name = reader.readUTF("n");
         super.readPortable(reader);
-        proxyId = new CollectionProxyId();
-        proxyId.readData(reader.getRawDataInput());
     }
 
     public int getFactoryId() {

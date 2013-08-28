@@ -18,7 +18,6 @@ package com.hazelcast.collection.multimap.tx;
 
 import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionDataSerializerHook;
-import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.operations.CollectionBackupAwareOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -38,8 +37,8 @@ public class TxnPrepareOperation extends CollectionBackupAwareOperation {
     public TxnPrepareOperation() {
     }
 
-    public TxnPrepareOperation(CollectionProxyId proxyId, Data dataKey, long ttl, int threadId) {
-        super(proxyId, dataKey, threadId);
+    public TxnPrepareOperation(String name, Data dataKey, long ttl, int threadId) {
+        super(name, dataKey, threadId);
         this.ttl = ttl;
     }
 
@@ -60,7 +59,7 @@ public class TxnPrepareOperation extends CollectionBackupAwareOperation {
     }
 
     public Operation getBackupOperation() {
-        return new TxnPrepareBackupOperation(proxyId, dataKey, getCallerUuid(), threadId);
+        return new TxnPrepareBackupOperation(name, dataKey, getCallerUuid(), threadId);
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

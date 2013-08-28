@@ -17,7 +17,6 @@
 package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionDataSerializerHook;
-import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionWrapper;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.Clock;
@@ -34,8 +33,8 @@ public class GetAllOperation extends CollectionKeyBasedOperation {
     public GetAllOperation() {
     }
 
-    public GetAllOperation(CollectionProxyId proxyId, Data dataKey) {
-        super(proxyId, dataKey);
+    public GetAllOperation(String name, Data dataKey) {
+        super(name, dataKey);
     }
 
     public void run() throws Exception {
@@ -47,10 +46,6 @@ public class GetAllOperation extends CollectionKeyBasedOperation {
         }
         begin = Clock.currentTimeMillis();
         response = new CollectionResponse(coll);
-    }
-
-    public void afterRun() throws Exception {
-        long elapsed = Math.max(0, Clock.currentTimeMillis() - begin);
     }
 
     public int getId() {

@@ -16,16 +16,15 @@
 
 package com.hazelcast.collection.multimap;
 
-import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.collection.operations.*;
 import com.hazelcast.collection.operations.MultiMapOperationFactory.OperationFactoryType;
 import com.hazelcast.concurrent.lock.proxy.LockProxySupport;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.*;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.ThreadUtil;
 
 import java.util.*;
 import java.util.concurrent.Future;
@@ -39,15 +38,14 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
     public static final String COLLECTION_SET_NAME = "hz:set:";
 
     protected final MultiMapConfig config;
-    protected final CollectionProxyId proxyId;
+    protected final String name;
     protected final LockProxySupport lockSupport;
 
-    protected MultiMapProxySupport(CollectionService service, NodeEngine nodeEngine,
-                                   MultiMapConfig config, CollectionProxyId proxyId) {
+    protected MultiMapProxySupport(CollectionService service, NodeEngine nodeEngine, String name) {
         super(nodeEngine, service);
-        this.config = config;
-        this.proxyId = proxyId;
-        lockSupport = new LockProxySupport(new DefaultObjectNamespace(CollectionService.SERVICE_NAME, proxyId));
+        this.config = nodeEngine.getConfig().getMultiMapConfig(name);
+        this.name = name;
+        lockSupport = new LockProxySupport(new DefaultObjectNamespace(CollectionService.SERVICE_NAME, name));
     }
 
     public <V> Collection<V> createNew() {
@@ -61,7 +59,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
 
     protected Boolean putInternal(Data dataKey, Data dataValue, int index) {
         try {
-            PutOperation operation = new PutOperation(proxyId, dataKey, getThreadId(), dataValue, index);
+            PutOperation operation = new PutOperation(name, dataKey, getThreadId(), dataValue, index);
             return invoke(operation, dataKey);
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);
@@ -70,7 +68,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
 
     protected CollectionResponse getAllInternal(Data dataKey) {
         try {
-            GetAllOperation operation = new GetAllOperation(proxyId, dataKey);
+            GetAllOperation operation = new GetAllOperation(name, dataKey);
             return invoke(operation, dataKey);
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);
@@ -79,7 +77,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
 
     protected Boolean removeInternal(Data dataKey, Data dataValue) {
         try {
-            RemoveOperation operation = new RemoveOperation(proxyId, dataKey, getThreadId(), dataValue);
+            RemoveOperation operation = new RemoveOperation(name, dataKey, getThreadId(), dataValue);
             return invoke(operation, dataKey);
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);
@@ -88,7 +86,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
 
     protected CollectionResponse removeInternal(Data dataKey) {
         try {
-            RemoveAllOperation operation = new RemoveAllOperation(proxyId, dataKey, getThreadId());
+            RemoveAllOperation operation = new RemoveAllOperation(name, dataKey, getThreadId());
             return invoke(operation, dataKey);
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);
@@ -96,7 +94,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
     }
 
     protected Set<Data> localKeySetInternal() {
-        return getService().localKeySet(proxyId);
+        return getService().localKeySet(name);
     }
 
     protected Set<Data> keySetInternal() {
@@ -104,7 +102,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
         try {
 
             Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(CollectionService.SERVICE_NAME, new MultiMapOperationFactory(proxyId, OperationFactoryType.KEY_SET));
+                    .invokeOnAllPartitions(CollectionService.SERVICE_NAME, new MultiMapOperationFactory(name, OperationFactoryType.KEY_SET));
             Set<Data> keySet = new HashSet<Data>();
             for (Object result : results.values()) {
                 if (result == null) {
@@ -125,7 +123,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
         final NodeEngine nodeEngine = getNodeEngine();
         try {
             Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(CollectionService.SERVICE_NAME, new MultiMapOperationFactory(proxyId, OperationFactoryType.VALUES));
+                    .invokeOnAllPartitions(CollectionService.SERVICE_NAME, new MultiMapOperationFactory(name, OperationFactoryType.VALUES));
             return results;
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);
@@ -136,7 +134,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
         final NodeEngine nodeEngine = getNodeEngine();
         try {
             Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(CollectionService.SERVICE_NAME, new MultiMapOperationFactory(proxyId, OperationFactoryType.ENTRY_SET));
+                    .invokeOnAllPartitions(CollectionService.SERVICE_NAME, new MultiMapOperationFactory(name, OperationFactoryType.ENTRY_SET));
             return results;
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);
@@ -147,7 +145,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
         final NodeEngine nodeEngine = getNodeEngine();
         try {
             Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(CollectionService.SERVICE_NAME, new MultiMapOperationFactory(proxyId, OperationFactoryType.CONTAINS, key, value));
+                    .invokeOnAllPartitions(CollectionService.SERVICE_NAME, new MultiMapOperationFactory(name, OperationFactoryType.CONTAINS, key, value));
             for (Object obj : results.values()) {
                 if (obj == null) {
                     continue;
@@ -167,7 +165,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
         final NodeEngine nodeEngine = getNodeEngine();
         try {
             Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(CollectionService.SERVICE_NAME, new MultiMapOperationFactory(proxyId, OperationFactoryType.SIZE));
+                    .invokeOnAllPartitions(CollectionService.SERVICE_NAME, new MultiMapOperationFactory(name, OperationFactoryType.SIZE));
             int size = 0;
             for (Object obj : results.values()) {
                 if (obj == null) {
@@ -185,7 +183,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
     public void clear() {
         final NodeEngine nodeEngine = getNodeEngine();
         try {
-            nodeEngine.getOperationService().invokeOnAllPartitions(CollectionService.SERVICE_NAME, new MultiMapOperationFactory(proxyId, OperationFactoryType.CLEAR));
+            nodeEngine.getOperationService().invokeOnAllPartitions(CollectionService.SERVICE_NAME, new MultiMapOperationFactory(name, OperationFactoryType.CLEAR));
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);
         }
@@ -193,87 +191,87 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
 
     protected Integer countInternal(Data dataKey) {
         try {
-            CountOperation operation = new CountOperation(proxyId, dataKey);
+            CountOperation operation = new CountOperation(name, dataKey);
             return invoke(operation, dataKey);
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);
         }
     }
 
-    protected Object getInternal(Data dataKey, int index) {
-        try {
-            GetOperation operation = new GetOperation(proxyId, dataKey, index);
-            return invokeData(operation, dataKey);
-        } catch (Throwable throwable) {
-            throw ExceptionUtil.rethrow(throwable);
-        }
-    }
-
-    protected Boolean containsInternalList(Data dataKey, Data dataValue) {
-        try {
-            ContainsOperation operation = new ContainsOperation(proxyId, dataKey, dataValue);
-            return invoke(operation, dataKey);
-        } catch (Throwable throwable) {
-            throw ExceptionUtil.rethrow(throwable);
-        }
-    }
-
-    protected Boolean containsAllInternal(Data dataKey, Set<Data> dataSet) {
-        try {
-            ContainsAllOperation operation = new ContainsAllOperation(proxyId, dataKey, dataSet);
-            return invoke(operation, dataKey);
-        } catch (Throwable throwable) {
-            throw ExceptionUtil.rethrow(throwable);
-        }
-    }
-
-    protected Object setInternal(Data dataKey, int index, Data dataValue) {
-        try {
-            SetOperation operation = new SetOperation(proxyId, dataKey, getThreadId(), index, dataValue);
-            return invokeData(operation, dataKey);
-        } catch (Throwable throwable) {
-            throw ExceptionUtil.rethrow(throwable);
-        }
-    }
-
-    protected Object removeInternal(Data dataKey, int index) {
-        try {
-            RemoveIndexOperation operation = new RemoveIndexOperation(proxyId, dataKey, getThreadId(), index);
-            return invokeData(operation, dataKey);
-        } catch (Throwable throwable) {
-            throw ExceptionUtil.rethrow(throwable);
-        }
-    }
-
-    protected Integer indexOfInternal(Data dataKey, Data value, boolean last) {
-        try {
-            IndexOfOperation operation = new IndexOfOperation(proxyId, dataKey, value, last);
-            return invoke(operation, dataKey);
-        } catch (Throwable throwable) {
-            throw ExceptionUtil.rethrow(throwable);
-        }
-    }
-
-    protected Boolean addAllInternal(Data dataKey, List<Data> dataList, int index) {
-        try {
-            AddAllOperation operation = new AddAllOperation(proxyId, dataKey, getThreadId(), dataList, index);
-            return invoke(operation, dataKey);
-        } catch (Throwable throwable) {
-            throw ExceptionUtil.rethrow(throwable);
-        }
-    }
-
-    protected Boolean compareAndRemoveInternal(Data dataKey, List<Data> dataList, boolean retain) {
-        try {
-            CompareAndRemoveOperation operation = new CompareAndRemoveOperation(proxyId, dataKey, getThreadId(), dataList, retain);
-            return invoke(operation, dataKey);
-        } catch (Throwable throwable) {
-            throw ExceptionUtil.rethrow(throwable);
-        }
-    }
+//    protected Object getInternal(Data dataKey, int index) {
+//        try {
+//            GetOperation operation = new GetOperation(proxyId, dataKey, index);
+//            return invokeData(operation, dataKey);
+//        } catch (Throwable throwable) {
+//            throw ExceptionUtil.rethrow(throwable);
+//        }
+//    }
+//
+//    protected Boolean containsInternalList(Data dataKey, Data dataValue) {
+//        try {
+//            ContainsOperation operation = new ContainsOperation(proxyId, dataKey, dataValue);
+//            return invoke(operation, dataKey);
+//        } catch (Throwable throwable) {
+//            throw ExceptionUtil.rethrow(throwable);
+//        }
+//    }
+//
+//    protected Boolean containsAllInternal(Data dataKey, Set<Data> dataSet) {
+//        try {
+//            ContainsAllOperation operation = new ContainsAllOperation(proxyId, dataKey, dataSet);
+//            return invoke(operation, dataKey);
+//        } catch (Throwable throwable) {
+//            throw ExceptionUtil.rethrow(throwable);
+//        }
+//    }
+//
+//    protected Object setInternal(Data dataKey, int index, Data dataValue) {
+//        try {
+//            SetOperation operation = new SetOperation(proxyId, dataKey, getThreadId(), index, dataValue);
+//            return invokeData(operation, dataKey);
+//        } catch (Throwable throwable) {
+//            throw ExceptionUtil.rethrow(throwable);
+//        }
+//    }
+//
+//    protected Object removeInternal(Data dataKey, int index) {
+//        try {
+//            RemoveIndexOperation operation = new RemoveIndexOperation(proxyId, dataKey, getThreadId(), index);
+//            return invokeData(operation, dataKey);
+//        } catch (Throwable throwable) {
+//            throw ExceptionUtil.rethrow(throwable);
+//        }
+//    }
+//
+//    protected Integer indexOfInternal(Data dataKey, Data value, boolean last) {
+//        try {
+//            IndexOfOperation operation = new IndexOfOperation(proxyId, dataKey, value, last);
+//            return invoke(operation, dataKey);
+//        } catch (Throwable throwable) {
+//            throw ExceptionUtil.rethrow(throwable);
+//        }
+//    }
+//
+//    protected Boolean addAllInternal(Data dataKey, List<Data> dataList, int index) {
+//        try {
+//            AddAllOperation operation = new AddAllOperation(proxyId, dataKey, getThreadId(), dataList, index);
+//            return invoke(operation, dataKey);
+//        } catch (Throwable throwable) {
+//            throw ExceptionUtil.rethrow(throwable);
+//        }
+//    }
+//
+//    protected Boolean compareAndRemoveInternal(Data dataKey, List<Data> dataList, boolean retain) {
+//        try {
+//            CompareAndRemoveOperation operation = new CompareAndRemoveOperation(proxyId, dataKey, getThreadId(), dataList, retain);
+//            return invoke(operation, dataKey);
+//        } catch (Throwable throwable) {
+//            throw ExceptionUtil.rethrow(throwable);
+//        }
+//    }
 
     public Object getId() {
-        return proxyId;
+        return name;
     }
 
     public String getServiceName() {
@@ -292,50 +290,50 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
                 f = invocation.invoke();
                 o = f.get();
                 if (operation instanceof PutOperation) {
-                    getService().getLocalMultiMapStatsImpl(proxyId).incrementPuts(System.currentTimeMillis() - time);
+                    getService().getLocalMultiMapStatsImpl(name).incrementPuts(System.currentTimeMillis() - time);    //TODO @ali should we remove statics from operations ?
                 } else if (operation instanceof RemoveOperation || operation instanceof RemoveAllOperation) {
-                    getService().getLocalMultiMapStatsImpl(proxyId).incrementRemoves(System.currentTimeMillis() - time);
+                    getService().getLocalMultiMapStatsImpl(name).incrementRemoves(System.currentTimeMillis() - time);
                 } else if (operation instanceof GetAllOperation) {
-                    getService().getLocalMultiMapStatsImpl(proxyId).incrementGets(System.currentTimeMillis() - time);
+                    getService().getLocalMultiMapStatsImpl(name).incrementGets(System.currentTimeMillis() - time);
                 }
             } else {
                 f = invocation.invoke();
                 o = f.get();
             }
-            return (T) nodeEngine.toObject(o);
+            return nodeEngine.toObject(o);
         } catch (Throwable throwable) {
             throw ExceptionUtil.rethrow(throwable);
         }
     }
 
-    private Object invokeData(CollectionOperation operation, Data dataKey) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        try {
-            int partitionId = nodeEngine.getPartitionService().getPartitionId(dataKey);
-            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(CollectionService.SERVICE_NAME, operation, partitionId).build();
-            Future f = inv.invoke();
-            return nodeEngine.toObject(f.get());
-        } catch (Throwable throwable) {
-            throw ExceptionUtil.rethrow(throwable);
-        }
-    }
+//    private Object invokeData(CollectionOperation operation, Data dataKey) {
+//        final NodeEngine nodeEngine = getNodeEngine();
+//        try {
+//            int partitionId = nodeEngine.getPartitionService().getPartitionId(dataKey);
+//            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(CollectionService.SERVICE_NAME, operation, partitionId).build();
+//            Future f = inv.invoke();
+//            return nodeEngine.toObject(f.get());
+//        } catch (Throwable throwable) {
+//            throw ExceptionUtil.rethrow(throwable);
+//        }
+//    }
 
     private int getThreadId() {
         return ThreadUtil.getThreadId();
     }
 
-    public static MultiMapConfig createConfig(CollectionProxyId proxyId) {
-        switch (proxyId.getType()) {
-            case MULTI_MAP:
-                return new MultiMapConfig().setName(proxyId.getName());
-            case LIST:
-                return new MultiMapConfig().setName(COLLECTION_LIST_NAME + proxyId.getKeyName())
-                    .setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST);
-            case SET:
-                return new MultiMapConfig().setName(COLLECTION_SET_NAME + proxyId.getKeyName())
-                        .setValueCollectionType(MultiMapConfig.ValueCollectionType.SET);
-            default:
-                throw new IllegalArgumentException("Illegal proxy type: " + proxyId.getType());
-        }
-    }
+//    public static MultiMapConfig createConfig(CollectionProxyId proxyId) {
+//        switch (proxyId.getType()) {
+//            case MULTI_MAP:
+//                return new MultiMapConfig().setName(proxyId.getName());
+//            case LIST:
+//                return new MultiMapConfig().setName(COLLECTION_LIST_NAME + proxyId.getKeyName())
+//                    .setValueCollectionType(MultiMapConfig.ValueCollectionType.LIST);
+//            case SET:
+//                return new MultiMapConfig().setName(COLLECTION_SET_NAME + proxyId.getKeyName())
+//                        .setValueCollectionType(MultiMapConfig.ValueCollectionType.SET);
+//            default:
+//                throw new IllegalArgumentException("Illegal proxy type: " + proxyId.getType());
+//        }
+//    }
 }

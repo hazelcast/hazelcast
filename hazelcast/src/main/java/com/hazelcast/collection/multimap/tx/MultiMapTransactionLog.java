@@ -16,7 +16,6 @@
 
 package com.hazelcast.collection.multimap.tx;
 
-import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -39,7 +38,7 @@ import java.util.concurrent.Future;
  */
 public class MultiMapTransactionLog implements KeyAwareTransactionLog {
 
-    CollectionProxyId proxyId;
+    String name;
     final List<Operation> opList = new LinkedList<Operation>();
     Data key;
     long ttl;
@@ -49,16 +48,16 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
     public MultiMapTransactionLog() {
     }
 
-    public MultiMapTransactionLog(Data key, CollectionProxyId proxyId, long ttl, int threadId, long version) {
+    public MultiMapTransactionLog(Data key, String name, long ttl, int threadId, long version) {
         this.key = key;
-        this.proxyId = proxyId;
+        this.name = name;
         this.ttl = ttl;
         this.threadId = threadId;
         this.txVersion = version;
     }
 
     public Future prepare(NodeEngine nodeEngine) {
-        TxnPrepareOperation operation = new TxnPrepareOperation(proxyId, key, ttl, threadId);
+        TxnPrepareOperation operation = new TxnPrepareOperation(name, key, ttl, threadId);
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
             Invocation invocation = nodeEngine.getOperationService()
@@ -70,7 +69,7 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
     }
 
     public Future commit(NodeEngine nodeEngine) {
-        TxnCommitOperation operation = new TxnCommitOperation(proxyId, key, threadId, txVersion, opList);
+        TxnCommitOperation operation = new TxnCommitOperation(name, key, threadId, txVersion, opList);
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
             Invocation invocation = nodeEngine.getOperationService()
@@ -82,7 +81,7 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
     }
 
     public Future rollback(NodeEngine nodeEngine) {
-        TxnRollbackOperation operation = new TxnRollbackOperation(proxyId, key, threadId);
+        TxnRollbackOperation operation = new TxnRollbackOperation(name, key, threadId);
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
             Invocation invocation = nodeEngine.getOperationService()
@@ -94,7 +93,7 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
-        proxyId.writeData(out);
+        out.writeUTF(name);
         out.writeInt(opList.size());
         for (Operation op: opList){
             out.writeObject(op);
@@ -106,8 +105,7 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
     }
 
     public void readData(ObjectDataInput in) throws IOException {
-        proxyId = new CollectionProxyId();
-        proxyId.readData(in);
+        name = in.readUTF();
         int size = in.readInt();
         for (int i=0; i<size; i++){
             opList.add((Operation)in.readObject());
@@ -120,7 +118,7 @@ public class MultiMapTransactionLog implements KeyAwareTransactionLog {
     }
 
     public Object getKey() {
-        return new TransactionLogKey(proxyId, key);
+        return new TransactionLogKey(name, key);
     }
 
     public void addOperation(Operation op){

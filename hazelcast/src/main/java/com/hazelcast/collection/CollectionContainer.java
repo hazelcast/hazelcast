@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class CollectionContainer {
 
-    final CollectionProxyId proxyId;
+    final String name;
 
     final CollectionService service;
 
@@ -55,14 +55,14 @@ public class CollectionContainer {
     final AtomicLong lastUpdateTime = new AtomicLong();
     final long creationTime;
 
-    public CollectionContainer(CollectionProxyId proxyId, CollectionService service, int partitionId) {
-        this.proxyId = proxyId;
+    public CollectionContainer(String name, CollectionService service, int partitionId) {
+        this.name = name;
         this.service = service;
         this.nodeEngine = service.getNodeEngine();
         this.partitionId = partitionId;
-        this.config = nodeEngine.getConfig().getMultiMapConfig(proxyId.name);
+        this.config = nodeEngine.getConfig().getMultiMapConfig(name);
 
-        this.lockNamespace = new DefaultObjectNamespace(CollectionService.SERVICE_NAME, proxyId);
+        this.lockNamespace = new DefaultObjectNamespace(CollectionService.SERVICE_NAME, name);
         final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         this.lockStore = lockService == null ? null : lockService.createLockStore(partitionId, lockNamespace);
         creationTime = Clock.currentTimeMillis();
@@ -103,7 +103,7 @@ public class CollectionContainer {
     public CollectionWrapper getOrCreateCollectionWrapper(Data dataKey) {
         CollectionWrapper wrapper = collections.get(dataKey);
         if (wrapper == null) {
-            Collection<CollectionRecord> coll = service.createNew(proxyId);
+            Collection<CollectionRecord> coll = service.createNew(name);
             wrapper = new CollectionWrapper(coll);
             collections.put(dataKey, wrapper);
         }

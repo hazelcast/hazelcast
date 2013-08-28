@@ -40,6 +40,7 @@ import static org.junit.Assert.assertEquals;
  */
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(SerialTest.class)
+@Ignore
 public class ClientSetTest {
 
     static final String name = "test";

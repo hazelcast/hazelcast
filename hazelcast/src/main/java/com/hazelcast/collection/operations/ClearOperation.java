@@ -18,8 +18,8 @@ package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionDataSerializerHook;
-import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
+import com.hazelcast.collection.CollectionService;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
@@ -39,8 +39,8 @@ public class ClearOperation extends CollectionOperation implements BackupAwareOp
     public ClearOperation() {
     }
 
-    public ClearOperation(CollectionProxyId proxyId) {
-        super(proxyId);
+    public ClearOperation(String name) {
+        super(name);
     }
 
     public void beforeRun() throws Exception {
@@ -54,6 +54,8 @@ public class ClearOperation extends CollectionOperation implements BackupAwareOp
         CollectionContainer container = getOrCreateContainer();
         container.clearCollections();
         response = true;
+        ((CollectionService) getService()).getLocalMultiMapStatsImpl(name).incrementOtherOperations();
+        //TODO @ali take these to afterRun maybe ?
     }
 
     public void afterRun() throws Exception {
@@ -79,7 +81,7 @@ public class ClearOperation extends CollectionOperation implements BackupAwareOp
     }
 
     public Operation getBackupOperation() {
-        return new ClearBackupOperation(proxyId);
+        return new ClearBackupOperation(name);
     }
 
     public int getId() {

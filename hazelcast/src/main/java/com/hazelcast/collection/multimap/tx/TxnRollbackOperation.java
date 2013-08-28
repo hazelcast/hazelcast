@@ -18,7 +18,6 @@ package com.hazelcast.collection.multimap.tx;
 
 import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionDataSerializerHook;
-import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.operations.CollectionBackupAwareOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Notifier;
@@ -34,8 +33,8 @@ public class TxnRollbackOperation extends CollectionBackupAwareOperation impleme
     public TxnRollbackOperation() {
     }
 
-    public TxnRollbackOperation(CollectionProxyId proxyId, Data dataKey, int threadId) {
-        super(proxyId, dataKey, threadId);
+    public TxnRollbackOperation(String name, Data dataKey, int threadId) {
+        super(name, dataKey, threadId);
     }
 
     public void run() throws Exception {
@@ -46,7 +45,7 @@ public class TxnRollbackOperation extends CollectionBackupAwareOperation impleme
     }
 
     public Operation getBackupOperation() {
-        return new TxnRollbackBackupOperation(proxyId, dataKey, getCallerUuid(), threadId);
+        return new TxnRollbackBackupOperation(name, dataKey, getCallerUuid(), threadId);
     }
 
     public boolean shouldNotify() {

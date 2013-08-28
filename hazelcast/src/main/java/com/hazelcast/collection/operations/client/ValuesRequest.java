@@ -18,7 +18,6 @@ package com.hazelcast.collection.operations.client;
 
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.collection.CollectionPortableHook;
-import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.collection.operations.CollectionResponse;
 import com.hazelcast.collection.operations.MultiMapOperationFactory;
@@ -38,12 +37,12 @@ public class ValuesRequest extends CollectionAllPartitionRequest implements Retr
     public ValuesRequest() {
     }
 
-    public ValuesRequest(CollectionProxyId proxyId) {
-        super(proxyId);
+    public ValuesRequest(String name) {
+        super(name);
     }
 
     protected OperationFactory createOperationFactory() {
-        return new MultiMapOperationFactory(proxyId, MultiMapOperationFactory.OperationFactoryType.VALUES);
+        return new MultiMapOperationFactory(name, MultiMapOperationFactory.OperationFactoryType.VALUES);
     }
 
     protected Object reduce(Map<Integer, Object> map) {

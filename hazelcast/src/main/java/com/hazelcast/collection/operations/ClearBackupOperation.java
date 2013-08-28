@@ -18,7 +18,6 @@ package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionDataSerializerHook;
-import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.spi.BackupOperation;
 
 /**
@@ -29,8 +28,8 @@ public class ClearBackupOperation extends CollectionOperation implements BackupO
     public ClearBackupOperation() {
     }
 
-    public ClearBackupOperation(CollectionProxyId proxyId) {
-        super(proxyId);
+    public ClearBackupOperation(String name) {
+        super(name);
     }
 
     public void run() throws Exception {

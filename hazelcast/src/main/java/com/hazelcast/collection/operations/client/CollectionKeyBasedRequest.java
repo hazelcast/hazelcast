@@ -16,7 +16,6 @@
 
 package com.hazelcast.collection.operations.client;
 
-import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -35,8 +34,8 @@ public abstract class CollectionKeyBasedRequest extends CollectionRequest {
     protected CollectionKeyBasedRequest() {
     }
 
-    protected CollectionKeyBasedRequest(CollectionProxyId proxyId, Data key) {
-        super(proxyId);
+    protected CollectionKeyBasedRequest(String name, Data key) {
+        super(name);
         this.key = key;
     }
 
@@ -45,16 +44,16 @@ public abstract class CollectionKeyBasedRequest extends CollectionRequest {
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
+        super.writePortable(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();
         key.writeData(out);
-        super.writePortable(writer);
     }
 
     @Override
     public void readPortable(PortableReader reader) throws IOException {
+        super.readPortable(reader);
         final ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);
-        super.readPortable(reader);
     }
 }

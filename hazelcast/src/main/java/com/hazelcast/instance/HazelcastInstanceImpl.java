@@ -16,11 +16,7 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.collection.CollectionProxyId;
-import com.hazelcast.collection.CollectionProxyType;
 import com.hazelcast.collection.CollectionService;
-import com.hazelcast.collection.list.ObjectListProxy;
-import com.hazelcast.collection.set.ObjectSetProxy;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
@@ -151,24 +147,25 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         if (name == null) {
             throw new NullPointerException("Retrieving a set instance with a null key is not allowed!");
         }
-        return getDistributedObject(CollectionService.SERVICE_NAME,
-                new CollectionProxyId(ObjectSetProxy.COLLECTION_SET_NAME, name, CollectionProxyType.SET));
+//        return getDistributedObject(CollectionService.SERVICE_NAME,
+//                new CollectionProxyId(ObjectSetProxy.COLLECTION_SET_NAME, name, CollectionProxyType.SET));
+        return null;
     }
 
     public <E> IList<E> getList(String name) {
         if (name == null) {
             throw new NullPointerException("Retrieving a list instance with a null key is not allowed!");
         }
-        return getDistributedObject(CollectionService.SERVICE_NAME,
-                new CollectionProxyId(ObjectListProxy.COLLECTION_LIST_NAME, name, CollectionProxyType.LIST));
+//        return getDistributedObject(CollectionService.SERVICE_NAME,
+//                new CollectionProxyId(ObjectListProxy.COLLECTION_LIST_NAME, name, CollectionProxyType.LIST));
+        return null;
     }
 
     public <K, V> MultiMap<K, V> getMultiMap(String name) {
         if (name == null) {
             throw new NullPointerException("Retrieving a multi-map instance with a null key is not allowed!");
         }
-        return getDistributedObject(CollectionService.SERVICE_NAME,
-                new CollectionProxyId(name, null, CollectionProxyType.MULTI_MAP));
+        return getDistributedObject(CollectionService.SERVICE_NAME, name);
     }
 
     public ILock getLock(Object key) {

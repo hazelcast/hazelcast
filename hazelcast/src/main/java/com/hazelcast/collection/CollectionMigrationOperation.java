@@ -32,12 +32,12 @@ import java.util.Map;
  */
 public class CollectionMigrationOperation extends AbstractOperation {
 
-    Map<CollectionProxyId, Map> map;
+    Map<String, Map> map;
 
     public CollectionMigrationOperation() {
     }
 
-    public CollectionMigrationOperation(Map<CollectionProxyId, Map> map) {
+    public CollectionMigrationOperation(Map<String, Map> map) {
         this.map = map;
     }
 
@@ -48,9 +48,9 @@ public class CollectionMigrationOperation extends AbstractOperation {
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeInt(map.size());
-        for (Map.Entry<CollectionProxyId, Map> entry : map.entrySet()) {
-            CollectionProxyId proxyId = entry.getKey();
-            proxyId.writeData(out);
+        for (Map.Entry<String, Map> entry : map.entrySet()) {
+            String name = entry.getKey();
+            out.writeUTF(name);
 
             Map<Data, CollectionWrapper> collections = entry.getValue();
             out.writeInt(collections.size());
@@ -69,10 +69,9 @@ public class CollectionMigrationOperation extends AbstractOperation {
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         int mapSize = in.readInt();
-        map = new HashMap<CollectionProxyId, Map>(mapSize);
+        map = new HashMap<String, Map>(mapSize);
         for (int i = 0; i < mapSize; i++) {
-            CollectionProxyId proxyId = new CollectionProxyId();
-            proxyId.readData(in);
+            String name = in.readUTF();
             int collectionSize = in.readInt();
             Map<Data, CollectionWrapper> collections = new HashMap<Data, CollectionWrapper>();
             for (int j = 0; j < collectionSize; j++) {
@@ -88,7 +87,7 @@ public class CollectionMigrationOperation extends AbstractOperation {
                 collections.put(key, new CollectionWrapper(coll));
 
             }
-            map.put(proxyId, collections);
+            map.put(name, collections);
         }
     }
 

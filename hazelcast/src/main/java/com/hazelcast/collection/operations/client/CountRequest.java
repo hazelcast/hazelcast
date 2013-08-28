@@ -18,7 +18,6 @@ package com.hazelcast.collection.operations.client;
 
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.collection.CollectionPortableHook;
-import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.operations.CountOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
@@ -31,12 +30,12 @@ public class CountRequest extends CollectionKeyBasedRequest implements Retryable
     public CountRequest() {
     }
 
-    public CountRequest(CollectionProxyId proxyId, Data key) {
-        super(proxyId, key);
+    public CountRequest(String name, Data key) {
+        super(name, key);
     }
 
     protected Operation prepareOperation() {
-        return new CountOperation(proxyId, key);
+        return new CountOperation(name, key);
     }
 
     public int getClassId() {

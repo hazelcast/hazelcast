@@ -21,7 +21,6 @@ import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.InitializingObjectRequest;
 import com.hazelcast.collection.CollectionPortableHook;
-import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
@@ -41,15 +40,15 @@ import java.io.IOException;
  */
 public class AddEntryListenerRequest extends CallableClientRequest implements Portable, InitializingObjectRequest {
 
-    CollectionProxyId proxyId;
+    String name;
     Data key;
     boolean includeValue;
 
     public AddEntryListenerRequest() {
     }
 
-    public AddEntryListenerRequest(CollectionProxyId proxyId, Data key, boolean includeValue) {
-        this.proxyId = proxyId;
+    public AddEntryListenerRequest(String name, Data key, boolean includeValue) {
+        this.name = name;
         this.key = key;
         this.includeValue = includeValue;
     }
@@ -86,8 +85,8 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Po
                 }
             }
         };
-        String registrationId = service.addListener(proxyId.getName(), listener, key, includeValue, false);
-        endpoint.setListenerRegistration(CollectionService.SERVICE_NAME, proxyId.getName(), registrationId);
+        String registrationId = service.addListener(name, listener, key, includeValue, false);
+        endpoint.setListenerRegistration(CollectionService.SERVICE_NAME, name, registrationId);
         return null;
     }
 
@@ -96,7 +95,7 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Po
     }
 
     public Object getObjectId() {
-        return proxyId;
+        return name;
     }
 
     public int getFactoryId() {
@@ -109,17 +108,15 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Po
 
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeBoolean("i", includeValue);
+        writer.writeUTF("n", name);
         final ObjectDataOutput out = writer.getRawDataOutput();
-        proxyId.writeData(out);
         IOUtil.writeNullableData(out, key);
     }
 
     public void readPortable(PortableReader reader) throws IOException {
         includeValue = reader.readBoolean("i");
+        name = reader.readUTF("n");
         final ObjectDataInput in = reader.getRawDataInput();
-        proxyId = new CollectionProxyId();
-        proxyId.readData(in);
         key = IOUtil.readNullableData(in);
-
     }
 }

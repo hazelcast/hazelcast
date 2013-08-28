@@ -18,7 +18,6 @@ package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionDataSerializerHook;
-import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -39,15 +38,15 @@ public class ContainsEntryOperation extends CollectionOperation {
     public ContainsEntryOperation() {
     }
 
-    public ContainsEntryOperation(CollectionProxyId proxyId, Data key, Data value) {
-        super(proxyId);
+    public ContainsEntryOperation(String name, Data key, Data value) {
+        super(name);
         this.key = key;
         this.value = value;
     }
 
     public void run() throws Exception {
         CollectionContainer container = getOrCreateContainer();
-        ((CollectionService) getService()).getLocalMultiMapStatsImpl(proxyId).incrementOtherOperations();
+        ((CollectionService) getService()).getLocalMultiMapStatsImpl(name).incrementOtherOperations();
         if (key != null && value != null) {
             response = container.containsEntry(isBinary(), key, value);
         } else if (key != null) {

@@ -18,7 +18,6 @@ package com.hazelcast.collection.operations.client;
 
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.collection.CollectionPortableHook;
-import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.operations.MultiMapOperationFactory;
 import com.hazelcast.spi.OperationFactory;
 
@@ -32,12 +31,12 @@ public class ClearRequest extends CollectionAllPartitionRequest implements Retry
     public ClearRequest() {
     }
 
-    public ClearRequest(CollectionProxyId proxyId) {
-        super(proxyId);
+    public ClearRequest(String name) {
+        super(name);
     }
 
     protected OperationFactory createOperationFactory() {
-        return new MultiMapOperationFactory(proxyId, MultiMapOperationFactory.OperationFactoryType.CLEAR);
+        return new MultiMapOperationFactory(name, MultiMapOperationFactory.OperationFactoryType.CLEAR);
     }
 
     protected Object reduce(Map<Integer, Object> map) {

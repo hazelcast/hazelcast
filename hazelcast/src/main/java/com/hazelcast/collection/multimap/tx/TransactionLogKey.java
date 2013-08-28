@@ -16,17 +16,16 @@
 
 package com.hazelcast.collection.multimap.tx;
 
-import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.nio.serialization.Data;
 
 public class TransactionLogKey {
 
-    final CollectionProxyId proxyId;
+    final String name;
 
     final Data key;
 
-    public TransactionLogKey(CollectionProxyId proxyId, Data key) {
-        this.proxyId = proxyId;
+    public TransactionLogKey(String name, Data key) {
+        this.name = name;
         this.key = key;
     }
 
@@ -37,13 +36,13 @@ public class TransactionLogKey {
         TransactionLogKey that = (TransactionLogKey) o;
 
         if (!key.equals(that.key)) return false;
-        if (!proxyId.equals(that.proxyId)) return false;
+        if (!name.equals(that.name)) return false;
 
         return true;
     }
 
     public int hashCode() {
-        int result = proxyId.hashCode();
+        int result = name.hashCode();
         result = 31 * result + key.hashCode();
         return result;
     }

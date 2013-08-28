@@ -42,8 +42,8 @@ public class TxnLockAndGetOperation extends CollectionKeyBasedOperation implemen
     public TxnLockAndGetOperation() {
     }
 
-    public TxnLockAndGetOperation(CollectionProxyId proxyId, Data dataKey, long timeout, long ttl, int threadId) {
-        super(proxyId, dataKey);
+    public TxnLockAndGetOperation(String name, Data dataKey, long timeout, long ttl, int threadId) {
+        super(name, dataKey);
         this.timeout = timeout;
         this.ttl = ttl;
         this.threadId = threadId;
@@ -60,7 +60,7 @@ public class TxnLockAndGetOperation extends CollectionKeyBasedOperation implemen
     }
 
     public WaitNotifyKey getWaitKey() {
-        return new LockWaitNotifyKey(new DefaultObjectNamespace(CollectionService.SERVICE_NAME, proxyId), dataKey);
+        return new LockWaitNotifyKey(new DefaultObjectNamespace(CollectionService.SERVICE_NAME, name), dataKey);
     }
 
     public boolean shouldWait() {

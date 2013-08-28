@@ -16,7 +16,6 @@
 
 package com.hazelcast.collection.operations;
 
-import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -28,7 +27,7 @@ import java.io.IOException;
 
 public class MultiMapOperationFactory implements OperationFactory {
 
-    private CollectionProxyId proxyId;
+    private String name;
 
     private OperationFactoryType operationFactoryType;
 
@@ -39,45 +38,44 @@ public class MultiMapOperationFactory implements OperationFactory {
     public MultiMapOperationFactory() {
     }
 
-    public MultiMapOperationFactory(CollectionProxyId proxyId, OperationFactoryType operationFactoryType) {
-        this.proxyId = proxyId;
+    public MultiMapOperationFactory(String name, OperationFactoryType operationFactoryType) {
+        this.name = name;
         this.operationFactoryType = operationFactoryType;
     }
 
-    public MultiMapOperationFactory(CollectionProxyId proxyId, OperationFactoryType operationFactoryType, Data key, Data value) {
-        this(proxyId, operationFactoryType);
+    public MultiMapOperationFactory(String name, OperationFactoryType operationFactoryType, Data key, Data value) {
+        this(name, operationFactoryType);
         this.key = key;
         this.value = value;
     }
 
     public Operation createOperation() {
         if (operationFactoryType == OperationFactoryType.KEY_SET){
-            return new KeySetOperation(proxyId);
+            return new KeySetOperation(name);
         } else if (operationFactoryType == OperationFactoryType.VALUES){
-            return new ValuesOperation(proxyId);
+            return new ValuesOperation(name);
         } else if (operationFactoryType == OperationFactoryType.ENTRY_SET){
-            return new EntrySetOperation(proxyId);
+            return new EntrySetOperation(name);
         } else if (operationFactoryType == OperationFactoryType.CONTAINS){
-            return new ContainsEntryOperation(proxyId, key, value);
+            return new ContainsEntryOperation(name, key, value);
         } else if (operationFactoryType == OperationFactoryType.SIZE){
-            return new SizeOperation(proxyId);
+            return new SizeOperation(name);
         } else if (operationFactoryType == OperationFactoryType.CLEAR){
-            return new ClearOperation(proxyId);
+            return new ClearOperation(name);
         }
 
         return null;
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
-        proxyId.writeData(out);
+        out.writeUTF(name);
         out.writeInt(operationFactoryType.type);
         IOUtil.writeNullableData(out, key);
         IOUtil.writeNullableData(out, value);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
-        proxyId = new CollectionProxyId();
-        proxyId.readData(in);
+        name = in.readUTF();
         operationFactoryType = OperationFactoryType.getByType(in.readInt());
         key = IOUtil.readNullableData(in);
         value = IOUtil.readNullableData(in);

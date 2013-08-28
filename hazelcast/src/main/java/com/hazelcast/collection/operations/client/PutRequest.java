@@ -18,7 +18,6 @@ package com.hazelcast.collection.operations.client;
 
 import com.hazelcast.client.InitializingObjectRequest;
 import com.hazelcast.collection.CollectionPortableHook;
-import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.operations.PutOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -43,15 +42,15 @@ public class PutRequest extends CollectionKeyBasedRequest implements Initializin
     public PutRequest() {
     }
 
-    public PutRequest(CollectionProxyId proxyId, Data key, Data value, int index, int threadId) {
-        super(proxyId, key);
+    public PutRequest(String name, Data key, Data value, int index, int threadId) {
+        super(name, key);
         this.value = value;
         this.index = index;
         this.threadId = threadId;
     }
 
     protected Operation prepareOperation() {
-        return new PutOperation(proxyId, key, threadId, value, index);
+        return new PutOperation(name, key, threadId, value, index);
     }
 
     public int getClassId() {
@@ -61,17 +60,17 @@ public class PutRequest extends CollectionKeyBasedRequest implements Initializin
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeInt("i",index);
         writer.writeInt("t", threadId);
+        super.writePortable(writer);
         final ObjectDataOutput out = writer.getRawDataOutput();
         value.writeData(out);
-        super.writePortable(writer);
     }
 
     public void readPortable(PortableReader reader) throws IOException {
         index = reader.readInt("i");
         threadId = reader.readInt("t");
+        super.readPortable(reader);
         final ObjectDataInput in = reader.getRawDataInput();
         value = new Data();
         value.readData(in);
-        super.readPortable(reader);
     }
 }

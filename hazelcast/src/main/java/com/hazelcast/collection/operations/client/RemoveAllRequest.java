@@ -18,7 +18,6 @@ package com.hazelcast.collection.operations.client;
 
 import com.hazelcast.client.InitializingObjectRequest;
 import com.hazelcast.collection.CollectionPortableHook;
-import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.collection.operations.CollectionResponse;
 import com.hazelcast.collection.operations.RemoveAllOperation;
@@ -42,13 +41,13 @@ public class RemoveAllRequest extends CollectionKeyBasedRequest implements Initi
     public RemoveAllRequest() {
     }
 
-    public RemoveAllRequest(CollectionProxyId proxyId, Data key, int threadId) {
-        super(proxyId, key);
+    public RemoveAllRequest(String name, Data key, int threadId) {
+        super(name, key);
         this.threadId = threadId;
     }
 
     protected Operation prepareOperation() {
-        return new RemoveAllOperation(proxyId,key,threadId);
+        return new RemoveAllOperation(name,key,threadId);
     }
 
     public int getClassId() {

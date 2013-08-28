@@ -17,7 +17,6 @@
 package com.hazelcast.collection.multimap.tx;
 
 import com.hazelcast.collection.CollectionDataSerializerHook;
-import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionWrapper;
 import com.hazelcast.collection.operations.CollectionBackupAwareOperation;
 import com.hazelcast.nio.ObjectDataInput;
@@ -43,8 +42,8 @@ public class TxnCommitOperation extends CollectionBackupAwareOperation implement
     public TxnCommitOperation() {
     }
 
-    public TxnCommitOperation(CollectionProxyId proxyId, Data dataKey, int threadId, long version, List<Operation> opList) {
-        super(proxyId, dataKey, threadId);
+    public TxnCommitOperation(String name, Data dataKey, int threadId, long version, List<Operation> opList) {
+        super(name, dataKey, threadId);
         this.version = version;
         this.opList = opList;
     }
@@ -70,7 +69,7 @@ public class TxnCommitOperation extends CollectionBackupAwareOperation implement
     }
 
     public Operation getBackupOperation() {
-        return new TxnCommitBackupOperation(proxyId, dataKey, opList, getCallerUuid(), threadId);
+        return new TxnCommitBackupOperation(name, dataKey, opList, getCallerUuid(), threadId);
     }
 
     public boolean shouldNotify() {

@@ -114,36 +114,6 @@ public class TxnMultiMapTest extends HazelcastTestSupport {
         assertTrue(instances[2].getMultiMap(name).put("key2","value2"));
     }
 
-    @Test
-    public void testPutRemoveList(){
-        Config config = new Config();
-        final String name = "defList";
-
-        final int insCount = 4;
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
-        final HazelcastInstance[] instances = factory.newInstances(config);
-        TransactionContext context = instances[0].newTransactionContext();
-        try {
-            context.beginTransaction();
-
-            TransactionalList mm = context.getList(name);
-            assertEquals(0, mm.size());
-            assertTrue(mm.add("value1"));
-            assertTrue(mm.add("value1"));
-            assertEquals(2, mm.size());
-            assertFalse(mm.remove("value2"));
-            assertTrue(mm.remove("value1"));
-
-            context.commitTransaction();
-        } catch (Exception e){
-            fail(e.getMessage());
-            context.rollbackTransaction();
-        }
-
-        assertEquals(1, instances[1].getList(name).size());
-        assertTrue(instances[2].getList(name).add("value1"));
-    }
-
     @Test(expected = TransactionNotActiveException.class)
     public void testTxnMultimapOuterTransaction() throws Throwable
     {

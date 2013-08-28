@@ -17,7 +17,6 @@
 package com.hazelcast.collection.operations;
 
 import com.hazelcast.collection.CollectionDataSerializerHook;
-import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.serialization.Data;
@@ -38,8 +37,8 @@ public class RemoveAllOperation extends CollectionBackupAwareOperation {
     public RemoveAllOperation() {
     }
 
-    public RemoveAllOperation(CollectionProxyId proxyId, Data dataKey, int threadId) {
-        super(proxyId, dataKey, threadId);
+    public RemoveAllOperation(String name, Data dataKey, int threadId) {
+        super(name, dataKey, threadId);
     }
 
     public void run() throws Exception {
@@ -63,7 +62,7 @@ public class RemoveAllOperation extends CollectionBackupAwareOperation {
     }
 
     public Operation getBackupOperation() {
-        return new RemoveAllBackupOperation(proxyId, dataKey);
+        return new RemoveAllBackupOperation(name, dataKey);
     }
 
     public void onWaitExpire() {

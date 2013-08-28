@@ -39,8 +39,8 @@ public class TxnPutOperation extends CollectionKeyBasedOperation {
     public TxnPutOperation() {
     }
 
-    public TxnPutOperation(CollectionProxyId proxyId, Data dataKey, Data value, long recordId) {
-        super(proxyId, dataKey);
+    public TxnPutOperation(String name, Data dataKey, Data value, long recordId) {
+        super(name, dataKey);
         this.recordId = recordId;
         this.value = value;
     }
@@ -62,7 +62,7 @@ public class TxnPutOperation extends CollectionKeyBasedOperation {
     public void afterRun() throws Exception {
         long elapsed = Math.max(0, Clock.currentTimeMillis()-begin);
         final CollectionService service = getService();
-        service.getLocalMultiMapStatsImpl(proxyId).incrementPuts(elapsed);
+        service.getLocalMultiMapStatsImpl(name).incrementPuts(elapsed);
         if (Boolean.TRUE.equals(response)) {
             publishEvent(EntryEventType.ADDED, dataKey, value);
         }

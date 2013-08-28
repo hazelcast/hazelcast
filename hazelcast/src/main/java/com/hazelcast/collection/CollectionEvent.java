@@ -31,29 +31,29 @@ import java.io.IOException;
  */
 public class CollectionEvent implements DataSerializable {
 
-    CollectionProxyId proxyId;
+    private String name;
 
-    Data key;
+    private Data key;
 
-    Data value;
+    private Data value;
 
-    EntryEventType eventType;
+    private EntryEventType eventType;
 
-    Address caller;
+    private Address caller;
 
     public CollectionEvent() {
     }
 
-    public CollectionEvent(CollectionProxyId proxyId, Data key, Data value, EntryEventType eventType, Address caller) {
-        this.proxyId = proxyId;
+    public CollectionEvent(String name, Data key, Data value, EntryEventType eventType, Address caller) {
+        this.name = name;
         this.key = key;
         this.value = value;
         this.eventType = eventType;
         this.caller = caller;
     }
 
-    public CollectionProxyId getProxyId() {
-        return proxyId;
+    public String getName() {
+        return name;
     }
 
     public Data getValue() {
@@ -73,7 +73,7 @@ public class CollectionEvent implements DataSerializable {
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
-        proxyId.writeData(out);
+        out.writeUTF(name);
         key.writeData(out);
         IOUtil.writeNullableData(out, value);
         out.writeInt(eventType.getType());
@@ -81,8 +81,7 @@ public class CollectionEvent implements DataSerializable {
     }
 
     public void readData(ObjectDataInput in) throws IOException {
-        proxyId = new CollectionProxyId();
-        proxyId.readData(in);
+        name = in.readUTF();
         key = IOUtil.readData(in);
         value = IOUtil.readNullableData(in);
         eventType = EntryEventType.getByType(in.readInt());

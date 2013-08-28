@@ -16,7 +16,6 @@
 
 package com.hazelcast.collection.multimap.tx;
 
-import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.collection.operations.CollectionResponse;
@@ -43,18 +42,18 @@ import java.util.concurrent.Future;
  */
 public abstract class TransactionalMultiMapProxySupport extends AbstractDistributedObject<CollectionService> implements TransactionalObject {
 
-    protected final CollectionProxyId proxyId;
+    protected final String name;
     protected final TransactionSupport tx;
     protected final MultiMapConfig config;
     private long version = -1;
 
     private final Map<Data, Collection<CollectionRecord>> txMap = new HashMap<Data, Collection<CollectionRecord>>();
 
-    protected TransactionalMultiMapProxySupport(NodeEngine nodeEngine, CollectionService service, CollectionProxyId proxyId, TransactionSupport tx, MultiMapConfig config) {
+    protected TransactionalMultiMapProxySupport(NodeEngine nodeEngine, CollectionService service, String name, TransactionSupport tx) {
         super(nodeEngine, service);
-        this.proxyId = proxyId;
+        this.name = name;
         this.tx = tx;
-        this.config = config;
+        this.config = nodeEngine.getConfig().getMultiMapConfig(name);
     }
 
     protected void checkTransactionState(){
@@ -80,7 +79,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
             version = response.getTxVersion();
             coll =  createCollection(response.getRecordCollection(getNodeEngine()));
             txMap.put(key, coll);
-            log = new MultiMapTransactionLog(key, proxyId, ttl, getThreadId(), version);
+            log = new MultiMapTransactionLog(key, name, ttl, getThreadId(), version);
             tx.addTransactionLog(log);
         } else {
             log = (MultiMapTransactionLog)tx.getTransactionLog(getTxLogKey(key));
@@ -91,7 +90,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
                 recordId = nextId(key);
             }
             record.setRecordId(recordId);
-            TxnPutOperation operation = new TxnPutOperation(proxyId, key, value, recordId);
+            TxnPutOperation operation = new TxnPutOperation(name, key, value, recordId);
             log.addOperation(operation);
             return true;
         }
@@ -113,7 +112,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
             version = response.getTxVersion();
             coll =  createCollection(response.getRecordCollection(getNodeEngine()));
             txMap.put(key, coll);
-            log = new MultiMapTransactionLog(key, proxyId, ttl, getThreadId(), version);
+            log = new MultiMapTransactionLog(key, name, ttl, getThreadId(), version);
             tx.addTransactionLog(log);
         } else {
             log = (MultiMapTransactionLog)tx.getTransactionLog(getTxLogKey(key));
@@ -130,7 +129,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
             }
         }
         if (version != -1 || recordId != -1){
-            TxnRemoveOperation operation = new TxnRemoveOperation(proxyId, key, recordId, value);
+            TxnRemoveOperation operation = new TxnRemoveOperation(name, key, recordId, value);
             log.addOperation(operation);
             return recordId != -1;
         }
@@ -150,13 +149,13 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
             }
             version = response.getTxVersion();
             coll =  createCollection(response.getRecordCollection(getNodeEngine()));
-            log = new MultiMapTransactionLog(key, proxyId, ttl, getThreadId(), version);
+            log = new MultiMapTransactionLog(key, name, ttl, getThreadId(), version);
             tx.addTransactionLog(log);
         } else {
             log = (MultiMapTransactionLog)tx.getTransactionLog(getTxLogKey(key));
         }
         txMap.put(key, createCollection());
-        TxnRemoveAllOperation operation = new TxnRemoveAllOperation(proxyId, key, coll);
+        TxnRemoveAllOperation operation = new TxnRemoveAllOperation(name, key, coll);
         log.addOperation(operation);
         return coll;
     }
@@ -165,7 +164,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         throwExceptionIfNull(key);
         Collection<CollectionRecord> coll = txMap.get(key);
         if (coll == null){
-            GetAllOperation operation = new GetAllOperation(proxyId, key);
+            GetAllOperation operation = new GetAllOperation(name, key);
             try {
                 int partitionId = getNodeEngine().getPartitionService().getPartitionId(key);
                 Invocation invocation = getNodeEngine().getOperationService()
@@ -185,7 +184,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         throwExceptionIfNull(key);
         Collection<CollectionRecord> coll = txMap.get(key);
         if (coll == null){
-            CountOperation operation = new CountOperation(proxyId, key);
+            CountOperation operation = new CountOperation(name, key);
             try {
                 int partitionId = getNodeEngine().getPartitionService().getPartitionId(key);
                 Invocation invocation = getNodeEngine().getOperationService()
@@ -203,7 +202,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         checkTransactionState();
         try {
             final Map<Integer, Object> results = getNodeEngine().getOperationService().invokeOnAllPartitions(CollectionService.SERVICE_NAME,
-                    new MultiMapOperationFactory(proxyId, MultiMapOperationFactory.OperationFactoryType.SIZE));
+                    new MultiMapOperationFactory(name, MultiMapOperationFactory.OperationFactoryType.SIZE));
             int size = 0;
             for (Object obj : results.values()) {
                 if (obj == null) {
@@ -226,11 +225,11 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
     }
 
     private TransactionLogKey getTxLogKey(Data key) {
-        return new TransactionLogKey(proxyId, key);
+        return new TransactionLogKey(name, key);
     }
 
     public Object getId() {
-        return proxyId;
+        return name;
     }
 
     public final String getServiceName() {
@@ -249,7 +248,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
 
     private CollectionResponse lockAndGet(Data key, long timeout, long ttl) {
         final NodeEngine nodeEngine = getNodeEngine();
-        TxnLockAndGetOperation operation = new TxnLockAndGetOperation(proxyId, key, timeout, ttl, getThreadId());
+        TxnLockAndGetOperation operation = new TxnLockAndGetOperation(name, key, timeout, ttl, getThreadId());
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
             Invocation invocation = nodeEngine.getOperationService()
@@ -263,7 +262,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
 
     private long nextId(Data key){
         final NodeEngine nodeEngine = getNodeEngine();
-        TxnGenerateRecordIdOperation operation = new TxnGenerateRecordIdOperation(proxyId, key);
+        TxnGenerateRecordIdOperation operation = new TxnGenerateRecordIdOperation(name, key);
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
             Invocation invocation = nodeEngine.getOperationService()

@@ -18,7 +18,6 @@ package com.hazelcast.collection.operations.client;
 
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.collection.CollectionPortableHook;
-import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.concurrent.lock.client.AbstractIsLockedRequest;
 import com.hazelcast.nio.serialization.Data;
@@ -34,29 +33,28 @@ import java.io.IOException;
  */
 public class MultiMapIsLockedRequest extends AbstractIsLockedRequest implements RetryableRequest {
 
-    CollectionProxyId proxyId;
+    String name;
 
     public MultiMapIsLockedRequest() {
     }
 
-    public MultiMapIsLockedRequest(Data key, CollectionProxyId proxyId) {
+    public MultiMapIsLockedRequest(Data key, String name) {
         super(key);
-        this.proxyId = proxyId;
+        this.name = name;
     }
 
     protected ObjectNamespace getNamespace() {
-        return new DefaultObjectNamespace(CollectionService.SERVICE_NAME, proxyId);
+        return new DefaultObjectNamespace(CollectionService.SERVICE_NAME, name);
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
+        writer.writeUTF("n", name);
         super.writePortable(writer);
-        proxyId.writeData(writer.getRawDataOutput());
     }
 
     public void readPortable(PortableReader reader) throws IOException {
+        name = reader.readUTF("n");
         super.readPortable(reader);
-        proxyId = new CollectionProxyId();
-        proxyId.readData(reader.getRawDataInput());
     }
 
 
