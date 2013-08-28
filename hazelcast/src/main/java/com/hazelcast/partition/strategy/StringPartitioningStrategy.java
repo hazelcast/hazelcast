@@ -25,8 +25,7 @@ public class StringPartitioningStrategy implements PartitioningStrategy {
 
     public Object getPartitionKey(Object key) {
         if (key instanceof String) {
-            String partitionKey = getPartitionKey((String) key);
-            return partitionKey != key ? partitionKey : null;
+            return getPartitionKey((String) key);
         }
         return null;
     }
