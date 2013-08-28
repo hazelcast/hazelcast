@@ -17,7 +17,6 @@
 package com.hazelcast.partition.strategy;
 
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.util.PartitionKeyUtil;
 
 /**
  * @author mdogan 8/25/13
@@ -26,9 +25,26 @@ public class StringPartitioningStrategy implements PartitioningStrategy {
 
     public Object getPartitionKey(Object key) {
         if (key instanceof String) {
-            String partitionKey = PartitionKeyUtil.getPartitionKey((String) key);
+            String partitionKey = getPartitionKey((String) key);
             return partitionKey != key ? partitionKey : null;
         }
         return null;
+    }
+
+    public static String getBaseName(String name){
+        if(name == null)return null;
+        int indexOf = name.indexOf('@');
+        if(indexOf == -1) return name;
+        return name.substring(0,indexOf);
+    }
+
+    public static String getPartitionKey(String key) {
+        if (key == null) return null;
+
+        int firstIndexOf = key.indexOf('@');
+        if (firstIndexOf > -1) {
+            key = key.substring(firstIndexOf + 1);
+        }
+        return key;
     }
 }

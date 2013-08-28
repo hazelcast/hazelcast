@@ -21,7 +21,6 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
-import com.hazelcast.util.PartitionKeyUtil;
 
 /**
  * @author mdogan 1/14/13
@@ -45,7 +44,7 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
 
     @Override
     public String getPartitionKey() {
-        return PartitionKeyUtil.getPartitionKey(getName());
+        return StringPartitioningStrategy.getPartitionKey(getName());
     }
 
     public final void destroy() {

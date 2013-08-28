@@ -20,9 +20,9 @@ import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.txn.TransactionContextProxy;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.util.ExceptionUtil;
-import com.hazelcast.util.PartitionKeyUtil;
 
 import java.io.IOException;
 
@@ -44,9 +44,8 @@ abstract class ClientTxnProxy implements TransactionalObject {
         try {
             return clusterService.sendAndReceiveFixedConnection(proxy.getConnection(), request);
         } catch (IOException e) {
-            ExceptionUtil.rethrow(new HazelcastException(e));
+            throw ExceptionUtil.rethrow(new HazelcastException(e));
         }
-        return null;
     }
 
     abstract void onDestroy();
@@ -60,7 +59,7 @@ abstract class ClientTxnProxy implements TransactionalObject {
     }
 
     public String getPartitionKey() {
-        return PartitionKeyUtil.getPartitionKey(getName());
+        return StringPartitioningStrategy.getPartitionKey(getName());
     }
 
     Data toData(Object obj){

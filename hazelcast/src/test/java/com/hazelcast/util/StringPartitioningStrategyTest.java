@@ -18,11 +18,11 @@ package com.hazelcast.util;
 
 import org.junit.Test;
 
-import static com.hazelcast.util.PartitionKeyUtil.getBaseName;
-import static com.hazelcast.util.PartitionKeyUtil.getPartitionKey;
+import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
+import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getPartitionKey;
 import static org.junit.Assert.assertEquals;
 
-public class PartitionKeyUtilTest {
+public class StringPartitioningStrategyTest {
 
     @Test
     public void testGetBaseName() {
@@ -37,8 +37,6 @@ public class PartitionKeyUtilTest {
 
     @Test
     public void testGetPartitionKey() {
-//        Date date = new Date();
-//        assertEquals(date, getPartitionKey(date));
         assertEquals("foo", getPartitionKey("foo"));
         assertEquals("", getPartitionKey(""));
         assertEquals(null, getPartitionKey(null));
