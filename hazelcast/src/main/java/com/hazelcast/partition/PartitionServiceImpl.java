@@ -17,10 +17,7 @@
 package com.hazelcast.partition;
 
 import com.hazelcast.config.PartitionGroupConfig;
-import com.hazelcast.core.HazelcastException;
-import com.hazelcast.core.Member;
-import com.hazelcast.core.MigrationEvent;
-import com.hazelcast.core.MigrationListener;
+import com.hazelcast.core.*;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
 import com.hazelcast.logging.ILogger;
@@ -36,7 +33,6 @@ import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
-import com.hazelcast.util.PartitionKeyUtil;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -816,7 +812,6 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
     }
 
     public final int getPartitionId(Object key) {
-        key = PartitionKeyUtil.getPartitionKey(key);
         return getPartitionId(nodeEngine.toData(key));
     }
 

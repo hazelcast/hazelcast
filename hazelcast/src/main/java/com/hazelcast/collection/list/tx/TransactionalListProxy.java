@@ -34,7 +34,11 @@ public class TransactionalListProxy<E> extends TransactionalMultiMapProxySupport
 
     public TransactionalListProxy(NodeEngine nodeEngine, CollectionService service, CollectionProxyId proxyId, TransactionSupport tx) {
         super(nodeEngine, service, proxyId, tx, MultiMapProxySupport.createConfig(proxyId));
-        key = nodeEngine.toData(MultiMapProxySupport.createCollectionKey(proxyId));
+        key = getNameAsPartitionAwareData();
+    }
+
+    public String getName() {
+        return proxyId.getKeyName();
     }
 
     public boolean add(E e) {

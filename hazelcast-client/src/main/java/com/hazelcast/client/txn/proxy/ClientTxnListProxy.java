@@ -22,10 +22,7 @@ import com.hazelcast.collection.CollectionService;
 import com.hazelcast.collection.operations.client.TxnListAddRequest;
 import com.hazelcast.collection.operations.client.TxnListRemoveRequest;
 import com.hazelcast.collection.operations.client.TxnListSizeRequest;
-import com.hazelcast.core.ICollection;
 import com.hazelcast.core.TransactionalList;
-
-import java.util.Collection;
 
 /**
  * @author ali 6/11/13

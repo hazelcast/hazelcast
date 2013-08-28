@@ -76,6 +76,8 @@ public class MapConfig {
 
     private boolean statisticsEnabled = true;
 
+    private PartitionStrategyConfig partitionStrategyConfig;
+
     public enum InMemoryFormat {
         BINARY, OBJECT, CACHED
     }
@@ -111,6 +113,7 @@ public class MapConfig {
         this.mergePolicy = config.mergePolicy;
         this.wanReplicationRef = config.wanReplicationRef;
         this.listenerConfigs = new ArrayList<EntryListenerConfig>(config.getEntryListenerConfigs());
+        this.partitionStrategyConfig = config.partitionStrategyConfig;
     }
 
     /**
@@ -411,6 +414,15 @@ public class MapConfig {
         return this;
     }
 
+    public PartitionStrategyConfig getPartitionStrategyConfig() {
+        return partitionStrategyConfig;
+    }
+
+    public MapConfig setPartitionStrategyConfig(PartitionStrategyConfig partitionStrategyConfig) {
+        this.partitionStrategyConfig = partitionStrategyConfig;
+        return this;
+    }
+
     public boolean isNearCacheEnabled() {
         return nearCacheConfig != null;
     }
@@ -460,7 +472,6 @@ public class MapConfig {
                 .hashCode());
         result = prime * result + this.timeToLiveSeconds;
         result = prime * result + (this.readBackupData ? 1231 : 1237);
-//        result = prime * result + (this.valueIndexed ? 1231 : 1237);
         return result;
     }
 
@@ -482,7 +493,6 @@ public class MapConfig {
                         this.maxSizeConfig.getSize() == other.maxSizeConfig.getSize() &&
                         this.timeToLiveSeconds == other.timeToLiveSeconds &&
                         this.readBackupData == other.readBackupData &&
-//                        this.valueIndexed == other.valueIndexed &&
                         (this.mergePolicy != null ? this.mergePolicy.equals(other.mergePolicy) : other.mergePolicy == null) &&
                         (this.inMemoryFormat != null ? this.inMemoryFormat.equals(other.inMemoryFormat) : other.inMemoryFormat == null) &&
                         (this.evictionPolicy != null ? this.evictionPolicy.equals(other.evictionPolicy)

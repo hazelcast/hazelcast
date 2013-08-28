@@ -31,7 +31,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
-import java.util.logging.Level;
 
 import static com.hazelcast.util.ValidationUtil.isNotNull;
 
@@ -74,7 +73,7 @@ public class ConfigXmlGenerator {
                 .append("xmlns=\"http://www.hazelcast.com/schema/config\"\n")
                 .append("xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\n")
                 .append("xsi:schemaLocation=\"http://www.hazelcast.com/schema/config ")
-                .append("http://www.hazelcast.com/schema/config/hazelcast-config-3.0.xsd\">");
+                .append("http://www.hazelcast.com/schema/config/hazelcast-config-3.1.xsd\">");
         xml.append("<group>");
         xml.append("<name>").append(config.getGroupConfig().getName()).append("</name>");
         xml.append("<password>").append(config.getGroupConfig().getPassword()).append("</password>");
@@ -285,6 +284,16 @@ public class ConfigXmlGenerator {
             if (m.getStorageType() != null) {
                 xml.append("<storage-type>").append(m.getStorageType().toString()).append("</storage-type>");
             }
+            if (m.getPartitionStrategyConfig() != null) {
+                xml.append("<partition-strategy>");
+                PartitionStrategyConfig psc = m.getPartitionStrategyConfig();
+                if (psc.getPartitionStrategy() != null) {
+                    xml.append(psc.getPartitionStrategy().getClass().getName());
+                } else {
+                    xml.append(psc.getPartitionStrategyClass());
+                }
+                xml.append("</partition-strategy>");
+            }
             xml.append("</map>");
         }
         final Collection<MultiMapConfig> mmCfgs = config.getMultiMapConfigs().values();
@@ -301,6 +310,16 @@ public class ConfigXmlGenerator {
                 }
                 xml.append("</entry-listeners>");
             }
+//            if (mm.getPartitionStrategyConfig() != null) {
+//                xml.append("<partition-strategy>");
+//                PartitionStrategyConfig psc = mm.getPartitionStrategyConfig();
+//                if (psc.getPartitionStrategy() != null) {
+//                    xml.append(psc.getPartitionStrategy().getClass().getName());
+//                } else {
+//                    xml.append(psc.getPartitionStrategyClass());
+//                }
+//                xml.append("</partition-strategy>");
+//            }
             xml.append("</multimap>");
         }
         final Collection<TopicConfig> tCfgs = config.getTopicConfigs().values();

@@ -214,24 +214,26 @@ public class MapService implements ManagedService, MigrationAwareService,
             MapReplicationUpdate replicationUpdate = (MapReplicationUpdate) eventObject;
             EntryView entryView = replicationUpdate.getEntryView();
             MapMergePolicy mergePolicy = replicationUpdate.getMergePolicy();
-            MergeOperation operation = new MergeOperation(replicationUpdate.getMapName(), toData(entryView.getKey()), entryView, mergePolicy);
+            String mapName = replicationUpdate.getMapName();
+            MapContainer mapContainer = getMapContainer(mapName);
+            MergeOperation operation = new MergeOperation(mapName, toData(entryView.getKey(), mapContainer.getPartitionStrategy()), entryView, mergePolicy);
             try {
                 int partitionId = nodeEngine.getPartitionService().getPartitionId(entryView.getKey());
                 Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId).build();
                 invocation.invoke().get();
             } catch (Throwable t) {
-                ExceptionUtil.rethrow(t);
+                throw ExceptionUtil.rethrow(t);
             }
         } else if (eventObject instanceof MapReplicationRemove) {
             MapReplicationRemove replicationRemove = (MapReplicationRemove) eventObject;
-
-            DeleteOperation operation = new DeleteOperation(replicationRemove.getMapName(), toData(replicationRemove.getKey()));
+            String mapName = replicationRemove.getMapName();
+            DeleteOperation operation = new DeleteOperation(replicationRemove.getMapName(), replicationRemove.getKey());
             try {
                 int partitionId = nodeEngine.getPartitionService().getPartitionId(replicationRemove.getKey());
                 Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId).build();
                 invocation.invoke().get();
             } catch (Throwable t) {
-                ExceptionUtil.rethrow(t);
+                throw ExceptionUtil.rethrow(t);
             }
         }
     }
@@ -647,13 +649,23 @@ public class MapService implements ManagedService, MigrationAwareService,
         }
     }
 
+    public Data toData(Object object, PartitioningStrategy partitionStrategy) {
+        if (object == null)
+            return null;
+        if (object instanceof Data) {
+            return (Data) object;
+        } else {
+            return nodeEngine.getSerializationService().toData(object, partitionStrategy);
+        }
+    }
+
     public Data toData(Object object) {
         if (object == null)
             return null;
         if (object instanceof Data) {
             return (Data) object;
         } else {
-            return nodeEngine.toData(object);
+            return nodeEngine.getSerializationService().toData(object);
         }
     }
 
@@ -661,10 +673,10 @@ public class MapService implements ManagedService, MigrationAwareService,
         if (value1 == null && value2 == null) {
             return true;
         }
-        if (value1 == null && value2 != null) {
+        if (value1 == null) {
             return false;
         }
-        if (value1 != null && value2 == null) {
+        if (value2 == null) {
             return false;
         }
 
@@ -799,6 +811,7 @@ public class MapService implements ManagedService, MigrationAwareService,
             }
 
             public void run() {
+                MapContainer mapContainer = getMapContainer(mapName);
                 for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
                     if ((i % ExecutorConfig.DEFAULT_POOL_SIZE) != mod) {
                         continue;

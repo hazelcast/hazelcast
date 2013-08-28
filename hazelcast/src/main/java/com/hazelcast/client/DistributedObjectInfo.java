@@ -72,4 +72,24 @@ public class DistributedObjectInfo implements Portable {
         serviceName = reader.readUTF("sn");
         id = reader.getRawDataInput().readObject();
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        DistributedObjectInfo that = (DistributedObjectInfo) o;
+
+        if (id != null ? !id.equals(that.id) : that.id != null) return false;
+        if (serviceName != null ? !serviceName.equals(that.serviceName) : that.serviceName != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = serviceName != null ? serviceName.hashCode() : 0;
+        result = 31 * result + (id != null ? id.hashCode() : 0);
+        return result;
+    }
 }

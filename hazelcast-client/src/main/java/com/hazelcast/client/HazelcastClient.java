@@ -76,7 +76,7 @@ public final class HazelcastClient implements HazelcastInstance {
     private final static AtomicInteger CLIENT_ID = new AtomicInteger();
     private final static ConcurrentMap<Integer, HazelcastClientProxy> CLIENTS = new ConcurrentHashMap<Integer, HazelcastClientProxy>(5);
     private final int id = CLIENT_ID.getAndIncrement();
-    private final String name;
+    private final String instanceName;
     private final ClientConfig config;
     private final ThreadGroup threadGroup;
     private final LifecycleServiceImpl lifecycleService;
@@ -92,8 +92,8 @@ public final class HazelcastClient implements HazelcastInstance {
     private HazelcastClient(ClientConfig config) {
         this.config = config;
         final GroupConfig groupConfig = config.getGroupConfig();
-        name = "hz.client_" + id + (groupConfig != null ? "_" + groupConfig.getName() : "");
-        threadGroup = new ThreadGroup(name);
+        instanceName = "hz.client_" + id + (groupConfig != null ? "_" + groupConfig.getName() : "");
+        threadGroup = new ThreadGroup(instanceName);
         lifecycleService = new LifecycleServiceImpl(this);
         try {
             serializationService = new SerializationServiceBuilder()
@@ -105,7 +105,7 @@ public final class HazelcastClient implements HazelcastInstance {
             throw ExceptionUtil.rethrow(e);
         }
         proxyManager = new ProxyManager(this);
-        executionService = new ClientExecutionServiceImpl(name, threadGroup, Thread.currentThread().getContextClassLoader(), config.getExecutorPoolSize());
+        executionService = new ClientExecutionServiceImpl(instanceName, threadGroup, Thread.currentThread().getContextClassLoader(), config.getExecutorPoolSize());
         clusterService = new ClientClusterServiceImpl(this);
         LoadBalancer loadBalancer = config.getLoadBalancer();
         if (loadBalancer == null) {
@@ -173,7 +173,7 @@ public final class HazelcastClient implements HazelcastInstance {
 
     @Override
     public String getName() {
-        return name;
+        return instanceName;
     }
 
     @Override
@@ -217,15 +217,7 @@ public final class HazelcastClient implements HazelcastInstance {
     @Override
     public ILock getLock(Object key) {
         //this method will be deleted in the near future.
-        String name;
-        if(key instanceof String){
-            name = (String)key;
-        } else{
-            Data data = getSerializationService().toData(key);
-            name = Integer.toString(data.hashCode());
-        }
-
-        return getDistributedObject(LockServiceImpl.SERVICE_NAME, name);
+        return getDistributedObject(LockServiceImpl.SERVICE_NAME, key);
     }
 
     @Override
@@ -342,17 +334,6 @@ public final class HazelcastClient implements HazelcastInstance {
 
     @Override
     public <T extends DistributedObject> T getDistributedObject(String serviceName, Object id) {
-        if(LockServiceImpl.SERVICE_NAME.equals(serviceName)){
-            if(!(id instanceof String)){
-                Data data = getSerializationService().toData(id);
-                id = Integer.toString(data.hashCode());
-            }
-        }
-        return (T) proxyManager.getProxy(serviceName, id);
-    }
-
-    @Override
-    public <T extends DistributedObject> T getDistributedObject(String serviceName, String name) {
         return (T) proxyManager.getProxy(serviceName, id);
     }
 

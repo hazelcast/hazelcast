@@ -37,7 +37,7 @@ public class ObjectSetProxy<E> extends MultiMapProxySupport implements ISet<E>, 
 
     public ObjectSetProxy(CollectionService service, NodeEngine nodeEngine, CollectionProxyId proxyId) {
         super(service, nodeEngine, createConfig(proxyId), proxyId);
-        key = nodeEngine.toData(createCollectionKey(proxyId));
+        key = getNameAsPartitionAwareData();
     }
 
     public String getName() {

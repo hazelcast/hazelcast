@@ -18,12 +18,16 @@ package com.hazelcast.spi;
 
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.util.PartitionKeyUtil;
+import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 
 /**
  * @author mdogan 1/14/13
  */
 public abstract class AbstractDistributedObject<S extends RemoteService> implements DistributedObject {
+
+    protected static final PartitioningStrategy PARTITIONING_STRATEGY = new StringPartitioningStrategy();
 
     private volatile NodeEngine nodeEngine;
     private volatile S service;
@@ -33,9 +37,14 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
         this.service = service;
     }
 
+    protected Data getNameAsPartitionAwareData() {
+        String name = getName();
+        return getNodeEngine().getSerializationService().toData(name, PARTITIONING_STRATEGY);
+    }
+
     @Override
     public String getPartitionKey() {
-        return (String) PartitionKeyUtil.getPartitionKey(getName());
+        return StringPartitioningStrategy.getPartitionKey(getName());
     }
 
     public final void destroy() {
@@ -72,5 +81,27 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
     final void invalidate() {
         nodeEngine = null;
         service = null;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        DistributedObject that = (DistributedObject) o;
+        Object id = getId();
+        if (id != null ? !id.equals(that.getId()) : that.getId() != null) return false;
+
+        String serviceName = getServiceName();
+        if (serviceName != null ? !serviceName.equals(that.getServiceName()) : that.getServiceName() != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = getServiceName() != null ? getServiceName().hashCode() : 0;
+        result = 31 * result + (getId() != null ? getId().hashCode() : 0);
+        return result;
     }
 }

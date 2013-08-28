@@ -38,9 +38,9 @@ import java.util.*;
  */
 public class ClientListProxy<E> extends ClientProxy implements IList<E> {
 
-    final CollectionProxyId proxyId;
+    private final CollectionProxyId proxyId;
 
-    Data key;
+    private volatile Data key;
 
     public ClientListProxy(String serviceName, CollectionProxyId objectId) {
         super(serviceName, objectId);

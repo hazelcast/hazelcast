@@ -51,8 +51,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         if (k == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
-        Data key = getService().toData(k);
-        return (V) getService().toObject(getInternal(key));
+        MapService service = getService();
+        Data key = service.toData(k, partitionStrategy);
+        return (V) service.toObject(getInternal(key));
     }
 
     public V put(final K k, final V v) {
@@ -66,10 +67,11 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         if (v == null) {
             throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
         }
-        final Data key = getService().toData(k);
-        final Data value = getService().toData(v);
+        MapService service = getService();
+        final Data key = service.toData(k, partitionStrategy);
+        final Data value = service.toData(v);
         final Data result = putInternal(key, value, ttl, timeunit);
-        return (V) getService().toObject(result);
+        return (V) service.toObject(result);
     }
 
     public boolean tryPut(final K k, final V v, final long timeout, final TimeUnit timeunit) {
@@ -79,8 +81,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         if (v == null) {
             throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
         }
-        final Data key = getService().toData(k);
-        final Data value = getService().toData(v);
+        MapService service = getService();
+        final Data key = service.toData(k, partitionStrategy);
+        final Data value = service.toData(v);
         return tryPutInternal(key, value, timeout, timeunit);
     }
 
@@ -95,10 +98,11 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         if (v == null) {
             throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
         }
-        final Data key = getService().toData(k);
-        final Data value = getService().toData(v);
+        MapService service = getService();
+        final Data key = service.toData(k, partitionStrategy);
+        final Data value = service.toData(v);
         final Data result = putIfAbsentInternal(key, value, ttl, timeunit);
-        return (V) getService().toObject(result);
+        return (V) service.toObject(result);
     }
 
     public void putTransient(final K k, final V v, final long ttl, final TimeUnit timeunit) {
@@ -108,8 +112,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         if (v == null) {
             throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
         }
-        final Data key = getService().toData(k);
-        final Data value = getService().toData(v);
+        MapService service = getService();
+        final Data key = service.toData(k, partitionStrategy);
+        final Data value = service.toData(v);
         putTransientInternal(key, value, ttl, timeunit);
     }
 
@@ -120,9 +125,10 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         if (v == null) {
             throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
         }
-        final Data key = getService().toData(k);
-        final Data oldValue = getService().toData(o);
-        final Data value = getService().toData(v);
+        MapService service = getService();
+        final Data key = service.toData(k, partitionStrategy);
+        final Data oldValue = service.toData(o);
+        final Data value = service.toData(v);
         return replaceInternal(key, oldValue, value);
     }
 
@@ -133,9 +139,10 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         if (v == null) {
             throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
         }
-        final Data key = getService().toData(k);
-        final Data value = getService().toData(v);
-        return (V) getService().toObject(replaceInternal(key, value));
+        MapService service = getService();
+        final Data key = service.toData(k, partitionStrategy);
+        final Data value = service.toData(v);
+        return (V) service.toObject(replaceInternal(key, value));
     }
 
     public void set(K key, V value) {
@@ -149,8 +156,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         if (v == null) {
             throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
         }
-        final Data key = getService().toData(k);
-        final Data value = getService().toData(v);
+        MapService service = getService();
+        final Data key = service.toData(k, partitionStrategy);
+        final Data value = service.toData(v);
         setInternal(key, value, ttl, timeunit);
     }
 
@@ -158,9 +166,10 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         if (k == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
-        final Data key = getService().toData(k);
+        MapService service = getService();
+        final Data key = service.toData(k, partitionStrategy);
         final Data result = removeInternal(key);
-        return (V) getService().toObject(result);
+        return (V) service.toObject(result);
     }
 
     public boolean remove(final Object k, final Object v) {
@@ -170,8 +179,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         if (v == null) {
             throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
         }
-        final Data key = getService().toData(k);
-        final Data value = getService().toData(v);
+        MapService service = getService();
+        final Data key = service.toData(k, partitionStrategy);
+        final Data value = service.toData(v);
         return removeInternal(key, value);
     }
 
@@ -179,7 +189,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         if (k == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
-        final Data key = getService().toData(k);
+        final Data key = getService().toData(k, partitionStrategy);
         deleteInternal(key);
     }
 
@@ -187,7 +197,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         if (k == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
-        Data key = getService().toData(k);
+        Data key = getService().toData(k, partitionStrategy);
         return containsKeyInternal(key);
     }
 
@@ -204,16 +214,16 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
         NodeEngine nodeEngine = getNodeEngine();
-        Data k = getService().toData(key);
-        lockSupport.lock(nodeEngine, k, k);
+        Data k = getService().toData(key, partitionStrategy);
+        lockSupport.lock(nodeEngine, k);
     }
 
     public void lock(final Object key, final long leaseTime, final TimeUnit timeUnit) {
         if (key == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
-        Data k = getService().toData(key);
-        lockSupport.lock(getNodeEngine(), k, k, timeUnit.toMillis(leaseTime));
+        Data k = getService().toData(key, partitionStrategy);
+        lockSupport.lock(getNodeEngine(), k, timeUnit.toMillis(leaseTime));
     }
 
     public void unlock(final K key) {
@@ -221,15 +231,15 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
         NodeEngine nodeEngine = getNodeEngine();
-        Data k = getService().toData(key);
-        lockSupport.unlock(nodeEngine, k, k);
+        Data k = getService().toData(key, partitionStrategy);
+        lockSupport.unlock(nodeEngine, k);
     }
 
     public boolean tryRemove(final K key, final long timeout, final TimeUnit timeunit) {
         if (key == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
-        Data k = getService().toData(key);
+        Data k = getService().toData(key, partitionStrategy);
         return tryRemoveInternal(k, timeout, timeunit);
     }
 
@@ -237,7 +247,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         if (k == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
-        Data key = getService().toData(k);
+        Data key = getService().toData(k, partitionStrategy);
         NodeEngine nodeEngine = getNodeEngine();
         return new DelegatingFuture<V>(getAsyncInternal(key), nodeEngine.getSerializationService());
     }
@@ -246,9 +256,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         if (k == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
-        Data key = getService().toData(k);
+        Data key = getService().toData(k, partitionStrategy);
         NodeEngine nodeEngine = getNodeEngine();
-        return lockSupport.isLocked(nodeEngine, key, key);
+        return lockSupport.isLocked(nodeEngine, key);
     }
 
     public Future putAsync(final K key, final V value) {
@@ -265,8 +275,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         if (value == null) {
             throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
         }
-        Data k = getService().toData(key);
-        Data v = getService().toData(value);
+        MapService service = getService();
+        Data k = service.toData(key, partitionStrategy);
+        Data v = service.toData(value);
         return new DelegatingFuture<V>(putAsyncInternal(k, v, ttl, timeunit), getNodeEngine().getSerializationService());
     }
 
@@ -274,17 +285,18 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         if (key == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
-        Data k = getService().toData(key);
+        Data k = getService().toData(key, partitionStrategy);
         return new DelegatingFuture<V>(removeAsyncInternal(k), getNodeEngine().getSerializationService());
     }
 
     public Map<K, V> getAll(final Set<K> keys) {
         Set<Data> ks = new HashSet(keys.size());
+        MapService service = getService();
         for (K key : keys) {
             if (key == null) {
                 throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
             }
-            Data k = getService().toData(key);
+            Data k = service.toData(key, partitionStrategy);
             ks.add(k);
         }
         return (Map<K, V>) getAllObjectInternal(ks);
@@ -299,8 +311,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
         final NodeEngine nodeEngine = getNodeEngine();
-        Data k = getService().toData(key);
-        return lockSupport.tryLock(nodeEngine, k, k);
+        Data k = getService().toData(key, partitionStrategy);
+        return lockSupport.tryLock(nodeEngine, k);
     }
 
     public boolean tryLock(final K key, final long time, final TimeUnit timeunit) throws InterruptedException {
@@ -308,8 +320,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
         final NodeEngine nodeEngine = getNodeEngine();
-        Data k = getService().toData(key);
-        return lockSupport.tryLock(nodeEngine, k, time, timeunit, k);
+        Data k = getService().toData(key, partitionStrategy);
+        return lockSupport.tryLock(nodeEngine, k, time, timeunit);
     }
 
     public void forceUnlock(final K key) {
@@ -317,8 +329,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
         final NodeEngine nodeEngine = getNodeEngine();
-        Data k = getService().toData(key);
-        lockSupport.forceUnlock(nodeEngine, k, k);
+        Data k = getService().toData(key, partitionStrategy);
+        lockSupport.forceUnlock(nodeEngine, k);
     }
 
     public String addInterceptor(MapInterceptor interceptor) {
@@ -346,7 +358,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         if (listener == null) {
             throw new NullPointerException("Listener should not be null!");
         }
-        return addEntryListenerInternal(listener, getService().toData(key), includeValue);
+        return addEntryListenerInternal(listener, getService().toData(key, partitionStrategy), includeValue);
     }
 
     public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue) {
@@ -356,7 +368,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         if (predicate == null) {
             throw new NullPointerException("Predicate should not be null!");
         }
-        return addEntryListenerInternal(listener, predicate, getService().toData(key), includeValue);
+        return addEntryListenerInternal(listener, predicate, getService().toData(key, partitionStrategy), includeValue);
     }
 
     public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, boolean includeValue) {
@@ -380,7 +392,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         if (key == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
-        SimpleEntryView<K, V> entryViewInternal = (SimpleEntryView) getEntryViewInternal(getService().toData(key));
+        SimpleEntryView<K, V> entryViewInternal = (SimpleEntryView) getEntryViewInternal(getService().toData(key, partitionStrategy));
         if (entryViewInternal == null) {
             return null;
         }
@@ -394,7 +406,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         if (key == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
-        return evictInternal(getService().toData(key));
+        return evictInternal(getService().toData(key, partitionStrategy));
     }
 
     public void clear() {
@@ -469,7 +481,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         if (key == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
-        return getService().toObject(executeOnKeyInternal(getService().toData(key), entryProcessor));
+        MapService service = getService();
+        return service.toObject(executeOnKeyInternal(service.toData(key, partitionStrategy), entryProcessor));
     }
 
     protected Object invoke(Operation operation, int partitionId) throws Throwable {

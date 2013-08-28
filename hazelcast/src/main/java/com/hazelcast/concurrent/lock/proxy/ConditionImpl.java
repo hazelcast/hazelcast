@@ -18,10 +18,12 @@ package com.hazelcast.concurrent.lock.proxy;
 
 import com.hazelcast.concurrent.lock.AwaitOperation;
 import com.hazelcast.concurrent.lock.BeforeAwaitOperation;
+import com.hazelcast.concurrent.lock.InternalLockNamespace;
 import com.hazelcast.concurrent.lock.SignalOperation;
 import com.hazelcast.core.ICondition;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.ObjectNamespace;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
@@ -40,6 +42,7 @@ final class ConditionImpl implements ICondition {
     private final LockProxy lockProxy;
     private final int partitionId;
     private final String conditionId;
+    private final ObjectNamespace namespace = new InternalLockNamespace();
 
     public ConditionImpl(LockProxy lockProxy, String id) {
         this.lockProxy = lockProxy;
@@ -72,8 +75,7 @@ final class ConditionImpl implements ICondition {
         final int threadId = ThreadUtil.getThreadId();
 
         final Invocation inv1 = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME,
-                new BeforeAwaitOperation(lockProxy.namespace, lockProxy.key,
-                        threadId, conditionId), partitionId).build();
+                new BeforeAwaitOperation(namespace, lockProxy.key, threadId, conditionId), partitionId).build();
         try {
             Future f = inv1.invoke();
             f.get();
@@ -81,8 +83,7 @@ final class ConditionImpl implements ICondition {
             throw ExceptionUtil.rethrow(t);
         }
         final Invocation inv2 = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME,
-                new AwaitOperation(lockProxy.namespace, lockProxy.key,
-                        threadId, unit.toMillis(time), conditionId), partitionId).build();
+                new AwaitOperation(namespace, lockProxy.key, threadId, unit.toMillis(time), conditionId), partitionId).build();
         try {
             Future f = inv2.invoke();
             return Boolean.TRUE.equals(f.get());
@@ -103,8 +104,7 @@ final class ConditionImpl implements ICondition {
     private void signal(boolean all) {
         final NodeEngine nodeEngine = lockProxy.getNodeEngine();
         final Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME,
-                new SignalOperation(lockProxy.namespace, lockProxy.key,
-                        ThreadUtil.getThreadId(), conditionId, all), partitionId).build();
+                new SignalOperation(namespace, lockProxy.key, ThreadUtil.getThreadId(), conditionId, all), partitionId).build();
         Future f = inv.invoke();
         try {
             f.get();

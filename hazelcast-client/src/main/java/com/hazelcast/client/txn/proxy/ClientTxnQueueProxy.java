@@ -18,7 +18,6 @@ package com.hazelcast.client.txn.proxy;
 
 import com.hazelcast.client.txn.TransactionContextProxy;
 import com.hazelcast.core.TransactionalQueue;
-import com.hazelcast.map.MapService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.queue.client.TxnOfferRequest;

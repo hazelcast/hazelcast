@@ -35,7 +35,6 @@ public interface DistributedObject {
      * Returns the unique id for this object.
      *
      * @return id the of this instance
-     * @deprecated  will be removed in Hazelcast 3.1. Use {@link #getName} instead.
      */
     Object getId();
 
@@ -49,7 +48,7 @@ public interface DistributedObject {
     String getPartitionKey();
 
     /**
-     * Returns the name that uniquely identifies this DistributedObject. Returned value will never be null.
+     * Returns the name for this DistributedObject. Returned value will never be null.
      *
      * @return the name for this object.
      */

@@ -14,9 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.util;
+package com.hazelcast.partition.strategy;
 
-public class PartitionKeyUtil {
+import com.hazelcast.core.PartitioningStrategy;
+
+/**
+ * @author mdogan 8/25/13
+ */
+public class StringPartitioningStrategy implements PartitioningStrategy {
+
+    public Object getPartitionKey(Object key) {
+        if (key instanceof String) {
+            String partitionKey = getPartitionKey((String) key);
+            return partitionKey != key ? partitionKey : null;
+        }
+        return null;
+    }
 
     public static String getBaseName(String name){
         if(name == null)return null;
@@ -25,19 +38,13 @@ public class PartitionKeyUtil {
         return name.substring(0,indexOf);
     }
 
-    public static Object getPartitionKey(Object key) {
+    public static String getPartitionKey(String key) {
         if (key == null) return null;
-        if (!(key instanceof String)) return key;
 
-        String s = (String) key;
-        int firstIndexOf = s.indexOf('@');
+        int firstIndexOf = key.indexOf('@');
         if (firstIndexOf > -1) {
-            key = s.substring(firstIndexOf + 1);
+            key = key.substring(firstIndexOf + 1);
         }
-
         return key;
     }
-
-    //we don't want any instances
-    private PartitionKeyUtil(){}
 }

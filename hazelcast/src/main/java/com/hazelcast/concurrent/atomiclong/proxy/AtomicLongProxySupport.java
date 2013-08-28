@@ -37,7 +37,7 @@ public class AtomicLongProxySupport extends AbstractDistributedObject<AtomicLong
     public AtomicLongProxySupport(String name, NodeEngine nodeEngine, AtomicLongService service) {
         super(nodeEngine, service);
         this.name = name;
-        this.partitionId = nodeEngine.getPartitionService().getPartitionId(name);
+        this.partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
     }
 
     public long addAndGetInternal(long delta) {

@@ -121,6 +121,7 @@ public interface HazelcastInstance {
     /**
      * @deprecated will be removed in Hazelcast 3.2. Use {@link #getLock(String)} instead.
      */
+    @Deprecated
     ILock getLock(Object key);
 
     /**
@@ -294,11 +295,13 @@ public interface HazelcastInstance {
     LifecycleService getLifecycleService();
 
     /**
-     * @deprecated use {@link #getDistributedObject(String, String)}
+     *
+     * @param serviceName name of the service
+     * @param id identifier of the object
+     * @param <T> type of the DistributedObject
+     * @return DistributedObject created by the service
      */
     <T extends DistributedObject> T getDistributedObject(String serviceName, Object id);
-
-    <T extends DistributedObject> T getDistributedObject(String serviceName, String name);
 
     /**
      * Returns a ConcurrentMap that can be used to add user-context to the HazelcastInstance. This can be used

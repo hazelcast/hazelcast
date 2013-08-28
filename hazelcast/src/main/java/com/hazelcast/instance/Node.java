@@ -34,6 +34,7 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.partition.PartitionServiceImpl;
+import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -50,7 +51,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
 
 public class Node {
 
@@ -120,10 +120,18 @@ public class Node {
         this.groupProperties = new GroupProperties(config);
         SerializationService ss;
         try {
+            String partitionStrategyClassName = groupProperties.PARTITIONING_STRATEGY_CLASS.getString();
+            final PartitioningStrategy partitionStrategy;
+            if (partitionStrategyClassName != null && partitionStrategyClassName.length() > 0) {
+                partitionStrategy = ClassLoaderUtil.newInstance(configClassLoader, partitionStrategyClassName);
+            } else {
+                partitionStrategy = new DefaultPartitioningStrategy();
+            }
             ss = new SerializationServiceBuilder()
                     .setClassLoader(configClassLoader)
                     .setConfig(config.getSerializationConfig())
                     .setManagedContext(hazelcastInstance.managedContext)
+                    .setPartitionStrategy(partitionStrategy)
                     .setHazelcastInstance(hazelcastInstance)
                     .build();
         } catch (Exception e) {

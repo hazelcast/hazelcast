@@ -38,7 +38,7 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
     public SemaphoreProxy(String name, SemaphoreService service, NodeEngine nodeEngine) {
         super(nodeEngine, service);
         this.name = name;
-        this.partitionId = nodeEngine.getPartitionService().getPartitionId(name);
+        this.partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
     }
 
     public String getName() {

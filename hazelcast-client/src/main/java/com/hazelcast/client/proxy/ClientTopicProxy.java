@@ -36,7 +36,7 @@ import com.hazelcast.util.ExceptionUtil;
 public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
 
     private final String name;
-    private Data key;
+    private volatile Data key;
 
     public ClientTopicProxy(String serviceName, String objectId) {
         super(serviceName, objectId);
@@ -53,7 +53,7 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
         AddMessageListenerRequest request = new AddMessageListenerRequest(name);
         EventHandler<PortableMessage> handler = new EventHandler<PortableMessage>() {
             public void handle(PortableMessage event) {
-                E messageObject = (E)getContext().getSerializationService().toObject(event.getMessage());
+                E messageObject = (E) getContext().getSerializationService().toObject(event.getMessage());
                 Member member = getContext().getClusterService().getMember(event.getUuid());
                 Message<E> message = new Message<E>(name, messageObject, event.getPublishTime(), member);
                 listener.onMessage(message);
@@ -79,14 +79,14 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
         return name;
     }
 
-    private Data getKey(){
-        if (key == null){
+    private Data getKey() {
+        if (key == null) {
             key = getContext().getSerializationService().toData(name);
         }
         return key;
     }
 
-    private <T> T invoke(Object req){
+    private <T> T invoke(Object req) {
         try {
             return getContext().getInvocationService().invokeOnKeyOwner(req, getKey());
         } catch (Exception e) {

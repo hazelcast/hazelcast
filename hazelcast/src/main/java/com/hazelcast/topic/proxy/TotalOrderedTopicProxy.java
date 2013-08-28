@@ -35,7 +35,7 @@ public class TotalOrderedTopicProxy extends TopicProxy {
 
     public TotalOrderedTopicProxy(String name, NodeEngine nodeEngine, TopicService service) {
         super(name, nodeEngine, service);
-        partitionId = nodeEngine.getPartitionService().getPartitionId(name);
+        partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
     }
 
     @Override

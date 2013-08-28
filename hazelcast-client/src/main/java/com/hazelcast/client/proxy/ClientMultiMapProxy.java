@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K, V> {
 
-    final CollectionProxyId proxyId;
+    private final CollectionProxyId proxyId;
 
     public ClientMultiMapProxy(String serviceName, CollectionProxyId objectId) {
         super(serviceName, objectId);

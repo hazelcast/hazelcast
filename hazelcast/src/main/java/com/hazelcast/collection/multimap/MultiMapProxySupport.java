@@ -18,12 +18,10 @@ package com.hazelcast.collection.multimap;
 
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionService;
-import com.hazelcast.collection.PartitionAwareKey;
 import com.hazelcast.collection.operations.*;
 import com.hazelcast.collection.operations.MultiMapOperationFactory.OperationFactoryType;
 import com.hazelcast.concurrent.lock.proxy.LockProxySupport;
 import com.hazelcast.config.MultiMapConfig;
-import com.hazelcast.util.PartitionKeyUtil;
 import com.hazelcast.util.ThreadUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.*;
@@ -278,10 +276,6 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
         return proxyId;
     }
 
-    public String getName() {
-        return proxyId.getName();
-    }
-
     public String getServiceName() {
         return CollectionService.SERVICE_NAME;
     }
@@ -343,11 +337,5 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Col
             default:
                 throw new IllegalArgumentException("Illegal proxy type: " + proxyId.getType());
         }
-    }
-
-    public static Object createCollectionKey(CollectionProxyId proxyId) {
-        String name = proxyId.getKeyName();
-        String baseName = PartitionKeyUtil.getBaseName(name);
-        return name.equals(baseName) ? name : new PartitionAwareKey(baseName, PartitionKeyUtil.getPartitionKey(name));
     }
 }
