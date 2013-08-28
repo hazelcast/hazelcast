@@ -16,13 +16,13 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.core.PartitionStrategy;
+import com.hazelcast.core.PartitioningStrategy;
 
 public class PartitionStrategyConfig {
 
     private String partitionStrategyClass;
 
-    private PartitionStrategy partitionStrategy;
+    private PartitioningStrategy partitionStrategy;
 
     public PartitionStrategyConfig() {
     }
@@ -31,7 +31,7 @@ public class PartitionStrategyConfig {
         this.partitionStrategyClass = partitionStrategyClass;
     }
 
-    public PartitionStrategyConfig(PartitionStrategy partitionStrategy) {
+    public PartitionStrategyConfig(PartitioningStrategy partitionStrategy) {
         this.partitionStrategy = partitionStrategy;
     }
 
@@ -44,11 +44,11 @@ public class PartitionStrategyConfig {
         return this;
     }
 
-    public PartitionStrategy getPartitionStrategy() {
+    public PartitioningStrategy getPartitionStrategy() {
         return partitionStrategy;
     }
 
-    public PartitionStrategyConfig setPartitionStrategy(PartitionStrategy partitionStrategy) {
+    public PartitionStrategyConfig setPartitionStrategy(PartitioningStrategy partitionStrategy) {
         this.partitionStrategy = partitionStrategy;
         return this;
     }

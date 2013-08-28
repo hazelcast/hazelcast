@@ -18,7 +18,7 @@ package com.hazelcast.nio.serialization;
 
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.core.PartitionStrategy;
+import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.OutOfMemoryErrorDispatcher;
 import com.hazelcast.nio.*;
 import com.hazelcast.nio.serialization.ConstantSerializers.*;
@@ -42,7 +42,7 @@ public final class SerializationServiceImpl implements SerializationService {
     private static final int OUTPUT_BUFFER_SIZE = 4 * 1024;
     private static final int CONSTANT_SERIALIZERS_SIZE = SerializationConstants.CONSTANT_SERIALIZERS_LENGTH;
 
-    private static final PartitionStrategy EMPTY_PARTITION_STRATEGY = new PartitionStrategy() {
+    private static final PartitioningStrategy EMPTY_PARTITIONING_STRATEGY = new PartitioningStrategy() {
         public Object getPartitionKey(Object key) {
             return null;
         }
@@ -64,7 +64,7 @@ public final class SerializationServiceImpl implements SerializationService {
     private final ClassLoader classLoader;
     private final ManagedContext managedContext;
     private final SerializationContextImpl serializationContext;
-    private final PartitionStrategy globalPartitionStrategy;
+    private final PartitioningStrategy globalPartitioningStrategy;
 
     private volatile boolean active = true;
 
@@ -72,13 +72,13 @@ public final class SerializationServiceImpl implements SerializationService {
                              Map<Integer, ? extends DataSerializableFactory> dataSerializableFactories,
                              Map<Integer, ? extends PortableFactory> portableFactories,
                              Collection<ClassDefinition> classDefinitions, boolean checkClassDefErrors,
-                             ManagedContext managedContext, PartitionStrategy partitionStrategy,
+                             ManagedContext managedContext, PartitioningStrategy partitionStrategy,
                              boolean enableCompression, boolean enableSharedObject) {
 
         this.inputOutputFactory = inputOutputFactory;
         this.classLoader = classLoader;
         this.managedContext = managedContext;
-        this.globalPartitionStrategy = partitionStrategy;
+        this.globalPartitioningStrategy = partitionStrategy;
 
         PortableHookLoader loader = new PortableHookLoader(portableFactories, classLoader);
         serializationContext = new SerializationContextImpl(this, loader.getFactories().keySet(), version);
@@ -150,11 +150,11 @@ public final class SerializationServiceImpl implements SerializationService {
     }
 
     public Data toData(final Object obj) {
-        return toData(obj, globalPartitionStrategy);
+        return toData(obj, globalPartitioningStrategy);
     }
 
     @SuppressWarnings("unchecked")
-    public Data toData(Object obj, PartitionStrategy strategy) {
+    public Data toData(Object obj, PartitioningStrategy strategy) {
         if (obj == null) {
             return null;
         }
@@ -176,12 +176,12 @@ public final class SerializationServiceImpl implements SerializationService {
                 data.classDefinition = serializationContext.lookup(portable.getFactoryId(), portable.getClassId());
             }
             if (strategy == null) {
-                strategy = globalPartitionStrategy;
+                strategy = globalPartitioningStrategy;
             }
             if (strategy != null) {
                 Object pk = strategy.getPartitionKey(obj);
                 if (pk != null) {
-                    final Data partitionKey = toData(pk, EMPTY_PARTITION_STRATEGY);
+                    final Data partitionKey = toData(pk, EMPTY_PARTITIONING_STRATEGY);
                     data.partitionHash = (partitionKey == null) ? -1 : partitionKey.getPartitionHash();
                 }
             }

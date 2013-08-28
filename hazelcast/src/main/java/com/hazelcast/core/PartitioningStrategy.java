@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.partition.strategy;
-
-import com.hazelcast.core.PartitionStrategy;
-import com.hazelcast.util.PartitionKeyUtil;
+package com.hazelcast.core;
 
 /**
- * @author mdogan 8/25/13
+ * PartitioningStrategy allows keys to be located on the same member
+ * This makes related data to be stored in the same location. (See data-affinity.)
+ *
+ * @param <K> key type
  */
-public class StringPartitionStrategy implements PartitionStrategy {
+public interface PartitioningStrategy<K> {
 
-    public Object getPartitionKey(Object key) {
-        if (key instanceof String) {
-            String partitionKey = PartitionKeyUtil.getPartitionKey((String) key);
-            return partitionKey != key ? partitionKey : null;
-        }
-        return null;
-    }
+    /**
+     * Returns the key object that will be used by Hazelcast to specify the partition.
+     *
+     * @param key actual key object
+     * @return partition key object or null to fallback to default partition calculation
+     */
+    Object getPartitionKey(K key);
 }

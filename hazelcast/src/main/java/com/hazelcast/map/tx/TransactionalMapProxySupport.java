@@ -16,7 +16,7 @@
 
 package com.hazelcast.map.tx;
 
-import com.hazelcast.core.PartitionStrategy;
+import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.operation.ContainsKeyOperation;
 import com.hazelcast.map.operation.GetOperation;
@@ -45,7 +45,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
 
     protected final String name;
     protected final TransactionSupport tx;
-    protected final PartitionStrategy partitionStrategy;
+    protected final PartitioningStrategy partitionStrategy;
 
     public TransactionalMapProxySupport(String name, MapService mapService, NodeEngine nodeEngine, TransactionSupport transaction) {
         super(nodeEngine, mapService);

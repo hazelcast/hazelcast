@@ -32,7 +32,7 @@ import com.hazelcast.config.PartitionStrategyConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
-import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitionStrategy;
+import com.hazelcast.partition.strategy.StringAndPartitionAwarePartitioningStrategy;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
@@ -66,7 +66,7 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
     public void setUp() throws InterruptedException {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(4);
         Config config = new Config();
-        config.getMapConfig("default").setPartitionStrategyConfig(new PartitionStrategyConfig(new StringAndPartitionAwarePartitionStrategy()));
+        config.getMapConfig("default").setPartitionStrategyConfig(new PartitionStrategyConfig(new StringAndPartitionAwarePartitioningStrategy()));
         instances = factory.newInstances(config);
         warmUpPartitions(instances);
     }

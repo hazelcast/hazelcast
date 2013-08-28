@@ -34,7 +34,7 @@ import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceBuilder;
 import com.hazelcast.nio.serialization.SerializationServiceImpl;
 import com.hazelcast.partition.PartitionServiceImpl;
-import com.hazelcast.partition.strategy.PartitionAwarePartitionStrategy;
+import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -120,12 +120,12 @@ public class Node {
         this.groupProperties = new GroupProperties(config);
         SerializationService ss;
         try {
-            String partitionStrategyClassName = groupProperties.PARTITION_STRATEGY_CLASS.getString();
-            final PartitionStrategy partitionStrategy;
+            String partitionStrategyClassName = groupProperties.PARTITIONING_STRATEGY_CLASS.getString();
+            final PartitioningStrategy partitionStrategy;
             if (partitionStrategyClassName != null && partitionStrategyClassName.length() > 0) {
                 partitionStrategy = ClassLoaderUtil.newInstance(configClassLoader, partitionStrategyClassName);
             } else {
-                partitionStrategy = new PartitionAwarePartitionStrategy();
+                partitionStrategy = new DefaultPartitioningStrategy();
             }
             ss = new SerializationServiceBuilder()
                     .setClassLoader(configClassLoader)

@@ -57,7 +57,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     protected final MapConfig mapConfig;
     protected final LocalMapStatsImpl localMapStats;
     protected final LockProxySupport lockSupport;
-    protected final PartitionStrategy partitionStrategy;
+    protected final PartitioningStrategy partitionStrategy;
 
     protected MapProxySupport(final String name, final MapService service, NodeEngine nodeEngine) {
         super(nodeEngine, service);

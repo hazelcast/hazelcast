@@ -649,7 +649,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         }
     }
 
-    public Data toData(Object object, PartitionStrategy partitionStrategy) {
+    public Data toData(Object object, PartitioningStrategy partitionStrategy) {
         if (object == null)
             return null;
         if (object instanceof Data) {

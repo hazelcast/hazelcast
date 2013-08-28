@@ -18,9 +18,9 @@ package com.hazelcast.spi;
 
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.core.PartitionStrategy;
+import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.partition.strategy.StringPartitionStrategy;
+import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.util.PartitionKeyUtil;
 
 /**
@@ -28,7 +28,7 @@ import com.hazelcast.util.PartitionKeyUtil;
  */
 public abstract class AbstractDistributedObject<S extends RemoteService> implements DistributedObject {
 
-    protected static final PartitionStrategy PARTITION_STRATEGY = new StringPartitionStrategy();
+    protected static final PartitioningStrategy PARTITIONING_STRATEGY = new StringPartitioningStrategy();
 
     private volatile NodeEngine nodeEngine;
     private volatile S service;
@@ -40,7 +40,7 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
 
     protected Data getNameAsPartitionAwareData() {
         String name = getName();
-        return getNodeEngine().getSerializationService().toData(name, PARTITION_STRATEGY);
+        return getNodeEngine().getSerializationService().toData(name, PARTITIONING_STRATEGY);
     }
 
     @Override

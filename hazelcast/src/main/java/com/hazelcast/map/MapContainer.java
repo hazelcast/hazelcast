@@ -23,7 +23,7 @@ import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.MapLoaderLifecycleSupport;
 import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.core.Member;
-import com.hazelcast.core.PartitionStrategy;
+import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.operation.MapInitialLoadOperation;
@@ -66,7 +66,7 @@ public class MapContainer {
     private final EntryTaskScheduler mapStoreDeleteScheduler;
     private final WanReplicationPublisher wanReplicationPublisher;
     private final MapMergePolicy wanMergePolicy;
-    private final PartitionStrategy partitionStrategy;
+    private final PartitioningStrategy partitionStrategy;
     private volatile boolean mapReady = false;
 
     public MapContainer(String name, MapConfig mapConfig, MapService mapService) {
@@ -167,7 +167,7 @@ public class MapContainer {
         interceptorMap = new ConcurrentHashMap<String, MapInterceptor>();
         nearCacheEnabled = mapConfig.getNearCacheConfig() != null;
 
-        PartitionStrategy strategy = null;
+        PartitioningStrategy strategy = null;
         PartitionStrategyConfig partitionStrategyConfig = mapConfig.getPartitionStrategyConfig();
         if (partitionStrategyConfig != null) {
             strategy = partitionStrategyConfig.getPartitionStrategy();
@@ -320,7 +320,7 @@ public class MapContainer {
         return storeWrapper;
     }
 
-    public PartitionStrategy getPartitionStrategy() {
+    public PartitioningStrategy getPartitionStrategy() {
         return partitionStrategy;
     }
 

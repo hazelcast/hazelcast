@@ -16,21 +16,18 @@
 
 package com.hazelcast.partition.strategy;
 
-import com.hazelcast.core.PartitionAware;
-import com.hazelcast.core.PartitionStrategy;
+import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.util.PartitionKeyUtil;
 
 /**
  * @author mdogan 8/25/13
  */
-public class StringAndPartitionAwarePartitionStrategy implements PartitionStrategy {
+public class StringPartitioningStrategy implements PartitioningStrategy {
 
     public Object getPartitionKey(Object key) {
         if (key instanceof String) {
             String partitionKey = PartitionKeyUtil.getPartitionKey((String) key);
             return partitionKey != key ? partitionKey : null;
-        } else if (key instanceof PartitionAware) {
-            return ((PartitionAware) key).getPartitionKey();
         }
         return null;
     }

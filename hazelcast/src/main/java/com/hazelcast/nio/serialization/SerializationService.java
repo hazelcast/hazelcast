@@ -16,7 +16,7 @@
 
 package com.hazelcast.nio.serialization;
 
-import com.hazelcast.core.PartitionStrategy;
+import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.nio.BufferObjectDataInput;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.ObjectDataInput;
@@ -33,7 +33,7 @@ public interface SerializationService {
 
     Data toData(Object obj);
 
-    Data toData(Object obj, PartitionStrategy strategy);
+    Data toData(Object obj, PartitioningStrategy strategy);
 
     Object toObject(Data data);
 

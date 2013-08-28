@@ -22,7 +22,7 @@ import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.core.PartitionStrategy;
+import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.nio.ClassLoaderUtil;
 
 import java.nio.ByteOrder;
@@ -59,7 +59,7 @@ public final class SerializationServiceBuilder {
 
     private boolean allowUnsafe = false;
 
-    private PartitionStrategy partitionStrategy;
+    private PartitioningStrategy partitionStrategy;
 
     private HazelcastInstance hazelcastInstance;
 
@@ -145,7 +145,7 @@ public final class SerializationServiceBuilder {
         return this;
     }
 
-    public SerializationServiceBuilder setPartitionStrategy(PartitionStrategy partitionStrategy) {
+    public SerializationServiceBuilder setPartitionStrategy(PartitioningStrategy partitionStrategy) {
         this.partitionStrategy = partitionStrategy;
         return this;
     }
