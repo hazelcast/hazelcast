@@ -23,8 +23,6 @@ import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.TransactionException;
-import com.hazelcast.transaction.TransactionNotActiveException;
-import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionSupport;
 
 import java.util.ArrayList;
@@ -37,6 +35,10 @@ public class TransactionalMultiMapProxy<K,V> extends TransactionalMultiMapProxyS
 
     public TransactionalMultiMapProxy(NodeEngine nodeEngine, CollectionService service, CollectionProxyId proxyId, TransactionSupport tx) {
         super(nodeEngine, service, proxyId, tx, nodeEngine.getConfig().getMultiMapConfig(proxyId.getName()));
+    }
+
+    public String getName() {
+        return proxyId.getName();
     }
 
     public boolean put(K key, V value) throws TransactionException {

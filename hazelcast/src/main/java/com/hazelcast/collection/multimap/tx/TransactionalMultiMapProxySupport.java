@@ -233,10 +233,6 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         return proxyId;
     }
 
-    public String getName() {
-        return proxyId.getName();
-    }
-
     public final String getServiceName() {
         return CollectionService.SERVICE_NAME;
     }

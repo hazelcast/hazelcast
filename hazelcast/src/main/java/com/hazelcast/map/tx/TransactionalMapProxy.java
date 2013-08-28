@@ -20,8 +20,6 @@ import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.transaction.TransactionNotActiveException;
-import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionSupport;
 
 import java.util.HashMap;
@@ -40,7 +38,7 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
 
     public boolean containsKey(Object key) {
         checkTransactionState();
-        return txMap.containsKey(key) || containsKeyInternal(getService().toData(key));
+        return txMap.containsKey(key) || containsKeyInternal(getService().toData(key, partitionStrategy));
     }
 
     public int size() {
@@ -67,7 +65,7 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         if (currentValue != null) {
             return checkIfRemoved(currentValue);
         }
-        return getService().toObject(getInternal(getService().toData(key)));
+        return getService().toObject(getInternal(getService().toData(key, partitionStrategy)));
     }
 
     private Object checkIfRemoved(TxnValueWrapper wrapper) {
@@ -77,7 +75,8 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
 
     public Object put(Object key, Object value) {
         checkTransactionState();
-        final Object valueBeforeTxn = getService().toObject(putInternal(getService().toData(key), getService().toData(value)));
+        MapService service = getService();
+        final Object valueBeforeTxn = service.toObject(putInternal(service.toData(key, partitionStrategy), service.toData(value)));
         TxnValueWrapper currentValue = txMap.get(key);
         if (value != null) {
             TxnValueWrapper wrapper = valueBeforeTxn == null ? new TxnValueWrapper(value, TxnValueWrapper.Type.NEW) : new TxnValueWrapper(value, TxnValueWrapper.Type.UPDATED);
@@ -89,7 +88,8 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
     @Override
     public void set(Object key, Object value) {
         checkTransactionState();
-        final Data dataBeforeTxn = putInternal(getService().toData(key), getService().toData(value));
+        MapService service = getService();
+        final Data dataBeforeTxn = putInternal(service.toData(key, partitionStrategy), service.toData(value));
         if (value != null) {
             TxnValueWrapper wrapper = dataBeforeTxn == null ? new TxnValueWrapper(value, TxnValueWrapper.Type.NEW) : new TxnValueWrapper(value, TxnValueWrapper.Type.UPDATED);
             txMap.put(key, wrapper);
@@ -101,19 +101,20 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         checkTransactionState();
         TxnValueWrapper wrapper = txMap.get(key);
         boolean haveTxnPast = wrapper != null;
+        MapService service = getService();
         if (haveTxnPast) {
             if (wrapper.type != TxnValueWrapper.Type.REMOVED) {
                 return wrapper.value;
             }
-            putInternal(getService().toData(key), getService().toData(value));
+            putInternal(service.toData(key, partitionStrategy), service.toData(value));
             txMap.put(key, new TxnValueWrapper(value, TxnValueWrapper.Type.NEW));
             return null;
         } else {
-            Data oldValue = putIfAbsentInternal(getService().toData(key), getService().toData(value));
+            Data oldValue = putIfAbsentInternal(service.toData(key, partitionStrategy), service.toData(value));
             if (oldValue == null) {
                 txMap.put(key, new TxnValueWrapper(value, TxnValueWrapper.Type.NEW));
             }
-            return getService().toObject(oldValue);
+            return service.toObject(oldValue);
         }
     }
 
@@ -123,19 +124,20 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         TxnValueWrapper wrapper = txMap.get(key);
         boolean haveTxnPast = wrapper != null;
 
+        MapService service = getService();
         if (haveTxnPast) {
             if (wrapper.type == TxnValueWrapper.Type.REMOVED) {
                 return null;
             }
-            putInternal(getService().toData(key), getService().toData(value));
+            putInternal(service.toData(key, partitionStrategy), service.toData(value));
             txMap.put(key, new TxnValueWrapper(value, TxnValueWrapper.Type.UPDATED));
             return wrapper.value;
         } else {
-            Data oldValue = replaceInternal(getService().toData(key), getService().toData(value));
+            Data oldValue = replaceInternal(service.toData(key, partitionStrategy), service.toData(value));
             if (oldValue != null) {
                 txMap.put(key, new TxnValueWrapper(value, TxnValueWrapper.Type.UPDATED));
             }
-            return getService().toObject(oldValue);
+            return service.toObject(oldValue);
         }
     }
 
@@ -145,15 +147,16 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         TxnValueWrapper wrapper = txMap.get(key);
         boolean haveTxnPast = wrapper != null;
 
+        MapService service = getService();
         if (haveTxnPast) {
             if (!wrapper.value.equals(oldValue)) {
                 return false;
             }
-            putInternal(getService().toData(key), getService().toData(newValue));
+            putInternal(service.toData(key, partitionStrategy), service.toData(newValue));
             txMap.put(key, new TxnValueWrapper(wrapper.value, TxnValueWrapper.Type.UPDATED));
             return true;
         } else {
-            boolean success = replaceIfSameInternal(getService().toData(key), getService().toData(oldValue), getService().toData(newValue));
+            boolean success = replaceIfSameInternal(service.toData(key), service.toData(oldValue), service.toData(newValue));
             if (success) {
                 txMap.put(key, new TxnValueWrapper(newValue, TxnValueWrapper.Type.UPDATED));
             }
@@ -166,10 +169,11 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         checkTransactionState();
         TxnValueWrapper wrapper = txMap.get(key);
 
-        if (wrapper != null && !getService().compare(name, wrapper.value, value)) {
+        MapService service = getService();
+        if (wrapper != null && !service.compare(name, wrapper.value, value)) {
             return false;
         }
-        boolean removed = removeIfSameInternal(getService().toData(key), value);
+        boolean removed = removeIfSameInternal(service.toData(key, partitionStrategy), value);
         if (removed) {
             txMap.put(key, new TxnValueWrapper(value, TxnValueWrapper.Type.REMOVED));
         }
@@ -179,7 +183,8 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
     @Override
     public Object remove(Object key) {
         checkTransactionState();
-        final Object valueBeforeTxn = getService().toObject(removeInternal(getService().toData(key)));
+        MapService service = getService();
+        final Object valueBeforeTxn = service.toObject(removeInternal(service.toData(key, partitionStrategy)));
         TxnValueWrapper wrapper = null;
         if(valueBeforeTxn != null || txMap.containsKey(key) ) {
             wrapper = txMap.put(key, new TxnValueWrapper(valueBeforeTxn, TxnValueWrapper.Type.REMOVED));
@@ -190,9 +195,10 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
     @Override
     public void delete(Object key) {
         checkTransactionState();
-        Data data = removeInternal(getService().toData(key));
+        MapService service = getService();
+        Data data = removeInternal(service.toData(key, partitionStrategy));
         if(data != null || txMap.containsKey(key) ) {
-            txMap.put(key, new TxnValueWrapper(getService().toObject(data), TxnValueWrapper.Type.REMOVED));
+            txMap.put(key, new TxnValueWrapper(service.toObject(data), TxnValueWrapper.Type.REMOVED));
         }
     }
 

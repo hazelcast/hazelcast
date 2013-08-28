@@ -38,8 +38,8 @@ import java.util.*;
  */
 public class ClientSetProxy<E> extends ClientProxy implements ISet<E> {
 
-    final CollectionProxyId proxyId;
-    Data key;
+    private final CollectionProxyId proxyId;
+    private volatile Data key;
 
     public ClientSetProxy(String serviceName, CollectionProxyId objectId) {
         super(serviceName, objectId);
@@ -165,39 +165,39 @@ public class ClientSetProxy<E> extends ClientProxy implements ISet<E> {
         }
     }
 
-    private Data getKey(){
-        if (key == null){
+    private Data getKey() {
+        if (key == null) {
             key = getSerializationService().toData(proxyId.getKeyName());
         }
         return key;
     }
 
-    private Set<E> getSet(){
+    private Set<E> getSet() {
         GetAllRequest request = new GetAllRequest(proxyId, getKey());
         PortableCollection result = invoke(request);
         Collection<Data> collection = result.getCollection();
         Set<E> set = new HashSet<E>(collection.size());
         for (Data data : collection) {
-            set.add((E)getSerializationService().toObject(data));
+            set.add((E) getSerializationService().toObject(data));
         }
         return set;
     }
 
-    private SerializationService getSerializationService(){
+    private SerializationService getSerializationService() {
         return getContext().getSerializationService();
     }
 
-    private EventHandler<PortableItemEvent> createHandler(final ItemListener<E> listener, final boolean includeValue){
+    private EventHandler<PortableItemEvent> createHandler(final ItemListener<E> listener, final boolean includeValue) {
         return new EventHandler<PortableItemEvent>() {
             public void handle(PortableItemEvent event) {
                 E item = null;
-                if (includeValue){
-                    item = (E)getSerializationService().toObject(event.getItem());
+                if (includeValue) {
+                    item = (E) getSerializationService().toObject(event.getItem());
                 }
                 Member member = getContext().getClusterService().getMember(event.getUuid());
                 ItemEvent<E> itemEvent = new ItemEvent<E>(proxyId.getKeyName(), event.getEventType(), item, member);
 
-                switch (event.getEventType()){
+                switch (event.getEventType()) {
                     case ADDED:
                         listener.itemAdded(itemEvent);
                         break;

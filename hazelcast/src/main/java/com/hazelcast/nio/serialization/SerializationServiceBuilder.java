@@ -22,6 +22,7 @@ import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ManagedContext;
+import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.nio.ClassLoaderUtil;
 
 import java.nio.ByteOrder;
@@ -32,7 +33,7 @@ import java.util.*;
  */
 public final class SerializationServiceBuilder {
 
-    private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+    private ClassLoader classLoader;
 
     private SerializationConfig config;
 
@@ -57,6 +58,9 @@ public final class SerializationServiceBuilder {
     private boolean enableSharedObject = false;
 
     private boolean allowUnsafe = false;
+
+    private PartitioningStrategy partitionStrategy;
+
     private HazelcastInstance hazelcastInstance;
 
     public SerializationServiceBuilder setVersion(int version) {
@@ -141,6 +145,11 @@ public final class SerializationServiceBuilder {
         return this;
     }
 
+    public SerializationServiceBuilder setPartitionStrategy(PartitioningStrategy partitionStrategy) {
+        this.partitionStrategy = partitionStrategy;
+        return this;
+    }
+
     public SerializationService build() {
         if (version < 0) {
             version = 0;
@@ -153,7 +162,8 @@ public final class SerializationServiceBuilder {
 
         final InputOutputFactory inputOutputFactory = createInputOutputFactory();
         final SerializationService ss = new SerializationServiceImpl(inputOutputFactory, version, classLoader, dataSerializableFactories,
-                portableFactories, classDefinitions, checkClassDefErrors, managedContext, enableCompression, enableSharedObject);
+                portableFactories, classDefinitions, checkClassDefErrors, managedContext, partitionStrategy,
+                enableCompression, enableSharedObject);
 
         if (config != null) {
             if (config.getGlobalSerializerConfig() != null) {

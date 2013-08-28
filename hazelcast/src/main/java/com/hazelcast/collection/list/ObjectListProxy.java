@@ -33,12 +33,11 @@ import java.util.*;
  */
 public class ObjectListProxy<E> extends MultiMapProxySupport implements CollectionProxy, IList<E> {
 
-
     final Data key;
 
     public ObjectListProxy(CollectionService service, NodeEngine nodeEngine, CollectionProxyId proxyId) {
         super(service, nodeEngine, createConfig(proxyId), proxyId);
-        key = nodeEngine.toData(createCollectionKey(proxyId));
+        key = getNameAsPartitionAwareData();
     }
 
     public String getName() {

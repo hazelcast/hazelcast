@@ -42,7 +42,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
-import java.util.logging.Level;
 
 /**
  * A XML {@link ConfigBuilder} implementation.
@@ -753,6 +752,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 }
             } else if ("statistics-enabled".equals(nodeName)) {
                 multiMapConfig.setStatisticsEnabled(checkTrue(value));
+//            } else if ("partition-strategy".equals(nodeName)) {
+//                multiMapConfig.setPartitionStrategyConfig(new PartitionStrategyConfig(value));
             }
         }
         this.config.addMultiMapConfig(multiMapConfig);
@@ -852,6 +853,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 }
             } else if ("storage-type".equals(nodeName)) {
                 mapConfig.setStorageType(StorageType.valueOf(value.toUpperCase()));
+            } else if ("partition-strategy".equals(nodeName)) {
+                mapConfig.setPartitionStrategyConfig(new PartitionStrategyConfig(value));
             }
         }
         this.config.addMapConfig(mapConfig);

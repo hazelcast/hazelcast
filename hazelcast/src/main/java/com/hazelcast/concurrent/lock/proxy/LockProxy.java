@@ -22,10 +22,11 @@ import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.core.ICondition;
 import com.hazelcast.core.ILock;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.util.PartitionKeyUtil;
 
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 
@@ -34,41 +35,47 @@ import java.util.concurrent.locks.Condition;
  */
 public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implements ILock {
 
+    final String name;
     final Data key;
-    final Data partitionKey;
-    final InternalLockNamespace namespace = new InternalLockNamespace();
     private final LockProxySupport lockSupport;
 
-    public LockProxy(NodeEngine nodeEngine, LockServiceImpl lockService, final Object actualKey) {
+    public LockProxy(NodeEngine nodeEngine, LockServiceImpl lockService, final Object object) {
         super(nodeEngine, lockService);
-        key = nodeEngine.toData(actualKey);
-        Object _partitionKey = PartitionKeyUtil.getPartitionKey(actualKey);
-        partitionKey = _partitionKey == actualKey ? key : nodeEngine.toData(_partitionKey);
-        lockSupport = new LockProxySupport(namespace);
+        if (object instanceof String) {
+            name = (String) object;
+            key = getNameAsPartitionAwareData();
+        } else if (object instanceof Data) {
+            key = (Data) object;
+            name = String.valueOf(nodeEngine.getSerializationService().toObject(key));
+        } else {
+            name = convertToStringKey(object, nodeEngine.getSerializationService());
+            key = getNameAsPartitionAwareData();
+        }
+        lockSupport = new LockProxySupport(new InternalLockNamespace());
     }
 
     public boolean isLocked() {
-        return lockSupport.isLocked(getNodeEngine(), key, partitionKey);
+        return lockSupport.isLocked(getNodeEngine(), key);
     }
 
     public boolean isLockedByCurrentThread() {
-        return lockSupport.isLockedByCurrentThread(getNodeEngine(), key, partitionKey);
+        return lockSupport.isLockedByCurrentThread(getNodeEngine(), key);
     }
 
     public int getLockCount() {
-        return lockSupport.getLockCount(getNodeEngine(), key, partitionKey);
+        return lockSupport.getLockCount(getNodeEngine(), key);
     }
 
     public long getRemainingLeaseTime() {
-        return lockSupport.getRemainingLeaseTime(getNodeEngine(), key, partitionKey);
+        return lockSupport.getRemainingLeaseTime(getNodeEngine(), key);
     }
 
     public void lock() {
-        lockSupport.lock(getNodeEngine(), key, partitionKey);
+        lockSupport.lock(getNodeEngine(), key);
     }
 
     public void lock(long ttl, TimeUnit timeUnit) {
-        lockSupport.lock(getNodeEngine(), key, partitionKey, timeUnit.toMillis(ttl));
+        lockSupport.lock(getNodeEngine(), key, timeUnit.toMillis(ttl));
     }
 
     public void lockInterruptibly() throws InterruptedException {
@@ -76,19 +83,19 @@ public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implem
     }
 
     public boolean tryLock() {
-        return lockSupport.tryLock(getNodeEngine(), key, partitionKey);
+        return lockSupport.tryLock(getNodeEngine(), key);
     }
 
     public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
-        return lockSupport.tryLock(getNodeEngine(), key, time, unit, partitionKey);
+        return lockSupport.tryLock(getNodeEngine(), key, time, unit);
     }
 
     public void unlock() {
-        lockSupport.unlock(getNodeEngine(), key, partitionKey);
+        lockSupport.unlock(getNodeEngine(), key);
     }
 
     public void forceUnlock() {
-        lockSupport.forceUnlock(getNodeEngine(), key, partitionKey);
+        lockSupport.forceUnlock(getNodeEngine(), key);
     }
 
     public Condition newCondition() {
@@ -104,7 +111,7 @@ public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implem
     }
 
     public String getName() {
-        return String.valueOf(getKey());
+        return name;
     }
 
     public String getServiceName() {
@@ -112,6 +119,18 @@ public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implem
     }
 
     public Object getKey() {
-        return getNodeEngine().toObject(key);
+        return getName();
+    }
+
+    // will be removed when HazelcastInstance.getLock(Object key) is removed from API
+    public static String convertToStringKey(Object key, SerializationService serializationService) {
+        if (key instanceof String) {
+            return String.valueOf(key);
+        } else {
+            Data data = serializationService.toData(key, PARTITIONING_STRATEGY);
+//            name = Integer.toString(data.hashCode());
+            byte[] buffer = data.getBuffer();
+            return Arrays.toString(buffer);
+        }
     }
 }

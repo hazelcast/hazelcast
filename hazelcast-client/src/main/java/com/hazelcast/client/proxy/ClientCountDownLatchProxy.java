@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class ClientCountDownLatchProxy extends ClientProxy implements ICountDownLatch{
 
-    Data key;
+    private volatile Data key;
 
     public ClientCountDownLatchProxy(String serviceName, String objectId) {
         super(serviceName, objectId);

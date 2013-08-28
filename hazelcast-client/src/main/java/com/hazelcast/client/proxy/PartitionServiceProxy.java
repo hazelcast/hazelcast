@@ -20,7 +20,6 @@ import com.hazelcast.client.spi.ClientPartitionService;
 import com.hazelcast.core.MigrationListener;
 import com.hazelcast.core.Partition;
 import com.hazelcast.core.PartitionService;
-import com.hazelcast.util.PartitionKeyUtil;
 
 import java.util.LinkedHashSet;
 import java.util.Random;
@@ -56,7 +55,6 @@ public final class PartitionServiceProxy implements PartitionService {
 
     @Override
     public Partition getPartition(Object key) {
-        key = PartitionKeyUtil.getPartitionKey(key);
         final int partitionId = partitionService.getPartitionId(key);
         return partitionService.getPartition(partitionId);
     }

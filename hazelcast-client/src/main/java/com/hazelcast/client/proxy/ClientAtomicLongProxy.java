@@ -28,7 +28,7 @@ import com.hazelcast.util.ExceptionUtil;
 public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
 
     private final String name;
-    private Data key;
+    private volatile Data key;
 
     public ClientAtomicLongProxy(String serviceName, String objectId) {
         super(serviceName, objectId);

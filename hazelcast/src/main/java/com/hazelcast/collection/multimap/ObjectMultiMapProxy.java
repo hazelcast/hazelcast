@@ -44,6 +44,10 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
         super(service, nodeEngine, nodeEngine.getConfig().getMultiMapConfig(proxyId.getName()), proxyId);
     }
 
+    public String getName() {
+        return proxyId.getName();
+    }
+
     @Override
     public void initialize() {
         final NodeEngine nodeEngine = getNodeEngine();
@@ -186,19 +190,19 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     public void lock(K key) {
         final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
-        lockSupport.lock(nodeEngine, dataKey, dataKey);
+        lockSupport.lock(nodeEngine, dataKey);
     }
 
     public void lock(K key, long leaseTime, TimeUnit timeUnit) {
         final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
-        lockSupport.lock(nodeEngine, dataKey, dataKey, timeUnit.toMillis(leaseTime));
+        lockSupport.lock(nodeEngine, dataKey, timeUnit.toMillis(leaseTime));
     }
 
     public boolean isLocked(K key) {
         final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
-        return lockSupport.isLocked(nodeEngine, dataKey, dataKey);
+        return lockSupport.isLocked(nodeEngine, dataKey);
     }
 
     public boolean tryLock(K key) {
@@ -212,19 +216,19 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     public boolean tryLock(K key, long time, TimeUnit timeunit) throws InterruptedException {
         final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
-        return lockSupport.tryLock(nodeEngine, dataKey, time, timeunit, dataKey);
+        return lockSupport.tryLock(nodeEngine, dataKey, time, timeunit);
     }
 
     public void unlock(K key) {
         final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
-        lockSupport.unlock(nodeEngine, dataKey, dataKey);
+        lockSupport.unlock(nodeEngine, dataKey);
     }
 
     public void forceUnlock(K key) {
         final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
-        lockSupport.forceUnlock(nodeEngine, dataKey, dataKey);
+        lockSupport.forceUnlock(nodeEngine, dataKey);
     }
 
     public LocalMultiMapStats getLocalMultiMapStats() {

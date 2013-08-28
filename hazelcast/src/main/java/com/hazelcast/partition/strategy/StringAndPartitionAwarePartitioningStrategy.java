@@ -14,23 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.partition.strategy;
+
+import com.hazelcast.core.PartitionAware;
+import com.hazelcast.core.PartitioningStrategy;
 
 /**
- * PartitionAware allows implementing keys to be located on the same member
- * or implementing tasks to be executed on {@link #getPartitionKey()}'s owner member.
- * This makes related data to be stored in the same location. (See data-affinity.)
- *
- * @param <T> key type
+ * @author mdogan 8/25/13
  */
-public interface PartitionAware<T> {
+public class StringAndPartitionAwarePartitioningStrategy implements PartitioningStrategy {
 
-    /**
-     * The key object that will be used by Hazelcast to specify the partition.
-     * You should give the same key for objects that you want them to locate in the same partition.
-     *
-     * @return partition key
-     */
-    T getPartitionKey();
-
+    public Object getPartitionKey(Object key) {
+        if (key instanceof String) {
+            String partitionKey = StringPartitioningStrategy.getPartitionKey((String) key);
+            return partitionKey != key ? partitionKey : null;
+        } else if (key instanceof PartitionAware) {
+            return ((PartitionAware) key).getPartitionKey();
+        }
+        return null;
+    }
 }
