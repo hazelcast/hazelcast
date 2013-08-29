@@ -53,7 +53,11 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         Map.Entry<Data, Object> mapEntry = recordStore.getMapEntryObject(dataKey);
         Map.Entry entry = new AbstractMap.SimpleEntry(mapService.toObject(dataKey), mapService.toObject(mapEntry.getValue()));
         response = mapService.toData(entryProcessor.process(entry));
-        recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, entry.getValue()));
+        if (entry.getValue() == null) {
+            recordStore.remove(dataKey);
+        } else {
+            recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, entry.getValue()));
+        }
     }
 
     public void afterRun() throws Exception {
