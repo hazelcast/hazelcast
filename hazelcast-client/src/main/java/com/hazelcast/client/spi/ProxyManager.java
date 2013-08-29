@@ -19,8 +19,7 @@ package com.hazelcast.client.spi;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.proxy.*;
-import com.hazelcast.collection.CollectionProxyType;
-import com.hazelcast.collection.CollectionService;
+import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
@@ -76,10 +75,10 @@ public final class ProxyManager {
                 return new ClientQueueProxy(QueueService.SERVICE_NAME, String.valueOf(id));
             }
         });
-        register(CollectionService.SERVICE_NAME, new ClientProxyFactory() {
+        register(MultiMapService.SERVICE_NAME, new ClientProxyFactory() {
             public ClientProxy create(Object id) {
                 String name = (String) id;
-                return new ClientMultiMapProxy(CollectionService.SERVICE_NAME, name);
+                return new ClientMultiMapProxy(MultiMapService.SERVICE_NAME, name);
             }
         });
         register(SemaphoreService.SERVICE_NAME, new ClientProxyFactory() {

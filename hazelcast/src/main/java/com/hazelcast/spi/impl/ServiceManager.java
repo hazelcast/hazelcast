@@ -18,7 +18,7 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.client.ClientEngineImpl;
 import com.hazelcast.cluster.ClusterServiceImpl;
-import com.hazelcast.collection.CollectionService;
+import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
@@ -47,7 +47,6 @@ import java.lang.reflect.Constructor;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.logging.Level;
 
 /**
  * @author mdogan 9/18/12
@@ -85,7 +84,7 @@ final class ServiceManager {
                 registerService(LockService.SERVICE_NAME, new LockServiceImpl(nodeEngine));
                 registerService(QueueService.SERVICE_NAME, new QueueService(nodeEngine));
                 registerService(TopicService.SERVICE_NAME, new TopicService());
-                registerService(CollectionService.SERVICE_NAME, new CollectionService(nodeEngine));
+                registerService(MultiMapService.SERVICE_NAME, new MultiMapService(nodeEngine));
                 registerService(DistributedExecutorService.SERVICE_NAME, new DistributedExecutorService());
                 registerService(AtomicLongService.SERVICE_NAME, new AtomicLongService());
                 registerService(CountDownLatchService.SERVICE_NAME, new CountDownLatchService());

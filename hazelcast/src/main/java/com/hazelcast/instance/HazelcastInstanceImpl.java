@@ -16,7 +16,7 @@
 
 package com.hazelcast.instance;
 
-import com.hazelcast.collection.CollectionService;
+import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
@@ -165,7 +165,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         if (name == null) {
             throw new NullPointerException("Retrieving a multi-map instance with a null key is not allowed!");
         }
-        return getDistributedObject(CollectionService.SERVICE_NAME, name);
+        return getDistributedObject(MultiMapService.SERVICE_NAME, name);
     }
 
     public ILock getLock(Object key) {

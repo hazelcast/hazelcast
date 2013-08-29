@@ -16,7 +16,7 @@
 
 package com.hazelcast.transaction.impl;
 
-import com.hazelcast.collection.CollectionService;
+import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.core.*;
 import com.hazelcast.map.MapService;
 import com.hazelcast.queue.QueueService;
@@ -73,7 +73,7 @@ final class TransactionContextImpl implements TransactionContext {
 
     @SuppressWarnings("unchecked")
     public <K, V> TransactionalMultiMap<K, V> getMultiMap(String name) {
-        return (TransactionalMultiMap<K, V>) getTransactionalObject(CollectionService.SERVICE_NAME, name);
+        return (TransactionalMultiMap<K, V>) getTransactionalObject(MultiMapService.SERVICE_NAME, name);
     }
 
     @SuppressWarnings("unchecked")

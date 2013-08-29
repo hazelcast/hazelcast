@@ -18,7 +18,7 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.client.spi.EventHandler;
-import com.hazelcast.collection.operations.client.*;
+import com.hazelcast.multimap.operations.client.*;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.Member;

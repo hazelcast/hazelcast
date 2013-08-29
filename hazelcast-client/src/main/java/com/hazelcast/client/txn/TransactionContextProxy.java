@@ -21,7 +21,7 @@ import com.hazelcast.client.connection.Connection;
 import com.hazelcast.client.txn.proxy.ClientTxnMapProxy;
 import com.hazelcast.client.txn.proxy.ClientTxnMultiMapProxy;
 import com.hazelcast.client.txn.proxy.ClientTxnQueueProxy;
-import com.hazelcast.collection.CollectionService;
+import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.core.*;
 import com.hazelcast.map.MapService;
 import com.hazelcast.queue.QueueService;
@@ -77,7 +77,7 @@ public class TransactionContextProxy implements TransactionContext {
     }
 
     public <K, V> TransactionalMultiMap<K, V> getMultiMap(String name) {
-        return getTransactionalObject(CollectionService.SERVICE_NAME, name);
+        return getTransactionalObject(MultiMapService.SERVICE_NAME, name);
     }
 
     public <E> TransactionalList<E> getList(String name) {
@@ -102,7 +102,7 @@ public class TransactionContextProxy implements TransactionContext {
                 obj = new ClientTxnQueueProxy(String.valueOf(id), this);
             } else if (serviceName.equals(MapService.SERVICE_NAME)) {
                 obj = new ClientTxnMapProxy(String.valueOf(id), this);
-            } else if (serviceName.equals(CollectionService.SERVICE_NAME)) {
+            } else if (serviceName.equals(MultiMapService.SERVICE_NAME)) {
                 obj = new ClientTxnMultiMapProxy(String.valueOf(id), this);
             }
             if (obj == null) {
