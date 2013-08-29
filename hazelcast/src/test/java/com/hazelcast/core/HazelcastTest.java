@@ -21,8 +21,6 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.util.Clock;
-import com.hazelcast.impl.GroupProperties;
-
 import org.junit.*;
 import org.junit.runner.RunWith;
 
@@ -46,7 +44,6 @@ public class HazelcastTest {
     @BeforeClass
     @AfterClass
     public static void init() throws Exception {
-        System.setProperty(GroupProperties.PROP_VERSION_CHECK_ENABLED, "false");
         Hazelcast.shutdownAll();
     }
 
@@ -1367,63 +1364,53 @@ public class HazelcastTest {
      */
     @Test
     public void testIssue174NearCacheContainsKeySingleNode() {
-        Config config = new Config();
-        config.getGroupConfig().setName("testIssue174NearCacheContainsKeySingleNode");
+        Config config = Hazelcast.getConfig();
+        String name = "testIssue174NearCacheContainsKeySingleNode";
         NearCacheConfig nearCacheConfig = new NearCacheConfig();
-        config.getMapConfig("default").setNearCacheConfig(nearCacheConfig);
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
-        IMap<String, String> map = h.getMap("testIssue174NearCacheContainsKeySingleNode");
+        config.getMapConfig(name).setNearCacheConfig(nearCacheConfig);
+        IMap<String, String> map = Hazelcast.getMap(name);
         map.put("key", "value");
         assertTrue(map.containsKey("key"));
-        h.getLifecycleService().shutdown();
     }
     /*
        github issue 455
     */
     @Test
     public void testIssue455ZeroTTLShouldPreventEviction() throws InterruptedException {
-        Config config = new Config();
-        config.getGroupConfig().setName("testIssue455ZeroTTLShouldPreventEviction");
+        Config config = Hazelcast.getConfig();
+        String name = "testIssue455ZeroTTLShouldPreventEviction";
         NearCacheConfig nearCacheConfig = new NearCacheConfig();
-        config.getMapConfig("default").setNearCacheConfig(nearCacheConfig);
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
-        IMap<String, String> map = h.getMap("testIssue455ZeroTTLShouldPreventEviction");
+        config.getMapConfig(name).setNearCacheConfig(nearCacheConfig);
+        IMap<String, String> map = Hazelcast.getMap(name);
         map.put("key", "value", 1, TimeUnit.SECONDS);
         map.put("key", "value2", 0, TimeUnit.SECONDS);
         Thread.sleep(2000);
         assertEquals("value2", map.get("key"));
-        h.getLifecycleService().shutdown();
     }
     /*
        github issue 585
     */
     @Test
     public void testIssue585ZeroTTLShouldPreventEvictionInSet() throws InterruptedException {
-        Config config = new Config();
-        config.getGroupConfig().setName("testIssue585ZeroTTLShouldPreventEvictionInSet");
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
-        IMap<String, String> map = h.getMap("testIssue585ZeroTTLShouldPreventEvictionInSet");
+        String name = "testIssue585ZeroTTLShouldPreventEvictionInSet";
+        IMap<String, String> map = Hazelcast.getMap(name);
         map.set("key", "value", 1, TimeUnit.SECONDS);
         map.set("key", "value2", 0, TimeUnit.SECONDS);
         Thread.sleep(2000);
         assertEquals("value2", map.get("key"));
-        h.getLifecycleService().shutdown();
     }
     /*
        github issue 585
     */
     @Test
     public void testIssue585SetWithoutTtl() throws InterruptedException {
-        Config config = new Config();
-        config.getGroupConfig().setName("testIssue585SetWithoutTtl");
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
-        IMap<String, String> map = h.getMap("testIssue585SetWithoutTtl");
+        String name = "testIssue585SetWithoutTtl";
+        IMap<String, String> map = Hazelcast.getMap(name);
         map.set("key", "value", 1, TimeUnit.SECONDS);
         map.set("key", "value2");
         map.set("key1", "value3");
         Thread.sleep(2000);
         assertEquals(1, map.size());
-        h.getLifecycleService().shutdown();
     }
     
     /*
@@ -1431,13 +1418,12 @@ public class HazelcastTest {
      */
     @Test
     public void testIssue670PutTtl() throws Exception {
-        Config config = new Config();
-        MapConfig mapConfig = new MapConfig("ttl-test");
+        Config config = Hazelcast.getConfig();
+        String name = "testIssue670PutTtl";
+        MapConfig mapConfig = config.getMapConfig(name);
         mapConfig.setTimeToLiveSeconds(1);
-        config.addMapConfig(mapConfig);
-        
-        HazelcastInstance h = Hazelcast.newHazelcastInstance(config);
-        IMap<Integer, Boolean> imap = h.getMap("ttl-test");
+
+        IMap<Integer, Boolean> imap = Hazelcast.getMap(name);
         HashMap<Integer, Boolean> putAllEntries = new HashMap<Integer, Boolean>();
         putAllEntries.put(1, true);
         putAllEntries.put(2, false);
@@ -1454,7 +1440,6 @@ public class HazelcastTest {
         assertFalse("put entry with ttl should have been evicted", imap.containsKey(4));
         assertTrue("put entry with long ttl should not have been evicted", imap.containsKey(5));
         assertTrue("put entry with zero ttl should not have been evicted", imap.containsKey(6));
-        h.getLifecycleService().shutdown();
     }
 
     /*
@@ -1462,19 +1447,14 @@ public class HazelcastTest {
      */
     @Test
     public void testIssue304EvictionDespitePut() throws InterruptedException {
-        Config c = new Config();
-        c.getGroupConfig().setName("testIssue304EvictionDespitePut");
-        final HashMap<String, MapConfig> mapConfigs = new HashMap<String, MapConfig>();
-        final MapConfig value = new MapConfig();
-        value.setMaxIdleSeconds(3);
-        mapConfigs.put("default", value);
-        c.setMapConfigs(mapConfigs);
-        final Properties properties = new Properties();
-        properties.setProperty("hazelcast.map.cleanup.delay.seconds", "1"); // we need faster cleanups
-        c.setProperties(properties);
-        final HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(c);
+        Config c = Hazelcast.getConfig();
+        String name = "testIssue304EvictionDespitePutMap";
+        final MapConfig mapConfig = c.getMapConfig(name);
+        mapConfig.setMaxIdleSeconds(3);
 
-        IMap<String, Long> map = hazelcastInstance.getMap("testIssue304EvictionDespitePutMap");
+        c.setProperty("hazelcast.map.cleanup.delay.seconds", "1"); // we need faster cleanups
+
+        IMap<String, Long> map = Hazelcast.getMap(name);
         final AtomicInteger evictCount = new AtomicInteger(0);
         map.addEntryListener(new EntryListener<String, Long>() {
             public void entryAdded(EntryEvent<String, Long> event) {
@@ -1499,6 +1479,5 @@ public class HazelcastTest {
         }
         assertEquals(evictCount.get(), 0);
         assertNotNull(map.get(key));
-        hazelcastInstance.getLifecycleService().shutdown();
     }
 }
