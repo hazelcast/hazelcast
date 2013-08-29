@@ -1023,8 +1023,11 @@ public class CMap {
         } else if (updates.size() > 1) {
             store.storeAll(updates);
         }
+        long now = Clock.currentTimeMillis();
         for (Record stored : toStore) {
-            stored.setLastStoredTime(Clock.currentTimeMillis());
+            // to make sure actual store time is after expected write time
+            long storedTime = Math.max(now, stored.getWriteTime() + 1);
+            stored.setLastStoredTime(storedTime);
         }
     }
 
@@ -1389,8 +1392,8 @@ public class CMap {
                     boolean ownedOrBackup = partition.isOwnerOrBackup(thisAddress, getTotalBackupCount());
                     if (owner != null && !partitionManager.isPartitionMigrating(partition.getPartitionId())) {
                         if (owned) {
-                            if (store != null && mapStoreWrapper.isEnabled()
-                                    && writeDelayMillis > 0 && record.isDirty()) {
+                            boolean hasWriteBehindStore = store != null && mapStoreWrapper.isEnabled() && writeDelayMillis > 0;
+                            if (hasWriteBehindStore && record.isDirty()) {
                                 if (now > record.getWriteTime()) {
                                     recordsDirty.add(record);
                                     record.setDirty(false);   // set dirty to false, we will store these soon
@@ -1400,7 +1403,9 @@ public class CMap {
                             } else if (shouldPurgeRecord(record, now)) {
                                 recordsToPurge.add(record);  // removed records
                             } else if (record.isActive() && !record.isValid(now)) {
-                                recordsToEvict.add(record);  // expired records
+                                if (!hasWriteBehindStore || (record.getWriteTime() <= record.getLastStoredTime())) {
+                                    recordsToEvict.add(record);  // expired records
+                                }
                             } else if (evictionAware && record.isActive() && record.isEvictable()) {
                                 sortedRecords.add(record);   // sorting for eviction
                                 recordsStillOwned++;
