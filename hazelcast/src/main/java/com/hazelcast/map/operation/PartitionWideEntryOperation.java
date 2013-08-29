@@ -57,7 +57,12 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
             Object result = entryProcessor.process(entry);
             if (result != null)
                 response.add(new AbstractMap.SimpleImmutableEntry<Data,Data>(dataKey, mapService.toData(result)));
-            recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, entry.getValue()));
+            if(entry.getValue() == null) {
+                recordStore.remove(dataKey);
+            }
+            else {
+                recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, entry.getValue()));
+            }
         }
     }
 
