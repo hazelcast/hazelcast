@@ -250,7 +250,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     private void _sendAndHandle(ConnectionFactory connectionFactory, Object obj, ResponseHandler handler) throws IOException {
         ResponseStream stream = null;
         while (stream == null) {
-            if (active){
+            if (!active){
                 throw new HazelcastInstanceNotActiveException();
             }
             Connection conn = null;
