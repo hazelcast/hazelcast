@@ -192,4 +192,29 @@ public class ClientIssueTest {
 
     }
 
+    /**
+     * Client hangs at map.get after shutdown
+     */
+    @Test
+    public void testIssue821(){
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient();
+
+        final IMap<Object, Object> map = client.getMap("default");
+
+        map.put("key1", "value1");
+
+        instance.getLifecycleService().shutdown();
+
+        try {
+            map.get("key1");
+            fail();
+        } catch (HazelcastInstanceNotActiveException ignored){
+        }
+        assertFalse(instance.getLifecycleService().isRunning());
+
+
+
+    }
+
 }
