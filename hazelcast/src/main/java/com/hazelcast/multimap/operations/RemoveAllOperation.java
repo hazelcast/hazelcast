@@ -43,7 +43,7 @@ public class RemoveAllOperation extends MultiMapBackupAwareOperation {
 
     public void run() throws Exception {
         begin = Clock.currentTimeMillis();
-        coll = removeCollection();
+        coll = remove();
         response = new MultiMapResponse(coll);
     }
 

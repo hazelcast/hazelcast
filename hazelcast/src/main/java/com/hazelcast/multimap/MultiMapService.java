@@ -17,7 +17,6 @@
 package com.hazelcast.multimap;
 
 import com.hazelcast.cluster.ClusterServiceImpl;
-import com.hazelcast.multimap.multimap.ObjectMultiMapProxy;
 import com.hazelcast.multimap.multimap.tx.TransactionalMultiMapProxy;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStoreInfo;
@@ -50,7 +49,7 @@ import java.util.concurrent.ConcurrentMap;
 public class MultiMapService implements ManagedService, RemoteService,
         MigrationAwareService, EventPublishingService<MultiMapEvent, EventListener>, TransactionalService {
 
-    public static final String SERVICE_NAME = "hz:impl:collectionService";
+    public static final String SERVICE_NAME = "hz:impl:multiMapService";
     private final NodeEngine nodeEngine;
     private final MultiMapPartitionContainer[] partitionContainers;
     private final ConcurrentMap<String, LocalMultiMapStatsImpl> statsMap = new ConcurrentHashMap<String, LocalMultiMapStatsImpl>(1000);
@@ -112,7 +111,7 @@ public class MultiMapService implements ManagedService, RemoteService,
     }
 
     public MultiMapContainer getOrCreateCollectionContainer(int partitionId, String name) {
-        return partitionContainers[partitionId].getOrCreateCollectionContainer(name);
+        return partitionContainers[partitionId].getOrCreateMultiMapContainer(name);
     }
 
     public MultiMapPartitionContainer getPartitionContainer(int partitionId) {
@@ -205,7 +204,7 @@ public class MultiMapService implements ManagedService, RemoteService,
             if (container.config.getTotalBackupCount() < replicaIndex) {
                 continue;
             }
-            map.put(name, container.collections);
+            map.put(name, container.multiMapWrappers);
         }
         if (map.isEmpty()) {
             return null;
@@ -218,7 +217,7 @@ public class MultiMapService implements ManagedService, RemoteService,
             String name = entry.getKey();
             MultiMapContainer container = getOrCreateCollectionContainer(partitionId, name);
             Map<Data, MultiMapWrapper> collections = entry.getValue();
-            container.collections.putAll(collections);
+            container.multiMapWrappers.putAll(collections);
         }
     }
 
@@ -263,7 +262,7 @@ public class MultiMapService implements ManagedService, RemoteService,
             }
             if (partition.getOwner().equals(thisAddress)) {
                 lockedEntryCount += multiMapContainer.getLockedCount();
-                for (MultiMapWrapper wrapper : multiMapContainer.collections.values()) {
+                for (MultiMapWrapper wrapper : multiMapContainer.multiMapWrappers.values()) {
                     hits += wrapper.getHits();
                     ownedEntryCount += wrapper.getCollection().size();
                 }
@@ -285,7 +284,7 @@ public class MultiMapService implements ManagedService, RemoteService,
                     }
 
                     if (replicaAddress != null && replicaAddress.equals(thisAddress)) {
-                        for (MultiMapWrapper wrapper : multiMapContainer.collections.values()) {
+                        for (MultiMapWrapper wrapper : multiMapContainer.multiMapWrappers.values()) {
                             backupEntryCount += wrapper.getCollection().size();
                         }
                     }

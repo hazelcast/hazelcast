@@ -28,7 +28,7 @@ public final class FactoryIdHelper {
     public static final String CLIENT_DS_FACTORY = "hazelcast.serialization.ds.client";
     public static final String MAP_DS_FACTORY = "hazelcast.serialization.ds.map";
     public static final String QUEUE_DS_FACTORY = "hazelcast.serialization.ds.queue";
-    public static final String COLLECTION_DS_FACTORY = "hazelcast.serialization.ds.collection";
+    public static final String MULTIMAP_DS_FACTORY = "hazelcast.serialization.ds.multimap";
     public static final String EXECUTOR_DS_FACTORY = "hazelcast.serialization.ds.executor";
     public static final String TOPIC_DS_FACTORY = "hazelcast.serialization.ds.topic";
     public static final String LOCK_DS_FACTORY = "hazelcast.serialization.ds.lock";
@@ -42,7 +42,7 @@ public final class FactoryIdHelper {
     public static final String CLIENT_TXN_PORTABLE_FACTORY = "hazelcast.serialization.portable.client.txn";
     public static final String MAP_PORTABLE_FACTORY = "hazelcast.serialization.portable.map";
     public static final String QUEUE_PORTABLE_FACTORY = "hazelcast.serialization.portable.queue";
-    public static final String COLLECTION_PORTABLE_FACTORY = "hazelcast.serialization.portable.collection";
+    public static final String MULTIMAP_PORTABLE_FACTORY = "hazelcast.serialization.portable.multimap";
     public static final String EXECUTOR_PORTABLE_FACTORY = "hazelcast.serialization.portable.executor";
     public static final String TOPIC_PORTABLE_FACTORY = "hazelcast.serialization.portable.topic";
     public static final String LOCK_PORTABLE_FACTORY = "hazelcast.serialization.portable.lock";

@@ -42,15 +42,15 @@ public abstract class MultiMapKeyBasedOperation extends MultiMapOperation implem
     }
 
     public final MultiMapWrapper getOrCreateCollectionWrapper() {
-        return getOrCreateContainer().getOrCreateCollectionWrapper(dataKey);
+        return getOrCreateContainer().getOrCreateMultiMapWrapper(dataKey);
     }
 
     public final MultiMapWrapper getCollectionWrapper() {
-        return getOrCreateContainer().getCollectionWrapper(dataKey);
+        return getOrCreateContainer().getMultiMapWrapper(dataKey);
     }
 
-    public final Collection<MultiMapRecord> removeCollection() {
-        return getOrCreateContainer().removeCollection(dataKey);
+    public final Collection<MultiMapRecord> remove() {
+        return getOrCreateContainer().remove(dataKey);
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

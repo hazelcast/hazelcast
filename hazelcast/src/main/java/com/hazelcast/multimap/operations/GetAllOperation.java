@@ -38,7 +38,7 @@ public class GetAllOperation extends MultiMapKeyBasedOperation {
     }
 
     public void run() throws Exception {
-        MultiMapWrapper wrapper = getOrCreateContainer().getCollectionWrapper(dataKey);
+        MultiMapWrapper wrapper = getOrCreateContainer().getMultiMapWrapper(dataKey);
         Collection coll = null;
         if (wrapper != null) {
             wrapper.incrementHit();

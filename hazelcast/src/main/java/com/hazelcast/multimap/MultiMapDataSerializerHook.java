@@ -26,7 +26,7 @@ import com.hazelcast.util.ConstructorFunction;
  */
 public class MultiMapDataSerializerHook implements DataSerializerHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.COLLECTION_DS_FACTORY, -12);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.MULTIMAP_DS_FACTORY, -12);
 
     public static final int ADD_ALL_BACKUP = 0;
     public static final int ADD_ALL = 1;

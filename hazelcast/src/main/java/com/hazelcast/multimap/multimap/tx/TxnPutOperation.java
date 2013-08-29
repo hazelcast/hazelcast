@@ -48,7 +48,7 @@ public class TxnPutOperation extends MultiMapKeyBasedOperation {
     public void run() throws Exception {
         begin = Clock.currentTimeMillis();
         MultiMapContainer container = getOrCreateContainer();
-        MultiMapWrapper wrapper = container.getOrCreateCollectionWrapper(dataKey);
+        MultiMapWrapper wrapper = container.getOrCreateMultiMapWrapper(dataKey);
         response = true;
         if (wrapper.containsRecordId(recordId)){
             response = false;

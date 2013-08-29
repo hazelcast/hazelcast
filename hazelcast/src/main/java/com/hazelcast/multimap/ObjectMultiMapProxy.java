@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.multimap.multimap;
+package com.hazelcast.multimap;
 
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.monitor.LocalMultiMapStats;
-import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.multimap.operations.MultiMapResponse;
 import com.hazelcast.multimap.operations.EntrySetResponse;
 import com.hazelcast.nio.ClassLoaderUtil;

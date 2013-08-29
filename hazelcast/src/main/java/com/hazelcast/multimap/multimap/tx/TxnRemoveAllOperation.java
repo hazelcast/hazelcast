@@ -53,7 +53,7 @@ public class TxnRemoveAllOperation extends MultiMapKeyBasedOperation {
     public void run() throws Exception {
         begin = Clock.currentTimeMillis();
         MultiMapContainer container = getOrCreateContainer();
-        MultiMapWrapper wrapper = container.getOrCreateCollectionWrapper(dataKey);
+        MultiMapWrapper wrapper = container.getOrCreateMultiMapWrapper(dataKey);
         response = true;
         for (Long recordId: recordIds){
             if(!wrapper.containsRecordId(recordId)){
@@ -75,7 +75,7 @@ public class TxnRemoveAllOperation extends MultiMapKeyBasedOperation {
             }
         }
         if (coll.isEmpty()) {
-            removeCollection();
+            remove();
         }
 
     }

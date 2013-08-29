@@ -14,19 +14,20 @@
  * limitations under the License.
  */
 
-package com.hazelcast.multimap.multimap;
+package com.hazelcast.multimap;
 
-import com.hazelcast.multimap.MultiMapService;
-import com.hazelcast.multimap.operations.*;
-import com.hazelcast.multimap.operations.MultiMapOperationFactory.OperationFactoryType;
 import com.hazelcast.concurrent.lock.proxy.LockProxySupport;
 import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.multimap.operations.*;
+import com.hazelcast.multimap.operations.MultiMapOperationFactory.OperationFactoryType;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.*;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Future;
 
 /**
@@ -34,8 +35,8 @@ import java.util.concurrent.Future;
  */
 public abstract class MultiMapProxySupport extends AbstractDistributedObject<MultiMapService> {
 
-    public static final String COLLECTION_LIST_NAME = "hz:list:";
-    public static final String COLLECTION_SET_NAME = "hz:set:";
+//    public static final String COLLECTION_LIST_NAME = "hz:list:";
+//    public static final String COLLECTION_SET_NAME = "hz:set:";
 
     protected final MultiMapConfig config;
     protected final String name;

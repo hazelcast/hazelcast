@@ -52,7 +52,7 @@ public class ClearOperation extends MultiMapOperation implements BackupAwareOper
 
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
-        container.clearCollections();
+        container.clear();
         response = true;
         ((MultiMapService) getService()).getLocalMultiMapStatsImpl(name).incrementOtherOperations();
         //TODO @ali take these to afterRun maybe ?

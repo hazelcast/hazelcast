@@ -33,7 +33,7 @@ public class RemoveAllBackupOperation extends MultiMapKeyBasedOperation implemen
     }
 
     public void run() throws Exception {
-        removeCollection();
+        remove();
         response = true;
     }
 

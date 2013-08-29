@@ -27,7 +27,7 @@ import java.util.Collection;
  */
 public class MultiMapPortableHook implements PortableHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.COLLECTION_PORTABLE_FACTORY, -12);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.MULTIMAP_PORTABLE_FACTORY, -12);
 
 
     public static final int ADD_ALL = 1;

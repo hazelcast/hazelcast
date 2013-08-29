@@ -34,7 +34,7 @@ public class ClearBackupOperation extends MultiMapOperation implements BackupOpe
 
     public void run() throws Exception {
         MultiMapContainer container = getOrCreateContainer();
-        container.clearCollections();
+        container.clear();
         response = true;
     }
 

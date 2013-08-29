@@ -56,7 +56,7 @@ public class RemoveBackupOperation extends MultiMapKeyBasedOperation implements 
                 iter.remove();
                 response = true;
                 if (coll.isEmpty()) {
-                    removeCollection();
+                    remove();
                 }
                 break;
             }

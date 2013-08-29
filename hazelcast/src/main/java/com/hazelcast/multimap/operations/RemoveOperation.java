@@ -64,7 +64,7 @@ public class RemoveOperation extends MultiMapBackupAwareOperation {
                 recordId = r.getRecordId();
                 response = true;
                 if (coll.isEmpty()) {
-                    removeCollection();
+                    remove();
                 }
                 break;
             }

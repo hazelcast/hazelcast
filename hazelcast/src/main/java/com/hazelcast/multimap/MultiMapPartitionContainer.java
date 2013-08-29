@@ -33,7 +33,7 @@ public class MultiMapPartitionContainer {
 
     final ConcurrentMap<String, MultiMapContainer> containerMap = new ConcurrentHashMap<String, MultiMapContainer>(1000);
 
-    private final ConstructorFunction<String, MultiMapContainer> collectionConstructor
+    private final ConstructorFunction<String, MultiMapContainer> containerConstructor
             = new ConstructorFunction<String, MultiMapContainer>() {
         public MultiMapContainer createNew(String name) {
             return new MultiMapContainer(name, service, partitionId);
@@ -45,8 +45,8 @@ public class MultiMapPartitionContainer {
         this.partitionId = partitionId;
     }
 
-    public MultiMapContainer getOrCreateCollectionContainer(String name) {
-        MultiMapContainer container = ConcurrencyUtil.getOrPutIfAbsent(containerMap, name, collectionConstructor);
+    public MultiMapContainer getOrCreateMultiMapContainer(String name) {
+        MultiMapContainer container = ConcurrencyUtil.getOrPutIfAbsent(containerMap, name, containerConstructor);
         container.access();
         return container;
     }

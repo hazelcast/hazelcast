@@ -42,7 +42,7 @@ public class MultiMapContainer {
 
     final MultiMapConfig config;
 
-    final ConcurrentMap<Data, MultiMapWrapper> collections = new ConcurrentHashMap<Data, MultiMapWrapper>(1000);
+    final ConcurrentMap<Data, MultiMapWrapper> multiMapWrappers = new ConcurrentHashMap<Data, MultiMapWrapper>(1000);
 
     final DefaultObjectNamespace lockNamespace;
 
@@ -100,8 +100,8 @@ public class MultiMapContainer {
         return idGen.getAndIncrement();
     }
 
-    public MultiMapWrapper getOrCreateCollectionWrapper(Data dataKey) {
-        MultiMapWrapper wrapper = collections.get(dataKey);
+    public MultiMapWrapper getOrCreateMultiMapWrapper(Data dataKey) {
+        MultiMapWrapper wrapper = multiMapWrappers.get(dataKey);
         if (wrapper == null) {
             Collection<MultiMapRecord> coll;
             if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.SET)) {
@@ -112,22 +112,22 @@ public class MultiMapContainer {
                 throw new IllegalArgumentException("No Matching CollectionProxyType!");
             }
             wrapper = new MultiMapWrapper(coll);
-            collections.put(dataKey, wrapper);
+            multiMapWrappers.put(dataKey, wrapper);
         }
         return wrapper;
     }
 
-    public MultiMapWrapper getCollectionWrapper(Data dataKey) {
-        return collections.get(dataKey);
+    public MultiMapWrapper getMultiMapWrapper(Data dataKey) {
+        return multiMapWrappers.get(dataKey);
     }
 
-    public Collection<MultiMapRecord> removeCollection(Data dataKey) {
-        MultiMapWrapper wrapper = collections.remove(dataKey);
+    public Collection<MultiMapRecord> remove(Data dataKey) {
+        MultiMapWrapper wrapper = multiMapWrappers.remove(dataKey);
         return wrapper != null ? wrapper.getCollection() : null;
     }
 
     public Set<Data> keySet() {
-        Set<Data> keySet = collections.keySet();
+        Set<Data> keySet = multiMapWrappers.keySet();
         Set<Data> keys = new HashSet<Data>(keySet.size());
         keys.addAll(keySet);
         return keys;
@@ -135,18 +135,18 @@ public class MultiMapContainer {
 
     public Collection<MultiMapRecord> values() {
         Collection<MultiMapRecord> valueCollection = new LinkedList<MultiMapRecord>();
-        for (MultiMapWrapper wrapper : collections.values()) {
+        for (MultiMapWrapper wrapper : multiMapWrappers.values()) {
             valueCollection.addAll(wrapper.getCollection());
         }
         return valueCollection;
     }
 
     public boolean containsKey(Data key) {
-        return collections.containsKey(key);
+        return multiMapWrappers.containsKey(key);
     }
 
     public boolean containsEntry(boolean binary, Data key, Data value) {
-        MultiMapWrapper wrapper = collections.get(key);
+        MultiMapWrapper wrapper = multiMapWrappers.get(key);
         if (wrapper == null) {
             return false;
         }
@@ -155,7 +155,7 @@ public class MultiMapContainer {
     }
 
     public boolean containsValue(boolean binary, Data value) {
-        for (Data key : collections.keySet()) {
+        for (Data key : multiMapWrappers.keySet()) {
             if (containsEntry(binary, key, value)) {
                 return true;
             }
@@ -164,8 +164,8 @@ public class MultiMapContainer {
     }
 
     public Map<Data, Collection<MultiMapRecord>> copyCollections() {
-        Map<Data, Collection<MultiMapRecord>> map = new HashMap<Data, Collection<MultiMapRecord>>(collections.size());
-        for (Map.Entry<Data, MultiMapWrapper> entry : collections.entrySet()) {
+        Map<Data, Collection<MultiMapRecord>> map = new HashMap<Data, Collection<MultiMapRecord>>(multiMapWrappers.size());
+        for (Map.Entry<Data, MultiMapWrapper> entry : multiMapWrappers.entrySet()) {
             Data key = entry.getKey();
             Collection<MultiMapRecord> col = copyCollection(entry.getValue().getCollection());
             map.put(key, col);
@@ -181,23 +181,23 @@ public class MultiMapContainer {
 
     public int size() {
         int size = 0;
-        for (MultiMapWrapper wrapper : collections.values()) {
+        for (MultiMapWrapper wrapper : multiMapWrappers.values()) {
             size += wrapper.getCollection().size();
         }
         return size;
     }
 
-    public void clearCollections() {
+    public void clear() {
         final Collection<Data> locks = lockStore != null ? lockStore.getLockedKeys() : Collections.<Data>emptySet();
         Map<Data, MultiMapWrapper> temp = new HashMap<Data, MultiMapWrapper>(locks.size());
         for (Data key : locks) {
-            MultiMapWrapper wrapper = collections.get(key);
+            MultiMapWrapper wrapper = multiMapWrappers.get(key);
             if (wrapper != null){
                 temp.put(key, wrapper);
             }
         }
-        collections.clear();
-        collections.putAll(temp);
+        multiMapWrappers.clear();
+        multiMapWrappers.putAll(temp);
     }
 
     public NodeEngine getNodeEngine() {
@@ -213,7 +213,7 @@ public class MultiMapContainer {
         if (lockService != null) {
             lockService.clearLockStore(partitionId, lockNamespace);
         }
-        collections.clear();
+        multiMapWrappers.clear();
     }
 
     public void access() {
