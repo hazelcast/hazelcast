@@ -18,8 +18,11 @@ package com.hazelcast.nio;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.util.Properties;
 
 public interface SocketInterceptor {
+
+    void init(Properties properties);
 
     void onConnect(Socket connectedSocket) throws IOException;
 }

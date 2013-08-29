@@ -34,8 +34,7 @@
                 <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="serialization" type="serialization" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="proxy-factories" type="proxy-factories" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0" maxOccurs="1"/>
-                <xs:element name="load-balancer" type="load-balancer" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="load-balancer" type="load-balancer" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="near-cache" type="near-cache-client" minOccurs="0" maxOccurs="unbounded"/>
             </xs:sequence>
             <xs:attribute name="id" type="xs:string" use="optional" default="default"/>
@@ -52,8 +51,10 @@
             <xs:element ref="connection-attempt-period" minOccurs="0" maxOccurs="1"/>
             <xs:element ref="connection-attempt-limit" minOccurs="0" maxOccurs="1"/>
             <xs:element ref="socket-options" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
     </xs:complexType>
+
     <xs:element name="cluster-members">
         <xs:complexType>
             <xs:sequence>
@@ -138,12 +139,12 @@
             <xs:sequence>
                 <xs:element name="tcp-no-delay" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
                 <xs:element name="keep-alive" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
-                <xs:element name="reuse-address" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
+                <xs:element name="reuse-address" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
                 <xs:element name="linger-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="3"/>
                 <xs:element name="timeout" type="xs:int" minOccurs="0" maxOccurs="1" default="-1"/>
-                <xs:element name="buffer-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="32">
+                <xs:element name="buffer-size" minOccurs="0" maxOccurs="1" default="32">
                     <xs:simpleType>
-                        <xs:restriction base="xs:int">
+                        <xs:restriction base="xs:unsignedInt">
                             <xs:minInclusive value="1"/>
                         </xs:restriction>
                     </xs:simpleType>
@@ -169,7 +170,7 @@
         </xs:sequence>
     </xs:complexType>
     <xs:complexType name="proxy-factory">
-        <xs:attribute name="service">
+        <xs:attribute name="service" >
             <xs:simpleType>
                 <xs:restriction base="non-space-string"/>
             </xs:simpleType>
@@ -180,13 +181,7 @@
             </xs:simpleType>
         </xs:attribute>
     </xs:complexType>
-    <xs:complexType name="socket-interceptor">
-        <xs:attribute name="class-name">
-            <xs:simpleType>
-                <xs:restriction base="non-space-string"/>
-            </xs:simpleType>
-        </xs:attribute>
-    </xs:complexType>
+
     <xs:complexType name="load-balancer">
         <xs:attribute name="type" use="required">
             <xs:simpleType>
@@ -198,7 +193,7 @@
         </xs:attribute>
     </xs:complexType>
     <xs:complexType name="near-cache-client">
-        <xs:simpleContent>
+        <xs:complexContent>
             <xs:extension base="near-cache">
                 <xs:attribute name="name" use="required">
                     <xs:simpleType>
@@ -206,6 +201,6 @@
                     </xs:simpleType>
                 </xs:attribute>
             </xs:extension>
-        </xs:simpleContent>
+        </xs:complexContent>
     </xs:complexType>
 </xs:schema>

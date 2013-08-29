@@ -27,6 +27,7 @@ import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.util.ExceptionUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -38,6 +39,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.ByteOrder;
 import java.util.EventListener;
+import java.util.Properties;
 import java.util.logging.Level;
 
 public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
@@ -163,8 +165,6 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
             final String nodeName = cleanNodeName(node.getNodeName());
             if ("security".equals(nodeName)) {
                 handleSecurity(node);
-            } else if ("socket-interceptor".equals(nodeName)) {
-                handleSocketInterceptor(node);
             } else if ("proxy-factories".equals(nodeName)) {
                 handleProxyFactories(node);
             } else if ("serialization".equals(nodeName)) {
@@ -233,6 +233,8 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
                 clientConfig.setConnectionAttemptLimit(Integer.parseInt(getTextContent(child)));
             } else if ("socket-options".equals(nodeName)) {
                 handleSocketOptions(child);
+            }  else if ("socket-interceptor".equals(nodeName)) {
+                handleSocketInterceptorConfig(node);
             }
         }
     }
@@ -269,18 +271,9 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
         for (Node child : new IterableNodeList(node.getChildNodes())) {
             if ("listener".equals(cleanNodeName(child))) {
                 String className = getTextContent(child);
-                handleEventListenerInstantiation(className);
+                clientConfig.addListenerConfig(new ListenerConfig(className));
             }
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    private void handleEventListenerInstantiation(String className) throws Exception {
-        ClassLoader classLoader = clientConfig.getClassLoader();
-        Class<? extends EventListener> listenerClass;
-        listenerClass = (Class<? extends EventListener>) classLoader.loadClass(className);
-        EventListener listener = listenerClass.newInstance();
-        clientConfig.getListeners().add(listener);
     }
 
     private void handleGroup(Node node) {
@@ -296,90 +289,10 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
     }
 
     private void handleSerialization(Node node) {
-        SerializationConfig serializationConfig = clientConfig.getSerializationConfig();
-        for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
-            final String name = cleanNodeName(child);
-            if ("portable-version".equals(name)) {
-                String value = getTextContent(child);
-                serializationConfig.setPortableVersion(getIntegerValue(name, value, 0));
-            } else if ("check-class-def-errors".equals(name)) {
-                String value = getTextContent(child);
-                serializationConfig.setCheckClassDefErrors(checkTrue(value));
-            } else if ("use-native-byte-order".equals(name)) {
-                serializationConfig.setUseNativeByteOrder(checkTrue(getTextContent(child)));
-            } else if ("byte-order".equals(name)) {
-                String value = getTextContent(child);
-                ByteOrder byteOrder = null;
-                if (ByteOrder.BIG_ENDIAN.toString().equals(value)) {
-                    byteOrder = ByteOrder.BIG_ENDIAN;
-                } else if (ByteOrder.LITTLE_ENDIAN.toString().equals(value)) {
-                    byteOrder = ByteOrder.LITTLE_ENDIAN;
-                }
-                serializationConfig.setByteOrder(byteOrder != null ? byteOrder : ByteOrder.BIG_ENDIAN);
-            } else if ("enable-compression".equals(name)) {
-                serializationConfig.setEnableCompression(checkTrue(getTextContent(child)));
-            } else if ("enable-shared-object".equals(name)) {
-                serializationConfig.setEnableSharedObject(checkTrue(getTextContent(child)));
-            } else if ("allow-unsafe".equals(name)) {
-                serializationConfig.setAllowUnsafe(checkTrue(getTextContent(child)));
-            } else if ("data-serializable-factories".equals(name)) {
-                handleDataSerializableFactories(child, serializationConfig);
-            } else if ("portable-factories".equals(name)) {
-                handlePortableFactories(child, serializationConfig);
-            } else if ("serializers".equals(name)) {
-                handleSerializers(child, serializationConfig);
-            }
-        }
+        SerializationConfig serializationConfig = parseSerialization(node);
+        clientConfig.setSerializationConfig(serializationConfig);
     }
 
-    private void handleDataSerializableFactories(Node node, SerializationConfig serializationConfig) {
-        for (Node child : new IterableNodeList(node.getChildNodes())) {
-            final String name = cleanNodeName(child);
-            if ("data-serializable-factory".equals(name)) {
-                final String value = getTextContent(child);
-                final Node factoryIdNode = child.getAttributes().getNamedItem("factory-id");
-                if (factoryIdNode == null) {
-                    throw new IllegalArgumentException(
-                            "'factory-id' attribute of 'data-serializable-factory' is required!");
-                }
-                int factoryId = Integer.parseInt(getTextContent(factoryIdNode));
-                serializationConfig.addDataSerializableFactoryClass(factoryId, value);
-            }
-        }
-    }
-
-    private void handlePortableFactories(Node node, SerializationConfig serializationConfig) {
-        for (Node child : new IterableNodeList(node.getChildNodes())) {
-            final String name = cleanNodeName(child);
-            if ("portable-factory".equals(name)) {
-                final String value = getTextContent(child);
-                final Node factoryIdNode = child.getAttributes().getNamedItem("factory-id");
-                if (factoryIdNode == null) {
-                    throw new IllegalArgumentException("'factory-id' attribute of 'portable-factory' is required!");
-                }
-                int factoryId = Integer.parseInt(getTextContent(factoryIdNode));
-                serializationConfig.addPortableFactoryClass(factoryId, value);
-            }
-        }
-    }
-
-    private void handleSerializers(Node node, SerializationConfig serializationConfig) {
-        for (Node child : new IterableNodeList(node.getChildNodes())) {
-            final String name = cleanNodeName(child);
-            final String value = getTextContent(child);
-            if ("serializer".equals(name)) {
-                SerializerConfig serializerConfig = new SerializerConfig();
-                serializerConfig.setClassName(value);
-                final String typeClassName = getAttribute(child, "type-class");
-                serializerConfig.setTypeClassName(typeClassName);
-                serializationConfig.addSerializerConfig(serializerConfig);
-            } else if ("global-serializer".equals(name)) {
-                GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
-                globalSerializerConfig.setClassName(value);
-                serializationConfig.setGlobalSerializerConfig(globalSerializerConfig);
-            }
-        }
-    }
 
     private void handleProxyFactories(Node node) throws Exception {
         for (Node child : new IterableNodeList(node.getChildNodes())) {
@@ -393,30 +306,14 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
     private void handleProxyFactory(Node node) throws Exception {
         final String service = getAttribute(node, "service");
         final String className = getAttribute(node, "class-name");
-        handleProxyFactoryInstantiation(service, className);
+
+        final ProxyFactoryConfig proxyFactoryConfig = new ProxyFactoryConfig(className, service);
+        clientConfig.addProxyFactoryConfig(proxyFactoryConfig);
     }
 
-    @SuppressWarnings("unchecked")
-    private void handleProxyFactoryInstantiation(String service, String className) throws Exception {
-        ClassLoader classLoader = clientConfig.getClassLoader();
-        Class<? extends ClientProxyFactory> proxyFactoryClass;
-        proxyFactoryClass = (Class<? extends ClientProxyFactory>) classLoader.loadClass(className);
-        ClientProxyFactory factory = proxyFactoryClass.newInstance();
-        clientConfig.getProxyFactoryConfig().addProxyFactory(service, factory);
-    }
-
-    private void handleSocketInterceptor(Node node) throws Exception {
-        String className = getAttribute(node, "class-name");
-        handleSocketInterceptorInstantiation(className);
-    }
-
-    @SuppressWarnings("unchecked")
-    private void handleSocketInterceptorInstantiation(String className) throws Exception {
-        ClassLoader classLoader = clientConfig.getClassLoader();
-        Class<? extends SocketInterceptor> socketInterceptorClass;
-        socketInterceptorClass = (Class<? extends SocketInterceptor>) classLoader.loadClass(className);
-        SocketInterceptor interceptor = socketInterceptorClass.newInstance();
-        clientConfig.setSocketInterceptor(interceptor);
+    private void handleSocketInterceptorConfig(final org.w3c.dom.Node node) {
+        SocketInterceptorConfig socketInterceptorConfig = parseSocketInterceptorConfig(node);
+        clientConfig.setSocketInterceptorConfig(socketInterceptorConfig);
     }
 
     private void handleSecurity(Node node) throws Exception {
@@ -441,21 +338,4 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
         clientConfig.setCredentials(credentials);
     }
 
-    private String getAttribute(Node node, String attName) {
-        final Node attNode = node.getAttributes().getNamedItem(attName);
-        if (attNode == null)
-            return null;
-        return getTextContent(attNode);
-    }
-
-    private int getIntegerValue(String parameterName, String value, int defaultValue) {
-        try {
-            return Integer.parseInt(value);
-        } catch (final Exception e) {
-            logger.info(parameterName + " parameter value, [" + value
-                    + "], is not a proper integer. Default value, [" + defaultValue + "], will be used!");
-            logger.warning(e);
-            return defaultValue;
-        }
-    }
 }

@@ -229,14 +229,13 @@
                         <xs:element name="serialization" type="serialization" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="proxy-factories" type="proxy-factories" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="load-balancer" type="load-balancer" minOccurs="0" maxOccurs="unbounded"/>
+                        <xs:element name="load-balancer" type="load-balancer" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="near-cache" type="near-cache-client" minOccurs="0" maxOccurs="unbounded"/>
                     </xs:sequence>
                     <xs:attribute name="executor-pool-size" type="xs:int" use="optional"/>
                     <xs:attribute name="credentials-ref" type="xs:string" use="optional"/>
                     <xs:attribute name="smart" type="xs:string" use="optional"/>
                     <xs:attribute name="redo-operation" type="xs:string" use="optional"/>
-                    <xs:attribute name="pool-size" type="xs:string" use="optional"/>
                 </xs:extension>
             </xs:complexContent>
         </xs:complexType>
@@ -359,7 +358,7 @@
         <xs:attribute name="enabled" type="xs:string" use="optional" default="true"/>
         <xs:attribute name="access-key" type="xs:string" use="optional" default=""/>
         <xs:attribute name="secret-key" type="xs:string" use="optional" default=""/>
-        <xs:attribute name="region" type="xs:string" use="optional" default=""/>
+        <xs:attribute name="region" type="xs:string" use="optional" default="us-east-1"/>
         <xs:attribute name="host-header" type="xs:string" use="optional" default="ec2.amazonaws.com"/>
         <xs:attribute name="security-group-name" type="xs:string" use="optional" default=""/>
         <xs:attribute name="tag-key" type="xs:string" use="optional" default=""/>
@@ -840,22 +839,7 @@
     <xs:complexType name="network-client">
         <xs:sequence>
             <xs:element name="member" type="member" minOccurs="0" maxOccurs="unbounded" />
-            <xs:element name="socket-options" minOccurs="0" maxOccurs="1">
-                <xs:complexType>
-                    <xs:attribute name="tcp-no-delay" type="xs:boolean" use="optional" default="false"/>
-                    <xs:attribute name="keep-alive" type="xs:boolean" use="optional" default="true"/>
-                    <xs:attribute name="reuse-address" type="xs:boolean" use="optional" default="false"/>
-                    <xs:attribute name="linger-seconds" type="xs:unsignedInt" use="optional" default="3"/>
-                    <xs:attribute name="timeout" type="xs:int" use="optional" default="-1"/>
-                    <xs:attribute name="buffer-size" type="xs:unsignedInt" use="optional" default="32">
-                        <xs:simpleType>
-                            <xs:restriction base="xs:int">
-                                <xs:minInclusive value="1"/>
-                            </xs:restriction>
-                        </xs:simpleType>
-                    </xs:attribute>
-                </xs:complexType>
-            </xs:element>
+            <xs:element name="socket-options" type="socket-options" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
         <xs:attribute name="smart-routing" use="optional" type="xs:boolean" default="false"/>
         <xs:attribute name="redo-operation" use="optional" type="xs:boolean" default="false"/>
@@ -863,6 +847,21 @@
         <xs:attribute name="connection-timeout" use="optional" type="intMin1" default="60000"/>
         <xs:attribute name="connection-attempt-period" use="optional" type="intMin1" default="3000"/>
         <xs:attribute name="connection-attempt-limit" use="optional" type="intMin1" default="2"/>
+    </xs:complexType>
+
+    <xs:complexType name="socket-options">
+        <xs:attribute name="tcp-no-delay" type="xs:boolean" use="optional" default="false"/>
+        <xs:attribute name="keep-alive" type="xs:boolean" use="optional" default="true"/>
+        <xs:attribute name="reuse-address" type="xs:boolean" use="optional" default="true"/>
+        <xs:attribute name="linger-seconds" type="xs:unsignedInt" use="optional" default="3"/>
+        <xs:attribute name="timeout" type="xs:int" use="optional" default="-1"/>
+        <xs:attribute name="buffer-size" type="xs:unsignedInt" use="optional" default="32">
+            <xs:simpleType>
+                <xs:restriction base="xs:int">
+                    <xs:minInclusive value="1"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
     </xs:complexType>
 
     <xs:simpleType name="intMin1">
@@ -919,11 +918,28 @@
 
     <xs:complexType name="near-cache">
         <xs:sequence/>
-        <xs:attribute name="time-to-live-seconds" use="required" type="xs:string"/>
-        <xs:attribute name="max-idle-seconds" use="required" type="xs:string"/>
-        <xs:attribute name="eviction-policy" use="required" type="xs:string"/>
-        <xs:attribute name="max-size" use="required" type="xs:string"/>
-        <xs:attribute name="invalidate-on-change" use="required" type="xs:string"/>
+        <xs:attribute name="max-size" use="optional" type="xs:string" default="0"/>
+        <xs:attribute name="time-to-live-seconds" use="optional" type="xs:string" default="0"/>
+        <xs:attribute name="max-idle-seconds" use="optional" type="xs:string" default="0"/>
+        <xs:attribute name="eviction-policy" use="optional" type="eviction-policy" default="LRU"/>
+        <xs:attribute name="invalidate-on-change" use="optional" type="xs:string" default="true"/>
+        <xs:attribute name="in-memory-format" type="in-memory-format" use="optional" default="BINARY"/>
     </xs:complexType>
+
+    <xs:simpleType name="eviction-policy">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="NONE"/>
+            <xs:enumeration value="LRU"/>
+            <xs:enumeration value="LFU"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="in-memory-format">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="BINARY"/>
+            <xs:enumeration value="OBJECT"/>
+            <xs:enumeration value="CACHED"/>
+        </xs:restriction>
+    </xs:simpleType>
 
 </xs:schema>

@@ -18,9 +18,7 @@ package com.hazelcast.client.config;
 
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.util.RoundRobinLB;
-import com.hazelcast.config.GroupConfig;
-import com.hazelcast.config.NearCacheConfig;
-import com.hazelcast.config.SerializationConfig;
+import com.hazelcast.config.*;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.security.Credentials;
@@ -28,8 +26,6 @@ import com.hazelcast.security.UsernamePasswordCredentials;
 
 import java.util.*;
 
-// todo check the new attributes added on 3.0 working in spring configuration
-//TODO @ali reform clientConfig API so that it reflects the server-side config API
 public class ClientConfig {
 
     /**
@@ -44,7 +40,6 @@ public class ClientConfig {
      * Client will use this list to find a running Member, connect to it.
      */
     private final List<String> addressList = new ArrayList<String>(10);
-
     /**
      * Used to distribute the operations to multiple Endpoints.
      */
@@ -54,7 +49,8 @@ public class ClientConfig {
      * List of listeners that Hazelcast will automatically add as a part of initialization process.
      * Currently only supports {@link com.hazelcast.core.LifecycleListener}.
      */
-    private final Collection<EventListener> listeners = new HashSet<EventListener>();
+    //private final Collection<EventListener> listeners = new HashSet<EventListener>();
+    private final List<ListenerConfig> listenerConfigs = new LinkedList<ListenerConfig>();
 
     /**
      * If true, client will route the key based operations to owner of the key at the best effort.
@@ -103,16 +99,17 @@ public class ClientConfig {
     private int executorPoolSize = -1;
 
 
-    private final SocketOptions socketOptions = new SocketOptions();
+    private SocketOptions socketOptions = new SocketOptions();
 
-    private final SerializationConfig serializationConfig = new SerializationConfig();
+    private SerializationConfig serializationConfig = new SerializationConfig();
     
-    private final ProxyFactoryConfig proxyFactoryConfig = new ProxyFactoryConfig();
+    private List<ProxyFactoryConfig> proxyFactoryConfigs = new LinkedList<ProxyFactoryConfig>();
 
     /**
      * Will be called with the Socket, each time client creates a connection to any Member.
      */
-    private SocketInterceptor socketInterceptor = null;
+    //private SocketInterceptor socketInterceptor = null;
+    private SocketInterceptorConfig socketInterceptorConfig = null;
 
     private ManagedContext managedContext = null;
     
@@ -134,6 +131,15 @@ public class ClientConfig {
         return this;
     }
 
+    public ClientConfig addListenerConfig(ListenerConfig listenerConfig) {
+        getListenerConfigs().add(listenerConfig);
+        return this;
+    }
+
+    public ClientConfig addProxyFactoryConfig(ProxyFactoryConfig proxyFactoryConfig) {
+        this.proxyFactoryConfigs.add(proxyFactoryConfig);
+        return this;
+    }
 
     public boolean isSmart() {
         return smart;
@@ -153,12 +159,12 @@ public class ClientConfig {
         return this;
     }
 
-    public SocketInterceptor getSocketInterceptor() {
-        return socketInterceptor;
+    public SocketInterceptorConfig getSocketInterceptorConfig() {
+        return socketInterceptorConfig;
     }
 
-    public ClientConfig setSocketInterceptor(SocketInterceptor socketInterceptor) {
-        this.socketInterceptor = socketInterceptor;
+    public ClientConfig setSocketInterceptorConfig(SocketInterceptorConfig socketInterceptorConfig) {
+        this.socketInterceptorConfig = socketInterceptorConfig;
         return this;
     }
 
@@ -230,21 +236,25 @@ public class ClientConfig {
         return this;
     }
 
-    public Collection<EventListener> getListeners() {
-        return listeners;
+    public List<ListenerConfig> getListenerConfigs() {
+        return listenerConfigs;
     }
 
-    /**
-     * Adds a listener object to configuration to be registered when {@code HazelcastClient} starts.
-     *
-     * @param listener one of {@link com.hazelcast.core.LifecycleListener}, {@link com.hazelcast.core.DistributedObjectListener}
-     *                 or {@link com.hazelcast.core.MembershipListener}
-     * @return
-     */
-    public ClientConfig addListener(EventListener listener) {
-        listeners.add(listener);
-        return this;
-    }
+//    public Collection<EventListener> getListeners() {
+//        return listeners;
+//    }
+
+//    /**
+//     * Adds a listener object to configuration to be registered when {@code HazelcastClient} starts.
+//     *
+//     * @param listener one of {@link com.hazelcast.core.LifecycleListener}, {@link com.hazelcast.core.DistributedObjectListener}
+//     *                 or {@link com.hazelcast.core.MembershipListener}
+//     * @return
+//     */
+//    public ClientConfig addListener(EventListener listener) {
+//        listeners.add(listener);
+//        return this;
+//    }
 
     public LoadBalancer getLoadBalancer() {
         return loadBalancer;
@@ -295,15 +305,21 @@ public class ClientConfig {
         return this;
     }
 
-    public ProxyFactoryConfig getProxyFactoryConfig() {
-        return proxyFactoryConfig;
+    public List<ProxyFactoryConfig> getProxyFactoryConfigs() {
+        return proxyFactoryConfigs;
     }
 
     public SerializationConfig getSerializationConfig()
     {
         return serializationConfig;
     }
-    
+
+    public ClientConfig setSerializationConfig(SerializationConfig serializationConfig) {
+        this.serializationConfig = serializationConfig;
+        return this;
+    }
+
+
     private static <T> T lookupByPattern(Map<String, T> map, String name) {
         T t = map.get(name);
         if (t == null) {
@@ -332,4 +348,5 @@ public class ClientConfig {
             return indexSecondPart != -1;
         }
     }
+
 }
