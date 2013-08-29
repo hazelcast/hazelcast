@@ -27,8 +27,8 @@
         <subtitle>version <?eval ${project.version}?></subtitle>
         <pubdate><?eval ${timestamp}?> </pubdate>
         <copyright>
-            <year>2012</year>
-            <holder>Hazel Bilisim Ltd. Sti.</holder>
+            <year>2013</year>
+            <holder>Hazelcast, Inc.</holder>
         </copyright>
         <legalnotice>
             <para>Permission to use, copy, modify and distribute
