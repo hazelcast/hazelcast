@@ -25,13 +25,11 @@ import com.hazelcast.client.util.Destructor;
 import com.hazelcast.client.util.Factory;
 import com.hazelcast.client.util.ObjectPool;
 import com.hazelcast.client.util.QueueBasedObjectPool;
+import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.Address;
-import com.hazelcast.nio.IOUtil;
-import com.hazelcast.nio.Protocols;
-import com.hazelcast.nio.SocketInterceptor;
+import com.hazelcast.nio.*;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ConstructorFunction;
 
@@ -60,7 +58,36 @@ public class SmartClientConnectionManager implements ClientConnectionManager {
         this.client = client;
         ClientConfig config = client.getClientConfig();
         router = new Router(loadBalancer);
-        socketInterceptor = config.getSocketInterceptor();
+
+        //init socketInterceptor
+        SocketInterceptorConfig sic = config.getSocketInterceptorConfig();
+        if (sic != null && sic.isEnabled()) {
+            SocketInterceptor implementation = (SocketInterceptor) sic.getImplementation();
+            if (implementation == null && sic.getClassName() != null) {
+                try {
+                    implementation = (SocketInterceptor) Class.forName(sic.getClassName()).newInstance();
+                } catch (Throwable e) {
+                    logger.severe("SocketInterceptor class cannot be instantiated!" + sic.getClassName(), e);
+                }
+            }
+            if (implementation != null) {
+                if (!(implementation instanceof MemberSocketInterceptor)) {
+                    logger.severe( "SocketInterceptor must be instance of " + MemberSocketInterceptor.class.getName());
+                    implementation = null;
+                } else {
+                    logger.info("SocketInterceptor is enabled");
+                }
+            }
+            if (implementation != null) {
+                socketInterceptor =  implementation;
+                socketInterceptor.init(sic.getProperties());
+            } else {
+                socketInterceptor = null;
+            }
+        } else {
+            socketInterceptor = null;
+        }
+
         poolSize = config.getConnectionPoolSize();
         int connectionTimeout = config.getConnectionTimeout();
         heartbeat = new HeartBeatChecker(connectionTimeout, client.getSerializationService(), client.getClientExecutionService());

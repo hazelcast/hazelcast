@@ -28,11 +28,13 @@ import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.client.util.ErrorHandler;
 import com.hazelcast.cluster.client.AddMembershipListenerRequest;
 import com.hazelcast.cluster.client.ClientMembershipEvent;
+import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
@@ -74,9 +76,17 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         final ClientConfig clientConfig = getClientConfig();
         redoOperation = clientConfig.isRedoOperation();
         credentials = clientConfig.getCredentials();
-        final Collection<EventListener> listenersList = client.getClientConfig().getListeners();
-        if (listenersList != null && !listenersList.isEmpty()) {
-            for (EventListener listener : listenersList) {
+        final List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
+        if(listenerConfigs != null && !listenerConfigs.isEmpty()){
+            for (ListenerConfig listenerConfig : listenerConfigs) {
+                EventListener listener = listenerConfig.getImplementation();
+                if (listener == null) {
+                    try {
+                        listener = ClassLoaderUtil.newInstance(clientConfig.getClassLoader(), listenerConfig.getClassName());
+                    } catch (Exception e) {
+                        logger.severe(e);
+                    }
+                }
                 if (listener instanceof MembershipListener) {
                     addMembershipListener((MembershipListener) listener);
                 }

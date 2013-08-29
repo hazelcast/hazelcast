@@ -42,7 +42,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
 
         private final ParserContext parserContext;
 
-        private BeanDefinitionBuilder configBuilder;
+//        private BeanDefinitionBuilder configBuilder;
 
         private ManagedMap mapConfigManagedMap;
         private ManagedMap queueManagedMap;
@@ -73,68 +73,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
 
         public AbstractBeanDefinition getBeanDefinition() {
             return configBuilder.getBeanDefinition();
-        }
-
-        protected BeanDefinitionBuilder createBeanBuilder(final Class clazz) {
-            BeanDefinitionBuilder builder = BeanDefinitionBuilder.rootBeanDefinition(clazz);
-            builder.setScope(configBuilder.getBeanDefinition().getScope());
-            builder.setLazyInit(configBuilder.getBeanDefinition().isLazyInit());
-            return builder;
-        }
-
-        protected BeanDefinitionBuilder createAndFillBeanBuilder(Node node, final Class clazz,
-                                                                 final String propertyName,
-                                                                 final BeanDefinitionBuilder parent,
-                                                                 final String... exceptPropertyNames) {
-            BeanDefinitionBuilder builder = createBeanBuilder(clazz);
-            final AbstractBeanDefinition beanDefinition = builder.getBeanDefinition();
-            fillValues(node, builder, exceptPropertyNames);
-            parent.addPropertyValue(propertyName, beanDefinition);
-            return builder;
-        }
-
-        protected void createAndFillListedBean(Node node, final Class clazz,
-                                               final String propertyName, final ManagedMap managedMap) {
-            BeanDefinitionBuilder builder = createBeanBuilder(clazz);
-            final AbstractBeanDefinition beanDefinition = builder.getBeanDefinition();
-            final Node attName = node.getAttributes().getNamedItem("name");
-            final String name = getTextContent(attName);
-            builder.addPropertyValue("name", name);
-            fillValues(node, builder);
-            managedMap.put(name, beanDefinition);
-        }
-
-        protected void fillValues(Node node, BeanDefinitionBuilder builder, String... excludeNames) {
-            Collection<String> epn = excludeNames != null && excludeNames.length > 0 ?
-                    new HashSet<String>(Arrays.asList(excludeNames)) : null;
-            fillAttributeValues(node, builder, epn);
-            for (org.w3c.dom.Node n : new IterableNodeList(node, Node.ELEMENT_NODE)) {
-                String name = xmlToJavaName(cleanNodeName(n));
-                if (epn != null && epn.contains(name)) continue;
-                String value = getTextContent(n);
-                builder.addPropertyValue(name, value);
-            }
-        }
-
-        private void fillAttributeValues(Node node,
-                                         BeanDefinitionBuilder builder, String... excludeNames) {
-            Collection<String> epn = excludeNames != null && excludeNames.length > 0 ?
-                    new HashSet<String>(Arrays.asList(excludeNames)) : null;
-            fillAttributeValues(node, builder, epn);
-        }
-
-        private void fillAttributeValues(Node node,
-                                         BeanDefinitionBuilder builder, Collection<String> epn) {
-            final NamedNodeMap atts = node.getAttributes();
-            if (atts != null) {
-                for (int a = 0; a < atts.getLength(); a++) {
-                    final org.w3c.dom.Node att = atts.item(a);
-                    final String name = xmlToJavaName(att.getNodeName());
-                    if (epn != null && epn.contains(name)) continue;
-                    final String value = att.getNodeValue();
-                    builder.addPropertyValue(name, value);
-                }
-            }
         }
 
         public void handleConfig(final Element element) {
@@ -287,90 +225,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     socketInterceptorConfigBuilder.getBeanDefinition());
         }
 
-        private void handleDataSerializableFactories(final Node node, final BeanDefinitionBuilder serializationConfigBuilder) {
-            ManagedMap factories = new ManagedMap();
-            ManagedMap<Integer, String> classNames = new ManagedMap<Integer, String>();
-            for (org.w3c.dom.Node child : new IterableNodeList(node, Node.ELEMENT_NODE)) {
-                final String name = cleanNodeName(child);
-                if ("data-serializable-factory".equals(name)) {
-                    final NamedNodeMap attrs = child.getAttributes();
-                    final Node implRef = attrs.getNamedItem("implementation");
-                    final Node classNode = attrs.getNamedItem("class-name");
-                    final Node fidNode = attrs.getNamedItem("factory-id");
-                    if(implRef != null) {
-                        factories.put(Integer.parseInt(getTextContent(fidNode)), new RuntimeBeanReference(getTextContent(implRef)));
-                    }
-                    if(classNode != null) {
-                        classNames.put(Integer.parseInt(getTextContent(fidNode)), getTextContent(classNode));
-                    }
-                }
-            }
-            serializationConfigBuilder.addPropertyValue("dataSerializableFactoryClasses", classNames);
-            serializationConfigBuilder.addPropertyValue("dataSerializableFactories", factories);
-        }
-
-        private void handleSerializers(final Node node, final BeanDefinitionBuilder serializationConfigBuilder) {
-            BeanDefinitionBuilder globalSerializerConfigBuilder = null;
-            String implementation = "implementation";
-            String className = "class-name";
-            ManagedList serializers = new ManagedList();
-            for (org.w3c.dom.Node child : new IterableNodeList(node, Node.ELEMENT_NODE)) {
-                final String name = cleanNodeName(child);
-                if ("global-serializer".equals(name)) {
-                    globalSerializerConfigBuilder = createBeanBuilder(GlobalSerializerConfig.class);
-                    final NamedNodeMap attrs = child.getAttributes();
-                    final Node implRef = attrs.getNamedItem(implementation);
-                    final Node classNode = attrs.getNamedItem(className);
-                    if(implRef != null) {
-                        globalSerializerConfigBuilder.addPropertyReference(xmlToJavaName(implementation), getTextContent(implRef));
-                    }
-                    if(classNode != null) {
-                        globalSerializerConfigBuilder.addPropertyValue(xmlToJavaName(className), getTextContent(classNode));
-                    }
-                }
-                if ("serializer".equals(name)) {
-                    BeanDefinitionBuilder serializerConfigBuilder = createBeanBuilder(SerializerConfig.class);
-                    fillAttributeValues(child, serializerConfigBuilder);
-                    final NamedNodeMap attrs = child.getAttributes();
-                    final Node implRef = attrs.getNamedItem(implementation);
-                    final Node classNode = attrs.getNamedItem(className);
-                    if(implRef != null) {
-                        serializerConfigBuilder.addPropertyReference(xmlToJavaName(implementation), getTextContent(implRef));
-                    }
-                    if(classNode != null) {
-                        serializerConfigBuilder.addPropertyValue(xmlToJavaName(className), getTextContent(classNode));
-                    }
-                    serializers.add(serializerConfigBuilder.getBeanDefinition());
-                }
-            }
-            if(globalSerializerConfigBuilder != null) {
-                serializationConfigBuilder.addPropertyValue("globalSerializerConfig", globalSerializerConfigBuilder.getBeanDefinition());
-            }
-            serializationConfigBuilder.addPropertyValue("serializerConfigs", serializers);
-        }
-
-
-        private void handlePortableFactories(final Node node, final BeanDefinitionBuilder serializationConfigBuilder) {
-            ManagedMap factories = new ManagedMap();
-            ManagedMap<Integer, String> classNames = new ManagedMap<Integer, String>();
-            for (org.w3c.dom.Node child : new IterableNodeList(node, Node.ELEMENT_NODE)) {
-                final String name = cleanNodeName(child);
-                if ("portable-factory".equals(name)) {
-                    final NamedNodeMap attrs = child.getAttributes();
-                    final Node implRef = attrs.getNamedItem("implementation");
-                    final Node classNode = attrs.getNamedItem("class-name");
-                    final Node fidNode = attrs.getNamedItem("factory-id");
-                    if(implRef != null) {
-                        factories.put(Integer.parseInt(getTextContent(fidNode)), new RuntimeBeanReference(getTextContent(implRef)));
-                    }
-                    if(classNode != null) {
-                        classNames.put(Integer.parseInt(getTextContent(fidNode)), getTextContent(classNode));
-                    }
-                }
-            }
-            serializationConfigBuilder.addPropertyValue("portableFactoryClasses", classNames);
-            serializationConfigBuilder.addPropertyValue("portableFactories", factories);
-        }
 
         private void handleOutboundPorts(final Node node, final BeanDefinitionBuilder networkConfigBuilder) {
             ManagedList outboundPorts = new ManagedList();
@@ -566,10 +420,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         public void handleNearCacheConfig(Node node, BeanDefinitionBuilder mapConfigBuilder) {
-            BeanDefinitionBuilder nearCacheConfigBuilder = createBeanBuilder(NearCacheConfig.class);
-            final AbstractBeanDefinition beanDefinition = nearCacheConfigBuilder.getBeanDefinition();
-            fillValues(node, nearCacheConfigBuilder);
-            mapConfigBuilder.addPropertyValue("nearCacheConfig", beanDefinition);
+            createAndFillBeanBuilder(node, NearCacheConfig.class, "nearCacheConfig", mapConfigBuilder);
         }
 
         public void handleMapStoreConfig(Node node, BeanDefinitionBuilder mapConfigBuilder) {
@@ -639,25 +490,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             topicManagedMap.put(name, topicConfigBuilder.getBeanDefinition());
-        }
-
-        private void handleSerialization(final Node node) {
-            final BeanDefinitionBuilder serializationConfigBuilder = createBeanBuilder(SerializationConfig.class);
-            final AbstractBeanDefinition beanDefinition = serializationConfigBuilder.getBeanDefinition();
-            fillAttributeValues(node, serializationConfigBuilder);
-            for (Node child : new IterableNodeList(node.getChildNodes())) {
-                final String nodeName = cleanNodeName(child.getNodeName());
-                if ("data-serializable-factories".equals(nodeName)) {
-                    handleDataSerializableFactories(child, serializationConfigBuilder);
-                }
-                else if ("portable-factories".equals(nodeName)) {
-                    handlePortableFactories(child, serializationConfigBuilder);
-                }
-                else if ("serializers".equals(nodeName)) {
-                    handleSerializers(child, serializationConfigBuilder);
-                }
-            }
-            configBuilder.addPropertyValue("serializationConfig", beanDefinition);
         }
 
         private void handleSecurity(final Node node) {
@@ -846,19 +678,5 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             }
         }
 
-        private ManagedList parseListeners(Node node, Class listenerConfigClass) {
-            ManagedList listeners = new ManagedList();
-            final String implementationAttr = "implementation";
-            for (Node listenerNode : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
-                final BeanDefinitionBuilder listenerConfBuilder = createBeanBuilder(listenerConfigClass);
-                fillAttributeValues(listenerNode, listenerConfBuilder, implementationAttr);
-                Node implementationNode = null;
-                if ((implementationNode = listenerNode.getAttributes().getNamedItem(implementationAttr)) != null) {
-                    listenerConfBuilder.addPropertyReference(implementationAttr, getTextContent(implementationNode));
-                }
-                listeners.add(listenerConfBuilder.getBeanDefinition());
-            }
-            return listeners;
-        }
     }
 }

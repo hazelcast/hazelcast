@@ -26,7 +26,32 @@ import java.util.Map;
  */
 public class ProxyFactoryConfig {
 
-    private final Map<String, ClientProxyFactory> factoryMap = new HashMap<String, ClientProxyFactory>();
+    private String service;
+
+    private String clasName;
+
+    public ProxyFactoryConfig(String clasName, String service) {
+        this.clasName = clasName;
+        this.service = service;
+    }
+
+    public String getClasName() {
+        return clasName;
+    }
+
+    public void setClasName(String clasName) {
+        this.clasName = clasName;
+    }
+
+    public String getService() {
+        return service;
+    }
+
+    public void setService(String service) {
+        this.service = service;
+    }
+
+    /*    private final Map<String, ClientProxyFactory> factoryMap = new HashMap<String, ClientProxyFactory>();
 
     public ProxyFactoryConfig addProxyFactory(String service, ClientProxyFactory factory) {
         factoryMap.put(service, factory);
@@ -36,4 +61,5 @@ public class ProxyFactoryConfig {
     public Map<String, ClientProxyFactory> getFactories() {
         return factoryMap;
     }
+    */
 }

@@ -16,13 +16,20 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import java.nio.ByteOrder;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.Properties;
 
 public abstract class AbstractXmlConfigHelper {
+
+    private final static ILogger logger = Logger.getLogger(AbstractXmlConfigHelper.class);
 
     protected boolean domLevel3 = true;
 
@@ -173,4 +180,148 @@ public abstract class AbstractXmlConfigHelper {
                 "yes".equalsIgnoreCase(value) ||
                 "on".equalsIgnoreCase(value);
     }
+
+    protected int getIntegerValue(final String parameterName, final String value, final int defaultValue) {
+        try {
+            return Integer.parseInt(value);
+        } catch (final Exception e) {
+            logger.info( parameterName + " parameter value, [" + value
+                    + "], is not a proper integer. Default value, [" + defaultValue + "], will be used!");
+            logger.warning(e);
+            return defaultValue;
+        }
+    }
+
+    protected String getAttribute(org.w3c.dom.Node node, String attName) {
+        final Node attNode = node.getAttributes().getNamedItem(attName);
+        if (attNode == null)
+            return null;
+        return getTextContent(attNode);
+    }
+
+    protected SocketInterceptorConfig parseSocketInterceptorConfig(final org.w3c.dom.Node node) {
+        SocketInterceptorConfig socketInterceptorConfig = new SocketInterceptorConfig();
+        final NamedNodeMap atts = node.getAttributes();
+        final Node enabledNode = atts.getNamedItem("enabled");
+        final boolean enabled = enabledNode != null ? checkTrue(getTextContent(enabledNode).trim()) : false;
+        socketInterceptorConfig.setEnabled(enabled);
+
+        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
+            final String nodeName = cleanNodeName(n.getNodeName());
+            if ("class-name".equals(nodeName)) {
+                socketInterceptorConfig.setClassName(getTextContent(n).trim());
+            } else if ("properties".equals(nodeName)) {
+                fillProperties(n, socketInterceptorConfig.getProperties());
+            }
+        }
+        return socketInterceptorConfig;
+    }
+
+    protected void fillProperties(final org.w3c.dom.Node node, Properties properties) {
+        if (properties == null) return;
+        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
+            if (n.getNodeType() == org.w3c.dom.Node.TEXT_NODE || n.getNodeType() == org.w3c.dom.Node.COMMENT_NODE) {
+                continue;
+            }
+            final String name = cleanNodeName(n.getNodeName());
+            final String propertyName;
+            if ("property".equals(name)) {
+                propertyName = getTextContent(n.getAttributes().getNamedItem("name")).trim();
+            } else {
+                // old way - probably should be deprecated
+                propertyName = name;
+            }
+            final String value = getTextContent(n).trim();
+            properties.setProperty(propertyName, value);
+        }
+    }
+
+
+    protected SerializationConfig parseSerialization(final Node node) {
+        SerializationConfig serializationConfig = new SerializationConfig();
+        for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
+            final String name = cleanNodeName(child);
+            if ("portable-version".equals(name)) {
+                String value = getTextContent(child);
+                serializationConfig.setPortableVersion(getIntegerValue(name, value, 0));
+            } else if ("check-class-def-errors".equals(name)) {
+                String value = getTextContent(child);
+                serializationConfig.setCheckClassDefErrors(checkTrue(value));
+            } else if ("use-native-byte-order".equals(name)) {
+                serializationConfig.setUseNativeByteOrder(checkTrue(getTextContent(child)));
+            } else if ("byte-order".equals(name)) {
+                String value = getTextContent(child);
+                ByteOrder byteOrder = null;
+                if (ByteOrder.BIG_ENDIAN.toString().equals(value)) {
+                    byteOrder = ByteOrder.BIG_ENDIAN;
+                } else if (ByteOrder.LITTLE_ENDIAN.toString().equals(value)) {
+                    byteOrder = ByteOrder.LITTLE_ENDIAN;
+                }
+                serializationConfig.setByteOrder(byteOrder != null ? byteOrder : ByteOrder.BIG_ENDIAN);
+            } else if ("enable-compression".equals(name)) {
+                serializationConfig.setEnableCompression(checkTrue(getTextContent(child)));
+            } else if ("enable-shared-object".equals(name)) {
+                serializationConfig.setEnableSharedObject(checkTrue(getTextContent(child)));
+            } else if ("allow-unsafe".equals(name)) {
+                serializationConfig.setAllowUnsafe(checkTrue(getTextContent(child)));
+            } else if ("data-serializable-factories".equals(name)) {
+                fillDataSerializableFactories(child, serializationConfig);
+            } else if ("portable-factories".equals(name)) {
+                fillPortableFactories(child, serializationConfig);
+            } else if ("serializers".equals(name)) {
+                fillSerializers(child, serializationConfig);
+            }
+        }
+        return serializationConfig;
+    }
+
+    protected void fillDataSerializableFactories(Node node, SerializationConfig serializationConfig) {
+        for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
+            final String name = cleanNodeName(child);
+            if ("data-serializable-factory".equals(name)) {
+                final String value = getTextContent(child);
+                final Node factoryIdNode = child.getAttributes().getNamedItem("factory-id");
+                if (factoryIdNode == null) {
+                    throw new IllegalArgumentException("'factory-id' attribute of 'data-serializable-factory' is required!");
+                }
+                int factoryId = Integer.parseInt(getTextContent(factoryIdNode));
+                serializationConfig.addDataSerializableFactoryClass(factoryId, value);
+            }
+        }
+    }
+
+    protected void fillPortableFactories(Node node, SerializationConfig serializationConfig) {
+        for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
+            final String name = cleanNodeName(child);
+            if ("portable-factory".equals(name)) {
+                final String value = getTextContent(child);
+                final Node factoryIdNode = child.getAttributes().getNamedItem("factory-id");
+                if (factoryIdNode == null) {
+                    throw new IllegalArgumentException("'factory-id' attribute of 'portable-factory' is required!");
+                }
+                int factoryId = Integer.parseInt(getTextContent(factoryIdNode));
+                serializationConfig.addPortableFactoryClass(factoryId, value);
+            }
+        }
+    }
+
+    protected void fillSerializers(final Node node, SerializationConfig serializationConfig) {
+        for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
+            final String name = cleanNodeName(child);
+            final String value = getTextContent(child);
+            if ("serializer".equals(name)) {
+                SerializerConfig serializerConfig = new SerializerConfig();
+                serializerConfig.setClassName(value);
+                final String typeClassName = getAttribute(child, "type-class");
+                serializerConfig.setTypeClassName(typeClassName);
+                serializationConfig.addSerializerConfig(serializerConfig);
+            } else if ("global-serializer".equals(name)) {
+                GlobalSerializerConfig globalSerializerConfig = new GlobalSerializerConfig();
+                globalSerializerConfig.setClassName(value);
+                serializationConfig.setGlobalSerializerConfig(globalSerializerConfig);
+            }
+        }
+    }
+
+
 }

@@ -59,19 +59,92 @@
     </hz:hazelcast>
 
     <hz:client id="client"
-        group-name="${cluster.group.name}" group-password="${cluster.group.password}"
-        connection-attempt-limit="3" connection-timeout="1000" connection-attempt-period="3000"
-        redo-operation="true" smart="true" pool-size="300">
-        <hz:member>127.0.0.1:5700</hz:member>
-        <hz:member>127.0.0.1:5701</hz:member>
+               redo-operation="true"
+               smart="true">
+        <hz:group name="${cluster.group.name}" password="${cluster.group.password}" />
+        <hz:network connection-attempt-limit="3"
+                    connection-attempt-period="3000"
+                    connection-pool-size="300"
+                    connection-timeout="1000"
+                    redo-operation="true"
+                    smart-routing="true">
+            <hz:socket-options buffer-size="32"
+                               keep-alive="false"
+                               linger-seconds="3"
+                               reuse-address="false"
+                               tcp-no-delay="false"
+                               timeout="-1"/>
+        </hz:network>
     </hz:client>
 
     <hz:client id="client2"
-               connection-attempt-limit="3" connection-timeout="1000" connection-attempt-period="3000"
-               redo-operation="true" smart="true" pool-size="300"
+               redo-operation="true"
+               smart="true"
                credentials-ref="credentials" >
-        <hz:member>127.0.0.1:5700</hz:member>
-        <hz:member>127.0.0.1:5701</hz:member>
+        <hz:network connection-attempt-limit="3"
+                    connection-attempt-period="3000"
+                    connection-pool-size="300"
+                    connection-timeout="1000"
+                    redo-operation="false"
+                    smart-routing="false">
+            <hz:member>127.0.0.1:5700</hz:member>
+            <hz:member>127.0.0.1:5701</hz:member>
+            <hz:socket-options buffer-size="32"
+                               keep-alive="false"
+                               linger-seconds="3"
+                               reuse-address="false"
+                               tcp-no-delay="false"
+                               timeout="-1"/>
+        </hz:network>
+    </hz:client>
+
+    <hz:client id="client3"
+               redo-operation="true"
+               smart="true"
+               credentials-ref="credentials" >
+        <hz:network connection-attempt-limit="3"
+                    connection-attempt-period="3000"
+                    connection-pool-size="300"
+                    connection-timeout="1000"
+                    redo-operation="false"
+                    smart-routing="false">
+            <hz:member>127.0.0.1:5700</hz:member>
+            <hz:member>127.0.0.1:5701</hz:member>
+            <hz:socket-options buffer-size="32"
+                               keep-alive="false"
+                               linger-seconds="3"
+                               reuse-address="false"
+                               tcp-no-delay="false"
+                               timeout="-1"/>
+        </hz:network>
+
+        <hz:listeners>
+            <hz:listener class-name="com.hazelcast.spring.DummyMembershipListener"/>
+            <hz:listener implementation="dummyMembershipListener"/>
+        </hz:listeners>
+
+        <hz:load-balancer type="round-robin" />
+
+        <hz:proxy-factories>
+            <hz:proxy-factory class-name="" service="" />
+        </hz:proxy-factories>
+
+        <hz:near-cache name="default"
+                       time-to-live-seconds="0"
+                       max-idle-seconds="60"
+                       eviction-policy="LRU"
+                       max-size="5000"
+                       invalidate-on-change="true"/>
+
+        <hz:serialization allow-unsafe="false"
+                          byte-order="BIG_ENDIAN"
+                          check-class-def-errors="false"
+                          enable-compression="false"
+                          enable-shared-object="false"
+                          portable-version="0"
+                          use-native-byte-order="false" />
+
+
     </hz:client>
 
     <bean id="credentials" class="com.hazelcast.security.UsernamePasswordCredentials">
@@ -91,5 +164,7 @@
     <hz:atomicLong id="atomicLong" instance-ref="client" name="atomicLong"/>
     <hz:countDownLatch id="countDownLatch" instance-ref="client" name="countDownLatch"/>
     <hz:semaphore id="semaphore" instance-ref="client" name="semaphore"/>
+
+    <bean id="dummyMembershipListener" class="com.hazelcast.spring.DummyMembershipListener"/>
 
 </beans>
