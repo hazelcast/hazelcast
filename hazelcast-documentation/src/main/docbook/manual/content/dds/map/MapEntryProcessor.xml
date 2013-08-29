@@ -46,7 +46,7 @@
     Map<K,Object> executeOnAllKeys(EntryProcessor entryProcessor);
 
 ]]></programlisting>
-        Using executeOnAllKeys method, if the number of entries is high
+        Using executeOnEntries method, if the number of entries is high
         and you do need the results then returing null in process(..) method is a good practice.
     </para>
     <para>
@@ -66,6 +66,9 @@
 ]]></programlisting>
 
                 </para>
+    <para>
+        Also you can remove entry while processing in entry processor. You should just set null for the processed entry's value.
+    </para>
     <para>
         <emphasis role="bold">Example Usage:</emphasis>
         <programlisting language="java"><![CDATA[
