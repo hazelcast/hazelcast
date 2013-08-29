@@ -30,18 +30,18 @@ import java.util.Collection;
 /**
  * @author ali 1/8/13
  */
-public abstract class CollectionOperation extends Operation implements PartitionAwareOperation, IdentifiedDataSerializable{
+public abstract class MultiMapOperation extends Operation implements PartitionAwareOperation, IdentifiedDataSerializable{
 
     protected String name;
 
-    private transient CollectionContainer container;
+    private transient MultiMapContainer container;
 
     protected transient Object response;
 
-    protected CollectionOperation() {
+    protected MultiMapOperation() {
     }
 
-    protected CollectionOperation(String name) {
+    protected MultiMapOperation(String name) {
         this.name = name;
     }
 
@@ -74,7 +74,7 @@ public abstract class CollectionOperation extends Operation implements Partition
         EventService eventService = engine.getEventService();
         Collection<EventRegistration> registrations = eventService.getRegistrations(MultiMapService.SERVICE_NAME, name);
         for (EventRegistration registration : registrations) {
-            CollectionEventFilter filter = (CollectionEventFilter) registration.getFilter();
+            MultiMapEventFilter filter = (MultiMapEventFilter) registration.getFilter();
             if (filter.getKey() == null || filter.getKey().equals(key)) {
                 Data dataValue = filter.isIncludeValue() ? engine.toData(value) : null;
                 MultiMapEvent event = new MultiMapEvent(name, key, dataValue, eventType, engine.getThisAddress());
@@ -91,7 +91,7 @@ public abstract class CollectionOperation extends Operation implements Partition
         return getNodeEngine().toData(obj);
     }
 
-    public final CollectionContainer getOrCreateContainer() {
+    public final MultiMapContainer getOrCreateContainer() {
         if (container == null) {
             MultiMapService service = getService();
             container = service.getOrCreateCollectionContainer(getPartitionId(), name);
@@ -120,6 +120,6 @@ public abstract class CollectionOperation extends Operation implements Partition
     }
 
     public int getFactoryId() {
-        return CollectionDataSerializerHook.F_ID;
+        return MultiMapDataSerializerHook.F_ID;
     }
 }

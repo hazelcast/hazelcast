@@ -17,7 +17,7 @@
 package com.hazelcast.multimap.operations.client;
 
 import com.hazelcast.client.InitializingObjectRequest;
-import com.hazelcast.multimap.CollectionPortableHook;
+import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.multimap.operations.RemoveOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -31,7 +31,7 @@ import java.io.IOException;
 /**
  * @author ali 5/10/13
  */
-public class RemoveRequest extends CollectionKeyBasedRequest implements InitializingObjectRequest {
+public class RemoveRequest extends MultiMapKeyBasedRequest implements InitializingObjectRequest {
 
     Data value;
 
@@ -51,7 +51,7 @@ public class RemoveRequest extends CollectionKeyBasedRequest implements Initiali
     }
 
     public int getClassId() {
-        return CollectionPortableHook.REMOVE;
+        return MultiMapPortableHook.REMOVE;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {

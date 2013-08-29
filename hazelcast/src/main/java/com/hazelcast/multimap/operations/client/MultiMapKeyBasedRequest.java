@@ -27,14 +27,14 @@ import java.io.IOException;
 /**
  * @author ali 5/9/13
  */
-public abstract class CollectionKeyBasedRequest extends CollectionRequest {
+public abstract class MultiMapKeyBasedRequest extends MultiMapRequest {
 
     Data key;
 
-    protected CollectionKeyBasedRequest() {
+    protected MultiMapKeyBasedRequest() {
     }
 
-    protected CollectionKeyBasedRequest(String name, Data key) {
+    protected MultiMapKeyBasedRequest(String name, Data key) {
         super(name);
         this.key = key;
     }

@@ -16,7 +16,7 @@
 
 package com.hazelcast.multimap.operations;
 
-import com.hazelcast.multimap.CollectionRecord;
+import com.hazelcast.multimap.MultiMapRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -30,7 +30,7 @@ import java.util.Collections;
 /**
  * @author ali 1/3/13
  */
-public class CollectionResponse implements DataSerializable {
+public class MultiMapResponse implements DataSerializable {
 
     private Collection collection;
 
@@ -38,10 +38,10 @@ public class CollectionResponse implements DataSerializable {
 
     private long txVersion = -1;
 
-    public CollectionResponse() {
+    public MultiMapResponse() {
     }
 
-    public CollectionResponse(Collection collection) {
+    public MultiMapResponse(Collection collection) {
         this.collection = collection;
     }
 
@@ -49,7 +49,7 @@ public class CollectionResponse implements DataSerializable {
         return nextRecordId;
     }
 
-    public CollectionResponse setNextRecordId(long recordId) {
+    public MultiMapResponse setNextRecordId(long recordId) {
         this.nextRecordId = recordId;
         return this;
     }
@@ -58,7 +58,7 @@ public class CollectionResponse implements DataSerializable {
         return txVersion;
     }
 
-    public CollectionResponse setTxVersion(long txVersion) {
+    public MultiMapResponse setTxVersion(long txVersion) {
         this.txVersion = txVersion;
         return this;
     }
@@ -73,19 +73,19 @@ public class CollectionResponse implements DataSerializable {
         }
         Collection coll = new ArrayList(collection.size());
         for (Object obj : collection) {
-            CollectionRecord record = nodeEngine.toObject(obj);
+            MultiMapRecord record = nodeEngine.toObject(obj);
             coll.add(nodeEngine.toObject(record.getObject()));
         }
         return coll;
     }
 
-    public Collection<CollectionRecord> getRecordCollection(NodeEngine nodeEngine) {
+    public Collection<MultiMapRecord> getRecordCollection(NodeEngine nodeEngine) {
         if (collection == null) {
             return Collections.emptyList();
         }
-        Collection<CollectionRecord> coll = new ArrayList(collection.size());
+        Collection<MultiMapRecord> coll = new ArrayList(collection.size());
         for (Object obj : collection) {
-            CollectionRecord record = nodeEngine.toObject(obj);
+            MultiMapRecord record = nodeEngine.toObject(obj);
             coll.add(record);
         }
         return coll;

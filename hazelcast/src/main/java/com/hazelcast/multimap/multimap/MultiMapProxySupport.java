@@ -48,15 +48,6 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
         lockSupport = new LockProxySupport(new DefaultObjectNamespace(MultiMapService.SERVICE_NAME, name));
     }
 
-    public <V> Collection<V> createNew() {
-        if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.SET)) {
-            return new HashSet<V>(10);
-        } else if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.LIST)) {
-            return new LinkedList<V>();
-        }
-        throw new IllegalArgumentException("No Matching CollectionProxyType!");
-    }
-
     protected Boolean putInternal(Data dataKey, Data dataValue, int index) {
         try {
             PutOperation operation = new PutOperation(name, dataKey, getThreadId(), dataValue, index);
@@ -66,7 +57,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
         }
     }
 
-    protected CollectionResponse getAllInternal(Data dataKey) {
+    protected MultiMapResponse getAllInternal(Data dataKey) {
         try {
             GetAllOperation operation = new GetAllOperation(name, dataKey);
             return invoke(operation, dataKey);
@@ -84,7 +75,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
         }
     }
 
-    protected CollectionResponse removeInternal(Data dataKey) {
+    protected MultiMapResponse removeInternal(Data dataKey) {
         try {
             RemoveAllOperation operation = new RemoveAllOperation(name, dataKey, getThreadId());
             return invoke(operation, dataKey);
@@ -108,7 +99,7 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
                 if (result == null) {
                     continue;
                 }
-                CollectionResponse response = nodeEngine.toObject(result);
+                MultiMapResponse response = nodeEngine.toObject(result);
                 if (response.getCollection() != null){
                     keySet.addAll(response.getCollection());
                 }

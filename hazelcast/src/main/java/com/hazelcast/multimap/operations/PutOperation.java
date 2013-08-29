@@ -16,9 +16,9 @@
 
 package com.hazelcast.multimap.operations;
 
-import com.hazelcast.multimap.CollectionContainer;
-import com.hazelcast.multimap.CollectionDataSerializerHook;
-import com.hazelcast.multimap.CollectionRecord;
+import com.hazelcast.multimap.MultiMapContainer;
+import com.hazelcast.multimap.MultiMapDataSerializerHook;
+import com.hazelcast.multimap.MultiMapRecord;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -34,7 +34,7 @@ import java.util.List;
 /**
  * @author ali 1/16/13
  */
-public class PutOperation extends CollectionBackupAwareOperation {
+public class PutOperation extends MultiMapBackupAwareOperation {
 
     Data value;
 
@@ -54,15 +54,15 @@ public class PutOperation extends CollectionBackupAwareOperation {
 
     public void run() throws Exception {
         begin = Clock.currentTimeMillis();
-        CollectionContainer container = getOrCreateContainer();
+        MultiMapContainer container = getOrCreateContainer();
         recordId = container.nextId();
-        CollectionRecord record = new CollectionRecord(recordId, isBinary() ? value : toObject(value));
-        Collection<CollectionRecord> coll = container.getOrCreateCollectionWrapper(dataKey).getCollection();
+        MultiMapRecord record = new MultiMapRecord(recordId, isBinary() ? value : toObject(value));
+        Collection<MultiMapRecord> coll = container.getOrCreateCollectionWrapper(dataKey).getCollection();
         if (index == -1) {
             response = coll.add(record);
         } else {
             try {
-                ((List<CollectionRecord>) coll).add(index, record);
+                ((List<MultiMapRecord>) coll).add(index, record);
                 response = true;
             } catch (IndexOutOfBoundsException e) {
                 response = e;
@@ -102,6 +102,6 @@ public class PutOperation extends CollectionBackupAwareOperation {
     }
 
     public int getId() {
-        return CollectionDataSerializerHook.PUT;
+        return MultiMapDataSerializerHook.PUT;
     }
 }

@@ -22,7 +22,7 @@ import com.hazelcast.nio.serialization.Data;
 /**
  * @author ali 1/16/13
  */
-public class CountOperation extends CollectionKeyBasedOperation {
+public class CountOperation extends MultiMapKeyBasedOperation {
 
     public CountOperation() {
     }
@@ -32,14 +32,14 @@ public class CountOperation extends CollectionKeyBasedOperation {
     }
 
     public void run() throws Exception {
-        CollectionContainer container = getOrCreateContainer();
+        MultiMapContainer container = getOrCreateContainer();
         ((MultiMapService) getService()).getLocalMultiMapStatsImpl(name).incrementOtherOperations();
-        CollectionWrapper wrapper = container.getCollectionWrapper(dataKey);
+        MultiMapWrapper wrapper = container.getCollectionWrapper(dataKey);
         response = wrapper == null ? 0 : wrapper.getCollection().size();
     }
 
     public int getId() {
-        return CollectionDataSerializerHook.COUNT;
+        return MultiMapDataSerializerHook.COUNT;
     }
 
 }

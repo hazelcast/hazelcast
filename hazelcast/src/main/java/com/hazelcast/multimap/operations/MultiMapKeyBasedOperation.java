@@ -16,8 +16,8 @@
 
 package com.hazelcast.multimap.operations;
 
-import com.hazelcast.multimap.CollectionRecord;
-import com.hazelcast.multimap.CollectionWrapper;
+import com.hazelcast.multimap.MultiMapRecord;
+import com.hazelcast.multimap.MultiMapWrapper;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -29,27 +29,27 @@ import java.util.Collection;
 /**
  * @author ali 1/16/13
  */
-public abstract class CollectionKeyBasedOperation extends CollectionOperation implements PartitionAwareOperation {
+public abstract class MultiMapKeyBasedOperation extends MultiMapOperation implements PartitionAwareOperation {
 
     protected Data dataKey;
 
-    protected CollectionKeyBasedOperation() {
+    protected MultiMapKeyBasedOperation() {
     }
 
-    protected CollectionKeyBasedOperation(String name, Data dataKey) {
+    protected MultiMapKeyBasedOperation(String name, Data dataKey) {
         super(name);
         this.dataKey = dataKey;
     }
 
-    public final CollectionWrapper getOrCreateCollectionWrapper() {
+    public final MultiMapWrapper getOrCreateCollectionWrapper() {
         return getOrCreateContainer().getOrCreateCollectionWrapper(dataKey);
     }
 
-    public final CollectionWrapper getCollectionWrapper() {
+    public final MultiMapWrapper getCollectionWrapper() {
         return getOrCreateContainer().getCollectionWrapper(dataKey);
     }
 
-    public final Collection<CollectionRecord> removeCollection() {
+    public final Collection<MultiMapRecord> removeCollection() {
         return getOrCreateContainer().removeCollection(dataKey);
     }
 

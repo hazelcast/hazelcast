@@ -16,7 +16,7 @@
 
 package com.hazelcast.multimap.operations.client;
 
-import com.hazelcast.multimap.CollectionPortableHook;
+import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.transaction.TransactionContext;
 
 /**
@@ -37,6 +37,6 @@ public class TxnMultiMapSizeRequest extends TxnMultiMapRequest {
     }
 
     public int getClassId() {
-        return CollectionPortableHook.TXN_MM_SIZE;
+        return MultiMapPortableHook.TXN_MM_SIZE;
     }
 }

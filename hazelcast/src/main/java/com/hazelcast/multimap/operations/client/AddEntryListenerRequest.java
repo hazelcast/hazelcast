@@ -20,7 +20,7 @@ import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngine;
 import com.hazelcast.client.InitializingObjectRequest;
-import com.hazelcast.multimap.CollectionPortableHook;
+import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
@@ -99,11 +99,11 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Po
     }
 
     public int getFactoryId() {
-        return CollectionPortableHook.F_ID;
+        return MultiMapPortableHook.F_ID;
     }
 
     public int getClassId() {
-        return CollectionPortableHook.ADD_ENTRY_LISTENER;
+        return MultiMapPortableHook.ADD_ENTRY_LISTENER;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {

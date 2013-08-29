@@ -17,7 +17,7 @@
 package com.hazelcast.multimap.multimap.tx;
 
 import com.hazelcast.multimap.*;
-import com.hazelcast.multimap.operations.CollectionKeyBasedOperation;
+import com.hazelcast.multimap.operations.MultiMapKeyBasedOperation;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -30,7 +30,7 @@ import java.util.Collection;
 /**
  * @author ali 4/2/13
  */
-public class TxnPutOperation extends CollectionKeyBasedOperation {
+public class TxnPutOperation extends MultiMapKeyBasedOperation {
 
     long recordId;
     Data value;
@@ -47,15 +47,15 @@ public class TxnPutOperation extends CollectionKeyBasedOperation {
 
     public void run() throws Exception {
         begin = Clock.currentTimeMillis();
-        CollectionContainer container = getOrCreateContainer();
-        CollectionWrapper wrapper = container.getOrCreateCollectionWrapper(dataKey);
+        MultiMapContainer container = getOrCreateContainer();
+        MultiMapWrapper wrapper = container.getOrCreateCollectionWrapper(dataKey);
         response = true;
         if (wrapper.containsRecordId(recordId)){
             response = false;
             return;
         }
-        Collection<CollectionRecord> coll = wrapper.getCollection();
-        CollectionRecord record = new CollectionRecord(recordId, isBinary() ? value : toObject(value));
+        Collection<MultiMapRecord> coll = wrapper.getCollection();
+        MultiMapRecord record = new MultiMapRecord(recordId, isBinary() ? value : toObject(value));
         coll.add(record);
     }
 
@@ -86,7 +86,7 @@ public class TxnPutOperation extends CollectionKeyBasedOperation {
     }
 
     public int getId() {
-        return CollectionDataSerializerHook.TXN_PUT;
+        return MultiMapDataSerializerHook.TXN_PUT;
     }
 
 }

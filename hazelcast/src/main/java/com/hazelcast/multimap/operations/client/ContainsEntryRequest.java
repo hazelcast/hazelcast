@@ -17,7 +17,7 @@
 package com.hazelcast.multimap.operations.client;
 
 import com.hazelcast.client.RetryableRequest;
-import com.hazelcast.multimap.CollectionPortableHook;
+import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.multimap.operations.MultiMapOperationFactory;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -33,7 +33,7 @@ import java.util.Map;
 /**
  * @author ali 5/10/13
  */
-public class ContainsEntryRequest extends CollectionAllPartitionRequest implements RetryableRequest {
+public class ContainsEntryRequest extends MultiMapAllPartitionRequest implements RetryableRequest {
 
     Data key;
 
@@ -62,7 +62,7 @@ public class ContainsEntryRequest extends CollectionAllPartitionRequest implemen
     }
 
     public int getClassId() {
-        return CollectionPortableHook.CONTAINS_ENTRY;
+        return MultiMapPortableHook.CONTAINS_ENTRY;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {

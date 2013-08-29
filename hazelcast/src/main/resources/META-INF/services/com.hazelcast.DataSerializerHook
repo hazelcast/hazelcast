@@ -4,7 +4,7 @@ com.hazelcast.partition.PartitionDataSerializerHook
 com.hazelcast.client.ClientDataSerializerHook
 com.hazelcast.map.MapDataSerializerHook
 com.hazelcast.queue.QueueDataSerializerHook
-com.hazelcast.collection.CollectionDataSerializerHook
+com.hazelcast.multimap.MultiMapDataSerializerHook
 com.hazelcast.executor.ExecutorDataSerializerHook
 com.hazelcast.topic.TopicDataSerializerHook
 com.hazelcast.concurrent.lock.LockDataSerializerHook

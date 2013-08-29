@@ -16,7 +16,7 @@
 
 package com.hazelcast.multimap.operations.client;
 
-import com.hazelcast.multimap.CollectionPortableHook;
+import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
@@ -45,7 +45,7 @@ public class TxnMultiMapValueCountRequest extends TxnMultiMapRequest {
     }
 
     public int getClassId() {
-        return CollectionPortableHook.TXN_MM_VALUE_COUNT;
+        return MultiMapPortableHook.TXN_MM_VALUE_COUNT;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {

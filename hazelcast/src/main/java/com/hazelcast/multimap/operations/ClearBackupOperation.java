@@ -16,14 +16,14 @@
 
 package com.hazelcast.multimap.operations;
 
-import com.hazelcast.multimap.CollectionContainer;
-import com.hazelcast.multimap.CollectionDataSerializerHook;
+import com.hazelcast.multimap.MultiMapContainer;
+import com.hazelcast.multimap.MultiMapDataSerializerHook;
 import com.hazelcast.spi.BackupOperation;
 
 /**
  * @author ali 1/9/13
  */
-public class ClearBackupOperation extends CollectionOperation implements BackupOperation {
+public class ClearBackupOperation extends MultiMapOperation implements BackupOperation {
 
     public ClearBackupOperation() {
     }
@@ -33,13 +33,13 @@ public class ClearBackupOperation extends CollectionOperation implements BackupO
     }
 
     public void run() throws Exception {
-        CollectionContainer container = getOrCreateContainer();
+        MultiMapContainer container = getOrCreateContainer();
         container.clearCollections();
         response = true;
     }
 
     public int getId() {
-        return CollectionDataSerializerHook.CLEAR_BACKUP;
+        return MultiMapDataSerializerHook.CLEAR_BACKUP;
     }
 
 }

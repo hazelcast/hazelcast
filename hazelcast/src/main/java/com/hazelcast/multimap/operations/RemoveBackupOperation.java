@@ -16,9 +16,9 @@
 
 package com.hazelcast.multimap.operations;
 
-import com.hazelcast.multimap.CollectionDataSerializerHook;
-import com.hazelcast.multimap.CollectionRecord;
-import com.hazelcast.multimap.CollectionWrapper;
+import com.hazelcast.multimap.MultiMapDataSerializerHook;
+import com.hazelcast.multimap.MultiMapRecord;
+import com.hazelcast.multimap.MultiMapWrapper;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -31,7 +31,7 @@ import java.util.Iterator;
 /**
  * @author ali 1/16/13
  */
-public class RemoveBackupOperation extends CollectionKeyBasedOperation implements BackupOperation {
+public class RemoveBackupOperation extends MultiMapKeyBasedOperation implements BackupOperation {
 
     long recordId;
 
@@ -44,13 +44,13 @@ public class RemoveBackupOperation extends CollectionKeyBasedOperation implement
     }
 
     public void run() throws Exception {
-        CollectionWrapper wrapper = getCollectionWrapper();
+        MultiMapWrapper wrapper = getCollectionWrapper();
         response = false;
         if (wrapper == null) {
             return;
         }
-        Collection<CollectionRecord> coll = wrapper.getCollection();
-        Iterator<CollectionRecord> iter = coll.iterator();
+        Collection<MultiMapRecord> coll = wrapper.getCollection();
+        Iterator<MultiMapRecord> iter = coll.iterator();
         while (iter.hasNext()){
             if(iter.next().getRecordId() == recordId){
                 iter.remove();
@@ -74,7 +74,7 @@ public class RemoveBackupOperation extends CollectionKeyBasedOperation implement
     }
 
     public int getId() {
-        return CollectionDataSerializerHook.REMOVE_BACKUP;
+        return MultiMapDataSerializerHook.REMOVE_BACKUP;
     }
 
 }

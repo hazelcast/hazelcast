@@ -16,14 +16,14 @@
 
 package com.hazelcast.multimap.operations;
 
-import com.hazelcast.multimap.CollectionDataSerializerHook;
+import com.hazelcast.multimap.MultiMapDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupOperation;
 
 /**
  * @author ali 1/16/13
  */
-public class RemoveAllBackupOperation extends CollectionKeyBasedOperation implements BackupOperation {
+public class RemoveAllBackupOperation extends MultiMapKeyBasedOperation implements BackupOperation {
 
     public RemoveAllBackupOperation() {
     }
@@ -38,6 +38,6 @@ public class RemoveAllBackupOperation extends CollectionKeyBasedOperation implem
     }
 
     public int getId() {
-        return CollectionDataSerializerHook.REMOVE_ALL_BACKUP;
+        return MultiMapDataSerializerHook.REMOVE_ALL_BACKUP;
     }
 }

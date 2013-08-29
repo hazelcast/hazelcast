@@ -24,7 +24,7 @@ import com.hazelcast.util.ConstructorFunction;
 /**
  * @author ali 1/7/13
  */
-public class CollectionDataSerializerHook implements DataSerializerHook {
+public class MultiMapDataSerializerHook implements DataSerializerHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.COLLECTION_DS_FACTORY, -12);
 

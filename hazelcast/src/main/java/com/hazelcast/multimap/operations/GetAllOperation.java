@@ -16,8 +16,8 @@
 
 package com.hazelcast.multimap.operations;
 
-import com.hazelcast.multimap.CollectionDataSerializerHook;
-import com.hazelcast.multimap.CollectionWrapper;
+import com.hazelcast.multimap.MultiMapDataSerializerHook;
+import com.hazelcast.multimap.MultiMapWrapper;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.Clock;
 
@@ -26,7 +26,7 @@ import java.util.Collection;
 /**
  * @author ali 1/16/13
  */
-public class GetAllOperation extends CollectionKeyBasedOperation {
+public class GetAllOperation extends MultiMapKeyBasedOperation {
 
     transient long begin = -1;
 
@@ -38,17 +38,17 @@ public class GetAllOperation extends CollectionKeyBasedOperation {
     }
 
     public void run() throws Exception {
-        CollectionWrapper wrapper = getOrCreateContainer().getCollectionWrapper(dataKey);
+        MultiMapWrapper wrapper = getOrCreateContainer().getCollectionWrapper(dataKey);
         Collection coll = null;
         if (wrapper != null) {
             wrapper.incrementHit();
             coll = wrapper.getCollection();
         }
         begin = Clock.currentTimeMillis();
-        response = new CollectionResponse(coll);
+        response = new MultiMapResponse(coll);
     }
 
     public int getId() {
-        return CollectionDataSerializerHook.GET_ALL;
+        return MultiMapDataSerializerHook.GET_ALL;
     }
 }

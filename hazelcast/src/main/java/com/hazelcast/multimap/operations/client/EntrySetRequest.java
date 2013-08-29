@@ -17,7 +17,7 @@
 package com.hazelcast.multimap.operations.client;
 
 import com.hazelcast.client.RetryableRequest;
-import com.hazelcast.multimap.CollectionPortableHook;
+import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.multimap.operations.EntrySetResponse;
 import com.hazelcast.multimap.operations.MultiMapOperationFactory;
 import com.hazelcast.nio.serialization.Data;
@@ -30,7 +30,7 @@ import java.util.Set;
 /**
  * @author ali 5/10/13
  */
-public class EntrySetRequest extends CollectionAllPartitionRequest implements RetryableRequest {
+public class EntrySetRequest extends MultiMapAllPartitionRequest implements RetryableRequest {
 
     public EntrySetRequest() {
     }
@@ -57,6 +57,6 @@ public class EntrySetRequest extends CollectionAllPartitionRequest implements Re
     }
 
     public int getClassId() {
-        return CollectionPortableHook.ENTRY_SET;
+        return MultiMapPortableHook.ENTRY_SET;
     }
 }

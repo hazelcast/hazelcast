@@ -18,7 +18,7 @@ package com.hazelcast.multimap.operations.client;
 
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.RetryableRequest;
-import com.hazelcast.multimap.CollectionPortableHook;
+import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
@@ -29,14 +29,14 @@ import java.io.IOException;
 /**
  * @author ali 5/24/13
  */
-public class CollectionDestroyRequest extends CallableClientRequest implements Portable, RetryableRequest {
+public class MultiMapDestroyRequest extends CallableClientRequest implements Portable, RetryableRequest {
 
     private String name;
 
-    public CollectionDestroyRequest() {
+    public MultiMapDestroyRequest() {
     }
 
-    public CollectionDestroyRequest(String name) {
+    public MultiMapDestroyRequest(String name) {
         this.name = name;
     }
 
@@ -50,11 +50,11 @@ public class CollectionDestroyRequest extends CallableClientRequest implements P
     }
 
     public int getFactoryId() {
-        return CollectionPortableHook.F_ID;
+        return MultiMapPortableHook.F_ID;
     }
 
     public int getClassId() {
-        return CollectionPortableHook.DESTROY;
+        return MultiMapPortableHook.DESTROY;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {

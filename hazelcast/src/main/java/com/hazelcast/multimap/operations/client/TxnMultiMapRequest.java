@@ -18,7 +18,7 @@ package com.hazelcast.multimap.operations.client;
 
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.InitializingObjectRequest;
-import com.hazelcast.multimap.CollectionPortableHook;
+import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
@@ -50,7 +50,7 @@ public abstract class TxnMultiMapRequest extends CallableClientRequest implement
     }
 
     public int getFactoryId() {
-        return CollectionPortableHook.F_ID;
+        return MultiMapPortableHook.F_ID;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {

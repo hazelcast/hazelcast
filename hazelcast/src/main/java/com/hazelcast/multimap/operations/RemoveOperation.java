@@ -32,7 +32,7 @@ import java.util.Iterator;
 /**
  * @author ali 1/16/13
  */
-public class RemoveOperation extends CollectionBackupAwareOperation {
+public class RemoveOperation extends MultiMapBackupAwareOperation {
 
     Data value;
 
@@ -50,15 +50,15 @@ public class RemoveOperation extends CollectionBackupAwareOperation {
     public void run() throws Exception {
         begin = Clock.currentTimeMillis();
         response = false;
-        CollectionWrapper wrapper = getCollectionWrapper();
+        MultiMapWrapper wrapper = getCollectionWrapper();
         if (wrapper == null) {
             return;
         }
-        Collection<CollectionRecord> coll = wrapper.getCollection();
-        CollectionRecord record = new CollectionRecord(isBinary() ? value : toObject(value));
-        Iterator<CollectionRecord> iter = coll.iterator();
+        Collection<MultiMapRecord> coll = wrapper.getCollection();
+        MultiMapRecord record = new MultiMapRecord(isBinary() ? value : toObject(value));
+        Iterator<MultiMapRecord> iter = coll.iterator();
         while (iter.hasNext()) {
-            CollectionRecord r = iter.next();
+            MultiMapRecord r = iter.next();
             if (r.equals(record)) {
                 iter.remove();
                 recordId = r.getRecordId();
@@ -101,6 +101,6 @@ public class RemoveOperation extends CollectionBackupAwareOperation {
     }
 
     public int getId() {
-        return CollectionDataSerializerHook.REMOVE;
+        return MultiMapDataSerializerHook.REMOVE;
     }
 }

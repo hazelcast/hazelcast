@@ -21,19 +21,19 @@ import java.util.Collection;
 /**
  * @author ali 3/1/13
  */
-public class CollectionWrapper {
+public class MultiMapWrapper {
 
-    private final Collection<CollectionRecord> collection;
+    private final Collection<MultiMapRecord> collection;
 
     private int hits;
 
     private long version = -1;
 
-    public CollectionWrapper(Collection<CollectionRecord> collection) {
+    public MultiMapWrapper(Collection<MultiMapRecord> collection) {
         this.collection = collection;
     }
 
-    public Collection<CollectionRecord> getCollection() {
+    public Collection<MultiMapRecord> getCollection() {
         return collection;
     }
 
@@ -46,7 +46,7 @@ public class CollectionWrapper {
     }
 
     public boolean containsRecordId(long recordId){
-        for (CollectionRecord record: collection){
+        for (MultiMapRecord record: collection){
             if (record.getRecordId() == recordId){
                 return true;
             }

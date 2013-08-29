@@ -16,8 +16,8 @@
 
 package com.hazelcast.multimap.operations;
 
-import com.hazelcast.multimap.CollectionDataSerializerHook;
-import com.hazelcast.multimap.CollectionRecord;
+import com.hazelcast.multimap.MultiMapDataSerializerHook;
+import com.hazelcast.multimap.MultiMapRecord;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
@@ -28,9 +28,9 @@ import java.util.Collection;
 /**
  * @author ali 1/16/13
  */
-public class RemoveAllOperation extends CollectionBackupAwareOperation {
+public class RemoveAllOperation extends MultiMapBackupAwareOperation {
 
-    transient Collection<CollectionRecord> coll;
+    transient Collection<MultiMapRecord> coll;
 
     transient long begin = -1;
 
@@ -44,14 +44,14 @@ public class RemoveAllOperation extends CollectionBackupAwareOperation {
     public void run() throws Exception {
         begin = Clock.currentTimeMillis();
         coll = removeCollection();
-        response = new CollectionResponse(coll);
+        response = new MultiMapResponse(coll);
     }
 
     public void afterRun() throws Exception {
         long elapsed = Math.max(0, Clock.currentTimeMillis() - begin);
         if (coll != null) {
             getOrCreateContainer().update();
-            for (CollectionRecord record : coll) {
+            for (MultiMapRecord record : coll) {
                 publishEvent(EntryEventType.REMOVED, dataKey, record.getObject());
             }
         }
@@ -66,10 +66,10 @@ public class RemoveAllOperation extends CollectionBackupAwareOperation {
     }
 
     public void onWaitExpire() {
-        getResponseHandler().sendResponse(new CollectionResponse(null));
+        getResponseHandler().sendResponse(new MultiMapResponse(null));
     }
 
     public int getId() {
-        return CollectionDataSerializerHook.REMOVE_ALL;
+        return MultiMapDataSerializerHook.REMOVE_ALL;
     }
 }

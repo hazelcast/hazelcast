@@ -16,14 +16,14 @@
 
 package com.hazelcast.multimap.operations;
 
-import com.hazelcast.multimap.CollectionContainer;
-import com.hazelcast.multimap.CollectionDataSerializerHook;
+import com.hazelcast.multimap.MultiMapContainer;
+import com.hazelcast.multimap.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.MultiMapService;
 
 /**
  * @author ali 1/9/13
  */
-public class SizeOperation extends CollectionOperation {
+public class SizeOperation extends MultiMapOperation {
 
     public SizeOperation() {
     }
@@ -33,12 +33,12 @@ public class SizeOperation extends CollectionOperation {
     }
 
     public void run() throws Exception {
-        CollectionContainer container = getOrCreateContainer();
+        MultiMapContainer container = getOrCreateContainer();
         response = container.size();
         ((MultiMapService) getService()).getLocalMultiMapStatsImpl(name).incrementOtherOperations();
     }
 
     public int getId() {
-        return CollectionDataSerializerHook.SIZE;
+        return MultiMapDataSerializerHook.SIZE;
     }
 }

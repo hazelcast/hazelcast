@@ -25,20 +25,20 @@ import java.io.IOException;
 /**
  * @author ali 1/23/13
  */
-public class CollectionRecord implements DataSerializable {
+public class MultiMapRecord implements DataSerializable {
 
     private long recordId = -1;
 
     private Object object;
 
-    public CollectionRecord() {
+    public MultiMapRecord() {
     }
 
-    public CollectionRecord(Object object) {
+    public MultiMapRecord(Object object) {
         this.object = object;
     }
 
-    public CollectionRecord(long recordId, Object object) {
+    public MultiMapRecord(long recordId, Object object) {
         this.recordId = recordId;
         this.object = object;
     }
@@ -61,9 +61,9 @@ public class CollectionRecord implements DataSerializable {
 
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof CollectionRecord)) return false;
+        if (!(o instanceof MultiMapRecord)) return false;
 
-        CollectionRecord record = (CollectionRecord) o;
+        MultiMapRecord record = (MultiMapRecord) o;
 
         if (!object.equals(record.object)) return false;
 

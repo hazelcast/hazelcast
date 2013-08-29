@@ -16,7 +16,7 @@
 
 package com.hazelcast.multimap.operations.client;
 
-import com.hazelcast.multimap.CollectionPortableHook;
+import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.concurrent.lock.client.AbstractLockRequest;
 import com.hazelcast.nio.serialization.Data;
@@ -62,10 +62,10 @@ public class MultiMapLockRequest extends AbstractLockRequest {
     }
 
     public int getFactoryId() {
-        return CollectionPortableHook.F_ID;
+        return MultiMapPortableHook.F_ID;
     }
 
     public int getClassId() {
-        return CollectionPortableHook.LOCK;
+        return MultiMapPortableHook.LOCK;
     }
 }

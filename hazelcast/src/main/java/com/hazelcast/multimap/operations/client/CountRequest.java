@@ -17,7 +17,7 @@
 package com.hazelcast.multimap.operations.client;
 
 import com.hazelcast.client.RetryableRequest;
-import com.hazelcast.multimap.CollectionPortableHook;
+import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.multimap.operations.CountOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
@@ -25,7 +25,7 @@ import com.hazelcast.spi.Operation;
 /**
  * @author ali 5/10/13
  */
-public class CountRequest extends CollectionKeyBasedRequest implements RetryableRequest {
+public class CountRequest extends MultiMapKeyBasedRequest implements RetryableRequest {
 
     public CountRequest() {
     }
@@ -39,6 +39,6 @@ public class CountRequest extends CollectionKeyBasedRequest implements Retryable
     }
 
     public int getClassId() {
-        return CollectionPortableHook.COUNT;
+        return MultiMapPortableHook.COUNT;
     }
 }

@@ -17,7 +17,7 @@
 package com.hazelcast.multimap.operations.client;
 
 import com.hazelcast.client.RetryableRequest;
-import com.hazelcast.multimap.CollectionPortableHook;
+import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.multimap.operations.MultiMapOperationFactory;
 import com.hazelcast.spi.OperationFactory;
 
@@ -26,7 +26,7 @@ import java.util.Map;
 /**
  * @author ali 5/10/13
  */
-public class SizeRequest extends CollectionAllPartitionRequest implements RetryableRequest {
+public class SizeRequest extends MultiMapAllPartitionRequest implements RetryableRequest {
 
     public SizeRequest() {
     }
@@ -48,6 +48,6 @@ public class SizeRequest extends CollectionAllPartitionRequest implements Retrya
     }
 
     public int getClassId() {
-        return CollectionPortableHook.SIZE;
+        return MultiMapPortableHook.SIZE;
     }
 }

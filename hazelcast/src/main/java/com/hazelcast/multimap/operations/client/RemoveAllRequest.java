@@ -17,9 +17,9 @@
 package com.hazelcast.multimap.operations.client;
 
 import com.hazelcast.client.InitializingObjectRequest;
-import com.hazelcast.multimap.CollectionPortableHook;
-import com.hazelcast.multimap.CollectionRecord;
-import com.hazelcast.multimap.operations.CollectionResponse;
+import com.hazelcast.multimap.MultiMapPortableHook;
+import com.hazelcast.multimap.MultiMapRecord;
+import com.hazelcast.multimap.operations.MultiMapResponse;
 import com.hazelcast.multimap.operations.RemoveAllOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
@@ -34,7 +34,7 @@ import java.util.Collection;
 /**
  * @author ali 5/10/13
  */
-public class RemoveAllRequest extends CollectionKeyBasedRequest implements InitializingObjectRequest {
+public class RemoveAllRequest extends MultiMapKeyBasedRequest implements InitializingObjectRequest {
 
     int threadId = -1;
 
@@ -51,7 +51,7 @@ public class RemoveAllRequest extends CollectionKeyBasedRequest implements Initi
     }
 
     public int getClassId() {
-        return CollectionPortableHook.REMOVE_ALL;
+        return MultiMapPortableHook.REMOVE_ALL;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
@@ -65,13 +65,13 @@ public class RemoveAllRequest extends CollectionKeyBasedRequest implements Initi
     }
 
     protected Object filter(Object response) {
-        if (response instanceof CollectionResponse){
-            Collection<CollectionRecord> coll = ((CollectionResponse) response).getCollection();
+        if (response instanceof MultiMapResponse){
+            Collection<MultiMapRecord> coll = ((MultiMapResponse) response).getCollection();
             if (coll == null){
                 return new PortableCollection();
             }
             Collection<Data> collection = new ArrayList<Data>(coll.size());
-            for (CollectionRecord record: coll){
+            for (MultiMapRecord record: coll){
                 collection.add(getClientEngine().toData(record.getObject()));
             }
             return new PortableCollection(collection);

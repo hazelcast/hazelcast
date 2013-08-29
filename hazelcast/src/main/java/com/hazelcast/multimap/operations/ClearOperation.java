@@ -16,9 +16,9 @@
 
 package com.hazelcast.multimap.operations;
 
-import com.hazelcast.multimap.CollectionContainer;
-import com.hazelcast.multimap.CollectionDataSerializerHook;
-import com.hazelcast.multimap.CollectionRecord;
+import com.hazelcast.multimap.MultiMapContainer;
+import com.hazelcast.multimap.MultiMapDataSerializerHook;
+import com.hazelcast.multimap.MultiMapRecord;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.serialization.Data;
@@ -32,9 +32,9 @@ import java.util.Map;
 /**
  * @author ali 1/9/13
  */
-public class ClearOperation extends CollectionOperation implements BackupAwareOperation, PartitionAwareOperation {
+public class ClearOperation extends MultiMapOperation implements BackupAwareOperation, PartitionAwareOperation {
 
-    transient Map<Data, Collection<CollectionRecord>> objects;
+    transient Map<Data, Collection<MultiMapRecord>> objects;
 
     public ClearOperation() {
     }
@@ -45,13 +45,13 @@ public class ClearOperation extends CollectionOperation implements BackupAwareOp
 
     public void beforeRun() throws Exception {
         if (hasListener()) {
-            CollectionContainer container = getOrCreateContainer();
+            MultiMapContainer container = getOrCreateContainer();
             objects = container.copyCollections();
         }
     }
 
     public void run() throws Exception {
-        CollectionContainer container = getOrCreateContainer();
+        MultiMapContainer container = getOrCreateContainer();
         container.clearCollections();
         response = true;
         ((MultiMapService) getService()).getLocalMultiMapStatsImpl(name).incrementOtherOperations();
@@ -60,14 +60,14 @@ public class ClearOperation extends CollectionOperation implements BackupAwareOp
 
     public void afterRun() throws Exception {
         if (objects != null && !objects.isEmpty()) {
-            CollectionContainer container = getOrCreateContainer();
-            for (Map.Entry<Data, Collection<CollectionRecord>> entry : objects.entrySet()) {
+            MultiMapContainer container = getOrCreateContainer();
+            for (Map.Entry<Data, Collection<MultiMapRecord>> entry : objects.entrySet()) {
                 Data key = entry.getKey();
                 if (container.isLocked(key)) {
                     continue;//key is locked so not removed
                 }
-                Collection<CollectionRecord> coll = entry.getValue();
-                for (CollectionRecord record : coll) {
+                Collection<MultiMapRecord> coll = entry.getValue();
+                for (MultiMapRecord record : coll) {
                     publishEvent(EntryEventType.REMOVED, key, record.getObject());
                 }
             }
@@ -85,7 +85,7 @@ public class ClearOperation extends CollectionOperation implements BackupAwareOp
     }
 
     public int getId() {
-        return CollectionDataSerializerHook.CLEAR;
+        return MultiMapDataSerializerHook.CLEAR;
     }
 
 }

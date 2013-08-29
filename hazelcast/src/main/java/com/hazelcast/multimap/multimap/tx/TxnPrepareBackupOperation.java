@@ -16,9 +16,9 @@
 
 package com.hazelcast.multimap.multimap.tx;
 
-import com.hazelcast.multimap.CollectionContainer;
-import com.hazelcast.multimap.CollectionDataSerializerHook;
-import com.hazelcast.multimap.operations.CollectionKeyBasedOperation;
+import com.hazelcast.multimap.MultiMapContainer;
+import com.hazelcast.multimap.MultiMapDataSerializerHook;
+import com.hazelcast.multimap.operations.MultiMapKeyBasedOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -30,7 +30,7 @@ import java.io.IOException;
 /**
  * @author ali 4/2/13
  */
-public class TxnPrepareBackupOperation extends CollectionKeyBasedOperation implements BackupOperation {
+public class TxnPrepareBackupOperation extends MultiMapKeyBasedOperation implements BackupOperation {
 
     String caller;
     int threadId;
@@ -46,7 +46,7 @@ public class TxnPrepareBackupOperation extends CollectionKeyBasedOperation imple
     }
 
     public void run() throws Exception {
-        CollectionContainer container = getOrCreateContainer();
+        MultiMapContainer container = getOrCreateContainer();
         if (!container.txnLock(dataKey, caller, threadId, ttl + 10000L)){
             throw new TransactionException("Lock is not owned by the transaction! -> " + container.getLockOwnerInfo(dataKey));
         }
@@ -67,6 +67,6 @@ public class TxnPrepareBackupOperation extends CollectionKeyBasedOperation imple
     }
 
     public int getId() {
-        return CollectionDataSerializerHook.TXN_PREPARE_BACKUP;
+        return MultiMapDataSerializerHook.TXN_PREPARE_BACKUP;
     }
 }

@@ -16,14 +16,14 @@
 
 package com.hazelcast.multimap.operations;
 
-import com.hazelcast.multimap.CollectionContainer;
-import com.hazelcast.multimap.CollectionDataSerializerHook;
+import com.hazelcast.multimap.MultiMapContainer;
+import com.hazelcast.multimap.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.MultiMapService;
 
 /**
  * @author ali 1/3/13
  */
-public class KeySetOperation extends CollectionOperation {
+public class KeySetOperation extends MultiMapOperation {
 
     public KeySetOperation() {
     }
@@ -33,12 +33,12 @@ public class KeySetOperation extends CollectionOperation {
     }
 
     public void run() throws Exception {
-        CollectionContainer container = getOrCreateContainer();
+        MultiMapContainer container = getOrCreateContainer();
         ((MultiMapService) getService()).getLocalMultiMapStatsImpl(name).incrementOtherOperations();
-        response = new CollectionResponse(container.keySet());
+        response = new MultiMapResponse(container.keySet());
     }
 
     public int getId() {
-        return CollectionDataSerializerHook.KEY_SET;
+        return MultiMapDataSerializerHook.KEY_SET;
     }
 }

@@ -25,34 +25,34 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * @author ali 1/2/13
  */
-public class CollectionPartitionContainer {
+public class MultiMapPartitionContainer {
 
     final int partitionId;
 
     final MultiMapService service;
 
-    final ConcurrentMap<String, CollectionContainer> containerMap = new ConcurrentHashMap<String, CollectionContainer>(1000);
+    final ConcurrentMap<String, MultiMapContainer> containerMap = new ConcurrentHashMap<String, MultiMapContainer>(1000);
 
-    private final ConstructorFunction<String, CollectionContainer> collectionConstructor
-            = new ConstructorFunction<String, CollectionContainer>() {
-        public CollectionContainer createNew(String name) {
-            return new CollectionContainer(name, service, partitionId);
+    private final ConstructorFunction<String, MultiMapContainer> collectionConstructor
+            = new ConstructorFunction<String, MultiMapContainer>() {
+        public MultiMapContainer createNew(String name) {
+            return new MultiMapContainer(name, service, partitionId);
         }
     };
 
-    public CollectionPartitionContainer(MultiMapService service, int partitionId) {
+    public MultiMapPartitionContainer(MultiMapService service, int partitionId) {
         this.service = service;
         this.partitionId = partitionId;
     }
 
-    public CollectionContainer getOrCreateCollectionContainer(String name) {
-        CollectionContainer container = ConcurrencyUtil.getOrPutIfAbsent(containerMap, name, collectionConstructor);
+    public MultiMapContainer getOrCreateCollectionContainer(String name) {
+        MultiMapContainer container = ConcurrencyUtil.getOrPutIfAbsent(containerMap, name, collectionConstructor);
         container.access();
         return container;
     }
 
-    public CollectionContainer getCollectionContainer(String name){
-        CollectionContainer container = containerMap.get(name);
+    public MultiMapContainer getCollectionContainer(String name){
+        MultiMapContainer container = containerMap.get(name);
         if (container != null){
             container.access();
         }
@@ -65,14 +65,14 @@ public class CollectionPartitionContainer {
     }
 
     void destroyCollection(String name) {
-        final CollectionContainer container = containerMap.remove(name);
+        final MultiMapContainer container = containerMap.remove(name);
         if (container != null) {
             container.destroy();
         }
     }
 
     void destroy() {
-        for (CollectionContainer container : containerMap.values()) {
+        for (MultiMapContainer container : containerMap.values()) {
             container.destroy();
         }
         containerMap.clear();

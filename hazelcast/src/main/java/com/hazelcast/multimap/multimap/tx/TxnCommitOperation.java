@@ -16,9 +16,9 @@
 
 package com.hazelcast.multimap.multimap.tx;
 
-import com.hazelcast.multimap.CollectionDataSerializerHook;
-import com.hazelcast.multimap.CollectionWrapper;
-import com.hazelcast.multimap.operations.CollectionBackupAwareOperation;
+import com.hazelcast.multimap.MultiMapDataSerializerHook;
+import com.hazelcast.multimap.MultiMapWrapper;
+import com.hazelcast.multimap.operations.MultiMapBackupAwareOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -33,7 +33,7 @@ import java.util.List;
 /**
  * @author ali 4/12/13
  */
-public class TxnCommitOperation extends CollectionBackupAwareOperation implements Notifier {
+public class TxnCommitOperation extends MultiMapBackupAwareOperation implements Notifier {
 
     List<Operation> opList;
     long version;
@@ -49,7 +49,7 @@ public class TxnCommitOperation extends CollectionBackupAwareOperation implement
     }
 
     public void run() throws Exception {
-        CollectionWrapper wrapper = getCollectionWrapper();
+        MultiMapWrapper wrapper = getCollectionWrapper();
         if (wrapper == null || wrapper.getVersion() != version){
             notify = false;
             return;
@@ -100,6 +100,6 @@ public class TxnCommitOperation extends CollectionBackupAwareOperation implement
     }
 
     public int getId() {
-        return CollectionDataSerializerHook.TXN_COMMIT;
+        return MultiMapDataSerializerHook.TXN_COMMIT;
     }
 }

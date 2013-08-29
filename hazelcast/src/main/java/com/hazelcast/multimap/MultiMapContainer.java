@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * @author ali 1/2/13
  */
-public class CollectionContainer {
+public class MultiMapContainer {
 
     final String name;
 
@@ -42,7 +42,7 @@ public class CollectionContainer {
 
     final MultiMapConfig config;
 
-    final ConcurrentMap<Data, CollectionWrapper> collections = new ConcurrentHashMap<Data, CollectionWrapper>(1000);
+    final ConcurrentMap<Data, MultiMapWrapper> collections = new ConcurrentHashMap<Data, MultiMapWrapper>(1000);
 
     final DefaultObjectNamespace lockNamespace;
 
@@ -55,7 +55,7 @@ public class CollectionContainer {
     final AtomicLong lastUpdateTime = new AtomicLong();
     final long creationTime;
 
-    public CollectionContainer(String name, MultiMapService service, int partitionId) {
+    public MultiMapContainer(String name, MultiMapService service, int partitionId) {
         this.name = name;
         this.service = service;
         this.nodeEngine = service.getNodeEngine();
@@ -100,22 +100,29 @@ public class CollectionContainer {
         return idGen.getAndIncrement();
     }
 
-    public CollectionWrapper getOrCreateCollectionWrapper(Data dataKey) {
-        CollectionWrapper wrapper = collections.get(dataKey);
+    public MultiMapWrapper getOrCreateCollectionWrapper(Data dataKey) {
+        MultiMapWrapper wrapper = collections.get(dataKey);
         if (wrapper == null) {
-            Collection<CollectionRecord> coll = service.createNew(name);
-            wrapper = new CollectionWrapper(coll);
+            Collection<MultiMapRecord> coll;
+            if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.SET)) {
+                coll = new HashSet<MultiMapRecord>(10);
+            } else if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.LIST)) {
+                coll = new LinkedList<MultiMapRecord>();
+            } else {
+                throw new IllegalArgumentException("No Matching CollectionProxyType!");
+            }
+            wrapper = new MultiMapWrapper(coll);
             collections.put(dataKey, wrapper);
         }
         return wrapper;
     }
 
-    public CollectionWrapper getCollectionWrapper(Data dataKey) {
+    public MultiMapWrapper getCollectionWrapper(Data dataKey) {
         return collections.get(dataKey);
     }
 
-    public Collection<CollectionRecord> removeCollection(Data dataKey) {
-        CollectionWrapper wrapper = collections.remove(dataKey);
+    public Collection<MultiMapRecord> removeCollection(Data dataKey) {
+        MultiMapWrapper wrapper = collections.remove(dataKey);
         return wrapper != null ? wrapper.getCollection() : null;
     }
 
@@ -126,9 +133,9 @@ public class CollectionContainer {
         return keys;
     }
 
-    public Collection<CollectionRecord> values() {
-        Collection<CollectionRecord> valueCollection = new LinkedList<CollectionRecord>();
-        for (CollectionWrapper wrapper : collections.values()) {
+    public Collection<MultiMapRecord> values() {
+        Collection<MultiMapRecord> valueCollection = new LinkedList<MultiMapRecord>();
+        for (MultiMapWrapper wrapper : collections.values()) {
             valueCollection.addAll(wrapper.getCollection());
         }
         return valueCollection;
@@ -139,11 +146,11 @@ public class CollectionContainer {
     }
 
     public boolean containsEntry(boolean binary, Data key, Data value) {
-        CollectionWrapper wrapper = collections.get(key);
+        MultiMapWrapper wrapper = collections.get(key);
         if (wrapper == null) {
             return false;
         }
-        CollectionRecord record = new CollectionRecord(binary ? value : nodeEngine.toObject(value));
+        MultiMapRecord record = new MultiMapRecord(binary ? value : nodeEngine.toObject(value));
         return wrapper.getCollection().contains(record);
     }
 
@@ -156,25 +163,25 @@ public class CollectionContainer {
         return false;
     }
 
-    public Map<Data, Collection<CollectionRecord>> copyCollections() {
-        Map<Data, Collection<CollectionRecord>> map = new HashMap<Data, Collection<CollectionRecord>>(collections.size());
-        for (Map.Entry<Data, CollectionWrapper> entry : collections.entrySet()) {
+    public Map<Data, Collection<MultiMapRecord>> copyCollections() {
+        Map<Data, Collection<MultiMapRecord>> map = new HashMap<Data, Collection<MultiMapRecord>>(collections.size());
+        for (Map.Entry<Data, MultiMapWrapper> entry : collections.entrySet()) {
             Data key = entry.getKey();
-            Collection<CollectionRecord> col = copyCollection(entry.getValue().getCollection());
+            Collection<MultiMapRecord> col = copyCollection(entry.getValue().getCollection());
             map.put(key, col);
         }
         return map;
     }
 
-    private Collection<CollectionRecord> copyCollection(Collection<CollectionRecord> coll) {
-        Collection<CollectionRecord> copy = new ArrayList<CollectionRecord>(coll.size());
+    private Collection<MultiMapRecord> copyCollection(Collection<MultiMapRecord> coll) {
+        Collection<MultiMapRecord> copy = new ArrayList<MultiMapRecord>(coll.size());
         copy.addAll(coll);
         return copy;
     }
 
     public int size() {
         int size = 0;
-        for (CollectionWrapper wrapper : collections.values()) {
+        for (MultiMapWrapper wrapper : collections.values()) {
             size += wrapper.getCollection().size();
         }
         return size;
@@ -182,9 +189,9 @@ public class CollectionContainer {
 
     public void clearCollections() {
         final Collection<Data> locks = lockStore != null ? lockStore.getLockedKeys() : Collections.<Data>emptySet();
-        Map<Data, CollectionWrapper> temp = new HashMap<Data, CollectionWrapper>(locks.size());
+        Map<Data, MultiMapWrapper> temp = new HashMap<Data, MultiMapWrapper>(locks.size());
         for (Data key : locks) {
-            CollectionWrapper wrapper = collections.get(key);
+            MultiMapWrapper wrapper = collections.get(key);
             if (wrapper != null){
                 temp.put(key, wrapper);
             }

@@ -30,14 +30,14 @@ import java.util.Map;
 /**
  * @author ali 1/18/13
  */
-public class CollectionMigrationOperation extends AbstractOperation {
+public class MultiMapMigrationOperation extends AbstractOperation {
 
     Map<String, Map> map;
 
-    public CollectionMigrationOperation() {
+    public MultiMapMigrationOperation() {
     }
 
-    public CollectionMigrationOperation(Map<String, Map> map) {
+    public MultiMapMigrationOperation(Map<String, Map> map) {
         this.map = map;
     }
 
@@ -52,15 +52,15 @@ public class CollectionMigrationOperation extends AbstractOperation {
             String name = entry.getKey();
             out.writeUTF(name);
 
-            Map<Data, CollectionWrapper> collections = entry.getValue();
+            Map<Data, MultiMapWrapper> collections = entry.getValue();
             out.writeInt(collections.size());
-            for (Map.Entry<Data, CollectionWrapper> collectionEntry : collections.entrySet()) {
+            for (Map.Entry<Data, MultiMapWrapper> collectionEntry : collections.entrySet()) {
                 Data key = collectionEntry.getKey();
                 key.writeData(out);
-                CollectionWrapper wrapper = collectionEntry.getValue();
-                Collection<CollectionRecord> coll = wrapper.getCollection();
+                MultiMapWrapper wrapper = collectionEntry.getValue();
+                Collection<MultiMapRecord> coll = wrapper.getCollection();
                 out.writeInt(coll.size());
-                for (CollectionRecord record : coll) {
+                for (MultiMapRecord record : coll) {
                     record.writeData(out);
                 }
             }
@@ -73,18 +73,18 @@ public class CollectionMigrationOperation extends AbstractOperation {
         for (int i = 0; i < mapSize; i++) {
             String name = in.readUTF();
             int collectionSize = in.readInt();
-            Map<Data, CollectionWrapper> collections = new HashMap<Data, CollectionWrapper>();
+            Map<Data, MultiMapWrapper> collections = new HashMap<Data, MultiMapWrapper>();
             for (int j = 0; j < collectionSize; j++) {
                 Data key = new Data();
                 key.readData(in);
                 int collSize = in.readInt();
-                Collection<CollectionRecord> coll = new ArrayList<CollectionRecord>(collSize);
+                Collection<MultiMapRecord> coll = new ArrayList<MultiMapRecord>(collSize);
                 for (int k = 0; k < collSize; k++) {
-                    CollectionRecord record = new CollectionRecord();
+                    MultiMapRecord record = new MultiMapRecord();
                     record.readData(in);
                     coll.add(record);
                 }
-                collections.put(key, new CollectionWrapper(coll));
+                collections.put(key, new MultiMapWrapper(coll));
 
             }
             map.put(name, collections);

@@ -52,7 +52,7 @@ public class MultiMapService implements ManagedService, RemoteService,
 
     public static final String SERVICE_NAME = "hz:impl:collectionService";
     private final NodeEngine nodeEngine;
-    private final CollectionPartitionContainer[] partitionContainers;
+    private final MultiMapPartitionContainer[] partitionContainers;
     private final ConcurrentMap<String, LocalMultiMapStatsImpl> statsMap = new ConcurrentHashMap<String, LocalMultiMapStatsImpl>(1000);
     private final ConstructorFunction<String, LocalMultiMapStatsImpl> localMultiMapStatsConstructorFunction = new ConstructorFunction<String, LocalMultiMapStatsImpl>() {
         public LocalMultiMapStatsImpl createNew(String key) {
@@ -63,13 +63,13 @@ public class MultiMapService implements ManagedService, RemoteService,
     public MultiMapService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
-        partitionContainers = new CollectionPartitionContainer[partitionCount];
+        partitionContainers = new MultiMapPartitionContainer[partitionCount];
     }
 
     public void init(final NodeEngine nodeEngine, Properties properties) {
         int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
         for (int partition = 0; partition < partitionCount; partition++) {
-            partitionContainers[partition] = new CollectionPartitionContainer(this, partition);
+            partitionContainers[partition] = new MultiMapPartitionContainer(this, partition);
         }
         final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         if (lockService != null) {
@@ -97,7 +97,7 @@ public class MultiMapService implements ManagedService, RemoteService,
     }
 
     public void reset() {
-        for (CollectionPartitionContainer container : partitionContainers) {
+        for (MultiMapPartitionContainer container : partitionContainers) {
             if (container != null) {
                 container.destroy();
             }
@@ -111,17 +111,12 @@ public class MultiMapService implements ManagedService, RemoteService,
         }
     }
 
-    public CollectionContainer getOrCreateCollectionContainer(int partitionId, String name) {
+    public MultiMapContainer getOrCreateCollectionContainer(int partitionId, String name) {
         return partitionContainers[partitionId].getOrCreateCollectionContainer(name);
     }
 
-    public CollectionPartitionContainer getPartitionContainer(int partitionId) {
+    public MultiMapPartitionContainer getPartitionContainer(int partitionId) {
         return partitionContainers[partitionId];
-    }
-
-    <V> Collection<V> createNew(String name) {
-        CollectionProxy proxy = (CollectionProxy) nodeEngine.getProxyService().getDistributedObject(SERVICE_NAME, name);
-        return proxy.createNew();
     }
 
     public DistributedObject createDistributedObject(Object objectId) {
@@ -132,7 +127,7 @@ public class MultiMapService implements ManagedService, RemoteService,
 
     public void destroyDistributedObject(Object objectId) {
         String name = (String) objectId;
-        for (CollectionPartitionContainer container : partitionContainers) {
+        for (MultiMapPartitionContainer container : partitionContainers) {
             if (container != null) {
                 container.destroyCollection(name);
             }
@@ -145,13 +140,13 @@ public class MultiMapService implements ManagedService, RemoteService,
         Address thisAddress = clusterService.getThisAddress();
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
             PartitionView partition = nodeEngine.getPartitionService().getPartition(i);
-            CollectionPartitionContainer partitionContainer = getPartitionContainer(i);
-            CollectionContainer collectionContainer = partitionContainer.getCollectionContainer(name);
-            if (collectionContainer == null) {
+            MultiMapPartitionContainer partitionContainer = getPartitionContainer(i);
+            MultiMapContainer multiMapContainer = partitionContainer.getCollectionContainer(name);
+            if (multiMapContainer == null) {
                 continue;
             }
             if (partition.getOwner().equals(thisAddress)) {
-                keySet.addAll(collectionContainer.keySet());
+                keySet.addAll(multiMapContainer.keySet());
             }
         }
         getLocalMultiMapStatsImpl(name).incrementOtherOperations();
@@ -170,9 +165,9 @@ public class MultiMapService implements ManagedService, RemoteService,
         EventService eventService = nodeEngine.getEventService();
         EventRegistration registration;
         if (local) {
-            registration = eventService.registerLocalListener(SERVICE_NAME, name, new CollectionEventFilter(includeValue, key), listener);
+            registration = eventService.registerLocalListener(SERVICE_NAME, name, new MultiMapEventFilter(includeValue, key), listener);
         } else {
-            registration = eventService.registerListener(SERVICE_NAME, name, new CollectionEventFilter(includeValue, key), listener);
+            registration = eventService.registerListener(SERVICE_NAME, name, new MultiMapEventFilter(includeValue, key), listener);
         }
         return registration.getId();
     }
@@ -199,14 +194,14 @@ public class MultiMapService implements ManagedService, RemoteService,
 
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
         int replicaIndex = event.getReplicaIndex();
-        final CollectionPartitionContainer partitionContainer = partitionContainers[event.getPartitionId()];
+        final MultiMapPartitionContainer partitionContainer = partitionContainers[event.getPartitionId()];
         if (partitionContainer == null) {
             return null;
         }
         Map<String, Map> map = new HashMap<String, Map>(partitionContainer.containerMap.size());
-        for (Map.Entry<String, CollectionContainer> entry : partitionContainer.containerMap.entrySet()) {
+        for (Map.Entry<String, MultiMapContainer> entry : partitionContainer.containerMap.entrySet()) {
             String name = entry.getKey();
-            CollectionContainer container = entry.getValue();
+            MultiMapContainer container = entry.getValue();
             if (container.config.getTotalBackupCount() < replicaIndex) {
                 continue;
             }
@@ -215,20 +210,20 @@ public class MultiMapService implements ManagedService, RemoteService,
         if (map.isEmpty()) {
             return null;
         }
-        return new CollectionMigrationOperation(map);
+        return new MultiMapMigrationOperation(map);
     }
 
     public void insertMigratedData(int partitionId, Map<String, Map> map) {
         for (Map.Entry<String, Map> entry : map.entrySet()) {
             String name = entry.getKey();
-            CollectionContainer container = getOrCreateCollectionContainer(partitionId, name);
-            Map<Data, CollectionWrapper> collections = entry.getValue();
+            MultiMapContainer container = getOrCreateCollectionContainer(partitionId, name);
+            Map<Data, MultiMapWrapper> collections = entry.getValue();
             container.collections.putAll(collections);
         }
     }
 
     private void clearMigrationData(int partitionId) {
-        final CollectionPartitionContainer partitionContainer = partitionContainers[partitionId];
+        final MultiMapPartitionContainer partitionContainer = partitionContainers[partitionId];
         partitionContainer.containerMap.clear();
     }
 
@@ -261,19 +256,19 @@ public class MultiMapService implements ManagedService, RemoteService,
         Address thisAddress = clusterService.getThisAddress();
         for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
             PartitionView partition = nodeEngine.getPartitionService().getPartition(i);
-            CollectionPartitionContainer partitionContainer = getPartitionContainer(i);
-            CollectionContainer collectionContainer = partitionContainer.getCollectionContainer(name);
-            if (collectionContainer == null) {
+            MultiMapPartitionContainer partitionContainer = getPartitionContainer(i);
+            MultiMapContainer multiMapContainer = partitionContainer.getCollectionContainer(name);
+            if (multiMapContainer == null) {
                 continue;
             }
             if (partition.getOwner().equals(thisAddress)) {
-                lockedEntryCount += collectionContainer.getLockedCount();
-                for (CollectionWrapper wrapper : collectionContainer.collections.values()) {
+                lockedEntryCount += multiMapContainer.getLockedCount();
+                for (MultiMapWrapper wrapper : multiMapContainer.collections.values()) {
                     hits += wrapper.getHits();
                     ownedEntryCount += wrapper.getCollection().size();
                 }
             } else {
-                int backupCount = collectionContainer.config.getTotalBackupCount();
+                int backupCount = multiMapContainer.config.getTotalBackupCount();
                 for (int j = 1; j <= backupCount; j++) {
                     Address replicaAddress = partition.getReplicaAddress(j);
                     int memberSize = nodeEngine.getClusterService().getMembers().size();
@@ -290,7 +285,7 @@ public class MultiMapService implements ManagedService, RemoteService,
                     }
 
                     if (replicaAddress != null && replicaAddress.equals(thisAddress)) {
-                        for (CollectionWrapper wrapper : collectionContainer.collections.values()) {
+                        for (MultiMapWrapper wrapper : multiMapContainer.collections.values()) {
                             backupEntryCount += wrapper.getCollection().size();
                         }
                     }

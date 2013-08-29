@@ -17,7 +17,7 @@
 package com.hazelcast.multimap.operations.client;
 
 import com.hazelcast.client.PartitionClientRequest;
-import com.hazelcast.multimap.CollectionPortableHook;
+import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
@@ -28,14 +28,14 @@ import java.io.IOException;
 /**
  * @author ali 5/9/13
  */
-public abstract class CollectionRequest extends PartitionClientRequest implements Portable {
+public abstract class MultiMapRequest extends PartitionClientRequest implements Portable {
 
     String name;
 
-    protected CollectionRequest() {
+    protected MultiMapRequest() {
     }
 
-    protected CollectionRequest(String name) {
+    protected MultiMapRequest(String name) {
         this.name = name;
     }
 
@@ -52,7 +52,7 @@ public abstract class CollectionRequest extends PartitionClientRequest implement
     }
 
     public int getFactoryId() {
-        return CollectionPortableHook.F_ID;
+        return MultiMapPortableHook.F_ID;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {

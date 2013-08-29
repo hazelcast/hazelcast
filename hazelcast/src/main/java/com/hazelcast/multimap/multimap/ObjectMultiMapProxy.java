@@ -16,15 +16,14 @@
 
 package com.hazelcast.multimap.multimap;
 
-import com.hazelcast.multimap.CollectionProxy;
-import com.hazelcast.multimap.MultiMapService;
-import com.hazelcast.multimap.operations.CollectionResponse;
-import com.hazelcast.multimap.operations.EntrySetResponse;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.MultiMap;
 import com.hazelcast.monitor.LocalMultiMapStats;
+import com.hazelcast.multimap.MultiMapService;
+import com.hazelcast.multimap.operations.MultiMapResponse;
+import com.hazelcast.multimap.operations.EntrySetResponse;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.InitializingObject;
@@ -37,7 +36,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author ali 1/2/13
  */
-public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements CollectionProxy, MultiMap<K, V>, InitializingObject {
+public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements MultiMap<K, V>, InitializingObject {
 
     public ObjectMultiMapProxy(MultiMapService service, NodeEngine nodeEngine, String name) {
         super(service, nodeEngine, name);
@@ -86,7 +85,7 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     public Collection<V> get(K key) {
         final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
-        CollectionResponse result = getAllInternal(dataKey);
+        MultiMapResponse result = getAllInternal(dataKey);
         return result.getObjectCollection(nodeEngine);
     }
 
@@ -100,7 +99,7 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
     public Collection<V> remove(Object key) {
         final NodeEngine nodeEngine = getNodeEngine();
         Data dataKey = nodeEngine.toData(key);
-        CollectionResponse result = removeInternal(dataKey);
+        MultiMapResponse result = removeInternal(dataKey);
         return result.getObjectCollection(nodeEngine);
     }
 
@@ -122,7 +121,7 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements C
             if (obj == null) {
                 continue;
             }
-            CollectionResponse response = nodeEngine.toObject(obj);
+            MultiMapResponse response = nodeEngine.toObject(obj);
             values.addAll(response.getObjectCollection(nodeEngine));
         }
         return values;

@@ -16,9 +16,9 @@
 
 package com.hazelcast.multimap.multimap.tx;
 
-import com.hazelcast.multimap.CollectionRecord;
+import com.hazelcast.multimap.MultiMapRecord;
 import com.hazelcast.multimap.MultiMapService;
-import com.hazelcast.multimap.operations.CollectionResponse;
+import com.hazelcast.multimap.operations.MultiMapResponse;
 import com.hazelcast.multimap.operations.CountOperation;
 import com.hazelcast.multimap.operations.GetAllOperation;
 import com.hazelcast.multimap.operations.MultiMapOperationFactory;
@@ -47,7 +47,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
     protected final MultiMapConfig config;
     private long version = -1;
 
-    private final Map<Data, Collection<CollectionRecord>> txMap = new HashMap<Data, Collection<CollectionRecord>>();
+    private final Map<Data, Collection<MultiMapRecord>> txMap = new HashMap<Data, Collection<MultiMapRecord>>();
 
     protected TransactionalMultiMapProxySupport(NodeEngine nodeEngine, MultiMapService service, String name, TransactionSupport tx) {
         super(nodeEngine, service);
@@ -65,13 +65,13 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
     protected boolean putInternal(Data key, Data value) {
         throwExceptionIfNull(key);
         throwExceptionIfNull(value);
-        Collection<CollectionRecord> coll = txMap.get(key);
+        Collection<MultiMapRecord> coll = txMap.get(key);
         long recordId = -1;
         long timeout = tx.getTimeoutMillis();
         long ttl = timeout*3/2;
         final MultiMapTransactionLog log;
         if (coll == null){
-            CollectionResponse response = lockAndGet(key, timeout, ttl);
+            MultiMapResponse response = lockAndGet(key, timeout, ttl);
             if (response == null){
                 throw new ConcurrentModificationException("Transaction couldn't obtain lock " + getThreadId());
             }
@@ -84,7 +84,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         } else {
             log = (MultiMapTransactionLog)tx.getTransactionLog(getTxLogKey(key));
         }
-        CollectionRecord record = new CollectionRecord(config.isBinary() ? value : getNodeEngine().toObject(value));
+        MultiMapRecord record = new MultiMapRecord(config.isBinary() ? value : getNodeEngine().toObject(value));
         if (coll.add(record)){
             if (recordId == -1){
                 recordId = nextId(key);
@@ -100,12 +100,12 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
     protected boolean removeInternal(Data key, Data value) {
         throwExceptionIfNull(key);
         throwExceptionIfNull(value);
-        Collection<CollectionRecord> coll = txMap.get(key);
+        Collection<MultiMapRecord> coll = txMap.get(key);
         long timeout = tx.getTimeoutMillis();
         long ttl = timeout*3/2;
         final MultiMapTransactionLog log;
         if (coll == null){
-            CollectionResponse response = lockAndGet(key, timeout, ttl);
+            MultiMapResponse response = lockAndGet(key, timeout, ttl);
             if (response == null){
                 throw new ConcurrentModificationException("Transaction couldn't obtain lock " + getThreadId());
             }
@@ -117,11 +117,11 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         } else {
             log = (MultiMapTransactionLog)tx.getTransactionLog(getTxLogKey(key));
         }
-        CollectionRecord record = new CollectionRecord(config.isBinary() ? value : getNodeEngine().toObject(value));
-        Iterator<CollectionRecord> iterator = coll.iterator();
+        MultiMapRecord record = new MultiMapRecord(config.isBinary() ? value : getNodeEngine().toObject(value));
+        Iterator<MultiMapRecord> iterator = coll.iterator();
         long recordId = -1;
         while (iterator.hasNext()){
-            CollectionRecord r = iterator.next();
+            MultiMapRecord r = iterator.next();
             if (r.equals(record)){
                 iterator.remove();
                 recordId = r.getRecordId();
@@ -136,14 +136,14 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         return false;
     }
 
-    protected Collection<CollectionRecord> removeAllInternal(Data key){
+    protected Collection<MultiMapRecord> removeAllInternal(Data key){
         throwExceptionIfNull(key);
         long timeout = tx.getTimeoutMillis();
         long ttl = timeout*3/2;
-        Collection<CollectionRecord> coll = txMap.get(key);
+        Collection<MultiMapRecord> coll = txMap.get(key);
         final MultiMapTransactionLog log;
         if (coll == null){
-            CollectionResponse response = lockAndGet(key, timeout, ttl);
+            MultiMapResponse response = lockAndGet(key, timeout, ttl);
             if (response == null){
                 throw new ConcurrentModificationException("Transaction couldn't obtain lock " + getThreadId());
             }
@@ -160,17 +160,17 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         return coll;
     }
 
-    protected Collection<CollectionRecord> getInternal(Data key){
+    protected Collection<MultiMapRecord> getInternal(Data key){
         throwExceptionIfNull(key);
-        Collection<CollectionRecord> coll = txMap.get(key);
+        Collection<MultiMapRecord> coll = txMap.get(key);
         if (coll == null){
             GetAllOperation operation = new GetAllOperation(name, key);
             try {
                 int partitionId = getNodeEngine().getPartitionService().getPartitionId(key);
                 Invocation invocation = getNodeEngine().getOperationService()
                         .createInvocationBuilder(MultiMapService.SERVICE_NAME, operation, partitionId).build();
-                Future<CollectionResponse> f = invocation.invoke();
-                CollectionResponse response = f.get();
+                Future<MultiMapResponse> f = invocation.invoke();
+                MultiMapResponse response = f.get();
                 coll = response.getRecordCollection(getNodeEngine());
             } catch (Throwable t) {
                 throw ExceptionUtil.rethrow(t);
@@ -182,7 +182,7 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
 
     protected int valueCountInternal(Data key){
         throwExceptionIfNull(key);
-        Collection<CollectionRecord> coll = txMap.get(key);
+        Collection<MultiMapRecord> coll = txMap.get(key);
         if (coll == null){
             CountOperation operation = new CountOperation(name, key);
             try {
@@ -246,14 +246,14 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         return ThreadUtil.getThreadId();
     }
 
-    private CollectionResponse lockAndGet(Data key, long timeout, long ttl) {
+    private MultiMapResponse lockAndGet(Data key, long timeout, long ttl) {
         final NodeEngine nodeEngine = getNodeEngine();
         TxnLockAndGetOperation operation = new TxnLockAndGetOperation(name, key, timeout, ttl, getThreadId());
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
             Invocation invocation = nodeEngine.getOperationService()
                     .createInvocationBuilder(MultiMapService.SERVICE_NAME, operation, partitionId).build();
-            Future<CollectionResponse> f = invocation.invoke();
+            Future<MultiMapResponse> f = invocation.invoke();
             return f.get();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
@@ -274,22 +274,22 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         }
     }
 
-    private Collection<CollectionRecord> createCollection(){
+    private Collection<MultiMapRecord> createCollection(){
         if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.SET)){
-            return new HashSet<CollectionRecord>();
+            return new HashSet<MultiMapRecord>();
         }
         else if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.LIST)){
-            return new ArrayList<CollectionRecord>();
+            return new ArrayList<MultiMapRecord>();
         }
         return null;
     }
 
-    private Collection<CollectionRecord> createCollection(Collection<CollectionRecord> coll){
+    private Collection<MultiMapRecord> createCollection(Collection<MultiMapRecord> coll){
         if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.SET)){
-            return new HashSet<CollectionRecord>(coll);
+            return new HashSet<MultiMapRecord>(coll);
         }
         else if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.LIST)){
-            return new ArrayList<CollectionRecord>(coll);
+            return new ArrayList<MultiMapRecord>(coll);
         }
         return null;
     }

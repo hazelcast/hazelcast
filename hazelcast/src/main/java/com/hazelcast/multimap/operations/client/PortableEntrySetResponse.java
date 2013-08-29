@@ -16,7 +16,7 @@
 
 package com.hazelcast.multimap.operations.client;
 
-import com.hazelcast.multimap.CollectionPortableHook;
+import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -49,11 +49,11 @@ public class PortableEntrySetResponse implements Portable {
     }
 
     public int getFactoryId() {
-        return CollectionPortableHook.F_ID;
+        return MultiMapPortableHook.F_ID;
     }
 
     public int getClassId() {
-        return CollectionPortableHook.ENTRY_SET_RESPONSE;
+        return MultiMapPortableHook.ENTRY_SET_RESPONSE;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {

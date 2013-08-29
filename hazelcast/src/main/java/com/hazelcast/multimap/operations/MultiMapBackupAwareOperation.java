@@ -31,14 +31,14 @@ import java.io.IOException;
 /**
  * @author ali 1/16/13
  */
-public abstract class CollectionBackupAwareOperation extends CollectionKeyBasedOperation implements BackupAwareOperation, WaitSupport {
+public abstract class MultiMapBackupAwareOperation extends MultiMapKeyBasedOperation implements BackupAwareOperation, WaitSupport {
 
     protected int threadId = -1;
 
-    protected CollectionBackupAwareOperation() {
+    protected MultiMapBackupAwareOperation() {
     }
 
-    protected CollectionBackupAwareOperation(String name, Data dataKey, int threadId) {
+    protected MultiMapBackupAwareOperation(String name, Data dataKey, int threadId) {
         super(name, dataKey);
         this.threadId = threadId;
     }

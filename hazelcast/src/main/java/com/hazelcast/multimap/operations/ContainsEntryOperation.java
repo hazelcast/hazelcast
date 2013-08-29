@@ -16,8 +16,8 @@
 
 package com.hazelcast.multimap.operations;
 
-import com.hazelcast.multimap.CollectionContainer;
-import com.hazelcast.multimap.CollectionDataSerializerHook;
+import com.hazelcast.multimap.MultiMapContainer;
+import com.hazelcast.multimap.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
@@ -29,7 +29,7 @@ import java.io.IOException;
 /**
  * @author ali 1/9/13
  */
-public class ContainsEntryOperation extends CollectionOperation {
+public class ContainsEntryOperation extends MultiMapOperation {
 
     Data key;
 
@@ -45,7 +45,7 @@ public class ContainsEntryOperation extends CollectionOperation {
     }
 
     public void run() throws Exception {
-        CollectionContainer container = getOrCreateContainer();
+        MultiMapContainer container = getOrCreateContainer();
         ((MultiMapService) getService()).getLocalMultiMapStatsImpl(name).incrementOtherOperations();
         if (key != null && value != null) {
             response = container.containsEntry(isBinary(), key, value);
@@ -69,6 +69,6 @@ public class ContainsEntryOperation extends CollectionOperation {
     }
 
     public int getId() {
-        return CollectionDataSerializerHook.CONTAINS_ENTRY;
+        return MultiMapDataSerializerHook.CONTAINS_ENTRY;
     }
 }

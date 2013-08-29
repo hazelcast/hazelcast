@@ -28,16 +28,16 @@ import java.io.IOException;
 /**
  * @author ali 1/9/13
  */
-public class CollectionEventFilter implements EventFilter, DataSerializable {
+public class MultiMapEventFilter implements EventFilter, DataSerializable {
 
     boolean includeValue;
 
     Data key;
 
-    public CollectionEventFilter() {
+    public MultiMapEventFilter() {
     }
 
-    public CollectionEventFilter(boolean includeValue, Data key) {
+    public MultiMapEventFilter(boolean includeValue, Data key) {
         this.includeValue = includeValue;
         this.key = key;
     }

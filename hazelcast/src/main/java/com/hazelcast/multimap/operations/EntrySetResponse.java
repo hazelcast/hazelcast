@@ -16,7 +16,7 @@
 
 package com.hazelcast.multimap.operations;
 
-import com.hazelcast.multimap.CollectionRecord;
+import com.hazelcast.multimap.MultiMapRecord;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -37,12 +37,12 @@ public class EntrySetResponse implements DataSerializable {
     public EntrySetResponse() {
     }
 
-    public EntrySetResponse(Map<Data, Collection<CollectionRecord>> map, NodeEngine nodeEngine) {
+    public EntrySetResponse(Map<Data, Collection<MultiMapRecord>> map, NodeEngine nodeEngine) {
         this.map = new HashMap<Data, Collection<Data>>(map.size());
-        for (Map.Entry<Data, Collection<CollectionRecord>> entry : map.entrySet()) {
-            Collection<CollectionRecord> records = entry.getValue();
+        for (Map.Entry<Data, Collection<MultiMapRecord>> entry : map.entrySet()) {
+            Collection<MultiMapRecord> records = entry.getValue();
             Collection<Data> coll = new ArrayList<Data>(records.size());
-            for (CollectionRecord record : records) {
+            for (MultiMapRecord record : records) {
                 coll.add(nodeEngine.toData(record.getObject()));
             }
             this.map.put(entry.getKey(), coll);

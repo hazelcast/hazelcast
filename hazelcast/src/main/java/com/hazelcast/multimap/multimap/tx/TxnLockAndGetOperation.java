@@ -17,8 +17,8 @@
 package com.hazelcast.multimap.multimap.tx;
 
 import com.hazelcast.multimap.*;
-import com.hazelcast.multimap.operations.CollectionKeyBasedOperation;
-import com.hazelcast.multimap.operations.CollectionResponse;
+import com.hazelcast.multimap.operations.MultiMapKeyBasedOperation;
+import com.hazelcast.multimap.operations.MultiMapResponse;
 import com.hazelcast.concurrent.lock.LockWaitNotifyKey;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -33,7 +33,7 @@ import java.io.IOException;
 /**
  * @author ali 4/4/13
  */
-public class TxnLockAndGetOperation extends CollectionKeyBasedOperation implements WaitSupport, TxnMultiMapOperation {
+public class TxnLockAndGetOperation extends MultiMapKeyBasedOperation implements WaitSupport, TxnMultiMapOperation {
 
     long timeout;
     long ttl;
@@ -50,13 +50,13 @@ public class TxnLockAndGetOperation extends CollectionKeyBasedOperation implemen
     }
 
     public void run() throws Exception {
-        CollectionContainer container =  getOrCreateContainer();
+        MultiMapContainer container =  getOrCreateContainer();
         if (!container.txnLock(dataKey, getCallerUuid(), threadId, ttl)) {
             throw new TransactionException("Transaction couldn't obtain lock!");
         }
-        CollectionWrapper wrapper = getOrCreateCollectionWrapper();
+        MultiMapWrapper wrapper = getOrCreateCollectionWrapper();
 
-        response = new CollectionResponse(wrapper.getCollection()).setNextRecordId(container.nextId()).setTxVersion(wrapper.incrementAndGetVersion());
+        response = new MultiMapResponse(wrapper.getCollection()).setNextRecordId(container.nextId()).setTxVersion(wrapper.incrementAndGetVersion());
     }
 
     public WaitNotifyKey getWaitKey() {
@@ -90,6 +90,6 @@ public class TxnLockAndGetOperation extends CollectionKeyBasedOperation implemen
     }
 
     public int getId() {
-        return CollectionDataSerializerHook.TXN_LOCK_AND_GET;
+        return MultiMapDataSerializerHook.TXN_LOCK_AND_GET;
     }
 }

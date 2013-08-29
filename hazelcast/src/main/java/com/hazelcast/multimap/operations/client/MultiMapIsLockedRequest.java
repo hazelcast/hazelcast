@@ -17,7 +17,7 @@
 package com.hazelcast.multimap.operations.client;
 
 import com.hazelcast.client.RetryableRequest;
-import com.hazelcast.multimap.CollectionPortableHook;
+import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.concurrent.lock.client.AbstractIsLockedRequest;
 import com.hazelcast.nio.serialization.Data;
@@ -59,10 +59,10 @@ public class MultiMapIsLockedRequest extends AbstractIsLockedRequest implements 
 
 
     public int getFactoryId() {
-        return CollectionPortableHook.F_ID;
+        return MultiMapPortableHook.F_ID;
     }
 
     public int getClassId() {
-        return CollectionPortableHook.IS_LOCKED;
+        return MultiMapPortableHook.IS_LOCKED;
     }
 }

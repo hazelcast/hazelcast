@@ -16,7 +16,7 @@
 
 package com.hazelcast.multimap.operations.client;
 
-import com.hazelcast.multimap.CollectionPortableHook;
+import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.config.MultiMapConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
@@ -57,7 +57,7 @@ public class TxnMultiMapGetRequest extends TxnMultiMapRequest {
     }
 
     public int getClassId() {
-        return CollectionPortableHook.TXN_MM_GET;
+        return MultiMapPortableHook.TXN_MM_GET;
     }
 
     private Collection<Data> createCollection(int size){

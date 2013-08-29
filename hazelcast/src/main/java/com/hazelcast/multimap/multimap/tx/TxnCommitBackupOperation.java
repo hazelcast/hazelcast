@@ -16,8 +16,8 @@
 
 package com.hazelcast.multimap.multimap.tx;
 
-import com.hazelcast.multimap.CollectionDataSerializerHook;
-import com.hazelcast.multimap.operations.CollectionKeyBasedOperation;
+import com.hazelcast.multimap.MultiMapDataSerializerHook;
+import com.hazelcast.multimap.operations.MultiMapKeyBasedOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -31,7 +31,7 @@ import java.util.List;
 /**
  * @author ali 4/12/13
  */
-public class TxnCommitBackupOperation extends CollectionKeyBasedOperation implements BackupOperation {
+public class TxnCommitBackupOperation extends MultiMapKeyBasedOperation implements BackupOperation {
 
     List<Operation> opList;
     String caller;
@@ -79,6 +79,6 @@ public class TxnCommitBackupOperation extends CollectionKeyBasedOperation implem
     }
 
     public int getId() {
-        return CollectionDataSerializerHook.TXN_COMMIT_BACKUP;
+        return MultiMapDataSerializerHook.TXN_COMMIT_BACKUP;
     }
 }

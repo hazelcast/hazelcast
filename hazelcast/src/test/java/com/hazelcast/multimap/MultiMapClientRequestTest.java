@@ -45,7 +45,7 @@ import static org.junit.Assert.*;
  */
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
-public class CollectionClientRequestTest extends ClientTestSupport {
+public class MultiMapClientRequestTest extends ClientTestSupport {
 
     static final String name = "test";
 //    static final CollectionProxyId mmProxyId = new CollectionProxyId(name, null, CollectionProxyType.MULTI_MAP);

@@ -25,7 +25,7 @@ import java.util.Collection;
 /**
  * @author ali 5/9/13
  */
-public class CollectionPortableHook implements PortableHook {
+public class MultiMapPortableHook implements PortableHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.COLLECTION_PORTABLE_FACTORY, -12);
 
@@ -205,7 +205,7 @@ public class CollectionPortableHook implements PortableHook {
 //        };
         constructors[DESTROY] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
-                return new CollectionDestroyRequest();
+                return new MultiMapDestroyRequest();
             }
         };
         constructors[TXN_MM_PUT] = new ConstructorFunction<Integer, Portable>() {
@@ -234,37 +234,37 @@ public class CollectionPortableHook implements PortableHook {
             }
         };
 
-        constructors[TXN_LIST_ADD] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new TxnListAddRequest();
-            }
-        };
-        constructors[TXN_LIST_REMOVE] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new TxnListRemoveRequest();
-            }
-        };
-        constructors[TXN_LIST_SIZE] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new TxnListSizeRequest();
-            }
-        };
-
-        constructors[TXN_SET_ADD] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new TxnSetAddRequest();
-            }
-        };
-        constructors[TXN_SET_REMOVE] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new TxnSetRemoveRequest();
-            }
-        };
-        constructors[TXN_SET_SIZE] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new TxnSetSizeRequest();
-            }
-        };
+//        constructors[TXN_LIST_ADD] = new ConstructorFunction<Integer, Portable>() {
+//            public Portable createNew(Integer arg) {
+//                return new TxnListAddRequest();
+//            }
+//        };
+//        constructors[TXN_LIST_REMOVE] = new ConstructorFunction<Integer, Portable>() {
+//            public Portable createNew(Integer arg) {
+//                return new TxnListRemoveRequest();
+//            }
+//        };
+//        constructors[TXN_LIST_SIZE] = new ConstructorFunction<Integer, Portable>() {
+//            public Portable createNew(Integer arg) {
+//                return new TxnListSizeRequest();
+//            }
+//        };
+//
+//        constructors[TXN_SET_ADD] = new ConstructorFunction<Integer, Portable>() {
+//            public Portable createNew(Integer arg) {
+//                return new TxnSetAddRequest();
+//            }
+//        };
+//        constructors[TXN_SET_REMOVE] = new ConstructorFunction<Integer, Portable>() {
+//            public Portable createNew(Integer arg) {
+//                return new TxnSetRemoveRequest();
+//            }
+//        };
+//        constructors[TXN_SET_SIZE] = new ConstructorFunction<Integer, Portable>() {
+//            public Portable createNew(Integer arg) {
+//                return new TxnSetSizeRequest();
+//            }
+//        };
 
         return new ArrayPortableFactory(constructors);
     }

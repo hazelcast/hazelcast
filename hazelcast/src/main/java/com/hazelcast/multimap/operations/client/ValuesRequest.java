@@ -17,9 +17,9 @@
 package com.hazelcast.multimap.operations.client;
 
 import com.hazelcast.client.RetryableRequest;
-import com.hazelcast.multimap.CollectionPortableHook;
-import com.hazelcast.multimap.CollectionRecord;
-import com.hazelcast.multimap.operations.CollectionResponse;
+import com.hazelcast.multimap.MultiMapPortableHook;
+import com.hazelcast.multimap.MultiMapRecord;
+import com.hazelcast.multimap.operations.MultiMapResponse;
 import com.hazelcast.multimap.operations.MultiMapOperationFactory;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.OperationFactory;
@@ -32,7 +32,7 @@ import java.util.Map;
 /**
  * @author ali 5/10/13
  */
-public class ValuesRequest extends CollectionAllPartitionRequest implements RetryableRequest {
+public class ValuesRequest extends MultiMapAllPartitionRequest implements RetryableRequest {
 
     public ValuesRequest() {
     }
@@ -51,12 +51,12 @@ public class ValuesRequest extends CollectionAllPartitionRequest implements Retr
             if (obj == null) {
                 continue;
             }
-            CollectionResponse response = (CollectionResponse)obj;
-            Collection<CollectionRecord> coll = response.getCollection();
+            MultiMapResponse response = (MultiMapResponse)obj;
+            Collection<MultiMapRecord> coll = response.getCollection();
             if (coll == null){
                 continue;
             }
-            for (CollectionRecord record: coll){
+            for (MultiMapRecord record: coll){
                 list.add(getClientEngine().toData(record.getObject()));
             }
         }
@@ -64,6 +64,6 @@ public class ValuesRequest extends CollectionAllPartitionRequest implements Retr
     }
 
     public int getClassId() {
-        return CollectionPortableHook.VALUES;
+        return MultiMapPortableHook.VALUES;
     }
 }

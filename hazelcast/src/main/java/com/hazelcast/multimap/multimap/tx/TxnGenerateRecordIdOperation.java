@@ -16,14 +16,14 @@
 
 package com.hazelcast.multimap.multimap.tx;
 
-import com.hazelcast.multimap.CollectionDataSerializerHook;
-import com.hazelcast.multimap.operations.CollectionKeyBasedOperation;
+import com.hazelcast.multimap.MultiMapDataSerializerHook;
+import com.hazelcast.multimap.operations.MultiMapKeyBasedOperation;
 import com.hazelcast.nio.serialization.Data;
 
 /**
  * @author ali 4/12/13
  */
-public class TxnGenerateRecordIdOperation extends CollectionKeyBasedOperation implements TxnMultiMapOperation{
+public class TxnGenerateRecordIdOperation extends MultiMapKeyBasedOperation implements TxnMultiMapOperation{
 
     public TxnGenerateRecordIdOperation() {
     }
@@ -37,6 +37,6 @@ public class TxnGenerateRecordIdOperation extends CollectionKeyBasedOperation im
     }
 
     public int getId() {
-        return CollectionDataSerializerHook.TXN_GENERATE_RECORD_ID;
+        return MultiMapDataSerializerHook.TXN_GENERATE_RECORD_ID;
     }
 }

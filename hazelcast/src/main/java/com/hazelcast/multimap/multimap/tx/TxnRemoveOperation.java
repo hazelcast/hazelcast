@@ -17,7 +17,7 @@
 package com.hazelcast.multimap.multimap.tx;
 
 import com.hazelcast.multimap.*;
-import com.hazelcast.multimap.operations.CollectionKeyBasedOperation;
+import com.hazelcast.multimap.operations.MultiMapKeyBasedOperation;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -31,7 +31,7 @@ import java.util.Iterator;
 /**
  * @author ali 4/5/13
  */
-public class TxnRemoveOperation extends CollectionKeyBasedOperation {
+public class TxnRemoveOperation extends MultiMapKeyBasedOperation {
 
     long recordId;
     Data value;
@@ -48,15 +48,15 @@ public class TxnRemoveOperation extends CollectionKeyBasedOperation {
 
     public void run() throws Exception {
         begin = Clock.currentTimeMillis();
-        CollectionContainer container = getOrCreateContainer();
-        CollectionWrapper wrapper = container.getCollectionWrapper(dataKey);
+        MultiMapContainer container = getOrCreateContainer();
+        MultiMapWrapper wrapper = container.getCollectionWrapper(dataKey);
         response = true;
         if (wrapper == null || !wrapper.containsRecordId(recordId)) {
             response = false;
             return;
         }
-        Collection<CollectionRecord> coll = wrapper.getCollection();
-        Iterator<CollectionRecord> iter = coll.iterator();
+        Collection<MultiMapRecord> coll = wrapper.getCollection();
+        Iterator<MultiMapRecord> iter = coll.iterator();
         while (iter.hasNext()){
             if (iter.next().getRecordId() == recordId){
                 iter.remove();
@@ -96,7 +96,7 @@ public class TxnRemoveOperation extends CollectionKeyBasedOperation {
     }
 
     public int getId() {
-        return CollectionDataSerializerHook.TXN_REMOVE;
+        return MultiMapDataSerializerHook.TXN_REMOVE;
     }
 
 }

@@ -16,8 +16,8 @@
 
 package com.hazelcast.multimap.operations;
 
-import com.hazelcast.multimap.CollectionDataSerializerHook;
-import com.hazelcast.multimap.CollectionRecord;
+import com.hazelcast.multimap.MultiMapDataSerializerHook;
+import com.hazelcast.multimap.MultiMapRecord;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -31,7 +31,7 @@ import java.util.List;
 /**
  * @author ali 1/16/13
  */
-public class PutBackupOperation extends CollectionKeyBasedOperation implements BackupOperation {
+public class PutBackupOperation extends MultiMapKeyBasedOperation implements BackupOperation {
 
     long recordId;
 
@@ -51,13 +51,13 @@ public class PutBackupOperation extends CollectionKeyBasedOperation implements B
 
     public void run() throws Exception {
 
-        CollectionRecord record = new CollectionRecord(recordId, isBinary() ? value : toObject(value));
-        Collection<CollectionRecord> coll = getOrCreateCollectionWrapper().getCollection();
+        MultiMapRecord record = new MultiMapRecord(recordId, isBinary() ? value : toObject(value));
+        Collection<MultiMapRecord> coll = getOrCreateCollectionWrapper().getCollection();
         if (index == -1) {
             response = coll.add(record);
         } else {
             try {
-                ((List<CollectionRecord>) coll).add(index, record);
+                ((List<MultiMapRecord>) coll).add(index, record);
                 response = true;
             } catch (IndexOutOfBoundsException e) {
                 response = e;
@@ -80,6 +80,6 @@ public class PutBackupOperation extends CollectionKeyBasedOperation implements B
     }
 
     public int getId() {
-        return CollectionDataSerializerHook.PUT_BACKUP;
+        return MultiMapDataSerializerHook.PUT_BACKUP;
     }
 }
