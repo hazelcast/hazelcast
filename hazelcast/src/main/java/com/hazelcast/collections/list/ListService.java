@@ -16,10 +16,39 @@
 
 package com.hazelcast.collections.list;
 
+import com.hazelcast.collections.CollectionsContainer;
 import com.hazelcast.collections.CollectionsService;
+import com.hazelcast.core.DistributedObject;
+import com.hazelcast.spi.NodeEngine;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * @ali 8/29/13
  */
 public class ListService extends CollectionsService {
+
+    public static final String SERVICE_NAME = "hz:impl:listService";
+
+    private final ConcurrentMap<String, ListContainer> containerMap = new ConcurrentHashMap<String, ListContainer>();
+
+    public ListService(NodeEngine nodeEngine) {
+        super(nodeEngine);
+    }
+
+    protected Map<String, ? extends CollectionsContainer> getContainerMap() {
+        return containerMap;
+    }
+
+    protected String getServiceName() {
+        return SERVICE_NAME;
+    }
+
+    public DistributedObject createDistributedObject(Object objectId) {
+        //TODO create proxy
+        return null;
+    }
+
 }

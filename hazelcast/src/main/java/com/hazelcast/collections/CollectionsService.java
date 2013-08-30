@@ -16,8 +16,40 @@
 
 package com.hazelcast.collections;
 
+import com.hazelcast.spi.*;
+
+import java.util.Map;
+import java.util.Properties;
+
 /**
  * @ali 8/29/13
  */
-public class CollectionsService {
+public abstract class CollectionsService implements ManagedService, RemoteService {
+
+    protected NodeEngine nodeEngine;
+
+    protected CollectionsService(NodeEngine nodeEngine) {
+        this.nodeEngine = nodeEngine;
+    }
+
+    public void init(NodeEngine nodeEngine, Properties properties) {
+    }
+
+    public void reset() {
+        getContainerMap().clear();
+    }
+
+    public void shutdown() {
+        reset();
+    }
+
+    public void destroyDistributedObject(Object objectId) {
+        final String name = String.valueOf(objectId);
+        getContainerMap().remove(name);
+        nodeEngine.getEventService().deregisterAllListeners(getServiceName(), name);
+    }
+
+    protected abstract CollectionsContainer getOrCreateContainer(String name, boolean backup);
+    protected abstract Map<String, ? extends CollectionsContainer> getContainerMap();
+    protected abstract String getServiceName();
 }

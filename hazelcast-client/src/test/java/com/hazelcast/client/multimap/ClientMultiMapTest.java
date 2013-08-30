@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.collection;
+package com.hazelcast.client.multimap;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
