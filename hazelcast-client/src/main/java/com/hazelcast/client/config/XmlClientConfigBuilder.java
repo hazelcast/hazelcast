@@ -16,18 +16,15 @@
 
 package com.hazelcast.client.config;
 
-import com.hazelcast.client.spi.ClientProxyFactory;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.*;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.util.ExceptionUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -37,10 +34,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.nio.ByteOrder;
-import java.util.EventListener;
-import java.util.Properties;
-import java.util.logging.Level;
 
 public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
 
@@ -220,7 +213,7 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
             if ("cluster-members".equals(nodeName)) {
                 handleClusterMembers(child);
             } else if ("smart-routing".equals(nodeName)) {
-                clientConfig.setSmart(Boolean.parseBoolean(getTextContent(child)));
+                clientConfig.setSmartRouting(Boolean.parseBoolean(getTextContent(child)));
             } else if ("redo-operation".equals(nodeName)) {
                 clientConfig.setRedoOperation(Boolean.parseBoolean(getTextContent(child)));
             } else if ("connection-pool-size".equals(nodeName)) {
@@ -244,17 +237,17 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
         for (Node child : new IterableNodeList(node.getChildNodes())) {
             final String nodeName = cleanNodeName(child);
             if ("tcp-no-delay".equals(nodeName)) {
-                socketOptions.setSocketTcpNoDelay(Boolean.parseBoolean(getTextContent(child)));
+                socketOptions.setTcpNoDelay(Boolean.parseBoolean(getTextContent(child)));
             } else if ("keep-alive".equals(nodeName)) {
-                socketOptions.setSocketKeepAlive(Boolean.parseBoolean(getTextContent(child)));
+                socketOptions.setKeepAlive(Boolean.parseBoolean(getTextContent(child)));
             } else if ("reuse-address".equals(nodeName)) {
-                socketOptions.setSocketReuseAddress(Boolean.parseBoolean(getTextContent(child)));
+                socketOptions.setReuseAddress(Boolean.parseBoolean(getTextContent(child)));
             } else if ("linger-seconds".equals(nodeName)) {
-                socketOptions.setSocketLingerSeconds(Integer.parseInt(getTextContent(child)));
+                socketOptions.setLingerSeconds(Integer.parseInt(getTextContent(child)));
             } else if ("timeout".equals(nodeName)) {
-                socketOptions.setSocketTimeout(Integer.parseInt(getTextContent(child)));
+                socketOptions.setTimeout(Integer.parseInt(getTextContent(child)));
             } else if ("buffer-size".equals(nodeName)) {
-                socketOptions.setSocketBufferSize(Integer.parseInt(getTextContent(child)));
+                socketOptions.setBufferSize(Integer.parseInt(getTextContent(child)));
             }
         }
     }

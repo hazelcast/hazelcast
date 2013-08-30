@@ -234,8 +234,6 @@
                     </xs:sequence>
                     <xs:attribute name="executor-pool-size" type="xs:int" use="optional"/>
                     <xs:attribute name="credentials-ref" type="xs:string" use="optional"/>
-                    <xs:attribute name="smart" type="xs:string" use="optional"/>
-                    <xs:attribute name="redo-operation" type="xs:string" use="optional"/>
                 </xs:extension>
             </xs:complexContent>
         </xs:complexType>
@@ -855,9 +853,9 @@
         <xs:attribute name="reuse-address" type="xs:boolean" use="optional" default="true"/>
         <xs:attribute name="linger-seconds" type="xs:unsignedInt" use="optional" default="3"/>
         <xs:attribute name="timeout" type="xs:int" use="optional" default="-1"/>
-        <xs:attribute name="buffer-size" type="xs:unsignedInt" use="optional" default="32">
+        <xs:attribute name="buffer-size" use="optional" default="32">
             <xs:simpleType>
-                <xs:restriction base="xs:int">
+                <xs:restriction base="xs:unsignedInt">
                     <xs:minInclusive value="1"/>
                 </xs:restriction>
             </xs:simpleType>
@@ -905,7 +903,7 @@
         </xs:attribute>
     </xs:complexType>
     <xs:complexType name="near-cache-client">
-        <xs:simpleContent>
+        <xs:complexContent>
             <xs:extension base="near-cache">
                 <xs:attribute name="name" use="required">
                     <xs:simpleType>
@@ -913,7 +911,7 @@
                     </xs:simpleType>
                 </xs:attribute>
             </xs:extension>
-        </xs:simpleContent>
+        </xs:complexContent>
     </xs:complexType>
 
     <xs:complexType name="near-cache">

@@ -142,6 +142,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             configBuilder.addPropertyValue("networkConfig", beanDefinition);
         }
 
+/*
         protected void handleViaReflection(org.w3c.dom.Node child) {
             final String methodName = xmlToJavaName("handle-" + cleanNodeName(child));
             final Method method;
@@ -157,6 +158,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 e.printStackTrace();
             }
         }
+*/
 
         public void handleGroup(Node node) {
             createAndFillBeanBuilder(node, GroupConfig.class, "groupConfig", configBuilder);
@@ -206,25 +208,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             networkConfigBuilder.addPropertyValue("join", beanDefinition);
         }
 
-        private void handleSocketInterceptorConfig(final Node node, final BeanDefinitionBuilder networkConfigBuilder) {
-            BeanDefinitionBuilder socketInterceptorConfigBuilder = createBeanBuilder(SocketInterceptorConfig.class);
-            final String implAttribute = "implementation";
-            fillAttributeValues(node, socketInterceptorConfigBuilder, implAttribute);
-            Node implNode = node.getAttributes().getNamedItem(implAttribute);
-            String implementation = implNode != null ? getTextContent(implNode) : null;
-            if (implementation != null) {
-                socketInterceptorConfigBuilder.addPropertyReference(xmlToJavaName(implAttribute), implementation);
-            }
-            for (org.w3c.dom.Node child : new IterableNodeList(node, Node.ELEMENT_NODE)) {
-                final String name = cleanNodeName(child);
-                if ("properties".equals(name)) {
-                    handleProperties(child, socketInterceptorConfigBuilder);
-                }
-            }
-            networkConfigBuilder.addPropertyValue("socketInterceptorConfig",
-                    socketInterceptorConfigBuilder.getBeanDefinition());
-        }
-
 
         private void handleOutboundPorts(final Node node, final BeanDefinitionBuilder networkConfigBuilder) {
             ManagedList outboundPorts = new ManagedList();
@@ -262,7 +245,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         public void handleExecutor(Node node) {
-            createAndFillListedBean(node, ExecutorConfig.class, "executorConfig", executorManagedMap);
+            createAndFillListedBean(node, ExecutorConfig.class, "name", executorManagedMap);
         }
 
         public void handleMulticast(Node node, BeanDefinitionBuilder joinConfigBuilder) {
@@ -447,21 +430,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             }
             mapConfigBuilder.addPropertyValue("mapStoreConfig", beanDefinition);
             mapStoreConfigBuilder = null;
-        }
-
-        public void handleProperties(final org.w3c.dom.Node node, BeanDefinitionBuilder beanDefinitionBuilder) {
-            ManagedMap properties = new ManagedMap();
-            for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
-                final String name = cleanNodeName(n.getNodeName());
-                final String propertyName;
-                if (!"property".equals(name)) {
-                    continue;
-                }
-                propertyName = getTextContent(n.getAttributes().getNamedItem("name")).trim();
-                final String value = getTextContent(n);
-                properties.put(propertyName, value);
-            }
-            beanDefinitionBuilder.addPropertyValue("properties", properties);
         }
 
         public void handleMultiMap(Node node) {

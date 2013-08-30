@@ -20,7 +20,6 @@ import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.*;
 import com.hazelcast.core.ManagedContext;
-import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.UsernamePasswordCredentials;
 
@@ -50,14 +49,14 @@ public class ClientConfig {
      * Currently only supports {@link com.hazelcast.core.LifecycleListener}.
      */
     //private final Collection<EventListener> listeners = new HashSet<EventListener>();
-    private final List<ListenerConfig> listenerConfigs = new LinkedList<ListenerConfig>();
+    private List<ListenerConfig> listenerConfigs = new LinkedList<ListenerConfig>();
 
     /**
      * If true, client will route the key based operations to owner of the key at the best effort.
      * Note that it uses a cached version of {@link com.hazelcast.core.PartitionService#getPartitions()} and doesn't
      * guarantee that the operation will always be executed on the owner. The cached table is updated every second.
      */
-    private boolean smart = true;
+    private boolean smartRouting = true;
 
     /**
      * If true, client will redo the operations that were executing on the server and client lost the connection.
@@ -120,14 +119,10 @@ public class ClientConfig {
      */
     private Credentials credentials;
 
-    private Map<String, NearCacheConfig> cacheConfigMap = new HashMap<String, NearCacheConfig>();
-
-    public NearCacheConfig getNearCacheConfig(String mapName) {
-    	return lookupByPattern(cacheConfigMap, mapName);
-    }
+    private Map<String, NearCacheConfig> nearCacheConfigMap = new HashMap<String, NearCacheConfig>();
 
     public ClientConfig addNearCacheConfig(String mapName, NearCacheConfig nearCacheConfig){
-        cacheConfigMap.put(mapName, nearCacheConfig);
+        nearCacheConfigMap.put(mapName, nearCacheConfig);
         return this;
     }
 
@@ -141,12 +136,26 @@ public class ClientConfig {
         return this;
     }
 
-    public boolean isSmart() {
-        return smart;
+
+    public NearCacheConfig getNearCacheConfig(String mapName) {
+        return lookupByPattern(nearCacheConfigMap, mapName);
     }
 
-    public ClientConfig setSmart(boolean smart) {
-        this.smart = smart;
+    public Map<String, NearCacheConfig> getNearCacheConfigMap() {
+        return nearCacheConfigMap;
+    }
+
+    public ClientConfig setNearCacheConfigMap(Map<String, NearCacheConfig> nearCacheConfigMap) {
+        this.nearCacheConfigMap = nearCacheConfigMap;
+        return this;
+    }
+
+    public boolean isSmartRouting() {
+        return smartRouting;
+    }
+
+    public ClientConfig setSmartRouting(boolean smartRouting) {
+        this.smartRouting = smartRouting;
         return this;
     }
 
@@ -240,6 +249,11 @@ public class ClientConfig {
         return listenerConfigs;
     }
 
+    public ClientConfig setListenerConfigs(List<ListenerConfig> listenerConfigs) {
+        this.listenerConfigs = listenerConfigs;
+        return this ;
+    }
+
 //    public Collection<EventListener> getListeners() {
 //        return listeners;
 //    }
@@ -278,6 +292,11 @@ public class ClientConfig {
         return socketOptions;
     }
 
+    public ClientConfig setSocketOptions(SocketOptions socketOptions) {
+        this.socketOptions = socketOptions;
+        return this;
+    }
+
     public ClassLoader getClassLoader() {
         return classLoader;
     }
@@ -307,6 +326,11 @@ public class ClientConfig {
 
     public List<ProxyFactoryConfig> getProxyFactoryConfigs() {
         return proxyFactoryConfigs;
+    }
+
+    public ClientConfig setProxyFactoryConfigs(List<ProxyFactoryConfig> proxyFactoryConfigs) {
+        this.proxyFactoryConfigs = proxyFactoryConfigs;
+        return this;
     }
 
     public SerializationConfig getSerializationConfig()

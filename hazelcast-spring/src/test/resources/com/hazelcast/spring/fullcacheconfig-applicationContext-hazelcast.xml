@@ -207,7 +207,7 @@
             </hz:topic>
 
             <hz:listeners>
-                <hz:listener class-name="com.hazelcast.spring.DummyMembershipListener" implementation="aa"/>
+                <hz:listener class-name="com.hazelcast.spring.DummyMembershipListener"/>
                 <hz:listener implementation="dummyMembershipListener"/>
             </hz:listeners>
 
