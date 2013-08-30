@@ -35,7 +35,7 @@
         <hsqldb.version>1.8.0.10</hsqldb.version>
         <javaassist.version>3.12.1.GA</javaassist.version>
     </properties>
-                  m
+                  
     <build>
         <plugins>
             <plugin>
