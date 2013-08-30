@@ -35,14 +35,7 @@
         <hsqldb.version>1.8.0.10</hsqldb.version>
         <javaassist.version>3.12.1.GA</javaassist.version>
     </properties>
-
-    <repositories>
-        <repository>
-            <id>jboss</id>
-            <url>http://repository.jboss.org/maven2/</url>
-        </repository>
-    </repositories>
-
+                  
     <build>
         <plugins>
             <plugin>
