@@ -50,6 +50,7 @@ import java.util.logging.Level;
 import static com.hazelcast.core.Prefix.*;
 import static com.hazelcast.impl.ClusterOperation.*;
 import static com.hazelcast.nio.IOUtil.toData;
+import static com.hazelcast.nio.IOUtil.toObject;
 
 public class CMap {
 
@@ -984,15 +985,20 @@ public class CMap {
         }
     }
 
-    private void executeStoreUpdate(final Set<Record> dirtyRecords) {
-        if (dirtyRecords.size() > 0) {
+    private void executeStoreUpdate(final Set<StoreRecord> storeRecords) {
+        if (storeRecords.size() > 0) {
             concurrentMapManager.executeLocally(new Runnable() {
                 public void run() {
                     try {
-                        runStoreUpdate(dirtyRecords);
+                        runStoreUpdate(storeRecords);
                     } catch (Throwable e) {
-                        for (Record dirtyRecord : dirtyRecords) {
-                            dirtyRecord.setDirty(true);
+                        logger.log(Level.WARNING, "Error while storing " + storeRecords.size()
+                                + " entries to the map-store! Store will be retried soon...", e);
+                        for (StoreRecord storeRecord : storeRecords) {
+                            Record record = mapRecords.get(storeRecord.key);
+                            if (record != null) {
+                                record.setDirty(true);
+                            }
                         }
                     }
                 }
@@ -1000,16 +1006,16 @@ public class CMap {
         }
     }
 
-    void runStoreUpdate(final Set<Record> dirtyRecords) throws Exception {
+    void runStoreUpdate(final Set<StoreRecord> storeRecords) throws Exception {
         Set<Object> keysToDelete = new HashSet<Object>();
-        Set<Record> toStore = new HashSet<Record>();
+        Set<Data> toStore = new HashSet<Data>();
         Map<Object, Object> updates = new HashMap<Object, Object>();
-        for (Record dirtyRecord : dirtyRecords) {
-            if (!dirtyRecord.isActive()) {
-                keysToDelete.add(dirtyRecord.getKey());
+        for (StoreRecord storeRecord : storeRecords) {
+            if (storeRecord.active) {
+                toStore.add(storeRecord.key);
+                updates.put(toObject(storeRecord.key), toObject(storeRecord.value));
             } else {
-                toStore.add(dirtyRecord);
-                updates.put(dirtyRecord.getKey(), dirtyRecord.getValue());
+                keysToDelete.add(toObject(storeRecord.key));
             }
         }
         if (keysToDelete.size() == 1) {
@@ -1024,10 +1030,13 @@ public class CMap {
             store.storeAll(updates);
         }
         long now = Clock.currentTimeMillis();
-        for (Record stored : toStore) {
+        for (Data key : toStore) {
             // to make sure actual store time is after expected write time
-            long storedTime = Math.max(now, stored.getWriteTime() + 1);
-            stored.setLastStoredTime(storedTime);
+            Record record = mapRecords.get(key);
+            if (record != null) {
+                long storedTime = Math.max(now, record.getWriteTime() + 1);
+                record.setLastStoredTime(storedTime);
+            }
         }
     }
 
@@ -1373,14 +1382,15 @@ public class CMap {
                     nearCache.evict(now, false);
                 }
                 dirty = false;
-                final Set<Record> recordsDirty = new HashSet<Record>();
+                final Set<StoreRecord> storeRecords = new HashSet<StoreRecord>();
                 final Set<Record> recordsUnknown = new HashSet<Record>();
                 final Set<Record> recordsToPurge = new HashSet<Record>();
                 final Set<Record> recordsToEvict = new HashSet<Record>();
                 final Set<Record> sortedRecords = new TreeSet<Record>(new ComparatorWrapper(evictionComparator));
                 final Collection<Record> records = mapRecords.values();
-                final boolean overCapacity = overCapacity();
+                final boolean overCapacity = maxSizePolicy != null && maxSizePolicy.overCapacity();
                 final boolean evictionAware = evictionComparator != null && overCapacity;
+                final boolean hasWriteBehindStore = store != null && mapStoreWrapper.isEnabled() && writeDelayMillis > 0;
                 int recordsStillOwned = 0;
                 int backupPurgeCount = 0;
                 long costOfRecords = 0L;
@@ -1392,10 +1402,9 @@ public class CMap {
                     boolean ownedOrBackup = partition.isOwnerOrBackup(thisAddress, getTotalBackupCount());
                     if (owner != null && !partitionManager.isPartitionMigrating(partition.getPartitionId())) {
                         if (owned) {
-                            boolean hasWriteBehindStore = store != null && mapStoreWrapper.isEnabled() && writeDelayMillis > 0;
                             if (hasWriteBehindStore && record.isDirty()) {
-                                if (now > record.getWriteTime()) {
-                                    recordsDirty.add(record);
+                                if (now >= record.getWriteTime()) {
+                                    storeRecords.add(new StoreRecord(record.getKeyData(), record.getValueData(), record.isActive()));
                                     record.setDirty(false);   // set dirty to false, we will store these soon
                                 } else {
                                     dirty = true;
@@ -1407,7 +1416,9 @@ public class CMap {
                                     recordsToEvict.add(record);  // expired records
                                 }
                             } else if (evictionAware && record.isActive() && record.isEvictable()) {
-                                sortedRecords.add(record);   // sorting for eviction
+                                if (!hasWriteBehindStore || (record.getWriteTime() <= record.getLastStoredTime())) {
+                                    sortedRecords.add(record);   // sorting for eviction
+                                }
                                 recordsStillOwned++;
                             }
 
@@ -1440,7 +1451,7 @@ public class CMap {
                 Level levelLog = (concurrentMapManager.logState) ? Level.INFO : Level.FINEST;
                 if (logger.isLoggable(levelLog)) {
                     logger.log(levelLog, name + " Cleanup "
-                            + ", dirty:" + recordsDirty.size()
+                            + ", dirty:" + storeRecords.size()
                             + ", purge:" + recordsToPurge.size()
                             + ", evict:" + recordsToEvict.size()
                             + ", unknown:" + recordsUnknown.size()
@@ -1451,7 +1462,7 @@ public class CMap {
                             + "  indexes: " + mapIndexService.getOwnedRecords().size()
                             + "  totalCost: " + costOfRecords);
                 }
-                executeStoreUpdate(recordsDirty);
+                executeStoreUpdate(storeRecords);
                 executeEviction(recordsToEvict);
                 executePurge(recordsToPurge);
                 executePurgeUnknowns(recordsUnknown);
@@ -1461,6 +1472,18 @@ public class CMap {
             return true;
         } else {
             return false;
+        }
+    }
+
+    static class StoreRecord {
+        final Data key;
+        final Data value;
+        final boolean active;
+
+        StoreRecord(Data key, Data value, boolean active) {
+            this.key = key;
+            this.value = value;
+            this.active = active;
         }
     }
 
