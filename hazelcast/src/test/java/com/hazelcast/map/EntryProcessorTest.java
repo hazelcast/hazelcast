@@ -18,7 +18,6 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IMap;
@@ -31,7 +30,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Map;
-import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -173,12 +171,12 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
         public Object process(Map.Entry entry) {
             Integer value = (Integer) entry.getValue();
+            if (value == null) {
+                value = 0;
+            }
             if (value == -1) {
                 entry.setValue(null);
                 return null;
-            }
-            if (value == null) {
-                value = 0;
             }
             value++;
             entry.setValue(value);
