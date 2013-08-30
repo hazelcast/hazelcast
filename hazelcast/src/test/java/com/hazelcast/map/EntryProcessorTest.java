@@ -146,6 +146,26 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
     }
 
+    @Test
+    public void testIssue825MapEntryProcessorDeleteSettingNull() throws InterruptedException {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        cfg.getMapConfig("default").setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+        IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
+        map.put(1, -1);
+        map.put(2, -1);
+        map.put(3, 1);
+        EntryProcessor entryProcessor = new IncrementorEntryProcessor();
+        map.executeOnKey(2, entryProcessor);
+        map.executeOnEntries(entryProcessor);
+        assertEquals(null, map.get(1));
+        assertEquals(null, map.get(2));
+        assertEquals(1, map.size());
+    }
+
+
     private static class IncrementorEntryProcessor implements EntryProcessor, EntryBackupProcessor {
 
         IncrementorEntryProcessor() {
@@ -153,6 +173,10 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
         public Object process(Map.Entry entry) {
             Integer value = (Integer) entry.getValue();
+            if (value == -1) {
+                entry.setValue(null);
+                return null;
+            }
             if (value == null) {
                 value = 0;
             }

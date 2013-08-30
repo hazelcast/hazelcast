@@ -66,6 +66,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     private final boolean redoOperation;
     private final Credentials credentials;
     private volatile ClientPrincipal principal;
+    private volatile boolean active = false;
 
     public ClientClusterServiceImpl(HazelcastClient client) {
         this.client = client;
@@ -147,7 +148,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     private <T> T _sendAndReceive(ConnectionFactory connectionFactory, Object obj) throws IOException {
-        while (true) {
+        while (active) {
             Connection conn = null;
             boolean release = true;
             try {
@@ -185,6 +186,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 }
             }
         }
+        throw new HazelcastInstanceNotActiveException();
     }
 
     public <T> T sendAndReceiveFixedConnection(Connection conn, Object obj) throws IOException {
@@ -251,6 +253,9 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     private void _sendAndHandle(ConnectionFactory connectionFactory, Object obj, ResponseHandler handler) throws IOException {
         ResponseStream stream = null;
         while (stream == null) {
+            if (!active){
+                throw new HazelcastInstanceNotActiveException();
+            }
             Connection conn = null;
             try {
                 conn = connectionFactory.create();
@@ -333,10 +338,12 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 throw new HazelcastException(e);
             }
         }
+        active = true;
         // started
     }
 
     public void stop() {
+        active = false;
         clusterThread.shutdown();
     }
 
