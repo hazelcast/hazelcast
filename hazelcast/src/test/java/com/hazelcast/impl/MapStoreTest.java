@@ -1670,4 +1670,72 @@ public class MapStoreTest extends TestUtil {
         assertFalse("MapStore load should not be called!", fail.get());
 
     }
+
+    /**
+     * test for issue #792
+     */
+    @Test
+    public void testEvictionShouldNotDeleteMapStore() throws InterruptedException {
+        int k = 1000;
+        final CountDownLatch evictionLatch = new CountDownLatch(k);
+        final Semaphore mapStoreLatch = new Semaphore(0);
+        final AtomicInteger stores = new AtomicInteger();
+        final AtomicInteger deletes = new AtomicInteger();
+
+        Config config = new Config();
+        config.setProperty(GroupProperties.PROP_CLEANUP_DELAY_SECONDS, "1");
+        config.getExecutorConfig("default").setCorePoolSize(1).setMaxPoolSize(1);
+        config.getMapConfig("default").setBackupCount(0).setTimeToLiveSeconds(3).setMaxIdleSeconds(5)
+                .setMapStoreConfig(new MapStoreConfig().setEnabled(true).setWriteDelaySeconds(3)
+                        .setImplementation(new MapStoreTest.MapStoreAdaptor() {
+                            public void store(Object key, Object value) {
+                                sleep(1);
+                                stores.incrementAndGet();
+                                mapStoreLatch.release();
+                            }
+                            public void storeAll(Map map) {
+                                int size = map.size();
+                                sleep(size);
+                                stores.addAndGet(size);
+                                mapStoreLatch.release(size);
+                            }
+                            public void delete(Object key) {
+                                deletes.incrementAndGet();
+                                mapStoreLatch.release();
+                            }
+                            public void deleteAll(Collection keys) {
+                                int size = keys.size();
+                                deletes.addAndGet(size);
+                                mapStoreLatch.release(size);
+                            }
+                            void sleep(int factor) {
+                                try {
+                                    Thread.sleep((long) (Math.random() * factor * 100));
+                                } catch (InterruptedException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        }));
+
+        HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+        final IMap<Object, Object> map = hz.getMap("test");
+
+        map.addEntryListener(new EntryAdapter<Object, Object>() {
+            public void entryEvicted(EntryEvent<Object, Object> event) {
+                evictionLatch.countDown();
+            }
+        }, true);
+
+        for (int i = 0; i < k; i++) {
+            map.put(i, System.currentTimeMillis());
+            if (i % 100 == 0) {
+                Thread.sleep(100);
+            }
+        }
+
+        assertTrue(evictionLatch.await(3, TimeUnit.MINUTES));
+        assertTrue(mapStoreLatch.tryAcquire(k, 3, TimeUnit.MINUTES));
+        assertEquals(0, deletes.get());
+        assertEquals(k, stores.get());
+    }
 }
