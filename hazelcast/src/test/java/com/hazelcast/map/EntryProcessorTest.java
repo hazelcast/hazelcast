@@ -21,6 +21,7 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IMap;
+import com.hazelcast.core.*;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -37,6 +38,22 @@ import static org.junit.Assert.assertNull;
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
 public class EntryProcessorTest extends HazelcastTestSupport {
+
+    @Test
+    public void testMapEntryProcessorBigData() throws InterruptedException {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        cfg.getMapConfig("default").setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        IMap  map = instance1.getMap("testMapEntryProcessor");
+        for(int k=0;k<50;k++){
+            map.put(new PartitionAwareKey(k,"foo"), k);
+        }
+
+        EntryProcessor entryProcessor = new IncrementorEntryProcessor();
+        assertEquals(2, map.executeOnEntries(entryProcessor));
+        assertEquals((Integer) 2, map.get(1));
+    }
 
     @Test
     public void testMapEntryProcessor() throws InterruptedException {

@@ -30,13 +30,26 @@ import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
 import java.util.AbstractMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
+/**
+ * There are 2 problems:
+ * 1: how to correctly continue where you left the previous time
+ * 2: how to with the response; especially if the response for one partition is build up during an interleaved migration
+ *
+ * todo: PartitionWideEntryBackupOperation needs to be fixed.
+ */
 public class PartitionWideEntryOperation extends AbstractMapOperation implements BackupAwareOperation, PartitionAwareOperation {
 
     EntryProcessor entryProcessor;
     MapEntrySet response;
-
+    //todo: do we want size based or time based batching?
+    private int batchSize = 10;
+    private Iterator<Map.Entry<Data, Record>> iterator;
+    private RecordStore recordStore;
+    private int processed = 0;
     public PartitionWideEntryOperation(String name, EntryProcessor entryProcessor) {
         super(name);
         this.entryProcessor = entryProcessor;
@@ -45,15 +58,25 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
     public PartitionWideEntryOperation() {
     }
 
+    @Override
     public void run() {
-        response = new MapEntrySet();
-        Map.Entry entry;
-        RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
-        Map<Data, Record> records = recordStore.getRecords();
-        for (Map.Entry<Data, Record> recordEntry : records.entrySet()) {
+        if(iterator == null){
+            recordStore = mapService.getRecordStore(getPartitionId(), name);
+            iterator = recordStore.getRecords().entrySet().iterator();
+            response = new MapEntrySet();
+        }
+
+        for (int k=0;k<batchSize;k++) {
+            if(!iterator.hasNext()){
+                break;
+            }
+
+            processed++;
+             Map.Entry<Data,Record> recordEntry = iterator.next();
             Data dataKey = recordEntry.getKey();
             Record record = recordEntry.getValue();
-            entry = new AbstractMap.SimpleEntry(mapService.toObject(record.getKey()), mapService.toObject(record.getValue()));
+            Map.Entry entry = new AbstractMap.SimpleEntry(mapService.toObject(record.getKey()), mapService.toObject(record.getValue()));
+            //todo: we probably want some protection here against exceptions.
             Object result = entryProcessor.process(entry);
             if (result != null) {
                 response.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(dataKey, mapService.toData(result)));
@@ -65,15 +88,22 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
                 recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, entry.getValue()));
             }
         }
-    }
 
-    public void afterRun() throws Exception {
-        super.afterRun();
+        if(iterator.hasNext()){
+            this.getNodeEngine().getOperationService().executeOperation(this);
+            System.out.println("Posting next batch");
+        } else{
+            if(processed>0){
+                System.out.println("Completed:"+processed);
+            }
+        }
     }
 
     @Override
     public boolean returnsResponse() {
-        return true;
+        if(iterator == null)return false;
+
+        return !iterator.hasNext();
     }
 
     @Override
@@ -98,14 +128,17 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
         return "PartitionWideEntryOperation{}";
     }
 
+    @Override
     public boolean shouldBackup() {
         return entryProcessor.getBackupProcessor() != null;
     }
 
+    @Override
     public int getSyncBackupCount() {
         return 0;
     }
 
+    @Override
     public int getAsyncBackupCount() {
         return mapContainer.getTotalBackupCount();
     }
