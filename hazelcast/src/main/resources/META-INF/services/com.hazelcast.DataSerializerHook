@@ -5,6 +5,7 @@ com.hazelcast.client.ClientDataSerializerHook
 com.hazelcast.map.MapDataSerializerHook
 com.hazelcast.queue.QueueDataSerializerHook
 com.hazelcast.multimap.MultiMapDataSerializerHook
+com.hazelcast.collection.CollectionDataSerializerHook
 com.hazelcast.executor.ExecutorDataSerializerHook
 com.hazelcast.topic.TopicDataSerializerHook
 com.hazelcast.concurrent.lock.LockDataSerializerHook

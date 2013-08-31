@@ -58,6 +58,22 @@ public class ListContainer extends CollectionContainer {
         return getList().get(index);
     }
 
+    protected CollectionItem remove(Data value) {
+        final Iterator<CollectionItem> iterator = getList().iterator();
+        while (iterator.hasNext()){
+            final CollectionItem item = iterator.next();
+            if (value.equals(item.getValue())){
+                iterator.remove();
+                return item;
+            }
+        }
+        return null;
+    }
+
+    protected void remove(long itemId) {
+        getMap().remove(itemId);
+    }
+
     private List<CollectionItem> getList(){
         if(itemList == null){
             if (itemMap != null && !itemMap.isEmpty()){

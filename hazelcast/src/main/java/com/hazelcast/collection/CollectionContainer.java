@@ -18,6 +18,7 @@ package com.hazelcast.collection;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.NodeEngine;
 
@@ -44,6 +45,10 @@ public abstract class CollectionContainer implements DataSerializable {
         this.service = service;
         this.partitionId = nodeEngine.getPartitionService().getPartitionId(nodeEngine.getSerializationService().toData(name, CollectionService.PARTITIONING_STRATEGY));
     }
+
+    protected abstract CollectionItem remove(Data value);
+
+    protected abstract void remove(long itemId);
 
     protected long nextId() {
         return idGenerator++;

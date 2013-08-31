@@ -15,10 +15,6 @@ public abstract class CollectionBackupAwareOperation extends CollectionOperation
         super(name);
     }
 
-    public boolean shouldBackup() {
-        return false;
-    }
-
     public int getSyncBackupCount() {
         //TODO getFrom container config
         return 0;
