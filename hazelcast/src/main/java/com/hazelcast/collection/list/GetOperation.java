@@ -1,30 +1,26 @@
 package com.hazelcast.collection.list;
 
 import com.hazelcast.collection.CollectionDataSerializerHook;
+import com.hazelcast.collection.CollectionItem;
 import com.hazelcast.collection.operation.CollectionOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupOperation;
 
 import java.io.IOException;
 
 /**
  * @ali 8/31/13
  */
-public class AddBackupOperation extends CollectionOperation implements BackupOperation {
+public class GetOperation extends CollectionOperation {
 
-    long itemId;
+    private int index;
 
-    Data value;
-
-    public AddBackupOperation() {
+    public GetOperation() {
     }
 
-    public AddBackupOperation(String name, long itemId, Data value) {
+    public GetOperation(String name, int index) {
         super(name);
-        this.itemId = itemId;
-        this.value = value;
+        this.index = index;
     }
 
     public void beforeRun() throws Exception {
@@ -32,7 +28,8 @@ public class AddBackupOperation extends CollectionOperation implements BackupOpe
     }
 
     public void run() throws Exception {
-        getOrCreateListContainer().addBackup(itemId, value);
+        final CollectionItem item = getOrCreateListContainer().get(index);
+        response = item.getValue();
     }
 
     public void afterRun() throws Exception {
@@ -40,19 +37,16 @@ public class AddBackupOperation extends CollectionOperation implements BackupOpe
     }
 
     public int getId() {
-        return CollectionDataSerializerHook.ADD_BACKUP;
+        return CollectionDataSerializerHook.GET;
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(itemId);
-        value.writeData(out);
+        out.writeInt(index);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        itemId = in.readLong();
-        value = new Data();
-        value.readData(in);
+        index = in.readInt();
     }
 }

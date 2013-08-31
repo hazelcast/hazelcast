@@ -2,6 +2,7 @@ package com.hazelcast.collection;
 
 import com.hazelcast.collection.list.AddBackupOperation;
 import com.hazelcast.collection.list.AddOperation;
+import com.hazelcast.collection.list.GetOperation;
 import com.hazelcast.nio.serialization.*;
 import com.hazelcast.util.ConstructorFunction;
 
@@ -15,6 +16,7 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
     public static int increment = 1;
     public static final int ADD = increment++;
     public static final int ADD_BACKUP = increment++;
+    public static final int GET = increment++;
 
     public int getFactoryId() {
         return F_ID;
@@ -31,6 +33,11 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
         constructors[ADD_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new AddBackupOperation();
+            }
+        };
+        constructors[GET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new GetOperation();
             }
         };
         return new ArrayDataSerializableFactory(constructors);

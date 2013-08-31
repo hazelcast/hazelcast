@@ -54,6 +54,10 @@ public class ListContainer extends CollectionContainer {
         getMap().put(itemId, item);
     }
 
+    CollectionItem get(int index){
+        return getList().get(index);
+    }
+
     private List<CollectionItem> getList(){
         if(itemList == null){
             if (itemMap != null && !itemMap.isEmpty()){

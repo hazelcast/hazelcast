@@ -47,11 +47,7 @@ public class ListProxyImpl<E> extends AbstractDistributedObject<ListService> imp
     }
 
     public boolean add(E e) {
-        throwExceptionIfNull(e);
-        final Data value = getNodeEngine().toData(e);
-        final AddOperation operation = new AddOperation(name, -1, value);
-        Boolean result = invoke(operation);
-        return result;
+        return addInternal(-1, e);
     }
 
     public boolean remove(Object o) {
@@ -83,7 +79,8 @@ public class ListProxyImpl<E> extends AbstractDistributedObject<ListService> imp
     }
 
     public E get(int index) {
-        return null;
+        final GetOperation operation = new GetOperation(name, index);
+        return invoke(operation);
     }
 
     public E set(int index, E element) {
@@ -91,7 +88,7 @@ public class ListProxyImpl<E> extends AbstractDistributedObject<ListService> imp
     }
 
     public void add(int index, E element) {
-
+        addInternal(index, element);
     }
 
     public E remove(int index) {
@@ -182,5 +179,13 @@ public class ListProxyImpl<E> extends AbstractDistributedObject<ListService> imp
         if (o == null) {
             throw new NullPointerException("Object is null");
         }
+    }
+
+    private boolean addInternal(int index, E e){
+        throwExceptionIfNull(e);
+        final Data value = getNodeEngine().toData(e);
+        final AddOperation operation = new AddOperation(name, index, value);
+        Boolean result = invoke(operation);
+        return result;
     }
 }
