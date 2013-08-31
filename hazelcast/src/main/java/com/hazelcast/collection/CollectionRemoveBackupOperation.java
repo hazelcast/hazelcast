@@ -24,7 +24,7 @@ public class CollectionRemoveBackupOperation extends CollectionOperation impleme
     }
 
     public void run() throws Exception {
-
+        getOrCreateContainer().removeBackup(itemId);
     }
 
     public void afterRun() throws Exception {
@@ -32,6 +32,6 @@ public class CollectionRemoveBackupOperation extends CollectionOperation impleme
     }
 
     public int getId() {
-        return 0;
+        return CollectionDataSerializerHook.COLLECTION_REMOVE_BACKUP;
     }
 }

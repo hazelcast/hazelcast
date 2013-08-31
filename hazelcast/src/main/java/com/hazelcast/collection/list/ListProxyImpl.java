@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection.list;
 
+import com.hazelcast.collection.CollectionClearOperation;
 import com.hazelcast.collection.CollectionRemoveOperation;
 import com.hazelcast.collection.CollectionSizeOperation;
 import com.hazelcast.collection.operation.CollectionOperation;
@@ -52,6 +53,10 @@ public class ListProxyImpl<E> extends AbstractDistributedObject<ListService> imp
         return addInternal(-1, e);
     }
 
+    public void add(int index, E element) {
+        addInternal(index, element);
+    }
+
     private boolean addInternal(int index, E e){
         throwExceptionIfNull(e);
         final Data value = getNodeEngine().toData(e);
@@ -66,6 +71,32 @@ public class ListProxyImpl<E> extends AbstractDistributedObject<ListService> imp
         final CollectionRemoveOperation operation = new CollectionRemoveOperation(name, value);
         final Boolean result = invoke(operation);
         return result;
+    }
+
+    public void clear() {
+        final CollectionClearOperation operation = new CollectionClearOperation(name);
+        invoke(operation);
+    }
+
+    public E get(int index) {
+        final ListGetOperation operation = new ListGetOperation(name, index);
+        return invoke(operation);
+    }
+
+    public E set(int index, E element) {
+        return null;
+    }
+
+    public E remove(int index) {
+        return null;
+    }
+
+    public int indexOf(Object o) {
+        return 0;
+    }
+
+    public int lastIndexOf(Object o) {
+        return 0;
     }
 
     public boolean containsAll(Collection<?> c) {
@@ -88,37 +119,8 @@ public class ListProxyImpl<E> extends AbstractDistributedObject<ListService> imp
         return false;
     }
 
-    public void clear() {
-
-    }
-
-    public E get(int index) {
-        final ListGetOperation operation = new ListGetOperation(name, index);
-        return invoke(operation);
-    }
-
-    public E set(int index, E element) {
-        return null;
-    }
-
-    public void add(int index, E element) {
-        addInternal(index, element);
-    }
-
-    public E remove(int index) {
-        return null;
-    }
-
-    public int indexOf(Object o) {
-        return 0;
-    }
-
-    public int lastIndexOf(Object o) {
-        return 0;
-    }
-
     public ListIterator<E> listIterator() {
-        return null;
+        return listIterator(0);
     }
 
     public ListIterator<E> listIterator(int index) {
@@ -144,7 +146,7 @@ public class ListProxyImpl<E> extends AbstractDistributedObject<ListService> imp
     }
 
     public Iterator<E> iterator() {
-        return null;
+        return listIterator();
     }
 
     public Object[] toArray() {

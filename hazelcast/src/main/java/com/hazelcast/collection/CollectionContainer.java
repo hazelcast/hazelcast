@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.NodeEngine;
 
 import java.io.IOException;
+import java.util.Set;
 
 /**
  * @ali 8/30/13
@@ -51,6 +52,9 @@ public abstract class CollectionContainer implements DataSerializable {
     protected abstract void removeBackup(long itemId);
 
     protected abstract int size();
+
+    protected abstract Set<Long> clear();
+    protected abstract void clearBackup(Set<Long> itemIdSet);
 
     protected long nextId() {
         return idGenerator++;

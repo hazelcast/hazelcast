@@ -47,7 +47,7 @@ public class ListTest extends HazelcastTestSupport {
         Config config = new Config();
         final String name = "defList";
         final int count = 100;
-        final int insCount = 4;
+        final int insCount = 2;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
         final HazelcastInstance[] instances = factory.newInstances(config);
 
@@ -72,6 +72,8 @@ public class ListTest extends HazelcastTestSupport {
         assertTrue(getList(instances, name).remove("item99"));
         assertFalse(getList(instances, name).remove("item99"));
         assertEquals(count, getList(instances, name).size());
+        getList(instances, name).clear();
+        assertEquals(0, getList(instances, name).size());
 
 //        assertEquals(count+1, getList(instances, name).size());
 //        assertEquals("item",getList(instances, name).set(0, "newItem"));

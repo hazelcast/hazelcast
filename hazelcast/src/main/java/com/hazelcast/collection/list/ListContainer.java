@@ -78,6 +78,21 @@ public class ListContainer extends CollectionContainer {
         return getList().size();
     }
 
+    protected Set<Long> clear() {
+        Set<Long> itemIdSet = new HashSet<Long>(size());
+        for (CollectionItem item : getList()) {
+            itemIdSet.add(item.getItemId());
+        }
+        getList().clear();
+        return itemIdSet;
+    }
+
+    protected void clearBackup(Set<Long> itemIdSet) {
+        for (Long itemId : itemIdSet) {
+            removeBackup(itemId);
+        }
+    }
+
     private List<CollectionItem> getList(){
         if(itemList == null){
             if (itemMap != null && !itemMap.isEmpty()){
