@@ -16,6 +16,7 @@
 
 package com.hazelcast.instance;
 
+import com.hazelcast.collection.list.ListService;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
@@ -156,9 +157,7 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         if (name == null) {
             throw new NullPointerException("Retrieving a list instance with a null key is not allowed!");
         }
-//        return getDistributedObject(CollectionService.SERVICE_NAME,
-//                new CollectionProxyId(ObjectListProxy.COLLECTION_LIST_NAME, name, CollectionProxyType.LIST));
-        return null;
+        return getDistributedObject(ListService.SERVICE_NAME, name);
     }
 
     public <K, V> MultiMap<K, V> getMultiMap(String name) {

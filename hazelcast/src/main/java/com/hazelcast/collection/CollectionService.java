@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.collections;
+package com.hazelcast.collection;
 
+import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.*;
 
 import java.util.Map;
@@ -24,11 +25,13 @@ import java.util.Properties;
 /**
  * @ali 8/29/13
  */
-public abstract class CollectionsService implements ManagedService, RemoteService {
+public abstract class CollectionService implements ManagedService, RemoteService {
+
+    protected static final StringPartitioningStrategy PARTITIONING_STRATEGY = new StringPartitioningStrategy();
 
     protected NodeEngine nodeEngine;
 
-    protected CollectionsService(NodeEngine nodeEngine) {
+    protected CollectionService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
     }
 
@@ -49,7 +52,7 @@ public abstract class CollectionsService implements ManagedService, RemoteServic
         nodeEngine.getEventService().deregisterAllListeners(getServiceName(), name);
     }
 
-    protected abstract CollectionsContainer getOrCreateContainer(String name, boolean backup);
-    protected abstract Map<String, ? extends CollectionsContainer> getContainerMap();
-    protected abstract String getServiceName();
+    public abstract CollectionContainer getOrCreateContainer(String name, boolean backup);
+    public abstract Map<String, ? extends CollectionContainer> getContainerMap();
+    public abstract String getServiceName();
 }

@@ -25,6 +25,7 @@ import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.PartitionView;
+import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.queue.proxy.QueueProxyImpl;
 import com.hazelcast.queue.tx.TransactionalQueueProxy;
 import com.hazelcast.spi.*;
@@ -51,6 +52,8 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         RemoteService, EventPublishingService<QueueEvent, ItemListener> {
 
     public static final String SERVICE_NAME = "hz:impl:queueService";
+    protected static final StringPartitioningStrategy PARTITIONING_STRATEGY = new StringPartitioningStrategy();
+
     private final NodeEngine nodeEngine;
     private final ConcurrentMap<String, QueueContainer> containerMap = new ConcurrentHashMap<String, QueueContainer>();
     private final ConcurrentMap<String, LocalQueueStatsImpl> statsMap = new ConcurrentHashMap<String, LocalQueueStatsImpl>(1000);
@@ -90,8 +93,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     public QueueContainer getOrCreateContainer(final String name, boolean fromBackup) throws Exception {
         QueueContainer container = containerMap.get(name);
         if (container == null) {
-            container = new QueueContainer(name, nodeEngine.getPartitionService().getPartitionId(nodeEngine.toData(name)), nodeEngine.getConfig().getQueueConfig(name),
-                    nodeEngine, this);
+            container = new QueueContainer(name, nodeEngine, this);
             QueueContainer existing = containerMap.putIfAbsent(name, container);
             if (existing != null) {
                 container = existing;

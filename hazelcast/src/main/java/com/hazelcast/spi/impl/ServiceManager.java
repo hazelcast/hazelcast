@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl;
 
 import com.hazelcast.client.ClientEngineImpl;
 import com.hazelcast.cluster.ClusterServiceImpl;
+import com.hazelcast.collection.list.ListService;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
@@ -85,6 +86,7 @@ final class ServiceManager {
                 registerService(QueueService.SERVICE_NAME, new QueueService(nodeEngine));
                 registerService(TopicService.SERVICE_NAME, new TopicService());
                 registerService(MultiMapService.SERVICE_NAME, new MultiMapService(nodeEngine));
+                registerService(ListService.SERVICE_NAME, new ListService(nodeEngine));
                 registerService(DistributedExecutorService.SERVICE_NAME, new DistributedExecutorService());
                 registerService(AtomicLongService.SERVICE_NAME, new AtomicLongService());
                 registerService(CountDownLatchService.SERVICE_NAME, new CountDownLatchService());

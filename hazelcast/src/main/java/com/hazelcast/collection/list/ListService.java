@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.collections.list;
+package com.hazelcast.collection.list;
 
-import com.hazelcast.collections.CollectionsContainer;
-import com.hazelcast.collections.CollectionsService;
+import com.hazelcast.collection.CollectionContainer;
+import com.hazelcast.collection.CollectionService;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.spi.NodeEngine;
 
@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * @ali 8/29/13
  */
-public class ListService extends CollectionsService {
+public class ListService extends CollectionService {
 
     public static final String SERVICE_NAME = "hz:impl:listService";
 
@@ -38,17 +38,28 @@ public class ListService extends CollectionsService {
         super(nodeEngine);
     }
 
-    protected Map<String, ? extends CollectionsContainer> getContainerMap() {
+    public CollectionContainer getOrCreateContainer(String name, boolean backup) {
+        ListContainer container = containerMap.get(name);
+        if (container == null){
+            container = new ListContainer();
+            final ListContainer current = containerMap.putIfAbsent(name, container);
+            if (current != null){
+                container = current;
+            }
+        }
+        return container;
+    }
+
+    public Map<String, ? extends CollectionContainer> getContainerMap() {
         return containerMap;
     }
 
-    protected String getServiceName() {
+    public String getServiceName() {
         return SERVICE_NAME;
     }
 
     public DistributedObject createDistributedObject(Object objectId) {
-        //TODO create proxy
-        return null;
+        return new ListProxyImpl(String.valueOf(objectId), nodeEngine, this);
     }
 
 }

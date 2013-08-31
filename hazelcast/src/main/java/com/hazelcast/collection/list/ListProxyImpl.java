@@ -14,18 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.collections.list;
+package com.hazelcast.collection.list;
 
+import com.hazelcast.collection.operation.CollectionOperation;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.ItemListener;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InitializingObject;
+import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.concurrent.Future;
 
 /**
  * @ali 8/30/13
@@ -42,7 +47,11 @@ public class ListProxyImpl<E> extends AbstractDistributedObject<ListService> imp
     }
 
     public boolean add(E e) {
-        return false;
+        throwExceptionIfNull(e);
+        final Data value = getNodeEngine().toData(e);
+        final AddOperation operation = new AddOperation(name, -1, value);
+        Boolean result = invoke(operation);
+        return result;
     }
 
     public boolean remove(Object o) {
@@ -156,5 +165,22 @@ public class ListProxyImpl<E> extends AbstractDistributedObject<ListService> imp
 
     public void initialize() {
         //TODO
+    }
+
+    private <T> T invoke(CollectionOperation operation) {
+        final NodeEngine nodeEngine = getNodeEngine();
+        try {
+            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(ListService.SERVICE_NAME, operation, partitionId).build();
+            Future f = inv.invoke();
+            return nodeEngine.toObject(f.get());
+        } catch (Throwable throwable) {
+            throw ExceptionUtil.rethrow(throwable);
+        }
+    }
+
+    private void throwExceptionIfNull(Object o) {
+        if (o == null) {
+            throw new NullPointerException("Object is null");
+        }
     }
 }

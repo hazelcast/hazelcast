@@ -24,21 +24,20 @@ import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.logging.Level;
 
 /**
  * User: ali
  * Date: 11/22/12
  * Time: 11:00 AM
  */
-public class QueueContainer implements DataSerializable {
+public class QueueContainer implements IdentifiedDataSerializable {
 
     private LinkedList<QueueItem> itemQueue = null;
     private HashMap<Long, QueueItem> backupMap = null;
@@ -54,9 +53,10 @@ public class QueueContainer implements DataSerializable {
 
     private long idGenerator = 0;
 
-    private final String name;
     private final QueueWaitNotifyKey pollWaitNotifyKey;
     private final QueueWaitNotifyKey offerWaitNotifyKey;
+
+    private String name;
 
     private long minAge = Long.MAX_VALUE;
 
@@ -69,16 +69,16 @@ public class QueueContainer implements DataSerializable {
     private boolean isEvictionScheduled = false;
 
 
-    public QueueContainer(String name) {
-        this.name = name;
+    public QueueContainer() {
         pollWaitNotifyKey = new QueueWaitNotifyKey(name, "poll");
         offerWaitNotifyKey = new QueueWaitNotifyKey(name, "offer");
     }
 
-    public QueueContainer(String name, int partitionId, QueueConfig config, NodeEngine nodeEngine, QueueService service) throws Exception {
-        this(name);
-        this.partitionId = partitionId;
-        setConfig(config, nodeEngine, service);
+    public QueueContainer(String name, NodeEngine nodeEngine, QueueService service) throws Exception {
+        this();
+        this.name = name;
+        this.partitionId = nodeEngine.getPartitionService().getPartitionId(nodeEngine.getSerializationService().toData(name, QueueService.PARTITIONING_STRATEGY));
+        setConfig(nodeEngine.getConfig().getQueueConfig(name), nodeEngine, service);
     }
 
     public void init(boolean fromBackup){
@@ -638,6 +638,7 @@ public class QueueContainer implements DataSerializable {
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
         out.writeInt(partitionId);
         out.writeInt(getItemQueue().size());
         for (QueueItem item : getItemQueue()) {
@@ -650,6 +651,7 @@ public class QueueContainer implements DataSerializable {
     }
 
     public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
         partitionId = in.readInt();
         int size = in.readInt();
         for (int j = 0; j < size; j++) {
@@ -676,5 +678,13 @@ public class QueueContainer implements DataSerializable {
         }
         txMap.clear();
         dataMap.clear();
+    }
+
+    public int getFactoryId() {
+        return QueueDataSerializerHook.F_ID;
+    }
+
+    public int getId() {
+        return QueueDataSerializerHook.QUEUE_CONTAINER;
     }
 }
