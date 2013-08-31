@@ -589,12 +589,14 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                         InputStream inputStream = connection.getInputStream();
                         ObjectDataInputStream input = serializationService.createObjectDataInputStream(inputStream);
                         final int taskId = input.readInt();
-                        final int requestType = input.readInt();
-                        if (taskId > 0 && requestType < consoleRequests.length) {
-                            final ConsoleRequest request = consoleRequests[requestType];
-                            if (request != null) {
-                                request.readData(input);
-                                sendResponse(taskId, request);
+                        if(taskId > 0){
+                            final int requestType = input.readInt();
+                            if (requestType < consoleRequests.length) {
+                                final ConsoleRequest request = consoleRequests[requestType];
+                                if (request != null) {
+                                    request.readData(input);
+                                    sendResponse(taskId, request);
+                                }
                             }
                         }
                     } catch (Exception e) {
