@@ -31,6 +31,10 @@ public final class PartitionAwareKey<K,P> implements PartitionAware<Object>, Dat
         this.partitionKey = ValidationUtil.isNotNull(partitionKey,"partitionKey");
     }
 
+    //constructor needed for deserialization.
+    private PartitionAwareKey(){
+    }
+
     public K getKey() {
         return key;
     }
