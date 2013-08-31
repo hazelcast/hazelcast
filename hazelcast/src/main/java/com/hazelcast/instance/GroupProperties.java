@@ -39,6 +39,8 @@ public class GroupProperties {
     public static final String PROP_MERGE_FIRST_RUN_DELAY_SECONDS = "hazelcast.merge.first.run.delay.seconds";
     public static final String PROP_MERGE_NEXT_RUN_DELAY_SECONDS = "hazelcast.merge.next.run.delay.seconds";
     public static final String PROP_OPERATION_CALL_TIMEOUT_MILLIS = "hazelcast.operation.call.timeout.millis";
+    public static final String PROP_OPERATION_BATCH_MAX_SIZE = "hazelcast.operation.max.batch.size";
+    public static final String PROP_OPERATION_BATCH_MAX_TIME_MILLIS = "hazelcast.operation.max.batch.time.millis";
     public static final String PROP_SOCKET_BIND_ANY = "hazelcast.socket.bind.any";
     public static final String PROP_SOCKET_SERVER_BIND_ANY = "hazelcast.socket.server.bind.any";
     public static final String PROP_SOCKET_CLIENT_BIND_ANY = "hazelcast.socket.client.bind.any";
@@ -84,6 +86,8 @@ public class GroupProperties {
     public static final String PROP_ENTERPRISE_LICENSE_KEY = "hazelcast.enterprise.license.key";
 
     public final GroupProperty OPERATION_THREAD_COUNT;
+    public final GroupProperty OPERATION_BATCH_MAX_SIZE;
+    public final GroupProperty OPERATION_BATCH_MAX_TIME_MILLIS;
 
     public final GroupProperty EVENT_THREAD_COUNT;
 
@@ -206,7 +210,9 @@ public class GroupProperties {
         PREFER_IPv4_STACK = new GroupProperty(config, PROP_PREFER_IPv4_STACK, "true");
         IO_THREAD_COUNT = new GroupProperty(config, PROP_IO_THREAD_COUNT, "3");
         OPERATION_THREAD_COUNT = new GroupProperty(config, PROP_OPERATION_THREAD_COUNT, "-1");
-        EVENT_THREAD_COUNT = new GroupProperty(config, PROP_EVENT_THREAD_COUNT, "5");
+        OPERATION_BATCH_MAX_SIZE = new GroupProperty(config, PROP_OPERATION_BATCH_MAX_SIZE, "10000");
+        OPERATION_BATCH_MAX_TIME_MILLIS = new GroupProperty(config, PROP_OPERATION_BATCH_MAX_TIME_MILLIS, "2000");
+         EVENT_THREAD_COUNT = new GroupProperty(config, PROP_EVENT_THREAD_COUNT, "5");
         EVENT_QUEUE_CAPACITY = new GroupProperty(config, PROP_EVENT_QUEUE_CAPACITY, "1000000");
         EVENT_QUEUE_TIMEOUT_MILLIS = new GroupProperty(config, PROP_EVENT_QUEUE_TIMEOUT_MILLIS, "250");
         CONNECT_ALL_WAIT_SECONDS = new GroupProperty(config, PROP_CONNECT_ALL_WAIT_SECONDS, "120");

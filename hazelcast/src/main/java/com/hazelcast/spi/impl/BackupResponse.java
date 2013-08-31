@@ -45,7 +45,7 @@ final class BackupResponse extends AbstractOperation implements IdentifiedDataSe
     }
 
     @Override
-    public boolean returnsResponse() {
+    public boolean returnsResponse(Throwable throwable) {
         return false;
     }
 

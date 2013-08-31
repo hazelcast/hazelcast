@@ -325,7 +325,7 @@ public class ProxyServiceImpl implements ProxyService, PostJoinAwareService,
             proxyService.destroyLocalDistributedObject(serviceName, objectId);
         }
 
-        public boolean returnsResponse() {
+        public boolean returnsResponse(Throwable throwable) {
             return true;
         }
 
@@ -371,7 +371,7 @@ public class ProxyServiceImpl implements ProxyService, PostJoinAwareService,
         }
 
         @Override
-        public boolean returnsResponse() {
+        public boolean returnsResponse(Throwable throwable) {
             return false;
         }
 

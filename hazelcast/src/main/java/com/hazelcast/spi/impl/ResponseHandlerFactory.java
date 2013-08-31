@@ -23,7 +23,6 @@ import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
 
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
 
 /**
  * @author mdogan 8/2/12
@@ -46,7 +45,7 @@ public final class ResponseHandlerFactory {
 
     public static ResponseHandler createRemoteResponseHandler(NodeEngine nodeEngine, Operation op) {
         if (op.getCallId() == 0) {
-            if (op.returnsResponse()) {
+            if (op.returnsResponse(null)) {
                 throw new HazelcastException("Op: " + op.getClass().getName() + " can not return response without call-id!");
             }
             return NO_RESPONSE_HANDLER;

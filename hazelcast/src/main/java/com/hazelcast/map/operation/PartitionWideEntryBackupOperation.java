@@ -60,7 +60,7 @@ public class PartitionWideEntryBackupOperation extends AbstractMapOperation impl
     }
 
     @Override
-    public boolean returnsResponse() {
+    public boolean returnsResponse(Throwable throwable) {
         return true;
     }
 
@@ -85,6 +85,4 @@ public class PartitionWideEntryBackupOperation extends AbstractMapOperation impl
     public String toString() {
         return "PartitionWideEntryBackupOperation{}";
     }
-
-
 }

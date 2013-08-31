@@ -66,7 +66,7 @@ final class SyncReplicaVersion extends Operation implements PartitionAwareOperat
     public void afterRun() throws Exception {
     }
 
-    public boolean returnsResponse() {
+    public boolean returnsResponse(Throwable throwable) {
         return false;
     }
 

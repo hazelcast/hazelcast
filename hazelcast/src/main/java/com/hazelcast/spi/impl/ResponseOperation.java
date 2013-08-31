@@ -61,7 +61,7 @@ final class ResponseOperation extends Operation implements IdentifiedDataSeriali
     }
 
     @Override
-    public boolean returnsResponse() {
+    public boolean returnsResponse(Throwable throwable) {
         return false;
     }
 

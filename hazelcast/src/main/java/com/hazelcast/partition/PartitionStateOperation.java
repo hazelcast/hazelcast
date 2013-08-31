@@ -52,7 +52,7 @@ public final class PartitionStateOperation extends AbstractOperation implements 
     }
 
     @Override
-    public boolean returnsResponse() {
+    public boolean returnsResponse(Throwable throwable) {
         return false;
     }
 

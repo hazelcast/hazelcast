@@ -42,7 +42,7 @@ public class LockInformationOperation extends Operation {
     public void afterRun() throws Exception {
     }
 
-    public boolean returnsResponse() {
+    public boolean returnsResponse(Throwable throwable) {
         return false;
     }
 

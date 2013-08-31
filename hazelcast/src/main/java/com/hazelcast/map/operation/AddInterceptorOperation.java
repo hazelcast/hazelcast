@@ -47,7 +47,7 @@ public class AddInterceptorOperation extends AbstractOperation {
     }
 
     @Override
-    public boolean returnsResponse() {
+    public boolean returnsResponse(Throwable throwable) {
         return true;
     }
 

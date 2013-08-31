@@ -53,7 +53,7 @@ public class ThreadDumpOperation extends Operation {
     public void afterRun() throws Exception {
     }
 
-    public boolean returnsResponse() {
+    public boolean returnsResponse(Throwable throwable) {
         return true;
     }
 

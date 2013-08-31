@@ -32,7 +32,7 @@ public class PutFromLoadOperation extends BasePutOperation {
     }
 
     @Override
-    public boolean returnsResponse() {
+    public boolean returnsResponse(Throwable throwable) {
         return true;
     }
 

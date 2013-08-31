@@ -56,7 +56,7 @@ public class ClientDisconnectionOperation extends AbstractOperation {
     }
 
     @Override
-    public boolean returnsResponse() {
+    public boolean returnsResponse(Throwable throwable) {
         return false;
     }
 

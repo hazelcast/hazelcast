@@ -29,7 +29,6 @@ import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.logging.Level;
 
 /**
  * @author mdogan 4/5/13
@@ -105,7 +104,7 @@ final class Backup extends Operation implements BackupOperation, IdentifiedDataS
         }
     }
 
-    public final boolean returnsResponse() {
+    public final boolean returnsResponse(Throwable throwable) {
         return false;
     }
 

@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.operation;
 
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapEntrySet;
@@ -32,7 +33,6 @@ import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * There are 2 problems:
@@ -45,11 +45,12 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
 
     EntryProcessor entryProcessor;
     MapEntrySet response;
-    //todo: do we want size based or time based batching?
-    private int batchSize = 10;
+
+    private int maxBatchSize;
+    private int maxBatchTimeMillis;
     private Iterator<Map.Entry<Data, Record>> iterator;
     private RecordStore recordStore;
-    private int processed = 0;
+
     public PartitionWideEntryOperation(String name, EntryProcessor entryProcessor) {
         super(name);
         this.entryProcessor = entryProcessor;
@@ -60,19 +61,24 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
 
     @Override
     public void run() {
-        if(iterator == null){
+        if (iterator == null) {
+            GroupProperties groupProperties = getNodeEngine().getGroupProperties();
+            maxBatchSize = groupProperties.OPERATION_BATCH_MAX_SIZE.getInteger();
+            maxBatchTimeMillis = groupProperties.OPERATION_BATCH_MAX_TIME_MILLIS.getInteger();
             recordStore = mapService.getRecordStore(getPartitionId(), name);
             iterator = recordStore.getRecords().entrySet().iterator();
             response = new MapEntrySet();
         }
 
-        for (int k=0;k<batchSize;k++) {
-            if(!iterator.hasNext()){
+        long startMs = System.currentTimeMillis();
+
+        for (int k = 0; k < maxBatchSize; k++) {
+
+            if (!iterator.hasNext()) {
                 break;
             }
 
-            processed++;
-             Map.Entry<Data,Record> recordEntry = iterator.next();
+            Map.Entry<Data, Record> recordEntry = iterator.next();
             Data dataKey = recordEntry.getKey();
             Record record = recordEntry.getValue();
             Map.Entry entry = new AbstractMap.SimpleEntry(mapService.toObject(record.getKey()), mapService.toObject(record.getValue()));
@@ -87,21 +93,30 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
             } else {
                 recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, entry.getValue()));
             }
+
+            //if we have been running too long, we should exit.
+            if (System.currentTimeMillis() > maxBatchTimeMillis + startMs) {
+                break;
+            }
         }
 
-        if(iterator.hasNext()){
-            this.getNodeEngine().getOperationService().executeOperation(this);
+        if (iterator.hasNext()) {
+            //we are going to reschedule the current operation. This give other operations for this partition to chance
+            //to run as well. As they will be starved from execution and this can lead to all kinds of problems.
+            getNodeEngine().getOperationService().executeOperation(this);
             System.out.println("Posting next batch");
-        } else{
-            if(processed>0){
-                System.out.println("Completed:"+processed);
-            }
         }
     }
 
     @Override
-    public boolean returnsResponse() {
-        if(iterator == null)return false;
+    public boolean returnsResponse(Throwable throwable) {
+        if(throwable != null){
+            return true;
+        }
+
+        if(iterator == null){
+            return false;
+        }
 
         return !iterator.hasNext();
     }

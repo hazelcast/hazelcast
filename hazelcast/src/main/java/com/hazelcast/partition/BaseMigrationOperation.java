@@ -46,7 +46,7 @@ public abstract class BaseMigrationOperation extends AbstractOperation
     }
 
     @Override
-    public boolean returnsResponse() {
+    public boolean returnsResponse(Throwable throwable) {
         return true;
     }
 

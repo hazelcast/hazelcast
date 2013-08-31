@@ -68,7 +68,7 @@ abstract class BaseCallableTaskOperation extends Operation {
     }
 
     @Override
-    public final boolean returnsResponse() {
+    public final boolean returnsResponse(Throwable throwable) {
         return false;
     }
 

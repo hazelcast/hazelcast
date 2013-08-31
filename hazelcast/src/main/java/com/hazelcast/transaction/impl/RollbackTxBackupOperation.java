@@ -53,7 +53,7 @@ public final class RollbackTxBackupOperation extends Operation {
     }
 
     @Override
-    public boolean returnsResponse() {
+    public boolean returnsResponse(Throwable throwable) {
         return true;
     }
 

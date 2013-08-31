@@ -48,7 +48,7 @@ public class ClientReAuthOperation extends AbstractOperation {
         }
     }
 
-    public boolean returnsResponse() {
+    public boolean returnsResponse(Throwable throwable) {
         return true;
     }
 

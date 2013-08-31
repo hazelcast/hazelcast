@@ -518,7 +518,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         }
 
         @Override
-        public boolean returnsResponse() {
+        public boolean returnsResponse(Throwable throwable) {
             return false;
         }
 

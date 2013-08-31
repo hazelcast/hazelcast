@@ -273,7 +273,7 @@ final class OperationServiceImpl implements OperationService {
             }
             op.run();
 
-            final boolean returnsResponse = op.returnsResponse();
+            final boolean returnsResponse = op.returnsResponse(null);
             Object response = null;
             if (op instanceof BackupAwareOperation) {
                 final BackupAwareOperation backupAwareOp = (BackupAwareOperation) op;
@@ -315,7 +315,7 @@ final class OperationServiceImpl implements OperationService {
     }
 
     boolean isCallTimedOut(Operation op) {
-        if (op.returnsResponse() && op.getCallId() != 0) {
+        if (op.returnsResponse(null) && op.getCallId() != 0) {
             final long callTimeout = op.getCallTimeout();
             final long invocationTime = op.getInvocationTime();
             final long expireTime = invocationTime + callTimeout;
@@ -331,7 +331,7 @@ final class OperationServiceImpl implements OperationService {
 
     private RemoteCallKey beforeCallExecution(Operation op) {
         RemoteCallKey callKey = null;
-        if (op.getCallId() != 0 && op.returnsResponse()) {
+        if (op.getCallId() != 0 && op.returnsResponse(null)) {
             callKey = new RemoteCallKey(op.getCallerAddress(), op.getCallId());
             RemoteCallKey current;
             if ((current = executingCalls.put(callKey, callKey)) != null) {
@@ -342,7 +342,7 @@ final class OperationServiceImpl implements OperationService {
     }
 
     private void afterCallExecution(Operation op, RemoteCallKey callKey) {
-        if (callKey != null && op.getCallId() != 0 && op.returnsResponse()) {
+        if (callKey != null && op.getCallId() != 0 && op.returnsResponse(null)) {
             if (executingCalls.remove(callKey) == null) {
                 logger.severe("No Call record has been found: -> " + callKey + " == " + op.getClass().getName());
             }
@@ -351,7 +351,7 @@ final class OperationServiceImpl implements OperationService {
 
     private int sendBackups(BackupAwareOperation backupAwareOp) throws Exception {
         final Operation op = (Operation) backupAwareOp;
-        final boolean returnsResponse = op.returnsResponse();
+        final boolean returnsResponse = op.returnsResponse(null);
         final PartitionServiceImpl partitionService = (PartitionServiceImpl) nodeEngine.getPartitionService();
         final int maxBackups = Math.min(partitionService.getMemberGroupsSize() - 1, PartitionView.MAX_BACKUP_COUNT);
 
@@ -462,7 +462,7 @@ final class OperationServiceImpl implements OperationService {
             OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) e);
         }
         op.logError(e);
-        if (node.isActive() && op.returnsResponse() && op.getResponseHandler() != null) {
+        if (node.isActive() && op.returnsResponse(e) && op.getResponseHandler() != null) {
             try {
                 op.getResponseHandler().sendResponse(e);
             } catch (Throwable t) {

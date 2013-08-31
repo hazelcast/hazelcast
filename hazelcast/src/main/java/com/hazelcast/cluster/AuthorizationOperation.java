@@ -52,7 +52,7 @@ public class AuthorizationOperation extends AbstractOperation implements JoinOpe
     }
 
     @Override
-    public boolean returnsResponse() {
+    public boolean returnsResponse(Throwable throwable) {
         return true;
     }
 

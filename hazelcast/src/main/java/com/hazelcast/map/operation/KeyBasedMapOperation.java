@@ -117,7 +117,7 @@ public abstract class KeyBasedMapOperation extends Operation implements Partitio
     }
 
     @Override
-    public boolean returnsResponse() {
+    public boolean returnsResponse(Throwable throwable) {
         return true;
     }
 

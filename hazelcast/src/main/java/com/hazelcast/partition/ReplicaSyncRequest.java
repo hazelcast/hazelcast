@@ -97,7 +97,7 @@ public final class ReplicaSyncRequest extends Operation implements PartitionAwar
     public void afterRun() throws Exception {
     }
 
-    public boolean returnsResponse() {
+    public boolean returnsResponse(Throwable throwable) {
         return false;
     }
 

@@ -33,7 +33,7 @@ abstract class BaseCountDownLatchOperation extends AbstractNamedOperation implem
     }
 
     @Override
-    public boolean returnsResponse() {
+    public boolean returnsResponse(Throwable throwable) {
         return true;
     }
 

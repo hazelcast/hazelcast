@@ -30,7 +30,7 @@ public class MapInitialLoadOperation extends AbstractMapOperation {
     }
 
     @Override
-    public boolean returnsResponse() {
+    public boolean returnsResponse(Throwable throwable) {
         return false;
     }
 }

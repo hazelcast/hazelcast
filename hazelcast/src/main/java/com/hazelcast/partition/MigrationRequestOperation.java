@@ -143,7 +143,7 @@ public final class MigrationRequestOperation extends BaseMigrationOperation {
     }
 
     @Override
-    public boolean returnsResponse() {
+    public boolean returnsResponse(Throwable throwable) {
         return returnResponse;
     }
 

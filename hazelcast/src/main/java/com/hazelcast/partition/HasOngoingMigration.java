@@ -31,7 +31,7 @@ public final class HasOngoingMigration extends AbstractOperation {
     }
 
     @Override
-    public boolean returnsResponse() {
+    public boolean returnsResponse(Throwable throwable) {
         return true;
     }
 

@@ -106,7 +106,7 @@ public class ReplicaSyncResponse extends Operation implements PartitionAwareOper
     public void afterRun() throws Exception {
     }
 
-    public boolean returnsResponse() {
+    public boolean returnsResponse(Throwable throwable) {
         return false;
     }
 

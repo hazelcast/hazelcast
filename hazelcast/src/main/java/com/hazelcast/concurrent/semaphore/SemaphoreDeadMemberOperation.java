@@ -47,7 +47,7 @@ public class SemaphoreDeadMemberOperation extends SemaphoreBackupAwareOperation 
         return Boolean.TRUE.equals(response);
     }
 
-    public boolean returnsResponse() {
+    public boolean returnsResponse(Throwable throwable) {
         return false;
     }
 

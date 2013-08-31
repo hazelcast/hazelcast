@@ -66,7 +66,7 @@ public abstract class Operation implements DataSerializable {
     // runs after backups, before wait-notify
     public abstract void afterRun() throws Exception;
 
-    public abstract boolean returnsResponse();
+    public abstract boolean returnsResponse(Throwable throwable);
 
     public abstract Object getResponse();
 
@@ -241,7 +241,7 @@ public abstract class Operation implements DataSerializable {
     public void logError(Throwable e) {
         final ILogger logger = getLogger();
         if (e instanceof RetryableException) {
-            final Level level = returnsResponse() ? Level.FINEST : Level.WARNING;
+            final Level level = returnsResponse(e) ? Level.FINEST : Level.WARNING;
             logger.log(level, e.getClass() + ": " + e.getMessage());
         } else {
             final Level level = nodeEngine != null && nodeEngine.isActive() ? Level.SEVERE : Level.FINEST;

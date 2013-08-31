@@ -26,7 +26,6 @@ import com.hazelcast.util.ResponseQueueFactory;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
-import java.util.logging.Level;
 
 public final class PartitionIteratingOperation extends AbstractOperation implements IdentifiedDataSerializable {
     private List<Integer> partitions;
@@ -89,7 +88,7 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
     }
 
     @Override
-    public final boolean returnsResponse() {
+    public final boolean returnsResponse(Throwable throwable) {
         return true;
     }
 

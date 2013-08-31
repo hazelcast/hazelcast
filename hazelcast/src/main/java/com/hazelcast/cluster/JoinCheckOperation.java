@@ -57,7 +57,7 @@ public class JoinCheckOperation extends AbstractOperation implements JoinOperati
     }
 
     @Override
-    public boolean returnsResponse() {
+    public boolean returnsResponse(Throwable throwable) {
         return true;
     }
 

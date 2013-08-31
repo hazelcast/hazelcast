@@ -62,7 +62,7 @@ public abstract class AtomicLongBaseOperation extends Operation implements Parti
     }
 
     @Override
-    public boolean returnsResponse() {
+    public boolean returnsResponse(Throwable throwable) {
         return true;
     }
 

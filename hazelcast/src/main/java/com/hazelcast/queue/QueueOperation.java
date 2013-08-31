@@ -82,7 +82,7 @@ public abstract class QueueOperation extends Operation implements PartitionAware
     public void beforeRun() throws Exception {
     }
 
-    public final boolean returnsResponse() {
+    public final boolean returnsResponse(Throwable throwable) {
         return true;
     }
 
