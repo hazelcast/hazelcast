@@ -16,7 +16,7 @@
 
 package com.hazelcast.collection.list;
 
-import com.hazelcast.collection.RemoveOperation;
+import com.hazelcast.collection.CollectionRemoveOperation;
 import com.hazelcast.collection.operation.CollectionOperation;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.ItemListener;
@@ -54,7 +54,7 @@ public class ListProxyImpl<E> extends AbstractDistributedObject<ListService> imp
     private boolean addInternal(int index, E e){
         throwExceptionIfNull(e);
         final Data value = getNodeEngine().toData(e);
-        final AddOperation operation = new AddOperation(name, index, value);
+        final ListAddOperation operation = new ListAddOperation(name, index, value);
         final Boolean result = invoke(operation);
         return result;
     }
@@ -62,7 +62,7 @@ public class ListProxyImpl<E> extends AbstractDistributedObject<ListService> imp
     public boolean remove(Object o) {
         throwExceptionIfNull(o);
         final Data value = getNodeEngine().toData(o);
-        final RemoveOperation operation = new RemoveOperation(name, value);
+        final CollectionRemoveOperation operation = new CollectionRemoveOperation(name, value);
         final Boolean result = invoke(operation);
         return result;
     }
@@ -92,7 +92,7 @@ public class ListProxyImpl<E> extends AbstractDistributedObject<ListService> imp
     }
 
     public E get(int index) {
-        final GetOperation operation = new GetOperation(name, index);
+        final ListGetOperation operation = new ListGetOperation(name, index);
         return invoke(operation);
     }
 

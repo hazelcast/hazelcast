@@ -12,16 +12,16 @@ import java.io.IOException;
 /**
  * @ali 8/31/13
  */
-public class AddBackupOperation extends CollectionOperation implements BackupOperation {
+public class ListAddBackupOperation extends CollectionOperation implements BackupOperation {
 
     long itemId;
 
     Data value;
 
-    public AddBackupOperation() {
+    public ListAddBackupOperation() {
     }
 
-    public AddBackupOperation(String name, long itemId, Data value) {
+    public ListAddBackupOperation(String name, long itemId, Data value) {
         super(name);
         this.itemId = itemId;
         this.value = value;
@@ -40,7 +40,7 @@ public class AddBackupOperation extends CollectionOperation implements BackupOpe
     }
 
     public int getId() {
-        return CollectionDataSerializerHook.ADD_BACKUP;
+        return CollectionDataSerializerHook.LIST_ADD_BACKUP;
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

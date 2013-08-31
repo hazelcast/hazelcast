@@ -1,7 +1,5 @@
-package com.hazelcast.collection.list;
+package com.hazelcast.collection;
 
-import com.hazelcast.collection.CollectionDataSerializerHook;
-import com.hazelcast.collection.CollectionItem;
 import com.hazelcast.collection.operation.CollectionBackupAwareOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -11,22 +9,19 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 
 /**
- * @ali 8/30/13
+ * @ali 8/31/13
  */
-public class AddOperation extends CollectionBackupAwareOperation {
-
-    private int index = -1;
+public class CollectionRemoveOperation extends CollectionBackupAwareOperation {
 
     private Data value;
 
     private transient long itemId = -1;
 
-    public AddOperation() {
+    public CollectionRemoveOperation() {
     }
 
-    public AddOperation(String name, int index, Data value) {
+    public CollectionRemoveOperation(String name, Data value) {
         super(name);
-        this.index = index;
         this.value = value;
     }
 
@@ -35,13 +30,11 @@ public class AddOperation extends CollectionBackupAwareOperation {
     }
 
     public void run() throws Exception {
-        final ListContainer container = getOrCreateListContainer();
-        final CollectionItem item = container.add(index, value);
+        response = false;
+        final CollectionItem item = getOrCreateContainer().remove(value);
         if (item != null){
-            itemId = item.getItemId();
             response = true;
-        } else {
-            response = false;
+            itemId = item.getItemId();
         }
     }
 
@@ -49,29 +42,26 @@ public class AddOperation extends CollectionBackupAwareOperation {
 
     }
 
-    public Operation getBackupOperation() {
-        return new AddBackupOperation(name, itemId, value);
-    }
-
     public boolean shouldBackup() {
         return itemId != -1;
     }
 
+    public Operation getBackupOperation() {
+        return new CollectionRemoveBackupOperation(name, itemId);
+    }
+
     public int getId() {
-        return CollectionDataSerializerHook.ADD;
+        return CollectionDataSerializerHook.COLLECTION_REMOVE;
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeInt(index);
         value.writeData(out);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        index = in.readInt();
         value = new Data();
         value.readData(in);
     }
-
 }

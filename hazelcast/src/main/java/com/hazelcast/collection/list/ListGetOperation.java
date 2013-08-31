@@ -11,14 +11,14 @@ import java.io.IOException;
 /**
  * @ali 8/31/13
  */
-public class GetOperation extends CollectionOperation {
+public class ListGetOperation extends CollectionOperation {
 
     private int index;
 
-    public GetOperation() {
+    public ListGetOperation() {
     }
 
-    public GetOperation(String name, int index) {
+    public ListGetOperation(String name, int index) {
         super(name);
         this.index = index;
     }
@@ -37,7 +37,7 @@ public class GetOperation extends CollectionOperation {
     }
 
     public int getId() {
-        return CollectionDataSerializerHook.GET;
+        return CollectionDataSerializerHook.LIST_GET;
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

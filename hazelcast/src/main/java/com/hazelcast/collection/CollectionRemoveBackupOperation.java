@@ -6,15 +6,15 @@ import com.hazelcast.spi.BackupOperation;
 /**
  * @ali 8/31/13
  */
-public class RemoveBackupOperation extends CollectionOperation implements BackupOperation {
+public class CollectionRemoveBackupOperation extends CollectionOperation implements BackupOperation {
 
     long itemId;
 
-    public RemoveBackupOperation() {
+    public CollectionRemoveBackupOperation() {
         this.itemId = itemId;
     }
 
-    public RemoveBackupOperation(String name, long itemId) {
+    public CollectionRemoveBackupOperation(String name, long itemId) {
         super(name);
         this.itemId = itemId;
     }
