@@ -19,7 +19,7 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
     public static final int LIST_GET = increment++;
     public static final int COLLECTION_REMOVE = increment++;
     public static final int COLLECTION_REMOVE_BACKUP = increment++;
-    public static final int SIZE = increment++;
+    public static final int COLLECTION_SIZE = increment++;
 
     public int getFactoryId() {
         return F_ID;
@@ -53,7 +53,7 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
                 return new CollectionRemoveBackupOperation();
             }
         };
-        constructors[SIZE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+        constructors[COLLECTION_SIZE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new CollectionSizeOperation();
             }

@@ -17,6 +17,7 @@
 package com.hazelcast.collection.list;
 
 import com.hazelcast.collection.CollectionRemoveOperation;
+import com.hazelcast.collection.CollectionSizeOperation;
 import com.hazelcast.collection.operation.CollectionOperation;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.ItemListener;
@@ -129,7 +130,9 @@ public class ListProxyImpl<E> extends AbstractDistributedObject<ListService> imp
     }
 
     public int size() {
-        return 0;
+        final CollectionSizeOperation operation = new CollectionSizeOperation(name);
+        final Integer result = invoke(operation);
+        return result;
     }
 
     public boolean isEmpty() {

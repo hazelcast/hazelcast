@@ -70,8 +70,12 @@ public class ListContainer extends CollectionContainer {
         return null;
     }
 
-    protected void remove(long itemId) {
+    protected void removeBackup(long itemId) {
         getMap().remove(itemId);
+    }
+
+    protected int size() {
+        return getList().size();
     }
 
     private List<CollectionItem> getList(){

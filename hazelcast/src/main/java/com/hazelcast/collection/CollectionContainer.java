@@ -48,7 +48,9 @@ public abstract class CollectionContainer implements DataSerializable {
 
     protected abstract CollectionItem remove(Data value);
 
-    protected abstract void remove(long itemId);
+    protected abstract void removeBackup(long itemId);
+
+    protected abstract int size();
 
     protected long nextId() {
         return idGenerator++;

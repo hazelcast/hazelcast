@@ -64,11 +64,14 @@ public class ListTest extends HazelcastTestSupport {
 //        assertEquals(count, getList(instances, name).size());
 
         assertEquals("item0", getList(instances, name).get(0));
+        assertEquals(count, getList(instances, name).size());
         getList(instances, name).add(0, "item");
+        assertEquals(count+1, getList(instances, name).size());
         assertEquals("item", getList(instances, name).get(0));
         assertEquals("item0", getList(instances, name).get(1));
         assertTrue(getList(instances, name).remove("item99"));
         assertFalse(getList(instances, name).remove("item99"));
+        assertEquals(count, getList(instances, name).size());
 
 //        assertEquals(count+1, getList(instances, name).size());
 //        assertEquals("item",getList(instances, name).set(0, "newItem"));

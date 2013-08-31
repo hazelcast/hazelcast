@@ -7,13 +7,19 @@ import com.hazelcast.collection.operation.CollectionOperation;
  */
 public class CollectionSizeOperation extends CollectionOperation {
 
+    public CollectionSizeOperation() {
+    }
+
+    public CollectionSizeOperation(String name) {
+        super(name);
+    }
 
     public void beforeRun() throws Exception {
 
     }
 
     public void run() throws Exception {
-
+        response = getOrCreateContainer().size();
     }
 
     public void afterRun() throws Exception {
@@ -21,6 +27,6 @@ public class CollectionSizeOperation extends CollectionOperation {
     }
 
     public int getId() {
-        return CollectionDataSerializerHook.LIST_ADD;
+        return CollectionDataSerializerHook.COLLECTION_SIZE;
     }
 }
