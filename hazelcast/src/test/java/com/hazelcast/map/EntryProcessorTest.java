@@ -21,7 +21,8 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IMap;
-import com.hazelcast.core.*;
+import com.hazelcast.core.PartitionAwareKey;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -40,19 +41,25 @@ import static org.junit.Assert.assertNull;
 public class EntryProcessorTest extends HazelcastTestSupport {
 
     @Test
-    public void testMapEntryProcessorBigData() throws InterruptedException {
+    public void testMapEntryProcessorBatchProcessing() throws InterruptedException {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
+        cfg.setProperty(GroupProperties.PROP_OPERATION_BATCH_MAX_SIZE, "1");
         cfg.getMapConfig("default").setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
-        IMap  map = instance1.getMap("testMapEntryProcessor");
-        for(int k=0;k<50;k++){
-            map.put(new PartitionAwareKey(k,"foo"), k);
+        IMap<PartitionAwareKey, Integer> map = instance1.getMap("testMapEntryProcessor");
+        for (int k = 0; k < 50; k++) {
+            map.put(new PartitionAwareKey(k, "foo"), 1);
         }
 
         EntryProcessor entryProcessor = new IncrementorEntryProcessor();
-        assertEquals(2, map.executeOnEntries(entryProcessor));
-        assertEquals((Integer) 2, map.get(1));
+        Map resultMap = map.executeOnEntries(entryProcessor);
+        assertEquals(map.size(), resultMap.size());
+        for (Map.Entry<PartitionAwareKey, Integer> entry : map.entrySet()) {
+            assertEquals(entry.getValue(), new Integer(2));
+            Object result = resultMap.get(entry.getKey());
+            assertEquals(new Integer(2), result);
+        }
     }
 
     @Test

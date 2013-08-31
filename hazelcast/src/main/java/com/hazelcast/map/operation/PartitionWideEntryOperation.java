@@ -25,6 +25,7 @@ import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
@@ -104,7 +105,6 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
             //we are going to reschedule the current operation. This give other operations for this partition to chance
             //to run as well. As they will be starved from execution and this can lead to all kinds of problems.
             getNodeEngine().getOperationService().executeOperation(this);
-            System.out.println("Posting next batch");
         }
     }
 
@@ -155,12 +155,49 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
 
     @Override
     public int getAsyncBackupCount() {
+       //todo
+
         return mapContainer.getTotalBackupCount();
     }
 
     @Override
     public Operation getBackupOperation() {
         EntryBackupProcessor backupProcessor = entryProcessor.getBackupProcessor();
-        return backupProcessor != null ? new PartitionWideEntryBackupOperation(name, backupProcessor) : null;
+        if(backupProcessor==null) {
+            return null;
+        }
+
+        return new PartitionWideEntryOperation(name, new EntryProcessorAdapter(backupProcessor));
+    }
+
+    private static class EntryProcessorAdapter implements EntryProcessor, DataSerializable{
+        private EntryBackupProcessor backupProcessor;
+
+        private EntryProcessorAdapter(EntryBackupProcessor backupProcessor) {
+            this.backupProcessor = backupProcessor;
+        }
+
+        private EntryProcessorAdapter(){}
+
+        @Override
+        public Object process(Map.Entry entry) {
+            backupProcessor.processBackup(entry);
+            return null;
+        }
+
+        @Override
+        public EntryBackupProcessor getBackupProcessor() {
+            return null;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+           out.writeObject(backupProcessor);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            backupProcessor = in.readObject();
+        }
     }
 }
