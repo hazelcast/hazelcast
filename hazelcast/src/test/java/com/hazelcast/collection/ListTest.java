@@ -99,21 +99,17 @@ public class ListTest extends HazelcastTestSupport {
         assertEquals(2, getList(instances, name).indexOf("item-2"));
         assertEquals(3, getList(instances, name).lastIndexOf("item-2"));
 
-//        assertEquals(count+1, getList(instances, name).size());
-//        assertEquals("item",getList(instances, name).set(0, "newItem"));
-//        assertEquals("newItem",getList(instances, name).remove(0));
-//        assertEquals(count, getList(instances, name).size());
+        assertEquals(4, getList(instances, name).size());
 
 
 
-//        assertEquals(count+list.size()-1, getList(instances, name).size());
 
-//
-//        assertTrue(getList(instances, name).containsAll(list));
-//        list.add("asd");
-//        assertFalse(getList(instances, name).containsAll(list));
-//        assertTrue(getList(instances, name).contains("item98"));
-//        assertFalse(getList(instances, name).contains("item99"));
+
+        assertTrue(getList(instances, name).containsAll(list));
+        list.add("asd");
+        assertFalse(getList(instances, name).containsAll(list));
+        assertTrue(getList(instances, name).contains("item-1"));
+        assertFalse(getList(instances, name).contains("item"));
     }
 
     @Test
