@@ -103,7 +103,7 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
 
         if (iterator.hasNext()) {
             //we are going to reschedule the current operation. This give other operations for this partition to chance
-            //to run as well. As they will be starved from execution and this can lead to all kinds of problems.
+            //to run as well. Else they could be starved from execution and this can lead to all kinds of problems.
             getNodeEngine().getOperationService().executeOperation(this);
         }
     }
