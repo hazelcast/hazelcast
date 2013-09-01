@@ -1,17 +1,20 @@
 package com.hazelcast.collection;
 
 import com.hazelcast.collection.operation.CollectionOperation;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
+
+import java.io.IOException;
 
 /**
  * @ali 8/31/13
  */
 public class CollectionRemoveBackupOperation extends CollectionOperation implements BackupOperation {
 
-    long itemId;
+    private long itemId;
 
     public CollectionRemoveBackupOperation() {
-        this.itemId = itemId;
     }
 
     public CollectionRemoveBackupOperation(String name, long itemId) {
@@ -33,5 +36,15 @@ public class CollectionRemoveBackupOperation extends CollectionOperation impleme
 
     public int getId() {
         return CollectionDataSerializerHook.COLLECTION_REMOVE_BACKUP;
+    }
+
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeLong(itemId);
+    }
+
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        itemId = in.readLong();
     }
 }

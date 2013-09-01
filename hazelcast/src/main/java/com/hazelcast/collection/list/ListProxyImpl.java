@@ -90,7 +90,8 @@ public class ListProxyImpl<E> extends AbstractDistributedObject<ListService> imp
     }
 
     public E remove(int index) {
-        return null;
+        final ListRemoveOperation operation = new ListRemoveOperation(name, index);
+        return invoke(operation);
     }
 
     public int indexOf(Object o) {

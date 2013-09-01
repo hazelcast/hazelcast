@@ -1,8 +1,12 @@
 package com.hazelcast.collection;
 
 import com.hazelcast.collection.operation.CollectionOperation;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.BackupOperation;
 
+import java.io.IOException;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -34,5 +38,22 @@ public class CollectionClearBackupOperation extends CollectionOperation implemen
 
     public void afterRun() throws Exception {
 
+    }
+
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeInt(itemIdSet.size());
+        for (Long itemId : itemIdSet) {
+            out.writeLong(itemId);
+        }
+    }
+
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        final int size = in.readInt();
+        itemIdSet = new HashSet<Long>(size);
+        for (int i=0; i<size; i++){
+            itemIdSet.add(in.readLong());
+        }
     }
 }

@@ -103,6 +103,10 @@ public class ListContainer extends CollectionContainer {
 
     }
 
+    protected CollectionItem remove(int index){
+        return getList().remove(index);
+    }
+
     private List<CollectionItem> getList(){
         if(itemList == null){
             if (itemMap != null && !itemMap.isEmpty()){

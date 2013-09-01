@@ -2,34 +2,29 @@ package com.hazelcast.collection.list;
 
 import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionItem;
+import com.hazelcast.collection.CollectionRemoveBackupOperation;
 import com.hazelcast.collection.operation.CollectionBackupAwareOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 
 /**
- * @ali 8/31/13
+ * @ali 9/1/13
  */
-public class ListSetOperation extends CollectionBackupAwareOperation {
+public class ListRemoveOperation extends CollectionBackupAwareOperation {
 
     private int index;
 
-    private Data value;
+    private transient long itemId;
 
-    private transient long itemId = -1;
-
-    private transient long oldItemId = -1;
-
-    public ListSetOperation() {
+    public ListRemoveOperation() {
     }
 
-    public ListSetOperation(String name, int index, Data value) {
+    public ListRemoveOperation(String name, int index) {
         super(name);
         this.index = index;
-        this.value = value;
     }
 
     public boolean shouldBackup() {
@@ -37,11 +32,11 @@ public class ListSetOperation extends CollectionBackupAwareOperation {
     }
 
     public Operation getBackupOperation() {
-        return new ListSetBackupOperation(name, oldItemId, itemId, value);
+        return new CollectionRemoveBackupOperation(name, itemId);
     }
 
     public int getId() {
-        return CollectionDataSerializerHook.LIST_SET_BACKUP;
+        return CollectionDataSerializerHook.LIST_REMOVE;
     }
 
     public void beforeRun() throws Exception {
@@ -49,10 +44,8 @@ public class ListSetOperation extends CollectionBackupAwareOperation {
     }
 
     public void run() throws Exception {
-        final ListContainer container = getOrCreateListContainer();
-        itemId = container.nextId();
-        final CollectionItem item = container.set(index, itemId, value);
-        oldItemId = item.getItemId();
+        final CollectionItem item = getOrCreateListContainer().remove(index);
+        itemId = item.getItemId();
         response = item.getValue();
     }
 
@@ -63,13 +56,10 @@ public class ListSetOperation extends CollectionBackupAwareOperation {
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(index);
-        value.writeData(out);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         index = in.readInt();
-        value = new Data();
-        value.readData(in);
     }
 }
