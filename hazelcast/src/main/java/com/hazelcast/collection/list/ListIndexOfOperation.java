@@ -35,7 +35,7 @@ public class ListIndexOfOperation extends CollectionOperation {
     }
 
     public void run() throws Exception {
-        getOrCreateListContainer().indexOf(last, value);
+        response = getOrCreateListContainer().indexOf(last, value);
     }
 
     public void afterRun() throws Exception {

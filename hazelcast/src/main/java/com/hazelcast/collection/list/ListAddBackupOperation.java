@@ -14,9 +14,9 @@ import java.io.IOException;
  */
 public class ListAddBackupOperation extends CollectionOperation implements BackupOperation {
 
-    long itemId;
+    private long itemId;
 
-    Data value;
+    private Data value;
 
     public ListAddBackupOperation() {
     }

@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.NodeEngine;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -56,6 +57,9 @@ public abstract class CollectionContainer implements DataSerializable {
     protected abstract void clearBackup(Set<Long> itemIdSet);
 
     protected abstract boolean contains(Set<Data> valueSet);
+
+    protected abstract Map<Long, Data> addAll(Set<Data> valueSet);
+    protected abstract void addAllBackup(Map<Long, Data> valueMap);
 
     public long nextId() {
         return idGenerator++;

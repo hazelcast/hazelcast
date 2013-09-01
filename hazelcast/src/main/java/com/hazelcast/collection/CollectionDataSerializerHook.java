@@ -25,6 +25,9 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
     public static final int LIST_REMOVE = increment++;
     public static final int LIST_INDEX_OF = increment++;
     public static final int COLLECTION_CONTAINS = increment++;
+    public static final int COLLECTION_ADD_ALL = increment++;
+    public static final int COLLECTION_ADD_ALL_BACKUP = increment++;
+    public static final int LIST_ADD_ALL = increment++;
 
     public int getFactoryId() {
         return F_ID;
@@ -96,6 +99,21 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
         constructors[COLLECTION_CONTAINS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new CollectionContainsOperation();
+            }
+        };
+        constructors[COLLECTION_ADD_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CollectionAddAllOperation();
+            }
+        };
+        constructors[COLLECTION_ADD_ALL_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CollectionAddAllBackupOperation();
+            }
+        };
+        constructors[LIST_ADD_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ListAddAllOperation();
             }
         };
 

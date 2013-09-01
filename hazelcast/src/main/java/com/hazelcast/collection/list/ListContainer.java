@@ -148,6 +148,33 @@ public class ListContainer extends CollectionContainer {
         return true;
     }
 
+    protected Map<Long, Data> addAll(Set<Data> valueSet) {
+        return addAll(0, valueSet);
+    }
+
+    protected Map<Long, Data> addAll(int index, Set<Data> valueSet) {
+        final int size = valueSet.size();
+        final Map<Long, Data> map = new HashMap<Long, Data>(size);
+        List<CollectionItem> list = new ArrayList<CollectionItem>(size);
+        for (Data value : valueSet) {
+            final long itemId = nextId();
+            list.add(new CollectionItem(this, itemId, value));
+            map.put(itemId, value);
+        }
+        getList().addAll(index, list);
+
+        return map;
+    }
+
+    protected void addAllBackup(Map<Long, Data> valueMap) {
+        Map<Long, CollectionItem> map = new HashMap<Long, CollectionItem>(valueMap.size());
+        for (Map.Entry<Long, CollectionItem> entry : map.entrySet()) {
+            final long itemId = entry.getKey();
+            map.put(itemId, new CollectionItem(this, itemId, entry.getValue()));
+        }
+        getMap().putAll(map);
+    }
+
     private List<CollectionItem> getList(){
         if(itemList == null){
             if (itemMap != null && !itemMap.isEmpty()){

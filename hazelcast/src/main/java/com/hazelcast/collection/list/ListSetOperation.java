@@ -41,7 +41,7 @@ public class ListSetOperation extends CollectionBackupAwareOperation {
     }
 
     public int getId() {
-        return CollectionDataSerializerHook.LIST_SET_BACKUP;
+        return CollectionDataSerializerHook.LIST_SET;
     }
 
     public void beforeRun() throws Exception {

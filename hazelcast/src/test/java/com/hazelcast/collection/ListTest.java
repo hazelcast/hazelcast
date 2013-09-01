@@ -28,6 +28,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -78,25 +80,34 @@ public class ListTest extends HazelcastTestSupport {
         getList(instances, name).clear();
         assertEquals(0, getList(instances, name).size());
 
+        List list = new ArrayList();
+        list.add("item-1");
+        list.add("item-2");
+
+        assertTrue(getList(instances, name).addAll(list));
+        assertEquals("item-1", getList(instances, name).get(0));
+        assertEquals("item-2", getList(instances, name).get(1));
+
+        assertTrue(getList(instances, name).addAll(1,list));
+        assertEquals("item-1", getList(instances, name).get(0));
+        assertEquals("item-1", getList(instances, name).get(1));
+        assertEquals("item-2", getList(instances, name).get(2));
+        assertEquals("item-2", getList(instances, name).get(3));
+        assertEquals(4, getList(instances, name).size());
+        assertEquals(0, getList(instances, name).indexOf("item-1"));
+        assertEquals(1, getList(instances, name).lastIndexOf("item-1"));
+        assertEquals(2, getList(instances, name).indexOf("item-2"));
+        assertEquals(3, getList(instances, name).lastIndexOf("item-2"));
+
 //        assertEquals(count+1, getList(instances, name).size());
 //        assertEquals("item",getList(instances, name).set(0, "newItem"));
 //        assertEquals("newItem",getList(instances, name).remove(0));
 //        assertEquals(count, getList(instances, name).size());
 
-//        List list = new ArrayList();
-//        list.add("item-1");
-//        list.add("item-2");
-//
-//        assertTrue(getList(instances, name).addAll(list));
-//        assertEquals("item-1", getList(instances, name).get(count-1));
-//        assertEquals("item-2", getList(instances, name).get(count));
+
+
 //        assertEquals(count+list.size()-1, getList(instances, name).size());
-//        assertTrue(getList(instances, name).addAll(10,list));
-//        assertEquals("item-1", getList(instances, name).get(10));
-//        assertEquals("item-2", getList(instances, name).get(11));
-//        assertEquals(count+2*list.size()-1, getList(instances, name).size());
-//        assertEquals(10, getList(instances, name).indexOf("item-1"));
-//        assertEquals(count-1+list.size(), getList(instances, name).lastIndexOf("item-1"));
+
 //
 //        assertTrue(getList(instances, name).containsAll(list));
 //        list.add("asd");

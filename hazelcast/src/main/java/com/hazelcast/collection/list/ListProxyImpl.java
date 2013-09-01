@@ -119,11 +119,18 @@ public class ListProxyImpl<E> extends AbstractDistributedObject<ListService> imp
     }
 
     public boolean addAll(Collection<? extends E> c) {
-        return false;
+        return addAll(0, c);
     }
 
     public boolean addAll(int index, Collection<? extends E> c) {
-        return false;
+        Set<Data> valueSet = new HashSet<Data>(c.size());
+        final NodeEngine nodeEngine = getNodeEngine();
+        for (E e : c) {
+            valueSet.add(nodeEngine.toData(e));
+        }
+        final ListAddAllOperation operation = new ListAddAllOperation(name, index, valueSet);
+        final Boolean result = invoke(operation);
+        return result;
     }
 
     public boolean removeAll(Collection<?> c) {
