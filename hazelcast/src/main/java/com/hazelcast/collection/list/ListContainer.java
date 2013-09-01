@@ -175,6 +175,20 @@ public class ListContainer extends CollectionContainer {
         getMap().putAll(map);
     }
 
+    protected List<Data> sub(int from, int to){
+        final List<CollectionItem> list;
+        if (from == -1 && to == -1){
+            list = getList();
+        } else {
+            list = getList().subList(from, to);
+        }
+        final ArrayList<Data> sub = new ArrayList<Data>(list.size());
+        for (CollectionItem item : list) {
+            sub.add((Data)item.getValue());
+        }
+        return sub;
+    }
+
     private List<CollectionItem> getList(){
         if(itemList == null){
             if (itemMap != null && !itemMap.isEmpty()){

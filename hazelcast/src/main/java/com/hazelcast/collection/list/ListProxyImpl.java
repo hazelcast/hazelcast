@@ -28,6 +28,7 @@ import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.InitializingObject;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.*;
@@ -82,6 +83,7 @@ public class ListProxyImpl<E> extends AbstractDistributedObject<ListService> imp
     }
 
     public E set(int index, E element) {
+        throwExceptionIfNull(element);
         final Data value = getNodeEngine().toData(element);
         final ListSetOperation operation = new ListSetOperation(name, index, value);
         return invoke(operation);
@@ -101,6 +103,7 @@ public class ListProxyImpl<E> extends AbstractDistributedObject<ListService> imp
     }
 
     private int indexOfInternal(boolean last, Object o){
+        throwExceptionIfNull(o);
         final Data value = getNodeEngine().toData(o);
         final ListIndexOfOperation operation = new ListIndexOfOperation(name, last, value);
         final Integer result = invoke(operation);
@@ -108,9 +111,11 @@ public class ListProxyImpl<E> extends AbstractDistributedObject<ListService> imp
     }
 
     public boolean containsAll(Collection<?> c) {
+        throwExceptionIfNull(c);
         Set<Data> valueSet = new HashSet<Data>(c.size());
         final NodeEngine nodeEngine = getNodeEngine();
         for (Object o : c) {
+            throwExceptionIfNull(o);
             valueSet.add(nodeEngine.toData(o));
         }
         final CollectionContainsOperation operation = new CollectionContainsOperation(name, valueSet);
@@ -123,9 +128,11 @@ public class ListProxyImpl<E> extends AbstractDistributedObject<ListService> imp
     }
 
     public boolean addAll(int index, Collection<? extends E> c) {
+        throwExceptionIfNull(c);
         Set<Data> valueSet = new HashSet<Data>(c.size());
         final NodeEngine nodeEngine = getNodeEngine();
         for (E e : c) {
+            throwExceptionIfNull(e);
             valueSet.add(nodeEngine.toData(e));
         }
         final ListAddAllOperation operation = new ListAddAllOperation(name, index, valueSet);
@@ -146,11 +153,20 @@ public class ListProxyImpl<E> extends AbstractDistributedObject<ListService> imp
     }
 
     public ListIterator<E> listIterator(int index) {
-        return null;
+        final List<E> list = subList(-1, -1);
+        return list.listIterator(index);
     }
 
     public List<E> subList(int fromIndex, int toIndex) {
-        return null;
+        final ListSubOperation operation = new ListSubOperation(name, fromIndex, toIndex);
+        final SerializableCollection result = invoke(operation);
+        final Collection<Data> collection = result.getCollection();
+        final List<E> list = new ArrayList<E>(collection.size());
+        final NodeEngine nodeEngine = getNodeEngine();
+        for (Data data : collection) {
+            list.add(nodeEngine.<E>toObject(data));
+        }
+        return list;
     }
 
     public int size() {
@@ -164,6 +180,7 @@ public class ListProxyImpl<E> extends AbstractDistributedObject<ListService> imp
     }
 
     public boolean contains(Object o) {
+        throwExceptionIfNull(o);
         Set<Data> valueSet = new HashSet<Data>(1);
         valueSet.add(getNodeEngine().toData(o));
         final CollectionContainsOperation operation = new CollectionContainsOperation(name, valueSet);
@@ -172,15 +189,16 @@ public class ListProxyImpl<E> extends AbstractDistributedObject<ListService> imp
     }
 
     public Iterator<E> iterator() {
-        return listIterator();
+        return listIterator(0);
     }
 
     public Object[] toArray() {
-        return new Object[0];
+        return subList(-1, -1).toArray();
     }
 
     public <T> T[] toArray(T[] a) {
-        return null;
+        throwExceptionIfNull(a);
+        return subList(-1,-1).toArray(a);
     }
 
     public String getName() {
