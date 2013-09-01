@@ -30,6 +30,7 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -101,15 +102,25 @@ public class ListTest extends HazelcastTestSupport {
 
         assertEquals(4, getList(instances, name).size());
 
-
-
-
-
         assertTrue(getList(instances, name).containsAll(list));
         list.add("asd");
         assertFalse(getList(instances, name).containsAll(list));
         assertTrue(getList(instances, name).contains("item-1"));
         assertFalse(getList(instances, name).contains("item"));
+
+        list = getList(instances, name).subList(1, 3);
+
+        assertEquals(2, list.size());
+        assertEquals("item-1", list.get(0));
+        assertEquals("item-2", list.get(1));
+
+        final ListIterator listIterator = getList(instances, name).listIterator(1);
+        assertTrue(listIterator.hasPrevious());
+        assertEquals("item-1", listIterator.next());
+        assertEquals("item-2", listIterator.next());
+        assertEquals("item-2", listIterator.next());
+        assertFalse(listIterator.hasNext());
+
     }
 
     @Test
