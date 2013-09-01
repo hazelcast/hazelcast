@@ -44,7 +44,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     public void testMapEntryProcessorBatchProcessing() throws InterruptedException {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
-        cfg.setProperty(GroupProperties.PROP_OPERATION_BATCH_MAX_SIZE, "1");
+        cfg.setProperty(GroupProperties.PROP_ENTRYPROCESSOR_BATCH_MAX_SIZE, "1");
         cfg.getMapConfig("default").setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         IMap<PartitionAwareKey, Integer> map = instance1.getMap("testMapEntryProcessor");

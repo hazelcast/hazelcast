@@ -64,8 +64,8 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
     public void run() {
         if (iterator == null) {
             GroupProperties groupProperties = getNodeEngine().getGroupProperties();
-            maxBatchSize = groupProperties.OPERATION_BATCH_MAX_SIZE.getInteger();
-            maxBatchTimeMillis = groupProperties.OPERATION_BATCH_MAX_TIME_MILLIS.getInteger();
+            maxBatchSize = groupProperties.ENTRYPROCESSOR_BATCH_MAX_SIZE.getInteger();
+            maxBatchTimeMillis = groupProperties.ENTRY_PROCESSOR_MAX_BATCH_TIME_MILLIS.getInteger();
             recordStore = mapService.getRecordStore(getPartitionId(), name);
             iterator = recordStore.getRecords().entrySet().iterator();
             response = new MapEntrySet();
