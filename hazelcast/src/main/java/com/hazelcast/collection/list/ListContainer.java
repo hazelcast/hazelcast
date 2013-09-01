@@ -132,6 +132,22 @@ public class ListContainer extends CollectionContainer {
         return -1;
     }
 
+    protected boolean contains(Set<Data> valueSet) {
+        for (Data value : valueSet) {
+            boolean contains = false;
+            for (CollectionItem item : getList()) {
+                if (value.equals(item.getValue())){
+                    contains = true;
+                    break;
+                }
+            }
+            if (!contains){
+                return false;
+            }
+        }
+        return true;
+    }
+
     private List<CollectionItem> getList(){
         if(itemList == null){
             if (itemMap != null && !itemMap.isEmpty()){

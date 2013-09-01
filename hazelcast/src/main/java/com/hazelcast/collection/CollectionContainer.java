@@ -48,13 +48,14 @@ public abstract class CollectionContainer implements DataSerializable {
     }
 
     protected abstract CollectionItem remove(Data value);
-
     protected abstract void removeBackup(long itemId);
 
     protected abstract int size();
 
     protected abstract Set<Long> clear();
     protected abstract void clearBackup(Set<Long> itemIdSet);
+
+    protected abstract boolean contains(Set<Data> valueSet);
 
     public long nextId() {
         return idGenerator++;

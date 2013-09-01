@@ -17,6 +17,7 @@
 package com.hazelcast.collection.list;
 
 import com.hazelcast.collection.CollectionClearOperation;
+import com.hazelcast.collection.CollectionContainsOperation;
 import com.hazelcast.collection.CollectionRemoveOperation;
 import com.hazelcast.collection.CollectionSizeOperation;
 import com.hazelcast.collection.operation.CollectionOperation;
@@ -29,10 +30,7 @@ import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
+import java.util.*;
 import java.util.concurrent.Future;
 
 /**
@@ -110,7 +108,14 @@ public class ListProxyImpl<E> extends AbstractDistributedObject<ListService> imp
     }
 
     public boolean containsAll(Collection<?> c) {
-        return false;
+        Set<Data> valueSet = new HashSet<Data>(c.size());
+        final NodeEngine nodeEngine = getNodeEngine();
+        for (Object o : c) {
+            valueSet.add(nodeEngine.toData(o));
+        }
+        final CollectionContainsOperation operation = new CollectionContainsOperation(name, valueSet);
+        final Boolean result = invoke(operation);
+        return result;
     }
 
     public boolean addAll(Collection<? extends E> c) {
@@ -152,7 +157,11 @@ public class ListProxyImpl<E> extends AbstractDistributedObject<ListService> imp
     }
 
     public boolean contains(Object o) {
-        return false;
+        Set<Data> valueSet = new HashSet<Data>(1);
+        valueSet.add(getNodeEngine().toData(o));
+        final CollectionContainsOperation operation = new CollectionContainsOperation(name, valueSet);
+        final Boolean result = invoke(operation);
+        return result;
     }
 
     public Iterator<E> iterator() {
