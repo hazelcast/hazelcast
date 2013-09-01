@@ -594,10 +594,8 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         Map result = new HashMap();
         try {
             NodeEngine nodeEngine = getNodeEngine();
-            PartitionWideEntryOperation operation = new PartitionWideEntryOperation(name, entryProcessor);
-            operation.setServiceName(SERVICE_NAME);
             Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnAllPartitions(SERVICE_NAME, new BinaryOperationFactory(operation, nodeEngine));
+                    .invokeOnAllPartitions(SERVICE_NAME, new PartitionWideEntryOperationFactory(name, entryProcessor));
             for (Object o : results.values()) {
                 if (o != null) {
                     final MapService service = getService();
