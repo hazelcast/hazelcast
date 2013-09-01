@@ -79,7 +79,7 @@ public class ListContainer extends CollectionContainer {
     }
 
     protected Set<Long> clear() {
-        Set<Long> itemIdSet = new HashSet<Long>(size());
+        Set<Long> itemIdSet = new HashSet<Long>(getList().size());
         for (CollectionItem item : getList()) {
             itemIdSet.add(item.getItemId());
         }
@@ -105,6 +105,31 @@ public class ListContainer extends CollectionContainer {
 
     protected CollectionItem remove(int index){
         return getList().remove(index);
+    }
+
+    protected int indexOf(boolean last, Data value){
+        if (last){
+            int index = getList().size();
+            final ListIterator<CollectionItem> iterator = getList().listIterator(index);
+            while (iterator.hasPrevious()){
+                final CollectionItem item = iterator.previous();
+                index--;
+                if (value.equals(item.getValue())){
+                    return index;
+                }
+            }
+        } else {
+            int index = -1;
+            final Iterator<CollectionItem> iterator = getList().iterator();
+            while (iterator.hasNext()){
+                final CollectionItem item = iterator.next();
+                index++;
+                if (value.equals(item.getValue())){
+                    return index;
+                }
+            }
+        }
+        return -1;
     }
 
     private List<CollectionItem> getList(){

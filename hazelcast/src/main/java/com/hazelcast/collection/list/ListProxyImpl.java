@@ -95,11 +95,18 @@ public class ListProxyImpl<E> extends AbstractDistributedObject<ListService> imp
     }
 
     public int indexOf(Object o) {
-        return 0;
+        return indexOfInternal(false, o);
     }
 
     public int lastIndexOf(Object o) {
-        return 0;
+        return indexOfInternal(true, o);
+    }
+
+    private int indexOfInternal(boolean last, Object o){
+        final Data value = getNodeEngine().toData(o);
+        final ListIndexOfOperation operation = new ListIndexOfOperation(name, last, value);
+        final Integer result = invoke(operation);
+        return result;
     }
 
     public boolean containsAll(Collection<?> c) {
