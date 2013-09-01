@@ -72,6 +72,9 @@ public class ListTest extends HazelcastTestSupport {
         assertTrue(getList(instances, name).remove("item99"));
         assertFalse(getList(instances, name).remove("item99"));
         assertEquals(count, getList(instances, name).size());
+        assertEquals("item",getList(instances, name).set(0, "newItem"));
+        assertEquals("newItem",getList(instances, name).get(0));
+
         getList(instances, name).clear();
         assertEquals(0, getList(instances, name).size());
 

@@ -39,7 +39,7 @@ public class ListContainer extends CollectionContainer {
         super(name, nodeEngine, service);
     }
 
-    CollectionItem add(int index, Data value){
+    protected CollectionItem add(int index, Data value){
         final CollectionItem item = new CollectionItem(this, nextId(), value);
         if (index < 0){
             return getList().add(item) ? item : null;
@@ -49,12 +49,12 @@ public class ListContainer extends CollectionContainer {
         }
     }
 
-    void addBackup(long itemId, Data value){
+    protected void addBackup(long itemId, Data value){
         final CollectionItem item = new CollectionItem(this, itemId, value);
         getMap().put(itemId, item);
     }
 
-    CollectionItem get(int index){
+    protected CollectionItem get(int index){
         return getList().get(index);
     }
 
@@ -91,6 +91,16 @@ public class ListContainer extends CollectionContainer {
         for (Long itemId : itemIdSet) {
             removeBackup(itemId);
         }
+    }
+
+    protected CollectionItem set(int index, long itemId, Data value){
+        return getList().set(index, new CollectionItem(this, itemId, value));
+    }
+
+    protected void setBackup(long oldItemId, long itemId, Data value){
+        getMap().remove(oldItemId);
+        getMap().put(itemId, new CollectionItem(this, itemId, value));
+
     }
 
     private List<CollectionItem> getList(){

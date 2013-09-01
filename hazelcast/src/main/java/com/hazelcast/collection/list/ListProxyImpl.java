@@ -84,7 +84,9 @@ public class ListProxyImpl<E> extends AbstractDistributedObject<ListService> imp
     }
 
     public E set(int index, E element) {
-        return null;
+        final Data value = getNodeEngine().toData(element);
+        final ListSetOperation operation = new ListSetOperation(name, index, value);
+        return invoke(operation);
     }
 
     public E remove(int index) {

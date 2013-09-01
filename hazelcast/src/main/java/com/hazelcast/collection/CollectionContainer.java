@@ -56,7 +56,7 @@ public abstract class CollectionContainer implements DataSerializable {
     protected abstract Set<Long> clear();
     protected abstract void clearBackup(Set<Long> itemIdSet);
 
-    protected long nextId() {
+    public long nextId() {
         return idGenerator++;
     }
 

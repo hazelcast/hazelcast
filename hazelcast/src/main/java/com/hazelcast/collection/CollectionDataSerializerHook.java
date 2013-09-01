@@ -1,8 +1,6 @@
 package com.hazelcast.collection;
 
-import com.hazelcast.collection.list.ListAddBackupOperation;
-import com.hazelcast.collection.list.ListAddOperation;
-import com.hazelcast.collection.list.ListGetOperation;
+import com.hazelcast.collection.list.*;
 import com.hazelcast.nio.serialization.*;
 import com.hazelcast.util.ConstructorFunction;
 
@@ -22,6 +20,8 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
     public static final int COLLECTION_SIZE = increment++;
     public static final int COLLECTION_CLEAR = increment++;
     public static final int COLLECTION_CLEAR_BACKUP = increment++;
+    public static final int LIST_SET = increment++;
+    public static final int LIST_SET_BACKUP = increment++;
 
     public int getFactoryId() {
         return F_ID;
@@ -68,6 +68,16 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
         constructors[COLLECTION_CLEAR_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new CollectionClearBackupOperation();
+            }
+        };
+        constructors[LIST_SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ListSetOperation();
+            }
+        };
+        constructors[LIST_SET_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ListSetBackupOperation();
             }
         };
 
