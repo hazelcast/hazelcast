@@ -121,6 +121,30 @@ public class ListTest extends HazelcastTestSupport {
         assertEquals("item-2", listIterator.next());
         assertFalse(listIterator.hasNext());
 
+        list = new ArrayList();
+        list.add("item1");
+        list.add("item2");
+
+        assertFalse(getList(instances, name).removeAll(list));
+        assertEquals(4, getList(instances, name).size());
+
+        list.add("item-1");
+
+        assertTrue(getList(instances, name).removeAll(list));
+        assertEquals(2, getList(instances, name).size());
+
+        list.clear();
+        list.add("item-2");
+        assertFalse(getList(instances, name).retainAll(list));
+        assertEquals(2, getList(instances, name).size());
+
+        list.set(0, "item");
+        assertTrue(getList(instances, name).add("item"));
+        assertTrue(getList(instances, name).retainAll(list));
+        assertEquals(1, getList(instances, name).size());
+        assertEquals("item", getList(instances, name).get(0));
+
+
     }
 
     @Test

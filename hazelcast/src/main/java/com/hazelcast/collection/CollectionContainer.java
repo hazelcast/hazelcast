@@ -61,6 +61,8 @@ public abstract class CollectionContainer implements DataSerializable {
     protected abstract Map<Long, Data> addAll(Set<Data> valueSet);
     protected abstract void addAllBackup(Map<Long, Data> valueMap);
 
+    protected abstract Set<Long> compareAndRemove(boolean retain, Set<Data> valueSet);
+
     public long nextId() {
         return idGenerator++;
     }

@@ -189,6 +189,20 @@ public class ListContainer extends CollectionContainer {
         return sub;
     }
 
+    protected Set<Long> compareAndRemove(boolean retain, Set<Data> valueSet) {
+        Set<Long> itemIdSet = new HashSet<Long>();
+        final Iterator<CollectionItem> iterator = getList().iterator();
+        while (iterator.hasNext()){
+            final CollectionItem item = iterator.next();
+            final boolean contains = valueSet.contains(item.getValue());
+            if ( (contains && !retain) || (!contains && retain)){
+                itemIdSet.add(item.getItemId());
+                iterator.remove();
+            }
+        }
+        return itemIdSet;
+    }
+
     private List<CollectionItem> getList(){
         if(itemList == null){
             if (itemMap != null && !itemMap.isEmpty()){

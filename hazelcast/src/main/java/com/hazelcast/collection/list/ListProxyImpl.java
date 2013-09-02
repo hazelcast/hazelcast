@@ -16,10 +16,7 @@
 
 package com.hazelcast.collection.list;
 
-import com.hazelcast.collection.CollectionClearOperation;
-import com.hazelcast.collection.CollectionContainsOperation;
-import com.hazelcast.collection.CollectionRemoveOperation;
-import com.hazelcast.collection.CollectionSizeOperation;
+import com.hazelcast.collection.*;
 import com.hazelcast.collection.operation.CollectionOperation;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.ItemListener;
@@ -141,11 +138,24 @@ public class ListProxyImpl<E> extends AbstractDistributedObject<ListService> imp
     }
 
     public boolean removeAll(Collection<?> c) {
-        return false;
+        return compareAndRemove(false, c);
     }
 
     public boolean retainAll(Collection<?> c) {
-        return false;
+        return compareAndRemove(true, c);
+    }
+
+    private boolean compareAndRemove(boolean retain, Collection<?> c){
+        throwExceptionIfNull(c);
+        Set<Data> valueSet = new HashSet<Data>(c.size());
+        final NodeEngine nodeEngine = getNodeEngine();
+        for (Object o : c) {
+            throwExceptionIfNull(o);
+            valueSet.add(nodeEngine.toData(o));
+        }
+        final CollectionCompareAndRemoveOperation operation = new CollectionCompareAndRemoveOperation(name, retain, valueSet);
+        final Boolean result = invoke(operation);
+        return result;
     }
 
     public ListIterator<E> listIterator() {
