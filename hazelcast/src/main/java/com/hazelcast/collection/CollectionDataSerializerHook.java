@@ -30,6 +30,7 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
     public static final int LIST_ADD_ALL = increment++;
     public static final int LIST_SUB = increment++;
     public static final int COLLECTION_COMPARE_AND_REMOVE = increment++;
+    public static final int COLLECTION_EVENT_FILTER = increment++;
 
     public int getFactoryId() {
         return F_ID;
@@ -126,6 +127,11 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
         constructors[COLLECTION_COMPARE_AND_REMOVE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new CollectionCompareAndRemoveOperation();
+            }
+        };
+        constructors[COLLECTION_EVENT_FILTER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CollectionEventFilter();
             }
         };
 

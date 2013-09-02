@@ -21,10 +21,7 @@ import com.hazelcast.collection.operation.CollectionOperation;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.InitializingObject;
-import com.hazelcast.spi.Invocation;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -216,11 +213,14 @@ public class ListProxyImpl<E> extends AbstractDistributedObject<ListService> imp
     }
 
     public String addItemListener(ItemListener<E> listener, boolean includeValue) {
-        return null;
+        final EventService eventService = getNodeEngine().getEventService();
+        final EventRegistration registration = eventService.registerListener(ListService.SERVICE_NAME, name, listener);
+        return registration.getId();
     }
 
     public boolean removeItemListener(String registrationId) {
-        return false;
+        EventService eventService = getNodeEngine().getEventService();
+        return eventService.deregisterListener(ListService.SERVICE_NAME, name, registrationId);
     }
 
 
