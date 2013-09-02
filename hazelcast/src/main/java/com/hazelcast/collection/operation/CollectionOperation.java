@@ -16,20 +16,19 @@
 
 package com.hazelcast.collection.operation;
 
-import com.hazelcast.collection.CollectionContainer;
-import com.hazelcast.collection.CollectionDataSerializerHook;
-import com.hazelcast.collection.CollectionService;
+import com.hazelcast.collection.*;
 import com.hazelcast.collection.list.ListContainer;
 import com.hazelcast.collection.list.ListService;
+import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.BackupOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.spi.PartitionAwareOperation;
+import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 
 import java.io.IOException;
+import java.util.Collection;
 
 /**
  * @ali 8/30/13
@@ -71,6 +70,16 @@ public abstract class CollectionOperation extends Operation implements Partition
             }
         }
         return container;
+    }
+
+    protected void publishEvent(ItemEventType eventType, Data data) {
+        EventService eventService = getNodeEngine().getEventService();
+        Collection<EventRegistration> registrations = eventService.getRegistrations(getServiceName(), name);
+        for (EventRegistration registration : registrations) {
+            CollectionEventFilter filter = (CollectionEventFilter) registration.getFilter();
+            CollectionEvent event = new CollectionEvent(name, filter.isIncludeValue() ? data : null, eventType, getNodeEngine().getThisAddress());
+            eventService.publishEvent(getServiceName(), registration, event, name.hashCode());
+        }
     }
 
     public int getFactoryId() {
