@@ -97,8 +97,10 @@
                                     org.apache.log4j;resolution:=optional,
                                     org.apache.log4j.*;resolution:=optional,
                                     org.slf4j;resolution:=optional,
+                                    !com.hazelcast.*,
                                     *
                                 </Import-Package>
+                                <Fragment-Host>com.hazelcast</Fragment-Host>
                                 <!--<Embed-Dependency>*;scope=compile|runtime</Embed-Dependency>-->
                             </instructions>
                         </configuration>
