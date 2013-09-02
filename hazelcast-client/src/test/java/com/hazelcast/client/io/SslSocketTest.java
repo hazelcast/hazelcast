@@ -22,7 +22,6 @@ import java.io.*;
 
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(SerialTest.class)
-@Ignore
 public class SslSocketTest {
 
     private static String keyStore;
