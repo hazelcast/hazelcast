@@ -38,6 +38,7 @@ import java.util.Map;
 public interface MapStore<K, V> extends MapLoader<K, V> {
     /**
      * Stores the key-value pair.
+     * If an exception is thrown then the put operation will fail.
      *
      * @param key   key of the entry to store
      * @param value value of the entry to store
@@ -47,6 +48,8 @@ public interface MapStore<K, V> extends MapLoader<K, V> {
     /**
      * Stores multiple entries. Implementation of this method can optimize the
      * store operation by storing all entries in one database connection for instance.
+     * storeAll used when writeDelaySeconds is positive (write-behind).
+     * If an exception is thrown the entries will be tried to be stored one by one using store() method.
      *
      * @param map map of entries to store
      */
@@ -54,6 +57,7 @@ public interface MapStore<K, V> extends MapLoader<K, V> {
 
     /**
      * Deletes the entry with a given key from the store.
+     * If an exception is thrown the remove operation will fail.
      *
      * @param key key to delete from the store.
      */
@@ -61,6 +65,7 @@ public interface MapStore<K, V> extends MapLoader<K, V> {
 
     /**
      * Deletes multiple entries from the store.
+     * If an exception is thrown the entries will be tried to be deleted one by one using delete() method.
      *
      * @param keys keys of the entries to delete.
      */
