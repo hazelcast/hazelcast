@@ -17,7 +17,7 @@
 package com.hazelcast.multimap;
 
 import com.hazelcast.cluster.ClusterServiceImpl;
-import com.hazelcast.multimap.multimap.tx.TransactionalMultiMapProxy;
+import com.hazelcast.multimap.txn.TransactionalMultiMapProxy;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStoreInfo;
 import com.hazelcast.config.MultiMapConfig;

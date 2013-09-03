@@ -2,7 +2,7 @@ package com.hazelcast.collection.list;
 
 import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionItem;
-import com.hazelcast.collection.operation.CollectionBackupAwareOperation;
+import com.hazelcast.collection.CollectionBackupAwareOperation;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;

@@ -1,7 +1,5 @@
 package com.hazelcast.collection;
 
-import com.hazelcast.collection.operation.CollectionOperation;
-
 /**
  * @ali 8/31/13
  */

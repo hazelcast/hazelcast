@@ -1,6 +1,5 @@
 package com.hazelcast.collection;
 
-import com.hazelcast.collection.operation.CollectionOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;

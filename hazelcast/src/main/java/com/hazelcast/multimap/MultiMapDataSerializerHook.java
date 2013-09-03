@@ -16,8 +16,8 @@
 
 package com.hazelcast.multimap;
 
-import com.hazelcast.multimap.multimap.tx.*;
 import com.hazelcast.multimap.operations.*;
+import com.hazelcast.multimap.txn.*;
 import com.hazelcast.nio.serialization.*;
 import com.hazelcast.util.ConstructorFunction;
 

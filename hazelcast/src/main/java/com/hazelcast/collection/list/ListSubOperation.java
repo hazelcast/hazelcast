@@ -1,7 +1,7 @@
 package com.hazelcast.collection.list;
 
 import com.hazelcast.collection.CollectionDataSerializerHook;
-import com.hazelcast.collection.operation.CollectionOperation;
+import com.hazelcast.collection.CollectionOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;

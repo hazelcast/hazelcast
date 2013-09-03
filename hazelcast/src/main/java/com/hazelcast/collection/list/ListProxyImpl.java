@@ -17,7 +17,7 @@
 package com.hazelcast.collection.list;
 
 import com.hazelcast.collection.*;
-import com.hazelcast.collection.operation.CollectionOperation;
+import com.hazelcast.collection.CollectionOperation;
 import com.hazelcast.core.IList;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.serialization.Data;

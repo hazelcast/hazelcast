@@ -1,6 +1,5 @@
 package com.hazelcast.collection;
 
-import com.hazelcast.collection.operation.CollectionBackupAwareOperation;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
