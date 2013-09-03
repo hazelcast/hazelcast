@@ -143,17 +143,17 @@
 
 
 
-        <!--<hz:proxy-factories>-->
-        <!--<hz:proxy-factory class-name="" service="" />-->
-        <!--</hz:proxy-factories>-->
+        <hz:proxy-factories>
+            <hz:proxy-factory class-name="com.hazelcast.spring.DummyProxyFactory" service="MyService" />
+        </hz:proxy-factories>
 
         <hz:load-balancer type="round-robin" />
 
         <hz:near-cache name="default"
-                       time-to-live-seconds="0"
-                       max-idle-seconds="60"
+                       time-to-live-seconds="1"
+                       max-idle-seconds="70"
                        eviction-policy="LRU"
-                       max-size="5000"
+                       max-size="4000"
                        invalidate-on-change="true"/>
 
 

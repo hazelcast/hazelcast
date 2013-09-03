@@ -16,11 +16,6 @@
 
 package com.hazelcast.client.config;
 
-import com.hazelcast.client.spi.ClientProxyFactory;
-
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * @author mdogan 5/17/13
  */
@@ -28,19 +23,22 @@ public class ProxyFactoryConfig {
 
     private String service;
 
-    private String clasName;
+    private String className;
 
-    public ProxyFactoryConfig(String clasName, String service) {
-        this.clasName = clasName;
+    public ProxyFactoryConfig() {
+    }
+
+    public ProxyFactoryConfig(String className, String service) {
+        this.className = className;
         this.service = service;
     }
 
-    public String getClasName() {
-        return clasName;
+    public String getClassName() {
+        return className;
     }
 
-    public void setClasName(String clasName) {
-        this.clasName = clasName;
+    public void setClassName(String className) {
+        this.className = className;
     }
 
     public String getService() {
