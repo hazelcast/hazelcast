@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.SerialTest;
 import org.junit.*;
@@ -29,6 +30,7 @@ import org.junit.runner.RunWith;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Map;
 
 /**
  * User: sancar
@@ -57,10 +59,16 @@ public class RestTest {
             communicator.put(name, String.valueOf(i), String.valueOf(i * 10));
         }
 
+        for (int i = 0; i < 100; i++) {
+            String actual = communicator.get(name, String.valueOf(i));
+            Assert.assertEquals(String.valueOf(i * 10), actual);
+        }
+
         communicator.deleteAll(name);
 
         for (int i = 0; i < 100; i++) {
-            Assert.assertEquals("q2", communicator.get(name, String.valueOf(i)));
+            String actual = communicator.get(name, String.valueOf(i));
+            Assert.assertEquals("", actual);
         }
 
         for (int i = 0; i < 100; i++) {
@@ -181,8 +189,7 @@ public class RestTest {
             urlConnection.setRequestProperty("Content-type", "text/xml; charset=" + "UTF-8");
 
             /** post the data */
-            OutputStream out = null;
-            out = urlConnection.getOutputStream();
+            OutputStream out = urlConnection.getOutputStream();
             Writer writer = new OutputStreamWriter(out, "UTF-8");
             writer.write(value);
             writer.close();

@@ -19,8 +19,8 @@ package com.hazelcast.map.operation;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapEntrySet;
-import com.hazelcast.map.record.Record;
 import com.hazelcast.map.RecordStore;
+import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -55,9 +55,15 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
             Record record = recordEntry.getValue();
             entry = new AbstractMap.SimpleEntry(mapService.toObject(record.getKey()), mapService.toObject(record.getValue()));
             Object result = entryProcessor.process(entry);
-            if (result != null)
-                response.add(new AbstractMap.SimpleImmutableEntry<Data,Data>(dataKey, mapService.toData(result)));
-            recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, entry.getValue()));
+            if (result != null) {
+                response.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(dataKey, mapService.toData(result)));
+            }
+
+            if (entry.getValue() == null) {
+                recordStore.remove(dataKey);
+            } else {
+                recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, entry.getValue()));
+            }
         }
     }
 

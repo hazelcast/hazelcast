@@ -17,11 +17,8 @@
   -->
 
 <para version="5.0" xmlns="http://docbook.org/ns/docbook"
-      xmlns:xi="http://www.w3.org/2001/XInclude"
-      xmlns:xlink="http://www.w3.org/1999/xlink"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-      xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
-      http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
+      xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd">
     Common Features of all Hazelcast Data Structures:
     <itemizedlist>
         <listitem>
@@ -51,6 +48,17 @@
             <para>There is no single cluster master or something that can cause single point of
                 failure. Every node in the cluster has equal rights and responsibilities. No-one is
                 superior. And no dependency on external 'server' or 'master' kind of concept.
+            </para>
+        </listitem>
+        <listitem>
+            <para>Hazelcast will synchronize the state of Distributed Data Structures, but not the content of it.
+                Example: if you have an IMap<String, Employee> and one node fires an employee by calling
+                employees.get(“John”).setFired(true);
+                then the state of Employee will not be synchronized. This is because employees.get("John") will create a
+                copy of the existing employee.
+                You need to put it back by calling employees.put("John", employee) in order for the state to be
+                reflected in Hazelcast.
+                As a rule of thumb you should treat everything stored in Hazelcast as immutable objects.
             </para>
         </listitem>
     </itemizedlist>
