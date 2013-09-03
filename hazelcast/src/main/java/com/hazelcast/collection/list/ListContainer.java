@@ -21,6 +21,7 @@ import com.hazelcast.collection.CollectionItem;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.transaction.TransactionException;
 
 import java.util.*;
 
@@ -196,11 +197,79 @@ public class ListContainer extends CollectionContainer {
             final CollectionItem item = iterator.next();
             final boolean contains = valueSet.contains(item.getValue());
             if ( (contains && !retain) || (!contains && retain)){
-                itemIdMap.put(item.getItemId(), (Data)item.getValue());
+                itemIdMap.put(item.getItemId(), (Data) item.getValue());
                 iterator.remove();
             }
         }
         return itemIdMap;
+    }
+
+    public CollectionItem reserveRemove(long reservedItemId, Data value) {
+        final Iterator<CollectionItem> iterator = getList().iterator();
+        while (iterator.hasNext()){
+            final CollectionItem item = iterator.next();
+            if (value.equals(item.getValue())){
+                iterator.remove();
+                txMap.put(item.getItemId(), item);
+                return item;
+            }
+        }
+        if (reservedItemId != -1){
+            return txMap.remove(reservedItemId);
+        }
+        return null;
+    }
+
+    public void reserveRemoveBackup(long itemId) {
+        final CollectionItem item = getMap().remove(itemId);
+        if (item == null) {
+            throw new TransactionException("Backup reserve failed: " + itemId);
+        }
+        txMap.put(itemId, item);
+    }
+
+    public void rollbackRemove(long itemId) {
+        final CollectionItem item = txMap.remove(itemId);
+        if (item == null) {
+            logger.warning("rollbackRemove No txn item for itemId: " + itemId);
+        }
+        getList().add(item);
+    }
+
+    public void rollbackRemoveBackup(long itemId) {
+        final CollectionItem item = txMap.remove(itemId);
+        if (item == null) {
+            logger.warning("rollbackRemoveBackup No txn item for itemId: " + itemId);
+        }
+    }
+
+    public void commitAdd(long itemId, Data value) {
+        final CollectionItem item = txMap.remove(itemId);
+        if (item == null) {
+            throw new TransactionException("No reserve :" + itemId);
+        }
+        item.setValue(value);
+        getList().add(item);
+    }
+
+    public void commitAddBackup(long itemId, Data value) {
+        CollectionItem item = txMap.remove(itemId);
+        if (item == null) {
+            item = new CollectionItem(this, itemId, value);
+        }
+        getMap().put(itemId, item);
+    }
+
+    public void commitRemove(long itemId) {
+        if (txMap.remove(itemId) == null) {
+            logger.warning("commitRemove operation-> No txn item for itemId: " + itemId);
+        }
+    }
+
+    public void commitRemoveBackup(long itemId) {
+        if (txMap.remove(itemId) == null) {
+            logger.warning("commitRemoveBackup operation-> No txn item for itemId: " + itemId);
+        }
     }
 
     private List<CollectionItem> getList(){

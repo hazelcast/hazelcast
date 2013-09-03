@@ -118,7 +118,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
             }
         }
         txMap.put(item.getItemId(), item);
-        return new QueueItem(null, item.getItemId(), item.getData());
+        return item;
     }
 
     public boolean txnPollBackupReserve(long itemId) {
@@ -146,8 +146,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
             try {
                 store.delete(item.getItemId());
             } catch (Exception e) {
-                //todo: ieuw.. we want to log it to a logger
-                e.printStackTrace();
+                logger.severe("Error during store delete: " + item.getItemId() + ", message: " + e.getMessage());
             }
         }
         return item.getData();

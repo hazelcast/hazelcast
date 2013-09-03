@@ -28,7 +28,7 @@ import java.util.Properties;
 /**
  * @ali 8/29/13
  */
-public abstract class CollectionService implements ManagedService, RemoteService, EventPublishingService<CollectionEvent, ItemListener> {
+public abstract class CollectionService implements ManagedService, RemoteService, EventPublishingService<CollectionEvent, ItemListener>, TransactionalService {
 
     protected static final StringPartitioningStrategy PARTITIONING_STRATEGY = new StringPartitioningStrategy();
 

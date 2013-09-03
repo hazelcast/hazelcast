@@ -1,11 +1,16 @@
 package com.hazelcast.collection;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.Clock;
+
+import java.io.IOException;
 
 /**
  * @ali 8/31/13
  */
-public class CollectionItem implements Comparable<CollectionItem> {
+public class CollectionItem implements Comparable<CollectionItem>, IdentifiedDataSerializable {
 
     private long itemId;
 
@@ -68,5 +73,23 @@ public class CollectionItem implements Comparable<CollectionItem> {
         int result = (int) (itemId ^ (itemId >>> 32));
         result = 31 * result + (value != null ? value.hashCode() : 0);
         return result;
+    }
+
+    public int getFactoryId() {
+        return CollectionDataSerializerHook.F_ID;
+    }
+
+    public int getId() {
+        return CollectionDataSerializerHook.COLLECTION_ITEM;
+    }
+
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeLong(itemId);
+        out.writeObject(value);
+    }
+
+    public void readData(ObjectDataInput in) throws IOException {
+        itemId = in.readLong();
+        value = in.readObject();
     }
 }

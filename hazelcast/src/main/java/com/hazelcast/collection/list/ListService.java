@@ -18,8 +18,10 @@ package com.hazelcast.collection.list;
 
 import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionService;
+import com.hazelcast.collection.list.txn.TransactionalListProxy;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.transaction.impl.TransactionSupport;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -62,4 +64,7 @@ public class ListService extends CollectionService {
         return new ListProxyImpl(String.valueOf(objectId), nodeEngine, this);
     }
 
+    public TransactionalListProxy createTransactionalObject(Object id, TransactionSupport transaction) {
+        return new TransactionalListProxy(nodeEngine, this, String.valueOf(id), transaction);
+    }
 }

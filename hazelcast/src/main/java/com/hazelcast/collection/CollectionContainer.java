@@ -16,13 +16,16 @@
 
 package com.hazelcast.collection;
 
+import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.transaction.TransactionException;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -32,10 +35,13 @@ import java.util.Set;
  */
 public abstract class CollectionContainer implements DataSerializable {
 
-    private String name;
-    private int partitionId;
-    private NodeEngine nodeEngine;
-    private CollectionService service;
+    protected String name;
+    protected int partitionId;
+    protected NodeEngine nodeEngine;
+    protected CollectionService service;
+    protected ILogger logger;
+
+    protected final Map<Long, CollectionItem> txMap = new HashMap<Long, CollectionItem>();
 
     private long idGenerator = 0;
 
@@ -47,6 +53,7 @@ public abstract class CollectionContainer implements DataSerializable {
         this.nodeEngine = nodeEngine;
         this.service = service;
         this.partitionId = nodeEngine.getPartitionService().getPartitionId(nodeEngine.getSerializationService().toData(name, CollectionService.PARTITIONING_STRATEGY));
+        logger = nodeEngine.getLogger(getClass());
     }
 
     protected abstract CollectionItem remove(Data value);
@@ -63,6 +70,53 @@ public abstract class CollectionContainer implements DataSerializable {
     protected abstract void addAllBackup(Map<Long, Data> valueMap);
 
     protected abstract Map<Long, Data> compareAndRemove(boolean retain, Set<Data> valueSet);
+
+    public long reserveAdd(){
+        final long itemId = nextId();
+        txMap.put(itemId, new CollectionItem(this, itemId, null));
+        return itemId;
+    }
+
+    public abstract CollectionItem reserveRemove(long reservedItemId, Data value);
+
+    public void reserveAddBackup(long itemId) {
+        CollectionItem item = new CollectionItem(this, itemId, null);
+        Object o = txMap.put(itemId, item);
+        if (o != null) {
+            logger.severe("txnOfferBackupReserve operation-> Item exists already at txMap for itemId: " + itemId);
+        }
+    }
+
+    public abstract void reserveRemoveBackup(long itemId);
+
+    public void ensureReserve(long itemId) {
+        if (txMap.get(itemId) == null) {
+            throw new TransactionException("No reserve for itemId: " + itemId);
+        }
+    }
+
+    public void rollbackAdd(long itemId){
+        if (txMap.remove(itemId) == null) {
+            logger.warning("rollbackAdd operation-> No txn item for itemId: " + itemId);
+        }
+    }
+
+    public void rollbackAddBackup(long itemId){
+        if (txMap.remove(itemId) == null) {
+            logger.warning("rollbackAddBackup operation-> No txn item for itemId: " + itemId);
+        }
+    }
+
+    public abstract void rollbackRemove(long itemId);
+    public abstract void rollbackRemoveBackup(long itemId);
+
+    public abstract void commitAdd(long itemId, Data value);
+    public abstract void commitAddBackup(long itemId, Data value);
+
+    public abstract void commitRemove(long itemId);
+    public abstract void commitRemoveBackup(long itemId);
+
+
 
     public long nextId() {
         return idGenerator++;

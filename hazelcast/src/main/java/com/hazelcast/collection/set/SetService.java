@@ -4,6 +4,8 @@ import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.transaction.TransactionalObject;
+import com.hazelcast.transaction.impl.TransactionSupport;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -44,5 +46,10 @@ public class SetService extends CollectionService {
 
     public DistributedObject createDistributedObject(Object objectId) {
         return new SetProxyImpl(String.valueOf(objectId), nodeEngine, this);
+    }
+
+    @Override
+    public <T extends TransactionalObject> T createTransactionalObject(Object id, TransactionSupport transaction) {
+        return null;
     }
 }

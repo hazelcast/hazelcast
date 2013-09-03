@@ -1,6 +1,7 @@
 package com.hazelcast.collection;
 
 import com.hazelcast.collection.list.*;
+import com.hazelcast.collection.txn.*;
 import com.hazelcast.nio.serialization.*;
 import com.hazelcast.util.ConstructorFunction;
 
@@ -32,6 +33,19 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
     public static final int COLLECTION_COMPARE_AND_REMOVE = increment++;
     public static final int COLLECTION_EVENT_FILTER = increment++;
     public static final int COLLECTION_EVENT = increment++;
+    public static final int COLLECTION_ITEM = increment++;
+
+    public static final int COLLECTION_RESERVE_ADD = increment++;
+    public static final int COLLECTION_RESERVE_REMOVE = increment++;
+    public static final int COLLECTION_TXN_ADD = increment++;
+    public static final int COLLECTION_TXN_ADD_BACKUP = increment++;
+    public static final int COLLECTION_TXN_REMOVE = increment++;
+    public static final int COLLECTION_TXN_REMOVE_BACKUP = increment++;
+
+    public static final int COLLECTION_PREPARE = increment++;
+    public static final int COLLECTION_PREPARE_BACKUP = increment++;
+    public static final int COLLECTION_ROLLBACK = increment++;
+    public static final int COLLECTION_ROLLBACK_BACKUP = increment++;
 
     public int getFactoryId() {
         return F_ID;
@@ -138,6 +152,66 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
         constructors[COLLECTION_EVENT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new CollectionEvent();
+            }
+        };
+        constructors[COLLECTION_ITEM] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CollectionItem();
+            }
+        };
+
+
+
+        constructors[COLLECTION_RESERVE_ADD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CollectionReserveAddOperation();
+            }
+        };
+        constructors[COLLECTION_RESERVE_REMOVE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CollectionReserveRemoveOperation();
+            }
+        };
+        constructors[COLLECTION_TXN_ADD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CollectionTxnAddOperation();
+            }
+        };
+        constructors[COLLECTION_TXN_ADD_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CollectionTxnAddBackupOperation();
+            }
+        };
+        constructors[COLLECTION_TXN_REMOVE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CollectionTxnRemoveOperation();
+            }
+        };
+        constructors[COLLECTION_TXN_REMOVE_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CollectionTxnRemoveBackupOperation();
+            }
+        };
+
+
+        constructors[COLLECTION_PREPARE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CollectionPrepareOperation();
+            }
+        };
+        constructors[COLLECTION_PREPARE_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CollectionPrepareBackupOperation();
+            }
+        };
+        constructors[COLLECTION_ROLLBACK] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CollectionRollbackOperation();
+            }
+        };
+        constructors[COLLECTION_ROLLBACK_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CollectionRollbackBackupOperation();
             }
         };
 

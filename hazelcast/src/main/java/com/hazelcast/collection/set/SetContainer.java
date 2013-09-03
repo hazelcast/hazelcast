@@ -56,4 +56,44 @@ public class SetContainer extends CollectionContainer {
     protected Map<Long, Data> compareAndRemove(boolean retain, Set<Data> valueSet) {
         return null;
     }
+
+    @Override
+    public void commitAdd(long itemId, Data value) {
+
+    }
+
+    @Override
+    public void commitAddBackup(long itemId, Data value) {
+
+    }
+
+    @Override
+    public CollectionItem reserveRemove(long reservedItemId, Data value) {
+        return null;
+    }
+
+    @Override
+    public void reserveRemoveBackup(long itemId) {
+
+    }
+
+    @Override
+    public void rollbackRemove(long itemId) {
+
+    }
+
+    @Override
+    public void rollbackRemoveBackup(long itemId) {
+
+    }
+
+    @Override
+    public void commitRemove(long itemId) {
+
+    }
+
+    @Override
+    public void commitRemoveBackup(long itemId) {
+
+    }
 }

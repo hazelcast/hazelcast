@@ -16,6 +16,7 @@
 
 package com.hazelcast.transaction.impl;
 
+import com.hazelcast.collection.list.ListService;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.core.*;
 import com.hazelcast.map.MapService;
@@ -78,8 +79,7 @@ final class TransactionContextImpl implements TransactionContext {
 
     @SuppressWarnings("unchecked")
     public <E> TransactionalList<E> getList(String name) {
-//        return (TransactionalList<E>) getTransactionalObject(CollectionService.SERVICE_NAME, new CollectionProxyId(ObjectListProxy.COLLECTION_LIST_NAME, name, CollectionProxyType.LIST));
-        return null;
+        return (TransactionalList<E>) getTransactionalObject(ListService.SERVICE_NAME, name);
     }
 
     @SuppressWarnings("unchecked")

@@ -144,10 +144,8 @@ public class ListTest extends HazelcastTestSupport {
         assertEquals(1, getList(instances, name).size());
         assertEquals("item", getList(instances, name).get(0));
 
-
-
-
     }
+
 
     @Test
     public void testListener() throws Exception {
@@ -184,25 +182,26 @@ public class ListTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testPutRemoveList(){
+    public void testAddRemoveList(){
         Config config = new Config();
         final String name = "defList";
 
-        final int insCount = 4;
+        final int insCount = 2;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
         final HazelcastInstance[] instances = factory.newInstances(config);
         TransactionContext context = instances[0].newTransactionContext();
+        assertTrue(instances[1].getList(name).add("value1"));
         try {
             context.beginTransaction();
 
-            TransactionalList mm = context.getList(name);
-            assertEquals(0, mm.size());
-            assertTrue(mm.add("value1"));
-            assertTrue(mm.add("value1"));
-            assertEquals(2, mm.size());
-            assertFalse(mm.remove("value2"));
-            assertTrue(mm.remove("value1"));
-
+            TransactionalList l = context.getList(name);
+            assertEquals(1, l.size());
+            assertTrue(l.add("value1"));
+            assertEquals(2, l.size());
+            assertFalse(l.remove("value2"));
+            assertEquals(2, l.size());
+            assertTrue(l.remove("value1"));
+            assertEquals(1, l.size());
             context.commitTransaction();
         } catch (Exception e){
             fail(e.getMessage());
@@ -210,7 +209,6 @@ public class ListTest extends HazelcastTestSupport {
         }
 
         assertEquals(1, instances[1].getList(name).size());
-        assertTrue(instances[2].getList(name).add("value1"));
     }
 
     private IList getList(HazelcastInstance[] instances, String name){
