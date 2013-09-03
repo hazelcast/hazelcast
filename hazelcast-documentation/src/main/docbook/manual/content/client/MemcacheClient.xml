@@ -50,7 +50,18 @@
 <![CDATA[MemcachedClient client = new MemcachedClient(AddrUtil.getAddresses("10.20.17.1:5701 10.20.17.2:5701"));
 client.set("key1", 3600, "value1");
 System.out.println(client.get("key1"));
-]]></programlisting>An entry written with a memcache client can be read by another memcache client
+]]></programlisting>If you want your data to be stored in different maps(e.g to utilize per map configuration ), you can do that with a map name prefix as following:
+        <programlisting language="java"><![CDATA[
+MemcachedClient client = new MemcachedClient(AddrUtil.getAddresses("10.20.17.1:5701 10.20.17.2:5701"));
+client.set("map1:key1", 3600, "value1"); // store to *hz_memcache_map1
+client.set("map2:key1", 3600, "value1"); // store to hz_memcache_map2
+System.out.println(client.get("key1")); //get from hz_memcache_map1
+System.out.println(client.get("key2")); //get from hz_memcache_map2
+]]></programlisting>
+        hz_memcache prefix is to separate memcache maps from hazelcast maps.
+    </para>
+    <para>
+        An entry written with a memcache client can be read by another memcache client
         written in another language.
     </para>
 </sect1>
