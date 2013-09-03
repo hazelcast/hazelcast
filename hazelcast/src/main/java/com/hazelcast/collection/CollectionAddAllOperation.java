@@ -1,31 +1,30 @@
 package com.hazelcast.collection;
 
 import com.hazelcast.collection.operation.CollectionBackupAwareOperation;
+import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @ali 9/1/13
  */
 public class CollectionAddAllOperation extends CollectionBackupAwareOperation {
 
-    protected Set<Data> valueSet;
+    protected List<Data> valueList;
 
     protected transient Map<Long, Data> valueMap;
 
     public CollectionAddAllOperation() {
     }
 
-    public CollectionAddAllOperation(String name, Set<Data> valueSet) {
+    public CollectionAddAllOperation(String name, List<Data> valueList) {
         super(name);
-        this.valueSet = valueSet;
+        this.valueList = valueList;
     }
 
     public boolean shouldBackup() {
@@ -45,18 +44,20 @@ public class CollectionAddAllOperation extends CollectionBackupAwareOperation {
     }
 
     public void run() throws Exception {
-        valueMap = getOrCreateContainer().addAll(valueSet);
+        valueMap = getOrCreateContainer().addAll(valueList);
         response = !valueMap.isEmpty();
     }
 
     public void afterRun() throws Exception {
-
+        for (Data value : valueMap.values()) {
+            publishEvent(ItemEventType.ADDED, value);
+        }
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeInt(valueSet.size());
-        for (Data value : valueSet) {
+        out.writeInt(valueList.size());
+        for (Data value : valueList) {
             value.writeData(out);
         }
     }
@@ -64,11 +65,11 @@ public class CollectionAddAllOperation extends CollectionBackupAwareOperation {
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         final int size = in.readInt();
-        valueSet = new HashSet<Data>(size);
+        valueList = new ArrayList<Data>(size);
         for (int i=0; i<size; i++){
             final Data value = new Data();
             value.readData(in);
-            valueSet.add(value);
+            valueList.add(value);
         }
     }
 }

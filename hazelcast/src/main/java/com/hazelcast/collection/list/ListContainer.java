@@ -78,13 +78,13 @@ public class ListContainer extends CollectionContainer {
         return getList().size();
     }
 
-    protected Set<Long> clear() {
-        Set<Long> itemIdSet = new HashSet<Long>(getList().size());
+    protected Map<Long, Data> clear() {
+        Map<Long, Data> itemIdMap = new HashMap<Long, Data>(getList().size());
         for (CollectionItem item : getList()) {
-            itemIdSet.add(item.getItemId());
+            itemIdMap.put(item.getItemId(), (Data) item.getValue());
         }
         getList().clear();
-        return itemIdSet;
+        return itemIdMap;
     }
 
     protected void clearBackup(Set<Long> itemIdSet) {
@@ -148,15 +148,15 @@ public class ListContainer extends CollectionContainer {
         return true;
     }
 
-    protected Map<Long, Data> addAll(Set<Data> valueSet) {
-        return addAll(0, valueSet);
+    protected Map<Long, Data> addAll(List<Data> valueList) {
+        return addAll(0, valueList);
     }
 
-    protected Map<Long, Data> addAll(int index, Set<Data> valueSet) {
-        final int size = valueSet.size();
+    protected Map<Long, Data> addAll(int index, List<Data> valueList) {
+        final int size = valueList.size();
         final Map<Long, Data> map = new HashMap<Long, Data>(size);
         List<CollectionItem> list = new ArrayList<CollectionItem>(size);
-        for (Data value : valueSet) {
+        for (Data value : valueList) {
             final long itemId = nextId();
             list.add(new CollectionItem(this, itemId, value));
             map.put(itemId, value);
@@ -189,18 +189,18 @@ public class ListContainer extends CollectionContainer {
         return sub;
     }
 
-    protected Set<Long> compareAndRemove(boolean retain, Set<Data> valueSet) {
-        Set<Long> itemIdSet = new HashSet<Long>();
+    protected Map<Long, Data> compareAndRemove(boolean retain, Set<Data> valueSet) {
+        Map<Long, Data> itemIdMap = new HashMap<Long, Data>();
         final Iterator<CollectionItem> iterator = getList().iterator();
         while (iterator.hasNext()){
             final CollectionItem item = iterator.next();
             final boolean contains = valueSet.contains(item.getValue());
             if ( (contains && !retain) || (!contains && retain)){
-                itemIdSet.add(item.getItemId());
+                itemIdMap.put(item.getItemId(), (Data)item.getValue());
                 iterator.remove();
             }
         }
-        return itemIdSet;
+        return itemIdMap;
     }
 
     private List<CollectionItem> getList(){

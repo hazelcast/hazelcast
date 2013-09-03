@@ -145,6 +145,8 @@ public class ListTest extends HazelcastTestSupport {
         assertEquals("item", getList(instances, name).get(0));
 
 
+
+
     }
 
     @Test

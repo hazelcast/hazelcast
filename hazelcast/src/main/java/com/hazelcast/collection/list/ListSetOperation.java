@@ -3,6 +3,7 @@ package com.hazelcast.collection.list;
 import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionItem;
 import com.hazelcast.collection.operation.CollectionBackupAwareOperation;
+import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -57,7 +58,8 @@ public class ListSetOperation extends CollectionBackupAwareOperation {
     }
 
     public void afterRun() throws Exception {
-
+        publishEvent(ItemEventType.REMOVED, (Data)response);
+        publishEvent(ItemEventType.ADDED, value);
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

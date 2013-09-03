@@ -1,6 +1,7 @@
 package com.hazelcast.collection;
 
 import com.hazelcast.collection.operation.CollectionBackupAwareOperation;
+import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -39,7 +40,9 @@ public class CollectionRemoveOperation extends CollectionBackupAwareOperation {
     }
 
     public void afterRun() throws Exception {
-
+        if (itemId != -1){
+            publishEvent(ItemEventType.REMOVED, value);
+        }
     }
 
     public boolean shouldBackup() {

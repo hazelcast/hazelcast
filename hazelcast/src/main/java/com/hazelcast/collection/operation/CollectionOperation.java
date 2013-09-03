@@ -72,6 +72,12 @@ public abstract class CollectionOperation extends Operation implements Partition
         return container;
     }
 
+    protected boolean hasListener() {
+        EventService eventService = getNodeEngine().getEventService();
+        Collection<EventRegistration> registrations = eventService.getRegistrations(getServiceName(), name);
+        return !registrations.isEmpty();
+    }
+
     protected void publishEvent(ItemEventType eventType, Data data) {
         EventService eventService = getNodeEngine().getEventService();
         Collection<EventRegistration> registrations = eventService.getRegistrations(getServiceName(), name);

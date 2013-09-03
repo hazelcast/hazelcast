@@ -7,7 +7,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
-import java.util.Set;
+import java.util.List;
 
 /**
  * @ali 9/1/13
@@ -19,8 +19,8 @@ public class ListAddAllOperation extends CollectionAddAllOperation {
     public ListAddAllOperation() {
     }
 
-    public ListAddAllOperation(String name, int index, Set<Data> valueSet) {
-        super(name, valueSet);
+    public ListAddAllOperation(String name, int index, List<Data> valueList) {
+        super(name, valueList);
         this.index = index;
     }
 
@@ -29,7 +29,7 @@ public class ListAddAllOperation extends CollectionAddAllOperation {
     }
 
     public void run() throws Exception {
-        valueMap = getOrCreateListContainer().addAll(index, valueSet);
+        valueMap = getOrCreateListContainer().addAll(index, valueList);
         response = !valueMap.isEmpty();
     }
 

@@ -1,6 +1,7 @@
 package com.hazelcast.collection;
 
 import com.hazelcast.collection.operation.CollectionBackupAwareOperation;
+import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -8,6 +9,7 @@ import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -19,7 +21,7 @@ public class CollectionCompareAndRemoveOperation extends CollectionBackupAwareOp
     
     private Set<Data> valueSet;
 
-    private transient Set<Long> itemIdSet;
+    private transient Map<Long, Data> itemIdMap;
 
     public CollectionCompareAndRemoveOperation() {
     }
@@ -31,11 +33,11 @@ public class CollectionCompareAndRemoveOperation extends CollectionBackupAwareOp
     }
 
     public boolean shouldBackup() {
-        return !itemIdSet.isEmpty();
+        return !itemIdMap.isEmpty();
     }
 
     public Operation getBackupOperation() {
-        return new CollectionClearBackupOperation(name, itemIdSet);
+        return new CollectionClearBackupOperation(name, itemIdMap.keySet());
     }
 
     public int getId() {
@@ -47,12 +49,14 @@ public class CollectionCompareAndRemoveOperation extends CollectionBackupAwareOp
     }
 
     public void run() throws Exception {
-        itemIdSet = getOrCreateContainer().compareAndRemove(retain, valueSet);
-        response = !itemIdSet.isEmpty();
+        itemIdMap = getOrCreateContainer().compareAndRemove(retain, valueSet);
+        response = !itemIdMap.isEmpty();
     }
 
     public void afterRun() throws Exception {
-
+        for (Data value : itemIdMap.values()) {
+            publishEvent(ItemEventType.REMOVED, value);
+        }
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

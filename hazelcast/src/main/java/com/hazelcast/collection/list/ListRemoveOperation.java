@@ -4,8 +4,10 @@ import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionItem;
 import com.hazelcast.collection.CollectionRemoveBackupOperation;
 import com.hazelcast.collection.operation.CollectionBackupAwareOperation;
+import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
@@ -40,7 +42,7 @@ public class ListRemoveOperation extends CollectionBackupAwareOperation {
     }
 
     public void beforeRun() throws Exception {
-
+        publishEvent(ItemEventType.ADDED, (Data)response);
     }
 
     public void run() throws Exception {

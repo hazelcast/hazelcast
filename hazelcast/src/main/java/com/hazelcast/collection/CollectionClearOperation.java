@@ -1,16 +1,18 @@
 package com.hazelcast.collection;
 
 import com.hazelcast.collection.operation.CollectionBackupAwareOperation;
+import com.hazelcast.core.ItemEventType;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
-import java.util.Set;
+import java.util.Map;
 
 /**
  * @ali 8/31/13
  */
 public class CollectionClearOperation extends CollectionBackupAwareOperation {
 
-    private transient Set<Long> itemIdSet;
+    private transient Map<Long, Data> itemIdMap;
 
 
     public CollectionClearOperation() {
@@ -21,11 +23,11 @@ public class CollectionClearOperation extends CollectionBackupAwareOperation {
     }
 
     public boolean shouldBackup() {
-        return itemIdSet != null && !itemIdSet.isEmpty();
+        return itemIdMap != null && !itemIdMap.isEmpty();
     }
 
     public Operation getBackupOperation() {
-        return new CollectionClearBackupOperation(name, itemIdSet);
+        return new CollectionClearBackupOperation(name, itemIdMap.keySet());
     }
 
     public int getId() {
@@ -37,10 +39,12 @@ public class CollectionClearOperation extends CollectionBackupAwareOperation {
     }
 
     public void run() throws Exception {
-        itemIdSet = getOrCreateContainer().clear();
+        itemIdMap = getOrCreateContainer().clear();
     }
 
     public void afterRun() throws Exception {
-
+        for (Data value : itemIdMap.values()) {
+            publishEvent(ItemEventType.REMOVED, value);
+        }
     }
 }

@@ -16,6 +16,9 @@
 
 package com.hazelcast.collection;
 
+import com.hazelcast.core.ItemEvent;
+import com.hazelcast.core.ItemEventType;
+import com.hazelcast.core.ItemListener;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.*;
 
@@ -25,7 +28,7 @@ import java.util.Properties;
 /**
  * @ali 8/29/13
  */
-public abstract class CollectionService implements ManagedService, RemoteService {
+public abstract class CollectionService implements ManagedService, RemoteService, EventPublishingService<CollectionEvent, ItemListener> {
 
     protected static final StringPartitioningStrategy PARTITIONING_STRATEGY = new StringPartitioningStrategy();
 
@@ -55,4 +58,14 @@ public abstract class CollectionService implements ManagedService, RemoteService
     public abstract CollectionContainer getOrCreateContainer(String name, boolean backup);
     public abstract Map<String, ? extends CollectionContainer> getContainerMap();
     public abstract String getServiceName();
+
+    public void dispatchEvent(CollectionEvent event, ItemListener listener) {
+        ItemEvent itemEvent = new ItemEvent(event.name, event.eventType, nodeEngine.toObject(event.data),
+                nodeEngine.getClusterService().getMember(event.caller));
+        if (event.eventType.equals(ItemEventType.ADDED)) {
+            listener.itemAdded(itemEvent);
+        } else {
+            listener.itemRemoved(itemEvent);
+        }
+    }
 }

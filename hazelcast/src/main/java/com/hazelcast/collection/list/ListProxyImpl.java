@@ -123,13 +123,13 @@ public class ListProxyImpl<E> extends AbstractDistributedObject<ListService> imp
 
     public boolean addAll(int index, Collection<? extends E> c) {
         throwExceptionIfNull(c);
-        Set<Data> valueSet = new HashSet<Data>(c.size());
+        List<Data> valueList = new ArrayList<Data>(c.size());
         final NodeEngine nodeEngine = getNodeEngine();
         for (E e : c) {
             throwExceptionIfNull(e);
-            valueSet.add(nodeEngine.toData(e));
+            valueList.add(nodeEngine.toData(e));
         }
-        final ListAddAllOperation operation = new ListAddAllOperation(name, index, valueSet);
+        final ListAddAllOperation operation = new ListAddAllOperation(name, index, valueList);
         final Boolean result = invoke(operation);
         return result;
     }
@@ -214,7 +214,7 @@ public class ListProxyImpl<E> extends AbstractDistributedObject<ListService> imp
 
     public String addItemListener(ItemListener<E> listener, boolean includeValue) {
         final EventService eventService = getNodeEngine().getEventService();
-        final EventRegistration registration = eventService.registerListener(ListService.SERVICE_NAME, name, listener);
+        final EventRegistration registration = eventService.registerListener(ListService.SERVICE_NAME, name, new CollectionEventFilter(includeValue), listener);
         return registration.getId();
     }
 
