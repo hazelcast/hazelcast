@@ -17,8 +17,12 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.client.HazelcastClientProxy;
+import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ProxyFactoryConfig;
+import com.hazelcast.client.util.RoundRobinLB;
+import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.core.*;
@@ -36,10 +40,12 @@ import org.springframework.test.context.ContextConfiguration;
 import javax.annotation.Resource;
 import java.nio.ByteOrder;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(CustomSpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"node-client-applicationContext-hazelcast.xml"})
@@ -152,8 +158,30 @@ public class TestClientApplicationContext {
 
         final SerializerConfig serializerConfig = serializerConfigs.iterator().next();
         assertNotNull(serializerConfig);
-        assertEquals("com.hazelcast.nio.serialization.CustomSerializationTest$FooXmlSerializer", serializerConfig.getClassName() );
+        assertEquals("com.hazelcast.nio.serialization.CustomSerializationTest$FooXmlSerializer", serializerConfig.getClassName());
         assertEquals("com.hazelcast.nio.serialization.CustomSerializationTest$Foo", serializerConfig.getTypeClassName() );
+
+        final List<ProxyFactoryConfig> proxyFactoryConfigs = config3.getProxyFactoryConfigs();
+        assertNotNull(proxyFactoryConfigs);
+        final ProxyFactoryConfig proxyFactoryConfig = proxyFactoryConfigs.get(0);
+        assertNotNull(proxyFactoryConfig);
+        assertEquals("com.hazelcast.spring.DummyProxyFactory", proxyFactoryConfig.getClassName());
+        assertEquals("MyService", proxyFactoryConfig.getService());
+
+        final LoadBalancer loadBalancer = config3.getLoadBalancer();
+        assertNotNull(loadBalancer);
+
+        assertTrue(loadBalancer instanceof RoundRobinLB);
+
+        final NearCacheConfig nearCacheConfig = config3.getNearCacheConfig("default");
+
+        assertNotNull(nearCacheConfig);
+
+        assertEquals(1,nearCacheConfig.getTimeToLiveSeconds());
+        assertEquals(70,nearCacheConfig.getMaxIdleSeconds());
+        assertEquals("LRU",nearCacheConfig.getEvictionPolicy());
+        assertEquals(4000,nearCacheConfig.getMaxSize());
+        assertEquals(true,nearCacheConfig.isInvalidateOnChange());
 
 
     }

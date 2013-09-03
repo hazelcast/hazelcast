@@ -143,7 +143,7 @@ public final class ProxyManager {
 
         for (ProxyFactoryConfig proxyFactoryConfig:config.getProxyFactoryConfigs()){
             try {
-                ClientProxyFactory clientProxyFactory = ClassLoaderUtil.newInstance(config.getClassLoader(), proxyFactoryConfig.getClasName());
+                ClientProxyFactory clientProxyFactory = ClassLoaderUtil.newInstance(config.getClassLoader(), proxyFactoryConfig.getClassName());
                 register(proxyFactoryConfig.getService(),clientProxyFactory);
             } catch (Exception e) {
                 logger.severe(e);
