@@ -16,9 +16,8 @@
 
 package com.hazelcast.util.scheduler;
 
-import com.hazelcast.map.TimeKey;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -62,13 +61,16 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
             return schedulePostponeEntry(delayMillis, key, value);
         } else if (scheduleType.equals(ScheduleType.SCHEDULE_IF_NEW)) {
             return scheduleIfNew(delayMillis, key, value);
-        } else {
+        } else if (scheduleType.equals(ScheduleType.FOR_EACH)) {
             return scheduleEntry(delayMillis, key, value);
+        } else {
+            ExceptionUtil.rethrow(new RuntimeException("Undefined schedule type."));
         }
+        return false;
     }
 
     public Set<K> flush(Set<K> keys) {
-        if(scheduleType.equals(ScheduleType.FOR_EACH)) {
+        if (scheduleType.equals(ScheduleType.FOR_EACH)) {
             return flushComparingTimeKeys(keys);
         }
         Set<ScheduledEntry<K, V>> res = new HashSet<ScheduledEntry<K, V>>(keys.size());
@@ -90,7 +92,7 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
     private Set flushComparingTimeKeys(Set keys) {
         Set<ScheduledEntry<K, V>> res = new HashSet<ScheduledEntry<K, V>>(keys.size());
         Set<TimeKey> candidateKeys = new HashSet<TimeKey>();
-        Set<Data> processedKeys = new HashSet<Data>();
+        Set processedKeys = new HashSet();
         for (Object key : keys) {
             for (Object skey : secondsOfKeys.keySet()) {
                 TimeKey timeKey = (TimeKey) skey;
@@ -105,7 +107,7 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
                 final ConcurrentMap<Object, ScheduledEntry<K, V>> entries = scheduledEntries.get(second);
                 if (entries != null) {
                     res.add(entries.remove(timeKey));
-                    processedKeys.add((Data) timeKey.getKey());
+                    processedKeys.add(timeKey.getKey());
                 }
             }
 
@@ -114,9 +116,8 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         return processedKeys;
     }
 
-
     public ScheduledEntry<K, V> cancel(K key) {
-        if(scheduleType.equals(ScheduleType.FOR_EACH)) {
+        if (scheduleType.equals(ScheduleType.FOR_EACH)) {
             return cancelComparingTimeKey(key);
         }
         final Integer second = secondsOfKeys.remove(key);
@@ -133,7 +134,7 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         Set<TimeKey> candidateKeys = new HashSet<TimeKey>();
         for (Object tkey : secondsOfKeys.keySet()) {
             TimeKey timeKey = (TimeKey) tkey;
-            if(timeKey.getKey().equals(key))  {
+            if (timeKey.getKey().equals(key)) {
                 candidateKeys.add(timeKey);
             }
         }
@@ -178,8 +179,8 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
     private boolean scheduleIfNew(long delayMillis, K key, V value) {
         final int delaySeconds = ceilToSecond(delayMillis);
         final Integer newSecond = findRelativeSecond(delayMillis);
-        secondsOfKeys.put(key, newSecond);
-//        if (secondsOfKeys.putIfAbsent(key, newSecond) != null) return false;
+        if (secondsOfKeys.putIfAbsent(key, newSecond) != null)
+            return false;
         doSchedule(key, new ScheduledEntry<K, V>(key, value, delayMillis, delaySeconds), newSecond);
         return true;
     }
