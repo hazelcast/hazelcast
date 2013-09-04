@@ -1,4 +1,4 @@
-package com.hazelcast.map;
+package com.hazelcast.util.scheduler;
 
 /**
  * @author enesakar 9/4/13
