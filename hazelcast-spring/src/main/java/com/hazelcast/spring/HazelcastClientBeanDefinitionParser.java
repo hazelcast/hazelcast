@@ -18,20 +18,31 @@ package com.hazelcast.spring;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ProxyFactoryConfig;
+import com.hazelcast.client.config.SocketOptions;
+import com.hazelcast.client.util.RandomLB;
+import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.config.GroupConfig;
+import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.spring.context.SpringManagedContext;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.ManagedList;
+import org.springframework.beans.factory.support.ManagedMap;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDefinitionParser {
 
     protected AbstractBeanDefinition parseInternal(Element element, ParserContext parserContext) {
         final SpringXmlBuilder springXmlBuilder = new SpringXmlBuilder(parserContext);
-        springXmlBuilder.handle(element);
+        springXmlBuilder.handleClient(element);
         return springXmlBuilder.getBeanDefinition();
     }
 
@@ -41,28 +52,28 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
 
         private BeanDefinitionBuilder builder;
 
-        private ManagedList members;
 
-        private BeanDefinitionBuilder configBuilder;
-
-        private BeanDefinitionBuilder groupConfigBuilder;
+        private ManagedMap nearCacheConfigMap;//= new HashMap<String, NearCacheConfig>();
 
         public SpringXmlBuilder(ParserContext parserContext) {
             this.parserContext = parserContext;
             this.builder = BeanDefinitionBuilder.rootBeanDefinition(HazelcastClient.class);
             this.builder.setFactoryMethod("newHazelcastClient");
             this.builder.setDestroyMethodName("shutdown");
-            this.members = new ManagedList();
+            this.nearCacheConfigMap =  new ManagedMap();
+
             this.configBuilder = BeanDefinitionBuilder.rootBeanDefinition(ClientConfig.class);
-            this.groupConfigBuilder = BeanDefinitionBuilder.rootBeanDefinition(GroupConfig.class);
-            configBuilder.addPropertyValue("groupConfig", groupConfigBuilder.getBeanDefinition());
+            configBuilder.addPropertyValue("nearCacheConfigMap", nearCacheConfigMap);
+
+            BeanDefinitionBuilder managedContextBeanBuilder = createBeanBuilder(SpringManagedContext.class);
+            this.configBuilder.addPropertyValue("managedContext", managedContextBeanBuilder.getBeanDefinition());
         }
 
         public AbstractBeanDefinition getBeanDefinition() {
             return builder.getBeanDefinition();
         }
 
-        public void handle(Element element) {
+        public void handleClient(Element element) {
             handleCommonBeanAttributes(element, builder, parserContext);
             final NamedNodeMap attrs = element.getAttributes();
             if (attrs != null) {
@@ -70,20 +81,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                     final org.w3c.dom.Node att = attrs.item(a);
                     final String name = att.getNodeName();
                     final String value = att.getNodeValue();
-                    if ("group-name".equals(name)) {
-                        groupConfigBuilder.addPropertyValue("name", value);
-                    } else if ("group-password".equals(name)) {
-                        groupConfigBuilder.addPropertyValue("password", value);
-                    } else if ("redo-operation".equals(name)) {
-                        configBuilder.addPropertyValue("redoOperation", value);
-                    } else if ("smart".equals(name)) {
-                        configBuilder.addPropertyValue("smart", value);
-                    } else if ("connection-attempt-limit".equals(name)) {
-                        configBuilder.addPropertyValue("connectionAttemptLimit", value);
-                    } else if ("connection-timeout".equals(name)) {
-                        configBuilder.addPropertyValue("connectionTimeout", value);
-                    } else if ("connection-attempt-period".equals(name)) {
-                        configBuilder.addPropertyValue("connectionAttemptPeriod", value);
+                    if ("executor-pool-size".equals(name)) {
+                        configBuilder.addPropertyValue("executorPoolSize", value);
                     } else if ("credentials-ref".equals(name)) {
                         configBuilder.addPropertyReference("credentials", value);
                     }
@@ -91,12 +90,58 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             }
             for (org.w3c.dom.Node node : new IterableNodeList(element, Node.ELEMENT_NODE)) {
                 final String nodeName = cleanNodeName(node.getNodeName());
+                if ("group".equals(nodeName)) {
+                    createAndFillBeanBuilder(node, GroupConfig.class, "groupConfig", configBuilder);
+                } else if ("network".equals(nodeName)) {
+                    handleNetwork(node);
+                } else if ("listeners".equals(nodeName)) {
+                    final List listeners = parseListeners(node, ListenerConfig.class);
+                    configBuilder.addPropertyValue("listenerConfigs", listeners);
+                } else if ("serialization".equals(nodeName)) {
+                    handleSerialization(node);
+                } else if ("proxy-factories".equals(nodeName)) {
+                    final List list = parseProxyFactories(node, ProxyFactoryConfig.class);
+                    configBuilder.addPropertyValue("proxyFactoryConfigs", list);
+                } else if ("socket-interceptor".equals(nodeName)) {
+                    handleSocketInterceptorConfig(node, configBuilder);
+                } else if ("load-balancer".equals(nodeName)) {
+                    handleLoadBalacer(node);
+                } else if ("near-cache".equals(nodeName)) {
+                    handleNearCache(node);
+                }
+            }
+            builder.addConstructorArgValue(configBuilder.getBeanDefinition());
+        }
+
+         private void handleNetwork(Node node) {
+            List<String> members = new ArrayList<String>(10);
+            fillAttributeValues(node, configBuilder);
+            for (org.w3c.dom.Node child : new IterableNodeList(node, Node.ELEMENT_NODE)) {
+                final String nodeName = cleanNodeName(child);
                 if ("member".equals(nodeName)) {
-                    members.add(getTextContent(node));
+                    members.add(getTextContent(child));
+                } else if("socket-options".equals(nodeName)) {
+                    createAndFillBeanBuilder(child, SocketOptions.class,"socketOptions", configBuilder);
                 }
             }
             configBuilder.addPropertyValue("addresses", members);
-            builder.addConstructorArgValue(configBuilder.getBeanDefinition());
         }
+
+        private void handleLoadBalacer(Node node) {
+            final String type = getAttribute(node, "type");
+            if ("random".equals(type)) {
+                configBuilder.addPropertyValue("loadBalancer", new RandomLB());
+            } else if ("round-robin".equals(type)) {
+                configBuilder.addPropertyValue("loadBalancer", new RoundRobinLB());
+            }
+        }
+
+        private void handleNearCache(Node node) {
+            createAndFillListedBean(node, NearCacheConfig.class, "name", nearCacheConfigMap,"name");
+        }
+
     }
+
+
 }
+
