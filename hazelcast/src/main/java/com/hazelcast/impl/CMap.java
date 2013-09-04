@@ -987,13 +987,13 @@ public class CMap {
 
     private void executeStoreUpdate(final Set<StoreRecord> storeRecords) {
         if (storeRecords.size() > 0) {
-            node.executorManager.executeLocally(new Runnable() {
+            node.executorManager.getMapStoreExecutorService().executeOrderedRunnable(name.hashCode(), new Runnable() {
                 public void run() {
                     try {
                         runStoreUpdate(storeRecords);
                     } catch (Throwable e) {
-                        logger.log(Level.WARNING, "Error while storing " + storeRecords.size()
-                                + " entries to the map-store! Store will be retried soon...", e);
+                        logger.log(Level.WARNING, "Map[" + getName() + "] -> Error while storing " + storeRecords.size()
+                                + " entries to the map-store! Store operation will be retried soon...", e);
                         for (StoreRecord storeRecord : storeRecords) {
                             Record record = mapRecords.get(storeRecord.key);
                             if (record != null) {
