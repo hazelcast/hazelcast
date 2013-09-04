@@ -88,4 +88,14 @@ public class SystemLogRecord implements Comparable, DataSerializable {
         message = in.readUTF();
         type = in.readUTF();
     }
+
+    @Override
+    public String toString() {
+        return "SystemLogRecord{" +
+                "date=" + date +
+                ", node='" + node + '\'' +
+                ", message='" + message + '\'' +
+                ", type='" + type + '\'' +
+                '}';
+    }
 }
