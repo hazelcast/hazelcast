@@ -33,6 +33,8 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static com.hazelcast.nio.IOUtil.toData;
 import static org.junit.Assert.*;
@@ -1737,5 +1739,47 @@ public class MapStoreTest extends TestUtil {
         assertTrue(mapStoreLatch.tryAcquire(k, 3, TimeUnit.MINUTES));
         assertEquals(0, deletes.get());
         assertEquals(k, stores.get());
+    }
+
+    @Test
+    public void testSequentialWriteBehindMapStore() throws InterruptedException {
+        final AtomicBoolean error = new AtomicBoolean(false);
+        Config config = new Config();
+        config.setProperty(GroupProperties.PROP_CLEANUP_DELAY_SECONDS, "1");
+        config.getMapConfig("default").setBackupCount(0)
+                .setMapStoreConfig(new MapStoreConfig().setEnabled(true).setWriteDelaySeconds(1)
+                        .setImplementation(new MapStoreTest.MapStoreAdaptor<Object, Object>() {
+                            final Lock lock = new ReentrantLock();
+                            public void store(Object key, Object value) {
+                                if (error.get()) {
+                                    return;
+                                }
+                                if (!lock.tryLock()) {
+                                    error.set(true);
+                                    return;
+                                }
+                                try {
+                                    Thread.sleep(500 + (int) (Math.random() * 3000));
+                                } catch (InterruptedException ignored) {
+                                } finally {
+                                    lock.unlock();
+                                }
+                            }
+
+                            public void storeAll(Map<Object, Object> map) {
+                                for (Map.Entry<Object, Object> entry : map.entrySet()) {
+                                    store(entry.getKey(), entry.getValue());
+                                }
+                            }
+                        }));
+        HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+        IMap<Object, Object> map = hz.getMap("test");
+
+        for (int i = 0; i < 100; i++) {
+            map.put(1, System.currentTimeMillis());
+            Thread.sleep(50 + (int)(Math.random() * 100));
+        }
+        Thread.sleep(5000);
+        assertFalse("Detected concurrent map-store access!", error.get());
     }
 }
