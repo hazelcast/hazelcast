@@ -17,7 +17,6 @@
 package com.hazelcast.util.scheduler;
 
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -64,9 +63,8 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
         } else if (scheduleType.equals(ScheduleType.FOR_EACH)) {
             return scheduleEntry(delayMillis, key, value);
         } else {
-            ExceptionUtil.rethrow(new RuntimeException("Undefined schedule type."));
+            throw new RuntimeException("Undefined schedule type.");
         }
-        return false;
     }
 
     public Set<K> flush(Set<K> keys) {
