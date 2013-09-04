@@ -48,7 +48,6 @@ public class ClientConfig {
      * List of listeners that Hazelcast will automatically add as a part of initialization process.
      * Currently only supports {@link com.hazelcast.core.LifecycleListener}.
      */
-    //private final Collection<EventListener> listeners = new HashSet<EventListener>();
     private List<ListenerConfig> listenerConfigs = new LinkedList<ListenerConfig>();
 
     /**
@@ -107,7 +106,6 @@ public class ClientConfig {
     /**
      * Will be called with the Socket, each time client creates a connection to any Member.
      */
-    //private SocketInterceptor socketInterceptor = null;
     private SocketInterceptorConfig socketInterceptorConfig = null;
 
     private ManagedContext managedContext = null;
@@ -253,22 +251,6 @@ public class ClientConfig {
         this.listenerConfigs = listenerConfigs;
         return this ;
     }
-
-//    public Collection<EventListener> getListeners() {
-//        return listeners;
-//    }
-
-//    /**
-//     * Adds a listener object to configuration to be registered when {@code HazelcastClient} starts.
-//     *
-//     * @param listener one of {@link com.hazelcast.core.LifecycleListener}, {@link com.hazelcast.core.DistributedObjectListener}
-//     *                 or {@link com.hazelcast.core.MembershipListener}
-//     * @return
-//     */
-//    public ClientConfig addListener(EventListener listener) {
-//        listeners.add(listener);
-//        return this;
-//    }
 
     public LoadBalancer getLoadBalancer() {
         return loadBalancer;

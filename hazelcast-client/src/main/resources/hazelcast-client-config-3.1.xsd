@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="http://www.hazelcast.com/schema/client-config"
+           targetNamespace="http://www.hazelcast.com/schema/client-config"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified">
+
+    <xs:include schemaLocation="http://www.hazelcast.com/schema/config/hazelcast-common-config-3.1.xsd"/>
+
+    <xs:element name="hazelcast-client">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="group" type="cluster-group" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="network" type="network" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="executor-pool-size" type="executor-pool-size" minOccurs="0" maxOccurs="1"
+                            default="100"/>
+                <xs:element name="security" type="security" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="serialization" type="serialization" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="proxy-factories" type="proxy-factories" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="load-balancer" type="load-balancer" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="near-cache" type="near-cache-client" minOccurs="0" maxOccurs="unbounded"/>
+            </xs:sequence>
+            <xs:attribute name="id" type="xs:string" use="optional" default="default"/>
+        </xs:complexType>
+    </xs:element>
+    <!--NETWORK-->
+   <xs:complexType name="network">
+        <xs:sequence>
+            <xs:element ref="cluster-members" minOccurs="0" maxOccurs="1"/>
+            <xs:element ref="smart-routing" minOccurs="0" maxOccurs="1"/>
+            <xs:element ref="redo-operation" minOccurs="0" maxOccurs="1"/>
+            <xs:element ref="connection-pool-size" minOccurs="0" maxOccurs="1"/>
+            <xs:element ref="connection-timeout" minOccurs="0" maxOccurs="1"/>
+            <xs:element ref="connection-attempt-period" minOccurs="0" maxOccurs="1"/>
+            <xs:element ref="connection-attempt-limit" minOccurs="0" maxOccurs="1"/>
+            <xs:element ref="socket-options" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:element name="cluster-members">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="address" type="xs:string" minOccurs="1" maxOccurs="unbounded"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <xs:element name="smart-routing" default="false">
+        <xs:annotation>
+            <xs:documentation>
+                If true, client will route the key based operations to owner of the key at
+                the best effort.
+                Note that it uses a cached version of
+                com.hazelcast.core.PartitionService#getPartitions() and doesn't
+                guarantee that the operation will always be executed on the
+                owner. The cached table is updated every
+                second.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:simpleType>
+            <xs:restriction base="xs:boolean"/>
+        </xs:simpleType>
+    </xs:element>
+    <xs:element name="redo-operation" default="false">
+        <xs:annotation>
+            <xs:documentation>
+                If true, client will redo the operations that were executing on the server
+                and client lost
+                the connection. This can be because of network, or simply
+                because the member died.
+                However it is not
+                clear
+                whether the application is performed or not. For
+                idempotent operations this is harmless, but for
+                non
+                idempotent ones retrying
+                can cause to undesirable effects. Note that the redo can perform on any
+                member.
+                If false, the operation will throw a RuntimeException that is wrapping a
+                java.io.IOException.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:simpleType>
+            <xs:restriction base="xs:boolean"/>
+        </xs:simpleType>
+    </xs:element>
+    <xs:element name="connection-pool-size" default="100">
+        <xs:annotation>
+            <xs:documentation>
+                Limit for the Pool size that is used to pool the connections to the members.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:simpleType>
+            <xs:restriction base="xs:int">
+                <xs:minInclusive value="1"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:element>
+    <xs:element name="connection-timeout" default="60000">
+        <xs:simpleType>
+            <xs:restriction base="xs:int">
+                <xs:minInclusive value="1"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:element>
+    <xs:element name="connection-attempt-period" default="3000">
+        <xs:simpleType>
+            <xs:restriction base="xs:int">
+                <xs:minInclusive value="1"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:element>
+    <xs:element name="connection-attempt-limit" default="2">
+        <xs:simpleType>
+            <xs:restriction base="xs:int">
+                <xs:minInclusive value="1"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:element>
+    <xs:element name="socket-options">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="tcp-no-delay" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
+                <xs:element name="keep-alive" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
+                <xs:element name="reuse-address" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
+                <xs:element name="linger-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="3"/>
+                <xs:element name="timeout" type="xs:int" minOccurs="0" maxOccurs="1" default="-1"/>
+                <xs:element name="buffer-size" minOccurs="0" maxOccurs="1" default="32">
+                    <xs:simpleType>
+                        <xs:restriction base="xs:unsignedInt">
+                            <xs:minInclusive value="1"/>
+                        </xs:restriction>
+                    </xs:simpleType>
+                </xs:element>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+    <!--NETWORK END-->
+    <xs:simpleType name="executor-pool-size">
+        <xs:restriction base="xs:int">
+            <xs:minInclusive value="1"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:complexType name="security">
+        <xs:sequence>
+            <xs:element name="username" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="password" type="xs:string" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="proxy-factories">
+        <xs:sequence>
+            <xs:element name="proxy-factory" type="proxy-factory" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="proxy-factory">
+        <xs:attribute name="service" >
+            <xs:simpleType>
+                <xs:restriction base="non-space-string"/>
+            </xs:simpleType>
+        </xs:attribute>
+        <xs:attribute name="class-name">
+            <xs:simpleType>
+                <xs:restriction base="non-space-string"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="load-balancer">
+        <xs:attribute name="type" use="required">
+            <xs:simpleType>
+                <xs:restriction base="xs:string">
+                    <xs:enumeration value="random"/>
+                    <xs:enumeration value="round-robin"/>
+                </xs:restriction>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="near-cache-client">
+        <xs:complexContent>
+            <xs:extension base="near-cache">
+                <xs:attribute name="name" use="required">
+                    <xs:simpleType>
+                        <xs:restriction base="xs:string"/>
+                    </xs:simpleType>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+</xs:schema>
