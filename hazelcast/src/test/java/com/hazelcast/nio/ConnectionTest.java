@@ -34,6 +34,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Properties;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -72,7 +73,7 @@ public class ConnectionTest {
         if (withSocketInterceptor) {
             c.getNetworkConfig().setSocketInterceptorConfig(new SocketInterceptorConfig().setEnabled(true)
                     .setImplementation(new MemberSocketInterceptor() {
-                        public void init(SocketInterceptorConfig socketInterceptorConfig) {
+                        public void init(Properties properties) {
                         }
 
                         public void onAccept(Socket acceptedSocket) throws IOException {

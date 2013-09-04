@@ -52,7 +52,7 @@
         </listitem>
         <listitem>
             <para>Hazelcast will synchronize the state of Distributed Data Structures, but not the content of it.
-                Example: if you have an IMap<String, Employee> and one node fires an employee by calling
+                Example: if you have an IMap &lt; String, Employee &gt; and one node fires an employee by calling
                 employees.get(“John”).setFired(true);
                 then the state of Employee will not be synchronized. This is because employees.get("John") will create a
                 copy of the existing employee.

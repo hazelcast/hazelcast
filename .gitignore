@@ -7,3 +7,4 @@ target/
 *.iml
 .DS_Store
 reports/
+.directory

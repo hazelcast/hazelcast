@@ -282,7 +282,7 @@ public class PortableTest {
         Assert.assertEquals(o1, o2);
     }
 
-    private class TestPortableFactory implements PortableFactory {
+    public static class TestPortableFactory implements PortableFactory {
 
         public Portable create(int classId) {
             switch (classId) {
@@ -303,7 +303,7 @@ public class PortableTest {
         }
     }
 
-    private static class MainPortable implements Portable {
+    public static class MainPortable implements Portable {
 
         static final int CLASS_ID = 1;
 
@@ -413,7 +413,7 @@ public class PortableTest {
         }
     }
 
-    private static class InnerPortable implements Portable {
+    public static class InnerPortable implements Portable {
 
         static final int CLASS_ID = 2;
 
@@ -506,7 +506,7 @@ public class PortableTest {
         }
     }
 
-    private static class NamedPortable implements Portable {
+    public static class NamedPortable implements Portable {
         static final int CLASS_ID = 3;
 
         String name;
@@ -568,7 +568,7 @@ public class PortableTest {
         }
     }
 
-    private static class NamedPortableV2 extends NamedPortable implements Portable {
+    public static class NamedPortableV2 extends NamedPortable implements Portable {
 
         private int v;
 
@@ -601,7 +601,7 @@ public class PortableTest {
         }
     }
 
-    private static class RawDataPortable implements Portable {
+    public static class RawDataPortable implements Portable {
         static final int CLASS_ID = 4;
 
         long l;
@@ -680,7 +680,7 @@ public class PortableTest {
         }
     }
 
-    private static class InvalidRawDataPortable extends RawDataPortable {
+    public static class InvalidRawDataPortable extends RawDataPortable {
         static final int CLASS_ID = 5;
 
         private InvalidRawDataPortable() {
@@ -705,7 +705,7 @@ public class PortableTest {
         }
     }
 
-    private static class InvalidRawDataPortable2 extends RawDataPortable {
+    public static class InvalidRawDataPortable2 extends RawDataPortable {
         static final int CLASS_ID = 6;
 
         private InvalidRawDataPortable2() {
@@ -730,7 +730,7 @@ public class PortableTest {
         }
     }
 
-    private static class SimpleDataSerializable implements DataSerializable {
+    public static class SimpleDataSerializable implements DataSerializable {
         private byte[] data;
 
         private SimpleDataSerializable() {
@@ -777,7 +777,7 @@ public class PortableTest {
         }
     }
 
-    private static class ComplexDataSerializable implements DataSerializable {
+    public static class ComplexDataSerializable implements DataSerializable {
 
         private SimpleDataSerializable ds;
         private NamedPortable portable;
@@ -840,5 +840,7 @@ public class PortableTest {
             return sb.toString();
         }
     }
+
+
 
 }
