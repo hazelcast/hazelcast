@@ -21,7 +21,6 @@ import com.hazelcast.collection.CollectionItem;
 import com.hazelcast.collection.CollectionService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.transaction.TransactionException;
 
 import java.util.*;
 
@@ -43,59 +42,19 @@ public class ListContainer extends CollectionContainer {
     protected CollectionItem add(int index, Data value){
         final CollectionItem item = new CollectionItem(this, nextId(), value);
         if (index < 0){
-            return getList().add(item) ? item : null;
+            return getCollection().add(item) ? item : null;
         } else {
-            getList().add(index, item);
+            getCollection().add(index, item);
             return item;
         }
     }
 
-    protected void addBackup(long itemId, Data value){
-        final CollectionItem item = new CollectionItem(this, itemId, value);
-        getMap().put(itemId, item);
-    }
-
     protected CollectionItem get(int index){
-        return getList().get(index);
-    }
-
-    protected CollectionItem remove(Data value) {
-        final Iterator<CollectionItem> iterator = getList().iterator();
-        while (iterator.hasNext()){
-            final CollectionItem item = iterator.next();
-            if (value.equals(item.getValue())){
-                iterator.remove();
-                return item;
-            }
-        }
-        return null;
-    }
-
-    protected void removeBackup(long itemId) {
-        getMap().remove(itemId);
-    }
-
-    protected int size() {
-        return getList().size();
-    }
-
-    protected Map<Long, Data> clear() {
-        Map<Long, Data> itemIdMap = new HashMap<Long, Data>(getList().size());
-        for (CollectionItem item : getList()) {
-            itemIdMap.put(item.getItemId(), (Data) item.getValue());
-        }
-        getList().clear();
-        return itemIdMap;
-    }
-
-    protected void clearBackup(Set<Long> itemIdSet) {
-        for (Long itemId : itemIdSet) {
-            removeBackup(itemId);
-        }
+        return getCollection().get(index);
     }
 
     protected CollectionItem set(int index, long itemId, Data value){
-        return getList().set(index, new CollectionItem(this, itemId, value));
+        return getCollection().set(index, new CollectionItem(this, itemId, value));
     }
 
     protected void setBackup(long oldItemId, long itemId, Data value){
@@ -105,13 +64,14 @@ public class ListContainer extends CollectionContainer {
     }
 
     protected CollectionItem remove(int index){
-        return getList().remove(index);
+        return getCollection().remove(index);
     }
 
     protected int indexOf(boolean last, Data value){
+        final List<CollectionItem> list = getCollection();
         if (last){
-            int index = getList().size();
-            final ListIterator<CollectionItem> iterator = getList().listIterator(index);
+            int index = list.size();
+            final ListIterator<CollectionItem> iterator = list.listIterator(index);
             while (iterator.hasPrevious()){
                 final CollectionItem item = iterator.previous();
                 index--;
@@ -121,7 +81,7 @@ public class ListContainer extends CollectionContainer {
             }
         } else {
             int index = -1;
-            final Iterator<CollectionItem> iterator = getList().iterator();
+            final Iterator<CollectionItem> iterator = list.iterator();
             while (iterator.hasNext()){
                 final CollectionItem item = iterator.next();
                 index++;
@@ -133,26 +93,6 @@ public class ListContainer extends CollectionContainer {
         return -1;
     }
 
-    protected boolean contains(Set<Data> valueSet) {
-        for (Data value : valueSet) {
-            boolean contains = false;
-            for (CollectionItem item : getList()) {
-                if (value.equals(item.getValue())){
-                    contains = true;
-                    break;
-                }
-            }
-            if (!contains){
-                return false;
-            }
-        }
-        return true;
-    }
-
-    protected Map<Long, Data> addAll(List<Data> valueList) {
-        return addAll(0, valueList);
-    }
-
     protected Map<Long, Data> addAll(int index, List<Data> valueList) {
         final int size = valueList.size();
         final Map<Long, Data> map = new HashMap<Long, Data>(size);
@@ -162,26 +102,17 @@ public class ListContainer extends CollectionContainer {
             list.add(new CollectionItem(this, itemId, value));
             map.put(itemId, value);
         }
-        getList().addAll(index, list);
+        getCollection().addAll(index, list);
 
         return map;
-    }
-
-    protected void addAllBackup(Map<Long, Data> valueMap) {
-        Map<Long, CollectionItem> map = new HashMap<Long, CollectionItem>(valueMap.size());
-        for (Map.Entry<Long, CollectionItem> entry : map.entrySet()) {
-            final long itemId = entry.getKey();
-            map.put(itemId, new CollectionItem(this, itemId, entry.getValue()));
-        }
-        getMap().putAll(map);
     }
 
     protected List<Data> sub(int from, int to){
         final List<CollectionItem> list;
         if (from == -1 && to == -1){
-            list = getList();
+            list = getCollection();
         } else {
-            list = getList().subList(from, to);
+            list = getCollection().subList(from, to);
         }
         final ArrayList<Data> sub = new ArrayList<Data>(list.size());
         for (CollectionItem item : list) {
@@ -190,91 +121,7 @@ public class ListContainer extends CollectionContainer {
         return sub;
     }
 
-    protected Map<Long, Data> compareAndRemove(boolean retain, Set<Data> valueSet) {
-        Map<Long, Data> itemIdMap = new HashMap<Long, Data>();
-        final Iterator<CollectionItem> iterator = getList().iterator();
-        while (iterator.hasNext()){
-            final CollectionItem item = iterator.next();
-            final boolean contains = valueSet.contains(item.getValue());
-            if ( (contains && !retain) || (!contains && retain)){
-                itemIdMap.put(item.getItemId(), (Data) item.getValue());
-                iterator.remove();
-            }
-        }
-        return itemIdMap;
-    }
-
-    public CollectionItem reserveRemove(long reservedItemId, Data value) {
-        final Iterator<CollectionItem> iterator = getList().iterator();
-        while (iterator.hasNext()){
-            final CollectionItem item = iterator.next();
-            if (value.equals(item.getValue())){
-                iterator.remove();
-                txMap.put(item.getItemId(), item);
-                return item;
-            }
-        }
-        if (reservedItemId != -1){
-            return txMap.remove(reservedItemId);
-        }
-        return null;
-    }
-
-    public void reserveRemoveBackup(long itemId) {
-        final CollectionItem item = getMap().remove(itemId);
-        if (item == null) {
-            throw new TransactionException("Backup reserve failed: " + itemId);
-        }
-        txMap.put(itemId, item);
-    }
-
-    public void rollbackRemove(long itemId) {
-        final CollectionItem item = txMap.remove(itemId);
-        if (item == null) {
-            logger.warning("rollbackRemove No txn item for itemId: " + itemId);
-        }
-        getList().add(item);
-    }
-
-    public void rollbackRemoveBackup(long itemId) {
-        final CollectionItem item = txMap.remove(itemId);
-        if (item == null) {
-            logger.warning("rollbackRemoveBackup No txn item for itemId: " + itemId);
-        }
-    }
-
-    public void commitAdd(long itemId, Data value) {
-        final CollectionItem item = txMap.remove(itemId);
-        if (item == null) {
-            throw new TransactionException("No reserve :" + itemId);
-        }
-        item.setValue(value);
-        getList().add(item);
-    }
-
-    public void commitAddBackup(long itemId, Data value) {
-        CollectionItem item = txMap.remove(itemId);
-        if (item == null) {
-            item = new CollectionItem(this, itemId, value);
-        }
-        getMap().put(itemId, item);
-    }
-
-    public CollectionItem commitRemove(long itemId) {
-        final CollectionItem item = txMap.remove(itemId);
-        if (item == null) {
-            logger.warning("commitRemove operation-> No txn item for itemId: " + itemId);
-        }
-        return item;
-    }
-
-    public void commitRemoveBackup(long itemId) {
-        if (txMap.remove(itemId) == null) {
-            logger.warning("commitRemoveBackup operation-> No txn item for itemId: " + itemId);
-        }
-    }
-
-    private List<CollectionItem> getList(){
+    protected List<CollectionItem> getCollection(){
         if(itemList == null){
             if (itemMap != null && !itemMap.isEmpty()){
                 itemList = new ArrayList<CollectionItem>(itemMap.values());
@@ -286,10 +133,10 @@ public class ListContainer extends CollectionContainer {
         return itemList;
     }
 
-    private Map<Long, CollectionItem> getMap(){
+    protected Map<Long, CollectionItem> getMap(){
         if (itemMap == null){
             if (itemList != null && !itemList.isEmpty()){
-                itemMap = new LinkedHashMap<Long, CollectionItem>(itemList.size());
+                itemMap = new HashMap<Long, CollectionItem>(itemList.size());
                 for (CollectionItem item : itemList) {
                     itemMap.put(item.getItemId(), item);
                 }

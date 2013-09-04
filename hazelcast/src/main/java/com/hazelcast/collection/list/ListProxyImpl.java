@@ -16,58 +16,27 @@
 
 package com.hazelcast.collection.list;
 
-import com.hazelcast.collection.*;
-import com.hazelcast.collection.CollectionOperation;
+import com.hazelcast.collection.AbstractCollectionProxyImpl;
 import com.hazelcast.core.IList;
-import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.*;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.impl.SerializableCollection;
-import com.hazelcast.util.ExceptionUtil;
 
 import java.util.*;
-import java.util.concurrent.Future;
 
 /**
  * @ali 8/30/13
  */
-public class ListProxyImpl<E> extends AbstractDistributedObject<ListService> implements IList<E>, InitializingObject {
-
-    final String name;
-    final int partitionId;
+public class ListProxyImpl<E> extends AbstractCollectionProxyImpl<ListService, E> implements IList<E> {
 
     protected ListProxyImpl(String name, NodeEngine nodeEngine, ListService service) {
-        super(nodeEngine, service);
-        this.name = name;
-        this.partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
+        super(name, nodeEngine, service);
     }
 
-    public boolean add(E e) {
-        return addInternal(-1, e);
-    }
-
-    public void add(int index, E element) {
-        addInternal(index, element);
-    }
-
-    private boolean addInternal(int index, E e){
+    public void add(int index, E e) {
         throwExceptionIfNull(e);
         final Data value = getNodeEngine().toData(e);
         final ListAddOperation operation = new ListAddOperation(name, index, value);
-        final Boolean result = invoke(operation);
-        return result;
-    }
-
-    public boolean remove(Object o) {
-        throwExceptionIfNull(o);
-        final Data value = getNodeEngine().toData(o);
-        final CollectionRemoveOperation operation = new CollectionRemoveOperation(name, value);
-        final Boolean result = invoke(operation);
-        return result;
-    }
-
-    public void clear() {
-        final CollectionClearOperation operation = new CollectionClearOperation(name);
         invoke(operation);
     }
 
@@ -104,23 +73,6 @@ public class ListProxyImpl<E> extends AbstractDistributedObject<ListService> imp
         return result;
     }
 
-    public boolean containsAll(Collection<?> c) {
-        throwExceptionIfNull(c);
-        Set<Data> valueSet = new HashSet<Data>(c.size());
-        final NodeEngine nodeEngine = getNodeEngine();
-        for (Object o : c) {
-            throwExceptionIfNull(o);
-            valueSet.add(nodeEngine.toData(o));
-        }
-        final CollectionContainsOperation operation = new CollectionContainsOperation(name, valueSet);
-        final Boolean result = invoke(operation);
-        return result;
-    }
-
-    public boolean addAll(Collection<? extends E> c) {
-        return addAll(0, c);
-    }
-
     public boolean addAll(int index, Collection<? extends E> c) {
         throwExceptionIfNull(c);
         List<Data> valueList = new ArrayList<Data>(c.size());
@@ -130,27 +82,6 @@ public class ListProxyImpl<E> extends AbstractDistributedObject<ListService> imp
             valueList.add(nodeEngine.toData(e));
         }
         final ListAddAllOperation operation = new ListAddAllOperation(name, index, valueList);
-        final Boolean result = invoke(operation);
-        return result;
-    }
-
-    public boolean removeAll(Collection<?> c) {
-        return compareAndRemove(false, c);
-    }
-
-    public boolean retainAll(Collection<?> c) {
-        return compareAndRemove(true, c);
-    }
-
-    private boolean compareAndRemove(boolean retain, Collection<?> c){
-        throwExceptionIfNull(c);
-        Set<Data> valueSet = new HashSet<Data>(c.size());
-        final NodeEngine nodeEngine = getNodeEngine();
-        for (Object o : c) {
-            throwExceptionIfNull(o);
-            valueSet.add(nodeEngine.toData(o));
-        }
-        final CollectionCompareAndRemoveOperation operation = new CollectionCompareAndRemoveOperation(name, retain, valueSet);
         final Boolean result = invoke(operation);
         return result;
     }
@@ -176,25 +107,6 @@ public class ListProxyImpl<E> extends AbstractDistributedObject<ListService> imp
         return list;
     }
 
-    public int size() {
-        final CollectionSizeOperation operation = new CollectionSizeOperation(name);
-        final Integer result = invoke(operation);
-        return result;
-    }
-
-    public boolean isEmpty() {
-        return size() == 0;
-    }
-
-    public boolean contains(Object o) {
-        throwExceptionIfNull(o);
-        Set<Data> valueSet = new HashSet<Data>(1);
-        valueSet.add(getNodeEngine().toData(o));
-        final CollectionContainsOperation operation = new CollectionContainsOperation(name, valueSet);
-        final Boolean result = invoke(operation);
-        return result;
-    }
-
     public Iterator<E> iterator() {
         return listIterator(0);
     }
@@ -208,49 +120,8 @@ public class ListProxyImpl<E> extends AbstractDistributedObject<ListService> imp
         return subList(-1,-1).toArray(a);
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public String addItemListener(ItemListener<E> listener, boolean includeValue) {
-        final EventService eventService = getNodeEngine().getEventService();
-        final EventRegistration registration = eventService.registerListener(ListService.SERVICE_NAME, name, new CollectionEventFilter(includeValue), listener);
-        return registration.getId();
-    }
-
-    public boolean removeItemListener(String registrationId) {
-        EventService eventService = getNodeEngine().getEventService();
-        return eventService.deregisterListener(ListService.SERVICE_NAME, name, registrationId);
-    }
-
-
-    public Object getId() {
-        return name;
-    }
-
     public String getServiceName() {
         return ListService.SERVICE_NAME;
-    }
-
-    public void initialize() {
-        //TODO
-    }
-
-    private <T> T invoke(CollectionOperation operation) {
-        final NodeEngine nodeEngine = getNodeEngine();
-        try {
-            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(ListService.SERVICE_NAME, operation, partitionId).build();
-            Future f = inv.invoke();
-            return nodeEngine.toObject(f.get());
-        } catch (Throwable throwable) {
-            throw ExceptionUtil.rethrow(throwable);
-        }
-    }
-
-    private void throwExceptionIfNull(Object o) {
-        if (o == null) {
-            throw new NullPointerException("Object is null");
-        }
     }
 
 }

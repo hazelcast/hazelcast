@@ -1,59 +1,59 @@
 /*
-* Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-package com.hazelcast.collection.list.txn;
+package com.hazelcast.collection.txn;
 
 import com.hazelcast.collection.CollectionItem;
 import com.hazelcast.collection.CollectionSizeOperation;
 import com.hazelcast.collection.list.ListService;
-import com.hazelcast.collection.txn.*;
-import com.hazelcast.core.TransactionalList;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.RemoteService;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.util.ExceptionUtil;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Set;
 import java.util.concurrent.Future;
 
 /**
-* @author ali 4/16/13
-*/
-public class TransactionalListProxy<E> extends AbstractDistributedObject<ListService> implements TransactionalList<E> {
+ * @ali 9/4/13
+ */
+public abstract class AbstractTransactionalCollectionProxy<S extends RemoteService, E> extends AbstractDistributedObject<S> {
 
-    private final String name;
-    private final TransactionSupport tx;
-    private final int partitionId;
-    private final Set<Long> itemIdSet = new HashSet<Long>();
-    private final LinkedList<CollectionItem> list = new LinkedList<CollectionItem>();
+    protected final String name;
+    protected final TransactionSupport tx;
+    protected final int partitionId;
+    protected final Set<Long> itemIdSet = new HashSet<Long>();
 
-    public TransactionalListProxy(NodeEngine nodeEngine, ListService service, String name, TransactionSupport tx) {
+    public AbstractTransactionalCollectionProxy(String name, TransactionSupport tx, NodeEngine nodeEngine, S service) {
         super(nodeEngine, service);
         this.name = name;
         this.tx = tx;
-        partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
+        this.partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
     }
+
+    protected abstract Collection<CollectionItem> getCollection();
 
     public Object getId() {
         return name;
@@ -77,7 +77,7 @@ public class TransactionalListProxy<E> extends AbstractDistributedObject<ListSer
                 if (!itemIdSet.add(itemId)) {
                     throw new TransactionException("Duplicate itemId: " + itemId);
                 }
-                list.add(new CollectionItem(null, itemId, value));
+                getCollection().add(new CollectionItem(null, itemId, value));
                 tx.addTransactionLog(new CollectionTransactionLog(itemId, name, partitionId, ListService.SERVICE_NAME, new CollectionTxnAddOperation(name, itemId, value)));
                 return true;
             }
@@ -92,7 +92,7 @@ public class TransactionalListProxy<E> extends AbstractDistributedObject<ListSer
         throwExceptionIfNull(e);
         final NodeEngine nodeEngine = getNodeEngine();
         final Data value = nodeEngine.toData(e);
-        final Iterator<CollectionItem> iterator = list.iterator();
+        final Iterator<CollectionItem> iterator = getCollection().iterator();
         long reservedItemId = -1;
         while (iterator.hasNext()){
             final CollectionItem item = iterator.next();
@@ -132,7 +132,7 @@ public class TransactionalListProxy<E> extends AbstractDistributedObject<ListSer
             Invocation invocation = getNodeEngine().getOperationService().createInvocationBuilder(ListService.SERVICE_NAME, operation, partitionId).build();
             Future<Integer> f = invocation.invoke();
             Integer size = f.get();
-            return size + list.size();
+            return size + getCollection().size();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
@@ -150,7 +150,4 @@ public class TransactionalListProxy<E> extends AbstractDistributedObject<ListSer
         }
     }
 
-    public String getServiceName() {
-        return ListService.SERVICE_NAME;
-    }
 }

@@ -18,6 +18,8 @@ package com.hazelcast.collection;
 
 import com.hazelcast.collection.list.ListContainer;
 import com.hazelcast.collection.list.ListService;
+import com.hazelcast.collection.set.SetContainer;
+import com.hazelcast.collection.set.SetService;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -45,6 +47,18 @@ public abstract class CollectionOperation extends Operation implements Partition
 
     protected CollectionOperation(String name) {
         this.name = name;
+    }
+
+    protected final SetContainer getOrCreateSetContainer(){
+        if (container == null) {
+            SetService service = getService();
+            try {
+                container = service.getOrCreateContainer(name, this instanceof BackupOperation);
+            } catch (Exception e) {
+                throw new RetryableHazelcastException(e);
+            }
+        }
+        return (SetContainer) container;
     }
 
     protected final ListContainer getOrCreateListContainer(){

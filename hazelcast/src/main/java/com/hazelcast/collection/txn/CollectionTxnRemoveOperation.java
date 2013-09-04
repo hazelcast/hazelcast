@@ -49,7 +49,9 @@ public class CollectionTxnRemoveOperation extends CollectionBackupAwareOperation
     }
 
     public void afterRun() throws Exception {
-        publishEvent(ItemEventType.REMOVED, (Data)item.getValue());
+        if (item != null){
+            publishEvent(ItemEventType.REMOVED, (Data)item.getValue());
+        }
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

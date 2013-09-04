@@ -2,9 +2,9 @@ package com.hazelcast.collection.set;
 
 import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionItem;
-import com.hazelcast.nio.serialization.Data;
 
-import java.util.List;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -13,87 +13,31 @@ import java.util.Set;
  */
 public class SetContainer extends CollectionContainer {
 
-    protected CollectionItem remove(Data value) {
-        return null;
+    private Set<CollectionItem> itemSet = null;
+    private Map<Long, CollectionItem> itemMap = null;
+
+    protected Set<CollectionItem> getCollection(){
+        if(itemSet == null){
+            if (itemMap != null && !itemMap.isEmpty()){
+                itemSet = new HashSet<CollectionItem>(itemMap.values());
+            } else {
+                itemSet = new HashSet<CollectionItem>(1000);
+            }
+        }
+        return itemSet;
     }
 
-    @Override
-    protected void removeBackup(long itemId) {
-
-    }
-
-    @Override
-    protected int size() {
-        return 0;
-    }
-
-    @Override
-    protected Map<Long, Data> clear() {
-        return null;
-    }
-
-    @Override
-    protected void clearBackup(Set<Long> itemIdSet) {
-
-    }
-
-    @Override
-    protected boolean contains(Set<Data> valueSet) {
-        return false;
-    }
-
-    @Override
-    protected Map<Long, Data> addAll(List<Data> valueList) {
-        return null;
-    }
-
-    @Override
-    protected void addAllBackup(Map<Long, Data> valueMap) {
-
-    }
-
-    @Override
-    protected Map<Long, Data> compareAndRemove(boolean retain, Set<Data> valueSet) {
-        return null;
-    }
-
-    @Override
-    public void commitAdd(long itemId, Data value) {
-
-    }
-
-    @Override
-    public void commitAddBackup(long itemId, Data value) {
-
-    }
-
-    @Override
-    public CollectionItem reserveRemove(long reservedItemId, Data value) {
-        return null;
-    }
-
-    @Override
-    public void reserveRemoveBackup(long itemId) {
-
-    }
-
-    @Override
-    public void rollbackRemove(long itemId) {
-
-    }
-
-    @Override
-    public void rollbackRemoveBackup(long itemId) {
-
-    }
-
-    @Override
-    public CollectionItem commitRemove(long itemId) {
-        return null;
-    }
-
-    @Override
-    public void commitRemoveBackup(long itemId) {
-
+    protected Map<Long, CollectionItem> getMap(){
+        if (itemMap == null){
+            if (itemSet != null && !itemSet.isEmpty()){
+                itemMap = new HashMap<Long, CollectionItem>(itemSet.size());
+                for (CollectionItem item : itemSet) {
+                    itemMap.put(item.getItemId(), item);
+                }
+            } else {
+                itemMap = new HashMap<Long, CollectionItem>(1000);
+            }
+        }
+        return itemMap;
     }
 }

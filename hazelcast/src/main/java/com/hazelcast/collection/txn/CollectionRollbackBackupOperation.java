@@ -36,7 +36,7 @@ public class CollectionRollbackBackupOperation extends CollectionOperation imple
 
     public void run() throws Exception {
         if (removeOperation){
-            getOrCreateContainer().reserveRemoveBackup(itemId);
+            getOrCreateContainer().rollbackRemoveBackup(itemId);
         } else {
             getOrCreateContainer().rollbackAddBackup(itemId);
         }

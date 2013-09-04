@@ -18,7 +18,7 @@ package com.hazelcast.collection.list;
 
 import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionService;
-import com.hazelcast.collection.list.txn.TransactionalListProxy;
+import com.hazelcast.collection.txn.TransactionalListProxy;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.impl.TransactionSupport;
@@ -65,6 +65,6 @@ public class ListService extends CollectionService {
     }
 
     public TransactionalListProxy createTransactionalObject(Object id, TransactionSupport transaction) {
-        return new TransactionalListProxy(nodeEngine, this, String.valueOf(id), transaction);
+        return new TransactionalListProxy(String.valueOf(id), transaction, nodeEngine, this);
     }
 }

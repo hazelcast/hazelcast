@@ -13,8 +13,10 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.COLLECTION_DS_FACTORY, -20);
 
     public static int increment = 1;
+
+    public static final int COLLECTION_ADD = increment++;
+    public static final int COLLECTION_ADD_BACKUP = increment++;
     public static final int LIST_ADD = increment++;
-    public static final int LIST_ADD_BACKUP = increment++;
     public static final int LIST_GET = increment++;
     public static final int COLLECTION_REMOVE = increment++;
     public static final int COLLECTION_REMOVE_BACKUP = increment++;
@@ -31,6 +33,7 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
     public static final int LIST_ADD_ALL = increment++;
     public static final int LIST_SUB = increment++;
     public static final int COLLECTION_COMPARE_AND_REMOVE = increment++;
+    public static final int COLLECTION_GET_ALL = increment++;
     public static final int COLLECTION_EVENT_FILTER = increment++;
     public static final int COLLECTION_EVENT = increment++;
     public static final int COLLECTION_ITEM = increment++;
@@ -47,6 +50,7 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
     public static final int COLLECTION_ROLLBACK = increment++;
     public static final int COLLECTION_ROLLBACK_BACKUP = increment++;
 
+
     public int getFactoryId() {
         return F_ID;
     }
@@ -54,14 +58,19 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
     public DataSerializableFactory createFactory() {
         ConstructorFunction<Integer, IdentifiedDataSerializable> constructors[] = new ConstructorFunction[increment];
 
+        constructors[COLLECTION_ADD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CollectionAddOperation();
+            }
+        };
+        constructors[COLLECTION_ADD_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CollectionAddBackupOperation();
+            }
+        };
         constructors[LIST_ADD] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new ListAddOperation();
-            }
-        };
-        constructors[LIST_ADD_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-            public IdentifiedDataSerializable createNew(Integer arg) {
-                return new ListAddBackupOperation();
             }
         };
         constructors[LIST_GET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
@@ -144,6 +153,11 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
                 return new CollectionCompareAndRemoveOperation();
             }
         };
+        constructors[COLLECTION_GET_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CollectionGetAllOperation();
+            }
+        };
         constructors[COLLECTION_EVENT_FILTER] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new CollectionEventFilter();
@@ -214,6 +228,7 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
                 return new CollectionRollbackBackupOperation();
             }
         };
+
 
         return new ArrayDataSerializableFactory(constructors);
     }
