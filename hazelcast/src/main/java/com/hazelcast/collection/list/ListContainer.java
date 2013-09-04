@@ -260,10 +260,12 @@ public class ListContainer extends CollectionContainer {
         getMap().put(itemId, item);
     }
 
-    public void commitRemove(long itemId) {
-        if (txMap.remove(itemId) == null) {
+    public CollectionItem commitRemove(long itemId) {
+        final CollectionItem item = txMap.remove(itemId);
+        if (item == null) {
             logger.warning("commitRemove operation-> No txn item for itemId: " + itemId);
         }
+        return item;
     }
 
     public void commitRemoveBackup(long itemId) {

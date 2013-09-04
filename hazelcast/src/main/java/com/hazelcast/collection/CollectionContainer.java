@@ -113,7 +113,7 @@ public abstract class CollectionContainer implements DataSerializable {
     public abstract void commitAdd(long itemId, Data value);
     public abstract void commitAddBackup(long itemId, Data value);
 
-    public abstract void commitRemove(long itemId);
+    public abstract CollectionItem commitRemove(long itemId);
     public abstract void commitRemoveBackup(long itemId);
 
 

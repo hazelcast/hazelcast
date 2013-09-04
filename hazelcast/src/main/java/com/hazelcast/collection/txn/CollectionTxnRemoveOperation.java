@@ -2,8 +2,11 @@ package com.hazelcast.collection.txn;
 
 import com.hazelcast.collection.CollectionBackupAwareOperation;
 import com.hazelcast.collection.CollectionDataSerializerHook;
+import com.hazelcast.collection.CollectionItem;
+import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
@@ -14,6 +17,8 @@ import java.io.IOException;
 public class CollectionTxnRemoveOperation extends CollectionBackupAwareOperation {
 
     private long itemId;
+
+    private transient CollectionItem item;
 
     public CollectionTxnRemoveOperation() {
     }
@@ -40,12 +45,11 @@ public class CollectionTxnRemoveOperation extends CollectionBackupAwareOperation
     }
 
     public void run() throws Exception {
-        getOrCreateContainer().commitRemove(itemId);
+        item = getOrCreateContainer().commitRemove(itemId);
     }
 
-    @Override
     public void afterRun() throws Exception {
-        //TODO publish event
+        publishEvent(ItemEventType.REMOVED, (Data)item.getValue());
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

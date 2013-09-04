@@ -2,6 +2,7 @@ package com.hazelcast.collection.txn;
 
 import com.hazelcast.collection.CollectionBackupAwareOperation;
 import com.hazelcast.collection.CollectionDataSerializerHook;
+import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -49,7 +50,7 @@ public class CollectionTxnAddOperation extends CollectionBackupAwareOperation {
     }
 
     public void afterRun() throws Exception {
-
+        publishEvent(ItemEventType.ADDED, value);
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

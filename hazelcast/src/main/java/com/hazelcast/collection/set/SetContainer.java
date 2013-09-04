@@ -88,8 +88,8 @@ public class SetContainer extends CollectionContainer {
     }
 
     @Override
-    public void commitRemove(long itemId) {
-
+    public CollectionItem commitRemove(long itemId) {
+        return null;
     }
 
     @Override
