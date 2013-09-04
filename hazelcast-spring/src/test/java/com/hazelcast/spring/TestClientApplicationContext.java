@@ -19,7 +19,10 @@ package com.hazelcast.spring;
 import com.hazelcast.client.HazelcastClientProxy;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.config.SerializationConfig;
+import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.core.*;
+import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.test.annotation.SerialTest;
 import org.junit.AfterClass;
@@ -31,6 +34,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 
 import javax.annotation.Resource;
+import java.nio.ByteOrder;
+import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 
 import static org.junit.Assert.*;
@@ -45,6 +51,9 @@ public class TestClientApplicationContext {
 
     @Resource (name = "client2")
     private HazelcastClientProxy client2;
+
+    @Resource (name = "client3")
+    private HazelcastClientProxy client3;
 
     @Resource(name = "instance")
     private HazelcastInstance instance;
@@ -99,6 +108,7 @@ public class TestClientApplicationContext {
     public void testClient() {
         assertNotNull(client);
         assertNotNull(client2);
+        assertNotNull(client3);
 
         ClientConfig config = client.getClientConfig();
         assertEquals(3, config.getConnectionAttemptLimit());
@@ -114,6 +124,38 @@ public class TestClientApplicationContext {
         final IMap<Object, Object> map = instance.getMap("default");
         assertEquals("q", map.get("Q"));
         assertEquals("x", map.get("X"));
+
+        ClientConfig config3 =client3.getClientConfig();
+        final SerializationConfig serConf = config3.getSerializationConfig();
+
+        assertEquals(ByteOrder.BIG_ENDIAN,serConf.getByteOrder());
+        assertEquals(false,serConf.isAllowUnsafe());
+        assertEquals(false,serConf.isCheckClassDefErrors());
+        assertEquals(false,serConf.isEnableCompression());
+        assertEquals(false,serConf.isEnableSharedObject());
+        assertEquals(false,serConf.isUseNativeByteOrder());
+        assertEquals(10,serConf.getPortableVersion());
+
+        final Map<Integer, String> map1 = serConf.getDataSerializableFactoryClasses();
+        assertNotNull(map1);
+        assertTrue(map1.containsKey(1));
+        assertEquals("com.hazelcast.spring.DummyDataSerializableFactory", map1.get(1));
+
+        final Map<Integer, String> portableFactoryClasses = serConf.getPortableFactoryClasses();
+        assertNotNull(portableFactoryClasses);
+        assertTrue(portableFactoryClasses.containsKey(2));
+        assertEquals("com.hazelcast.spring.DummyPortableFactory", portableFactoryClasses.get(2));
+
+        final Collection<SerializerConfig> serializerConfigs = serConf.getSerializerConfigs();
+
+        assertNotNull(serializerConfigs);
+
+        final SerializerConfig serializerConfig = serializerConfigs.iterator().next();
+        assertNotNull(serializerConfig);
+        assertEquals("com.hazelcast.nio.serialization.CustomSerializationTest$FooXmlSerializer", serializerConfig.getClassName() );
+        assertEquals("com.hazelcast.nio.serialization.CustomSerializationTest$Foo", serializerConfig.getTypeClassName() );
+
+
     }
 
     @Test

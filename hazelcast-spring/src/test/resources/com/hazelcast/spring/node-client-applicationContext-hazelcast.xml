@@ -58,9 +58,7 @@
         </hz:config>
     </hz:hazelcast>
 
-    <hz:client id="client"
-               redo-operation="true"
-               smart="true">
+    <hz:client id="client">
         <hz:group name="${cluster.group.name}" password="${cluster.group.password}" />
         <hz:network connection-attempt-limit="3"
                     connection-attempt-period="3000"
@@ -68,25 +66,27 @@
                     connection-timeout="1000"
                     redo-operation="true"
                     smart-routing="true">
+            <hz:member>127.0.0.1:5700</hz:member>
+            <hz:member>127.0.0.1:5701</hz:member>
+
             <hz:socket-options buffer-size="32"
                                keep-alive="false"
                                linger-seconds="3"
                                reuse-address="false"
                                tcp-no-delay="false"
                                timeout="-1"/>
+
         </hz:network>
     </hz:client>
 
-    <hz:client id="client2"
-               redo-operation="true"
-               smart="true"
-               credentials-ref="credentials" >
+    <hz:client id="client2"  credentials-ref="credentials" >
         <hz:network connection-attempt-limit="3"
                     connection-attempt-period="3000"
                     connection-pool-size="300"
                     connection-timeout="1000"
                     redo-operation="false"
                     smart-routing="false">
+
             <hz:member>127.0.0.1:5700</hz:member>
             <hz:member>127.0.0.1:5701</hz:member>
             <hz:socket-options buffer-size="32"
@@ -99,8 +99,6 @@
     </hz:client>
 
     <hz:client id="client3"
-               redo-operation="true"
-               smart="true"
                credentials-ref="credentials" >
         <hz:network connection-attempt-limit="3"
                     connection-attempt-period="3000"
@@ -123,11 +121,33 @@
             <hz:listener implementation="dummyMembershipListener"/>
         </hz:listeners>
 
-        <hz:load-balancer type="round-robin" />
+        <hz:serialization allow-unsafe="false"
+                          byte-order="BIG_ENDIAN"
+                          check-class-def-errors="false"
+                          enable-compression="false"
+                          enable-shared-object="false"
+                          portable-version="10"
+                          use-native-byte-order="false" >
 
-        <hz:proxy-factories>
-            <hz:proxy-factory class-name="" service="" />
-        </hz:proxy-factories>
+            <hz:data-serializable-factories>
+                <hz:data-serializable-factory factory-id="1" class-name="com.hazelcast.spring.DummyDataSerializableFactory"/>
+            </hz:data-serializable-factories>
+            <hz:portable-factories>
+                <hz:portable-factory factory-id="2" class-name="com.hazelcast.spring.DummyPortableFactory" />
+            </hz:portable-factories>
+            <hz:serializers>
+                <!--<hz:global-serializer class-name="com.hazelcast.spring.DummyGlobalSerializationFactory"/>-->
+                <hz:serializer type-class="com.hazelcast.nio.serialization.CustomSerializationTest$Foo" class-name="com.hazelcast.nio.serialization.CustomSerializationTest$FooXmlSerializer"/>
+            </hz:serializers>
+        </hz:serialization>
+
+
+
+        <!--<hz:proxy-factories>-->
+        <!--<hz:proxy-factory class-name="" service="" />-->
+        <!--</hz:proxy-factories>-->
+
+        <hz:load-balancer type="round-robin" />
 
         <hz:near-cache name="default"
                        time-to-live-seconds="0"
@@ -136,13 +156,6 @@
                        max-size="5000"
                        invalidate-on-change="true"/>
 
-        <hz:serialization allow-unsafe="false"
-                          byte-order="BIG_ENDIAN"
-                          check-class-def-errors="false"
-                          enable-compression="false"
-                          enable-shared-object="false"
-                          portable-version="0"
-                          use-native-byte-order="false" />
 
 
     </hz:client>

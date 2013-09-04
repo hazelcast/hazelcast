@@ -41,12 +41,26 @@
         </hz:config>
     </hz:hazelcast>
 
-    <hz:client id="client" depends-on="instance" scope="prototype"
-               connection-attempt-limit="3" connection-timeout="1000"
-               connection-attempt-period="3000" pool-size="300"
-               redo-operation="true" smart="true">
-        <hz:member>127.0.0.1:5701</hz:member>
+    <hz:client id="client">
+        <hz:group name="${cluster.group.name}" password="${cluster.group.password}" />
+        <hz:network connection-attempt-limit="3"
+                    connection-attempt-period="3000"
+                    connection-pool-size="300"
+                    connection-timeout="1000"
+                    redo-operation="true"
+                    smart-routing="true">
+
+            <hz:member>127.0.0.1:5701</hz:member>
+
+            <hz:socket-options buffer-size="32"
+                               keep-alive="false"
+                               linger-seconds="3"
+                               reuse-address="false"
+                               tcp-no-delay="false"
+                               timeout="-1"/>
+        </hz:network>
     </hz:client>
+
 
     <hz:map id="map1" instance-ref="instance" name="map1" lazy-init="true" depends-on="instance, client"/>
     <hz:map id="map2" instance-ref="instance" name="map2" lazy-init="true" depends-on="map1"/>
