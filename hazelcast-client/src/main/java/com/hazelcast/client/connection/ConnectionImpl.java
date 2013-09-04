@@ -59,16 +59,16 @@ final class ConnectionImpl implements Connection {
         }
         final Socket socket = socketFactory.createSocket();
         try {
-            socket.setKeepAlive(options.isSocketKeepAlive());
-            socket.setTcpNoDelay(options.isSocketTcpNoDelay());
-            socket.setReuseAddress(options.isSocketReuseAddress());
-            if (options.getSocketLingerSeconds() > 0) {
-                socket.setSoLinger(true, options.getSocketLingerSeconds());
+            socket.setKeepAlive(options.isKeepAlive());
+            socket.setTcpNoDelay(options.isTcpNoDelay());
+            socket.setReuseAddress(options.isReuseAddress());
+            if (options.getLingerSeconds() > 0) {
+                socket.setSoLinger(true, options.getLingerSeconds());
             }
-            if (options.getSocketTimeout() > 0) {
-                socket.setSoTimeout(options.getSocketTimeout());
+            if (options.getTimeout() > 0) {
+                socket.setSoTimeout(options.getTimeout());
             }
-            int bufferSize = options.getSocketBufferSize() * 1024;
+            int bufferSize = options.getBufferSize() * 1024;
             if (bufferSize < 0) {
                 bufferSize = BUFFER_SIZE;
             }
