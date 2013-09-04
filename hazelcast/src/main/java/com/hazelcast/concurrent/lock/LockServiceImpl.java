@@ -27,6 +27,7 @@ import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
+import com.hazelcast.util.scheduler.ScheduleType;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -108,7 +109,7 @@ public final class LockServiceImpl implements ManagedService, RemoteService, Mem
 
     private final ConstructorFunction<ObjectNamespace, EntryTaskScheduler> schedulerConstructor = new ConstructorFunction<ObjectNamespace, EntryTaskScheduler>() {
         public EntryTaskScheduler createNew(ObjectNamespace namespace) {
-            return EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new LockEvictionProcessor(nodeEngine, namespace), true);
+            return EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new LockEvictionProcessor(nodeEngine, namespace), ScheduleType.POSTPONE);
         }
     };
 

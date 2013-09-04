@@ -32,10 +32,7 @@ import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.util.Clock;
-import com.hazelcast.util.scheduler.EntryTaskScheduler;
-import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
-import com.hazelcast.util.scheduler.ScheduledEntry;
-import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
+import com.hazelcast.util.scheduler.*;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -117,7 +114,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
 
         replicaSyncRequests = new ConcurrentHashMap<Integer, ReplicaSyncInfo>(partitionCount);
         replicaSyncScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(),
-                new ReplicaSyncEntryProcessor(), false);
+                new ReplicaSyncEntryProcessor(), ScheduleType.SCHEDULE_IF_NEW);
 
         nodeEngine.getExecutionService().scheduleWithFixedDelay(new SyncReplicaVersionTask(), 30, 30, TimeUnit.SECONDS);
     }
