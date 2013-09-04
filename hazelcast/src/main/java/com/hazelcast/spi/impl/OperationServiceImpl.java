@@ -40,10 +40,7 @@ import com.hazelcast.spi.impl.PartitionIteratingOperation.PartitionResponse;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.executor.AbstractExecutorThreadFactory;
 import com.hazelcast.util.executor.SingleExecutorThreadFactory;
-import com.hazelcast.util.scheduler.EntryTaskScheduler;
-import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
-import com.hazelcast.util.scheduler.ScheduledEntry;
-import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
+import com.hazelcast.util.scheduler.*;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -89,7 +86,7 @@ final class OperationServiceImpl implements OperationService {
         executingCalls = new ConcurrentHashMap<RemoteCallKey, RemoteCallKey>(1000, 0.75f, concurrencyLevel);
         backupCalls = new ConcurrentHashMap<Long, Semaphore>(1000, 0.75f, concurrencyLevel);
         backupScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(),
-                new ScheduledBackupProcessor(), false);
+                new ScheduledBackupProcessor(), ScheduleType.SCHEDULE_IF_NEW);
     }
 
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, final int partitionId) {
