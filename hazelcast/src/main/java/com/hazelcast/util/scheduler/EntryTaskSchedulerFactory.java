@@ -44,8 +44,8 @@ public final class EntryTaskSchedulerFactory {
      */
     public static <K, V> EntryTaskScheduler<K, V> newScheduler(ScheduledExecutorService scheduledExecutorService,
                                                                ScheduledEntryProcessor entryProcessor,
-                                                               boolean allowPostponeScheduling) {
-        return new SecondsBasedEntryTaskScheduler<K, V>(scheduledExecutorService, entryProcessor, allowPostponeScheduling);
+                                                               ScheduleType scheduleType) {
+        return new SecondsBasedEntryTaskScheduler<K, V>(scheduledExecutorService, entryProcessor, scheduleType);
     }
 
 }

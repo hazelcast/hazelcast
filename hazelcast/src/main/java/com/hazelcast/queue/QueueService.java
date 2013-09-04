@@ -33,6 +33,7 @@ import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
+import com.hazelcast.util.scheduler.ScheduleType;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -65,7 +66,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     public QueueService(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
         logger = nodeEngine.getLogger(QueueService.class);
-        queueEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new QueueEvictionProcessor(nodeEngine, this), true);
+        queueEvictionScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new QueueEvictionProcessor(nodeEngine, this), ScheduleType.POSTPONE);
     }
 
     public void scheduleEviction(String name, long delay){
