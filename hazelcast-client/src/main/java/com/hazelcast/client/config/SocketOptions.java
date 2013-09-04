@@ -16,6 +16,8 @@
 
 package com.hazelcast.client.config;
 
+import com.hazelcast.client.connection.SocketFactory;
+
 /**
  * @author mdogan 5/17/13
  */
