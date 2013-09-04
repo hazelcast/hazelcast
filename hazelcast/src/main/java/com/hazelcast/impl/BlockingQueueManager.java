@@ -726,7 +726,7 @@ public class BlockingQueueManager extends BaseManager {
     void initialize(final String queueName) {
         final BQ q = getOrCreateBQ(queueName);
         final CMap cmapStorage = getOrCreateStorageCMap(queueName);
-        executeLocally(new Runnable() {
+        node.executorManager.executeLocally(new Runnable() {
             public void run() {
                 TreeSet<Long> itemKeys = null;
                 if (cmapStorage.loader != null) {

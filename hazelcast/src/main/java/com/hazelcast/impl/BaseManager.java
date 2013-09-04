@@ -1265,10 +1265,6 @@ public abstract class BaseManager {
         }
     }
 
-    public void executeLocally(Runnable runnable) {
-        node.executorManager.executeLocally(runnable);
-    }
-
     protected Address getMasterAddress() {
         return node.getMasterAddress();
     }
