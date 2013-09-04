@@ -78,7 +78,7 @@
 
     </proxy-factories>
 
-    <load-balancer type="random" ></load-balancer>
+    <load-balancer type="random" />
 
     <near-cache name="asd">
         <max-size>2000</max-size>
@@ -88,7 +88,5 @@
         <invalidate-on-change>true</invalidate-on-change>
         <in-memory-format>OBJECT</in-memory-format>
     </near-cache>
-
-
 
 </hazelcast-client>
