@@ -16,6 +16,8 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
@@ -24,6 +26,7 @@ import com.hazelcast.logging.Logger;
 
 import java.util.Collection;
 import java.util.EventListener;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -44,11 +47,11 @@ public final class LifecycleServiceImpl implements LifecycleService {
 
     public LifecycleServiceImpl(HazelcastClient client) {
         this.client = client;
-        final Collection<EventListener> listeners = client.getClientConfig().getListeners();
-        if (listeners != null && !listeners.isEmpty()) {
-            for (EventListener listener : listeners) {
-                if (listener instanceof LifecycleListener) {
-                    addLifecycleListener((LifecycleListener) listener);
+        final List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
+        if(listenerConfigs != null && !listenerConfigs.isEmpty()){
+            for (ListenerConfig listenerConfig : listenerConfigs) {
+                if (listenerConfig.getImplementation() instanceof LifecycleListener) {
+                    addLifecycleListener((LifecycleListener) listenerConfig.getImplementation());
                 }
             }
         }

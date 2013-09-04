@@ -58,20 +58,106 @@
         </hz:config>
     </hz:hazelcast>
 
-    <hz:client id="client"
-        group-name="${cluster.group.name}" group-password="${cluster.group.password}"
-        connection-attempt-limit="3" connection-timeout="1000" connection-attempt-period="3000"
-        redo-operation="true" smart="true" pool-size="300">
-        <hz:member>127.0.0.1:5700</hz:member>
-        <hz:member>127.0.0.1:5701</hz:member>
+    <hz:client id="client">
+        <hz:group name="${cluster.group.name}" password="${cluster.group.password}" />
+        <hz:network connection-attempt-limit="3"
+                    connection-attempt-period="3000"
+                    connection-pool-size="300"
+                    connection-timeout="1000"
+                    redo-operation="true"
+                    smart-routing="true">
+            <hz:member>127.0.0.1:5700</hz:member>
+            <hz:member>127.0.0.1:5701</hz:member>
+
+            <hz:socket-options buffer-size="32"
+                               keep-alive="false"
+                               linger-seconds="3"
+                               reuse-address="false"
+                               tcp-no-delay="false"
+                               timeout="-1"/>
+
+        </hz:network>
     </hz:client>
 
-    <hz:client id="client2"
-               connection-attempt-limit="3" connection-timeout="1000" connection-attempt-period="3000"
-               redo-operation="true" smart="true" pool-size="300"
+    <hz:client id="client2"  credentials-ref="credentials" >
+        <hz:network connection-attempt-limit="3"
+                    connection-attempt-period="3000"
+                    connection-pool-size="300"
+                    connection-timeout="1000"
+                    redo-operation="false"
+                    smart-routing="false">
+
+            <hz:member>127.0.0.1:5700</hz:member>
+            <hz:member>127.0.0.1:5701</hz:member>
+            <hz:socket-options buffer-size="32"
+                               keep-alive="false"
+                               linger-seconds="3"
+                               reuse-address="false"
+                               tcp-no-delay="false"
+                               timeout="-1"/>
+        </hz:network>
+    </hz:client>
+
+    <hz:client id="client3"
                credentials-ref="credentials" >
-        <hz:member>127.0.0.1:5700</hz:member>
-        <hz:member>127.0.0.1:5701</hz:member>
+        <hz:network connection-attempt-limit="3"
+                    connection-attempt-period="3000"
+                    connection-pool-size="300"
+                    connection-timeout="1000"
+                    redo-operation="false"
+                    smart-routing="false">
+            <hz:member>127.0.0.1:5700</hz:member>
+            <hz:member>127.0.0.1:5701</hz:member>
+            <hz:socket-options buffer-size="32"
+                               keep-alive="false"
+                               linger-seconds="3"
+                               reuse-address="false"
+                               tcp-no-delay="false"
+                               timeout="-1"/>
+        </hz:network>
+
+        <hz:listeners>
+            <hz:listener class-name="com.hazelcast.spring.DummyMembershipListener"/>
+            <hz:listener implementation="dummyMembershipListener"/>
+        </hz:listeners>
+
+        <hz:serialization allow-unsafe="false"
+                          byte-order="BIG_ENDIAN"
+                          check-class-def-errors="false"
+                          enable-compression="false"
+                          enable-shared-object="false"
+                          portable-version="10"
+                          use-native-byte-order="false" >
+
+            <hz:data-serializable-factories>
+                <hz:data-serializable-factory factory-id="1" class-name="com.hazelcast.spring.DummyDataSerializableFactory"/>
+            </hz:data-serializable-factories>
+            <hz:portable-factories>
+                <hz:portable-factory factory-id="2" class-name="com.hazelcast.spring.DummyPortableFactory" />
+            </hz:portable-factories>
+            <hz:serializers>
+                <!--<hz:global-serializer class-name="com.hazelcast.spring.DummyGlobalSerializationFactory"/>-->
+                <hz:serializer type-class="com.hazelcast.nio.serialization.CustomSerializationTest$Foo" class-name="com.hazelcast.nio.serialization.CustomSerializationTest$FooXmlSerializer"/>
+            </hz:serializers>
+        </hz:serialization>
+
+
+
+        <hz:proxy-factories>
+            <hz:proxy-factory class-name="com.hazelcast.spring.DummyProxyFactory" service="MyService" />
+        </hz:proxy-factories>
+
+        <hz:load-balancer type="round-robin" />
+
+        <hz:near-cache name="default"
+                       time-to-live-seconds="1"
+                       max-idle-seconds="70"
+                       eviction-policy="LRU"
+                       max-size="4000"
+                       invalidate-on-change="true"/>
+
+
+
     </hz:client>
 
     <bean id="credentials" class="com.hazelcast.security.UsernamePasswordCredentials">
@@ -91,5 +177,7 @@
     <hz:atomicLong id="atomicLong" instance-ref="client" name="atomicLong"/>
     <hz:countDownLatch id="countDownLatch" instance-ref="client" name="countDownLatch"/>
     <hz:semaphore id="semaphore" instance-ref="client" name="semaphore"/>
+
+    <bean id="dummyMembershipListener" class="com.hazelcast.spring.DummyMembershipListener"/>
 
 </beans>

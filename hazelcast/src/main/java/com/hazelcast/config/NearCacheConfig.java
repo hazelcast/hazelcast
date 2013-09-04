@@ -35,6 +35,8 @@ public class NearCacheConfig {
 
     private MapConfig.InMemoryFormat inMemoryFormat = DEFAULT_MEMORY_FORMAT;
 
+    private String name="default";
+
     public NearCacheConfig(int timeToLiveSeconds, int maxSize, String evictionPolicy, int maxIdleSeconds, boolean invalidateOnChange, MapConfig.InMemoryFormat inMemoryFormat) {
         this.timeToLiveSeconds = timeToLiveSeconds;
         this.maxSize = maxSize;
@@ -45,6 +47,14 @@ public class NearCacheConfig {
     }
 
     public NearCacheConfig() {
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public int getTimeToLiveSeconds() {

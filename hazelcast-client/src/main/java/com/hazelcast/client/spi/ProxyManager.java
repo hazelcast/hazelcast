@@ -17,6 +17,7 @@
 package com.hazelcast.client.spi;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.proxy.*;
 import com.hazelcast.collection.CollectionProxyId;
@@ -27,12 +28,16 @@ import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
 import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
+import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.executor.DistributedExecutorService;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.map.MapService;
+import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
@@ -47,6 +52,8 @@ import java.util.concurrent.ConcurrentMap;
  */
 public final class ProxyManager {
 
+    private final static ILogger logger = Logger.getLogger(ProxyManager.class);
+
     private final HazelcastClient client;
     private final ConcurrentMap<String, ClientProxyFactory> proxyFactories = new ConcurrentHashMap<String, ClientProxyFactory>();
     private final ConcurrentMap<ObjectNamespace, ClientProxy> proxies = new ConcurrentHashMap<ObjectNamespace, ClientProxy>();
@@ -54,18 +61,17 @@ public final class ProxyManager {
 
     public ProxyManager(HazelcastClient client) {
         this.client = client;
-
-        final Collection<EventListener> listeners = client.getClientConfig().getListeners();
-        if (listeners != null && !listeners.isEmpty()) {
-            for (EventListener listener : listeners) {
-                if (listener instanceof DistributedObjectListener) {
-                    addDistributedObjectListener((DistributedObjectListener) listener);
+        final List<ListenerConfig> listenerConfigs = client.getClientConfig().getListenerConfigs();
+        if(listenerConfigs != null && !listenerConfigs.isEmpty()){
+            for (ListenerConfig listenerConfig : listenerConfigs) {
+                if (listenerConfig.getImplementation() instanceof DistributedObjectListener) {
+                    addDistributedObjectListener((DistributedObjectListener) listenerConfig.getImplementation());
                 }
             }
         }
     }
 
-    public void init(ProxyFactoryConfig config) {
+    public void init(ClientConfig config) {
         // register defaults
         register(MapService.SERVICE_NAME, new ClientProxyFactory() {
             public ClientProxy create(Object id) {
@@ -134,8 +140,14 @@ public final class ProxyManager {
             }
         });
 
-        for (Map.Entry<String, ClientProxyFactory> entry : config.getFactories().entrySet()) {
-            register(entry.getKey(), entry.getValue());
+
+        for (ProxyFactoryConfig proxyFactoryConfig:config.getProxyFactoryConfigs()){
+            try {
+                ClientProxyFactory clientProxyFactory = ClassLoaderUtil.newInstance(config.getClassLoader(), proxyFactoryConfig.getClassName());
+                register(proxyFactoryConfig.getService(),clientProxyFactory);
+            } catch (Exception e) {
+                logger.severe(e);
+            }
         }
     }
 
