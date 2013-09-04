@@ -139,7 +139,7 @@ public class TcpIpConnectionManager implements ConnectionManager {
             }
             if (implementation != null) {
                 memberSocketInterceptor = (MemberSocketInterceptor) implementation;
-                memberSocketInterceptor.init(sic);
+                memberSocketInterceptor.init(sic.getProperties());
             } else {
                 memberSocketInterceptor = null;
             }

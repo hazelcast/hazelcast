@@ -25,72 +25,66 @@ public class SocketOptions {
 
     // socket options
 
-    private boolean socketTcpNoDelay = false;
+    private boolean tcpNoDelay = false;
 
-    private boolean socketKeepAlive = true;
+    private boolean keepAlive = true;
 
-    private boolean socketReuseAddress = true;
+    private boolean reuseAddress = true;
 
-    private int socketLingerSeconds = 3;
+    private int lingerSeconds = 3;
 
-    private int socketTimeout = -1;
+    private int timeout = -1;
 
-    private int socketBufferSize = 32; // in kb
+    private int bufferSize = 32; // in kb
 
     private SocketFactory socketFactory;
 
-    public boolean isSocketTcpNoDelay() {
-        return socketTcpNoDelay;
+    public boolean isTcpNoDelay() {
+        return tcpNoDelay;
     }
 
-    public SocketOptions setSocketTcpNoDelay(boolean socketTcpNoDelay) {
-        this.socketTcpNoDelay = socketTcpNoDelay;
-        return this;
+    public void setTcpNoDelay(boolean tcpNoDelay) {
+        this.tcpNoDelay = tcpNoDelay;
     }
 
-    public boolean isSocketKeepAlive() {
-        return socketKeepAlive;
+    public boolean isKeepAlive() {
+        return keepAlive;
     }
 
-    public SocketOptions setSocketKeepAlive(boolean socketKeepAlive) {
-        this.socketKeepAlive = socketKeepAlive;
-        return this;
+    public void setKeepAlive(boolean keepAlive) {
+        this.keepAlive = keepAlive;
     }
 
-    public boolean isSocketReuseAddress() {
-        return socketReuseAddress;
+    public boolean isReuseAddress() {
+        return reuseAddress;
     }
 
-    public SocketOptions setSocketReuseAddress(boolean socketReuseAddress) {
-        this.socketReuseAddress = socketReuseAddress;
-        return this;
+    public void setReuseAddress(boolean reuseAddress) {
+        this.reuseAddress = reuseAddress;
     }
 
-    public int getSocketLingerSeconds() {
-        return socketLingerSeconds;
+    public int getLingerSeconds() {
+        return lingerSeconds;
     }
 
-    public SocketOptions setSocketLingerSeconds(int socketLingerSeconds) {
-        this.socketLingerSeconds = socketLingerSeconds;
-        return this;
+    public void setLingerSeconds(int lingerSeconds) {
+        this.lingerSeconds = lingerSeconds;
     }
 
-    public int getSocketTimeout() {
-        return socketTimeout;
+    public int getTimeout() {
+        return timeout;
     }
 
-    public SocketOptions setSocketTimeout(int socketTimeout) {
-        this.socketTimeout = socketTimeout;
-        return this;
+    public void setTimeout(int timeout) {
+        this.timeout = timeout;
     }
 
-    public int getSocketBufferSize() {
-        return socketBufferSize;
+    public int getBufferSize() {
+        return bufferSize;
     }
 
-    public SocketOptions setSocketBufferSize(int socketBufferSize) {
-        this.socketBufferSize = socketBufferSize;
-        return this;
+    public void setBufferSize(int bufferSize) {
+        this.bufferSize = bufferSize;
     }
 
     public SocketFactory getSocketFactory() {
