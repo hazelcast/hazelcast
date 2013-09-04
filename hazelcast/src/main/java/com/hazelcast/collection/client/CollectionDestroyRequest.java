@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,67 +14,60 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue.client;
+package com.hazelcast.collection.client;
 
-import com.hazelcast.client.InitializingObjectRequest;
-import com.hazelcast.client.PartitionClientRequest;
+import com.hazelcast.client.CallableClientRequest;
+import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.queue.QueuePortableHook;
-import com.hazelcast.queue.QueueService;
 
 import java.io.IOException;
 
 /**
- * @author ali 5/8/13
+ * @ali 9/4/13
  */
-//TODO partitionId fix
-public abstract class QueueRequest extends PartitionClientRequest implements Portable, InitializingObjectRequest {
+public class CollectionDestroyRequest extends CallableClientRequest implements Portable, RetryableRequest {
 
-    protected String name;
+    String name;
 
-    protected long timeoutMillis;
+    String serviceName;
 
-    protected QueueRequest() {
+    public CollectionDestroyRequest() {
     }
 
-    protected QueueRequest(String name) {
+    public CollectionDestroyRequest(String name) {
         this.name = name;
     }
 
-    protected QueueRequest(String name, long timeoutMillis) {
-        this.name = name;
-        this.timeoutMillis = timeoutMillis;
-    }
-
-    protected int getPartition() {
-        return getClientEngine().getPartitionService().getPartitionId(name);
-    }
-
-    protected int getReplicaIndex() {
-        return 0;
+    public Object call() throws Exception {
+        return null;
     }
 
     public String getServiceName() {
-        return QueueService.SERVICE_NAME;
+        return serviceName;
     }
 
-    public Object getObjectId() {
-        return name;
+    public void setServiceName(String serviceName) {
+        this.serviceName = serviceName;
     }
 
     public int getFactoryId() {
-        return QueuePortableHook.F_ID;
+        return CollectionPortableHook.F_ID;
+    }
+
+    public int getClassId() {
+        return CollectionPortableHook.COLLECTION_DESTROY;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeUTF("n",name);
-        writer.writeLong("t",timeoutMillis);
+        writer.writeUTF("s",serviceName);
     }
 
     public void readPortable(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
-        timeoutMillis = reader.readLong("t");
+        serviceName = reader.readUTF("s");
     }
 }

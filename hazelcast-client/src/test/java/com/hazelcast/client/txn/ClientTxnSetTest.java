@@ -17,13 +17,15 @@
 package com.hazelcast.client.txn;
 
 import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.core.*;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.ISet;
+import com.hazelcast.core.TransactionalSet;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.SerialTest;
 import com.hazelcast.transaction.TransactionContext;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -35,7 +37,6 @@ import static org.junit.Assert.*;
  */
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(SerialTest.class)
-@Ignore
 public class ClientTxnSetTest {
 
     static final String name = "test";

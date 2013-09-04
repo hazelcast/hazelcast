@@ -1,6 +1,5 @@
 package com.hazelcast.collection;
 
-import com.hazelcast.collection.list.ListService;
 import com.hazelcast.spi.BackupAwareOperation;
 
 /**
@@ -24,9 +23,4 @@ public abstract class CollectionBackupAwareOperation extends CollectionOperation
         //TODO getFrom container config
         return 0;
     }
-
-    public final String getServiceName() {
-        return ListService.SERVICE_NAME;
-    }
-
 }

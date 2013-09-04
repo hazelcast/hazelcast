@@ -61,18 +61,15 @@ public class CollectionItem implements Comparable<CollectionItem>, IdentifiedDat
         if (this == o) return true;
         if (!(o instanceof CollectionItem)) return false;
 
-        CollectionItem that = (CollectionItem) o;
+        CollectionItem item = (CollectionItem) o;
 
-        if (itemId != that.itemId) return false;
-        if (value != null ? !value.equals(that.value) : that.value != null) return false;
+        if (value != null ? !value.equals(item.value) : item.value != null) return false;
 
         return true;
     }
 
     public int hashCode() {
-        int result = (int) (itemId ^ (itemId >>> 32));
-        result = 31 * result + (value != null ? value.hashCode() : 0);
-        return result;
+        return value != null ? value.hashCode() : 0;
     }
 
     public int getFactoryId() {

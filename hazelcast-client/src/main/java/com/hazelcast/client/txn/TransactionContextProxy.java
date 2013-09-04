@@ -18,9 +18,9 @@ package com.hazelcast.client.txn;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.connection.Connection;
-import com.hazelcast.client.txn.proxy.ClientTxnMapProxy;
-import com.hazelcast.client.txn.proxy.ClientTxnMultiMapProxy;
-import com.hazelcast.client.txn.proxy.ClientTxnQueueProxy;
+import com.hazelcast.client.txn.proxy.*;
+import com.hazelcast.collection.list.ListService;
+import com.hazelcast.collection.set.SetService;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.core.*;
 import com.hazelcast.map.MapService;
@@ -81,13 +81,11 @@ public class TransactionContextProxy implements TransactionContext {
     }
 
     public <E> TransactionalList<E> getList(String name) {
-//        return getTransactionalObject(CollectionService.SERVICE_NAME, new CollectionProxyId(ObjectListProxy.COLLECTION_LIST_NAME, name, CollectionProxyType.LIST));
-        return null;
+        return getTransactionalObject(ListService.SERVICE_NAME, name);
     }
 
     public <E> TransactionalSet<E> getSet(String name) {
-//        return getTransactionalObject(CollectionService.SERVICE_NAME, new CollectionProxyId(ObjectSetProxy.COLLECTION_SET_NAME, name, CollectionProxyType.SET));
-        return null;
+        return getTransactionalObject(SetService.SERVICE_NAME, name);
     }
 
     public <T extends TransactionalObject> T getTransactionalObject(String serviceName, Object id) {
@@ -104,7 +102,12 @@ public class TransactionContextProxy implements TransactionContext {
                 obj = new ClientTxnMapProxy(String.valueOf(id), this);
             } else if (serviceName.equals(MultiMapService.SERVICE_NAME)) {
                 obj = new ClientTxnMultiMapProxy(String.valueOf(id), this);
+            } else if (serviceName.equals(ListService.SERVICE_NAME)) {
+                obj = new ClientTxnListProxy(String.valueOf(id), this);
+            }else if (serviceName.equals(SetService.SERVICE_NAME)) {
+                obj = new ClientTxnSetProxy(String.valueOf(id), this);
             }
+
             if (obj == null) {
                 throw new IllegalArgumentException("Service[" + serviceName + "] is not transactional!");
             }

@@ -21,11 +21,10 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ISet;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -44,7 +43,6 @@ import static org.junit.Assert.*;
  */
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
-@Ignore
 public class SetTest extends HazelcastTestSupport {
 
     @Test
@@ -52,7 +50,7 @@ public class SetTest extends HazelcastTestSupport {
         Config config = new Config();
         final String name = "defSet";
         final int count = 100;
-        final int insCount = 4;
+        final int insCount = 2;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
         final HazelcastInstance[] instances = factory.newInstances(config);
 

@@ -30,6 +30,8 @@ import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.client.txn.TransactionContextProxy;
 import com.hazelcast.client.util.RoundRobinLB;
+import com.hazelcast.collection.list.ListService;
+import com.hazelcast.collection.set.SetService;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
@@ -184,16 +186,12 @@ public final class HazelcastClient implements HazelcastInstance {
 
     @Override
     public <E> ISet<E> getSet(String name) {
-//        return getDistributedObject(CollectionService.SERVICE_NAME,
-//                new CollectionProxyId(ObjectSetProxy.COLLECTION_SET_NAME, name, CollectionProxyType.SET));
-        return null;
+        return getDistributedObject(SetService.SERVICE_NAME, name);
     }
 
     @Override
     public <E> IList<E> getList(String name) {
-//        return getDistributedObject(CollectionService.SERVICE_NAME,
-//                new CollectionProxyId(ObjectListProxy.COLLECTION_LIST_NAME, name, CollectionProxyType.LIST));
-        return null;
+        return getDistributedObject(ListService.SERVICE_NAME, name);
     }
 
     @Override

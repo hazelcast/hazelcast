@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,54 +14,50 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue.client;
+package com.hazelcast.collection.client;///*
+
 
 import com.hazelcast.client.CallableClientRequest;
-import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.collection.CollectionPortableHook;
+import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.queue.QueuePortableHook;
-import com.hazelcast.queue.QueueService;
 
 import java.io.IOException;
 
 /**
- * @author ali 5/24/13
- */
-public class QueueDestroyRequest extends CallableClientRequest implements Portable, RetryableRequest {
+* @author ali 6/11/13
+*/
+public abstract class TxnCollectionRequest extends CallableClientRequest implements Portable {
 
-    private String name;
+    String name;
+    Data value;
 
-    public QueueDestroyRequest() {
+    public TxnCollectionRequest() {
     }
 
-    public QueueDestroyRequest(String name) {
+    public TxnCollectionRequest(String name) {
         this.name = name;
     }
 
-    public Object call() throws Exception {
-        getClientEngine().getProxyService().destroyDistributedObject(getServiceName(), name);
-        return null;
-    }
-
-    public String getServiceName() {
-        return QueueService.SERVICE_NAME;
+    public TxnCollectionRequest(String name, Data value) {
+        this(name);
+        this.value = value;
     }
 
     public int getFactoryId() {
-        return QueuePortableHook.F_ID;
-    }
-
-    public int getClassId() {
-        return QueuePortableHook.DESTROY;
+        return CollectionPortableHook.F_ID;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeUTF("n",name);
+        IOUtil.writeNullableData(writer.getRawDataOutput(), value);
     }
 
     public void readPortable(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
+        value = IOUtil.readNullableData(reader.getRawDataInput());
     }
 }

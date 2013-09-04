@@ -17,8 +17,12 @@
 package com.hazelcast.collection;
 
 import com.hazelcast.core.ItemEventType;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.Operation;
+
+import java.io.IOException;
 
 /**
  * @ali 9/4/13
@@ -55,11 +59,24 @@ public class CollectionAddOperation extends CollectionBackupAwareOperation {
 
     public void run() throws Exception {
         itemId = getOrCreateContainer().add(value);
+        response = itemId != -1;
     }
 
     public void afterRun() throws Exception {
         if (itemId != -1){
             publishEvent(ItemEventType.ADDED, value);
         }
+    }
+
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        value.writeData(out);
+    }
+
+    @Override
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        value = new Data();
+        value.readData(in);
     }
 }

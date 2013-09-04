@@ -78,7 +78,6 @@ public abstract class ClientProxy implements DistributedObject {
         return objectId;
     }
 
-    @Override
     public String getPartitionKey() {
         return StringPartitioningStrategy.getPartitionKey(getName());
     }

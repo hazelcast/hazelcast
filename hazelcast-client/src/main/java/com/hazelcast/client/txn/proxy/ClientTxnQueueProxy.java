@@ -44,7 +44,7 @@ public class ClientTxnQueueProxy<E> extends ClientTxnProxy implements Transactio
     }
 
     public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
-        final Data data = proxy.getClient().getSerializationService().toData(e);
+        final Data data = toData(e);
         TxnOfferRequest request = new TxnOfferRequest(getName(), unit.toMillis(timeout), data);
         Boolean result = invoke(request);
         return result;

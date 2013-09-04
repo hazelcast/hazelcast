@@ -18,7 +18,6 @@ package com.hazelcast.collection.txn;
 
 import com.hazelcast.collection.CollectionItem;
 import com.hazelcast.collection.CollectionSizeOperation;
-import com.hazelcast.collection.list.ListService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
@@ -70,7 +69,7 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
         final Data value = nodeEngine.toData(e);
         CollectionReserveAddOperation operation = new CollectionReserveAddOperation(name);
         try {
-            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(ListService.SERVICE_NAME, operation, partitionId).build();
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(getServiceName(), operation, partitionId).build();
             Future<Long> f = invocation.invoke();
             Long itemId = f.get();
             if (itemId != null) {
@@ -78,7 +77,7 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
                     throw new TransactionException("Duplicate itemId: " + itemId);
                 }
                 getCollection().add(new CollectionItem(null, itemId, value));
-                tx.addTransactionLog(new CollectionTransactionLog(itemId, name, partitionId, ListService.SERVICE_NAME, new CollectionTxnAddOperation(name, itemId, value)));
+                tx.addTransactionLog(new CollectionTransactionLog(itemId, name, partitionId, getServiceName(), new CollectionTxnAddOperation(name, itemId, value)));
                 return true;
             }
         } catch (Throwable t) {
@@ -103,7 +102,7 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
         }
         final CollectionReserveRemoveOperation operation = new CollectionReserveRemoveOperation(name, reservedItemId, value);
         try {
-            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(ListService.SERVICE_NAME, operation, partitionId).build();
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(getServiceName(), operation, partitionId).build();
             Future<CollectionItem> f = invocation.invoke();
             CollectionItem item = f.get();
             if (item != null) {
@@ -116,7 +115,7 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
                 if (!itemIdSet.add(item.getItemId())) {
                     throw new TransactionException("Duplicate itemId: " + item.getItemId());
                 }
-                tx.addTransactionLog(new CollectionTransactionLog(item.getItemId(), name, partitionId, ListService.SERVICE_NAME, new CollectionTxnRemoveOperation(name, item.getItemId())));
+                tx.addTransactionLog(new CollectionTransactionLog(item.getItemId(), name, partitionId, getServiceName(), new CollectionTxnRemoveOperation(name, item.getItemId())));
                 return true;
             }
         } catch (Throwable t) {
@@ -129,7 +128,7 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
         checkTransactionState();
         CollectionSizeOperation operation = new CollectionSizeOperation(name);
         try {
-            Invocation invocation = getNodeEngine().getOperationService().createInvocationBuilder(ListService.SERVICE_NAME, operation, partitionId).build();
+            Invocation invocation = getNodeEngine().getOperationService().createInvocationBuilder(getServiceName(), operation, partitionId).build();
             Future<Integer> f = invocation.invoke();
             Integer size = f.get();
             return size + getCollection().size();

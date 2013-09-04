@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,42 +14,35 @@
  * limitations under the License.
  */
 
-package com.hazelcast.queue.client;
+package com.hazelcast.collection.client;
 
-import com.hazelcast.client.InitializingObjectRequest;
 import com.hazelcast.client.PartitionClientRequest;
+import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
-import com.hazelcast.queue.QueuePortableHook;
-import com.hazelcast.queue.QueueService;
+import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 
 import java.io.IOException;
 
 /**
- * @author ali 5/8/13
+ * @ali 9/4/13
  */
-//TODO partitionId fix
-public abstract class QueueRequest extends PartitionClientRequest implements Portable, InitializingObjectRequest {
+public abstract class CollectionRequest extends PartitionClientRequest implements Portable {
+
+    protected String serviceName;
 
     protected String name;
 
-    protected long timeoutMillis;
-
-    protected QueueRequest() {
+    public CollectionRequest() {
     }
 
-    protected QueueRequest(String name) {
+    public CollectionRequest(String name) {
         this.name = name;
-    }
-
-    protected QueueRequest(String name, long timeoutMillis) {
-        this.name = name;
-        this.timeoutMillis = timeoutMillis;
     }
 
     protected int getPartition() {
-        return getClientEngine().getPartitionService().getPartitionId(name);
+        return getClientEngine().getPartitionService().getPartitionId(StringPartitioningStrategy.getPartitionKey(name));
     }
 
     protected int getReplicaIndex() {
@@ -57,24 +50,24 @@ public abstract class QueueRequest extends PartitionClientRequest implements Por
     }
 
     public String getServiceName() {
-        return QueueService.SERVICE_NAME;
+        return serviceName;
     }
 
-    public Object getObjectId() {
-        return name;
+    public void setServiceName(String serviceName) {
+        this.serviceName = serviceName;
     }
 
     public int getFactoryId() {
-        return QueuePortableHook.F_ID;
+        return CollectionPortableHook.F_ID;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
-        writer.writeUTF("n",name);
-        writer.writeLong("t",timeoutMillis);
+        writer.writeUTF("s", serviceName);
+        writer.writeUTF("n", name);
     }
 
     public void readPortable(PortableReader reader) throws IOException {
+        serviceName = reader.readUTF("s");
         name = reader.readUTF("n");
-        timeoutMillis = reader.readLong("t");
     }
 }
