@@ -163,6 +163,11 @@ public class TcpIpConnectionManager implements ConnectionManager {
         return connectionsMap.size();
     }
 
+    @Override
+    public boolean isSSLEnabled() {
+        return socketChannelWrapperFactory instanceof SSLSocketChannelWrapperFactory;
+    }
+
     public void incrementTextConnections() {
         allTextConnections.incrementAndGet();
     }

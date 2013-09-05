@@ -1,1 +1,7 @@
-keystore-pass=123456
+[commands]
+keytool -genkey -alias hazelcast -keyalg RSA -keypass password -keystore hazelcast.ks -storepass password  -validity 3600
+keytool -export -alias hazelcast -file hazelcast.cer -keystore hazelcast.ks -storepass password
+keytool -import -v -trustcacerts -alias hazelcast -keypass password -file hazelcast.cer -keystore hazelcast.ts -storepass password
+
+[pass]
+123456

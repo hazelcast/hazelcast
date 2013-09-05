@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.connection;
 
-import com.hazelcast.client.ClientTypes;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.LoadBalancer;
 import com.hazelcast.client.config.ClientConfig;
@@ -29,7 +28,10 @@ import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.*;
+import com.hazelcast.nio.Address;
+import com.hazelcast.nio.IOUtil;
+import com.hazelcast.nio.MemberSocketInterceptor;
+import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ConstructorFunction;
 
@@ -101,8 +103,7 @@ public class SmartClientConnectionManager implements ClientConnectionManager {
     public Connection newConnection(Address address, Authenticator authenticator) throws IOException {
         checkLive();
         final ConnectionImpl connection = new ConnectionImpl(address, socketOptions, client.getSerializationService());
-        connection.write(Protocols.CLIENT_BINARY.getBytes());
-        connection.write(ClientTypes.JAVA.getBytes());
+        connection.init();
         if (socketInterceptor != null) {
             socketInterceptor.onConnect(connection.getSocket());
         }

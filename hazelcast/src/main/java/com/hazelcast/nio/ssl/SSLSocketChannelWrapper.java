@@ -26,10 +26,11 @@ import java.nio.channels.SocketChannel;
 public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
 
     private final ByteBuffer in;
-    private final ByteBuffer out;
-    private final ByteBuffer cTOs;      // "reliable" write transport
-    private final ByteBuffer sTOc;      // "reliable" read transport
+    private final ByteBuffer emptyBuffer;
+    private final ByteBuffer netOutBuffer;      // "reliable" write transport
+    private final ByteBuffer netInBuffer;      // "reliable" read transport
     private final SSLEngine sslEngine;
+    private volatile boolean handshake = false;
     private SSLEngineResult sslEngineResult;
 
     public SSLSocketChannelWrapper(SSLContext sslContext, SocketChannel sc, boolean client) throws Exception {
@@ -39,33 +40,49 @@ public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
         sslEngine.setEnableSessionCreation(true);
         SSLSession session = sslEngine.getSession();
         in = ByteBuffer.allocate(64 * 1024);
-        int appBufferMax = session.getApplicationBufferSize();
+        emptyBuffer = ByteBuffer.allocate(0);
         int netBufferMax = session.getPacketBufferSize();
-        out = ByteBuffer.allocate(appBufferMax);
-        cTOs = ByteBuffer.allocate(netBufferMax);
-        sTOc = ByteBuffer.allocate(netBufferMax);
-        write(out);
-        while (sslEngineResult.getHandshakeStatus() != SSLEngineResult.HandshakeStatus.FINISHED) {
-            if (sslEngineResult.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.NEED_UNWRAP) {
-                sTOc.clear();
-                while (socketChannel.read(sTOc) < 1) {
-                    Thread.sleep(50);
-                }
-                sTOc.flip();
-                unwrap(sTOc);
-                if (sslEngineResult.getHandshakeStatus() != SSLEngineResult.HandshakeStatus.FINISHED) {
-                    out.clear();
-                    write(out);
-                }
-            } else if (sslEngineResult.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.NEED_WRAP) {
-                out.clear();
-                write(out);
-            } else {
-                Thread.sleep(500);
+        netOutBuffer = ByteBuffer.allocate(netBufferMax);
+        netInBuffer = ByteBuffer.allocate(netBufferMax);
+    }
+
+    private void handshake() throws IOException {
+        synchronized (this) {
+            if (handshake) {
+                return;
             }
+            writeInternal(emptyBuffer);
+            while (sslEngineResult.getHandshakeStatus() != SSLEngineResult.HandshakeStatus.FINISHED) {
+                if (sslEngineResult.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.NEED_UNWRAP) {
+                    netInBuffer.clear();
+
+                    while (socketChannel.read(netInBuffer) < 1) {
+                        try {
+                            Thread.sleep(50);
+                        } catch (InterruptedException e) {
+                            throw new IOException(e);
+                        }
+                    }
+                    netInBuffer.flip();
+                    unwrap(netInBuffer);
+
+                    if (sslEngineResult.getHandshakeStatus() != SSLEngineResult.HandshakeStatus.FINISHED) {
+                        writeInternal(emptyBuffer);
+                    }
+                } else if (sslEngineResult.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.NEED_WRAP) {
+                    writeInternal(emptyBuffer);
+                } else {
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        throw new IOException(e);
+                    }
+                }
+            }
+            in.clear();
+            in.flip();
+            handshake = true;
         }
-        in.clear();
-        in.flip();
     }
 
     private ByteBuffer unwrap(ByteBuffer b) throws SSLException {
@@ -82,22 +99,33 @@ public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
                 return in;
             }
         }
+        in.flip();
         return in;
     }
 
     public int write(ByteBuffer input) throws IOException {
-        sslEngineResult = sslEngine.wrap(input, cTOs);
-        cTOs.flip();
-        int written = socketChannel.write(cTOs);
-        if (cTOs.hasRemaining()) {
-            cTOs.compact();
+        if (!handshake) {
+            handshake();
+        }
+        return writeInternal(input);
+    }
+
+    private int writeInternal(ByteBuffer input) throws IOException {
+        sslEngineResult = sslEngine.wrap(input, netOutBuffer);
+        netOutBuffer.flip();
+        int written = socketChannel.write(netOutBuffer);
+        if (netOutBuffer.hasRemaining()) {
+            netOutBuffer.compact();
         } else {
-            cTOs.clear();
+            netOutBuffer.clear();
         }
         return written;
     }
 
     public int read(ByteBuffer output) throws IOException {
+        if (!handshake) {
+            handshake();
+        }
         int readBytesCount = 0;
         int limit;
         if (in.hasRemaining()) {
@@ -108,33 +136,31 @@ public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
             }
             return readBytesCount;
         }
-        if (sTOc.hasRemaining()) {
-            unwrap(sTOc);
-            in.flip();
+        if (netInBuffer.hasRemaining()) {
+            unwrap(netInBuffer);
             limit = Math.min(in.limit(), output.remaining());
             for (int i = 0; i < limit; i++) {
                 output.put(in.get());
                 readBytesCount++;
             }
             if (sslEngineResult.getStatus() != SSLEngineResult.Status.BUFFER_UNDERFLOW) {
-                sTOc.clear();
-                sTOc.flip();
+                netInBuffer.clear();
+                netInBuffer.flip();
                 return readBytesCount;
             }
         }
-        if (sTOc.hasRemaining()) {
-            sTOc.compact();
+        if (netInBuffer.hasRemaining()) {
+            netInBuffer.compact();
         } else {
-            sTOc.clear();
+            netInBuffer.clear();
         }
-        if (socketChannel.read(sTOc) == -1) {
-            sTOc.clear();
-            sTOc.flip();
+        if (socketChannel.read(netInBuffer) == -1) {
+            netInBuffer.clear();
+            netInBuffer.flip();
             return -1;
         }
-        sTOc.flip();
-        unwrap(sTOc);
-        in.flip();
+        netInBuffer.flip();
+        unwrap(netInBuffer);
         limit = Math.min(in.limit(), output.remaining());
         for (int i = 0; i < limit; i++) {
             output.put(in.get());
@@ -146,11 +172,20 @@ public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
     public void close() throws IOException {
         sslEngine.closeOutbound();
         try {
-            out.clear();
-            write(out);
+            write(emptyBuffer);
         } catch (Exception ignored) {
         }
         socketChannel.close();
+    }
+
+    @Override
+    public long read(ByteBuffer[] byteBuffers) throws IOException {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public long write(ByteBuffer[] byteBuffers) throws IOException {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -161,5 +196,14 @@ public class SSLSocketChannelWrapper extends DefaultSocketChannelWrapper {
     @Override
     public long write(ByteBuffer[] byteBuffers, int offset, int length) throws IOException {
         throw new UnsupportedOperationException();
+    }
+
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("SSLSocketChannelWrapper{");
+        sb.append("socketChannel=").append(socketChannel);
+        sb.append('}');
+        return sb.toString();
     }
 }

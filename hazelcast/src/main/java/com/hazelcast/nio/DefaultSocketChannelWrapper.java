@@ -100,4 +100,12 @@ public class DefaultSocketChannelWrapper implements SocketChannelWrapper {
     public SelectionKey register(Selector selector, int ops, Object attachment) throws ClosedChannelException {
         return socketChannel.register(selector, ops, attachment);
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("DefaultSocketChannelWrapper{");
+        sb.append("socketChannel=").append(socketChannel);
+        sb.append('}');
+        return sb.toString();
+    }
 }
