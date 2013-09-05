@@ -23,4 +23,5 @@ public interface TransactionalService {
 
     <T extends TransactionalObject> T createTransactionalObject(Object id, TransactionSupport transaction);
 
+    void rollbackTransaction(String transactionId);
 }
