@@ -522,7 +522,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     }
 
     class TaskPoller extends Thread {
-        final ConsoleRequest[] consoleRequests = new ConsoleRequest[21];
+        final Map<Integer,Class<? extends ConsoleRequest>> consoleRequests = new HashMap<Integer,Class<? extends ConsoleRequest>>();
 
         TaskPoller() {
             super(instance.node.threadGroup, instance.node.getThreadNamePrefix("MC.Task.Poller"));
@@ -544,7 +544,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         }
 
         public void register(ConsoleRequest consoleRequest) {
-            consoleRequests[consoleRequest.getType()] = consoleRequest;
+            consoleRequests.put(consoleRequest.getType(),consoleRequest.getClass());
         }
 
         public void sendResponse(int taskId, ConsoleRequest request) {
@@ -591,13 +591,13 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                         final int taskId = input.readInt();
                         if(taskId > 0){
                             final int requestType = input.readInt();
-                            if (requestType < consoleRequests.length) {
-                                final ConsoleRequest request = consoleRequests[requestType];
-                                if (request != null) {
-                                    request.readData(input);
-                                    sendResponse(taskId, request);
-                                }
+                            Class<? extends ConsoleRequest> requestClass = consoleRequests.get(requestType);
+                            if (requestClass == null) {
+                                throw new RuntimeException("Failed to find a request for requestType:" + requestType);
                             }
+                            final ConsoleRequest request = requestClass.newInstance();
+                            request.readData(input);
+                            sendResponse(taskId, request);
                         }
                     } catch (Exception e) {
                         logger.finest(e);
