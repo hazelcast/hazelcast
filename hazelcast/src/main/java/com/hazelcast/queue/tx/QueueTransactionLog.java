@@ -97,6 +97,6 @@ public class QueueTransactionLog implements KeyAwareTransactionLog {
     }
 
     public Object getKey() {
-        return itemId;
+        return new TransactionLogKey(itemId, name);
     }
 }
