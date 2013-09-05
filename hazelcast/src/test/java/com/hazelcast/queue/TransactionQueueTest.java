@@ -22,7 +22,10 @@ import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
-import com.hazelcast.transaction.*;
+import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionNotActiveException;
+import com.hazelcast.transaction.TransactionOptions;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -30,6 +33,7 @@ import org.junit.runner.RunWith;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 
@@ -51,11 +55,16 @@ public class TransactionQueueTest extends HazelcastTestSupport {
 
         final TransactionContext context = instances[0].newTransactionContext();
         context.beginTransaction();
-        TransactionalQueue<String> q = context.getQueue(name);
-        assertTrue(q.offer("ali"));
-        String s = q.poll();
-        assertEquals("ali",s);
-        context.commitTransaction();
+        try {
+            TransactionalQueue<String> q = context.getQueue(name);
+            assertTrue(q.offer("ali"));
+            String s = q.poll();
+            assertEquals("ali", s);
+            context.commitTransaction();
+        } catch (TransactionException e) {
+            context.rollbackTransaction();
+            throw e;
+        }
         assertEquals(0, getQueue(instances, name).size());
     }
 
@@ -131,8 +140,7 @@ public class TransactionQueueTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRollbackQueue() throws Throwable
-    {
+    public void testRollbackQueue() throws Throwable {
         Config config = new Config();
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(4);
         final HazelcastInstance h1 = factory.newHazelcastInstance(config);
@@ -152,8 +160,7 @@ public class TransactionQueueTest extends HazelcastTestSupport {
     }
 
     @Test(expected = TransactionNotActiveException.class)
-    public void testTxnQueueOuterTransaction() throws Throwable
-    {
+    public void testTxnQueueOuterTransaction() throws Throwable {
         Config config = new Config();
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
         final HazelcastInstance h1 = factory.newHazelcastInstance(config);
@@ -164,6 +171,83 @@ public class TransactionQueueTest extends HazelcastTestSupport {
         queue.offer("item");
         transactionContext.commitTransaction();
         queue.poll();
+    }
+
+    @Test
+    public void testIssue859And863() throws Exception {
+        final int numberOfMessages = 20000;
+        final AtomicInteger count = new AtomicInteger();
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        Config config = new Config();
+        HazelcastInstance instance1 = factory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+
+        String inQueueName = "in@foo";
+        String outQueueName = "out@foo";
+
+        for (int i = 0; i < numberOfMessages; i++) {
+            if (!instance1.getQueue(inQueueName).offer(new byte[1024])) {
+                throw new RuntimeException("initial put did not work");
+            }
+        }
+
+        class MoveMessage extends Thread {
+
+            private final HazelcastInstance hazelcastInstance;
+            private final String inQueueName;
+            private final String outQueueName;
+            private volatile boolean active = true;
+
+            public MoveMessage(HazelcastInstance hazelcastInstance, String inQueueName, String outQueueName) {
+                this.hazelcastInstance = hazelcastInstance;
+                this.inQueueName = inQueueName;
+                this.outQueueName = outQueueName;
+            }
+
+            public void run() {
+                while (active && count.get() != numberOfMessages) {
+                    TransactionContext transactionContext = hazelcastInstance.newTransactionContext();
+                    transactionContext.beginTransaction();
+                    try {
+                        TransactionalQueue<Object> queue = transactionContext.getQueue(inQueueName);
+                        Object value = queue.poll();
+                        if (value != null) {
+                            TransactionalQueue<Object> outQueue = transactionContext.getQueue(outQueueName);
+                            if (!outQueue.offer(value)) {
+                                throw new RuntimeException();
+                            }
+                        }
+                        transactionContext.commitTransaction();
+                        if (value != null) {
+                            count.incrementAndGet();
+                        }
+                    } catch (Exception e) {
+                        transactionContext.rollbackTransaction();
+                    }
+                }
+            }
+        }
+
+        MoveMessage moveMessage1 = new MoveMessage(instance1, inQueueName, outQueueName);
+        MoveMessage moveMessage2 = new MoveMessage(instance2, inQueueName, outQueueName);
+        moveMessage1.start();
+        moveMessage2.start();
+
+        while (count.get() < numberOfMessages / 2) {
+            Thread.sleep(10);
+        }
+        moveMessage2.active = false;
+        instance2.getLifecycleService().terminate();
+        moveMessage2.join(10000);
+        moveMessage1.join(20000);
+
+        try {
+            assertEquals(numberOfMessages, instance1.getQueue(outQueueName).size());
+            assertTrue(instance1.getQueue(inQueueName).isEmpty());
+        } finally {
+            moveMessage1.active = false;
+        }
     }
 
 }

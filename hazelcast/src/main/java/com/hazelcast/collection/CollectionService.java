@@ -346,4 +346,8 @@ public class CollectionService implements ManagedService, RemoteService,
         }
         throw new IllegalArgumentException();
     }
+
+    @Override
+    public void rollbackTransaction(String transactionId) {
+    }
 }

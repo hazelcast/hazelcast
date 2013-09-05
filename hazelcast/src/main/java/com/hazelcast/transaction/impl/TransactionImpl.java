@@ -16,6 +16,7 @@
 
 package com.hazelcast.transaction.impl;
 
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
@@ -137,6 +138,27 @@ final class TransactionImpl implements Transaction, TransactionSupport {
         setThreadFlag(Boolean.TRUE);
         startTime = Clock.currentTimeMillis();
         backupAddresses = transactionManagerService.pickBackupAddresses(durability);
+
+        if (durability > 0 && backupAddresses != null && transactionType == TransactionType.TWO_PHASE) {
+            final OperationService operationService = nodeEngine.getOperationService();
+            List<Future> futures = new ArrayList<Future>(backupAddresses.length);
+            for (Address backupAddress : backupAddresses) {
+                if (nodeEngine.getClusterService().getMember(backupAddress) != null) {
+                    final Invocation inv = operationService.createInvocationBuilder(TransactionManagerServiceImpl.SERVICE_NAME,
+                            new BeginTxBackupOperation(txOwnerUuid, txnId), backupAddress).build();
+                    futures.add(inv.invoke());
+                }
+            }
+            for (Future future : futures) {
+                try {
+                    future.get(timeoutMillis, TimeUnit.MILLISECONDS);
+                } catch (MemberLeftException e) {
+                    nodeEngine.getLogger(Transaction.class).finest("Member left replicating tx begin..", e);
+                } catch (Exception e) {
+                    throw ExceptionUtil.rethrow(e, IllegalStateException.class);
+                }
+            }
+        }
         state = ACTIVE;
     }
 
