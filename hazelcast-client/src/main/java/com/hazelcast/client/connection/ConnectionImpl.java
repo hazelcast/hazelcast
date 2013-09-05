@@ -16,8 +16,10 @@
 
 package com.hazelcast.client.connection;
 
+import com.hazelcast.client.ClientTypes;
 import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.nio.Address;
+import com.hazelcast.nio.Protocols;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.ObjectDataInputStream;
 import com.hazelcast.nio.serialization.ObjectDataOutputStream;
@@ -97,8 +99,9 @@ final class ConnectionImpl implements Connection {
         return endpoint;
     }
 
-    void write(byte[] bytes) throws IOException {
-        out.write(bytes);
+    void init() throws IOException {
+        out.write(Protocols.CLIENT_BINARY.getBytes());
+        out.write(ClientTypes.JAVA.getBytes());
         out.flush();
     }
 

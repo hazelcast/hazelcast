@@ -117,8 +117,8 @@ public class SocketConnector implements Runnable {
                 log(Level.FINEST, "Calling member socket interceptor: " + memberSocketInterceptor + " for " + socketChannel);
                 memberSocketInterceptor.onConnect(socketChannel.socket());
             }
-            socketChannel.configureBlocking(false);
             final SocketChannelWrapper socketChannelWrapper = connectionManager.wrapSocketChannel(socketChannel, true);
+            socketChannelWrapper.configureBlocking(false);
             TcpIpConnection connection = connectionManager.assignSocketChannel(socketChannelWrapper);
             connectionManager.sendBindRequest(connection, address, true);
         } catch (Exception e) {

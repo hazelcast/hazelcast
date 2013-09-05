@@ -43,48 +43,54 @@ public class SocketOptions {
         return tcpNoDelay;
     }
 
-    public void setTcpNoDelay(boolean tcpNoDelay) {
+    public SocketOptions setTcpNoDelay(boolean tcpNoDelay) {
         this.tcpNoDelay = tcpNoDelay;
+        return this;
     }
 
     public boolean isKeepAlive() {
         return keepAlive;
     }
 
-    public void setKeepAlive(boolean keepAlive) {
+    public SocketOptions setKeepAlive(boolean keepAlive) {
         this.keepAlive = keepAlive;
+        return this;
     }
 
     public boolean isReuseAddress() {
         return reuseAddress;
     }
 
-    public void setReuseAddress(boolean reuseAddress) {
+    public SocketOptions setReuseAddress(boolean reuseAddress) {
         this.reuseAddress = reuseAddress;
+        return this;
     }
 
     public int getLingerSeconds() {
         return lingerSeconds;
     }
 
-    public void setLingerSeconds(int lingerSeconds) {
+    public SocketOptions setLingerSeconds(int lingerSeconds) {
         this.lingerSeconds = lingerSeconds;
+        return this;
     }
 
     public int getTimeout() {
         return timeout;
     }
 
-    public void setTimeout(int timeout) {
+    public SocketOptions setTimeout(int timeout) {
         this.timeout = timeout;
+        return this;
     }
 
     public int getBufferSize() {
         return bufferSize;
     }
 
-    public void setBufferSize(int bufferSize) {
+    public SocketOptions setBufferSize(int bufferSize) {
         this.bufferSize = bufferSize;
+        return this;
     }
 
     public SocketFactory getSocketFactory() {
