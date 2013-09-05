@@ -19,6 +19,7 @@ package com.hazelcast.client.spi.impl;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.spi.ClientClusterService;
 import com.hazelcast.client.spi.ClientPartitionService;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.Partition;
 import com.hazelcast.instance.MemberImpl;
@@ -35,7 +36,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
 
 /**
  * @author mdogan 5/16/13
@@ -78,6 +78,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
                     if (response != null) {
                         processPartitionResponse(response);
                     }
+                } catch (HazelcastInstanceNotActiveException ignored) {
                 } finally {
                     updating.set(false);
                 }
@@ -123,7 +124,7 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     }
 
     public void stop() {
-
+        partitions.clear();
     }
 
     @Override
@@ -134,6 +135,9 @@ public final class ClientPartitionServiceImpl implements ClientPartitionService 
     @Override
     public int getPartitionId(Data key) {
         final int pc = partitionCount;
+        if (pc <= 0) {
+            return 0;
+        }
         int hash = key.getPartitionHash();
         return (hash == Integer.MIN_VALUE) ? 0 : Math.abs(hash) % pc;
     }

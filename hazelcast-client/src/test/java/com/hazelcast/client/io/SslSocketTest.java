@@ -62,8 +62,8 @@ public class SslSocketTest {
         System.setProperty("javax.net.ssl.keyStore", keyStore);
         System.setProperty("javax.net.ssl.trustStore", trustStore);
         System.setProperty("javax.net.ssl.keyStorePassword", "123456");
+        System.setProperty("javax.net.ssl.trustStorePassword", "123456");
 
-        System.err.println("keyStore = " + keyStore);
         try {
             Config cfg = new Config();
             cfg.getNetworkConfig().setSSLConfig(new SSLConfig().setEnabled(true));

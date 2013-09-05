@@ -23,7 +23,6 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
-import java.util.logging.Level;
 
 final class ReadHandler extends AbstractSelectionHandler implements Runnable {
 
@@ -81,6 +80,11 @@ final class ReadHandler extends AbstractSelectionHandler implements Runnable {
             int readBytes = socketChannel.read(protocolBuffer);
             if (readBytes == -1) {
                 throw new EOFException("Could not read protocol type!");
+            }
+            if (readBytes == 0 && connectionManager.isSSLEnabled()) {
+                // when using SSL, we can read 0 bytes since data read from socket can be handshake packets.
+                initializeSocketReader();
+                return;
             }
             if (!protocolBuffer.hasRemaining()) {
                 String protocol = new String(protocolBuffer.array());

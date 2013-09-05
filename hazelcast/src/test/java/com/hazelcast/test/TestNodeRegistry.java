@@ -161,6 +161,11 @@ final class TestNodeRegistry {
                 return 0;
             }
 
+            @Override
+            public boolean isSSLEnabled() {
+                return false;
+            }
+
             private class MockConnection implements Connection {
                 final Address endpoint;
                 final NodeEngineImpl nodeEngine;
