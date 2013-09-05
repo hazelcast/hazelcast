@@ -212,13 +212,13 @@ public class ConcurrentMapManager extends BaseManager {
     public void flush(String name) {
         CMap cmap = getMap(name);
         if (cmap != null && cmap.store != null && cmap.writeDelayMillis > 0) {
-            final Set<Record> dirtyRecords = new HashSet<Record>();
+            final Set<CMap.StoreRecord> dirtyRecords = new HashSet<CMap.StoreRecord>();
             for (Record record : cmap.mapRecords.values()) {
                 if (record.isDirty()) {
                     PartitionInfo partition = partitionManager.getPartition(record.getBlockId());
                     Address owner = partition.getOwner();
                     if (owner != null && thisAddress.equals(owner)) {
-                        dirtyRecords.add(record);
+                        dirtyRecords.add(new CMap.StoreRecord(record.getKeyData(), record.getValueData(), record.isActive()));
                         record.setDirty(false);  // set dirty to false, we will store these soon
                     }
                 }
@@ -226,8 +226,11 @@ public class ConcurrentMapManager extends BaseManager {
             try {
                 cmap.runStoreUpdate(dirtyRecords);
             } catch (Throwable e) {
-                for (Record dirtyRecord : dirtyRecords) {
-                    dirtyRecord.setDirty(true);
+                for (CMap.StoreRecord storeRecord : dirtyRecords) {
+                    Record record = cmap.getRecord(storeRecord.key);
+                    if (record != null) {
+                        record.setDirty(true);
+                    }
                 }
                 Util.throwUncheckedException(e);
             }

@@ -52,6 +52,7 @@ public class ExecutorManager extends BaseManager {
     private final NamedExecutorService defaultExecutorService;
     private final NamedExecutorService queryExecutorService;
     private final NamedExecutorService eventExecutorService;
+    private final NamedExecutorService mapStoreExecutorService;
 
     private volatile boolean started = false;
     private static final String DEFAULT_EXECUTOR_SERVICE = "x:default";
@@ -100,6 +101,7 @@ public class ExecutorManager extends BaseManager {
         };
         parallelExecutorService = new ParallelExecutorService(node.getLogger(ParallelExecutorService.class.getName()), threadPoolExecutor);
         defaultExecutorService = getOrCreateNamedExecutorService(DEFAULT_EXECUTOR_SERVICE);
+        mapStoreExecutorService = getOrCreateNamedExecutorService(STORE_EXECUTOR_SERVICE);
         queryExecutorService = getOrCreateNamedExecutorService(QUERY_EXECUTOR_SERVICE, gp.EXECUTOR_QUERY_THREAD_COUNT);
         eventExecutorService = getOrCreateNamedExecutorService(EVENT_EXECUTOR_SERVICE, gp.EXECUTOR_EVENT_THREAD_COUNT);
         mapLoaderExecutorService = parallelExecutorService.newParallelExecutor(gp.MAP_LOAD_THREAD_COUNT.getInteger());
@@ -121,6 +123,10 @@ public class ExecutorManager extends BaseManager {
 
     public ParallelExecutor getMapLoaderExecutorService() {
         return mapLoaderExecutorService;
+    }
+
+    public NamedExecutorService getMapStoreExecutorService() {
+        return mapStoreExecutorService;
     }
 
     private NamedExecutorService getOrCreateNamedExecutorService(String name, GroupProperties.GroupProperty groupProperty) {
