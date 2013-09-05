@@ -28,7 +28,6 @@ import org.hibernate.internal.util.config.ConfigurationHelper;
 
 import java.io.IOException;
 import java.util.Properties;
-import java.util.logging.Level;
 
 class HazelcastClientLoader implements IHazelcastInstanceLoader {
 
@@ -72,7 +71,7 @@ class HazelcastClientLoader implements IHazelcastInstanceLoader {
         if (address != null) {
             clientConfig.addAddress(address);
         }
-        clientConfig.setSmart(true);
+        clientConfig.setSmartRouting(true);
         clientConfig.setRedoOperation(true);
         return (client = HazelcastClient.newHazelcastClient(clientConfig));
     }

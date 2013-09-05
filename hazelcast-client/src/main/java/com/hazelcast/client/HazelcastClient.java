@@ -109,7 +109,7 @@ public final class HazelcastClient implements HazelcastInstance {
         if (loadBalancer == null) {
             loadBalancer = new RoundRobinLB();
         }
-        if (config.isSmart()) {
+        if (config.isSmartRouting()) {
             connectionManager = new SmartClientConnectionManager(this, clusterService.getAuthenticator(), loadBalancer);
         } else {
             connectionManager = new DummyClientConnectionManager(this, clusterService.getAuthenticator(), loadBalancer);
@@ -117,8 +117,17 @@ public final class HazelcastClient implements HazelcastInstance {
         invocationService = new ClientInvocationServiceImpl(this);
         userContext = new ConcurrentHashMap<String, Object>();
         loadBalancer.init(getCluster(), config);
-        proxyManager.init(config.getProxyFactoryConfig());
+        proxyManager.init(config);
         partitionService = new ClientPartitionServiceImpl(this);
+
+        this.initConfiguration();
+    }
+
+    private void initConfiguration() {
+        //TODO init code comes here
+
+        //handleProxyFactoryInstantiation
+
     }
 
     public static HazelcastInstance newHazelcastClient() {
@@ -130,6 +139,7 @@ public final class HazelcastClient implements HazelcastInstance {
             config = new XmlClientConfigBuilder().build();
         }
         final HazelcastClient client = new HazelcastClient(config);
+        client.initConfiguration();
         client.start();
         final HazelcastClientProxy proxy = new HazelcastClientProxy(client);
         CLIENTS.put(client.id, proxy);

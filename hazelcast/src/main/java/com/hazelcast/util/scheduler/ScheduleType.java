@@ -14,15 +14,8 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio;
+package com.hazelcast.util.scheduler;
 
-import java.io.IOException;
-import java.net.Socket;
-import java.util.Properties;
-
-public interface SocketInterceptor {
-
-    void init(Properties properties);
-
-    void onConnect(Socket connectedSocket) throws IOException;
+public enum ScheduleType {
+    POSTPONE, FOR_EACH, SCHEDULE_IF_NEW
 }

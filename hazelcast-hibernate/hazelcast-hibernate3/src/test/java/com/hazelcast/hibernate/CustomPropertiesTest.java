@@ -78,7 +78,7 @@ public class CustomPropertiesTest extends HibernateTestSupport {
         ClientConfig clientConfig = client.getClientConfig();
         assertEquals("dev-custom", clientConfig.getGroupConfig().getName());
         assertEquals("dev-pass", clientConfig.getGroupConfig().getPassword());
-        assertTrue(clientConfig.isSmart());
+        assertTrue(clientConfig.isSmartRouting());
         assertTrue(clientConfig.isRedoOperation());
         Hazelcast.newHazelcastInstance(new ClasspathXmlConfig("hazelcast-custom.xml"));
         assertEquals(2, hz.getCluster().getMembers().size());
