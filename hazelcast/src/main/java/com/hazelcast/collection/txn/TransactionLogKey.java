@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.multimap.txn;
+package com.hazelcast.collection.txn;
 
-import com.hazelcast.nio.serialization.Data;
-
+/**
+ * @ali 9/5/13
+ */
 class TransactionLogKey {
 
-    final String name;
+    private final String name;
 
-    final Data key;
+    private final long itemId;
 
-    public TransactionLogKey(String name, Data key) {
+    private final String serviceName;
+
+    TransactionLogKey(String name, long itemId, String serviceName) {
         this.name = name;
-        this.key = key;
+        this.itemId = itemId;
+        this.serviceName = serviceName;
     }
 
     public boolean equals(Object o) {
@@ -35,15 +39,17 @@ class TransactionLogKey {
 
         TransactionLogKey that = (TransactionLogKey) o;
 
-        if (!key.equals(that.key)) return false;
+        if (itemId != that.itemId) return false;
         if (!name.equals(that.name)) return false;
+        if (!serviceName.equals(that.serviceName)) return false;
 
         return true;
     }
 
     public int hashCode() {
         int result = name.hashCode();
-        result = 31 * result + key.hashCode();
+        result = 31 * result + (int) (itemId ^ (itemId >>> 32));
+        result = 31 * result + serviceName.hashCode();
         return result;
     }
 }

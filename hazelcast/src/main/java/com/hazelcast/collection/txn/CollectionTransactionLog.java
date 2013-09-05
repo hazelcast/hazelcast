@@ -34,7 +34,7 @@ public class CollectionTransactionLog implements KeyAwareTransactionLog {
     }
 
     public Object getKey() {
-        return itemId;
+        return new TransactionLogKey(name, itemId, serviceName);
     }
 
     public Future prepare(NodeEngine nodeEngine) {
