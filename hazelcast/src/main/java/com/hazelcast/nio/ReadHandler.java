@@ -51,6 +51,10 @@ final class ReadHandler extends AbstractSelectionHandler implements Runnable {
         try {
             if (socketReader == null) {
                 initializeSocketReader();
+                if (socketReader == null) {
+                    // when using SSL, we can read 0 bytes since data read from socket can be handshake packets.
+                    return;
+                }
             }
             int readBytes = socketChannel.read(buffer);
             if (readBytes == -1) {
@@ -83,7 +87,6 @@ final class ReadHandler extends AbstractSelectionHandler implements Runnable {
             }
             if (readBytes == 0 && connectionManager.isSSLEnabled()) {
                 // when using SSL, we can read 0 bytes since data read from socket can be handshake packets.
-                initializeSocketReader();
                 return;
             }
             if (!protocolBuffer.hasRemaining()) {
