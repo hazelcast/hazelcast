@@ -591,10 +591,11 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                         final int taskId = input.readInt();
                         if(taskId > 0){
                             final int requestType = input.readInt();
-                            final ConsoleRequest request = consoleRequests.get(requestType).newInstance();
-                            if (request == null) {
+                            Class<? extends ConsoleRequest> requestClass = consoleRequests.get(requestType);
+                            if (requestClass == null) {
                                 throw new RuntimeException("Failed to find a request for requestType:" + requestType);
                             }
+                            final ConsoleRequest request = requestClass.newInstance();
                             request.readData(input);
                             sendResponse(taskId, request);
                         }
