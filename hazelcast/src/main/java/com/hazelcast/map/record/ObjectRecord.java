@@ -42,13 +42,13 @@ public final class ObjectRecord extends AbstractRecord<Object> implements Record
         long size = 0;
 
         // add statistics size if enabled.
-        size += ( statistics == null ? 0 : statistics.size() );
+        //size += ( statistics == null ? 0 : statistics.size() );
 
         // add size of version.
-        size += ( Long.SIZE/Byte.SIZE );
+        //size += ( Long.SIZE/Byte.SIZE );
 
         // add key size.
-        size += key.totalSize();
+        //size += key.totalSize();
 
         // todo add object size
         //size += ( value == null ? 0 : value.totalSize() );
