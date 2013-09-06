@@ -33,18 +33,21 @@ public class TxnReserveOfferOperation extends QueueOperation implements WaitSupp
 
     int txSize;
 
+    String transactionId;
+
     public TxnReserveOfferOperation() {
     }
 
-    public TxnReserveOfferOperation(String name, long timeoutMillis, int txSize) {
+    public TxnReserveOfferOperation(String name, long timeoutMillis, int txSize, String transactionId) {
         super(name, timeoutMillis);
         this.txSize = txSize;
+        this.transactionId = transactionId;
     }
 
     public void run() throws Exception {
         QueueContainer container = getOrCreateContainer();
         if (container.hasEnoughCapacity(txSize+1)) {
-            response = container.txnOfferReserve();
+            response = container.txnOfferReserve(transactionId);
         }
     }
 
@@ -68,10 +71,12 @@ public class TxnReserveOfferOperation extends QueueOperation implements WaitSupp
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeInt(txSize);
+        out.writeUTF(transactionId);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         txSize = in.readInt();
+        transactionId = in.readUTF();
     }
 }

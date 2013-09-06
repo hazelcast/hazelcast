@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,58 +20,43 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.queue.QueueDataSerializerHook;
 import com.hazelcast.queue.QueueOperation;
-import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.WaitSupport;
 
 import java.io.IOException;
 
 /**
- * @author ali 3/27/13
+ * @ali 9/5/13
  */
-public class TxnReservePollOperation extends QueueOperation implements WaitSupport {
-
-    long reservedOfferId;
+public class QueueTransactionRollbackOperation extends QueueOperation {
 
     String transactionId;
 
-    public TxnReservePollOperation() {
+    public QueueTransactionRollbackOperation() {
     }
 
-    public TxnReservePollOperation(String name, long timeoutMillis, long reservedOfferId, String transactionId) {
-        super(name, timeoutMillis);
-        this.reservedOfferId = reservedOfferId;
+    public QueueTransactionRollbackOperation(String name, String transactionId) {
+        super(name);
         this.transactionId = transactionId;
     }
 
-    public void run() throws Exception {
-        response = getOrCreateContainer().txnPollReserve(reservedOfferId, transactionId);
-    }
-
-    public WaitNotifyKey getWaitKey() {
-        return getOrCreateContainer().getPollWaitNotifyKey();
-    }
-
-    public boolean shouldWait() {
-        return getWaitTimeoutMillis() != 0 && getOrCreateContainer().size() == 0;
-    }
-
-    public void onWaitExpire() {
-        getResponseHandler().sendResponse(null);
-    }
-
     public int getId() {
-        return QueueDataSerializerHook.TXN_RESERVE_POLL;
+        return QueueDataSerializerHook.CHECK_EVICT;
+    }
+
+    public void run() throws Exception {
+        getOrCreateContainer().rollbackTransaction(transactionId);
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeLong(reservedOfferId);
         out.writeUTF(transactionId);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        reservedOfferId = in.readLong();
         transactionId = in.readUTF();
+    }
+
+    public boolean returnsResponse() {
+        return false;
     }
 }
