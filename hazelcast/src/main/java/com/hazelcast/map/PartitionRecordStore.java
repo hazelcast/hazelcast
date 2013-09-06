@@ -582,7 +582,7 @@ public class PartitionRecordStore implements RecordStore {
 
             setRecordValue(record, value);
 
-            updateSizeEstimator( -calculateRecordSize(record) );
+            updateSizeEstimator( calculateRecordSize(record) );
 
         } else {
             return null;
