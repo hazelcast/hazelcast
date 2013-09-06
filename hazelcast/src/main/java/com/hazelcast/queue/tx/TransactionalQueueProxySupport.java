@@ -64,7 +64,7 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
 
     public boolean offerInternal(Data data, long timeout) {
         throwExceptionIfNull(data);
-        TxnReserveOfferOperation operation = new TxnReserveOfferOperation(name, timeout, offeredQueue.size());
+        TxnReserveOfferOperation operation = new TxnReserveOfferOperation(name, timeout, offeredQueue.size(), tx.getTxnId());
         try {
             Invocation invocation = getNodeEngine().getOperationService().createInvocationBuilder(QueueService.SERVICE_NAME, operation, partitionId).build();
             Future<Long> f = invocation.invoke();
@@ -85,7 +85,7 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
 
     public Data pollInternal(long timeout) {
         QueueItem reservedOffer = offeredQueue.peek();
-        TxnReservePollOperation operation = new TxnReservePollOperation(name, timeout, reservedOffer == null ? -1 : reservedOffer.getItemId());
+        TxnReservePollOperation operation = new TxnReservePollOperation(name, timeout, reservedOffer == null ? -1 : reservedOffer.getItemId(), tx.getTxnId());
         try {
             Invocation invocation = getNodeEngine().getOperationService().createInvocationBuilder(QueueService.SERVICE_NAME, operation, partitionId).build();
             Future<QueueItem> f = invocation.invoke();

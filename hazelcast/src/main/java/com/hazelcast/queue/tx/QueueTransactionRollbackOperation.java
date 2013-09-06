@@ -18,65 +18,45 @@ package com.hazelcast.queue.tx;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.queue.QueueContainer;
 import com.hazelcast.queue.QueueDataSerializerHook;
 import com.hazelcast.queue.QueueOperation;
-import com.hazelcast.spi.WaitNotifyKey;
-import com.hazelcast.spi.WaitSupport;
 
 import java.io.IOException;
 
 /**
- * @author ali 3/27/13
+ * @ali 9/5/13
  */
-public class TxnReserveOfferOperation extends QueueOperation implements WaitSupport {
-
-    int txSize;
+public class QueueTransactionRollbackOperation extends QueueOperation {
 
     String transactionId;
 
-    public TxnReserveOfferOperation() {
+    public QueueTransactionRollbackOperation() {
     }
 
-    public TxnReserveOfferOperation(String name, long timeoutMillis, int txSize, String transactionId) {
-        super(name, timeoutMillis);
-        this.txSize = txSize;
+    public QueueTransactionRollbackOperation(String name, String transactionId) {
+        super(name);
         this.transactionId = transactionId;
     }
 
-    public void run() throws Exception {
-        QueueContainer container = getOrCreateContainer();
-        if (container.hasEnoughCapacity(txSize+1)) {
-            response = container.txnOfferReserve(transactionId);
-        }
-    }
-
-    public WaitNotifyKey getWaitKey() {
-        return getOrCreateContainer().getOfferWaitNotifyKey();
-    }
-
-    public boolean shouldWait() {
-        QueueContainer container = getOrCreateContainer();
-        return getWaitTimeoutMillis() != 0 && !container.hasEnoughCapacity(txSize+1);
-    }
-
-    public void onWaitExpire() {
-        getResponseHandler().sendResponse(null);
-    }
-
     public int getId() {
-        return QueueDataSerializerHook.TXN_RESERVE_OFFER;
+        return QueueDataSerializerHook.CHECK_EVICT;
+    }
+
+    public void run() throws Exception {
+        getOrCreateContainer().rollbackTransaction(transactionId);
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        out.writeInt(txSize);
         out.writeUTF(transactionId);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        txSize = in.readInt();
         transactionId = in.readUTF();
+    }
+
+    public boolean returnsResponse() {
+        return false;
     }
 }
