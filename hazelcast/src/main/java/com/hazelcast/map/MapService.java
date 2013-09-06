@@ -887,7 +887,8 @@ public class MapService implements ManagedService, MigrationAwareService,
             if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.USED_HEAP_SIZE
                     || maxSizePolicy == MaxSizeConfig.MaxSizePolicy.USED_HEAP_PERCENTAGE) {
                 final long total = Runtime.getRuntime().totalMemory();
-                final long used = mapContainer.getSizeEstimator().getSize();
+                final long used = mapContainer.getSizeEstimator().getSize()
+                        + mapContainer.getBackUpSizeEstimator().getSize();
                         // (total - Runtime.getRuntime().freeMemory());
                 if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.USED_HEAP_SIZE) {
                     return maxSize < (used / 1024 / 1024);
@@ -996,6 +997,9 @@ public class MapService implements ManagedService, MigrationAwareService,
         localMapStats.setBackupEntryCount(zeroOrPositive(backupEntryCount));
         localMapStats.setOwnedEntryMemoryCost(zeroOrPositive(ownedEntryMemoryCost));
         localMapStats.setBackupEntryMemoryCost(zeroOrPositive(backupEntryMemoryCost));
+        localMapStats.setHeapCost( mapContainer.getSizeEstimator().getSize() );
+        localMapStats.setBackupHeapCost( mapContainer.getBackUpSizeEstimator().getSize() );
+
         return localMapStats;
     }
 

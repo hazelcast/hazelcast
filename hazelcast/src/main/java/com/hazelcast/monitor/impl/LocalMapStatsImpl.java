@@ -44,10 +44,13 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
     private long backupEntryCount;
     private long ownedEntryMemoryCost;
     private long backupEntryMemoryCost;
+    private long heapCost;
+    private long backupHeapCost;
     private long creationTime;
     private long lockedEntryCount;
     private long dirtyEntryCount;
     private int backupCount;
+
 
     public LocalMapStatsImpl() {
         creationTime = Clock.currentTimeMillis();
@@ -75,6 +78,9 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         out.writeLong(maxGetLatency.get());
         out.writeLong(maxPutLatency.get());
         out.writeLong(maxRemoveLatency.get());
+        out.writeLong(backupHeapCost);
+        out.writeLong(heapCost);
+
     }
 
     public void readData(ObjectDataInput in) throws IOException {
@@ -99,6 +105,8 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         maxGetLatency.set(in.readLong());
         maxPutLatency.set(in.readLong());
         maxRemoveLatency.set(in.readLong());
+        backupHeapCost = in.readLong();
+        heapCost = in.readLong();
     }
 
     public long getOwnedEntryCount() {
@@ -251,6 +259,22 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         numberOfEvents.incrementAndGet();
     }
 
+    public void setHeapCost(long heapCost) {
+        this.heapCost = heapCost;
+    }
+
+    public void setBackupHeapCost(long backupHeapCost) {
+        this.backupHeapCost = backupHeapCost;
+    }
+
+    public long getHeapCost() {
+        return heapCost;
+    }
+
+    public long getBackupHeapCost() {
+        return backupHeapCost;
+    }
+
     public String toString() {
         return "LocalMapStatsImpl{" +
                 "lastAccessTime=" + lastAccessTime +
@@ -271,6 +295,8 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
                 ", creationTime=" + creationTime +
                 ", lockedEntryCount=" + lockedEntryCount +
                 ", dirtyEntryCount=" + dirtyEntryCount +
+                ", backupHeapCost=" + backupHeapCost +
+                ", heapCost=" + heapCost +
                 '}';
     }
 
