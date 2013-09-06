@@ -23,7 +23,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
-import sun.misc.Unsafe;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -209,8 +208,8 @@ public class NearCache {
 
         public long getCost(){
             return key.totalSize()
-                    // todo is this correct?
-                    + ((Data)value).totalSize()
+                    // todo find object size
+                    //+ ((Data)value).totalSize()
                     + 2 * Long.SIZE / Byte.SIZE
                     // todo sizeof atomic integer
                     + Integer.SIZE / Byte.SIZE;

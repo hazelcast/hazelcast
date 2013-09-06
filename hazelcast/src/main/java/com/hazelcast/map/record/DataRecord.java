@@ -36,9 +36,29 @@ public /*final*/ class DataRecord extends AbstractRecord<Data> implements Record
     public DataRecord() {
     }
 
+    /*
+    * get record size in bytes.
+    *
+    * */
     @Override
     public long getCost() {
-        return key.totalSize() + (value == null ? 0 : value.totalSize());
+
+        long size = 0;
+
+        // add statistics size if enabled.
+        size += ( statistics == null ? 0 : statistics.size() );
+
+        // add size of version.
+        size += ( Long.SIZE/Byte.SIZE );
+
+        // add key size.
+        size += key.totalSize();
+
+        // add value size.
+        size += ( value == null ? 0 : value.totalSize() );
+
+
+        return size;
     }
 
     public Data getValue() {

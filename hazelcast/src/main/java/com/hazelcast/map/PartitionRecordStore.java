@@ -254,8 +254,8 @@ public class PartitionRecordStore implements RecordStore {
     }
 
     public void reset() {
-        resetSizeEstimator();
         records.clear();
+        resetSizeEstimator();
     }
 
     public Object remove(Data dataKey) {
@@ -324,7 +324,7 @@ public class PartitionRecordStore implements RecordStore {
             mapStoreDelete(record, dataKey);
             records.remove(dataKey);
             // reduce size
-            updateSizeEstimator( calculateRecordSize(record) );
+            updateSizeEstimator( -calculateRecordSize(record) );
             removed = true;
         }
         return removed;
@@ -459,7 +459,7 @@ public class PartitionRecordStore implements RecordStore {
 
             setRecordValue(record, value);
 
-            // increase size
+            // then increase size
             updateSizeEstimator( calculateRecordSize(record) );
         }
         saveIndex(record);
