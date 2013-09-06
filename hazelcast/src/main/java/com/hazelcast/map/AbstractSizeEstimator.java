@@ -4,7 +4,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Created with IntelliJ IDEA.
- * User: admin
+ * User: ahmet
  * Date: 05.09.2013
  * Time: 14:36
  * To change this template use File | Settings | File Templates.
