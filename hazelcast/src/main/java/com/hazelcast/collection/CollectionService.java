@@ -68,4 +68,8 @@ public abstract class CollectionService implements ManagedService, RemoteService
             listener.itemRemoved(itemEvent);
         }
     }
+
+    @Override
+    public void rollbackTransaction(String transactionId) {
+    }
 }

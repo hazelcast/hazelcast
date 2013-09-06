@@ -38,28 +38,27 @@ public class BasicSSLContextFactory implements SSLContextFactory {
     public void init(Properties properties) throws Exception {
         KeyStore ks = KeyStore.getInstance("JKS");
         KeyStore ts = KeyStore.getInstance("JKS");
-        String keyStorePassword = properties.getProperty("keyStorePassword");
-        if (keyStorePassword == null) {
-            keyStorePassword = System.getProperty("javax.net.ssl.keyStorePassword");
-        }
-        String keyStore = properties.getProperty("keyStore");
-        if (keyStore == null) {
-            keyStore = System.getProperty("javax.net.ssl.keyStore");
-        }
+        String keyStorePassword = getProperty(properties, "keyStorePassword", "javax.net.ssl.keyStorePassword");
+        String keyStore = getProperty(properties, "keyStore", "javax.net.ssl.keyStore");
         if (keyStore == null || keyStorePassword == null) {
             throw new RuntimeException("SSL is enabled but keyStore[Password] properties aren't set!");
         }
-        String keyManagerAlgorithm = getProperty(properties, "keyManagerAlgorithm", "SunX509");
-        String trustManagerAlgorithm = getProperty(properties, "trustManagerAlgorithm", "SunX509");
-        String protocol = getProperty(properties, "protocol", "TLS");
-        final char[] passPhrase = keyStorePassword.toCharArray();
-        final String keyStoreFile = keyStore;
-        loadKeyStore(ks, passPhrase, keyStoreFile);
-        loadKeyStore(ts, passPhrase, keyStoreFile);
+        String trustStore = getProperty(properties, "trustStore", "javax.net.ssl.trustStore", keyStore);
+        String trustStorePassword = getProperty(properties, "trustStorePassword", "javax.net.ssl.trustStorePassword", keyStorePassword);
+
+        String keyManagerAlgorithm = properties.getProperty("keyManagerAlgorithm", "SunX509");
+        String trustManagerAlgorithm = properties.getProperty("trustManagerAlgorithm", "SunX509");
+        String protocol = properties.getProperty("protocol", "TLS");
+
+        final char[] keyStorePassPhrase = keyStorePassword.toCharArray();
+        loadKeyStore(ks, keyStorePassPhrase, keyStore);
         KeyManagerFactory kmf = KeyManagerFactory.getInstance(keyManagerAlgorithm);
-        kmf.init(ks, passPhrase);
+        kmf.init(ks, keyStorePassPhrase);
+
+        loadKeyStore(ts, trustStorePassword.toCharArray(), trustStore);
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(trustManagerAlgorithm);
         tmf.init(ts);
+
         sslContext = SSLContext.getInstance(protocol);
         sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
     }
@@ -73,12 +72,17 @@ public class BasicSSLContextFactory implements SSLContextFactory {
         }
     }
 
-    private static String getProperty(Properties properties, String propertyName, String defaultValue) {
+    private static String getProperty(Properties properties, String propertyName, String systemPropertyName) {
         String value = properties.getProperty(propertyName);
         if (value == null) {
-            value = defaultValue;
+            value = System.getProperty(systemPropertyName);
         }
         return value;
+    }
+
+    private static String getProperty(Properties properties, String propertyName, String systemPropertyName, String defaultValue) {
+        String value = getProperty(properties, propertyName, systemPropertyName);
+        return value != null ? value : defaultValue;
     }
 
     public SSLContext getSSLContext() {

@@ -119,15 +119,6 @@ public final class HazelcastClient implements HazelcastInstance {
         loadBalancer.init(getCluster(), config);
         proxyManager.init(config);
         partitionService = new ClientPartitionServiceImpl(this);
-
-        this.initConfiguration();
-    }
-
-    private void initConfiguration() {
-        //TODO init code comes here
-
-        //handleProxyFactoryInstantiation
-
     }
 
     public static HazelcastInstance newHazelcastClient() {
@@ -139,7 +130,6 @@ public final class HazelcastClient implements HazelcastInstance {
             config = new XmlClientConfigBuilder().build();
         }
         final HazelcastClient client = new HazelcastClient(config);
-        client.initConfiguration();
         client.start();
         final HazelcastClientProxy proxy = new HazelcastClientProxy(client);
         CLIENTS.put(client.id, proxy);

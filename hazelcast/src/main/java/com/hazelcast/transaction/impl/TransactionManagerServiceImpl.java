@@ -24,13 +24,11 @@ import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.transaction.*;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.logging.Level;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.transaction.impl.Transaction.State;
 
@@ -108,21 +106,39 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
 
     private void finalizeTransactionsOf(String uuid) {
         if (!txBackupLogs.isEmpty()) {
-            for (TxBackupLog log : txBackupLogs.values()) {
+            for (Map.Entry<String, TxBackupLog> entry : txBackupLogs.entrySet()) {
+                TxBackupLog log = entry.getValue();
                 if (uuid.equals(log.callerUuid)) {
-                    TransactionImpl tx = new TransactionImpl(this, nodeEngine, log.txnId, log.txLogs, log.timeoutMillis,
-                            log.startTime, log.callerUuid);
-                    if (log.state == State.COMMITTING) {
-                        try {
-                            tx.commit();
-                        } catch (Throwable e) {
-                            logger.warning("Error during committing from tx backup!", e);
+                    String txnId = entry.getKey();
+                    if (log.state == State.ACTIVE) {
+                        Collection<MemberImpl> memberList = nodeEngine.getClusterService().getMemberList();
+                        Collection<Future> futures = new ArrayList<Future>(memberList.size());
+                        for (MemberImpl member : memberList) {
+                            Operation op = new BroadcastTxRollbackOperation(txnId);
+                            Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, op, member.getAddress()).build();
+                            futures.add(inv.invoke());
+                        }
+                        for (Future future : futures) {
+                            try {
+                                future.get(TransactionOptions.getDefault().getTimeoutMillis(), TimeUnit.MILLISECONDS);
+                            } catch (Exception e) {
+                                logger.warning("Error while rolling-back tx!");
+                            }
                         }
                     } else {
-                        try {
-                            tx.rollback();
-                        } catch (Throwable e) {
-                            logger.warning( "Error during rolling-back from tx backup!", e);
+                        TransactionImpl tx = new TransactionImpl(this, nodeEngine, txnId, log.txLogs, log.timeoutMillis, log.startTime, log.callerUuid);
+                        if (log.state == State.COMMITTING) {
+                            try {
+                                tx.commit();
+                            } catch (Throwable e) {
+                                logger.warning("Error during committing from tx backup!", e);
+                            }
+                        } else {
+                            try {
+                                tx.rollback();
+                            } catch (Throwable e) {
+                                logger.warning("Error during rolling-back from tx backup!", e);
+                            }
                         }
                     }
                 }
@@ -147,8 +163,22 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         return addresses;
     }
 
-    void putTxBackupLog(List<TransactionLog> txLogs, String callerUuid, String txnId, long timeoutMillis, long startTime) {
-        if (txBackupLogs.putIfAbsent(txnId, new TxBackupLog(txLogs, callerUuid, txnId, timeoutMillis, startTime)) != null) {
+    void beginTxBackupLog(String callerUuid, String txnId) {
+        TxBackupLog log = new TxBackupLog(Collections.<TransactionLog>emptyList(), callerUuid, State.ACTIVE, -1, -1);
+        if (txBackupLogs.putIfAbsent(txnId, log) != null) {
+            throw new TransactionException("TxLog already exists!");
+        }
+    }
+
+    void prepareTxBackupLog(List<TransactionLog> txLogs, String callerUuid, String txnId, long timeoutMillis, long startTime) {
+        TxBackupLog beginLog = txBackupLogs.get(txnId);
+        if (beginLog == null) {
+            throw new TransactionException("Could not find begin tx log!");
+        }
+        if (beginLog.state != State.ACTIVE) {
+            throw new TransactionException("TxLog already exists!");
+        }
+        if (!txBackupLogs.replace(txnId, beginLog, new TxBackupLog(txLogs, callerUuid, State.COMMITTING, timeoutMillis, startTime))) {
             throw new TransactionException("TxLog already exists!");
         }
     }
@@ -158,7 +188,7 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         if (log != null) {
             log.state = State.ROLLING_BACK;
         } else {
-            logger.warning( "No tx backup log is found, tx -> " + txnId);
+            logger.warning("No tx backup log is found, tx -> " + txnId);
         }
     }
 
@@ -166,19 +196,18 @@ public class TransactionManagerServiceImpl implements TransactionManagerService,
         txBackupLogs.remove(txnId);
     }
 
-    private class TxBackupLog {
+    private static class TxBackupLog {
         private final List<TransactionLog> txLogs;
         private final String callerUuid;
-        private final String txnId;
         private final long timeoutMillis;
         private final long startTime;
 
-        private volatile State state = State.COMMITTING;
+        private volatile State state;
 
-        private TxBackupLog(List<TransactionLog> txLogs, String callerUuid, String txnId, long timeoutMillis, long startTime) {
+        private TxBackupLog(List<TransactionLog> txLogs, String callerUuid, State state, long timeoutMillis, long startTime) {
             this.txLogs = txLogs;
             this.callerUuid = callerUuid;
-            this.txnId = txnId;
+            this.state = state;
             this.timeoutMillis = timeoutMillis;
             this.startTime = startTime;
         }

@@ -226,7 +226,6 @@ public class MapService implements ManagedService, MigrationAwareService,
             }
         } else if (eventObject instanceof MapReplicationRemove) {
             MapReplicationRemove replicationRemove = (MapReplicationRemove) eventObject;
-            String mapName = replicationRemove.getMapName();
             DeleteOperation operation = new DeleteOperation(replicationRemove.getMapName(), replicationRemove.getKey());
             try {
                 int partitionId = nodeEngine.getPartitionService().getPartitionId(replicationRemove.getKey());
@@ -410,6 +409,11 @@ public class MapService implements ManagedService, MigrationAwareService,
     @SuppressWarnings("unchecked")
     public TransactionalMapProxy createTransactionalObject(Object id, TransactionSupport transaction) {
         return new TransactionalMapProxy(String.valueOf(id), this, nodeEngine, transaction);
+    }
+
+    @Override
+    public void rollbackTransaction(String transactionId) {
+
     }
 
     private final ConstructorFunction<String, NearCache> nearCacheConstructor = new ConstructorFunction<String, NearCache>() {

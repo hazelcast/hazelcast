@@ -220,4 +220,9 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     public TransactionalQueueProxy createTransactionalObject(Object id, TransactionSupport transaction) {
         return new TransactionalQueueProxy(nodeEngine, this, String.valueOf(id), transaction);
     }
+
+    @Override
+    public void rollbackTransaction(String transactionId) {
+
+    }
 }

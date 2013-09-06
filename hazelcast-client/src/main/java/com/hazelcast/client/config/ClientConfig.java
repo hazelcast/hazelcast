@@ -110,7 +110,7 @@ public class ClientConfig {
 
     private ManagedContext managedContext = null;
     
-    private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+    private ClassLoader classLoader = null;
     
     /**
      * Can be used instead of {@link GroupConfig} in Hazelcast EE.
