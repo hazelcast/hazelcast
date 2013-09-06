@@ -18,6 +18,7 @@ package com.hazelcast.concurrent.atomiclong;
 
 import com.hazelcast.concurrent.atomiclong.proxy.AtomicLongProxy;
 import com.hazelcast.partition.MigrationEndpoint;
+import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.*;
 import com.hazelcast.util.ConcurrencyUtil;
 import com.hazelcast.util.ConstructorFunction;
@@ -85,7 +86,7 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
         Map<String, Long> data = new HashMap<String, Long>();
         final int partitionId = event.getPartitionId();
         for (String name : numbers.keySet()) {
-            if (partitionId == nodeEngine.getPartitionService().getPartitionId(name)) {
+            if (partitionId == nodeEngine.getPartitionService().getPartitionId(StringPartitioningStrategy.getPartitionKey(name))) {
                 data.put(name, numbers.get(name).get());
             }
         }
@@ -112,7 +113,7 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
         final Iterator<String> iterator = numbers.keySet().iterator();
         while (iterator.hasNext()) {
             String name = iterator.next();
-            if (nodeEngine.getPartitionService().getPartitionId(name) == partitionId) {
+            if (nodeEngine.getPartitionService().getPartitionId(StringPartitioningStrategy.getPartitionKey(name)) == partitionId) {
                 iterator.remove();
             }
         }

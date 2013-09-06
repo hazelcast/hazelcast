@@ -17,6 +17,7 @@
 package com.hazelcast.concurrent.countdownlatch;
 
 import com.hazelcast.partition.MigrationEndpoint;
+import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.*;
 
 import java.util.*;
@@ -108,7 +109,8 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
         }
         final Collection<CountDownLatchInfo> data = new LinkedList<CountDownLatchInfo>();
         for (Map.Entry<String, CountDownLatchInfo> latchEntry : latches.entrySet()) {
-            if (nodeEngine.getPartitionService().getPartitionId(latchEntry.getKey()) == event.getPartitionId()) {
+            final String name = latchEntry.getKey();
+            if (nodeEngine.getPartitionService().getPartitionId(StringPartitioningStrategy.getPartitionKey(name)) == event.getPartitionId()) {
                 data.add(latchEntry.getValue());
             }
         }
@@ -130,7 +132,8 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
     private void clearPartition(int partitionId) {
         final Iterator<String> iter = latches.keySet().iterator();
         while (iter.hasNext()) {
-            if (nodeEngine.getPartitionService().getPartitionId(iter.next()) == partitionId) {
+            final String name = iter.next();
+            if (nodeEngine.getPartitionService().getPartitionId(StringPartitioningStrategy.getPartitionKey(name)) == partitionId) {
                 iter.remove();
             }
         }
