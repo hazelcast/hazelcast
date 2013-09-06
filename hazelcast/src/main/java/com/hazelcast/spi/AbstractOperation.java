@@ -32,7 +32,7 @@ public abstract class AbstractOperation extends Operation {
     }
 
     @Override
-    public boolean returnsResponse() {
+    public boolean returnsResponse(Throwable throwable) {
         return true;
     }
 

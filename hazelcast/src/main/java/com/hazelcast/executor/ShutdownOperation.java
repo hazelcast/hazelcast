@@ -37,7 +37,7 @@ public final class ShutdownOperation extends AbstractNamedOperation {
     }
 
     @Override
-    public boolean returnsResponse() {
+    public boolean returnsResponse(Throwable throwable) {
         return true;
     }
 

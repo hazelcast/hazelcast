@@ -53,7 +53,7 @@ public abstract class AbstractMapOperation extends AbstractNamedOperation {
     }
 
     @Override
-    public boolean returnsResponse() {
+    public boolean returnsResponse(Throwable throwable) {
         return true;
     }
 

@@ -712,7 +712,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
             eventService.executeEvent(eventService.new EventPacketProcessor(eventPacket, orderKey));
         }
 
-        public boolean returnsResponse() {
+        public boolean returnsResponse(Throwable throwable) {
             return true;
         }
 
@@ -753,7 +753,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         }
 
         @Override
-        public boolean returnsResponse() {
+        public boolean returnsResponse(Throwable throwable) {
             return true;
         }
 
@@ -793,7 +793,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         }
 
         @Override
-        public boolean returnsResponse() {
+        public boolean returnsResponse(Throwable throwable) {
             return true;
         }
 
@@ -833,7 +833,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         }
 
         @Override
-        public boolean returnsResponse() {
+        public boolean returnsResponse(Throwable throwable) {
             return false;
         }
 

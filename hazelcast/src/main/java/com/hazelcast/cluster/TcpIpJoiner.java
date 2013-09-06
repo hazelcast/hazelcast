@@ -40,7 +40,6 @@ import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
 
 import static com.hazelcast.util.AddressUtil.AddressHolder;
 
@@ -106,7 +105,7 @@ public class TcpIpJoiner extends AbstractJoiner {
         }
 
         @Override
-        public boolean returnsResponse() {
+        public boolean returnsResponse(Throwable throwable) {
             return true;
         }
 

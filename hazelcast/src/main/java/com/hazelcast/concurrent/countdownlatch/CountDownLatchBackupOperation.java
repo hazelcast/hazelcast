@@ -48,7 +48,7 @@ public class CountDownLatchBackupOperation extends BaseCountDownLatchOperation i
     }
 
     @Override
-    public boolean returnsResponse() {
+    public boolean returnsResponse(Throwable throwable) {
         return true;
     }
 

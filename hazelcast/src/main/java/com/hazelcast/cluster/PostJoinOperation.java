@@ -70,7 +70,7 @@ public class PostJoinOperation extends AbstractOperation {
     }
 
     @Override
-    public boolean returnsResponse() {
+    public boolean returnsResponse(Throwable throwable) {
         return true;
     }
 

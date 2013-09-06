@@ -59,7 +59,7 @@ public abstract class CollectionOperation extends Operation implements Partition
     public void beforeRun() throws Exception {
     }
 
-    public boolean returnsResponse() {
+    public boolean returnsResponse(Throwable throwable) {
         return true;
     }
 

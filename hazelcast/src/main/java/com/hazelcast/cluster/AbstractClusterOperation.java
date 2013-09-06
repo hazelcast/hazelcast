@@ -24,7 +24,7 @@ import com.hazelcast.spi.AbstractOperation;
 abstract class AbstractClusterOperation extends AbstractOperation implements JoinOperation {
 
     @Override
-    public boolean returnsResponse() {
+    public boolean returnsResponse(Throwable throwable) {
         return false;
     }
 

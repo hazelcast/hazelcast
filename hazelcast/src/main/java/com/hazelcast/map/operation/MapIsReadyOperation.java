@@ -31,7 +31,7 @@ public class MapIsReadyOperation extends AbstractMapOperation {
     }
 
     @Override
-    public boolean returnsResponse() {
+    public boolean returnsResponse(Throwable throwable) {
         return true;
     }
 

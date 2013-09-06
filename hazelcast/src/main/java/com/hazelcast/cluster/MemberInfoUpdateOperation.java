@@ -67,7 +67,7 @@ public class MemberInfoUpdateOperation extends AbstractClusterOperation implemen
     }
 
     @Override
-    public final boolean returnsResponse() {
+    public final boolean returnsResponse(Throwable throwable) {
         return sendResponse;
     }
 

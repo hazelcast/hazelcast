@@ -949,7 +949,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         }
 
         @Override
-        public boolean returnsResponse() {
+        public boolean returnsResponse(Throwable throwable) {
             return true;
         }
 

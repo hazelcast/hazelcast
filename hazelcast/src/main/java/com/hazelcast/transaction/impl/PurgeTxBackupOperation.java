@@ -53,7 +53,7 @@ public final class PurgeTxBackupOperation extends Operation {
     }
 
     @Override
-    public boolean returnsResponse() {
+    public boolean returnsResponse(Throwable throwable) {
         return true;
     }
 

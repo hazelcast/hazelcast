@@ -33,7 +33,6 @@ import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 import java.util.Iterator;
 import java.util.Queue;
 import java.util.concurrent.*;
-import java.util.logging.Level;
 
 class WaitNotifyServiceImpl implements WaitNotifyService {
 
@@ -309,7 +308,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
         }
 
         @Override
-        public boolean returnsResponse() {
+        public boolean returnsResponse(Throwable throwable) {
             return false;
         }
 
