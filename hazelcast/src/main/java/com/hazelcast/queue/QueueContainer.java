@@ -631,7 +631,6 @@ public class QueueContainer implements DataSerializable {
     }
 
     public void rollbackTransaction(String transactionId){
-        System.err.println("fatal rollback for txId: " + transactionId);
         final Iterator<QueueItem> iterator = txMap.values().iterator();
 
         while (iterator.hasNext()){
