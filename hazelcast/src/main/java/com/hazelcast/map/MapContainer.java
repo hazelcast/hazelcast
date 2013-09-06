@@ -67,6 +67,8 @@ public class MapContainer {
     private final WanReplicationPublisher wanReplicationPublisher;
     private final MapMergePolicy wanMergePolicy;
     private final PartitioningStrategy partitionStrategy;
+    private final SizeEstimator sizeEstimator;
+
     private volatile boolean mapReady = false;
 
     public MapContainer(String name, MapConfig mapConfig, MapService mapService) {
@@ -180,6 +182,8 @@ public class MapContainer {
             }
         }
         partitionStrategy = strategy;
+
+        sizeEstimator = MapSizeEstimator.createNew( mapConfig.isStatisticsEnabled() );
     }
 
     public boolean isMapReady() {
@@ -322,6 +326,10 @@ public class MapContainer {
 
     public PartitioningStrategy getPartitionStrategy() {
         return partitionStrategy;
+    }
+
+    public SizeEstimator getSizeEstimator(){
+        return sizeEstimator;
     }
 
     private class MapLoadAllTask implements Runnable {
