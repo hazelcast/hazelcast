@@ -31,7 +31,6 @@ import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.logging.Level;
 
 /**
  * User: ali
@@ -45,7 +44,6 @@ public class QueueContainer implements DataSerializable {
     private final Map<Long, QueueItem> txMap = new HashMap<Long, QueueItem>();
     private final HashMap<Long, Data> dataMap = new HashMap<Long, Data>();
 
-    private int partitionId;
     private QueueConfig config;
     private QueueStoreWrapper store;
     private NodeEngine nodeEngine;
@@ -75,9 +73,8 @@ public class QueueContainer implements DataSerializable {
         offerWaitNotifyKey = new QueueWaitNotifyKey(name, "offer");
     }
 
-    public QueueContainer(String name, int partitionId, QueueConfig config, NodeEngine nodeEngine, QueueService service) throws Exception {
+    public QueueContainer(String name, QueueConfig config, NodeEngine nodeEngine, QueueService service) throws Exception {
         this(name);
-        this.partitionId = partitionId;
         setConfig(config, nodeEngine, service);
     }
 
@@ -104,7 +101,7 @@ public class QueueContainer implements DataSerializable {
     }
 
     //TX Poll
-    public QueueItem txnPollReserve(long reservedOfferId) {
+    public QueueItem txnPollReserve(long reservedOfferId, String transactionId) {
         QueueItem item = getItemQueue().poll();
         if (item == null) {
             item = txMap.remove(reservedOfferId);
@@ -117,8 +114,8 @@ public class QueueContainer implements DataSerializable {
                 throw new HazelcastException(e);
             }
         }
-        txMap.put(item.getItemId(), item);
-        return new QueueItem(null, item.getItemId(), item.getData());
+        txMap.put(item.getItemId(), new TxQueueItem(item).setPollOperation(true).setTransactionId(transactionId));
+        return item;
     }
 
     public boolean txnPollBackupReserve(long itemId) {
@@ -166,8 +163,8 @@ public class QueueContainer implements DataSerializable {
     }
 
     //TX Offer
-    public long txnOfferReserve() {
-        QueueItem item = new QueueItem(this, nextId(), null);
+    public long txnOfferReserve(String transactionId) {
+        TxQueueItem item = new TxQueueItem(this, nextId(), null).setTransactionId(transactionId).setPollOperation(false);
         txMap.put(item.getItemId(), item);
         return item.getItemId();
     }
@@ -588,10 +585,6 @@ public class QueueContainer implements DataSerializable {
         return config;
     }
 
-    public int getPartitionId() {
-        return partitionId;
-    }
-
     private void age(QueueItem item, long currentTime) {
         long elapsed = currentTime - item.getCreationTime();
         if (elapsed <= 0) {
@@ -637,8 +630,22 @@ public class QueueContainer implements DataSerializable {
         return getItemQueue().isEmpty() && txMap.isEmpty();
     }
 
+    public void rollbackTransaction(String transactionId){
+        final Iterator<QueueItem> iterator = txMap.values().iterator();
+
+        while (iterator.hasNext()){
+            final TxQueueItem item = (TxQueueItem)iterator.next();
+            if (transactionId.equals(item.getTransactionId())){
+                iterator.remove();
+                if (item.isPollOperation()){
+                    getItemQueue().offerFirst(item);
+                }
+            }
+        }
+
+    }
+
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(partitionId);
         out.writeInt(getItemQueue().size());
         for (QueueItem item : getItemQueue()) {
             item.writeData(out);
@@ -650,7 +657,6 @@ public class QueueContainer implements DataSerializable {
     }
 
     public void readData(ObjectDataInput in) throws IOException {
-        partitionId = in.readInt();
         int size = in.readInt();
         for (int j = 0; j < size; j++) {
             QueueItem item = new QueueItem(this, -1, null);

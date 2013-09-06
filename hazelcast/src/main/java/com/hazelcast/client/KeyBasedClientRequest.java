@@ -16,6 +16,8 @@
 
 package com.hazelcast.client;
 
+import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+
 /**
  * @author mdogan 5/3/13
  */
@@ -24,7 +26,11 @@ public abstract class KeyBasedClientRequest extends PartitionClientRequest {
     protected abstract Object getKey();
 
     protected final int getPartition() {
-        return clientEngine.getPartitionService().getPartitionId(getKey());
+        final Object key = getKey();
+        if (key instanceof String){
+            return clientEngine.getPartitionService().getPartitionId(StringPartitioningStrategy.getPartitionKey((String)key));
+        }
+        return clientEngine.getPartitionService().getPartitionId(key);
     }
 
     protected int getReplicaIndex() {

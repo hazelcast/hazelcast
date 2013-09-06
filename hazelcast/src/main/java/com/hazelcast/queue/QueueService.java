@@ -25,7 +25,9 @@ import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.Address;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.PartitionView;
+import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.queue.proxy.QueueProxyImpl;
+import com.hazelcast.queue.tx.QueueTransactionRollbackOperation;
 import com.hazelcast.queue.tx.TransactionalQueueProxy;
 import com.hazelcast.spi.*;
 import com.hazelcast.transaction.impl.TransactionSupport;
@@ -35,11 +37,8 @@ import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 import com.hazelcast.util.scheduler.ScheduleType;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -91,7 +90,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     public QueueContainer getOrCreateContainer(final String name, boolean fromBackup) throws Exception {
         QueueContainer container = containerMap.get(name);
         if (container == null) {
-            container = new QueueContainer(name, nodeEngine.getPartitionService().getPartitionId(nodeEngine.toData(name)), nodeEngine.getConfig().getQueueConfig(name),
+            container = new QueueContainer(name, nodeEngine.getConfig().getQueueConfig(name),
                     nodeEngine, this);
             QueueContainer existing = containerMap.putIfAbsent(name, container);
             if (existing != null) {
@@ -120,8 +119,9 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         Map<String, QueueContainer> migrationData = new HashMap<String, QueueContainer>();
         for (Entry<String, QueueContainer> entry : containerMap.entrySet()) {
             String name = entry.getKey();
+            int partitionId = nodeEngine.getPartitionService().getPartitionId(StringPartitioningStrategy.getPartitionKey(name));
             QueueContainer container = entry.getValue();
-            if (container.getPartitionId() == event.getPartitionId() && container.getConfig().getTotalBackupCount() >= event.getReplicaIndex()) {
+            if (partitionId == event.getPartitionId() && container.getConfig().getTotalBackupCount() >= event.getReplicaIndex()) {
                 migrationData.put(name, container);
             }
         }
@@ -143,8 +143,11 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     private void clearMigrationData(int partitionId) {
         Iterator<Entry<String, QueueContainer>> iterator = containerMap.entrySet().iterator();
         while (iterator.hasNext()) {
-            QueueContainer container = iterator.next().getValue();
-            if (container.getPartitionId() == partitionId) {
+            final Entry<String, QueueContainer> entry = iterator.next();
+            final String name = entry.getKey();
+            final QueueContainer container = entry.getValue();
+            int containerPartitionId = nodeEngine.getPartitionService().getPartitionId(StringPartitioningStrategy.getPartitionKey(name));
+            if (containerPartitionId == partitionId) {
                 container.destroy();
                 iterator.remove();
             }
@@ -219,8 +222,12 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         return new TransactionalQueueProxy(nodeEngine, this, String.valueOf(id), transaction);
     }
 
-    @Override
     public void rollbackTransaction(String transactionId) {
-
+        final Set<String> queueNames = containerMap.keySet();
+        for (String name : queueNames) {
+            int partitionId = nodeEngine.getPartitionService().getPartitionId(StringPartitioningStrategy.getPartitionKey(name));
+            Operation operation = new QueueTransactionRollbackOperation(name, transactionId).setPartitionId(partitionId).setService(this).setNodeEngine(nodeEngine);
+            nodeEngine.getOperationService().executeOperation(operation);
+        }
     }
 }

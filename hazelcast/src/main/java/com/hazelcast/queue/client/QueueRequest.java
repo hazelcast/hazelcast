@@ -21,6 +21,7 @@ import com.hazelcast.client.PartitionClientRequest;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.queue.QueuePortableHook;
 import com.hazelcast.queue.QueueService;
 
@@ -48,7 +49,8 @@ public abstract class QueueRequest extends PartitionClientRequest implements Por
     }
 
     protected int getPartition() {
-        return getClientEngine().getPartitionService().getPartitionId(name);
+        final String partitionKey = StringPartitioningStrategy.getPartitionKey(name);
+        return getClientEngine().getPartitionService().getPartitionId(partitionKey);
     }
 
     protected int getReplicaIndex() {
