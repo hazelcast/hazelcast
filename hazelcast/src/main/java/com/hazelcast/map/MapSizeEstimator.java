@@ -1,5 +1,7 @@
 package com.hazelcast.map;
 
+import com.hazelcast.map.record.DataRecord;
+import com.hazelcast.map.record.ObjectRecord;
 import com.hazelcast.map.record.Record;
 
 /**
@@ -38,7 +40,7 @@ public class MapSizeEstimator extends AbstractSizeEstimator {
 
             return keySize + valueSize;
         }
-        else if( record instanceof  Record )
+        else if( record instanceof DataRecord)
         {
             final Record rec = (Record)record;
 
@@ -48,10 +50,16 @@ public class MapSizeEstimator extends AbstractSizeEstimator {
 
             return keySize + valueSize;
         }
+        else if( record instanceof ObjectRecord)
+        {
+            // todo calculate object size properly.
+            // calculating object size is omitted for now.
+            return 0;
+        }
 
 
-        final String msg =  "MapSizeEstimator::not known object for cost" +
-                " calculation of a map [" + record.getClass().getCanonicalName()+"]";
+        final String msg =  "MapSizeEstimator::not known object for map heap cost" +
+                " calculation [" + record.getClass().getCanonicalName()+"]";
 
         throw new RuntimeException( msg ) ;
     }

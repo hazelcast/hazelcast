@@ -17,7 +17,7 @@ public interface SizeEstimator {
 
     void reset();
 
-    final SizeEstimator EMPTY_SIZE_ESTIMATOR = new SizeEstimator(){
+    static final SizeEstimator EMPTY_SIZE_ESTIMATOR = new SizeEstimator(){
 
         @Override
         public long getSize() {

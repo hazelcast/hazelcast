@@ -44,6 +44,7 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
     private long backupEntryCount;
     private long ownedEntryMemoryCost;
     private long backupEntryMemoryCost;
+    // total heap cost with map & backup & nearcache
     private long heapCost;
     private long backupHeapCost;
     private long creationTime;

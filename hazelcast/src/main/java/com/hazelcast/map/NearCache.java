@@ -129,7 +129,11 @@ public class NearCache {
                                 if (entry.getValue().expired()) {
                                     final Data key = entry.getKey();
                                     final CacheRecord record = cache.remove( key );
-                                    updateSizeEstimator(-calculateCost(record));
+                                    if (record != null)//if a mapping exists.
+                                    {
+                                        updateSizeEstimator(-calculateCost(record));
+                                    }
+
                                 }
                             }
                         } finally {
@@ -162,8 +166,12 @@ public class NearCache {
     }
 
     public void invalidate(Data key) {
-        CacheRecord record = cache.remove(key);
-        updateSizeEstimator(-calculateCost(record));
+        final CacheRecord record = cache.remove(key);
+        if( record != null ) // if a mapping exists for the key.
+        {
+            updateSizeEstimator(-calculateCost(record));
+        }
+
     }
 
     void clear() {
