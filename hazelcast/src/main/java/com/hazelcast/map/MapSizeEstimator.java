@@ -12,7 +12,7 @@ import com.hazelcast.map.record.Record;
  * Time: 07:51
  * To change this template use File | Settings | File Templates.
  */
-public class MapSizeEstimator extends AbstractSizeEstimator {
+class MapSizeEstimator extends AbstractSizeEstimator {
 
     private MapSizeEstimator(){
         super();
