@@ -16,30 +16,4 @@ public interface SizeEstimator {
     <T> long getCost( T record );
 
     void reset();
-
-    static final SizeEstimator EMPTY_SIZE_ESTIMATOR = new SizeEstimator(){
-
-        @Override
-        public long getSize() {
-            //not implemented
-            return 0;
-        }
-
-        @Override
-        public void add(long size) {
-            //not implemented
-        }
-
-        @Override
-        public <T> long getCost(T record) {
-            //not implemented
-            return 0;
-        }
-
-        @Override
-        public void reset() {
-            //not implemented
-        }
-    };
-
 }

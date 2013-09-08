@@ -184,8 +184,8 @@ public class MapContainer {
         }
         partitionStrategy = strategy;
 
-        sizeEstimator = MapSizeEstimator.createNew( mapConfig.isStatisticsEnabled() );
-        backUpSizeEstimator = MapSizeEstimator.createNew( mapConfig.isStatisticsEnabled() );
+        sizeEstimator = SizeEstimators.createMapSizeEstimator( mapConfig.isStatisticsEnabled() );
+        backUpSizeEstimator = SizeEstimators.createMapSizeEstimator( mapConfig.isStatisticsEnabled() );
     }
 
     public boolean isMapReady() {

@@ -14,17 +14,9 @@ import com.hazelcast.map.record.Record;
  */
 class MapSizeEstimator extends AbstractSizeEstimator {
 
-    private MapSizeEstimator(){
+    protected MapSizeEstimator(){
         super();
     }
-
-    public  static SizeEstimator createNew( boolean enabled ){
-
-        final SizeEstimator mapSizeEstimator = enabled ? new MapSizeEstimator() : EMPTY_SIZE_ESTIMATOR;
-
-        return mapSizeEstimator;
-    }
-
 
 
     @Override
