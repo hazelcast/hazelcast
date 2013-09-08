@@ -10,7 +10,6 @@ import com.hazelcast.map.record.Record;
  * Date: 06.09.2013
  *
  * Time: 07:51
- * To change this template use File | Settings | File Templates.
  */
 class MapSizeEstimator extends AbstractSizeEstimator {
 
@@ -21,6 +20,11 @@ class MapSizeEstimator extends AbstractSizeEstimator {
 
     @Override
     public <T> long getCost(T record) {
+
+        // immidiate check nothing to do if record is null
+        if( record == null ){
+            return 0;
+        }
 
         if( record instanceof NearCache.CacheRecord)
         {
