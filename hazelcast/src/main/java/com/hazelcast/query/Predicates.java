@@ -114,7 +114,7 @@ public final class Predicates {
 
         public InPredicate(String attribute, Comparable... values) {
             super(attribute);
-            this.values = Arrays.copyOf( values, values.length ) ;
+            this.values = values;
         }
 
         public boolean apply(Map.Entry entry) {
@@ -260,13 +260,13 @@ public final class Predicates {
 
     public static class AndPredicate implements IndexAwarePredicate, DataSerializable {
 
-        private Predicate[] predicates;
+        protected Predicate[] predicates;
 
         public AndPredicate() {
         }
 
         public AndPredicate(Predicate... predicates) {
-            predicates = Arrays.copyOf( predicates,predicates.length );
+            this.predicates = predicates;
         }
 
         public Set<QueryableEntry> filter(QueryContext queryContext) {
@@ -373,7 +373,7 @@ public final class Predicates {
         }
 
         public OrPredicate(Predicate... predicates) {
-            this.predicates  = Arrays.copyOf( predicates, predicates.length );
+            this.predicates = predicates;
         }
 
         public Set<QueryableEntry> filter(QueryContext queryContext) {
@@ -598,7 +598,7 @@ public final class Predicates {
                 if (entryValue != null && entryValue.getClass().isAssignableFrom(attributeValue.getClass())) {
                     return attributeValue;
                 } else if (type != null) {
-                   return type.getConverter().convert(attributeValue);
+                    return type.getConverter().convert(attributeValue);
                 } else {
                     throw new QueryException("Unknown attribute type: " + attributeValue.getClass());
                 }
