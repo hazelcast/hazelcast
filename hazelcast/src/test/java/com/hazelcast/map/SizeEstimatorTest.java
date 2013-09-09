@@ -52,6 +52,33 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testPutRemove() throws InterruptedException {
+        final String MAP_NAME =  "default";
+
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        final HazelcastInstance h = factory.newHazelcastInstance(null);
+
+        final IMap<String, String> map = h.getMap(MAP_NAME);
+
+        map.put("key","value");
+
+        Assert.assertTrue( map.getLocalMapStats().getHeapCost() > 0);
+        Assert.assertTrue( map.getLocalMapStats().getBackupHeapCost() > 0);
+
+        Thread.sleep(1000);
+
+        map.remove("key");
+
+        Thread.sleep(1000);
+
+        Assert.assertTrue( map.getLocalMapStats().getHeapCost() == 0);
+        Assert.assertTrue( map.getLocalMapStats().getBackupHeapCost() == 0);
+
+        h.getLifecycleService().shutdown();
+
+    }
+
+    @Test
     public void testBackups() throws InterruptedException {
 
     }
