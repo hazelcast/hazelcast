@@ -18,6 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -29,6 +30,8 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.Random;
 
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
@@ -96,6 +99,54 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
 
     @Test
     public void testEvictionPolicy() throws InterruptedException {
+        final String MAP_NAME =  "default";
+
+        final Config config = new Config();
+        final MaxSizeConfig mapMaxSizeConfig = new MaxSizeConfig();
+        mapMaxSizeConfig.setSize( 1 ).setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.USED_HEAP_SIZE);
+        config.getMapConfig( MAP_NAME )
+                .setEvictionPolicy(MapConfig.EvictionPolicy.LFU).
+                setMaxSizeConfig(mapMaxSizeConfig).setEvictionPercentage(100);
+
+        final int n = 1;
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory( n );
+        final HazelcastInstance h[] = factory.newInstances(config);
+
+        final IMap<Long, Integer> map = h[0].getMap( MAP_NAME );
+
+        Long key = 0L;
+        for (int i = 0; i< 1;i++)
+        {
+            map.put(++key,1);
+        }
+         // key 24 bytes look at {Data.totalSize}
+        // value 104 bytes (DataRecord.getCost)
+        Assert.assertTrue(map.getLocalMapStats().getHeapCost() == 128);
+
+        Thread.sleep(1000);
+
+        map.clear();
+
+        Thread.sleep(1000);
+
+        Assert.assertTrue(map.getLocalMapStats().getHeapCost() == 0);
+
+
+        for (int i = 0; i< 1024*1024;i++)
+        {
+            map.put(++key, new Random().nextInt() );
+        }
+
+        Thread.sleep(3000);
+
+        System.err.println("map.size()" + map.size());
+
+        // 129554048
+        // 134217728 (128*1024*1024)
+        System.err.println( map.getLocalMapStats().getHeapCost() );
+        System.err.println( map.getLocalMapStats().getBackupHeapCost() );
+
+        h[0].getLifecycleService().shutdown();
 
     }
 
@@ -132,6 +183,7 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
             nearCachedMap.get("key1");
             nearCachedMap.get("key2");
             nearCachedMap.get("key3");
+
         }
 
         Assert.assertTrue(  nearCachedMap.getLocalMapStats().getHeapCost() > noNearCached.getLocalMapStats().getHeapCost() );
