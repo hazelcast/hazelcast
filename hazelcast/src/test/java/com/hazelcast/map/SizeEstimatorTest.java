@@ -119,8 +119,8 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
         {
             map.put(++key,1);
         }
-         // key 24 bytes look at {Data.totalSize}
-        // value 104 bytes (DataRecord.getCost)
+         /** key 24 bytes look at {@link com.hazelcast.nio.serialization.Data} totalSize method */
+        /** value 104 bytes {@link com.hazelcast.map.record.DataRecord}*/
         Assert.assertTrue(map.getLocalMapStats().getHeapCost() == 128);
 
         Thread.sleep(1000);
