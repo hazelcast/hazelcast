@@ -150,9 +150,7 @@ public class AbstractClientCollectionProxy<E> extends ClientProxy implements ICo
                 }
             }
         };
-        Data key = getContext().getSerializationService().toData(getName());
-        //TODO partitionKey
-        return listen(request, key, eventHandler);
+        return listen(request, getPartitionKey(), eventHandler);
     }
 
     public boolean removeItemListener(String registrationId) {

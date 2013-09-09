@@ -307,4 +307,8 @@ public class MultiMapService implements ManagedService, RemoteService,
         String name = (String) id;
         return (T) new TransactionalMultiMapProxy(nodeEngine, this, name, transaction);
     }
+
+    public void rollbackTransaction(String transactionId) {
+
+    }
 }

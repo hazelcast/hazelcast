@@ -16,11 +16,11 @@
 
 package com.hazelcast.multimap.operations;
 
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.multimap.MultiMapContainer;
 import com.hazelcast.multimap.MultiMapDataSerializerHook;
 import com.hazelcast.multimap.MultiMapRecord;
 import com.hazelcast.multimap.MultiMapService;
-import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
@@ -54,11 +54,11 @@ public class ClearOperation extends MultiMapOperation implements BackupAwareOper
         MultiMapContainer container = getOrCreateContainer();
         container.clear();
         response = true;
-        ((MultiMapService) getService()).getLocalMultiMapStatsImpl(name).incrementOtherOperations();
-        //TODO @ali take these to afterRun maybe ?
     }
 
     public void afterRun() throws Exception {
+        ((MultiMapService) getService()).getLocalMultiMapStatsImpl(name).incrementOtherOperations();
+
         if (objects != null && !objects.isEmpty()) {
             MultiMapContainer container = getOrCreateContainer();
             for (Map.Entry<Data, Collection<MultiMapRecord>> entry : objects.entrySet()) {

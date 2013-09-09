@@ -56,9 +56,7 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
                 }
             }
         };
-        Data key = getContext().getSerializationService().toData(name);
-        //TODO partitionKey
-        return listen(request, key, eventHandler);
+        return listen(request, getPartitionKey(), eventHandler);
     }
 
     public boolean removeItemListener(String registrationId) {

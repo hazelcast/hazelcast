@@ -18,7 +18,6 @@ package com.hazelcast.client.spi;
 
 import com.hazelcast.client.util.ErrorHandler;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.nio.serialization.Data;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -37,7 +36,7 @@ public final class ListenerSupport  {
     private Future<?> future;
     private volatile boolean active = true;
     private volatile ResponseStream lastStream;
-    private Data key;
+    private Object partitionKey;
     final CountDownLatch latch = new CountDownLatch(1);
 
     public ListenerSupport(ClientContext context, Object registrationRequest, EventHandler handler) {
@@ -46,9 +45,9 @@ public final class ListenerSupport  {
         this.handler = handler;
     }
 
-    public ListenerSupport(ClientContext context, Object registrationRequest, EventHandler handler, Data key) {
+    public ListenerSupport(ClientContext context, Object registrationRequest, EventHandler handler, Object partitionKey) {
         this(context,registrationRequest, handler);
-        this.key = key;
+        this.partitionKey = partitionKey;
     }
 
     public String listen() {
@@ -57,10 +56,10 @@ public final class ListenerSupport  {
                 while (active && !Thread.currentThread().isInterrupted()) {
                     try {
                         EventResponseHandler eventResponseHandler = new EventResponseHandler();
-                        if (key == null){
+                        if (partitionKey == null){
                             context.getInvocationService().invokeOnRandomTarget(registrationRequest, eventResponseHandler);
                         } else {
-                            context.getInvocationService().invokeOnKeyOwner(registrationRequest, key, eventResponseHandler);
+                            context.getInvocationService().invokeOnKeyOwner(registrationRequest, partitionKey, eventResponseHandler);
                         }
                     } catch (Exception ignored) {
                     }

@@ -104,6 +104,8 @@ public class ClientTxnMultiMapProxy<K, V> extends ClientTxnProxy implements Tran
     }
 
     void onDestroy() {
-        //TODO
+        //TODO what if a non-committed map calls destroy ?
+        final MultiMapDestroyRequest request = new MultiMapDestroyRequest(getName());
+        invoke(request);
     }
 }

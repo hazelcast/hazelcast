@@ -30,7 +30,6 @@ import java.io.IOException;
 /**
  * @author ali 5/8/13
  */
-//TODO partitionId fix
 public abstract class QueueRequest extends PartitionClientRequest implements Portable, InitializingObjectRequest {
 
     protected String name;

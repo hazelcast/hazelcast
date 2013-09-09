@@ -15,12 +15,12 @@ public abstract class CollectionBackupAwareOperation extends CollectionOperation
     }
 
     public int getSyncBackupCount() {
-        //TODO getFrom container config
-        return 0;
+        //TODO getFrom collection config
+        return 1;
     }
 
     public int getAsyncBackupCount() {
-        //TODO getFrom container config
+        //TODO getFrom collection config
         return 0;
     }
 }
