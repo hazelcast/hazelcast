@@ -16,16 +16,20 @@
 
 package com.hazelcast.queue;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+
+import java.io.IOException;
 
 /**
  * @ali 9/5/13
  */
 public class TxQueueItem extends QueueItem {
 
-    private transient String transactionId;
+    private String transactionId;
 
-    private transient boolean pollOperation;
+    private boolean pollOperation;
 
     public TxQueueItem() {
     }
@@ -56,5 +60,41 @@ public class TxQueueItem extends QueueItem {
     public TxQueueItem setPollOperation(boolean pollOperation) {
         this.pollOperation = pollOperation;
         return this;
+    }
+
+    public void writeData(ObjectDataOutput out) throws IOException {
+        super.writeData(out);
+        out.writeUTF(transactionId);
+        out.writeBoolean(pollOperation);
+    }
+
+    public void readData(ObjectDataInput in) throws IOException {
+        super.readData(in);
+        transactionId = in.readUTF();
+        pollOperation = in.readBoolean();
+    }
+
+    public int getId() {
+        return QueueDataSerializerHook.TX_QUEUE_ITEM;
+    }
+
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof TxQueueItem)) return false;
+        if (!super.equals(o)) return false;
+
+        TxQueueItem item = (TxQueueItem) o;
+
+        if (pollOperation != item.pollOperation) return false;
+        if (!transactionId.equals(item.transactionId)) return false;
+
+        return true;
+    }
+
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + transactionId.hashCode();
+        result = 31 * result + (pollOperation ? 1 : 0);
+        return result;
     }
 }
