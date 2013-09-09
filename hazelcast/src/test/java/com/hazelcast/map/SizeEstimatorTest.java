@@ -132,19 +132,19 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
         Assert.assertTrue(map.getLocalMapStats().getHeapCost() == 0);
 
 
-        for (int i = 0; i< 1024*1024;i++)
-        {
-            map.put(++key, new Random().nextInt() );
-        }
+//        for (int i = 0; i< 1024*1024;i++)
+//        {
+//            map.put(++key, new Random().nextInt() );
+//        }
+//
+//        Thread.sleep(60000);
 
-        Thread.sleep(3000);
-
-        System.err.println("map.size()" + map.size());
+       // System.err.println("map.size()" + map.size());
 
         // 129554048
         // 134217728 (128*1024*1024)
-        System.err.println( map.getLocalMapStats().getHeapCost() );
-        System.err.println( map.getLocalMapStats().getBackupHeapCost() );
+       // System.err.println( map.getLocalMapStats().getHeapCost() );
+       // System.err.println( map.getLocalMapStats().getBackupHeapCost() );
 
         h[0].getLifecycleService().shutdown();
 
