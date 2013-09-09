@@ -223,7 +223,10 @@ public class TransactionQueueTest extends HazelcastTestSupport {
                             count.incrementAndGet();
                         }
                     } catch (Exception e) {
-                        transactionContext.rollbackTransaction();
+                        try {
+                            transactionContext.rollbackTransaction();
+                        } catch (HazelcastInstanceNotActiveException ignored) {
+                        }
                     }
                 }
             }
