@@ -55,15 +55,27 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
     public void testPutRemove() throws InterruptedException {
         final String MAP_NAME =  "default";
 
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance h = factory.newHazelcastInstance(null);
+        final Config config = new Config();
+        config.getMapConfig(MAP_NAME).setBackupCount(1).setInMemoryFormat(MapConfig.InMemoryFormat.BINARY);
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance h[] = factory.newInstances(config);
 
-        final IMap<String, String> map = h.getMap(MAP_NAME);
+        final IMap<String, String> map = h[0].getMap(MAP_NAME);
 
-        map.put("key","value");
+        map.put("key", "value");
+        Thread.sleep(5000);
 
-        Assert.assertTrue( map.getLocalMapStats().getHeapCost() > 0);
-        Assert.assertTrue( map.getLocalMapStats().getBackupHeapCost() > 0);
+        System.err.println(h[0].getMap(MAP_NAME).getLocalMapStats().getHeapCost());
+        System.err.println(h[1].getMap(MAP_NAME).getLocalMapStats().getHeapCost());
+
+        System.err.println(h[0].getMap(MAP_NAME).getLocalMapStats().getBackupHeapCost());
+        System.err.println(h[1].getMap(MAP_NAME).getLocalMapStats().getBackupHeapCost());
+
+        Assert.assertTrue( h[0].getMap(MAP_NAME).getLocalMapStats().getHeapCost() == 0);
+        Assert.assertTrue( h[0].getMap(MAP_NAME).getLocalMapStats().getBackupHeapCost() > 0);
+
+        Assert.assertTrue( h[1].getMap(MAP_NAME).getLocalMapStats().getHeapCost() > 0);
+        Assert.assertTrue( h[1].getMap(MAP_NAME).getLocalMapStats().getBackupHeapCost() > 0);
 
         Thread.sleep(1000);
 
@@ -72,9 +84,10 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
         Thread.sleep(1000);
 
         Assert.assertTrue( map.getLocalMapStats().getHeapCost() == 0);
-        Assert.assertTrue( map.getLocalMapStats().getBackupHeapCost() == 0);
+        Assert.assertTrue( h[1].getMap(MAP_NAME).getLocalMapStats().getBackupHeapCost() == 0);
 
-        h.getLifecycleService().shutdown();
+        h[0].getLifecycleService().shutdown();
+        h[1].getLifecycleService().shutdown();
 
     }
 

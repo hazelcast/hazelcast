@@ -997,8 +997,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         localMapStats.setBackupEntryCount(zeroOrPositive(backupEntryCount));
         localMapStats.setOwnedEntryMemoryCost(zeroOrPositive(ownedEntryMemoryCost));
         localMapStats.setBackupEntryMemoryCost(zeroOrPositive(backupEntryMemoryCost));
-        localMapStats.setHeapCost( mapContainer.getSizeEstimator().getSize()
-                + mapContainer.getBackUpSizeEstimator().getSize() );
+        localMapStats.setHeapCost( mapContainer.getSizeEstimator().getSize() );
         localMapStats.setBackupHeapCost( mapContainer.getBackUpSizeEstimator().getSize() );
 
         return localMapStats;
