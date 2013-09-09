@@ -63,19 +63,16 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
         final IMap<String, String> map = h[0].getMap(MAP_NAME);
 
         map.put("key", "value");
-        Thread.sleep(5000);
 
-        System.err.println(h[0].getMap(MAP_NAME).getLocalMapStats().getHeapCost());
-        System.err.println(h[1].getMap(MAP_NAME).getLocalMapStats().getHeapCost());
+        Thread.sleep(10000);
 
-        System.err.println(h[0].getMap(MAP_NAME).getLocalMapStats().getBackupHeapCost());
-        System.err.println(h[1].getMap(MAP_NAME).getLocalMapStats().getBackupHeapCost());
+        long h1MapCost = h[0].getMap(MAP_NAME).getLocalMapStats().getHeapCost()
+                + h[0].getMap(MAP_NAME).getLocalMapStats().getBackupHeapCost();
 
-        Assert.assertTrue( h[0].getMap(MAP_NAME).getLocalMapStats().getHeapCost() == 0);
-        Assert.assertTrue( h[0].getMap(MAP_NAME).getLocalMapStats().getBackupHeapCost() > 0);
+        long h2MapCost = h[1].getMap(MAP_NAME).getLocalMapStats().getHeapCost()
+                + h[1].getMap(MAP_NAME).getLocalMapStats().getBackupHeapCost();
 
-        Assert.assertTrue( h[1].getMap(MAP_NAME).getLocalMapStats().getHeapCost() > 0);
-        Assert.assertTrue( h[1].getMap(MAP_NAME).getLocalMapStats().getBackupHeapCost() > 0);
+        Assert.assertTrue( h1MapCost == h2MapCost );
 
         Thread.sleep(1000);
 
@@ -83,8 +80,14 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
 
         Thread.sleep(1000);
 
-        Assert.assertTrue( map.getLocalMapStats().getHeapCost() == 0);
-        Assert.assertTrue( h[1].getMap(MAP_NAME).getLocalMapStats().getBackupHeapCost() == 0);
+        h1MapCost = h[0].getMap(MAP_NAME).getLocalMapStats().getHeapCost()
+                + h[0].getMap(MAP_NAME).getLocalMapStats().getBackupHeapCost();
+
+        h2MapCost = h[1].getMap(MAP_NAME).getLocalMapStats().getHeapCost()
+                + h[1].getMap(MAP_NAME).getLocalMapStats().getBackupHeapCost();
+
+        Assert.assertTrue( h1MapCost == 0 && h2MapCost == 0 );
+
 
         h[0].getLifecycleService().shutdown();
         h[1].getLifecycleService().shutdown();
