@@ -372,4 +372,12 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
     public String getName() {
         return name;
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("IExecutorService{");
+        sb.append("name='").append(name).append('\'');
+        sb.append('}');
+        return sb.toString();
+    }
 }

@@ -98,4 +98,12 @@ public class CountDownLatchProxy extends AbstractDistributedObject<CountDownLatc
     public Object getId() {
         return name;
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("ICountDownLatch{");
+        sb.append("name='").append(name).append('\'');
+        sb.append('}');
+        return sb.toString();
+    }
 }

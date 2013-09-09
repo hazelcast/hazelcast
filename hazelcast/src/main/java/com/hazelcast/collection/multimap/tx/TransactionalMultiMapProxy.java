@@ -82,4 +82,12 @@ public class TransactionalMultiMapProxy<K,V> extends TransactionalMultiMapProxyS
         Data dataKey = getNodeEngine().toData(key);
         return valueCountInternal(dataKey);
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("TransactionalMultiMap{");
+        sb.append("name=").append(getName());
+        sb.append('}');
+        return sb.toString();
+    }
 }

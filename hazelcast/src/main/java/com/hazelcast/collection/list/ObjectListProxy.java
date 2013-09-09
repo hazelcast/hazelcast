@@ -196,4 +196,12 @@ public class ObjectListProxy<E> extends MultiMapProxySupport implements Collecti
         }
         return dataList;
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("IList{");
+        sb.append("name=").append(getName());
+        sb.append('}');
+        return sb.toString();
+    }
 }

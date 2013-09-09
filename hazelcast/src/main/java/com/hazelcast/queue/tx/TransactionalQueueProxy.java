@@ -20,8 +20,6 @@ import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.transaction.TransactionNotActiveException;
-import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionSupport;
 
 import java.util.concurrent.TimeUnit;
@@ -61,5 +59,13 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport i
         checkTransactionState();
         Data data = pollInternal(unit.toMillis(timeout));
         return getNodeEngine().toObject(data);
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("TransactionalQueue{");
+        sb.append("name=").append(name);
+        sb.append('}');
+        return sb.toString();
     }
 }

@@ -130,4 +130,12 @@ public class ObjectSetProxy<E> extends MultiMapProxySupport implements ISet<E>, 
         }
         return dataList;
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("ISet{");
+        sb.append("name=").append(getName());
+        sb.append('}');
+        return sb.toString();
+    }
 }

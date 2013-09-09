@@ -58,4 +58,11 @@ public class TransactionalListProxy<E> extends TransactionalMultiMapProxySupport
         return valueCountInternal(key);
     }
 
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("TransactionalList{");
+        sb.append("name=").append(getName());
+        sb.append('}');
+        return sb.toString();
+    }
 }
