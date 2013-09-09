@@ -131,11 +131,7 @@ public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, 
     boolean remove(Object key, Object value);
 
     /**
-     * Returns a set clone of the keys contained in this map.
-     * The set is <b>NOT</b> backed by the map,
-     * so changes to the map are <b>NOT</b> reflected in the set, and vice-versa.
      *
-     * @return a set clone of the keys contained in this map
      */
     Set<K> keySet();
 }
