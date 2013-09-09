@@ -18,7 +18,6 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -94,10 +93,6 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
 
     }
 
-    @Test
-    public void testBackups() throws InterruptedException {
-
-    }
 
     @Test
     public void testEvictionPolicy() throws InterruptedException {
@@ -220,62 +215,6 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
 
             h[i].getLifecycleService().shutdown();
         }
-    }
-
-    public void testIssue833() throws InterruptedException {
-        final String MAP_NAME =  "testIssue833";
-        Config config = new Config();
-
-        MaxSizeConfig msc = new MaxSizeConfig();
-        msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.USED_HEAP_SIZE);
-        msc.setSize( 500 );
-
-        config.getMapConfig( MAP_NAME ).setStatisticsEnabled( true ).setBackupCount( 0 ).setMaxSizeConfig( msc )
-                .setInMemoryFormat(MapConfig.InMemoryFormat.BINARY).setEvictionPolicy(MapConfig.EvictionPolicy.LFU);
-
-        /*NearCacheConfig nearCacheConfig = new NearCacheConfig();
-        config.getMapConfig("default").setNearCacheConfig(nearCacheConfig);*/
-        int n = 3;
-        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
-        HazelcastInstance[] h = factory.newInstances(config);
-
-        IMap<String, String> map = h[0].getMap(MAP_NAME);
-        map.put("key", "value");
-        map.put("key1", "value1");
-        map.put("key2", "value2");
-        map.put("key3", "asdavalue2");
-
-        Thread.sleep(10000);
-
-        Thread.sleep(3000);
-        System.err.println("##########################");
-        for(int i = 0; i< n; i++){
-
-            final long heapCost = h[i].getMap(MAP_NAME).getLocalMapStats().getHeapCost();
-            System.err.println("heapCost "+i +" : " + heapCost);
-            final long backupHeapCost = h[i].getMap(MAP_NAME).getLocalMapStats().getBackupHeapCost();
-            System.err.println("backupHeapCost "+i +" : " + +backupHeapCost);
-        }
-
-        map.put("key245", "value2");
-        Thread.sleep(5000);
-        System.err.println("##########################");
-        for(int i = 0; i< n; i++){
-            final long heapCost = h[i].getMap( MAP_NAME ).getLocalMapStats().getHeapCost();
-            System.err.println("heapCost "+i +" : " + heapCost);
-            final long backupHeapCost = h[i].getMap( MAP_NAME ).getLocalMapStats().getBackupHeapCost();
-            System.err.println("backupHeapCost "+i +" : " + +backupHeapCost);
-        }
-        map.clear();
-        Thread.sleep(3000);
-        System.err.println("##########################");
-        for(int i = 0; i< n; i++){
-            final long heapCost = h[i].getMap( MAP_NAME ).getLocalMapStats().getHeapCost();
-            System.err.println("heapCost "+i +" : " + heapCost);
-            final long backupHeapCost = h[i].getMap( MAP_NAME ).getLocalMapStats().getBackupHeapCost();
-            System.err.println("backupHeapCost "+i +" : " + +backupHeapCost);
-        }
-//        h[0].getLifecycleService().shutdown();
     }
 
 }
