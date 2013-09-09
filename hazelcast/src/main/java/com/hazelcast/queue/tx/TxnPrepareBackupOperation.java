@@ -31,22 +31,24 @@ public class TxnPrepareBackupOperation extends QueueOperation implements BackupO
 
     long itemId;
     boolean pollOperation;
+    String transactionId;
 
     public TxnPrepareBackupOperation() {
     }
 
-    public TxnPrepareBackupOperation(String name, long itemId, boolean pollOperation) {
+    public TxnPrepareBackupOperation(String name, long itemId, boolean pollOperation, String transactionId) {
         super(name);
         this.itemId = itemId;
         this.pollOperation = pollOperation;
+        this.transactionId = transactionId;
     }
 
     public void run() throws Exception {
         if (pollOperation){
-            response = getOrCreateContainer().txnPollBackupReserve(itemId);
+            response = getOrCreateContainer().txnPollBackupReserve(itemId, transactionId);
         }
         else {
-            getOrCreateContainer().txnOfferBackupReserve(itemId);
+            getOrCreateContainer().txnOfferBackupReserve(itemId, transactionId);
             response = true;
         }
     }
@@ -55,12 +57,14 @@ public class TxnPrepareBackupOperation extends QueueOperation implements BackupO
         super.writeInternal(out);
         out.writeLong(itemId);
         out.writeBoolean(pollOperation);
+        out.writeUTF(transactionId);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         itemId = in.readLong();
         pollOperation = in.readBoolean();
+        transactionId = in.readUTF();
     }
 
     public int getId() {
