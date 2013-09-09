@@ -252,6 +252,7 @@ public final class Predicates {
             second = in.readUTF();
         }
 
+
         @Override
         public String toString() {
             return attribute + " LIKE '" + second + "'";
