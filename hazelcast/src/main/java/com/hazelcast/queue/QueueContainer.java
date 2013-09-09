@@ -41,7 +41,7 @@ public class QueueContainer implements DataSerializable {
 
     private LinkedList<QueueItem> itemQueue = null;
     private HashMap<Long, QueueItem> backupMap = null;
-    private final Map<Long, QueueItem> txMap = new HashMap<Long, QueueItem>();
+    private final Map<Long, TxQueueItem> txMap = new HashMap<Long, TxQueueItem>();
     private final HashMap<Long, Data> dataMap = new HashMap<Long, Data>();
 
     private QueueConfig config;
@@ -104,7 +104,11 @@ public class QueueContainer implements DataSerializable {
     public QueueItem txnPollReserve(long reservedOfferId, String transactionId) {
         QueueItem item = getItemQueue().poll();
         if (item == null) {
-            item = txMap.remove(reservedOfferId);
+            TxQueueItem txItem = txMap.remove(reservedOfferId);
+            if (txItem == null){
+                return null;
+            }
+            item = new QueueItem(this, txItem.getItemId(), txItem.getData());
             return item;
         }
         if (store.isEnabled() && item.getData() == null) {
@@ -118,12 +122,12 @@ public class QueueContainer implements DataSerializable {
         return item;
     }
 
-    public boolean txnPollBackupReserve(long itemId) {
+    public boolean txnPollBackupReserve(long itemId, String transactionId) {
         QueueItem item = getBackupMap().remove(itemId);
         if (item == null) {
             throw new TransactionException("Backup reserve failed: " + itemId);
         }
-        txMap.put(itemId, item);
+        txMap.put(itemId, new TxQueueItem(item).setPollOperation(true).setTransactionId(transactionId));
         return true;
     }
 
@@ -134,7 +138,7 @@ public class QueueContainer implements DataSerializable {
     }
 
     public Data txnCommitPollBackup(long itemId) {
-        QueueItem item = txMap.remove(itemId);
+        TxQueueItem item = txMap.remove(itemId);
         if (item == null) {
             logger.warning("txnCommitPoll operation-> No txn item for itemId: " + itemId);
             return null;
@@ -142,9 +146,8 @@ public class QueueContainer implements DataSerializable {
         if (store.isEnabled()) {
             try {
                 store.delete(item.getItemId());
-            } catch (Exception e) {
-                //todo: ieuw.. we want to log it to a logger
-                e.printStackTrace();
+            } catch (Exception ignored) {
+                logger.severe("Deleting while commit poll backup, itemId" + item.getItemId(), ignored);
             }
         }
         return item.getData();
@@ -169,9 +172,9 @@ public class QueueContainer implements DataSerializable {
         return item.getItemId();
     }
 
-    public void txnOfferBackupReserve(long itemId) {
+    public void txnOfferBackupReserve(long itemId, String transactionId) {
         QueueItem item = new QueueItem(this, itemId, null);
-        Object o = txMap.put(itemId, item);
+        Object o = txMap.put(itemId, new TxQueueItem(item).setPollOperation(false).setTransactionId(transactionId));
         if (o != null) {
             logger.severe("txnOfferBackupReserve operation-> Item exists already at txMap for itemId: " + itemId);
         }
@@ -631,10 +634,10 @@ public class QueueContainer implements DataSerializable {
     }
 
     public void rollbackTransaction(String transactionId){
-        final Iterator<QueueItem> iterator = txMap.values().iterator();
+        final Iterator<TxQueueItem> iterator = txMap.values().iterator();
 
         while (iterator.hasNext()){
-            final TxQueueItem item = (TxQueueItem)iterator.next();
+            final TxQueueItem item = iterator.next();
             if (transactionId.equals(item.getTransactionId())){
                 iterator.remove();
                 if (item.isPollOperation()){
@@ -642,7 +645,6 @@ public class QueueContainer implements DataSerializable {
                 }
             }
         }
-
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
@@ -651,7 +653,7 @@ public class QueueContainer implements DataSerializable {
             item.writeData(out);
         }
         out.writeInt(txMap.size());
-        for (QueueItem item : txMap.values()) {
+        for (TxQueueItem item : txMap.values()) {
             item.writeData(out);
         }
     }
@@ -666,7 +668,7 @@ public class QueueContainer implements DataSerializable {
         }
         int txSize = in.readInt();
         for (int j = 0; j < txSize; j++) {
-            QueueItem item = new QueueItem(this, -1, null);
+            TxQueueItem item = new TxQueueItem(this, -1, null);
             item.readData(in);
             txMap.put(item.getItemId(), item);
             setId(item.getItemId());

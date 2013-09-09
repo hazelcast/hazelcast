@@ -33,13 +33,16 @@ public class TxnPrepareOperation extends QueueBackupAwareOperation {
 
     boolean pollOperation;
 
+    String transactionId;
+
     public TxnPrepareOperation() {
     }
 
-    public TxnPrepareOperation(String name, long itemId, boolean pollOperation) {
+    public TxnPrepareOperation(String name, long itemId, boolean pollOperation, String transactionId) {
         super(name);
         this.itemId = itemId;
         this.pollOperation = pollOperation;
+        this.transactionId = transactionId;
     }
 
     public void run() throws Exception {
@@ -51,19 +54,21 @@ public class TxnPrepareOperation extends QueueBackupAwareOperation {
     }
 
     public Operation getBackupOperation() {
-        return new TxnPrepareBackupOperation(name, itemId, pollOperation);
+        return new TxnPrepareBackupOperation(name, itemId, pollOperation, transactionId);
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(itemId);
         out.writeBoolean(pollOperation);
+        out.writeUTF(transactionId);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         itemId = in.readLong();
         pollOperation = in.readBoolean();
+        transactionId = in.readUTF();
     }
 
     public int getId() {
