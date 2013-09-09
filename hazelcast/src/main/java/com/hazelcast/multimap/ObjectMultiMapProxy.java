@@ -240,4 +240,12 @@ public class ObjectMultiMapProxy<K, V> extends MultiMapProxySupport implements M
         }
         return keySet;
     }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("MultiMap{");
+        sb.append("name=").append(getName());
+        sb.append('}');
+        return sb.toString();
+    }
 }

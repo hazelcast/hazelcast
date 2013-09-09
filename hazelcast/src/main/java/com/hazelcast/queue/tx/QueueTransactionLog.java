@@ -37,11 +37,13 @@ public class QueueTransactionLog implements KeyAwareTransactionLog {
     String name;
     Operation op;
     int partitionId;
+    String transactionId;
 
     public QueueTransactionLog() {
     }
 
-    public QueueTransactionLog(long itemId, String name, int partitionId, Operation op) {
+    public QueueTransactionLog(String transactionId, long itemId, String name, int partitionId, Operation op) {
+        this.transactionId = transactionId;
         this.itemId = itemId;
         this.name = name;
         this.partitionId = partitionId;
@@ -50,7 +52,7 @@ public class QueueTransactionLog implements KeyAwareTransactionLog {
 
     public Future prepare(NodeEngine nodeEngine) {
         boolean pollOperation = op instanceof TxnPollOperation;
-        TxnPrepareOperation operation = new TxnPrepareOperation(name, itemId, pollOperation);
+        TxnPrepareOperation operation = new TxnPrepareOperation(name, itemId, pollOperation, transactionId);
         try {
             Invocation invocation = nodeEngine.getOperationService()
                     .createInvocationBuilder(QueueService.SERVICE_NAME, operation, partitionId).build();
@@ -83,6 +85,7 @@ public class QueueTransactionLog implements KeyAwareTransactionLog {
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(transactionId);
         out.writeLong(itemId);
         out.writeUTF(name);
         out.writeInt(partitionId);
@@ -90,6 +93,7 @@ public class QueueTransactionLog implements KeyAwareTransactionLog {
     }
 
     public void readData(ObjectDataInput in) throws IOException {
+        transactionId = in.readUTF();
         itemId = in.readLong();
         name = in.readUTF();
         partitionId = in.readInt();

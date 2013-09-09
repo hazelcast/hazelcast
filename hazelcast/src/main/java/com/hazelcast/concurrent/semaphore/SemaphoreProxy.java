@@ -154,4 +154,13 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
     public String getServiceName() {
         return SemaphoreService.SERVICE_NAME;
     }
+
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("ISemaphore{");
+        sb.append("name='").append(name).append('\'');
+        sb.append('}');
+        return sb.toString();
+    }
 }

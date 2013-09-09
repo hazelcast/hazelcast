@@ -202,4 +202,13 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         }
     }
 
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("TransactionalMap");
+        sb.append("{name='").append(name).append('\'');
+        sb.append('}');
+        return sb.toString();
+    }
+
 }

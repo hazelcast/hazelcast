@@ -74,7 +74,7 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
                     throw new TransactionException("Duplicate itemId: " + itemId);
                 }
                 offeredQueue.offer(new QueueItem(null, itemId, data));
-                tx.addTransactionLog(new QueueTransactionLog(itemId, name, partitionId, new TxnOfferOperation(name, itemId, data)));
+                tx.addTransactionLog(new QueueTransactionLog(tx.getTxnId(), itemId, name, partitionId, new TxnOfferOperation(name, itemId, data)));
                 return true;
             }
         } catch (Throwable t) {
@@ -101,7 +101,7 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
                 if (!itemIdSet.add(item.getItemId())) {
                     throw new TransactionException("Duplicate itemId: " + item.getItemId());
                 }
-                tx.addTransactionLog(new QueueTransactionLog(item.getItemId(), name, partitionId, new TxnPollOperation(name, item.getItemId())));
+                tx.addTransactionLog(new QueueTransactionLog(tx.getTxnId(), item.getItemId(), name, partitionId, new TxnPollOperation(name, item.getItemId())));
                 return item.getData();
             }
         } catch (Throwable t) {
