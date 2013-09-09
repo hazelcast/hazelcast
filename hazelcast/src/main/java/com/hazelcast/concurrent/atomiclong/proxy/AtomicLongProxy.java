@@ -16,51 +16,122 @@
 
 package com.hazelcast.concurrent.atomiclong.proxy;
 
-import com.hazelcast.concurrent.atomiclong.AtomicLongService;
+import com.hazelcast.concurrent.atomiclong.*;
 import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.spi.AbstractDistributedObject;
+import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.util.ExceptionUtil;
 
-// author: sancar - 21.12.2012
-public class AtomicLongProxy extends AtomicLongProxySupport implements IAtomicLong {
+import java.util.concurrent.Future;
+
+/**
+ * User: sancar
+ * Date: 2/26/13
+ * Time: 12:22 PM
+ */
+public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService> implements IAtomicLong {
+
+    private final String name;
+    private final int partitionId;
 
     public AtomicLongProxy(String name, NodeEngine nodeEngine, AtomicLongService service) {
-        super(name, nodeEngine, service);
+        super(nodeEngine, service);
+        this.name = name;
+        this.partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
     }
 
     public long addAndGet(long delta) {
-        return addAndGetInternal(delta);
+        try {
+            AddAndGetOperation operation = new AddAndGetOperation(name, delta);
+            Invocation inv = getNodeEngine().getOperationService().createInvocationBuilder(AtomicLongService.SERVICE_NAME, operation, partitionId).build();
+            Future f = inv.invoke();
+            return (Long) f.get();
+        } catch (Throwable throwable) {
+            throw ExceptionUtil.rethrow(throwable);
+        }
     }
 
     public boolean compareAndSet(long expect, long update) {
-        return compareAndSetInternal(expect, update);
+        try {
+            CompareAndSetOperation operation = new CompareAndSetOperation(name, expect, update);
+            Invocation inv = getNodeEngine().getOperationService().createInvocationBuilder(AtomicLongService.SERVICE_NAME, operation, partitionId).build();
+            Future f = inv.invoke();
+            return (Boolean) f.get();
+        } catch (Throwable throwable) {
+            throw ExceptionUtil.rethrow(throwable);
+        }
+    }
+
+    public void set(long newValue) {
+        try {
+            SetOperation operation = new SetOperation(name, newValue);
+            Invocation inv = getNodeEngine().getOperationService().createInvocationBuilder(AtomicLongService.SERVICE_NAME, operation, partitionId).build();
+            inv.invoke();
+        } catch (Throwable throwable) {
+            throw ExceptionUtil.rethrow(throwable);
+        }
+    }
+
+    public long getAndSet(long newValue) {
+        try {
+            GetAndSetOperation operation = new GetAndSetOperation(name, newValue);
+            Invocation inv = getNodeEngine().getOperationService().createInvocationBuilder(AtomicLongService.SERVICE_NAME, operation, partitionId).build();
+            Future f = inv.invoke();
+            return (Long) f.get();
+        } catch (Throwable throwable) {
+            throw ExceptionUtil.rethrow(throwable);
+        }
+    }
+
+    public long getAndAdd(long delta) {
+        try {
+            GetAndAddOperation operation = new GetAndAddOperation(name, delta);
+            Invocation inv = getNodeEngine().getOperationService().createInvocationBuilder(AtomicLongService.SERVICE_NAME, operation, partitionId).build();
+            Future f = inv.invoke();
+            return (Long) f.get();
+        } catch (Throwable throwable) {
+            throw ExceptionUtil.rethrow(throwable);
+        }
     }
 
     public long decrementAndGet() {
-        return addAndGetInternal(-1);
-    }
-
-    public long incrementAndGet() {
-        return addAndGetInternal(1);
-    }
-
-    public long getAndIncrement() {
-        return getAndAdd(1);
+        return addAndGet(-1);
     }
 
     public long get() {
         return getAndAdd(0);
     }
 
-    public long getAndAdd(long delta) {
-        return getAndAddInternal(delta);
+    public long incrementAndGet() {
+        return addAndGet(1);
     }
 
-    public long getAndSet(long newValue) {
-        return getAndSetInternal(newValue);
+    public long getAndIncrement() {
+        return getAndAdd(1);
     }
 
-    public void set(long newValue) {
-        setInternal(newValue);
+    public Object getId() {
+        return name;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public int getPartitionId() {
+        return partitionId;
+    }
+
+    public String getServiceName() {
+        return AtomicLongService.SERVICE_NAME;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("IAtomicLong{");
+        sb.append("name='").append(name).append('\'');
+        sb.append('}');
+        return sb.toString();
+    }
 }
