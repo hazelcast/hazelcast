@@ -44,7 +44,6 @@ public class QueueContainer implements IdentifiedDataSerializable {
     private final Map<Long, QueueItem> txMap = new HashMap<Long, QueueItem>();
     private final HashMap<Long, Data> dataMap = new HashMap<Long, Data>();
 
-    private int partitionId;
     private QueueConfig config;
     private QueueStoreWrapper store;
     private NodeEngine nodeEngine;
@@ -69,16 +68,16 @@ public class QueueContainer implements IdentifiedDataSerializable {
     private boolean isEvictionScheduled = false;
 
 
-    public QueueContainer() {
+    public QueueContainer(String name) {
+        this.name = name;
         pollWaitNotifyKey = new QueueWaitNotifyKey(name, "poll");
         offerWaitNotifyKey = new QueueWaitNotifyKey(name, "offer");
     }
 
-    public QueueContainer(String name, NodeEngine nodeEngine, QueueService service) throws Exception {
-        this();
-        this.name = name;
-        this.partitionId = nodeEngine.getPartitionService().getPartitionId(nodeEngine.getSerializationService().toData(name, QueueService.PARTITIONING_STRATEGY));
-        setConfig(nodeEngine.getConfig().getQueueConfig(name), nodeEngine, service);
+
+    public QueueContainer(String name, QueueConfig config, NodeEngine nodeEngine, QueueService service) throws Exception {
+        this(name);
+        setConfig(config, nodeEngine, service);
     }
 
     public void init(boolean fromBackup){
@@ -104,7 +103,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
     }
 
     //TX Poll
-    public QueueItem txnPollReserve(long reservedOfferId) {
+    public QueueItem txnPollReserve(long reservedOfferId, String transactionId) {
         QueueItem item = getItemQueue().poll();
         if (item == null) {
             item = txMap.remove(reservedOfferId);
@@ -117,7 +116,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
                 throw new HazelcastException(e);
             }
         }
-        txMap.put(item.getItemId(), item);
+        txMap.put(item.getItemId(), new TxQueueItem(item).setPollOperation(true).setTransactionId(transactionId));
         return item;
     }
 
@@ -165,8 +164,8 @@ public class QueueContainer implements IdentifiedDataSerializable {
     }
 
     //TX Offer
-    public long txnOfferReserve() {
-        QueueItem item = new QueueItem(this, nextId(), null);
+    public long txnOfferReserve(String transactionId) {
+        TxQueueItem item = new TxQueueItem(this, nextId(), null).setTransactionId(transactionId).setPollOperation(false);
         txMap.put(item.getItemId(), item);
         return item.getItemId();
     }
@@ -587,10 +586,6 @@ public class QueueContainer implements IdentifiedDataSerializable {
         return config;
     }
 
-    public int getPartitionId() {
-        return partitionId;
-    }
-
     private void age(QueueItem item, long currentTime) {
         long elapsed = currentTime - item.getCreationTime();
         if (elapsed <= 0) {
@@ -636,9 +631,23 @@ public class QueueContainer implements IdentifiedDataSerializable {
         return getItemQueue().isEmpty() && txMap.isEmpty();
     }
 
+    public void rollbackTransaction(String transactionId){
+        final Iterator<QueueItem> iterator = txMap.values().iterator();
+
+        while (iterator.hasNext()){
+            final TxQueueItem item = (TxQueueItem)iterator.next();
+            if (transactionId.equals(item.getTransactionId())){
+                iterator.remove();
+                if (item.isPollOperation()){
+                    getItemQueue().offerFirst(item);
+                }
+            }
+        }
+
+    }
+
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
-        out.writeInt(partitionId);
         out.writeInt(getItemQueue().size());
         for (QueueItem item : getItemQueue()) {
             item.writeData(out);
@@ -651,7 +660,6 @@ public class QueueContainer implements IdentifiedDataSerializable {
 
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
-        partitionId = in.readInt();
         int size = in.readInt();
         for (int j = 0; j < size; j++) {
             QueueItem item = new QueueItem(this, -1, null);

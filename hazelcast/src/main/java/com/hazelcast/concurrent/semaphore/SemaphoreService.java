@@ -19,6 +19,7 @@ package com.hazelcast.concurrent.semaphore;
 import com.hazelcast.config.SemaphoreConfig;
 import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.PartitionView;
+import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.ResponseHandlerFactory;
 import com.hazelcast.util.ConcurrencyUtil;
@@ -50,7 +51,7 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
     private final ConstructorFunction<String, Permit> permitConstructor = new ConstructorFunction<String, Permit>() {
         public Permit createNew(String name) {
             SemaphoreConfig config = nodeEngine.getConfig().getSemaphoreConfig(name);
-            int partitionId = nodeEngine.getPartitionService().getPartitionId(name);
+            int partitionId = nodeEngine.getPartitionService().getPartitionId(StringPartitioningStrategy.getPartitionKey(name));
             return new Permit(partitionId, new SemaphoreConfig(config));
         }
     };
@@ -85,7 +86,7 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
 
     private void onOwnerDisconnected(final String caller) {
         for (String name: permitMap.keySet()){
-            int partitionId = nodeEngine.getPartitionService().getPartitionId(name);
+            int partitionId = nodeEngine.getPartitionService().getPartitionId(StringPartitioningStrategy.getPartitionKey(name));
             PartitionView info = nodeEngine.getPartitionService().getPartition(partitionId);
             if (nodeEngine.getThisAddress().equals(info.getOwner())){
                 Operation op = new SemaphoreDeadMemberOperation(name, caller).setPartitionId(partitionId)

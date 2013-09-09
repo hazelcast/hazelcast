@@ -30,13 +30,13 @@ import java.io.IOException;
  */
 public class QueueItem implements IdentifiedDataSerializable, Comparable<QueueItem> {
 
-    private long itemId;
+    protected long itemId;
 
-    private Data data;
+    protected Data data;
 
-    private final long creationTime;
+    protected final long creationTime;
 
-    private transient QueueContainer container;
+    protected transient QueueContainer container;
 
     public QueueItem() {
         this.creationTime = Clock.currentTimeMillis();

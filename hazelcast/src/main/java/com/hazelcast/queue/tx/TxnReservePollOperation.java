@@ -32,16 +32,19 @@ public class TxnReservePollOperation extends QueueOperation implements WaitSuppo
 
     long reservedOfferId;
 
+    String transactionId;
+
     public TxnReservePollOperation() {
     }
 
-    public TxnReservePollOperation(String name, long timeoutMillis, long reservedOfferId) {
+    public TxnReservePollOperation(String name, long timeoutMillis, long reservedOfferId, String transactionId) {
         super(name, timeoutMillis);
         this.reservedOfferId = reservedOfferId;
+        this.transactionId = transactionId;
     }
 
     public void run() throws Exception {
-        response = getOrCreateContainer().txnPollReserve(reservedOfferId);
+        response = getOrCreateContainer().txnPollReserve(reservedOfferId, transactionId);
     }
 
     public WaitNotifyKey getWaitKey() {
@@ -63,10 +66,12 @@ public class TxnReservePollOperation extends QueueOperation implements WaitSuppo
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeLong(reservedOfferId);
+        out.writeUTF(transactionId);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         reservedOfferId = in.readLong();
+        transactionId = in.readUTF();
     }
 }
