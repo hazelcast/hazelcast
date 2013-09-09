@@ -132,7 +132,7 @@ public final class Packet extends DataAdapter implements SocketWritable, SocketR
     }
 
     public int size() {
-        return (data != null  ? data.totalSize() : 0) + 6; // 6 = short(header) + int(partitionId)
+        return (data != null  ? data.totalSize() : 0) + 7; // 7 = byte(version) + short(header) + int(partitionId)
     }
 
 
