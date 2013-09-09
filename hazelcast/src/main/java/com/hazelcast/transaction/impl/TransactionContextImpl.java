@@ -105,6 +105,12 @@ final class TransactionContextImpl implements TransactionContext {
                 obj = ((TransactionalService) service).createTransactionalObject(id, transaction);
                 txnObjectMap.put(key, obj);
             } else {
+                if (service == null) {
+                    if (!nodeEngine.isActive()) {
+                        throw new HazelcastInstanceNotActiveException();
+                    }
+                    throw new IllegalArgumentException("Unknown Service[" + serviceName + "]!");
+                }
                 throw new IllegalArgumentException("Service[" + serviceName + "] is not transactional!");
             }
         }
