@@ -17,13 +17,16 @@ public class CollectionReserveRemoveOperation extends CollectionOperation {
 
     private Data value;
 
+    String transactionId;
+
     public CollectionReserveRemoveOperation() {
     }
 
-    public CollectionReserveRemoveOperation(String name, long reservedItemId, Data value) {
+    public CollectionReserveRemoveOperation(String name, long reservedItemId, Data value, String transactionId) {
         super(name);
         this.reservedItemId = reservedItemId;
         this.value = value;
+        this.transactionId = transactionId;
     }
 
     public int getId() {
@@ -35,7 +38,7 @@ public class CollectionReserveRemoveOperation extends CollectionOperation {
     }
 
     public void run() throws Exception {
-        response = getOrCreateContainer().reserveRemove(reservedItemId, value);
+        response = getOrCreateContainer().reserveRemove(reservedItemId, value, transactionId);
     }
 
     public void afterRun() throws Exception {
@@ -46,6 +49,7 @@ public class CollectionReserveRemoveOperation extends CollectionOperation {
         super.writeInternal(out);
         out.writeLong(reservedItemId);
         value.writeData(out);
+        out.writeUTF(transactionId);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
@@ -53,5 +57,6 @@ public class CollectionReserveRemoveOperation extends CollectionOperation {
         reservedItemId = in.readLong();
         value = new Data();
         value.readData(in);
+        transactionId = in.readUTF();
     }
 }

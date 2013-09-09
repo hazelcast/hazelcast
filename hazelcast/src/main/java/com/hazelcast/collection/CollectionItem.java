@@ -12,13 +12,13 @@ import java.io.IOException;
  */
 public class CollectionItem implements Comparable<CollectionItem>, IdentifiedDataSerializable {
 
-    private long itemId;
+    protected long itemId;
 
-    private Object value;
+    protected Object value;
 
-    private final long creationTime;
+    protected final long creationTime;
 
-    private transient CollectionContainer container;
+    protected transient CollectionContainer container;
 
     public CollectionItem() {
         creationTime = Clock.currentTimeMillis();

@@ -21,16 +21,18 @@ public class CollectionTransactionLog implements KeyAwareTransactionLog {
     private Operation op;
     private int partitionId;
     private String serviceName;
+    String transactionId;
 
     public CollectionTransactionLog() {
     }
 
-    public CollectionTransactionLog(long itemId, String name, int partitionId, String serviceName, Operation op) {
+    public CollectionTransactionLog(long itemId, String name, int partitionId, String serviceName, String transactionId, Operation op) {
         this.itemId = itemId;
         this.name = name;
         this.op = op;
         this.partitionId = partitionId;
         this.serviceName = serviceName;
+        this.transactionId = transactionId;
     }
 
     public Object getKey() {
@@ -39,7 +41,7 @@ public class CollectionTransactionLog implements KeyAwareTransactionLog {
 
     public Future prepare(NodeEngine nodeEngine) {
         boolean removeOperation = op instanceof CollectionTxnRemoveOperation;
-        CollectionPrepareOperation operation = new CollectionPrepareOperation(name, itemId, removeOperation);
+        CollectionPrepareOperation operation = new CollectionPrepareOperation(name, itemId, transactionId, removeOperation);
         try {
             Invocation invocation = nodeEngine.getOperationService()
                     .createInvocationBuilder(serviceName, operation, partitionId).build();
@@ -77,6 +79,7 @@ public class CollectionTransactionLog implements KeyAwareTransactionLog {
         out.writeInt(partitionId);
         out.writeUTF(serviceName);
         out.writeObject(op);
+        out.writeUTF(transactionId);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
@@ -85,6 +88,7 @@ public class CollectionTransactionLog implements KeyAwareTransactionLog {
         partitionId = in.readInt();
         serviceName = in.readUTF();
         op = in.readObject();
+        transactionId = in.readUTF();
     }
 
 

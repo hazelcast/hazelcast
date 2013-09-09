@@ -50,6 +50,8 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
     public static final int COLLECTION_ROLLBACK = increment++;
     public static final int COLLECTION_ROLLBACK_BACKUP = increment++;
 
+    public static final int TX_COLLECTION_ITEM = increment++;
+    public static final int TX_ROLLBACK = increment++;
 
     public int getFactoryId() {
         return F_ID;
@@ -226,6 +228,16 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
         constructors[COLLECTION_ROLLBACK_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new CollectionRollbackBackupOperation();
+            }
+        };
+        constructors[TX_COLLECTION_ITEM] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new TxCollectionItem();
+            }
+        };
+        constructors[TX_ROLLBACK] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new CollectionTransactionRollbackOperation();
             }
         };
 

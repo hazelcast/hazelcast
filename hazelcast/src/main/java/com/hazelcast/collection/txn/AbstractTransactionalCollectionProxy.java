@@ -67,7 +67,7 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
         throwExceptionIfNull(e);
         final NodeEngine nodeEngine = getNodeEngine();
         final Data value = nodeEngine.toData(e);
-        CollectionReserveAddOperation operation = new CollectionReserveAddOperation(name);
+        CollectionReserveAddOperation operation = new CollectionReserveAddOperation(name, tx.getTxnId());
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(getServiceName(), operation, partitionId).build();
             Future<Long> f = invocation.invoke();
@@ -77,7 +77,7 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
                     throw new TransactionException("Duplicate itemId: " + itemId);
                 }
                 getCollection().add(new CollectionItem(null, itemId, value));
-                tx.addTransactionLog(new CollectionTransactionLog(itemId, name, partitionId, getServiceName(), new CollectionTxnAddOperation(name, itemId, value)));
+                tx.addTransactionLog(new CollectionTransactionLog(itemId, name, partitionId, getServiceName(), tx.getTxnId(), new CollectionTxnAddOperation(name, itemId, value)));
                 return true;
             }
         } catch (Throwable t) {
@@ -100,7 +100,7 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
                 break;
             }
         }
-        final CollectionReserveRemoveOperation operation = new CollectionReserveRemoveOperation(name, reservedItemId, value);
+        final CollectionReserveRemoveOperation operation = new CollectionReserveRemoveOperation(name, reservedItemId, value, tx.getTxnId());
         try {
             Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(getServiceName(), operation, partitionId).build();
             Future<CollectionItem> f = invocation.invoke();
@@ -115,7 +115,7 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
                 if (!itemIdSet.add(item.getItemId())) {
                     throw new TransactionException("Duplicate itemId: " + item.getItemId());
                 }
-                tx.addTransactionLog(new CollectionTransactionLog(item.getItemId(), name, partitionId, getServiceName(), new CollectionTxnRemoveOperation(name, item.getItemId())));
+                tx.addTransactionLog(new CollectionTransactionLog(item.getItemId(), name, partitionId, getServiceName(), tx.getTxnId(), new CollectionTxnRemoveOperation(name, item.getItemId())));
                 return true;
             }
         } catch (Throwable t) {

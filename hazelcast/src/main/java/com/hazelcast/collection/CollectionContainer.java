@@ -38,7 +38,7 @@ public abstract class CollectionContainer implements DataSerializable {
     protected CollectionService service;
     protected ILogger logger;
 
-    protected final Map<Long, CollectionItem> txMap = new HashMap<Long, CollectionItem>();
+    protected final Map<Long, TxCollectionItem> txMap = new HashMap<Long, TxCollectionItem>();
 
     private long idGenerator = 0;
 
@@ -172,27 +172,27 @@ public abstract class CollectionContainer implements DataSerializable {
      *
      */
 
-    public long reserveAdd(){
+    public long reserveAdd(String transactionId){
         final long itemId = nextId();
-        txMap.put(itemId, new CollectionItem(this, itemId, null));
+        txMap.put(itemId, new TxCollectionItem(this, itemId, null, transactionId, false));
         return itemId;
     }
 
-    public void reserveAddBackup(long itemId) {
-        CollectionItem item = new CollectionItem(this, itemId, null);
+    public void reserveAddBackup(long itemId, String transactionId) {
+        TxCollectionItem item = new TxCollectionItem(this, itemId, null, transactionId, false);
         Object o = txMap.put(itemId, item);
         if (o != null) {
             logger.severe("txnOfferBackupReserve operation-> Item exists already at txMap for itemId: " + itemId);
         }
     }
 
-    public CollectionItem reserveRemove(long reservedItemId, Data value) {
+    public CollectionItem reserveRemove(long reservedItemId, Data value, String transactionId) {
         final Iterator<CollectionItem> iterator = getCollection().iterator();
         while (iterator.hasNext()){
             final CollectionItem item = iterator.next();
             if (value.equals(item.getValue())){
                 iterator.remove();
-                txMap.put(item.getItemId(), item);
+                txMap.put(item.getItemId(), new TxCollectionItem(item).setTransactionId(transactionId).setRemoveOperation(true));
                 return item;
             }
         }
@@ -202,12 +202,12 @@ public abstract class CollectionContainer implements DataSerializable {
         return null;
     }
 
-    public void reserveRemoveBackup(long itemId) {
+    public void reserveRemoveBackup(long itemId, String transactionId) {
         final CollectionItem item = getMap().remove(itemId);
         if (item == null) {
             throw new TransactionException("Backup reserve failed: " + itemId);
         }
-        txMap.put(itemId, item);
+        txMap.put(itemId, new TxCollectionItem(item).setTransactionId(transactionId).setRemoveOperation(true));
     }
 
     public void ensureReserve(long itemId) {
@@ -274,6 +274,20 @@ public abstract class CollectionContainer implements DataSerializable {
         }
     }
 
+    public void rollbackTransaction(String transactionId) {
+        final Iterator<TxCollectionItem> iterator = txMap.values().iterator();
+
+        while (iterator.hasNext()){
+            final TxCollectionItem item = iterator.next();
+            if (transactionId.equals(item.getTransactionId())){
+                iterator.remove();
+                if (item.isRemoveOperation()){
+                    getCollection().add(item);
+                }
+            }
+        }
+    }
+
     public long nextId() {
         return idGenerator++;
     }
@@ -281,10 +295,14 @@ public abstract class CollectionContainer implements DataSerializable {
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeInt(partitionId);
+
+        //TODO @ali migration
     }
 
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         partitionId = in.readInt();
     }
+
+
 }

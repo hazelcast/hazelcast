@@ -17,13 +17,16 @@ public class CollectionPrepareBackupOperation extends CollectionOperation implem
 
     boolean removeOperation;
 
+    String transactionId;
+
     public CollectionPrepareBackupOperation() {
     }
 
-    public CollectionPrepareBackupOperation(String name, long itemId, boolean removeOperation) {
+    public CollectionPrepareBackupOperation(String name, long itemId, String transactionId, boolean removeOperation) {
         super(name);
         this.itemId = itemId;
         this.removeOperation = removeOperation;
+        this.transactionId = transactionId;
     }
 
     public int getId() {
@@ -36,9 +39,9 @@ public class CollectionPrepareBackupOperation extends CollectionOperation implem
 
     public void run() throws Exception {
         if (removeOperation){
-            getOrCreateContainer().reserveRemoveBackup(itemId);
+            getOrCreateContainer().reserveRemoveBackup(itemId, transactionId);
         } else {
-            getOrCreateContainer().reserveAddBackup(itemId);
+            getOrCreateContainer().reserveAddBackup(itemId, transactionId);
         }
     }
 
@@ -50,11 +53,13 @@ public class CollectionPrepareBackupOperation extends CollectionOperation implem
         super.writeInternal(out);
         out.writeLong(itemId);
         out.writeBoolean(removeOperation);
+        out.writeUTF(transactionId);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         itemId = in.readLong();
         removeOperation = in.readBoolean();
+        transactionId = in.readUTF();
     }
 }

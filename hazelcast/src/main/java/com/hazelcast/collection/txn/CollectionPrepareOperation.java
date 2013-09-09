@@ -17,13 +17,16 @@ public class CollectionPrepareOperation extends CollectionBackupAwareOperation {
 
     boolean removeOperation;
 
+    String transactionId;
+
     public CollectionPrepareOperation() {
     }
 
-    public CollectionPrepareOperation(String name, long itemId, boolean removeOperation) {
+    public CollectionPrepareOperation(String name, long itemId, String transactionId, boolean removeOperation) {
         super(name);
         this.itemId = itemId;
         this.removeOperation = removeOperation;
+        this.transactionId = transactionId;
     }
 
     public boolean shouldBackup() {
@@ -31,7 +34,7 @@ public class CollectionPrepareOperation extends CollectionBackupAwareOperation {
     }
 
     public Operation getBackupOperation() {
-        return new CollectionPrepareBackupOperation(name, itemId, removeOperation);
+        return new CollectionPrepareBackupOperation(name, itemId, transactionId, removeOperation);
     }
 
     public int getId() {
@@ -54,11 +57,13 @@ public class CollectionPrepareOperation extends CollectionBackupAwareOperation {
         super.writeInternal(out);
         out.writeLong(itemId);
         out.writeBoolean(removeOperation);
+        out.writeUTF(transactionId);
     }
 
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         itemId = in.readLong();
         removeOperation = in.readBoolean();
+        transactionId = in.readUTF();
     }
 }

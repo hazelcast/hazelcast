@@ -24,6 +24,7 @@ import com.hazelcast.spi.*;
 
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 /**
  * @ali 8/29/13
@@ -69,7 +70,12 @@ public abstract class CollectionService implements ManagedService, RemoteService
         }
     }
 
-    @Override
     public void rollbackTransaction(String transactionId) {
+        final Set<String> collectionNames = getContainerMap().keySet();
+        for (String name : collectionNames) {
+            int partitionId = nodeEngine.getPartitionService().getPartitionId(StringPartitioningStrategy.getPartitionKey(name));
+            Operation operation = new CollectionTransactionRollbackOperation(name, transactionId).setPartitionId(partitionId).setService(this).setNodeEngine(nodeEngine);
+            nodeEngine.getOperationService().executeOperation(operation);
+        }
     }
 }
