@@ -33,11 +33,11 @@ import java.util.*;
 public abstract class CollectionContainer implements DataSerializable {
 
     protected String name;
-    protected int partitionId;
     protected NodeEngine nodeEngine;
     protected CollectionService service;
     protected ILogger logger;
 
+    protected Map<Long, CollectionItem> itemMap = null;
     protected final Map<Long, TxCollectionItem> txMap = new HashMap<Long, TxCollectionItem>();
 
     private long idGenerator = 0;
@@ -49,8 +49,12 @@ public abstract class CollectionContainer implements DataSerializable {
         this.name = name;
         this.nodeEngine = nodeEngine;
         this.service = service;
-        this.partitionId = nodeEngine.getPartitionService().getPartitionId(nodeEngine.getSerializationService().toData(name, CollectionService.PARTITIONING_STRATEGY));
         logger = nodeEngine.getLogger(getClass());
+    }
+
+    public void init(NodeEngine nodeEngine, CollectionService service){
+        this.nodeEngine = nodeEngine;
+        this.service = service;
     }
 
     protected abstract Collection<CollectionItem> getCollection();
@@ -292,16 +296,53 @@ public abstract class CollectionContainer implements DataSerializable {
         return idGenerator++;
     }
 
+    void setId(long itemId) {
+        idGenerator = Math.max(itemId+1, idGenerator);
+    }
+
+    public void destroy(){
+        onDestroy();
+        if (itemMap != null){
+            itemMap.clear();
+        }
+        txMap.clear();
+    }
+
+    protected abstract void onDestroy();
+
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
-        out.writeInt(partitionId);
-
-        //TODO @ali migration
+        final Collection<CollectionItem> collection = getCollection();
+        out.writeInt(collection.size());
+        for (CollectionItem item : collection) {
+            item.writeData(out);
+        }
+        out.writeInt(txMap.size());
+        for (TxCollectionItem txCollectionItem : txMap.values()) {
+            txCollectionItem.writeData(out);
+        }
     }
 
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
-        partitionId = in.readInt();
+        final int collectionSize = in.readInt();
+        final Collection<CollectionItem> collection = getCollection();
+        for (int i=0; i<collectionSize; i++){
+            final CollectionItem item = new CollectionItem();
+            item.setContainer(this);
+            item.readData(in);
+            collection.add(item);
+            setId(item.getItemId());
+        }
+
+        final int txMapSize = in.readInt();
+        for (int i=0; i<txMapSize; i++){
+            final TxCollectionItem txCollectionItem = new TxCollectionItem();
+            txCollectionItem.setContainer(this);
+            txCollectionItem.readData(in);
+            txMap.put(txCollectionItem.getItemId(), txCollectionItem);
+            setId(txCollectionItem.itemId);
+        }
     }
 
 

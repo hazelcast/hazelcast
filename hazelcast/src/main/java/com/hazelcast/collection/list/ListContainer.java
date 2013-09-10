@@ -30,7 +30,6 @@ import java.util.*;
 public class ListContainer extends CollectionContainer {
 
     private List<CollectionItem> itemList = null;
-    private Map<Long, CollectionItem> itemMap = null;
 
     public ListContainer() {
     }
@@ -147,4 +146,12 @@ public class ListContainer extends CollectionContainer {
         return itemMap;
     }
 
+    protected void onDestroy() {
+        if (itemList != null){
+            itemList.clear();
+        }
+        if (itemMap != null){
+            itemMap.clear();
+        }
+    }
 }

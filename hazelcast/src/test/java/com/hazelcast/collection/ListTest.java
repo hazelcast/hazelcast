@@ -211,6 +211,54 @@ public class ListTest extends HazelcastTestSupport {
         assertEquals(1, instances[1].getList(name).size());
     }
 
+    @Test
+    public void testMigration(){
+        Config config = new Config();
+        final String name = "defList";
+
+        final int insCount = 4;
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
+
+        HazelcastInstance instance1 = factory.newHazelcastInstance(config);
+
+        IList list = instance1.getList(name);
+
+        for (int i=0; i<100; i++){
+            list.add("item"+i);
+        }
+
+        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        assertEquals(100, instance2.getList(name).size());
+
+
+        HazelcastInstance instance3 = factory.newHazelcastInstance(config);
+        assertEquals(100, instance3.getList(name).size());
+
+
+
+        instance1.getLifecycleService().shutdown();
+        assertEquals(100, instance3.getList(name).size());
+
+
+        list = instance2.getList(name);
+        for (int i=0; i<100; i++){
+            list.add("item-"+i);
+        }
+
+
+        instance2.getLifecycleService().shutdown();
+        assertEquals(200, instance3.getList(name).size());
+
+
+
+        instance1 = factory.newHazelcastInstance(config);
+        assertEquals(200, instance1.getList(name).size());
+
+        instance3.getLifecycleService().shutdown();
+        assertEquals(200, instance1.getList(name).size());
+
+    }
+
     private IList getList(HazelcastInstance[] instances, String name){
         final Random rnd = new Random(System.currentTimeMillis());
         return instances[rnd.nextInt(instances.length)].getList(name);

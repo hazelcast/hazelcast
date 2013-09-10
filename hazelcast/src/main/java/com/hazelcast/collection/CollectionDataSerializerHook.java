@@ -1,6 +1,7 @@
 package com.hazelcast.collection;
 
 import com.hazelcast.collection.list.*;
+import com.hazelcast.collection.set.SetReplicationOperation;
 import com.hazelcast.collection.txn.*;
 import com.hazelcast.nio.serialization.*;
 import com.hazelcast.util.ConstructorFunction;
@@ -52,6 +53,9 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
 
     public static final int TX_COLLECTION_ITEM = increment++;
     public static final int TX_ROLLBACK = increment++;
+
+    public static final int LIST_REPLICATION = increment++;
+    public static final int SET_REPLICATION = increment++;
 
     public int getFactoryId() {
         return F_ID;
@@ -240,7 +244,16 @@ public class CollectionDataSerializerHook implements DataSerializerHook {
                 return new CollectionTransactionRollbackOperation();
             }
         };
-
+        constructors[LIST_REPLICATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new ListReplicationOperation();
+            }
+        };
+        constructors[SET_REPLICATION] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
+            public IdentifiedDataSerializable createNew(Integer arg) {
+                return new SetReplicationOperation();
+            }
+        };
 
         return new ArrayDataSerializableFactory(constructors);
     }

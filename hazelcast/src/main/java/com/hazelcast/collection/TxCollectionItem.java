@@ -44,6 +44,8 @@ public class TxCollectionItem extends CollectionItem {
         this.removeOperation = removeOperation;
     }
 
+
+
     public String getTransactionId() {
         return transactionId;
     }

@@ -21,6 +21,8 @@ import com.hazelcast.collection.CollectionService;
 import com.hazelcast.collection.txn.TransactionalListProxy;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.transaction.impl.TransactionSupport;
 
 import java.util.Map;
@@ -40,10 +42,10 @@ public class ListService extends CollectionService {
         super(nodeEngine);
     }
 
-    public CollectionContainer getOrCreateContainer(String name, boolean backup) {
+    public ListContainer getOrCreateContainer(String name, boolean backup) {
         ListContainer container = containerMap.get(name);
         if (container == null){
-            container = new ListContainer();
+            container = new ListContainer(name, nodeEngine, this);
             final ListContainer current = containerMap.putIfAbsent(name, container);
             if (current != null){
                 container = current;
@@ -66,5 +68,11 @@ public class ListService extends CollectionService {
 
     public TransactionalListProxy createTransactionalObject(Object id, TransactionSupport transaction) {
         return new TransactionalListProxy(String.valueOf(id), transaction, nodeEngine, this);
+    }
+
+    public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
+        final int totalBackupCount = 1; //TODO through config
+        final Map<String, CollectionContainer> migrationData = getMigrationData(event, totalBackupCount);
+        return migrationData.isEmpty() ? null : new ListReplicationOperation(migrationData, event.getPartitionId(), event.getReplicaIndex());
     }
 }

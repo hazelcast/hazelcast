@@ -31,6 +31,10 @@ public class CollectionItem implements Comparable<CollectionItem>, IdentifiedDat
         this.value = value;
     }
 
+    public void setContainer(CollectionContainer container) {
+        this.container = container;
+    }
+
     public long getItemId() {
         return itemId;
     }

@@ -49,7 +49,7 @@ public class CollectionAddBackupOperation extends CollectionOperation implements
     }
 
     public void run() throws Exception {
-        getOrCreateSetContainer().addBackup(itemId, value);
+        getOrCreateContainer().addBackup(itemId, value);
     }
 
     public void afterRun() throws Exception {

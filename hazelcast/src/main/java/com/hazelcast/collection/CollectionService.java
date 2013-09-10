@@ -19,17 +19,16 @@ package com.hazelcast.collection;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.core.ItemListener;
+import com.hazelcast.partition.MigrationEndpoint;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.spi.*;
 
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @ali 8/29/13
  */
-public abstract class CollectionService implements ManagedService, RemoteService, EventPublishingService<CollectionEvent, ItemListener>, TransactionalService {
+public abstract class CollectionService implements ManagedService, RemoteService, EventPublishingService<CollectionEvent, ItemListener>, TransactionalService, MigrationAwareService {
 
     protected static final StringPartitioningStrategy PARTITIONING_STRATEGY = new StringPartitioningStrategy();
 
@@ -78,4 +77,57 @@ public abstract class CollectionService implements ManagedService, RemoteService
             nodeEngine.getOperationService().executeOperation(operation);
         }
     }
+
+    public void beforeMigration(PartitionMigrationEvent event) {
+    }
+
+    public Map<String, CollectionContainer> getMigrationData(PartitionReplicationEvent event, int totalBackupCount) {
+        Map<String, CollectionContainer> migrationData = new HashMap<String, CollectionContainer>();
+        for (Map.Entry<String, ? extends CollectionContainer> entry : getContainerMap().entrySet()) {
+            String name = entry.getKey();
+            int partitionId = nodeEngine.getPartitionService().getPartitionId(StringPartitioningStrategy.getPartitionKey(name));
+            CollectionContainer container = entry.getValue();
+            if (partitionId == event.getPartitionId() && totalBackupCount >= event.getReplicaIndex()) {
+                migrationData.put(name, container);
+            }
+        }
+        return migrationData;
+    }
+
+    public void commitMigration(PartitionMigrationEvent event) {
+        if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
+            clearMigrationData(event.getPartitionId());
+        }
+    }
+
+    public void rollbackMigration(PartitionMigrationEvent event) {
+        if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
+            clearMigrationData(event.getPartitionId());
+        }
+    }
+
+    public void clearPartitionReplica(int partitionId) {
+        clearMigrationData(partitionId);
+    }
+
+    private void clearMigrationData(int partitionId) {
+        final Set<? extends Map.Entry<String, ? extends CollectionContainer>> entrySet = getContainerMap().entrySet();
+        final Iterator<? extends Map.Entry<String, ? extends CollectionContainer>> iterator = entrySet.iterator();
+        while (iterator.hasNext()) {
+            final Map.Entry<String, ? extends CollectionContainer> entry = iterator.next();
+            final String name = entry.getKey();
+            final CollectionContainer container = entry.getValue();
+            int containerPartitionId = nodeEngine.getPartitionService().getPartitionId(StringPartitioningStrategy.getPartitionKey(name));
+            if (containerPartitionId == partitionId) {
+                container.destroy();
+                iterator.remove();
+            }
+        }
+    }
+
+    public void  addContainer(String name, CollectionContainer container){
+        final Map map = getContainerMap();
+        map.put(name, container);
+    }
+
 }

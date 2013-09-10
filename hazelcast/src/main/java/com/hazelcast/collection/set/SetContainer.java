@@ -2,7 +2,9 @@ package com.hazelcast.collection.set;
 
 import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionItem;
+import com.hazelcast.collection.CollectionService;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.NodeEngine;
 
 import java.util.*;
 
@@ -12,7 +14,13 @@ import java.util.*;
 public class SetContainer extends CollectionContainer {
 
     private Set<CollectionItem> itemSet = null;
-    private Map<Long, CollectionItem> itemMap = null;
+
+    public SetContainer() {
+    }
+
+    public SetContainer(String name, NodeEngine nodeEngine, CollectionService service) {
+        super(name, nodeEngine, service);
+    }
 
     protected Map<Long, Data> addAll(List<Data> valueList) {
         final int size = valueList.size();
@@ -35,9 +43,11 @@ public class SetContainer extends CollectionContainer {
         if(itemSet == null){
             if (itemMap != null && !itemMap.isEmpty()){
                 itemSet = new HashSet<CollectionItem>(itemMap.values());
+                itemMap.clear();
             } else {
                 itemSet = new HashSet<CollectionItem>(1000);
             }
+            itemMap = null;
         }
         return itemSet;
     }
@@ -49,10 +59,18 @@ public class SetContainer extends CollectionContainer {
                 for (CollectionItem item : itemSet) {
                     itemMap.put(item.getItemId(), item);
                 }
+                itemSet.clear();
             } else {
                 itemMap = new HashMap<Long, CollectionItem>(1000);
             }
+            itemSet = null;
         }
         return itemMap;
+    }
+
+    protected void onDestroy() {
+        if (itemSet != null){
+            itemSet.clear();
+        }
     }
 }

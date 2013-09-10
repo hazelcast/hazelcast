@@ -5,6 +5,8 @@ import com.hazelcast.collection.CollectionService;
 import com.hazelcast.collection.txn.TransactionalSetProxy;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.PartitionReplicationEvent;
 import com.hazelcast.transaction.impl.TransactionSupport;
 
 import java.util.Map;
@@ -24,10 +26,10 @@ public class SetService extends CollectionService {
         super(nodeEngine);
     }
 
-    public CollectionContainer getOrCreateContainer(String name, boolean backup) {
+    public SetContainer getOrCreateContainer(String name, boolean backup) {
         SetContainer container = containerMap.get(name);
         if (container == null){
-            container = new SetContainer();
+            container = new SetContainer(name, nodeEngine, this);
             final SetContainer current = containerMap.putIfAbsent(name, container);
             if (current != null){
                 container = current;
@@ -50,5 +52,11 @@ public class SetService extends CollectionService {
 
     public TransactionalSetProxy createTransactionalObject(Object id, TransactionSupport transaction) {
         return new TransactionalSetProxy(String.valueOf(id), transaction, nodeEngine, this);
+    }
+
+    public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
+        final int totalBackupCount = 1; //TODO through config
+        final Map<String, CollectionContainer> migrationData = getMigrationData(event, totalBackupCount);
+        return migrationData.isEmpty() ? null : new SetReplicationOperation(migrationData, event.getPartitionId(), event.getReplicaIndex());
     }
 }
