@@ -211,7 +211,9 @@ public class ParallelExecutorService {
                             try {
                                 command.run();
                             } catch (Throwable e) {
-                                logger.log(Level.WARNING, e.getMessage(), e);
+                                if(logger.isLoggable(Level.FINEST)){
+                                    logger.log(Level.FINEST, e.getMessage(), e);
+                                }
                             }
                         }
                     }
