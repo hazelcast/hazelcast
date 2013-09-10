@@ -22,8 +22,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.impl.TransactionSupport;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author mdogan 2/26/13
@@ -200,6 +199,55 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         if(data != null || txMap.containsKey(key) ) {
             txMap.put(key, new TxnValueWrapper(service.toObject(data), TxnValueWrapper.Type.REMOVED));
         }
+    }
+
+    @Override
+    public Set<Object> keySet() {
+        checkTransactionState();
+        final Set<Data> keySet = keySetInternal();
+        final Set<Object> keys = new HashSet<Object>( keySet.size() );
+        final MapService service = getService();
+        // convert Data to Object
+        for ( final Data data: keySet )
+        {
+            keys.add( service.toObject( data ) );
+        }
+
+        for ( final Map.Entry<Object, TxnValueWrapper> entry : txMap.entrySet() )
+        {
+            if( TxnValueWrapper.Type.NEW.equals( entry.getValue().type ) )
+            {
+                keys.add(entry.getKey());
+            }
+            else if( TxnValueWrapper.Type.REMOVED.equals( entry.getValue().type ) )
+            {
+                keys.remove( entry.getKey() );
+            }
+        }
+        return keys;
+    }
+
+    @Override
+    public Collection<Object> values() {
+        checkTransactionState();
+        final Collection<Data> dataSet = valuesInternal();
+        final Collection<Object> values = new ArrayList<Object>( dataSet.size() );
+        for (final Data data : dataSet) {
+            values.add(getService().toObject(data));
+        }
+
+        for (TxnValueWrapper wrapper : txMap.values()) {
+            if( TxnValueWrapper.Type.NEW.equals( wrapper.type ) )
+            {
+                values.add(wrapper.value);
+            }
+            else if( TxnValueWrapper.Type.REMOVED.equals( wrapper.type ) )
+            {
+                values.remove(wrapper.value);
+            }
+        }
+
+        return values;
     }
 
 }

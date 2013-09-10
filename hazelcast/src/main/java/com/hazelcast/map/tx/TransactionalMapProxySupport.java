@@ -17,14 +17,15 @@
 package com.hazelcast.map.tx;
 
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.map.MapKeySet;
 import com.hazelcast.map.MapService;
-import com.hazelcast.map.operation.ContainsKeyOperation;
-import com.hazelcast.map.operation.GetOperation;
-import com.hazelcast.map.operation.SizeOperationFactory;
+import com.hazelcast.map.MapValueCollection;
+import com.hazelcast.map.operation.*;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.impl.BinaryOperationFactory;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionalObject;
@@ -33,7 +34,7 @@ import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.ThreadUtil;
 
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.map.MapService.SERVICE_NAME;
@@ -186,6 +187,37 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
                     .createInvocationBuilder(MapService.SERVICE_NAME, operation, partitionId).build();
             Future<VersionedValue> f = invocation.invoke();
             return f.get();
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
+    }
+
+    protected Set<Data> keySetInternal() {
+        final NodeEngine nodeEngine = getNodeEngine();
+        try {
+            Map<Integer, Object> results = nodeEngine.getOperationService()
+                    .invokeOnAllPartitions(SERVICE_NAME, new BinaryOperationFactory(new MapKeySetOperation(name), nodeEngine));
+            Set<Data> keySet = new HashSet<Data>();
+            for (Object result : results.values()) {
+                Set keys = ((MapKeySet) getService().toObject(result)).getKeySet();
+                keySet.addAll(keys);
+            }
+            return keySet;
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
+    }
+
+    protected Collection<Data> valuesInternal() {
+        final NodeEngine nodeEngine = getNodeEngine();
+        try {
+            Map<Integer, Object> results = nodeEngine.getOperationService()
+                    .invokeOnAllPartitions(SERVICE_NAME, new BinaryOperationFactory(new MapValuesOperation(name), nodeEngine));
+            List<Data> values = new ArrayList<Data>();
+            for (Object result : results.values()) {
+                values.addAll(((MapValueCollection) getService().toObject(result)).getValues());
+            }
+            return values;
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
