@@ -17,14 +17,18 @@
 package com.hazelcast.map.tx;
 
 import com.hazelcast.core.PartitioningStrategy;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.MapKeySet;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.MapValueCollection;
+import com.hazelcast.map.QueryResult;
 import com.hazelcast.map.operation.*;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.spi.impl.BinaryOperationFactory;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
@@ -32,6 +36,8 @@ import com.hazelcast.transaction.TransactionalObject;
 import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.IterationType;
+import com.hazelcast.util.QueryResultSet;
 import com.hazelcast.util.ThreadUtil;
 
 import java.util.*;
@@ -222,6 +228,72 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
             throw ExceptionUtil.rethrow(t);
         }
     }
+
+    protected Set queryInternal(final Predicate predicate, final IterationType iterationType, final boolean dataResult) {
+        final NodeEngine nodeEngine = getNodeEngine();
+        OperationService operationService = nodeEngine.getOperationService();
+        Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+        int partitionCount = nodeEngine.getPartitionService().getPartitionCount();
+        Set<Integer> plist = new HashSet<Integer>(partitionCount);
+        QueryResultSet result = new QueryResultSet(nodeEngine.getSerializationService(), iterationType, dataResult);
+        List<Integer> missingList = new ArrayList<Integer>();
+        try {
+            List<Future> flist = new ArrayList<Future>();
+            for (MemberImpl member : members) {
+                Invocation invocation = operationService
+                        .createInvocationBuilder(SERVICE_NAME, new QueryOperation(name, predicate), member.getAddress()).build();
+                Future future = invocation.invoke();
+                flist.add(future);
+            }
+            for (Future future : flist) {
+                QueryResult queryResult = (QueryResult) future.get();
+                if (queryResult != null) {
+                    final List<Integer> partitionIds = queryResult.getPartitionIds();
+                    if (partitionIds != null) {
+                        plist.addAll(partitionIds);
+                        result.addAll(queryResult.getResult());
+                    }
+                }
+            }
+            if (plist.size() == partitionCount) {
+                return result;
+            }
+            for (int i = 0; i < partitionCount; i++) {
+                if (!plist.contains(i)) {
+                    missingList.add(i);
+                }
+            }
+        } catch (Throwable t) {
+            missingList.clear();
+            for (int i = 0; i < partitionCount; i++) {
+                if (!plist.contains(i)) {
+                    missingList.add(i);
+                }
+            }
+        }
+
+        try {
+            List<Future> futures = new ArrayList<Future>(missingList.size());
+            for (Integer pid : missingList) {
+                QueryPartitionOperation queryPartitionOperation = new QueryPartitionOperation(name, predicate);
+                queryPartitionOperation.setPartitionId(pid);
+                try {
+                    Future f = operationService.createInvocationBuilder(SERVICE_NAME, queryPartitionOperation, pid).build().invoke();
+                    futures.add(f);
+                } catch (Throwable t) {
+                    throw ExceptionUtil.rethrow(t);
+                }
+            }
+            for (Future future : futures) {
+                QueryResult queryResult = (QueryResult) future.get();
+                result.addAll(queryResult.getResult());
+            }
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
+        return result;
+    }
+
 
     public Object getId() {
         return name;

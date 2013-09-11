@@ -17,12 +17,27 @@
 package com.hazelcast.map.tx;
 
 import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.MapService;
+import com.hazelcast.map.QueryResult;
+import com.hazelcast.map.operation.QueryOperation;
+import com.hazelcast.map.operation.QueryPartitionOperation;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.QueryEntry;
+import com.hazelcast.query.impl.QueryResultEntry;
+import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.transaction.impl.TransactionSupport;
+import com.hazelcast.util.ExceptionUtil;
+import com.hazelcast.util.IterationType;
+import com.hazelcast.util.QueryResultSet;
 
 import java.util.*;
+import java.util.concurrent.Future;
+
+import static com.hazelcast.map.MapService.SERVICE_NAME;
 
 /**
  * @author mdogan 2/26/13
@@ -217,7 +232,7 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         {
             if( TxnValueWrapper.Type.NEW.equals( entry.getValue().type ) )
             {
-                keys.add(entry.getKey());
+                keys.add( entry.getKey() );
             }
             else if( TxnValueWrapper.Type.REMOVED.equals( entry.getValue().type ) )
             {
@@ -225,6 +240,41 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
             }
         }
         return keys;
+    }
+
+    @Override
+    public Set keySet(Predicate predicate) {
+        checkTransactionState();
+        if ( predicate == null) {
+            throw new NullPointerException("Predicate should not be null!");
+        }
+
+        final MapService service = getService();
+        final QueryResultSet queryResultSet = (QueryResultSet) queryInternal(predicate, IterationType.KEY, false);
+        final Set<Object> keySet = new HashSet<Object>( queryResultSet.size() );
+        while( queryResultSet.iterator().hasNext() )
+        {
+            keySet.add(service.toObject(((QueryResultEntry) queryResultSet.iterator().next()).getKeyData()));
+        }
+
+        for ( final Map.Entry<Object, TxnValueWrapper> entry : txMap.entrySet() )
+        {
+            if( !TxnValueWrapper.Type.REMOVED.equals( entry.getValue().type ) )
+            {
+                // apply predicate on txMap.
+                if( predicate.apply( new QueryEntry( null, service.toData(entry.getKey()),
+                        entry.getKey(), entry.getValue().value ) )) {
+                    keySet.add(entry.getKey());
+                }
+            }
+            else
+            {
+                // meanwhile remove keys which are not in txMap.
+                keySet.remove(entry.getKey());
+            }
+        }
+
+        return  keySet;
     }
 
     @Override
@@ -248,6 +298,43 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         }
 
         return values;
+    }
+
+    @Override
+    public Collection values(Predicate predicate) {
+        checkTransactionState();
+        if ( predicate == null) {
+            throw new NullPointerException("Predicate can not be null!");
+        }
+
+        final MapService service = getService();
+        final QueryResultSet queryResultSet = (QueryResultSet) queryInternal(predicate, IterationType.VALUE, false);
+        final Set<Object> valueSet = new HashSet<Object>( queryResultSet.size() );
+
+        final Iterator iterator = queryResultSet.iterator();
+        while( iterator.hasNext() )
+        {
+            valueSet.add( iterator.next() );
+        }
+
+        for ( final Map.Entry<Object, TxnValueWrapper> entry : txMap.entrySet() )
+        {
+            if( !TxnValueWrapper.Type.REMOVED.equals( entry.getValue().type ) )
+            {
+                // apply predicate on txMap.
+                if( predicate.apply( new QueryEntry( null, service.toData(entry.getKey()),
+                        entry.getKey(), entry.getValue().value ) )) {
+                    valueSet.add( entry.getValue().value );
+                }
+            }
+            else
+            {
+                // meanwhile remove values which are not in txMap.
+                valueSet.remove( entry.getValue() );
+            }
+        }
+
+        return valueSet;
     }
 
 }
