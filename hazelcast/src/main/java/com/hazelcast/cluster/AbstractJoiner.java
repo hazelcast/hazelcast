@@ -17,6 +17,7 @@
 package com.hazelcast.cluster;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.Member;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.instance.Node;
@@ -106,7 +107,7 @@ public abstract class AbstractJoiner implements Joiner {
                         node.shutdown(false, true);
                     }
                 } else {
-                    throw new RuntimeException("Failed to join in " + (maxJoinMillis / 1000) + " seconds!");
+                    throw new HazelcastException("Failed to join in " + (maxJoinMillis / 1000) + " seconds!");
                 }
                 return;
             }
