@@ -101,11 +101,11 @@ public class SmartClientConnectionManager implements ClientConnectionManager {
     public Connection newConnection(Address address, Authenticator authenticator) throws IOException {
         checkLive();
         final ConnectionImpl connection = new ConnectionImpl(address, socketOptions, client.getSerializationService());
-        connection.write(Protocols.CLIENT_BINARY.getBytes());
-        connection.write(ClientTypes.JAVA.getBytes());
         if (socketInterceptor != null) {
             socketInterceptor.onConnect(connection.getSocket());
         }
+        connection.write(Protocols.CLIENT_BINARY.getBytes());
+        connection.write(ClientTypes.JAVA.getBytes());
         authenticator.auth(connection);
         return connection;
     }
