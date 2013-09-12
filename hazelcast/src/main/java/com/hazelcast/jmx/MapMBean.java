@@ -207,16 +207,11 @@ public class MapMBean extends HazelcastMBean<IMap> {
     }
 
     @ManagedAnnotation("localHeapCost")
-    @ManagedDescription("the total map and near cache heap cost")
+    @ManagedDescription("the total heap cost of map, near cache and heap cost")
     public long localHeapCost(){
         return managedObject.getLocalMapStats().getHeapCost();
     }
 
-    @ManagedAnnotation("localBackupHeapCost")
-    @ManagedDescription("the total map backup heap cost")
-    public long localBackupHeapCost(){
-        return managedObject.getLocalMapStats().getBackupHeapCost();
-    }
 
     @ManagedAnnotation("name")
     @ManagedDescription("name of the map")
