@@ -206,6 +206,18 @@ public class MapMBean extends HazelcastMBean<IMap> {
         return managedObject.getLocalMapStats().total();
     }
 
+    @ManagedAnnotation("localHeapCost")
+    @ManagedDescription("the total map and near cache heap cost")
+    public long localHeapCost(){
+        return managedObject.getLocalMapStats().getHeapCost();
+    }
+
+    @ManagedAnnotation("localBackupHeapCost")
+    @ManagedDescription("the total map backup heap cost")
+    public long localBackupHeapCost(){
+        return managedObject.getLocalMapStats().getBackupHeapCost();
+    }
+
     @ManagedAnnotation("name")
     @ManagedDescription("name of the map")
     public String getName(){
