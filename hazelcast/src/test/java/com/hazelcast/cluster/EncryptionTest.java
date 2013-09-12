@@ -20,6 +20,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.SymmetricEncryptionConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+import com.hazelcast.core.Member;
+import com.hazelcast.instance.TestUtil;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.SerialTest;
 import org.junit.AfterClass;
@@ -55,5 +58,22 @@ public class EncryptionTest {
         Assert.assertEquals(2, h1.getCluster().getMembers().size());
         Assert.assertEquals(2, h2.getCluster().getMembers().size());
         Assert.assertEquals(h1.getCluster().getLocalMember(), h2.getCluster().getMembers().iterator().next());
+
+        TestUtil.warmUpPartitions(h1, h2);
+        Member owner1 = h1.getPartitionService().getPartition(0).getOwner();
+        Member owner2 = h2.getPartitionService().getPartition(0).getOwner();
+        Assert.assertEquals(owner1, owner2);
+
+        String name = "encryption-test";
+        IMap<Integer, byte[]> map1 = h1.getMap(name);
+        for (int i = 1; i < 100; i++) {
+            map1.put(i, new byte[1024 * i]);
+        }
+
+        IMap<Integer, byte[]> map2 = h2.getMap(name);
+        for (int i = 1; i < 100; i++) {
+            byte[] bytes = map2.get(i);
+            Assert.assertEquals(i * 1024, bytes.length);
+        }
     }
 }
