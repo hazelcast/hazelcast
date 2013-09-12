@@ -103,10 +103,10 @@ public class SmartClientConnectionManager implements ClientConnectionManager {
     public Connection newConnection(Address address, Authenticator authenticator) throws IOException {
         checkLive();
         final ConnectionImpl connection = new ConnectionImpl(address, socketOptions, client.getSerializationService());
-        connection.init();
         if (socketInterceptor != null) {
             socketInterceptor.onConnect(connection.getSocket());
         }
+        connection.init();
         authenticator.auth(connection);
         return connection;
     }
