@@ -93,38 +93,40 @@ public class SocketConnector implements Runnable {
         connectionManager.initSocket(socketChannel.socket());
         bindSocket(socketChannel);
         final String message = "Connecting to " + socketAddress + ", timeout: " + timeout
-                               + ", bind-any: " + connectionManager.ioService.isSocketBindAny();
+                + ", bind-any: " + connectionManager.ioService.isSocketBindAny();
         final Level level = silent ? Level.FINEST : Level.INFO;
         log(level, message);
         try {
             socketChannel.configureBlocking(true);
-            try{
+            try {
                 if (timeout > 0) {
                     socketChannel.socket().connect(socketAddress, timeout);
                 } else {
                     socketChannel.connect(socketAddress);
                 }
-            }catch(SocketException ex){
+            } catch (SocketException ex) {
                 //we want to include the socketAddress in the exception.
-                SocketException newEx = new SocketException(ex.getMessage()+" to address "+socketAddress);
+                SocketException newEx = new SocketException(ex.getMessage() + " to address " + socketAddress);
                 newEx.setStackTrace(ex.getStackTrace());
                 throw newEx;
             }
 
             log(Level.FINEST, "Successfully connected to: " + address + " using socket " + socketChannel.socket());
+            final SocketChannelWrapper socketChannelWrapper = connectionManager.wrapSocketChannel(socketChannel, true);
             MemberSocketInterceptor memberSocketInterceptor = connectionManager.getMemberSocketInterceptor();
             if (memberSocketInterceptor != null) {
                 log(Level.FINEST, "Calling member socket interceptor: " + memberSocketInterceptor + " for " + socketChannel);
                 memberSocketInterceptor.onConnect(socketChannel.socket());
             }
-            final SocketChannelWrapper socketChannelWrapper = connectionManager.wrapSocketChannel(socketChannel, true);
+
             socketChannelWrapper.configureBlocking(false);
             TcpIpConnection connection = connectionManager.assignSocketChannel(socketChannelWrapper);
+            connection.getWriteHandler().setProtocol(Protocols.CLUSTER);
             connectionManager.sendBindRequest(connection, address, true);
         } catch (Exception e) {
             closeSocket(socketChannel);
             log(level, "Could not connect to: " + socketAddress + ". Reason: " + e.getClass().getSimpleName()
-                                      + "[" + e.getMessage() + "]");
+                    + "[" + e.getMessage() + "]");
             throw e;
         }
     }
@@ -152,7 +154,7 @@ public class SocketConnector implements Runnable {
                     return;
                 } catch (IOException e) {
                     ex = e;
-                    log(Level.FINEST, "Could not bind port[ " + port + "]: " +  e.getMessage());
+                    log(Level.FINEST, "Could not bind port[ " + port + "]: " + e.getMessage());
                 }
             }
             throw ex;

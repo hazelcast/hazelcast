@@ -24,9 +24,17 @@ public class SSLSocketFactory implements SocketFactory {
         properties = new Properties();
     }
 
+    public SSLSocketFactory(Properties properties) {
+        this.properties = properties != null ? properties : new Properties();
+        sslContextFactory = new BasicSSLContextFactory();
+    }
+
     public SSLSocketFactory(SSLContextFactory sslContextFactory, Properties properties) {
+        if (sslContextFactory == null) {
+            throw new NullPointerException("SSLContextFactory is required!");
+        }
         this.sslContextFactory = sslContextFactory;
-        this.properties = properties;
+        this.properties = properties != null ? properties : new Properties();
     }
 
     public SSLSocket createSocket() throws IOException {

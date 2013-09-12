@@ -30,7 +30,10 @@ import java.security.cert.CertificateException;
 import java.util.Properties;
 
 public class BasicSSLContextFactory implements SSLContextFactory {
-    SSLContext sslContext;
+
+    private static final String JAVA_NET_SSL_PREFIX = "javax.net.ssl.";
+
+    private SSLContext sslContext;
 
     public BasicSSLContextFactory() {
     }
@@ -38,13 +41,13 @@ public class BasicSSLContextFactory implements SSLContextFactory {
     public void init(Properties properties) throws Exception {
         KeyStore ks = KeyStore.getInstance("JKS");
         KeyStore ts = KeyStore.getInstance("JKS");
-        String keyStorePassword = getProperty(properties, "keyStorePassword", "javax.net.ssl.keyStorePassword");
-        String keyStore = getProperty(properties, "keyStore", "javax.net.ssl.keyStore");
+        String keyStorePassword = getProperty(properties, "keyStorePassword");
+        String keyStore = getProperty(properties, "keyStore");
         if (keyStore == null || keyStorePassword == null) {
             throw new RuntimeException("SSL is enabled but keyStore[Password] properties aren't set!");
         }
-        String trustStore = getProperty(properties, "trustStore", "javax.net.ssl.trustStore", keyStore);
-        String trustStorePassword = getProperty(properties, "trustStorePassword", "javax.net.ssl.trustStorePassword", keyStorePassword);
+        String trustStore = getProperty(properties, "trustStore", keyStore);
+        String trustStorePassword = getProperty(properties, "trustStorePassword", keyStorePassword);
 
         String keyManagerAlgorithm = properties.getProperty("keyManagerAlgorithm", "SunX509");
         String trustManagerAlgorithm = properties.getProperty("trustManagerAlgorithm", "SunX509");
@@ -72,16 +75,19 @@ public class BasicSSLContextFactory implements SSLContextFactory {
         }
     }
 
-    private static String getProperty(Properties properties, String propertyName, String systemPropertyName) {
-        String value = properties.getProperty(propertyName);
+    private static String getProperty(Properties properties, String property) {
+        String value = properties.getProperty(property);
         if (value == null) {
-            value = System.getProperty(systemPropertyName);
+            value = properties.getProperty(JAVA_NET_SSL_PREFIX + property);
+        }
+        if (value == null) {
+            value = System.getProperty(JAVA_NET_SSL_PREFIX + property);
         }
         return value;
     }
 
-    private static String getProperty(Properties properties, String propertyName, String systemPropertyName, String defaultValue) {
-        String value = getProperty(properties, propertyName, systemPropertyName);
+    private static String getProperty(Properties properties, String property, String defaultValue) {
+        String value = getProperty(properties, property);
         return value != null ? value : defaultValue;
     }
 
