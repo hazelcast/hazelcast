@@ -55,8 +55,7 @@ public class SetService extends CollectionService {
     }
 
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {
-        final int totalBackupCount = 1; //TODO through config
-        final Map<String, CollectionContainer> migrationData = getMigrationData(event, totalBackupCount);
+        final Map<String, CollectionContainer> migrationData = getMigrationData(event);
         return migrationData.isEmpty() ? null : new SetReplicationOperation(migrationData, event.getPartitionId(), event.getReplicaIndex());
     }
 }

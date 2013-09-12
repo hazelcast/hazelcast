@@ -3,6 +3,7 @@ package com.hazelcast.collection.set;
 import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionItem;
 import com.hazelcast.collection.CollectionService;
+import com.hazelcast.config.SetConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 
@@ -14,12 +15,20 @@ import java.util.*;
 public class SetContainer extends CollectionContainer {
 
     private Set<CollectionItem> itemSet = null;
+    private SetConfig config;
 
     public SetContainer() {
     }
 
     public SetContainer(String name, NodeEngine nodeEngine, CollectionService service) {
         super(name, nodeEngine, service);
+    }
+
+    protected SetConfig getConfig() {
+        if (config == null){
+            config = new SetConfig(nodeEngine.getConfig().getSetConfig(name));
+        }
+        return config;
     }
 
     protected Map<Long, Data> addAll(List<Data> valueList) {

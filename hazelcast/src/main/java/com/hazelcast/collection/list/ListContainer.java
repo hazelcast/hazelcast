@@ -19,6 +19,7 @@ package com.hazelcast.collection.list;
 import com.hazelcast.collection.CollectionContainer;
 import com.hazelcast.collection.CollectionItem;
 import com.hazelcast.collection.CollectionService;
+import com.hazelcast.config.ListConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 
@@ -30,12 +31,20 @@ import java.util.*;
 public class ListContainer extends CollectionContainer {
 
     private List<CollectionItem> itemList = null;
+    private ListConfig config;
 
     public ListContainer() {
     }
 
     public ListContainer(String name, NodeEngine nodeEngine, CollectionService service) {
         super(name, nodeEngine, service);
+    }
+
+    public ListConfig getConfig() {
+        if (config == null){
+            config = new ListConfig(nodeEngine.getConfig().getListConfig(name));
+        }
+        return config;
     }
 
     protected CollectionItem add(int index, Data value){

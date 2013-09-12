@@ -81,13 +81,13 @@ public abstract class CollectionService implements ManagedService, RemoteService
     public void beforeMigration(PartitionMigrationEvent event) {
     }
 
-    public Map<String, CollectionContainer> getMigrationData(PartitionReplicationEvent event, int totalBackupCount) {
+    public Map<String, CollectionContainer> getMigrationData(PartitionReplicationEvent event) {
         Map<String, CollectionContainer> migrationData = new HashMap<String, CollectionContainer>();
         for (Map.Entry<String, ? extends CollectionContainer> entry : getContainerMap().entrySet()) {
             String name = entry.getKey();
             int partitionId = nodeEngine.getPartitionService().getPartitionId(StringPartitioningStrategy.getPartitionKey(name));
             CollectionContainer container = entry.getValue();
-            if (partitionId == event.getPartitionId() && totalBackupCount >= event.getReplicaIndex()) {
+            if (partitionId == event.getPartitionId() && container.getConfig().getTotalBackupCount() >= event.getReplicaIndex()) {
                 migrationData.put(name, container);
             }
         }

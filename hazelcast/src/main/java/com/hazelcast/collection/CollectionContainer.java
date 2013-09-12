@@ -16,6 +16,7 @@
 
 package com.hazelcast.collection;
 
+import com.hazelcast.config.CollectionConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -56,6 +57,8 @@ public abstract class CollectionContainer implements DataSerializable {
         this.nodeEngine = nodeEngine;
         this.service = service;
     }
+
+    protected abstract CollectionConfig getConfig();
 
     protected abstract Collection<CollectionItem> getCollection();
     protected abstract Map<Long, CollectionItem> getMap();

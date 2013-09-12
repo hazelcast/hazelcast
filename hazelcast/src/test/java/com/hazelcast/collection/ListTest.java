@@ -17,6 +17,7 @@
 package com.hazelcast.collection;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ListConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -215,6 +216,7 @@ public class ListTest extends HazelcastTestSupport {
     public void testMigration(){
         Config config = new Config();
         final String name = "defList";
+        config.addListConfig(new ListConfig().setName(name).setBackupCount(1));
 
         final int insCount = 4;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
