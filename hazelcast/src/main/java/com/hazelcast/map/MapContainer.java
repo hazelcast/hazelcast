@@ -68,7 +68,6 @@ public class MapContainer {
     private final MapMergePolicy wanMergePolicy;
     private final PartitioningStrategy partitionStrategy;
     private final SizeEstimator sizeEstimator;
-    private final SizeEstimator backUpSizeEstimator;
 
     private volatile boolean mapReady = false;
 
@@ -185,7 +184,6 @@ public class MapContainer {
         partitionStrategy = strategy;
 
         sizeEstimator = SizeEstimators.createMapSizeEstimator( mapConfig.isStatisticsEnabled() );
-        backUpSizeEstimator = SizeEstimators.createMapSizeEstimator( mapConfig.isStatisticsEnabled() );
     }
 
     public boolean isMapReady() {
@@ -332,10 +330,6 @@ public class MapContainer {
 
     public SizeEstimator getSizeEstimator(){
         return sizeEstimator;
-    }
-
-    public SizeEstimator getBackUpSizeEstimator(){
-        return backUpSizeEstimator;
     }
 
     private class MapLoadAllTask implements Runnable {
