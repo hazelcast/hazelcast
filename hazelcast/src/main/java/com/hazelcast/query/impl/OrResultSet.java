@@ -16,25 +16,20 @@
 
 package com.hazelcast.query.impl;
 
-import com.hazelcast.nio.ObjectDataOutput;
-
 import java.util.*;
 
 public class OrResultSet extends AbstractSet<QueryableEntry> {
-    private final List<Set<QueryableEntry>> lsIndexedResults;
-    Set<QueryableEntry> entries = null;
 
-    public OrResultSet(List<Set<QueryableEntry>> lsIndexedResults) {
-        this.lsIndexedResults = lsIndexedResults;
-    }
+    private final List<Set<QueryableEntry>> indexedResults;
+    private Set<QueryableEntry> entries = null;
 
-    public byte[] toByteArray(ObjectDataOutput out) {
-        return null;
+    public OrResultSet(List<Set<QueryableEntry>> indexedResults) {
+        this.indexedResults = indexedResults;
     }
 
     @Override
     public boolean contains(Object o) {
-        for (Set<QueryableEntry> otherIndexedResult : lsIndexedResults) {
+        for (Set<QueryableEntry> otherIndexedResult : indexedResults) {
             if (otherIndexedResult.contains(o)) return true;
         }
         return false;
@@ -42,18 +37,25 @@ public class OrResultSet extends AbstractSet<QueryableEntry> {
 
     @Override
     public Iterator<QueryableEntry> iterator() {
-        if (entries != null) {
-            return entries.iterator();
-        }
-        entries = new HashSet<QueryableEntry>(lsIndexedResults.get(0));
-        for (int i = 1; i < lsIndexedResults.size(); i++) {
-            entries.addAll(lsIndexedResults.get(i));
+        if (entries == null) {
+            if (!indexedResults.isEmpty()) {
+                if (indexedResults.size() == 1) {
+                    entries = new HashSet<QueryableEntry>(indexedResults.get(0));
+                } else {
+                    entries = new HashSet<QueryableEntry>();
+                    for (Set<QueryableEntry> result : indexedResults) {
+                        entries.addAll(result);
+                    }
+                }
+            } else {
+                entries = Collections.emptySet();
+            }
         }
         return entries.iterator();
     }
 
     @Override
     public int size() {
-        return lsIndexedResults.get(0).size();
+        return indexedResults.isEmpty() ? 0 : indexedResults.get(0).size();
     }
 }
