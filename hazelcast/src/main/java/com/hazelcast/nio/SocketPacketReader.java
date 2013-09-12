@@ -17,11 +17,11 @@
 package com.hazelcast.nio;
 
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.util.ExceptionUtil;
 
 import javax.crypto.Cipher;
 import javax.crypto.ShortBufferException;
 import java.nio.ByteBuffer;
-import java.util.logging.Level;
 
 class SocketPacketReader implements SocketReader {
 
@@ -78,18 +78,20 @@ class SocketPacketReader implements SocketReader {
     private class SymmetricCipherPacketReader implements PacketReader {
         int size = -1;
         final Cipher cipher;
-        final ByteBuffer cipherBuffer = ByteBuffer.allocate(2 * ioService.getSocketReceiveBufferSize() * IOService.KILO_BYTE);
+        ByteBuffer cipherBuffer = ByteBuffer.allocate(ioService.getSocketReceiveBufferSize() * IOService.KILO_BYTE);
 
-        SymmetricCipherPacketReader() {
+        private SymmetricCipherPacketReader() {
             cipher = init();
         }
 
         Cipher init() {
-            Cipher c = null;
+            Cipher c;
             try {
-                c = CipherHelper.createSymmetricReaderCipher(connection.getConnectionManager().ioService);
+                c = CipherHelper.createSymmetricReaderCipher(ioService.getSymmetricEncryptionConfig());
             } catch (Exception e) {
                 logger.severe("Symmetric Cipher for ReadHandler cannot be initialized.", e);
+                CipherHelper.handleCipherException(e, connection);
+                throw ExceptionUtil.rethrow(e);
             }
             return c;
         }
@@ -100,6 +102,9 @@ class SocketPacketReader implements SocketReader {
                     if (size == -1) {
                         if (inBuffer.remaining() < 4) return;
                         size = inBuffer.getInt();
+                        if (cipherBuffer.capacity() < size) {
+                            cipherBuffer = ByteBuffer.allocate(size);
+                        }
                     }
                     int remaining = inBuffer.remaining();
                     if (remaining < size) {
