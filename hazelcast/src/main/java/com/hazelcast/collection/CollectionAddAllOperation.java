@@ -43,11 +43,19 @@ public class CollectionAddAllOperation extends CollectionBackupAwareOperation {
     }
 
     public void run() throws Exception {
+        if (!hasEnoughCapacity(valueList.size())){
+            response = false;
+            return;
+        }
+
         valueMap = getOrCreateContainer().addAll(valueList);
         response = !valueMap.isEmpty();
     }
 
     public void afterRun() throws Exception {
+        if (valueMap == null){
+            return;
+        }
         for (Data value : valueMap.values()) {
             publishEvent(ItemEventType.ADDED, value);
         }

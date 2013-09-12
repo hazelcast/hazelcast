@@ -35,6 +35,8 @@
                 <xs:element name="partition-group" type="partition-group" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="executor-service" type="executor-service" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="queue" type="queue" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="list" type="list" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="set" type="set" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="map" type="map" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="multimap" type="multimap" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="topic" type="topic" minOccurs="0" maxOccurs="unbounded"/>
@@ -214,6 +216,60 @@
                 </xs:complexType>
             </xs:element>
             <xs:element ref="queue-store" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute name="name" use="optional" default="default">
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="list">
+        <xs:sequence>
+            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
+            <xs:element name="max-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Maximum size.
+                        Any integer between 0 and Integer.MAX_VALUE. 0 means Integer.MAX_VALUE. Default is 0.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="1"/>
+            <xs:element name="async-backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="0"/>
+            <xs:element name="item-listeners" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="item-listener" type="item-listener" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="name" use="optional" default="default">
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="set">
+        <xs:sequence>
+            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
+            <xs:element name="max-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Maximum size.
+                        Any integer between 0 and Integer.MAX_VALUE. 0 means Integer.MAX_VALUE. Default is 0.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="1"/>
+            <xs:element name="async-backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="0"/>
+            <xs:element name="item-listeners" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="item-listener" type="item-listener" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
         </xs:sequence>
         <xs:attribute name="name" use="optional" default="default">
             <xs:simpleType>

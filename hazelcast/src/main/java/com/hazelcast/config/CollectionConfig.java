@@ -75,7 +75,7 @@ public abstract class CollectionConfig<T extends CollectionConfig> {
     }
 
     public int getMaxSize() {
-        return maxSize;
+        return maxSize == 0 ? Integer.MAX_VALUE : maxSize;
     }
 
     public T setMaxSize(int maxSize) {

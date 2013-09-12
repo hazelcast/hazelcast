@@ -18,8 +18,6 @@ package com.hazelcast.collection;
 
 import com.hazelcast.collection.list.ListContainer;
 import com.hazelcast.collection.list.ListService;
-import com.hazelcast.collection.set.SetContainer;
-import com.hazelcast.collection.set.SetService;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -49,18 +47,6 @@ public abstract class CollectionOperation extends Operation implements Partition
         this.name = name;
     }
 
-    protected final SetContainer getOrCreateSetContainer(){
-        if (container == null) {
-            SetService service = getService();
-            try {
-                container = service.getOrCreateContainer(name, this instanceof BackupOperation);
-            } catch (Exception e) {
-                throw new RetryableHazelcastException(e);
-            }
-        }
-        return (SetContainer) container;
-    }
-
     protected final ListContainer getOrCreateListContainer(){
         if (container == null) {
             ListService service = getService();
@@ -85,11 +71,6 @@ public abstract class CollectionOperation extends Operation implements Partition
         return container;
     }
 
-    protected boolean hasListener() {
-        EventService eventService = getNodeEngine().getEventService();
-        Collection<EventRegistration> registrations = eventService.getRegistrations(getServiceName(), name);
-        return !registrations.isEmpty();
-    }
 
     protected void publishEvent(ItemEventType eventType, Data data) {
         EventService eventService = getNodeEngine().getEventService();
@@ -99,6 +80,10 @@ public abstract class CollectionOperation extends Operation implements Partition
             CollectionEvent event = new CollectionEvent(name, filter.isIncludeValue() ? data : null, eventType, getNodeEngine().getThisAddress());
             eventService.publishEvent(getServiceName(), registration, event, name.hashCode());
         }
+    }
+
+    public boolean hasEnoughCapacity(int delta){
+        return getOrCreateContainer().hasEnoughCapacity(delta);
     }
 
     public int getFactoryId() {

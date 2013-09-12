@@ -31,7 +31,7 @@ public class CollectionAddOperation extends CollectionBackupAwareOperation {
 
     protected Data value;
 
-    protected transient long itemId;
+    protected transient long itemId = -1;
 
     public CollectionAddOperation() {
     }
@@ -58,7 +58,9 @@ public class CollectionAddOperation extends CollectionBackupAwareOperation {
     }
 
     public void run() throws Exception {
-        itemId = getOrCreateContainer().add(value);
+        if (hasEnoughCapacity(1)){
+            itemId = getOrCreateContainer().add(value);
+        }
         response = itemId != -1;
     }
 

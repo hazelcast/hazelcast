@@ -29,6 +29,10 @@ public class ListAddAllOperation extends CollectionAddAllOperation {
     }
 
     public void run() throws Exception {
+        if (hasEnoughCapacity(valueList.size())){
+            response = false;
+            return;
+        }
         valueMap = getOrCreateListContainer().addAll(index, valueList);
         response = !valueMap.isEmpty();
     }

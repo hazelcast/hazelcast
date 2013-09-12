@@ -261,6 +261,28 @@ public class ListTest extends HazelcastTestSupport {
 
     }
 
+    @Test
+    public void testMaxSize(){
+        Config config = new Config();
+        final String name = "defList";
+        config.addListConfig(new ListConfig().setName(name).setBackupCount(1).setMaxSize(100));
+
+        final int insCount = 2;
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
+
+        HazelcastInstance instance1 = factory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+
+        IList list = instance1.getList(name);
+
+        for (int i=0; i<100; i++){
+            assertTrue(list.add("item"+i));
+        }
+        assertFalse(list.add("item"));
+        assertNotNull(list.remove(0));
+        assertTrue(list.add("item"));
+    }
+
     private IList getList(HazelcastInstance[] instances, String name){
         final Random rnd = new Random(System.currentTimeMillis());
         return instances[rnd.nextInt(instances.length)].getList(name);

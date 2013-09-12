@@ -173,6 +173,10 @@ public abstract class CollectionContainer implements DataSerializable {
         return sub;
     }
 
+    protected boolean hasEnoughCapacity(int delta){
+        return getCollection().size() + delta <= getConfig().getMaxSize();
+    }
+
 
     /*
      * TX methods

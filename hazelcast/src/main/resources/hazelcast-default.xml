@@ -104,6 +104,12 @@
 
         <empty-queue-ttl>-1</empty-queue-ttl>
     </queue>
+    <list name="default">
+        <backup-count>1</backup-count>
+    </list>
+    <set name="default">
+        <backup-count>1</backup-count>
+    </set>
     <map name="default">
         <!--
            Data type that will be used for storing recordMap.
