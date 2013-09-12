@@ -533,7 +533,7 @@ public class Node {
                 rejoin();
             } else {
                 logger.severe( "Could not join cluster, shutting down!", e);
-                shutdown(false, true);
+                shutdown(true, true);
             }
         }
     }

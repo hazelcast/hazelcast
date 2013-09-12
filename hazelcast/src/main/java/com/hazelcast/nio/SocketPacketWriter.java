@@ -16,13 +16,12 @@
 
 package com.hazelcast.nio;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.util.ExceptionUtil;
 
 import javax.crypto.Cipher;
 import java.nio.ByteBuffer;
-import java.util.logging.Level;
-
-import static com.hazelcast.nio.IOUtil.copyToDirectBuffer;
 
 class SocketPacketWriter implements SocketWriter<Packet> {
 
@@ -59,92 +58,69 @@ class SocketPacketWriter implements SocketWriter<Packet> {
     }
 
     private class SymmetricCipherPacketWriter implements PacketWriter {
-        boolean sizeWritten = false;
-        ByteBuffer packetBuffer = ByteBuffer.allocate(ioService.getSocketSendBufferSize() * IOService.KILO_BYTE);
-        final ByteBuffer cipherBuffer = ByteBuffer.allocate(ioService.getSocketSendBufferSize() * IOService.KILO_BYTE);
         final Cipher cipher;
+        ByteBuffer packetBuffer = ByteBuffer.allocate(ioService.getSocketSendBufferSize() * IOService.KILO_BYTE);
+        boolean packetWritten = false;
 
         SymmetricCipherPacketWriter() {
-            Cipher c = null;
+            cipher = init();
+        }
+
+        private Cipher init() {
+            Cipher c;
             try {
-                c = CipherHelper.createSymmetricWriterCipher(connection.getConnectionManager().ioService);
+                c = CipherHelper.createSymmetricWriterCipher(ioService.getSymmetricEncryptionConfig());
             } catch (Exception e) {
                 logger.severe("Symmetric Cipher for WriteHandler cannot be initialized.", e);
                 CipherHelper.handleCipherException(e, connection);
+                throw ExceptionUtil.rethrow(e);
             }
-            cipher = c;
+            return c;
         }
 
-        public boolean writePacket(Packet packet, ByteBuffer socketBB) throws Exception {
-            if (!sizeWritten) {
+        public boolean writePacket(Packet packet, ByteBuffer socketBuffer) throws Exception {
+            if (!packetWritten) {
+                if (socketBuffer.remaining() < 4) {
+                    return false;
+                }
+                int size = cipher.getOutputSize(packet.size());
+                socketBuffer.putInt(size);
+
                 if (packetBuffer.capacity() < packet.size()) {
                     packetBuffer = ByteBuffer.allocate(packet.size());
                 }
                 if (!packet.writeTo(packetBuffer)) {
-                    throw new RuntimeException("Packet didn't fit into the buffer");
+                    throw new HazelcastException("Packet didn't fit into the buffer!");
                 }
                 packetBuffer.flip();
+                packetWritten = true;
             }
-            if (cipherBuffer.position() > 0 && socketBB.hasRemaining()) {
-                cipherBuffer.flip();
-                copyToDirectBuffer(cipherBuffer, socketBB);
-                if (cipherBuffer.hasRemaining()) {
-                    cipherBuffer.compact();
-                } else {
-                    cipherBuffer.clear();
-                }
-            }
-            if (!sizeWritten) {
-                if (socketBB.remaining() > 4) {
-                    int cipherSize = cipher.getOutputSize(packet.size());
-                    socketBB.putInt(cipherSize);
-                    sizeWritten = true;
-                } else {
-                    return false;
-                }
-            }
-            encryptAndWriteToSocket(packetBuffer, socketBB);
-            boolean complete = !packetBuffer.hasRemaining();
-            if (complete) {
-                if (socketBB.remaining() >= cipher.getOutputSize(0)) {
-                    sizeWritten = false;
-                    socketBB.put(cipher.doFinal());
-                    packetBuffer.clear();
-                } else {
-                    return false;
-                }
-            }
-            return complete;
-        }
 
-        private int encryptAndWriteToSocket(ByteBuffer src, ByteBuffer socketBB) throws Exception {
-            int remaining = src.remaining();
-            if (src.hasRemaining() && cipherBuffer.hasRemaining()) {
-                int outputSize = cipher.getOutputSize(src.remaining());
-                if (outputSize <= cipherBuffer.remaining()) {
-                    cipher.update(src, cipherBuffer);
+            if (socketBuffer.hasRemaining()) {
+                int outputSize = cipher.getOutputSize(packetBuffer.remaining());
+                if (outputSize <= socketBuffer.remaining()) {
+                    cipher.update(packetBuffer, socketBuffer);
                 } else {
-                    int min = Math.min(src.remaining(), cipherBuffer.remaining());
+                    int min = Math.min(packetBuffer.remaining(), socketBuffer.remaining());
                     int len = min / 2;
                     if (len > 0) {
-                        int limitOld = src.limit();
-                        src.limit(src.position() + len);
-                        cipher.update(src, cipherBuffer);
-                        src.limit(limitOld);
-                    } else {
-                        return 0;
+                        int limitOld = packetBuffer.limit();
+                        packetBuffer.limit(packetBuffer.position() + len);
+                        cipher.update(packetBuffer, socketBuffer);
+                        packetBuffer.limit(limitOld);
                     }
                 }
-                cipherBuffer.flip();
-                copyToDirectBuffer(cipherBuffer, socketBB);
-                if (cipherBuffer.hasRemaining()) {
-                    cipherBuffer.compact();
-                } else {
-                    cipherBuffer.clear();
+
+                if (!packetBuffer.hasRemaining()) {
+                    if (socketBuffer.remaining() >= cipher.getOutputSize(0)) {
+                        socketBuffer.put(cipher.doFinal());
+                        packetWritten = false;
+                        packetBuffer.clear();
+                        return true;
+                    }
                 }
-                return remaining - src.remaining();
             }
-            return 0;
+            return false;
         }
     }
 }

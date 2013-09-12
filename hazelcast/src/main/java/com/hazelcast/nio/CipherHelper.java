@@ -25,12 +25,13 @@ import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.*;
 import java.nio.ByteBuffer;
-import java.security.*;
+import java.security.MessageDigest;
+import java.security.Provider;
+import java.security.Security;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.KeySpec;
-import java.util.logging.Level;
 
-final class CipherHelper {
+public final class CipherHelper {
     private static SymmetricCipherBuilder symmetricCipherBuilder = null;
 
     final static ILogger logger = Logger.getLogger(CipherHelper.class);
@@ -47,17 +48,17 @@ final class CipherHelper {
     }
 
     @SuppressWarnings("SynchronizedMethod")
-    public static synchronized Cipher createSymmetricReaderCipher(IOService ioService) throws Exception {
+    public static synchronized Cipher createSymmetricReaderCipher(SymmetricEncryptionConfig config) throws Exception {
         if (symmetricCipherBuilder == null) {
-            symmetricCipherBuilder = new SymmetricCipherBuilder(ioService.getSymmetricEncryptionConfig());
+            symmetricCipherBuilder = new SymmetricCipherBuilder(config);
         }
-        return symmetricCipherBuilder.getReaderCipher(null);
+        return symmetricCipherBuilder.getReaderCipher();
     }
 
     @SuppressWarnings("SynchronizedMethod")
-    public static synchronized Cipher createSymmetricWriterCipher(IOService ioService) throws Exception {
+    public static synchronized Cipher createSymmetricWriterCipher(SymmetricEncryptionConfig config) throws Exception {
         if (symmetricCipherBuilder == null) {
-            symmetricCipherBuilder = new SymmetricCipherBuilder(ioService.getSymmetricEncryptionConfig());
+            symmetricCipherBuilder = new SymmetricCipherBuilder(config);
         }
         return symmetricCipherBuilder.getWriterCipher();
     }
@@ -67,13 +68,7 @@ final class CipherHelper {
         return (sec != null && sec.isEnabled());
     }
 
-    interface CipherBuilder {
-        Cipher getWriterCipher() throws Exception;
-
-        Cipher getReaderCipher(String param) throws Exception;
-    }
-
-    static class SymmetricCipherBuilder implements CipherBuilder {
+    static class SymmetricCipherBuilder {
         final String algorithm;
         // 8-byte Salt
         final byte[] salt;
@@ -162,7 +157,7 @@ final class CipherHelper {
             return create(true);
         }
 
-        public Cipher getReaderCipher(String ignored) {
+        public Cipher getReaderCipher() {
             return create(false);
         }
     }
