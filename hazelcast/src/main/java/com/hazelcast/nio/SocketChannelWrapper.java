@@ -47,15 +47,7 @@ public interface SocketChannelWrapper extends Closeable {
 
     int read(ByteBuffer byteBuffer) throws java.io.IOException;
 
-    long read(ByteBuffer[] byteBuffers, int offset, int length) throws IOException;
-
-    long read(ByteBuffer[] byteBuffers) throws IOException;
-
     int write(ByteBuffer byteBuffer) throws IOException;
-
-    long write(ByteBuffer[] byteBuffers, int offset, int length) throws IOException;
-
-    long write(ByteBuffer[] byteBuffers) throws IOException;
 
     SelectableChannel configureBlocking(boolean b) throws IOException;
 
