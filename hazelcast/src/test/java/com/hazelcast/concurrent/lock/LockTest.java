@@ -149,7 +149,7 @@ public class LockTest extends HazelcastTestSupport {
         final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(new Config());
         warmUpPartitions(instance2, instance);
 
-        final int key;
+        final String key;
         if (localKey) {
             key = generateKeyOwnedBy(instance);
         } else {
@@ -219,7 +219,7 @@ public class LockTest extends HazelcastTestSupport {
         final HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(config);
 
         warmUpPartitions(keyOwner, instance1, instance2);
-        final int key = generateKeyOwnedBy(keyOwner);
+        final String key = generateKeyOwnedBy(keyOwner);
         final ILock lock1 = instance1.getLock(key);
         lock1.lock();
 
@@ -259,7 +259,7 @@ public class LockTest extends HazelcastTestSupport {
 
         warmUpPartitions(instance2, instance1);
 
-        final int key;
+        final String key;
         if (localKey) {
             key = generateKeyOwnedBy(instance1);
         } else {

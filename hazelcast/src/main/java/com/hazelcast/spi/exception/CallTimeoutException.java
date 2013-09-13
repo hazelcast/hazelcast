@@ -27,4 +27,8 @@ public class CallTimeoutException extends RetryableHazelcastException {
     public CallTimeoutException(String message) {
         super(message);
     }
+
+    public CallTimeoutException(String opName, long invocationTime, long timeout) {
+        super("Call timed out for " + opName + ", call-time: " + invocationTime + ", timeout: " + timeout);
+    }
 }
