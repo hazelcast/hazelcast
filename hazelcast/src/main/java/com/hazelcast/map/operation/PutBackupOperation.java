@@ -80,11 +80,11 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
     }
 
     private void updateSizeEstimator( long recordSize ) {
-        mapContainer.getBackUpSizeEstimator().add( recordSize );
+        mapContainer.getSizeEstimator().add( recordSize );
     }
 
     private long calculateRecordSize( Record record ) {
-        return mapContainer.getBackUpSizeEstimator().getCost(record);
+        return mapContainer.getSizeEstimator().getCost(record);
     }
 
 }

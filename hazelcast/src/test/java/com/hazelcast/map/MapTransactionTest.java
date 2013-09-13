@@ -546,7 +546,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testIssue615KeySet() throws TransactionException {
+    public void testIssue615keySet() throws TransactionException {
         Config config = new Config();
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance h1 = factory.newHazelcastInstance(config);
@@ -598,7 +598,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testIssue615KeySetWithPredicate() throws TransactionException {
+    public void testIssue615keySetWithPredicate() throws TransactionException {
         Config config = new Config();
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance h1 = factory.newHazelcastInstance(config);
@@ -658,7 +658,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testIssue615Values() throws TransactionException {
+    public void testIssue615values() throws TransactionException {
         Config config = new Config();
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance h1 = factory.newHazelcastInstance(config);

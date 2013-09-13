@@ -17,17 +17,24 @@
 package com.hazelcast.map.tx;
 
 import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.MapService;
+import com.hazelcast.map.QueryResult;
+import com.hazelcast.map.operation.QueryOperation;
+import com.hazelcast.map.operation.QueryPartitionOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryResultEntry;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.OperationService;
 import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryResultSet;
 
 import java.util.*;
+
+import static com.hazelcast.map.MapService.SERVICE_NAME;
 
 /**
  * @author mdogan 2/26/13

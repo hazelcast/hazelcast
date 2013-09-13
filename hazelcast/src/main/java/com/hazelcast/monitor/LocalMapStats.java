@@ -184,18 +184,12 @@ public interface LocalMapStats extends LocalInstanceStats {
 
     /**
      *
-     * Cost of map & near cache
+     * Cost of map & near cache  & backup
      * todo in object mode object size is zero.
      *
      * @return heap cost
      */
     public long getHeapCost();
 
-    /**
-     *
-     * Cost of map backup.
-     * todo in object mode object size is zero.
-     */
-    public long getBackupHeapCost();
 
 }

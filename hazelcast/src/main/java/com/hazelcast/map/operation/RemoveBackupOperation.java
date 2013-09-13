@@ -67,11 +67,11 @@ public final class RemoveBackupOperation extends KeyBasedMapOperation implements
     }
 
     private void updateSizeEstimator( long recordSize ) {
-        mapService.getMapContainer( name ).getBackUpSizeEstimator().add( recordSize );
+        mapService.getMapContainer( name ).getSizeEstimator().add( recordSize );
     }
 
     private long calculateRecordSize( Record record ) {
-        return mapService.getMapContainer( name ).getBackUpSizeEstimator().getCost( record );
+        return mapService.getMapContainer( name ).getSizeEstimator().getCost( record );
     }
 
 }
