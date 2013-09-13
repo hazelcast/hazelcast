@@ -52,7 +52,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
         buffer = ByteBuffer.allocate(connectionManager.socketSendBufferSize);
     }
 
-    // accessed from ReadHandler
+    // accessed from ReadHandler and SocketConnector
     void setProtocol(final String protocol) {
         final CountDownLatch latch = new CountDownLatch(1);
         ioSelector.addTask(new Runnable() {
@@ -110,6 +110,7 @@ public final class WriteHandler extends AbstractSelectionHandler implements Runn
             return;
         }
         if (socketWriter == null) {
+            logger.log(Level.WARNING, "SocketWriter is not set, creating SocketWriter with CLUSTER protocol!");
             createWriter(Protocols.CLUSTER);
         }
         if (lastWritable == null && (lastWritable = poll()) == null && buffer.position() == 0) {
