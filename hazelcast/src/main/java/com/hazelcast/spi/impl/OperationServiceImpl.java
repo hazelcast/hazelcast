@@ -180,8 +180,7 @@ final class OperationServiceImpl implements OperationService {
         RemoteCallKey callKey = null;
         try {
             if (isCallTimedOut(op)) {
-                Object response = new CallTimeoutException("Call timed out for " + op.getClass().getName()
-                        + ", call-time: " + op.getInvocationTime() + ", timeout: " + op.getCallTimeout());
+                Object response = new CallTimeoutException(op.getClass().getName(), op.getInvocationTime(), op.getCallTimeout());
                 op.getResponseHandler().sendResponse(response);
                 return;
             }

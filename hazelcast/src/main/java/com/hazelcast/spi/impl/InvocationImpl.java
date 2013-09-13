@@ -25,10 +25,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.PartitionView;
 import com.hazelcast.spi.*;
-import com.hazelcast.spi.exception.RetryableException;
-import com.hazelcast.spi.exception.RetryableIOException;
-import com.hazelcast.spi.exception.TargetNotMemberException;
-import com.hazelcast.spi.exception.WrongTargetException;
+import com.hazelcast.spi.exception.*;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.executor.ScheduledTaskRunner;
@@ -203,6 +200,12 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         final Object response;
         if (obj == null) {
             response = NULL_RESPONSE;
+        } else if (obj instanceof CallTimeoutException) {
+            response = RETRY_RESPONSE;
+            if (logger.isFinestEnabled()) {
+                logger.finest("Call timed-out during wait-notify phase, retrying call: " + toString());
+            }
+            invokeCount--;
         } else if (obj instanceof Throwable) {
             final Throwable error = (Throwable) obj;
             final ExceptionAction action = onException(error);
