@@ -19,6 +19,7 @@ package com.hazelcast.client.txn;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.SerialTest;
@@ -72,5 +73,27 @@ public class ClientTxnMapTest {
         assertEquals("value1" , hz.getMap(name).get("key1"));
     }
 
+
+    @Test
+    public void testKeySetValues() throws Exception {
+        final String name = "defMap";
+        IMap<Object,Object> map = hz.getMap(name);
+        map.put("key1", "value1");
+        map.put("key2", "value2");
+
+        final TransactionContext context = hz.newTransactionContext();
+        context.beginTransaction();
+        final TransactionalMap<Object,Object> txMap = context.getMap(name);
+        assertNull(txMap.put("key3", "value3"));
+        assertEquals(3, txMap.size());
+        assertEquals(3, txMap.keySet().size());
+        assertEquals(3, txMap.values().size());
+        context.commitTransaction();
+
+        assertEquals(3, map.size());
+        assertEquals(3, map.keySet().size());
+        assertEquals(3, map.values().size());
+
+    }
 
 }
