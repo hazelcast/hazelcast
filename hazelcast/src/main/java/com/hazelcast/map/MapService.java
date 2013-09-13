@@ -896,7 +896,7 @@ public class MapService implements ManagedService, MigrationAwareService,
                 if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.USED_HEAP_SIZE) {
                     return maxSize < (used / 1024 / 1024);
                 } else {
-                    return maxSize < (used / total);
+                    return maxSize < (100d * used / total);
                 }
             }
             return false;
