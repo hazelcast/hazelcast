@@ -90,9 +90,7 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
 
         h[0].getLifecycleService().shutdown();
         h[1].getLifecycleService().shutdown();
-
     }
-
 
     @Test
     public void testEvictionPolicy() throws InterruptedException {
@@ -200,7 +198,6 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
         Thread.sleep(2000);
 
         for(int i = 0; i< n; i++){
-
             Assert.assertTrue( h[i].getMap(BINARY_MAP).getLocalMapStats().getHeapCost() == 0 );
             Assert.assertTrue( h[i].getMap(BINARY_MAP).getLocalMapStats().getBackupHeapCost() == 0);
 
@@ -212,7 +209,6 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
         }
 
         for(int i = 0; i< n; i++){
-
             h[i].getLifecycleService().shutdown();
         }
     }

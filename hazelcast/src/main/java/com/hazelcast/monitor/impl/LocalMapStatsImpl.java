@@ -52,7 +52,6 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
     private long dirtyEntryCount;
     private int backupCount;
 
-
     public LocalMapStatsImpl() {
         creationTime = Clock.currentTimeMillis();
     }
@@ -81,7 +80,6 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         out.writeLong(maxRemoveLatency.get());
         out.writeLong(backupHeapCost);
         out.writeLong(heapCost);
-
     }
 
     public void readData(ObjectDataInput in) throws IOException {

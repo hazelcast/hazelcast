@@ -21,7 +21,7 @@ class MapSizeEstimator extends AbstractSizeEstimator {
     @Override
     public <T> long getCost(T record) {
 
-        // immidiate check nothing to do if record is null
+        // immediate check nothing to do if record is null
         if( record == null ){
             return 0;
         }
@@ -29,21 +29,15 @@ class MapSizeEstimator extends AbstractSizeEstimator {
         if( record instanceof NearCache.CacheRecord)
         {
             final NearCache.CacheRecord rec = (NearCache.CacheRecord)record;
-
             final long keySize = rec.getKey().totalSize();
-
             final long valueSize = rec.getCost() ;
-
             return keySize + valueSize;
         }
         else if( record instanceof DataRecord)
         {
             final Record rec = (Record)record;
-
             final long keySize = rec.getKey().totalSize();
-
             final long valueSize = rec.getCost() ;
-
             return keySize + valueSize;
         }
         else if( record instanceof ObjectRecord)
@@ -52,7 +46,6 @@ class MapSizeEstimator extends AbstractSizeEstimator {
             // calculating object size is omitted for now.
             return 0;
         }
-
 
         final String msg =  "MapSizeEstimator::not known object for map heap cost" +
                 " calculation [" + record.getClass().getCanonicalName()+"]";

@@ -80,10 +80,8 @@ public class NearCache {
             fireEvictCache();
         }
         Object value = inMemoryFormat.equals(MapConfig.InMemoryFormat.BINARY) ? data : mapService.toObject(data);
-
         final CacheRecord record = new CacheRecord(key, value);
         cache.put(key, record);
-
         updateSizeEstimator(calculateCost(record));
     }
 
@@ -133,7 +131,6 @@ public class NearCache {
                                     {
                                         updateSizeEstimator(-calculateCost(record));
                                     }
-
                                 }
                             }
                         } finally {
@@ -171,7 +168,6 @@ public class NearCache {
         {
             updateSizeEstimator(-calculateCost(record));
         }
-
     }
 
     void clear() {
