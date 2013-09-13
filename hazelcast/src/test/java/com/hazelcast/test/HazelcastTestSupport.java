@@ -76,4 +76,8 @@ public abstract class HazelcastTestSupport {
         }
         return k;
     }
+
+    public final class DummyUncheckedHazelcastTestException extends RuntimeException{
+
+    }
 }

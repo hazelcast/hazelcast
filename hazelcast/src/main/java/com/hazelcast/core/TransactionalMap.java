@@ -16,7 +16,11 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.query.Predicate;
 import com.hazelcast.transaction.TransactionalObject;
+
+import java.util.Collection;
+import java.util.Set;
 
 /**
  * Transactional implementation of {@link BaseMap}.
@@ -127,4 +131,36 @@ public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, 
      * @see IMap#remove(Object, Object)
      */
     boolean remove(Object key, Object value);
+
+    /**
+     * Transactional implementation of {@link IMap#keySet()}.
+     * <p/>
+     *
+     * @see com.hazelcast.core.IMap#keySet()
+     */
+    Set<K> keySet();
+
+    /**
+     * Transactional implementation of {@link com.hazelcast.core.IMap#keySet(com.hazelcast.query.Predicate)} .
+     * <p/>
+     *
+     * @see IMap#keySet(com.hazelcast.query.Predicate)
+     */
+    Set<K> keySet(Predicate predicate);
+
+    /**
+     * Transactional implementation of {@link com.hazelcast.core.IMap#values()}.
+     * <p/>
+     *
+     * @see IMap#values()
+     */
+    Collection<V> values();
+
+    /**
+     * Transactional implementation of {@link com.hazelcast.core.IMap#values(com.hazelcast.query.Predicate)} .
+     * <p/>
+     *
+     * @see IMap#values(com.hazelcast.query.Predicate)
+     */
+    Collection<V> values(Predicate predicate);
 }
