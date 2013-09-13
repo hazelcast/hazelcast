@@ -39,7 +39,21 @@ public final class ObjectRecord extends AbstractRecord<Object> implements Record
     // as there is no easy way to calculate the size of Object cost is not implemented for ObjectRecord
     @Override
     public long getCost() {
-        return 0;
+        long size = 0;
+
+        // add statistics size if enabled.
+        //size += ( statistics == null ? 0 : statistics.size() );
+
+        // add size of version.
+        //size += ( Long.SIZE/Byte.SIZE );
+
+        // add key size.
+        //size += key.totalSize();
+
+        // todo add object size
+        //size += ( value == null ? 0 : value.totalSize() );
+
+        return size;
     }
 
     public Object getValue() {

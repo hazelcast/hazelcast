@@ -241,6 +241,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         MapMergePolicy mergePolicy = mergePolicyMap.get(mergePolicyName);
         if (mergePolicy == null && mergePolicyName != null) {
             try {
+
                 // check if user has entered custom class name instead of policy name
                 mergePolicy = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), mergePolicyName);
                 mergePolicyMap.put(mergePolicyName, mergePolicy);
@@ -887,9 +888,12 @@ public class MapService implements ManagedService, MigrationAwareService,
                 }
                 return maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_NODE && totalSize >= maxSize;
             }
-            if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.USED_HEAP_SIZE || maxSizePolicy == MaxSizeConfig.MaxSizePolicy.USED_HEAP_PERCENTAGE) {
-                long total = Runtime.getRuntime().totalMemory();
-                long used = (total - Runtime.getRuntime().freeMemory());
+            if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.USED_HEAP_SIZE
+                    || maxSizePolicy == MaxSizeConfig.MaxSizePolicy.USED_HEAP_PERCENTAGE) {
+                final long total = Runtime.getRuntime().totalMemory();
+                final long used = mapContainer.getSizeEstimator().getSize()
+                        + mapContainer.getBackUpSizeEstimator().getSize();
+                        // (total - Runtime.getRuntime().freeMemory());
                 if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.USED_HEAP_SIZE) {
                     return maxSize < (used / 1024 / 1024);
                 } else {
@@ -997,6 +1001,9 @@ public class MapService implements ManagedService, MigrationAwareService,
         localMapStats.setBackupEntryCount(zeroOrPositive(backupEntryCount));
         localMapStats.setOwnedEntryMemoryCost(zeroOrPositive(ownedEntryMemoryCost));
         localMapStats.setBackupEntryMemoryCost(zeroOrPositive(backupEntryMemoryCost));
+        localMapStats.setHeapCost( mapContainer.getSizeEstimator().getSize() );
+        localMapStats.setBackupHeapCost( mapContainer.getBackUpSizeEstimator().getSize() );
+
         return localMapStats;
     }
 

@@ -252,6 +252,7 @@ public final class Predicates {
             second = in.readUTF();
         }
 
+
         @Override
         public String toString() {
             return attribute + " LIKE '" + second + "'";
@@ -598,7 +599,7 @@ public final class Predicates {
                 if (entryValue != null && entryValue.getClass().isAssignableFrom(attributeValue.getClass())) {
                     return attributeValue;
                 } else if (type != null) {
-                   return type.getConverter().convert(attributeValue);
+                    return type.getConverter().convert(attributeValue);
                 } else {
                     throw new QueryException("Unknown attribute type: " + attributeValue.getClass());
                 }
