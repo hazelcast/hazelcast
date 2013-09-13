@@ -56,7 +56,9 @@ public class ClearBackupOperation extends AbstractNamedOperation implements Back
         }
         for (Data key : keys) {
             if (!recordStore.isLocked(key))
+            {
                 recordStore.evict(key);
+            }
         }
     }
 

@@ -106,6 +106,11 @@ public class RecordStatistics implements DataSerializable {
         this.lastUpdateTime = lastUpdateTime;
     }
 
+    public long size(){
+        //size of the instance.
+        return 6*(Long.SIZE/Byte.SIZE) + 1*(Integer.SIZE/Byte.SIZE);
+    }
+
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeInt(hits);
         out.writeLong(lastStoredTime);
@@ -121,5 +126,7 @@ public class RecordStatistics implements DataSerializable {
         lastAccessTime = in.readLong();
         cost = in.readLong();
     }
+
+
 
 }
