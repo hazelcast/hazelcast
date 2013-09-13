@@ -124,7 +124,7 @@ public class ConnectionTest {
         }
 
         try {
-            Assert.assertTrue(latch.await(1, TimeUnit.MINUTES));
+            Assert.assertTrue(latch.await(5, TimeUnit.MINUTES));
         } finally {
             for (Socket socket : sockets) {
                 try {
