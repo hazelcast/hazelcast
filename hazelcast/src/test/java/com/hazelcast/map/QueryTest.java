@@ -1456,4 +1456,72 @@ public class QueryTest extends HazelcastTestSupport {
         Arrays.sort(indexes);
         assertArrayEquals(indexes, expectedValues);
     }
+
+    @Test
+    public void testMultipleOrPredicatesIssue885WithoutIndex() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance = factory.newHazelcastInstance(new Config());
+        factory.newHazelcastInstance(new Config());
+        final IMap<Integer, Employee> map = instance.getMap("default");
+        testMultipleOrPredicates(map);
+    }
+
+    @Test
+    public void testMultipleOrPredicatesIssue885WithIndex() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance = factory.newHazelcastInstance(new Config());
+        factory.newHazelcastInstance(new Config());
+        final IMap<Integer, Employee> map = instance.getMap("default");
+        map.addIndex("name", true);
+        testMultipleOrPredicates(map);
+    }
+
+    @Test
+    public void testMultipleOrPredicatesIssue885WithIndex2() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance = factory.newHazelcastInstance(new Config());
+        factory.newHazelcastInstance(new Config());
+        final IMap<Integer, Employee> map = instance.getMap("default");
+        map.addIndex("name", true);
+        map.addIndex("city", true);
+        testMultipleOrPredicates(map);
+    }
+
+    private void testMultipleOrPredicates(final IMap<Integer, Employee> map) {
+        for (int i = 0; i < 10; i++) {
+            map.put(i, new Employee(i, "name" + i, "city" + i, i, true, i));
+        }
+
+        Collection<Employee> values;
+
+        values = map.values(new SqlPredicate("name = 'name1' OR name = 'name2' OR name LIKE 'name3'"));
+        assertEquals(3, values.size());
+
+        values = map.values(new SqlPredicate("name = 'name1' OR name LIKE 'name2%' OR name LIKE 'name3'"));
+        assertEquals(3, values.size());
+
+        values = map.values(new SqlPredicate("name = 'name1' OR name LIKE 'name2%' OR name == 'name3'"));
+        assertEquals(3, values.size());
+
+        values = map.values(new SqlPredicate("name LIKE '%name1' OR name LIKE 'name2%' OR name LIKE '%name3%'"));
+        assertEquals(3, values.size());
+
+        values = map.values(new SqlPredicate("name == 'name1' OR name == 'name2' OR name = 'name3'"));
+        assertEquals(3, values.size());
+
+        values = map.values(new SqlPredicate("name = 'name1' OR name = 'name2' OR city LIKE 'city3'"));
+        assertEquals(3, values.size());
+
+        values = map.values(new SqlPredicate("name = 'name1' OR name LIKE 'name2%' OR city LIKE 'city3'"));
+        assertEquals(3, values.size());
+
+        values = map.values(new SqlPredicate("name = 'name1' OR name LIKE 'name2%' OR city == 'city3'"));
+        assertEquals(3, values.size());
+
+        values = map.values(new SqlPredicate("name LIKE '%name1' OR name LIKE 'name2%' OR city LIKE '%city3%'"));
+        assertEquals(3, values.size());
+
+        values = map.values(new SqlPredicate("name == 'name1' OR name == 'name2' OR city = 'city3'"));
+        assertEquals(3, values.size());
+    }
 }
