@@ -28,9 +28,11 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.transaction.TransactionContext;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 
 /**
  * @author ali 6/10/13
@@ -43,6 +45,7 @@ public class TxnMapRequest extends CallableClientRequest implements Portable, In
     Data key;
     Data value;
     Data newValue;
+    String sqlPredicate;
 
     public TxnMapRequest() {
     }
@@ -65,6 +68,11 @@ public class TxnMapRequest extends CallableClientRequest implements Portable, In
     public TxnMapRequest(String name, TxnMapRequestType requestType, Data key, Data value, Data newValue) {
         this(name, requestType, key, value);
         this.newValue = newValue;
+    }
+
+    public TxnMapRequest(String name, TxnMapRequestType requestType, String sqlPredicate) {
+        this(name, requestType, null, null, null);
+        this.sqlPredicate = sqlPredicate;
     }
 
     public Object call() throws Exception {
@@ -93,6 +101,14 @@ public class TxnMapRequest extends CallableClientRequest implements Portable, In
             case DELETE:
                 map.delete(key);
                 break;
+            case KEYSET:
+                return map.keySet();
+            case KEYSET_BY_PREDICATE:
+                return map.keySet( new SqlPredicate( sqlPredicate ) );
+            case VALUES:
+                return map.values();
+            case VALUES_BY_PREDICATE:
+                return map.values( new SqlPredicate( sqlPredicate ) );
             case REMOVE_IF_SAME:
                 return map.remove(key, value);
 
@@ -124,6 +140,7 @@ public class TxnMapRequest extends CallableClientRequest implements Portable, In
         IOUtil.writeNullableData(out, key);
         IOUtil.writeNullableData(out, value);
         IOUtil.writeNullableData(out, newValue);
+        IOUtil.writeByteArray(out,sqlPredicate == null ? null : sqlPredicate.getBytes( Charset.forName("UTF-8") ) );
     }
 
     public void readPortable(PortableReader reader) throws IOException {
@@ -133,6 +150,8 @@ public class TxnMapRequest extends CallableClientRequest implements Portable, In
         key = IOUtil.readNullableData(in);
         value = IOUtil.readNullableData(in);
         newValue = IOUtil.readNullableData(in);
+        final byte[] sqlPredicateRead = IOUtil.readByteArray(in);
+        sqlPredicate =  sqlPredicateRead == null ? null : new String( sqlPredicateRead, Charset.forName("UTF-8") );
     }
 
     public enum TxnMapRequestType{
@@ -146,7 +165,11 @@ public class TxnMapRequest extends CallableClientRequest implements Portable, In
         SET(8),
         REMOVE(9),
         DELETE(10),
-        REMOVE_IF_SAME(11);
+        REMOVE_IF_SAME(11),
+        KEYSET(12),
+        KEYSET_BY_PREDICATE(13),
+        VALUES(14),
+        VALUES_BY_PREDICATE(15);
 
         int type;
 
