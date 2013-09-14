@@ -26,8 +26,6 @@ import com.hazelcast.core.Member;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.merge.MapMergePolicy;
-import com.hazelcast.map.operation.MapInitialLoadOperation;
-import com.hazelcast.map.operation.MapIsReadyOperation;
 import com.hazelcast.map.operation.PutFromLoadOperation;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
@@ -70,7 +68,6 @@ public class MapContainer {
     private final PartitioningStrategy partitionStrategy;
     private final SizeEstimator sizeEstimator;
 
-    private volatile boolean mapReady = false;
 
     public MapContainer(String name, MapConfig mapConfig, MapService mapService) {
         Object store = null;
@@ -109,37 +106,8 @@ public class MapContainer {
             }
             // only master can initiate the loadAll. master will send other members to loadAll.
             // the members join later will not load from mapstore.
-            if (nodeEngine.getClusterService().isMaster() && initialLoaded.compareAndSet(false, true)) {
+            if (initialLoaded.compareAndSet(false, true)) {
                 loadMapFromStore(true);
-                Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
-                for (Member member : members) {
-                    try {
-                        if (member.localMember())
-                            continue;
-                        MemberImpl memberImpl = (MemberImpl) member;
-                        Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, new MapInitialLoadOperation(name), memberImpl.getAddress()).build();
-                        invocation.invoke();
-                    } catch (Throwable t) {
-                        throw ExceptionUtil.rethrow(t);
-                    }
-                }
-            } else {
-                try {
-                    Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, new MapIsReadyOperation(name), nodeEngine.getMasterAddress()).build();
-                    Future future = invocation.invoke();
-                    mapReady = (Boolean) future.get();
-                    while (!mapReady) {
-                        Thread.sleep(1000);
-                        invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, new MapIsReadyOperation(name), nodeEngine.getMasterAddress()).build();
-                        future = invocation.invoke();
-                        boolean temp = (Boolean) future.get();
-                        if(!mapReady) {
-                            mapReady = temp;
-                        }
-                    }
-                } catch (Exception e) {
-                    throw ExceptionUtil.rethrow(e);
-                }
             }
 
             if (mapStoreConfig.getWriteDelaySeconds() > 0) {
@@ -150,7 +118,6 @@ public class MapContainer {
                 mapStoreWriteScheduler = null;
             }
         } else {
-            mapReady = true;
             mapStoreDeleteScheduler = null;
             mapStoreWriteScheduler = null;
         }
@@ -187,19 +154,13 @@ public class MapContainer {
         sizeEstimator = SizeEstimators.createMapSizeEstimator( mapConfig.isStatisticsEnabled() );
     }
 
-    public boolean isMapReady() {
-        // map ready states whether the map load operation has been finished. if not retry exception is sent.
-        return mapReady;
-    }
 
     public void loadMapFromStore(boolean force) {
         if (force || initialLoaded.compareAndSet(false, true)) {
-            mapReady = false;
             NodeEngine nodeEngine = mapService.getNodeEngine();
             int chunkSize = nodeEngine.getGroupProperties().MAP_LOAD_CHUNK_SIZE.getInteger();
             Set keys = storeWrapper.loadAllKeys();
             if (keys == null || keys.isEmpty()) {
-                mapReady = true;
                 return;
             }
             Map<Data, Object> chunk = new HashMap<Data, Object>();
@@ -231,7 +192,7 @@ public class MapContainer {
             AtomicInteger counter = new AtomicInteger(numberOfChunks);
             for (Map<Data, Object> currentChunk : chunkList) {
                 try {
-                    nodeEngine.getExecutionService().submit("hz:map-load", new MapLoadAllTask(currentChunk, counter));
+                    nodeEngine.getExecutionService().submit("hz:map-load", new MapLoadAllTask(currentChunk));
                 } catch (Throwable t) {
                     ExceptionUtil.rethrow(t);
                 }
@@ -335,11 +296,9 @@ public class MapContainer {
 
     private class MapLoadAllTask implements Runnable {
         private Map<Data, Object> keys;
-        private AtomicInteger counter;
 
-        private MapLoadAllTask(Map<Data, Object> keys, AtomicInteger counter) {
+        private MapLoadAllTask(Map<Data, Object> keys) {
             this.keys = keys;
-            this.counter = counter;
         }
 
         public void run() {
@@ -362,14 +321,6 @@ public class MapContainer {
                 OperationAccessor.setCallerAddress(operation, nodeEngine.getThisAddress());
                 operation.setServiceName(MapService.SERVICE_NAME);
                 nodeEngine.getOperationService().executeOperation(operation);
-            }
-
-            try {
-                if (latch.await(30, TimeUnit.SECONDS) && counter.decrementAndGet() <= 0) {
-                    mapReady = true;
-                }
-            } catch (InterruptedException e) {
-                throw ExceptionUtil.rethrow(e);
             }
         }
 
