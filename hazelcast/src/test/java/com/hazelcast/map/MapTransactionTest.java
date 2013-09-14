@@ -551,20 +551,27 @@ public class MapTransactionTest extends HazelcastTestSupport {
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance h1 = factory.newHazelcastInstance(config);
         final HazelcastInstance h2 = factory.newHazelcastInstance(config);
-        final IMap map2 = h2.getMap("default");
-        map2.put("1", "1");
-        map2.put("2", "2");
+        final IMap map = h2.getMap("default");
+        map.put("1", "1");
+        map.put("2", "2");
 
         boolean b = h1.executeTransaction(options, new TransactionalTask<Boolean>() {
             public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                 final TransactionalMap<Object, Object> txMap = context.getMap("default");
                 txMap.put("3", "3");
+
                 assertEquals(3, txMap.keySet().size());
-                map2.put("4", "4");
+
+                map.put("4", "4");
+
                 assertEquals(4, txMap.keySet().size());
+
                 txMap.remove("1");
+
                 assertEquals(3, txMap.keySet().size());
-                map2.remove("2");
+
+                map.remove("2");
+
                 assertEquals(2, txMap.keySet().size());
                 assertEquals(2, txMap.size());
 
@@ -572,16 +579,18 @@ public class MapTransactionTest extends HazelcastTestSupport {
             }
         });
 
-        assertEquals(2, map2.keySet().size());
+        assertEquals(2, map.keySet().size());
 
         // raise an exception and rollback changes.
         try {
             boolean b2 = h1.executeTransaction(options, new TransactionalTask<Boolean>() {
                 public Boolean execute(TransactionalTaskContext context) throws TransactionException {
                     final TransactionalMap<Object, Object> txMap = context.getMap("default");
+
                     txMap.put("5", "5");
+
                     assertEquals(3, txMap.keySet().size());
-                    assertEquals(3, map2.keySet().size());
+                    assertEquals(2, map.keySet().size());
 
                     throw new DummyUncheckedHazelcastTestException();
                 }
@@ -592,13 +601,13 @@ public class MapTransactionTest extends HazelcastTestSupport {
                 throw new RuntimeException( e );
             }
         }
-        assertEquals(2, map2.keySet().size());
+        assertEquals(2, map.keySet().size());
         h1.getLifecycleService().shutdown();
         h2.getLifecycleService().shutdown();
     }
 
     @Test
-    public void testIssue615keySetWithPredicate() throws TransactionException {
+    public void testIssue615KeysetWithPredicate() throws TransactionException {
         Config config = new Config();
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance h1 = factory.newHazelcastInstance(config);
@@ -658,6 +667,46 @@ public class MapTransactionTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testIssue615KeysetPredicates() throws TransactionException {
+        final String MAP_NAME = "defaultMap";
+        final Config config = new Config();
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance h2 = factory.newHazelcastInstance(config);
+        final IMap map = h2.getMap( MAP_NAME );
+        final SampleObjects.Employee employee1 = new SampleObjects.Employee("abc-123-xvz", 34, true, 10D);
+        final SampleObjects.Employee employee2 = new SampleObjects.Employee("abc-1xvz", 4, true, 7D);
+        final SampleObjects.Employee employee3 = new SampleObjects.Employee("abc-1xasda...vz", 7, true, 1D);
+        final SampleObjects.Employee employee4 = new SampleObjects.Employee("abc-1asdsaxvz", 2, true, 2D);
+
+        map.put(employee1, employee1);
+
+        final TransactionContext context = h1.newTransactionContext();
+        context.beginTransaction();
+
+        final TransactionalMap<Object,Object> txMap = context.getMap( MAP_NAME );
+
+        assertNull(txMap.put(employee2, employee2));
+
+        assertEquals(2, txMap.size());
+        assertEquals(2, txMap.keySet().size());
+        assertEquals(1, txMap.keySet( new SqlPredicate( "age = 34" ) ).size());
+
+        for(Object o : txMap.keySet() )
+        {
+            System.err.println( o );
+        }
+
+        context.commitTransaction();
+
+
+        assertEquals(2, map.size());
+
+        h1.getLifecycleService().shutdown();
+        h2.getLifecycleService().shutdown();
+    }
+
+    @Test
     public void testIssue615values() throws TransactionException {
         Config config = new Config();
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
@@ -680,10 +729,13 @@ public class MapTransactionTest extends HazelcastTestSupport {
                 map2.remove("2");
                 assertEquals( 2, txMap.values().size() );
                 assertEquals(2, txMap.size());
+                txMap.put("12", "32");
+                assertEquals( 2, map2.values().size() );
                 return true;
             }
         });
 
+        assertEquals( 3, map2.values().size() );
 
         h1.getLifecycleService().shutdown();
         h2.getLifecycleService().shutdown();

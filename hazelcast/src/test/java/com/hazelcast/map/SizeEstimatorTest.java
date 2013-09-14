@@ -65,13 +65,13 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
 
         map.put("key", "value");
 
-        Thread.sleep(10000);
+        Thread.sleep(1000);
 
         long h1MapCost = h[0].getMap(MAP_NAME).getLocalMapStats().getHeapCost();
 
-
         long h2MapCost = h[1].getMap(MAP_NAME).getLocalMapStats().getHeapCost();
 
+        // one map is backup. so backup & real map cost must be same.
         Assert.assertTrue( h1MapCost == h2MapCost );
 
         Thread.sleep(1000);
