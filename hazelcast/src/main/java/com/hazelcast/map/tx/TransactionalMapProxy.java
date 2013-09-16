@@ -17,24 +17,16 @@
 package com.hazelcast.map.tx;
 
 import com.hazelcast.core.TransactionalMap;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.MapService;
-import com.hazelcast.map.QueryResult;
-import com.hazelcast.map.operation.QueryOperation;
-import com.hazelcast.map.operation.QueryPartitionOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryEntry;
-import com.hazelcast.query.impl.QueryResultEntry;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.OperationService;
 import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryResultSet;
 
 import java.util.*;
-
-import static com.hazelcast.map.MapService.SERVICE_NAME;
 
 /**
  * @author mdogan 2/26/13
@@ -87,10 +79,13 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
     public Object put(Object key, Object value) {
         checkTransactionState();
         MapService service = getService();
-        final Object valueBeforeTxn = service.toObject(putInternal(service.toData(key, partitionStrategy), service.toData(value)));
+        final Object valueBeforeTxn = service.toObject(putInternal(service.toData(key, partitionStrategy),
+                service.toData(value)));
         TxnValueWrapper currentValue = txMap.get(key);
         if (value != null) {
-            TxnValueWrapper wrapper = valueBeforeTxn == null ? new TxnValueWrapper(value, TxnValueWrapper.Type.NEW) : new TxnValueWrapper(value, TxnValueWrapper.Type.UPDATED);
+            TxnValueWrapper wrapper = valueBeforeTxn == null ?
+                    new TxnValueWrapper(value, TxnValueWrapper.Type.NEW) :
+                    new TxnValueWrapper(value, TxnValueWrapper.Type.UPDATED);
             txMap.put(key, wrapper);
         }
         return currentValue == null ? valueBeforeTxn : checkIfRemoved(currentValue);
@@ -242,25 +237,29 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
     @Override
     public Set keySet(Predicate predicate) {
         checkTransactionState();
-        if ( predicate == null) {
+        if ( predicate == null)
+        {
             throw new NullPointerException("Predicate should not be null!");
         }
-
         final MapService service = getService();
         final QueryResultSet queryResultSet = (QueryResultSet) queryInternal(predicate, IterationType.KEY, false);
         final Set<Object> keySet = new HashSet<Object>( queryResultSet.size() );
-        while( queryResultSet.iterator().hasNext() )
+        final Iterator iterator = queryResultSet.iterator();
+        while( iterator.hasNext() )
         {
-            keySet.add(service.toObject(((QueryResultEntry) queryResultSet.iterator().next()).getKeyData()));
+            keySet.add( iterator.next() );
         }
 
         for ( final Map.Entry<Object, TxnValueWrapper> entry : txMap.entrySet() )
         {
             if( !TxnValueWrapper.Type.REMOVED.equals( entry.getValue().type ) )
             {
+                final Object value = entry.getValue().value instanceof Data ?
+                        service.toObject( entry.getValue().value ): entry.getValue().value;
+                final QueryEntry queryEntry = new QueryEntry( null, service.toData(entry.getKey()), entry.getKey(), value ) ;
                 // apply predicate on txMap.
-                if( predicate.apply( new QueryEntry( null, service.toData(entry.getKey()),
-                        entry.getKey(), entry.getValue().value ) )) {
+                if( predicate.apply( queryEntry ))
+                {
                     keySet.add(entry.getKey());
                 }
             }
@@ -270,7 +269,6 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
                 keySet.remove(entry.getKey());
             }
         }
-
         return  keySet;
     }
 
@@ -301,7 +299,6 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         if ( predicate == null) {
             throw new NullPointerException("Predicate can not be null!");
         }
-
         final MapService service = getService();
         final QueryResultSet queryResultSet = (QueryResultSet) queryInternal(predicate, IterationType.VALUE, false);
         final Set<Object> valueSet = new HashSet<Object>( queryResultSet.size() );
@@ -311,14 +308,16 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         {
             valueSet.add( iterator.next() );
         }
-
         for ( final Map.Entry<Object, TxnValueWrapper> entry : txMap.entrySet() )
         {
             if( !TxnValueWrapper.Type.REMOVED.equals( entry.getValue().type ) )
             {
+                final Object value = entry.getValue().value instanceof Data ?
+                        service.toObject( entry.getValue().value ): entry.getValue().value;
+                final QueryEntry queryEntry = new QueryEntry( null, service.toData(entry.getKey()), entry.getKey(), value ) ;
                 // apply predicate on txMap.
-                if( predicate.apply( new QueryEntry( null, service.toData(entry.getKey()),
-                        entry.getKey(), entry.getValue().value ) )) {
+                if( predicate.apply( queryEntry ))
+                {
                     valueSet.add( entry.getValue().value );
                 }
             }

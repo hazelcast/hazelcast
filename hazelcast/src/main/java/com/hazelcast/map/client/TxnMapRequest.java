@@ -28,6 +28,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.transaction.TransactionContext;
 
 import java.io.IOException;
@@ -43,6 +44,7 @@ public class TxnMapRequest extends CallableClientRequest implements Portable, In
     Data key;
     Data value;
     Data newValue;
+    Predicate predicate;
 
     public TxnMapRequest() {
     }
@@ -65,6 +67,11 @@ public class TxnMapRequest extends CallableClientRequest implements Portable, In
     public TxnMapRequest(String name, TxnMapRequestType requestType, Data key, Data value, Data newValue) {
         this(name, requestType, key, value);
         this.newValue = newValue;
+    }
+
+    public TxnMapRequest(String name, TxnMapRequestType requestType, Predicate predicate) {
+        this(name, requestType, null, null, null);
+        this.predicate = predicate;
     }
 
     public Object call() throws Exception {
@@ -95,6 +102,14 @@ public class TxnMapRequest extends CallableClientRequest implements Portable, In
                 break;
             case REMOVE_IF_SAME:
                 return map.remove(key, value);
+            case KEYSET:
+                return map.keySet();
+            case KEYSET_BY_PREDICATE:
+                return map.keySet( predicate );
+            case VALUES:
+                return map.values();
+            case VALUES_BY_PREDICATE:
+                return map.values( predicate );
 
         }
         return null;
@@ -124,6 +139,7 @@ public class TxnMapRequest extends CallableClientRequest implements Portable, In
         IOUtil.writeNullableData(out, key);
         IOUtil.writeNullableData(out, value);
         IOUtil.writeNullableData(out, newValue);
+        out.writeObject(predicate);
     }
 
     public void readPortable(PortableReader reader) throws IOException {
@@ -133,6 +149,7 @@ public class TxnMapRequest extends CallableClientRequest implements Portable, In
         key = IOUtil.readNullableData(in);
         value = IOUtil.readNullableData(in);
         newValue = IOUtil.readNullableData(in);
+        predicate = in.readObject();
     }
 
     public enum TxnMapRequestType{
@@ -146,7 +163,11 @@ public class TxnMapRequest extends CallableClientRequest implements Portable, In
         SET(8),
         REMOVE(9),
         DELETE(10),
-        REMOVE_IF_SAME(11);
+        REMOVE_IF_SAME(11),
+        KEYSET(12),
+        KEYSET_BY_PREDICATE(13),
+        VALUES(14),
+        VALUES_BY_PREDICATE(15);
 
         int type;
 

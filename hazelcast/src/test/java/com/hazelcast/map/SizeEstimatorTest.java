@@ -31,8 +31,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Random;
-
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
 public class SizeEstimatorTest extends HazelcastTestSupport {
@@ -65,13 +63,13 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
 
         map.put("key", "value");
 
-        Thread.sleep(10000);
+        Thread.sleep(1000);
 
         long h1MapCost = h[0].getMap(MAP_NAME).getLocalMapStats().getHeapCost();
 
-
         long h2MapCost = h[1].getMap(MAP_NAME).getLocalMapStats().getHeapCost();
 
+        // one map is backup. so backup & real map cost must be same.
         Assert.assertTrue( h1MapCost == h2MapCost );
 
         Thread.sleep(1000);
@@ -113,7 +111,7 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
         {
             map.put(++key,1);
         }
-         /** key 24 bytes look at {@link com.hazelcast.nio.serialization.Data} totalSize method */
+        /** key 24 bytes look at {@link com.hazelcast.nio.serialization.Data} totalSize method */
         /** value 104 bytes {@link com.hazelcast.map.record.DataRecord}*/
         Assert.assertTrue(map.getLocalMapStats().getHeapCost() == 128);
 
@@ -133,12 +131,12 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
 //
 //        Thread.sleep(60000);
 
-       // System.err.println("map.size()" + map.size());
+        // System.err.println("map.size()" + map.size());
 
         // 129554048
         // 134217728 (128*1024*1024)
-       // System.err.println( map.getLocalMapStats().getHeapCost() );
-       // System.err.println( map.getLocalMapStats().getBackupHeapCost() );
+        // System.err.println( map.getLocalMapStats().getHeapCost() );
+        // System.err.println( map.getLocalMapStats().getBackupHeapCost() );
 
         h[0].getLifecycleService().shutdown();
 
