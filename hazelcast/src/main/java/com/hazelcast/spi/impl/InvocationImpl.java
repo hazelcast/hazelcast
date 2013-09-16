@@ -359,6 +359,9 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
                 } else if (response == WAIT_RESPONSE) {
                     continue;
                 } else if (response != null) {
+                    if (interrupted != null) {
+                        Thread.currentThread().interrupt();
+                    }
                     return response;
                 } else if (/* response == null && */ longPolling) {
                     // no response!
