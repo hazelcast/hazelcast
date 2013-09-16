@@ -57,23 +57,29 @@ public abstract class HazelcastTestSupport {
         TestUtil.warmUpPartitions(instances);
     }
 
-    protected static int generateKeyOwnedBy(HazelcastInstance instance) throws InterruptedException {
+    protected static String generateKeyOwnedBy(HazelcastInstance instance) throws InterruptedException {
         final Member localMember = instance.getCluster().getLocalMember();
         final PartitionService partitionService = instance.getPartitionService();
-        int k = 0;
-        while (!localMember.equals(partitionService.getPartition(++k).getOwner())) {
+        int k = (int) (Math.random() * 1000);
+        while (!localMember.equals(partitionService.getPartition(String.valueOf(k)).getOwner())) {
+            k++;
             Thread.sleep(10);
         }
-        return k;
+        return String.valueOf(k);
     }
 
-    protected static int generateKeyNotOwnedBy(HazelcastInstance instance) throws InterruptedException {
+    protected static String generateKeyNotOwnedBy(HazelcastInstance instance) throws InterruptedException {
         final Member localMember = instance.getCluster().getLocalMember();
         final PartitionService partitionService = instance.getPartitionService();
-        int k = 0;
-        while (localMember.equals(partitionService.getPartition(++k).getOwner())) {
+        int k = (int) (Math.random() * 1000);
+        while (localMember.equals(partitionService.getPartition(String.valueOf(k)).getOwner())) {
+            k++;
             Thread.sleep(10);
         }
-        return k;
+        return String.valueOf(k);
+    }
+
+    public final class DummyUncheckedHazelcastTestException extends RuntimeException{
+
     }
 }

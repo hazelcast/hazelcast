@@ -44,12 +44,18 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
         Record record = recordStore.getRecords().get(dataKey);
         if (record == null) {
             record = mapService.createRecord(name, dataKey, dataValue, ttl, false);
+            updateSizeEstimator( calculateRecordSize(record) );
             recordStore.getRecords().put(dataKey, record);
-        } else {
-            if (record instanceof DataRecord)
+        }
+        else {
+            updateSizeEstimator( -calculateRecordSize(record) );
+            if (record instanceof DataRecord){
                 ((DataRecord) record).setValue(dataValue);
-            else if (record instanceof ObjectRecord)
+            }
+            else if (record instanceof ObjectRecord) {
                 ((ObjectRecord) record).setValue(mapService.toObject(dataValue));
+            }
+            updateSizeEstimator( calculateRecordSize(record) );
         }
         if(unlockKey)
             recordStore.forceUnlock(dataKey);
@@ -72,4 +78,13 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
     public int getId() {
         return MapDataSerializerHook.PUT_BACKUP;
     }
+
+    private void updateSizeEstimator( long recordSize ) {
+        mapContainer.getSizeEstimator().add( recordSize );
+    }
+
+    private long calculateRecordSize( Record record ) {
+        return mapContainer.getSizeEstimator().getCost(record);
+    }
+
 }

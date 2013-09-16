@@ -33,7 +33,6 @@ import com.hazelcast.util.executor.SingleExecutorThreadFactory;
 import java.util.Iterator;
 import java.util.Queue;
 import java.util.concurrent.*;
-import java.util.logging.Level;
 
 class WaitNotifyServiceImpl implements WaitNotifyService {
 
@@ -275,7 +274,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
         public boolean isCallTimedOut() {
             final NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
             if(nodeEngine.operationService.isCallTimedOut(op)) {
-                cancel(new CallTimeoutException("Call timed out for " + op.getClass().getName()));
+                cancel(new CallTimeoutException(op.getClass().getName(), op.getInvocationTime(), op.getCallTimeout()));
                 return true;
             }
             return false;

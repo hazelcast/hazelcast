@@ -23,6 +23,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.*;
 
 public class DefaultSocketChannelWrapper implements SocketChannelWrapper {
+
     protected final SocketChannel socketChannel;
 
     public DefaultSocketChannelWrapper(SocketChannel socketChannel) {
@@ -61,24 +62,8 @@ public class DefaultSocketChannelWrapper implements SocketChannelWrapper {
         return socketChannel.read(byteBuffer);
     }
 
-    public long read(ByteBuffer[] byteBuffers, int offset, int length) throws IOException {
-        return socketChannel.read(byteBuffers, offset, length);
-    }
-
-    public long read(ByteBuffer[] byteBuffers) throws IOException {
-        return socketChannel.read(byteBuffers);
-    }
-
     public int write(ByteBuffer byteBuffer) throws IOException {
         return socketChannel.write(byteBuffer);
-    }
-
-    public long write(ByteBuffer[] byteBuffers, int offset, int length) throws IOException {
-        return socketChannel.write(byteBuffers, offset, length);
-    }
-
-    public long write(ByteBuffer[] byteBuffers) throws IOException {
-        return socketChannel.write(byteBuffers);
     }
 
     public SelectableChannel configureBlocking(boolean b) throws IOException {

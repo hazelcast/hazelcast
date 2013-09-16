@@ -21,6 +21,10 @@ import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.client.MapDestroyRequest;
 import com.hazelcast.map.client.TxnMapRequest;
+import com.hazelcast.query.Predicate;
+
+import java.util.Collection;
+import java.util.Set;
 
 /**
  * @author ali 6/10/13
@@ -92,6 +96,30 @@ public class ClientTxnMapProxy<K,V> extends ClientTxnProxy implements Transactio
         TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.REMOVE_IF_SAME, toData(key), toData(value));
         Boolean result = invoke(request);
         return result;
+    }
+
+    @Override
+    public Set<K> keySet() {
+        // TODO implement
+        return null;
+    }
+
+    @Override
+    public Set<K> keySet(Predicate predicate) {
+        // TODO implement
+        return null;
+    }
+
+    @Override
+    public Collection<V> values() {
+        // TODO implement
+        return null;
+    }
+
+    @Override
+    public Collection<V> values(Predicate predicate) {
+        // TODO implement
+        return null;
     }
 
     public String getName() {

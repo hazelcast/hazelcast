@@ -80,7 +80,9 @@ public class NearCache {
             fireEvictCache();
         }
         Object value = inMemoryFormat.equals(MapConfig.InMemoryFormat.BINARY) ? data : mapService.toObject(data);
-        cache.put(key, new CacheRecord(key, value));
+        final CacheRecord record = new CacheRecord(key, value);
+        cache.put(key, record);
+        updateSizeEstimator(calculateCost(record));
     }
 
     private void fireEvictCache() {
@@ -94,6 +96,7 @@ public class NearCache {
                             int i=0;
                             for (CacheRecord record : records) {
                                 cache.remove(record.key);
+                                updateSizeEstimator(-calculateCost(record));
                                 if (++i > evictSize)
                                     break;
                             }
@@ -122,7 +125,12 @@ public class NearCache {
                             lastCleanup = Clock.currentTimeMillis();
                             for (Map.Entry<Data, CacheRecord> entry : cache.entrySet()) {
                                 if (entry.getValue().expired()) {
-                                    cache.remove(entry.getKey());
+                                    final Data key = entry.getKey();
+                                    final CacheRecord record = cache.remove( key );
+                                    if (record != null)//if a mapping exists.
+                                    {
+                                        updateSizeEstimator(-calculateCost(record));
+                                    }
                                 }
                             }
                         } finally {
@@ -145,6 +153,7 @@ public class NearCache {
             record.access();
             if (record.expired()) {
                 cache.remove(key);
+                updateSizeEstimator(-calculateCost(record));
                 return null;
             }
             return record.value;
@@ -154,14 +163,19 @@ public class NearCache {
     }
 
     public void invalidate(Data key) {
-        cache.remove(key);
+        final CacheRecord record = cache.remove(key);
+        if( record != null ) // if a mapping exists for the key.
+        {
+            updateSizeEstimator(-calculateCost(record));
+        }
     }
 
     void clear() {
         cache.clear();
+        resetSizeEstimator();
     }
 
-    class CacheRecord implements Comparable<CacheRecord> {
+    public class CacheRecord implements Comparable<CacheRecord> {
         final Data key;
         final Object value;
         volatile long lastAccessTime;
@@ -195,5 +209,32 @@ public class NearCache {
 
             return 0;
         }
+
+        public long getCost(){
+            return key.totalSize()
+                    // todo find object size
+                    //+ ((Data)value).totalSize()
+                    + 2 * Long.SIZE / Byte.SIZE
+                    // todo sizeof atomic integer
+                    + Integer.SIZE / Byte.SIZE;
+
+        }
+
+        public Data getKey() {
+            return key;
+        }
+    }
+
+
+    private void resetSizeEstimator(){
+        mapService.getMapContainer(mapName).getSizeEstimator().reset();
+    }
+
+    private void updateSizeEstimator( long size ){
+        mapService.getMapContainer(mapName).getSizeEstimator().add( size );
+    }
+
+    private long calculateCost( CacheRecord record ){
+        return mapService.getMapContainer(mapName).getSizeEstimator().getCost( record );
     }
 }

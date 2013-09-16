@@ -14,17 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spring;
-
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableFactory;
+package com.hazelcast.map;
 
 /**
- * @author asimarslan
+ * Created with IntelliJ IDEA.
+ * User: ahmet
+ * Date: 06.09.2013
+ * Time: 08:10
  */
-public class DummyPortableFactory implements PortableFactory{
-    @Override
-    public Portable create(int classId) {
-        throw new UnsupportedOperationException("not implemented yet");
-    }
+public interface SizeEstimator {
+
+    long getSize();
+
+    void add( long size );
+
+    <T> long getCost( T record );
+
+    void reset();
 }

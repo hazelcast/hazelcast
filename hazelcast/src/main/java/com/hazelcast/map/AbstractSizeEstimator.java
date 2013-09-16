@@ -14,17 +14,38 @@
  * limitations under the License.
  */
 
-package com.hazelcast.spring;
+package com.hazelcast.map;
 
-import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.nio.serialization.PortableFactory;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * @author asimarslan
+ * Created with IntelliJ IDEA.
+ * User: ahmet
+ * Date: 05.09.2013
+ * Time: 14:36
  */
-public class DummyPortableFactory implements PortableFactory{
-    @Override
-    public Portable create(int classId) {
-        throw new UnsupportedOperationException("not implemented yet");
+public abstract class AbstractSizeEstimator implements SizeEstimator{
+
+    private final AtomicLong _size ;
+
+    protected AbstractSizeEstimator(){
+        _size =  new AtomicLong( 0 );
     }
+
+    @Override
+    public long getSize() {
+        return _size.longValue();
+    }
+
+    public void add( long size )
+    {
+        _size.addAndGet(size);
+    }
+
+
+    public void reset()
+    {
+        _size.set( 0 );
+    }
+
 }
