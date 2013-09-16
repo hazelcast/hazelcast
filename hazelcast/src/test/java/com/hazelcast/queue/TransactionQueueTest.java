@@ -17,7 +17,10 @@
 package com.hazelcast.queue;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.*;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.IQueue;
+import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -183,8 +186,8 @@ public class TransactionQueueTest extends HazelcastTestSupport {
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);
 
-        String inQueueName = "in@foo";
-        String outQueueName = "out@foo";
+        String inQueueName = "in";
+        String outQueueName = "out";
 
         for (int i = 0; i < numberOfMessages; i++) {
             if (!instance1.getQueue(inQueueName).offer(new byte[1024])) {
@@ -206,7 +209,7 @@ public class TransactionQueueTest extends HazelcastTestSupport {
             }
 
             public void run() {
-                while (active && count.get() != numberOfMessages) {
+                while (active && count.get() != numberOfMessages && hazelcastInstance.getLifecycleService().isRunning()) {
                     TransactionContext transactionContext = hazelcastInstance.newTransactionContext();
                     transactionContext.beginTransaction();
                     try {
@@ -240,10 +243,10 @@ public class TransactionQueueTest extends HazelcastTestSupport {
         while (count.get() < numberOfMessages / 2) {
             Thread.sleep(10);
         }
-        moveMessage2.active = false;
         instance2.getLifecycleService().terminate();
+        moveMessage2.active = false;
         moveMessage2.join(10000);
-        moveMessage1.join(20000);
+        moveMessage1.join(30000);
 
         try {
             assertEquals(numberOfMessages, instance1.getQueue(outQueueName).size());
