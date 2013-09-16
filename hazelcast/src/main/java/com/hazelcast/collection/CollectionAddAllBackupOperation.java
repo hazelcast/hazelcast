@@ -56,6 +56,7 @@ public class CollectionAddAllBackupOperation extends CollectionOperation impleme
         for (int i=0; i<size; i++){
             final long itemId = in.readLong();
             final Data value = new Data();
+            value.readData(in);
             valueMap.put(itemId, value);
         }
     }

@@ -29,7 +29,7 @@ public class ListAddAllOperation extends CollectionAddAllOperation {
     }
 
     public void run() throws Exception {
-        if (hasEnoughCapacity(valueList.size())){
+        if (!hasEnoughCapacity(valueList.size())){
             response = false;
             return;
         }
