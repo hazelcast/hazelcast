@@ -99,27 +99,40 @@ public class ClientTxnMapProxy<K,V> extends ClientTxnProxy implements Transactio
 
     @Override
     public Set<K> keySet() {
-        // TODO implement
-        return null;
+        final TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.KEYSET);
+        final Set result = invoke(request);
+        return result;
     }
 
     @Override
     public Set<K> keySet(Predicate predicate) {
-        // TODO implement
-        return null;
+        if ( predicate == null) {
+            throw new NullPointerException("Predicate should not be null!");
+        }
+        final TxnMapRequest request = new TxnMapRequest(getName(),
+                TxnMapRequest.TxnMapRequestType.KEYSET_BY_PREDICATE, predicate );
+        final Set result = invoke(request);
+        return result;
     }
 
     @Override
     public Collection<V> values() {
-        // TODO implement
-        return null;
+        final TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.VALUES);
+        final Collection result = invoke(request);
+        return result;
     }
 
     @Override
     public Collection<V> values(Predicate predicate) {
-        // TODO implement
-        return null;
+        if ( predicate == null) {
+            throw new NullPointerException("Predicate should not be null!");
+        }
+        final TxnMapRequest request = new TxnMapRequest(getName(),
+                TxnMapRequest.TxnMapRequestType.VALUES_BY_PREDICATE, predicate );
+        final Collection result = invoke(request);
+        return  result;
     }
+
 
     public String getName() {
         return (String)getId();
