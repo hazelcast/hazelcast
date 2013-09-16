@@ -581,7 +581,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
                     final TransactionalMap<Object, Object> txMap = context.getMap("default");
                     txMap.put("5", "5");
                     assertEquals(3, txMap.keySet().size());
-                    assertEquals(3, map2.keySet().size());
+                    assertEquals(2, map2.keySet().size());
 
                     throw new DummyUncheckedHazelcastTestException();
                 }
