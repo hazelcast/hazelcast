@@ -21,6 +21,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
 import com.hazelcast.transaction.TransactionOptions;
@@ -153,7 +154,9 @@ final class TransactionImpl implements Transaction, TransactionSupport {
                 try {
                     future.get(timeoutMillis, TimeUnit.MILLISECONDS);
                 } catch (MemberLeftException e) {
-                    nodeEngine.getLogger(Transaction.class).finest("Member left replicating tx begin..", e);
+                    nodeEngine.getLogger(Transaction.class).warning("Member left while replicating tx begin..", e);
+                } catch (TargetNotMemberException e) {
+                    nodeEngine.getLogger(Transaction.class).warning("Member left while replicating tx begin..", e);
                 } catch (Exception e) {
                     throw ExceptionUtil.rethrow(e, IllegalStateException.class);
                 }

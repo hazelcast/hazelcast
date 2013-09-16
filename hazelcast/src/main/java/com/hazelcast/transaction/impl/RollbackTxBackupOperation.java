@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.ExceptionAction;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import java.io.IOException;
 
@@ -64,7 +65,7 @@ public final class RollbackTxBackupOperation extends Operation {
 
     @Override
     public ExceptionAction onException(Throwable throwable) {
-        if (throwable instanceof MemberLeftException) {
+        if (throwable instanceof MemberLeftException || throwable instanceof TargetNotMemberException) {
             return ExceptionAction.THROW_EXCEPTION;
         }
         return super.onException(throwable);
