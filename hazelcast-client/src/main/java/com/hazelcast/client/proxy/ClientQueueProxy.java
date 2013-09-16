@@ -36,7 +36,6 @@ import java.util.concurrent.TimeUnit;
 public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
 
     private final String name;
-    private volatile Data key;
 
     public ClientQueueProxy(String serviceName, String name) {
         super(serviceName, name);
@@ -57,7 +56,7 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
                 }
             }
         };
-        return listen(request, getKey(), eventHandler);
+        return listen(request, getPartitionKey(), eventHandler);
     }
 
     public boolean removeItemListener(String registrationId) {
@@ -253,17 +252,10 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
 
     private <T> T invoke(Object req){
         try {
-            return getContext().getInvocationService().invokeOnKeyOwner(req, getKey());
+            return getContext().getInvocationService().invokeOnKeyOwner(req, getPartitionKey());
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);
         }
-    }
-
-    private Data getKey(){
-        if (key == null){
-            key = getContext().getSerializationService().toData(name);
-        }
-        return key;
     }
 
     private List<Data> getDataList(Collection<?> objects) {

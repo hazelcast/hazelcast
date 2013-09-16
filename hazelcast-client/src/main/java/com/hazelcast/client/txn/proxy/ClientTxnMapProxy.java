@@ -20,6 +20,7 @@ import com.hazelcast.client.txn.TransactionContextProxy;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.map.MapKeySet;
 import com.hazelcast.map.MapService;
+import com.hazelcast.map.client.MapDestroyRequest;
 import com.hazelcast.map.MapValueCollection;
 import com.hazelcast.map.client.TxnMapRequest;
 import com.hazelcast.nio.serialization.Data;
@@ -161,6 +162,8 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
     }
 
     void onDestroy() {
-        //TODO
+        //TODO what if a non-committed map calls destroy ?
+        MapDestroyRequest request = new MapDestroyRequest(getName());
+        invoke(request);
     }
 }

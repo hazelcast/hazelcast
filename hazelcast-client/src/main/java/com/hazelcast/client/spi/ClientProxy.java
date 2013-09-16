@@ -18,7 +18,6 @@ package com.hazelcast.client.spi;
 
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 
 import java.util.Map;
@@ -42,8 +41,8 @@ public abstract class ClientProxy implements DistributedObject {
         this.objectId = objectId;
     }
 
-    protected final String listen(Object registrationRequest, Data key, EventHandler handler){
-        ListenerSupport listenerSupport = new ListenerSupport(context, registrationRequest, handler, key);
+    protected final String listen(Object registrationRequest, Object partitionKey, EventHandler handler){
+        ListenerSupport listenerSupport = new ListenerSupport(context, registrationRequest, handler, partitionKey);
         String registrationId = listenerSupport.listen();
         listenerSupportMap.put(registrationId, listenerSupport);
         return registrationId;
@@ -78,7 +77,6 @@ public abstract class ClientProxy implements DistributedObject {
         return objectId;
     }
 
-    @Override
     public String getPartitionKey() {
         return StringPartitioningStrategy.getPartitionKey(getName());
     }

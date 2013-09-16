@@ -17,22 +17,21 @@
 package com.hazelcast.collection;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IList;
-import com.hazelcast.core.ItemEvent;
-import com.hazelcast.core.ItemListener;
+import com.hazelcast.config.ListConfig;
+import com.hazelcast.core.*;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ClientCompatibleTest;
 import com.hazelcast.test.annotation.ParallelTest;
+import com.hazelcast.transaction.TransactionContext;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -52,7 +51,7 @@ public class ListTest extends HazelcastTestSupport {
         Config config = new Config();
         final String name = "defList";
         final int count = 100;
-        final int insCount = 4;
+        final int insCount = 2;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
         final HazelcastInstance[] instances = factory.newInstances(config);
 
@@ -60,44 +59,94 @@ public class ListTest extends HazelcastTestSupport {
             assertTrue(getList(instances, name).add("item"+i));
         }
 
-        Iterator iter = getList(instances, name).iterator();
-        int item = 0;
-        while (iter.hasNext()){
-            assertEquals("item"+item++, iter.next());
-        }
+//        Iterator iter = getList(instances, name).iterator();
+//        int item = 0;
+//        while (iter.hasNext()){
+//            assertEquals("item"+item++, iter.next());
+//        }
 
-        assertEquals(count, getList(instances, name).size());
+//        assertEquals(count, getList(instances, name).size());
 
         assertEquals("item0", getList(instances, name).get(0));
+        assertEquals(count, getList(instances, name).size());
         getList(instances, name).add(0, "item");
         assertEquals(count+1, getList(instances, name).size());
-        assertEquals("item",getList(instances, name).set(0, "newItem"));
-        assertEquals("newItem",getList(instances, name).remove(0));
-        assertEquals(count, getList(instances, name).size());
+        assertEquals("item", getList(instances, name).get(0));
+        assertEquals("item0", getList(instances, name).get(1));
         assertTrue(getList(instances, name).remove("item99"));
         assertFalse(getList(instances, name).remove("item99"));
+        assertEquals(count, getList(instances, name).size());
+        assertEquals("item",getList(instances, name).set(0, "newItem"));
+        assertEquals("newItem",getList(instances, name).get(0));
+
+        getList(instances, name).clear();
+        assertEquals(0, getList(instances, name).size());
 
         List list = new ArrayList();
         list.add("item-1");
         list.add("item-2");
 
         assertTrue(getList(instances, name).addAll(list));
-        assertEquals("item-1", getList(instances, name).get(count-1));
-        assertEquals("item-2", getList(instances, name).get(count));
-        assertEquals(count+list.size()-1, getList(instances, name).size());
-        assertTrue(getList(instances, name).addAll(10,list));
-        assertEquals("item-1", getList(instances, name).get(10));
-        assertEquals("item-2", getList(instances, name).get(11));
-        assertEquals(count+2*list.size()-1, getList(instances, name).size());
-        assertEquals(10, getList(instances, name).indexOf("item-1"));
-        assertEquals(count-1+list.size(), getList(instances, name).lastIndexOf("item-1"));
+        assertEquals("item-1", getList(instances, name).get(0));
+        assertEquals("item-2", getList(instances, name).get(1));
+
+        assertTrue(getList(instances, name).addAll(1,list));
+        assertEquals("item-1", getList(instances, name).get(0));
+        assertEquals("item-1", getList(instances, name).get(1));
+        assertEquals("item-2", getList(instances, name).get(2));
+        assertEquals("item-2", getList(instances, name).get(3));
+        assertEquals(4, getList(instances, name).size());
+        assertEquals(0, getList(instances, name).indexOf("item-1"));
+        assertEquals(1, getList(instances, name).lastIndexOf("item-1"));
+        assertEquals(2, getList(instances, name).indexOf("item-2"));
+        assertEquals(3, getList(instances, name).lastIndexOf("item-2"));
+
+        assertEquals(4, getList(instances, name).size());
 
         assertTrue(getList(instances, name).containsAll(list));
         list.add("asd");
         assertFalse(getList(instances, name).containsAll(list));
-        assertTrue(getList(instances, name).contains("item98"));
-        assertFalse(getList(instances, name).contains("item99"));
+        assertTrue(getList(instances, name).contains("item-1"));
+        assertFalse(getList(instances, name).contains("item"));
+
+        list = getList(instances, name).subList(1, 3);
+
+        assertEquals(2, list.size());
+        assertEquals("item-1", list.get(0));
+        assertEquals("item-2", list.get(1));
+
+        final ListIterator listIterator = getList(instances, name).listIterator(1);
+        assertTrue(listIterator.hasPrevious());
+        assertEquals("item-1", listIterator.next());
+        assertEquals("item-2", listIterator.next());
+        assertEquals("item-2", listIterator.next());
+        assertFalse(listIterator.hasNext());
+
+        list = new ArrayList();
+        list.add("item1");
+        list.add("item2");
+
+        assertFalse(getList(instances, name).removeAll(list));
+        assertEquals(4, getList(instances, name).size());
+
+        list.add("item-1");
+
+        assertTrue(getList(instances, name).removeAll(list));
+        assertEquals(2, getList(instances, name).size());
+
+        list.clear();
+        list.add("item-2");
+        assertFalse(getList(instances, name).retainAll(list));
+        assertEquals(2, getList(instances, name).size());
+
+        list.set(0, "item");
+        assertTrue(getList(instances, name).add("item"));
+        assertTrue(getList(instances, name).retainAll(list));
+        assertEquals(1, getList(instances, name).size());
+        assertEquals("item", getList(instances, name).get(0));
+
     }
+
 
     @Test
     public void testListener() throws Exception {
@@ -131,6 +180,107 @@ public class ListTest extends HazelcastTestSupport {
         assertTrue(latchAdd.await(5, TimeUnit.SECONDS));
         assertTrue(latchRemove.await(5, TimeUnit.SECONDS));
 
+    }
+
+    @Test
+    public void testAddRemoveList(){
+        Config config = new Config();
+        final String name = "defList";
+
+        final int insCount = 2;
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
+        final HazelcastInstance[] instances = factory.newInstances(config);
+        TransactionContext context = instances[0].newTransactionContext();
+        assertTrue(instances[1].getList(name).add("value1"));
+        try {
+            context.beginTransaction();
+
+            TransactionalList l = context.getList(name);
+            assertEquals(1, l.size());
+            assertTrue(l.add("value1"));
+            assertEquals(2, l.size());
+            assertFalse(l.remove("value2"));
+            assertEquals(2, l.size());
+            assertTrue(l.remove("value1"));
+            assertEquals(1, l.size());
+            context.commitTransaction();
+        } catch (Exception e){
+            fail(e.getMessage());
+            context.rollbackTransaction();
+        }
+
+        assertEquals(1, instances[1].getList(name).size());
+    }
+
+    @Test
+    public void testMigration(){
+        Config config = new Config();
+        final String name = "defList";
+        config.addListConfig(new ListConfig().setName(name).setBackupCount(1));
+
+        final int insCount = 4;
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
+
+        HazelcastInstance instance1 = factory.newHazelcastInstance(config);
+
+        IList list = instance1.getList(name);
+
+        for (int i=0; i<100; i++){
+            list.add("item"+i);
+        }
+
+        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        assertEquals(100, instance2.getList(name).size());
+
+
+        HazelcastInstance instance3 = factory.newHazelcastInstance(config);
+        assertEquals(100, instance3.getList(name).size());
+
+
+
+        instance1.getLifecycleService().shutdown();
+        assertEquals(100, instance3.getList(name).size());
+
+
+        list = instance2.getList(name);
+        for (int i=0; i<100; i++){
+            list.add("item-"+i);
+        }
+
+
+        instance2.getLifecycleService().shutdown();
+        assertEquals(200, instance3.getList(name).size());
+
+
+
+        instance1 = factory.newHazelcastInstance(config);
+        assertEquals(200, instance1.getList(name).size());
+
+        instance3.getLifecycleService().shutdown();
+        assertEquals(200, instance1.getList(name).size());
+
+    }
+
+    @Test
+    public void testMaxSize(){
+        Config config = new Config();
+        final String name = "defList";
+        config.addListConfig(new ListConfig().setName(name).setBackupCount(1).setMaxSize(100));
+
+        final int insCount = 2;
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
+
+        HazelcastInstance instance1 = factory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+
+        IList list = instance1.getList(name);
+
+        for (int i=0; i<100; i++){
+            assertTrue(list.add("item"+i));
+        }
+        assertFalse(list.add("item"));
+        assertNotNull(list.remove(0));
+        assertTrue(list.add("item"));
     }
 
     private IList getList(HazelcastInstance[] instances, String name){

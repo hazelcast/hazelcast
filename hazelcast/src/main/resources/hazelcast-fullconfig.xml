@@ -141,6 +141,24 @@
         </item-listeners>
 
     </queue>
+    <list name="default">
+        <statistics-enabled>false</statistics-enabled>
+        <max-size>0</max-size>
+        <backup-count>1</backup-count>
+        <async-backup-count>0</async-backup-count>
+        <item-listeners>
+            <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
+        </item-listeners>
+    </list>
+    <set name="default">
+        <statistics-enabled>false</statistics-enabled>
+        <max-size>0</max-size>
+        <backup-count>1</backup-count>
+        <async-backup-count>0</async-backup-count>
+        <item-listeners>
+            <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
+        </item-listeners>
+    </set>
     <map name="default">
         <!--
            Data type that will be used for storing recordMap.

@@ -37,7 +37,6 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.URL;
-import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Properties;
@@ -279,6 +278,10 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 handleServices(node);
             } else if ("queue".equals(nodeName)) {
                 handleQueue(node);
+            } else if ("list".equals(nodeName)) {
+                handleList(node);
+            } else if ("set".equals(nodeName)) {
+                handleSet(node);
             } else if ("map".equals(nodeName)) {
                 handleMap(node);
             } else if ("multimap".equals(nodeName)) {
@@ -691,6 +694,66 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             }
         }
         this.config.addQueueConfig(qConfig);
+    }
+
+    private void handleList(final org.w3c.dom.Node node) {
+        final Node attName = node.getAttributes().getNamedItem("name");
+        final String name = getTextContent(attName);
+        final ListConfig lConfig = new ListConfig();
+        lConfig.setName(name);
+        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
+            final String nodeName = cleanNodeName(n.getNodeName());
+            final String value = getTextContent(n).trim();
+            if ("max-size".equals(nodeName)) {
+                lConfig.setMaxSize(getIntegerValue("max-size", value, ListConfig.DEFAULT_MAX_SIZE));
+            } else if ("backup-count".equals(nodeName)) {
+                lConfig.setBackupCount(getIntegerValue("backup-count", value, ListConfig.DEFAULT_SYNC_BACKUP_COUNT));
+            } else if ("async-backup-count".equals(nodeName)) {
+                lConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value, ListConfig.DEFAULT_ASYNC_BACKUP_COUNT));
+            } else if ("item-listeners".equals(nodeName)) {
+                for (org.w3c.dom.Node listenerNode : new IterableNodeList(n.getChildNodes())) {
+                    if ("item-listener".equals(cleanNodeName(listenerNode))) {
+                        final NamedNodeMap attrs = listenerNode.getAttributes();
+                        boolean incValue = checkTrue(getTextContent(attrs.getNamedItem("include-value")));
+                        String listenerClass = getTextContent(listenerNode);
+                        lConfig.addItemListenerConfig(new ItemListenerConfig(listenerClass, incValue));
+                    }
+                }
+            } else if ("statistics-enabled".equals(nodeName)) {
+                lConfig.setStatisticsEnabled(checkTrue(value));
+            }
+        }
+        this.config.addListConfig(lConfig);
+    }
+
+    private void handleSet(final org.w3c.dom.Node node) {
+        final Node attName = node.getAttributes().getNamedItem("name");
+        final String name = getTextContent(attName);
+        final SetConfig sConfig = new SetConfig();
+        sConfig.setName(name);
+        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
+            final String nodeName = cleanNodeName(n.getNodeName());
+            final String value = getTextContent(n).trim();
+            if ("max-size".equals(nodeName)) {
+                sConfig.setMaxSize(getIntegerValue("max-size", value, SetConfig.DEFAULT_MAX_SIZE));
+            } else if ("backup-count".equals(nodeName)) {
+                sConfig.setBackupCount(getIntegerValue("backup-count", value, SetConfig.DEFAULT_SYNC_BACKUP_COUNT));
+            } else if ("async-backup-count".equals(nodeName)) {
+                sConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value, SetConfig.DEFAULT_ASYNC_BACKUP_COUNT));
+            } else if ("item-listeners".equals(nodeName)) {
+                for (org.w3c.dom.Node listenerNode : new IterableNodeList(n.getChildNodes())) {
+                    if ("item-listener".equals(cleanNodeName(listenerNode))) {
+                        final NamedNodeMap attrs = listenerNode.getAttributes();
+                        boolean incValue = checkTrue(getTextContent(attrs.getNamedItem("include-value")));
+                        String listenerClass = getTextContent(listenerNode);
+                        sConfig.addItemListenerConfig(new ItemListenerConfig(listenerClass, incValue));
+                    }
+                }
+            } else if ("statistics-enabled".equals(nodeName)) {
+                sConfig.setStatisticsEnabled(checkTrue(value));
+            }
+        }
+        this.config.addSetConfig(sConfig);
     }
 
 

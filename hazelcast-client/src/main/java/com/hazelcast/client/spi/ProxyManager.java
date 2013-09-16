@@ -20,9 +20,9 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.proxy.*;
-import com.hazelcast.collection.CollectionProxyId;
-import com.hazelcast.collection.CollectionProxyType;
-import com.hazelcast.collection.CollectionService;
+import com.hazelcast.collection.list.ListService;
+import com.hazelcast.collection.set.SetService;
+import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
@@ -83,21 +83,19 @@ public final class ProxyManager {
                 return new ClientQueueProxy(QueueService.SERVICE_NAME, String.valueOf(id));
             }
         });
-        register(CollectionService.SERVICE_NAME, new ClientProxyFactory() {
+        register(MultiMapService.SERVICE_NAME, new ClientProxyFactory() {
             public ClientProxy create(Object id) {
-                CollectionProxyId proxyId = (CollectionProxyId) id;
-                final CollectionProxyType type = proxyId.getType();
-                switch (type) {
-                    case MULTI_MAP:
-                        return new ClientMultiMapProxy(CollectionService.SERVICE_NAME, proxyId);
-                    case LIST:
-                        return new ClientListProxy(CollectionService.SERVICE_NAME, proxyId);
-                    case SET:
-                        return new ClientSetProxy(CollectionService.SERVICE_NAME, proxyId);
-                    case QUEUE:
-                        return null;
-                }
-                return null;
+                return new ClientMultiMapProxy(MultiMapService.SERVICE_NAME, String.valueOf(id));
+            }
+        });
+        register(ListService.SERVICE_NAME, new ClientProxyFactory() {
+            public ClientProxy create(Object id) {
+                return new ClientListProxy(ListService.SERVICE_NAME, String.valueOf(id));
+            }
+        });
+        register(SetService.SERVICE_NAME, new ClientProxyFactory() {
+            public ClientProxy create(Object id) {
+                return new ClientSetProxy(SetService.SERVICE_NAME, String.valueOf(id));
             }
         });
         register(SemaphoreService.SERVICE_NAME, new ClientProxyFactory() {

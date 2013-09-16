@@ -17,9 +17,8 @@
 package com.hazelcast.client.txn.proxy;
 
 import com.hazelcast.client.txn.TransactionContextProxy;
-import com.hazelcast.collection.CollectionProxyId;
-import com.hazelcast.collection.CollectionService;
-import com.hazelcast.collection.operations.client.*;
+import com.hazelcast.multimap.MultiMapService;
+import com.hazelcast.multimap.operations.client.*;
 import com.hazelcast.core.TransactionalMultiMap;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.impl.PortableCollection;
@@ -35,8 +34,8 @@ import java.util.List;
  */
 public class ClientTxnMultiMapProxy<K, V> extends ClientTxnProxy implements TransactionalMultiMap<K,V> {
 
-    public ClientTxnMultiMapProxy(CollectionProxyId id, TransactionContextProxy proxy) {
-        super(id, proxy);
+    public ClientTxnMultiMapProxy(String name, TransactionContextProxy proxy) {
+        super(name, proxy);
     }
 
     public boolean put(K key, V value) throws TransactionException {
@@ -96,16 +95,17 @@ public class ClientTxnMultiMapProxy<K, V> extends ClientTxnProxy implements Tran
     }
 
     public String getName() {
-        final CollectionProxyId proxyId = (CollectionProxyId)getId();
-        return proxyId.getName();
+        return (String)getId();
     }
 
     @Override
     public String getServiceName() {
-        return CollectionService.SERVICE_NAME;
+        return MultiMapService.SERVICE_NAME;
     }
 
     void onDestroy() {
-        //TODO
+        //TODO what if a non-committed map calls destroy ?
+        final MultiMapDestroyRequest request = new MultiMapDestroyRequest(getName());
+        invoke(request);
     }
 }

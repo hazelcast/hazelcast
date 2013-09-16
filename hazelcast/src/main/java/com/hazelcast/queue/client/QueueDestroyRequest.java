@@ -54,7 +54,7 @@ public class QueueDestroyRequest extends CallableClientRequest implements Portab
     }
 
     public int getClassId() {
-        return QueuePortableHook.F_ID;
+        return QueuePortableHook.DESTROY;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
