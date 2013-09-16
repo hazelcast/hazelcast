@@ -91,7 +91,6 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         return currentValue == null ? valueBeforeTxn : checkIfRemoved(currentValue);
     }
 
-    @Override
     public void set(Object key, Object value) {
         checkTransactionState();
         MapService service = getService();
@@ -102,7 +101,6 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         }
     }
 
-    @Override
     public Object putIfAbsent(Object key, Object value) {
         checkTransactionState();
         TxnValueWrapper wrapper = txMap.get(key);
@@ -124,7 +122,6 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         }
     }
 
-    @Override
     public Object replace(Object key, Object value) {
         checkTransactionState();
         TxnValueWrapper wrapper = txMap.get(key);
@@ -147,7 +144,6 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         }
     }
 
-    @Override
     public boolean replace(Object key, Object oldValue, Object newValue) {
         checkTransactionState();
         TxnValueWrapper wrapper = txMap.get(key);
@@ -170,7 +166,6 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         }
     }
 
-    @Override
     public boolean remove(Object key, Object value) {
         checkTransactionState();
         TxnValueWrapper wrapper = txMap.get(key);
@@ -186,152 +181,124 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
         return removed;
     }
 
-    @Override
     public Object remove(Object key) {
         checkTransactionState();
         MapService service = getService();
         final Object valueBeforeTxn = service.toObject(removeInternal(service.toData(key, partitionStrategy)));
         TxnValueWrapper wrapper = null;
-        if(valueBeforeTxn != null || txMap.containsKey(key) ) {
+        if (valueBeforeTxn != null || txMap.containsKey(key)) {
             wrapper = txMap.put(key, new TxnValueWrapper(valueBeforeTxn, TxnValueWrapper.Type.REMOVED));
         }
         return wrapper == null ? valueBeforeTxn : checkIfRemoved(wrapper);
     }
 
-    @Override
     public void delete(Object key) {
         checkTransactionState();
         MapService service = getService();
         Data data = removeInternal(service.toData(key, partitionStrategy));
-        if(data != null || txMap.containsKey(key) ) {
+        if (data != null || txMap.containsKey(key)) {
             txMap.put(key, new TxnValueWrapper(service.toObject(data), TxnValueWrapper.Type.REMOVED));
         }
     }
 
-    @Override
     public Set<Object> keySet() {
         checkTransactionState();
         final Set<Data> keySet = keySetInternal();
-        final Set<Object> keys = new HashSet<Object>( keySet.size() );
+        final Set<Object> keys = new HashSet<Object>(keySet.size());
         final MapService service = getService();
         // convert Data to Object
-        for ( final Data data: keySet )
-        {
-            keys.add( service.toObject( data ) );
+        for (final Data data : keySet) {
+            keys.add(service.toObject(data));
         }
 
-        for ( final Map.Entry<Object, TxnValueWrapper> entry : txMap.entrySet() )
-        {
-            if( TxnValueWrapper.Type.NEW.equals( entry.getValue().type ) )
-            {
-                keys.add( entry.getKey() );
-            }
-            else if( TxnValueWrapper.Type.REMOVED.equals( entry.getValue().type ) )
-            {
-                keys.remove( entry.getKey() );
+        for (final Map.Entry<Object, TxnValueWrapper> entry : txMap.entrySet()) {
+            if (TxnValueWrapper.Type.NEW.equals(entry.getValue().type)) {
+                keys.add(entry.getKey());
+            } else if (TxnValueWrapper.Type.REMOVED.equals(entry.getValue().type)) {
+                keys.remove(entry.getKey());
             }
         }
         return keys;
     }
 
-    @Override
     public Set keySet(Predicate predicate) {
         checkTransactionState();
-        if ( predicate == null)
-        {
+        if (predicate == null) {
             throw new NullPointerException("Predicate should not be null!");
         }
         final MapService service = getService();
         final QueryResultSet queryResultSet = (QueryResultSet) queryInternal(predicate, IterationType.KEY, false);
-        final Set<Object> keySet = new HashSet<Object>( queryResultSet.size() );
+        final Set<Object> keySet = new HashSet<Object>(queryResultSet.size());
         final Iterator iterator = queryResultSet.iterator();
-        while( iterator.hasNext() )
-        {
-            keySet.add( iterator.next() );
+        while (iterator.hasNext()) {
+            keySet.add(iterator.next());
         }
 
-        for ( final Map.Entry<Object, TxnValueWrapper> entry : txMap.entrySet() )
-        {
-            if( !TxnValueWrapper.Type.REMOVED.equals( entry.getValue().type ) )
-            {
+        for (final Map.Entry<Object, TxnValueWrapper> entry : txMap.entrySet()) {
+            if (!TxnValueWrapper.Type.REMOVED.equals(entry.getValue().type)) {
                 final Object value = entry.getValue().value instanceof Data ?
-                        service.toObject( entry.getValue().value ): entry.getValue().value;
-                final QueryEntry queryEntry = new QueryEntry( null, service.toData(entry.getKey()), entry.getKey(), value ) ;
+                        service.toObject(entry.getValue().value) : entry.getValue().value;
+                final QueryEntry queryEntry = new QueryEntry(null, service.toData(entry.getKey()), entry.getKey(), value);
                 // apply predicate on txMap.
-                if( predicate.apply( queryEntry ))
-                {
+                if (predicate.apply(queryEntry)) {
                     keySet.add(entry.getKey());
                 }
-            }
-            else
-            {
+            } else {
                 // meanwhile remove keys which are not in txMap.
                 keySet.remove(entry.getKey());
             }
         }
-        return  keySet;
+        return keySet;
     }
 
-    @Override
     public Collection<Object> values() {
         checkTransactionState();
         final Collection<Data> dataSet = valuesInternal();
-        final Collection<Object> values = new ArrayList<Object>( dataSet.size() );
+        final Collection<Object> values = new ArrayList<Object>(dataSet.size());
         for (final Data data : dataSet) {
             values.add(getService().toObject(data));
         }
         for (TxnValueWrapper wrapper : txMap.values()) {
-            if( TxnValueWrapper.Type.NEW.equals( wrapper.type ) )
-            {
+            if (TxnValueWrapper.Type.NEW.equals(wrapper.type)) {
                 values.add(wrapper.value);
-            }
-            else if( TxnValueWrapper.Type.REMOVED.equals( wrapper.type ) )
-            {
+            } else if (TxnValueWrapper.Type.REMOVED.equals(wrapper.type)) {
                 values.remove(wrapper.value);
             }
         }
         return values;
     }
 
-    @Override
     public Collection values(Predicate predicate) {
         checkTransactionState();
-        if ( predicate == null) {
+        if (predicate == null) {
             throw new NullPointerException("Predicate can not be null!");
         }
         final MapService service = getService();
         final QueryResultSet queryResultSet = (QueryResultSet) queryInternal(predicate, IterationType.VALUE, false);
-        final Set<Object> valueSet = new HashSet<Object>( queryResultSet.size() );
+        final Set<Object> valueSet = new HashSet<Object>(queryResultSet.size());
 
         final Iterator iterator = queryResultSet.iterator();
-        while( iterator.hasNext() )
-        {
-            valueSet.add( iterator.next() );
+        while (iterator.hasNext()) {
+            valueSet.add(iterator.next());
         }
-        for ( final Map.Entry<Object, TxnValueWrapper> entry : txMap.entrySet() )
-        {
-            if( !TxnValueWrapper.Type.REMOVED.equals( entry.getValue().type ) )
-            {
+        for (final Map.Entry<Object, TxnValueWrapper> entry : txMap.entrySet()) {
+            if (!TxnValueWrapper.Type.REMOVED.equals(entry.getValue().type)) {
                 final Object value = entry.getValue().value instanceof Data ?
-                        service.toObject( entry.getValue().value ): entry.getValue().value;
-                final QueryEntry queryEntry = new QueryEntry( null, service.toData(entry.getKey()), entry.getKey(), value ) ;
+                        service.toObject(entry.getValue().value) : entry.getValue().value;
+                final QueryEntry queryEntry = new QueryEntry(null, service.toData(entry.getKey()), entry.getKey(), value);
                 // apply predicate on txMap.
-                if( predicate.apply( queryEntry ))
-                {
-                    valueSet.add( entry.getValue().value );
+                if (predicate.apply(queryEntry)) {
+                    valueSet.add(entry.getValue().value);
                 }
-            }
-            else
-            {
+            } else {
                 // meanwhile remove values which are not in txMap.
-                valueSet.remove( entry.getValue() );
+                valueSet.remove(entry.getValue());
             }
         }
 
         return valueSet;
     }
 
-    @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         sb.append("TransactionalMap");

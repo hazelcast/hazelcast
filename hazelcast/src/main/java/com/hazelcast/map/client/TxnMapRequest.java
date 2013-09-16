@@ -19,8 +19,10 @@ package com.hazelcast.map.client;
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.InitializingObjectRequest;
 import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.map.MapKeySet;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
+import com.hazelcast.map.MapValueCollection;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -32,6 +34,9 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.transaction.TransactionContext;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author ali 6/10/13
@@ -77,7 +82,7 @@ public class TxnMapRequest extends CallableClientRequest implements Portable, In
     public Object call() throws Exception {
         final TransactionContext context = getEndpoint().getTransactionContext();
         final TransactionalMap map = context.getMap(name);
-        switch (requestType){
+        switch (requestType) {
             case CONTAINS_KEY:
                 return map.containsKey(key);
             case GET:
@@ -103,16 +108,34 @@ public class TxnMapRequest extends CallableClientRequest implements Portable, In
             case REMOVE_IF_SAME:
                 return map.remove(key, value);
             case KEYSET:
-                return map.keySet();
+                return getMapKeySet(map.keySet());
             case KEYSET_BY_PREDICATE:
-                return map.keySet( predicate );
+                return getMapKeySet(map.keySet(predicate));
             case VALUES:
-                return map.values();
+                return getMapValueCollection(map.values());
             case VALUES_BY_PREDICATE:
-                return map.values( predicate );
+                return getMapValueCollection(map.values(predicate));
 
         }
         return null;
+    }
+
+    private MapKeySet getMapKeySet(Set keySet) {
+        final HashSet<Data> dataKeySet = new HashSet<Data>();
+        for (Object key : keySet) {
+            final Data dataKey = getClientEngine().toData(key);
+            dataKeySet.add(dataKey);
+        }
+        return new MapKeySet(dataKeySet);
+    }
+
+    private MapValueCollection getMapValueCollection(Collection coll) {
+        final HashSet<Data> valuesCollection = new HashSet<Data>(coll.size());
+        for (Object value : coll) {
+            final Data dataValue = getClientEngine().toData(value);
+            valuesCollection.add(dataValue);
+        }
+        return new MapValueCollection(valuesCollection);
     }
 
     public String getServiceName() {
@@ -133,8 +156,8 @@ public class TxnMapRequest extends CallableClientRequest implements Portable, In
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
-        writer.writeUTF("n",name);
-        writer.writeInt("t",requestType.type);
+        writer.writeUTF("n", name);
+        writer.writeInt("t", requestType.type);
         final ObjectDataOutput out = writer.getRawDataOutput();
         IOUtil.writeNullableData(out, key);
         IOUtil.writeNullableData(out, value);
@@ -152,7 +175,7 @@ public class TxnMapRequest extends CallableClientRequest implements Portable, In
         predicate = in.readObject();
     }
 
-    public enum TxnMapRequestType{
+    public enum TxnMapRequestType {
         CONTAINS_KEY(1),
         GET(2),
         SIZE(3),
@@ -175,9 +198,9 @@ public class TxnMapRequest extends CallableClientRequest implements Portable, In
             type = i;
         }
 
-        public static TxnMapRequestType getByType(int type){
+        public static TxnMapRequestType getByType(int type) {
             for (TxnMapRequestType requestType : values()) {
-                if (requestType.type == type){
+                if (requestType.type == type) {
                     return requestType;
                 }
             }
