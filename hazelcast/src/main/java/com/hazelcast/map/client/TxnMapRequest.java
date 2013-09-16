@@ -19,8 +19,10 @@ package com.hazelcast.map.client;
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.InitializingObjectRequest;
 import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.map.MapKeySet;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
+import com.hazelcast.map.MapValueCollection;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -28,9 +30,13 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.query.Predicate;
 import com.hazelcast.transaction.TransactionContext;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author ali 6/10/13
@@ -43,6 +49,7 @@ public class TxnMapRequest extends CallableClientRequest implements Portable, In
     Data key;
     Data value;
     Data newValue;
+    Predicate predicate;
 
     public TxnMapRequest() {
     }
@@ -67,10 +74,15 @@ public class TxnMapRequest extends CallableClientRequest implements Portable, In
         this.newValue = newValue;
     }
 
+    public TxnMapRequest(String name, TxnMapRequestType requestType, Predicate predicate) {
+        this(name, requestType, null, null, null);
+        this.predicate = predicate;
+    }
+
     public Object call() throws Exception {
         final TransactionContext context = getEndpoint().getTransactionContext();
         final TransactionalMap map = context.getMap(name);
-        switch (requestType){
+        switch (requestType) {
             case CONTAINS_KEY:
                 return map.containsKey(key);
             case GET:
@@ -95,9 +107,35 @@ public class TxnMapRequest extends CallableClientRequest implements Portable, In
                 break;
             case REMOVE_IF_SAME:
                 return map.remove(key, value);
+            case KEYSET:
+                return getMapKeySet(map.keySet());
+            case KEYSET_BY_PREDICATE:
+                return getMapKeySet(map.keySet(predicate));
+            case VALUES:
+                return getMapValueCollection(map.values());
+            case VALUES_BY_PREDICATE:
+                return getMapValueCollection(map.values(predicate));
 
         }
         return null;
+    }
+
+    private MapKeySet getMapKeySet(Set keySet) {
+        final HashSet<Data> dataKeySet = new HashSet<Data>();
+        for (Object key : keySet) {
+            final Data dataKey = getClientEngine().toData(key);
+            dataKeySet.add(dataKey);
+        }
+        return new MapKeySet(dataKeySet);
+    }
+
+    private MapValueCollection getMapValueCollection(Collection coll) {
+        final HashSet<Data> valuesCollection = new HashSet<Data>(coll.size());
+        for (Object value : coll) {
+            final Data dataValue = getClientEngine().toData(value);
+            valuesCollection.add(dataValue);
+        }
+        return new MapValueCollection(valuesCollection);
     }
 
     public String getServiceName() {
@@ -118,12 +156,13 @@ public class TxnMapRequest extends CallableClientRequest implements Portable, In
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
-        writer.writeUTF("n",name);
-        writer.writeInt("t",requestType.type);
+        writer.writeUTF("n", name);
+        writer.writeInt("t", requestType.type);
         final ObjectDataOutput out = writer.getRawDataOutput();
         IOUtil.writeNullableData(out, key);
         IOUtil.writeNullableData(out, value);
         IOUtil.writeNullableData(out, newValue);
+        out.writeObject(predicate);
     }
 
     public void readPortable(PortableReader reader) throws IOException {
@@ -133,9 +172,10 @@ public class TxnMapRequest extends CallableClientRequest implements Portable, In
         key = IOUtil.readNullableData(in);
         value = IOUtil.readNullableData(in);
         newValue = IOUtil.readNullableData(in);
+        predicate = in.readObject();
     }
 
-    public enum TxnMapRequestType{
+    public enum TxnMapRequestType {
         CONTAINS_KEY(1),
         GET(2),
         SIZE(3),
@@ -146,7 +186,11 @@ public class TxnMapRequest extends CallableClientRequest implements Portable, In
         SET(8),
         REMOVE(9),
         DELETE(10),
-        REMOVE_IF_SAME(11);
+        REMOVE_IF_SAME(11),
+        KEYSET(12),
+        KEYSET_BY_PREDICATE(13),
+        VALUES(14),
+        VALUES_BY_PREDICATE(15);
 
         int type;
 
@@ -154,9 +198,9 @@ public class TxnMapRequest extends CallableClientRequest implements Portable, In
             type = i;
         }
 
-        public static TxnMapRequestType getByType(int type){
+        public static TxnMapRequestType getByType(int type) {
             for (TxnMapRequestType requestType : values()) {
-                if (requestType.type == type){
+                if (requestType.type == type) {
                     return requestType;
                 }
             }
