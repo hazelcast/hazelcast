@@ -237,7 +237,15 @@ public final class Predicates {
                 return false;
             } else {
                 if (pattern == null) {
-                    pattern = Pattern.compile(second.replaceAll("%", ".*").replaceAll("_", "."));
+                    // we quote the input string then escape then replace % and _
+                    // at the end we have a regex pattern look like : \QSOME_STRING\E.*\QSOME_OTHER_STRING\E
+                    final String quoted = Pattern.quote(second);
+                    String regex = quoted
+                            .replaceAll("(?<!\\\\)[%]", "\\\\E.*\\\\Q")//escaped %
+                            .replaceAll("(?<!\\\\)[_]", "\\\\E.\\\\Q")//escaped _
+                            .replaceAll("\\\\%", "%")//non escaped %
+                            .replaceAll("\\\\_", "_");//non escaped _
+                    pattern = Pattern.compile(regex);
                 }
                 Matcher m = pattern.matcher(firstVal);
                 return m.matches();
