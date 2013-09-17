@@ -43,21 +43,18 @@ class Parser {
 
     private static final List<String> charOperators = Arrays.asList("(", ")", " + ", " - ", "=", "<", ">", " * ", " / ", "!");
 
+    private static final int NO_INDEX = -1;
+    private static final String IN_LOWER = " in ";
+    private static final String IN_LOWER_P = " in(";
+    private static final String IN_UPPER = " IN ";
+    private static final String IN_UPPER_P = " IN(";
+
+
     public Parser() {
     }
 
     public List<String> toPrefix(String in) {
-        int indexIn = in.indexOf(" in ");
-        if (indexIn == -1) {
-            indexIn = in.indexOf(" IN ");
-        }
-        if (indexIn != -1) {
-            int indexOpen = in.indexOf("(", indexIn);
-            int indexClose = in.indexOf(")", indexOpen);
-            String sub = in.substring(indexOpen, indexClose + 1);
-            sub = sub.replaceAll(" ", "");
-            in = in.substring(0, indexOpen) + sub + in.substring(indexClose + 1);
-        }
+        in = alignINClause(in);
         List<String> stack = new ArrayList<String>();
         List<String> output = new ArrayList<String>();
         List<String> tokens = split(in);
@@ -110,12 +107,13 @@ class Parser {
     }
 
     public List<String> split(String in) {
-        StringBuilder result = new StringBuilder();
-        char[] chars = in.toCharArray();
+        final StringBuilder result = new StringBuilder();
+        final char[] chars = in.toCharArray();
         for (int i = 0; i < chars.length; i++) {
-            char c = chars[i];
+            final char c = chars[i];
             if (charOperators.contains(String.valueOf(c))) {
-                if (i < chars.length - 2 && charOperators.contains(String.valueOf(chars[i + 1])) && !("(".equals(String.valueOf(chars[i + 1])) || ")".equals(String.valueOf(chars[i + 1])))) {
+                if (i < chars.length - 2 && charOperators.contains(String.valueOf(chars[i + 1]))
+                        && !("(".equals(String.valueOf(chars[i + 1])) || ")".equals(String.valueOf(chars[i + 1])))) {
                     result.append(" ").append(c).append(chars[i + 1]).append(" ");
                     i++;
                 } else {
@@ -125,8 +123,8 @@ class Parser {
                 result.append(c);
             }
         }
-        String[] tokens = result.toString().split(SPLIT_EXPRESSION);
-        List<String> list = new ArrayList<String>();
+        final String[] tokens = result.toString().split(SPLIT_EXPRESSION);
+        final List<String> list = new ArrayList<String>();
         for (int i = 0; i < tokens.length; i++) {
             tokens[i] = tokens[i].trim();
             if (!tokens[i].equals("")) {
@@ -137,14 +135,61 @@ class Parser {
     }
 
     boolean hasHigherPrecedence(String operator1, String operator2) {
-        return precedence.get(operator1.toLowerCase()) > precedence.get(operator2.toLowerCase());
+        return precedence.get(operator1.toLowerCase(Locale.ENGLISH)) > precedence.get(operator2.toLowerCase(Locale.ENGLISH));
     }
 
     boolean isOperand(String string) {
-        return precedence.containsKey(string.toLowerCase());
+        return precedence.containsKey(string.toLowerCase(Locale.ENGLISH));
     }
 
     private boolean openParanthesesFound(List<String> stack) {
         return stack.size() > 0 && !stack.get(stack.size() - 1).equals("(");
     }
+
+    /*
+    *
+    * Recursively finds in-clauses and reformats them for the parser
+    *
+    * */
+    private String alignINClause(String in) {
+        final int indexLowerIn = in.indexOf( IN_LOWER );
+        final int indexLowerInWithParentheses = in.indexOf( IN_LOWER_P );
+        final int indexUpperIn = in.indexOf( IN_UPPER );
+        final int indexUpperInWithParentheses = in.indexOf( IN_UPPER_P );
+        // find first occurrence of in clause.
+        final int indexIn = findMinIfNot( indexUpperInWithParentheses,
+                findMinIfNot(indexUpperIn,
+                        findMinIfNot(indexLowerIn, indexLowerInWithParentheses, NO_INDEX),NO_INDEX),NO_INDEX);
+
+        if( indexIn > NO_INDEX && (indexIn == indexLowerInWithParentheses || indexIn == indexUpperInWithParentheses) ){
+            // 3 is the size of param in ending with a parentheses.
+            // add SPLIT_EXPRESSION
+            in = in.substring(0,indexIn+3) + SPLIT_EXPRESSION + in.substring(indexIn+3);
+        }
+        String sql = in;
+        if (indexIn != NO_INDEX) {
+            final int indexOpen = in.indexOf("(", indexIn);
+            final int indexClose = in.indexOf(")", indexOpen);
+            String sub = in.substring(indexOpen, indexClose + 1);
+            sub = sub.replaceAll(" ", "");
+            sql = in.substring(0, indexOpen) + sub
+                    + alignINClause(in.substring(indexClose + 1) );
+
+        }
+        return sql;
+    }
+
+    /**
+     * finds min choosing a lower bound.
+     * @param a first number
+     * @param b second number
+     * @param notMin lower bound
+     *
+     * */
+    private int findMinIfNot(int a, int b, int notMin){
+        if( a <= notMin ) return b;
+        if( b <= notMin ) return a;
+        return Math.min( a, b);
+    }
 }
+
