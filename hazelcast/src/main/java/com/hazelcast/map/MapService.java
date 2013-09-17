@@ -108,7 +108,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         if (lockService != null) {
             lockService.registerLockStoreConstructor(SERVICE_NAME, new ConstructorFunction<ObjectNamespace, LockStoreInfo>() {
                 public LockStoreInfo createNew(final ObjectNamespace key) {
-                    final MapContainer mapContainer = getMapContainer(String.valueOf(key.getObjectId()));
+                    final MapContainer mapContainer = getMapContainer(key.getObjectName());
                     return new LockStoreInfo() {
                         public ObjectNamespace getObjectNamespace() {
                             return key;
@@ -408,8 +408,8 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     @SuppressWarnings("unchecked")
-    public TransactionalMapProxy createTransactionalObject(Object id, TransactionSupport transaction) {
-        return new TransactionalMapProxy(String.valueOf(id), this, nodeEngine, transaction);
+    public TransactionalMapProxy createTransactionalObject(String name, TransactionSupport transaction) {
+        return new TransactionalMapProxy(name, this, nodeEngine, transaction);
     }
 
     @Override
@@ -463,13 +463,11 @@ public class MapService implements ManagedService, MigrationAwareService,
         return nodeEngine;
     }
 
-    public MapProxyImpl createDistributedObject(Object objectId) {
-        final String name = String.valueOf(objectId);
+    public MapProxyImpl createDistributedObject(String name) {
         return new MapProxyImpl(name, this, nodeEngine);
     }
 
-    public void destroyDistributedObject(Object objectId) {
-        final String name = String.valueOf(objectId);
+    public void destroyDistributedObject(String name) {
         mapContainers.remove(name);
         final PartitionContainer[] containers = partitionContainers;
         for (PartitionContainer container : containers) {

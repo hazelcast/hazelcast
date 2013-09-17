@@ -73,7 +73,7 @@ public class MapTryRemoveRequest extends KeyBasedClientRequest implements Portab
     }
 
     @Override
-    public Object getObjectId() {
+    public String getObjectName() {
         return name;
     }
 

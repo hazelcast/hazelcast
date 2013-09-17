@@ -278,14 +278,14 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 handleServices(node);
             } else if ("queue".equals(nodeName)) {
                 handleQueue(node);
-            } else if ("list".equals(nodeName)) {
-                handleList(node);
-            } else if ("set".equals(nodeName)) {
-                handleSet(node);
             } else if ("map".equals(nodeName)) {
                 handleMap(node);
             } else if ("multimap".equals(nodeName)) {
                 handleMultiMap(node);
+            } else if ("list".equals(nodeName)) {
+                handleList(node);
+            } else if ("set".equals(nodeName)) {
+                handleSet(node);
             } else if ("topic".equals(nodeName)) {
                 handleTopic(node);
             } else if ("semaphore".equals(nodeName)) {
@@ -767,6 +767,10 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             final String value = getTextContent(n).trim();
             if ("value-collection-type".equals(nodeName)) {
                 multiMapConfig.setValueCollectionType(value);
+            } else if ("backup-count".equals(nodeName)) {
+                multiMapConfig.setBackupCount(getIntegerValue("backup-count", value, MultiMapConfig.DEFAULT_SYNC_BACKUP_COUNT));
+            } else if ("async-backup-count".equals(nodeName)) {
+                multiMapConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value, MultiMapConfig.DEFAULT_ASYNC_BACKUP_COUNT));
             } else if ("entry-listeners".equals(nodeName)) {
                 for (org.w3c.dom.Node listenerNode : new IterableNodeList(n.getChildNodes())) {
                     if ("entry-listener".equals(cleanNodeName(listenerNode))) {

@@ -98,7 +98,7 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
         LockServiceImpl lockService = node.nodeEngine.getService(LockServiceImpl.SERVICE_NAME);
 
         Partition partition = instances[0].getPartitionService().getPartition(partitionKey);
-        LockStore lockStore = lockService.getLockStore(partition.getPartitionId(), new InternalLockNamespace());
+        LockStore lockStore = lockService.getLockStore(partition.getPartitionId(), new InternalLockNamespace(lock.getName()));
         assertTrue(lockStore.isLocked(node.getSerializationService().toData(lock.getName())));
     }
 

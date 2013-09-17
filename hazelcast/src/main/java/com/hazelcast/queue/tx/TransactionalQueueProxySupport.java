@@ -123,10 +123,6 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
         }
     }
 
-    public Object getId() {
-        return name;
-    }
-
     public String getName() {
         return name;
     }

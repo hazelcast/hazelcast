@@ -94,7 +94,7 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Po
         return MultiMapService.SERVICE_NAME;
     }
 
-    public Object getObjectId() {
+    public String getObjectName() {
         return name;
     }
 

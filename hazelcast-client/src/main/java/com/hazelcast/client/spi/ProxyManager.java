@@ -74,58 +74,58 @@ public final class ProxyManager {
     public void init(ClientConfig config) {
         // register defaults
         register(MapService.SERVICE_NAME, new ClientProxyFactory() {
-            public ClientProxy create(Object id) {
+            public ClientProxy create(String id) {
                 return new ClientMapProxy(MapService.SERVICE_NAME, String.valueOf(id));
             }
         });
         register(QueueService.SERVICE_NAME, new ClientProxyFactory() {
-            public ClientProxy create(Object id) {
+            public ClientProxy create(String id) {
                 return new ClientQueueProxy(QueueService.SERVICE_NAME, String.valueOf(id));
             }
         });
         register(MultiMapService.SERVICE_NAME, new ClientProxyFactory() {
-            public ClientProxy create(Object id) {
+            public ClientProxy create(String id) {
                 return new ClientMultiMapProxy(MultiMapService.SERVICE_NAME, String.valueOf(id));
             }
         });
         register(ListService.SERVICE_NAME, new ClientProxyFactory() {
-            public ClientProxy create(Object id) {
+            public ClientProxy create(String id) {
                 return new ClientListProxy(ListService.SERVICE_NAME, String.valueOf(id));
             }
         });
         register(SetService.SERVICE_NAME, new ClientProxyFactory() {
-            public ClientProxy create(Object id) {
+            public ClientProxy create(String id) {
                 return new ClientSetProxy(SetService.SERVICE_NAME, String.valueOf(id));
             }
         });
         register(SemaphoreService.SERVICE_NAME, new ClientProxyFactory() {
-            public ClientProxy create(Object id) {
+            public ClientProxy create(String id) {
                 return new ClientSemaphoreProxy(SemaphoreService.SERVICE_NAME, String.valueOf(id));
             }
         });
         register(TopicService.SERVICE_NAME, new ClientProxyFactory() {
-            public ClientProxy create(Object id) {
+            public ClientProxy create(String id) {
                 return new ClientTopicProxy(TopicService.SERVICE_NAME, String.valueOf(id));
             }
         });
         register(AtomicLongService.SERVICE_NAME, new ClientProxyFactory() {
-            public ClientProxy create(Object id) {
+            public ClientProxy create(String id) {
                 return new ClientAtomicLongProxy(AtomicLongService.SERVICE_NAME, String.valueOf(id));
             }
         });
         register(DistributedExecutorService.SERVICE_NAME, new ClientProxyFactory() {
-            public ClientProxy create(Object id) {
+            public ClientProxy create(String id) {
                 return new ClientExecutorServiceProxy(DistributedExecutorService.SERVICE_NAME, String.valueOf(id));
             }
         });
         register(LockServiceImpl.SERVICE_NAME, new ClientProxyFactory() {
-            public ClientProxy create(Object id) {
+            public ClientProxy create(String id) {
                 return new ClientLockProxy(LockServiceImpl.SERVICE_NAME, id);
             }
         });
 
         register(IdGeneratorService.SERVICE_NAME, new ClientProxyFactory() {
-            public ClientProxy create(Object id) {
+            public ClientProxy create(String id) {
                 String name = String.valueOf(id);
                 IAtomicLong atomicLong = client.getAtomicLong(IdGeneratorService.ATOMIC_LONG_NAME + name);
                 return new ClientIdGeneratorProxy(IdGeneratorService.SERVICE_NAME, name, atomicLong);
@@ -133,7 +133,7 @@ public final class ProxyManager {
         });
 
         register(CountDownLatchService.SERVICE_NAME, new ClientProxyFactory() {
-            public ClientProxy create(Object id) {
+            public ClientProxy create(String id) {
                 return new ClientCountDownLatchProxy(CountDownLatchService.SERVICE_NAME, String.valueOf(id));
             }
         });
@@ -155,7 +155,7 @@ public final class ProxyManager {
         }
     }
 
-    public ClientProxy getProxy(String service, Object id) {
+    public ClientProxy getProxy(String service, String id) {
         final ObjectNamespace ns = new DefaultObjectNamespace(service, id);
         final ClientProxy proxy = proxies.get(ns);
         if (proxy != null) {
@@ -175,7 +175,7 @@ public final class ProxyManager {
         return clientProxy;
     }
 
-    public ClientProxy removeProxy(String service, Object id) {
+    public ClientProxy removeProxy(String service, String id) {
         final ObjectNamespace ns = new DefaultObjectNamespace(service, id);
         final ClientProxy clientProxy = proxies.remove(ns);
         if (clientProxy != null){

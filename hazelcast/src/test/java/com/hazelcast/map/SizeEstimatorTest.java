@@ -45,9 +45,6 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
         final IMap<String, String> map = h.getMap(MAP_NAME);
 
         Assert.assertTrue(map.getLocalMapStats().getHeapCost() == 0);
-
-        h.getLifecycleService().shutdown();
-
     }
 
     @Test
@@ -58,6 +55,7 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
         config.getMapConfig(MAP_NAME).setBackupCount(1).setInMemoryFormat(MapConfig.InMemoryFormat.BINARY);
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance h[] = factory.newInstances(config);
+        warmUpPartitions(h);
 
         final IMap<String, String> map = h[0].getMap(MAP_NAME);
 
@@ -70,7 +68,7 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
         long h2MapCost = h[1].getMap(MAP_NAME).getLocalMapStats().getHeapCost();
 
         // one map is backup. so backup & real map cost must be same.
-        Assert.assertTrue(h1MapCost == h2MapCost);
+        Assert.assertEquals(h1MapCost, h2MapCost);
 
         Thread.sleep(1000);
 
@@ -82,11 +80,8 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
 
         h2MapCost = h[1].getMap(MAP_NAME).getLocalMapStats().getHeapCost();
 
-        Assert.assertTrue(h1MapCost == 0 && h2MapCost == 0);
-
-
-        h[0].getLifecycleService().shutdown();
-        h[1].getLifecycleService().shutdown();
+        Assert.assertEquals(0, h1MapCost);
+        Assert.assertEquals(0, h2MapCost);
     }
 
     @Test
@@ -103,6 +98,7 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
         final int n = 1;
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
         final HazelcastInstance h[] = factory.newInstances(config);
+        warmUpPartitions(h);
 
         final IMap<Long, Integer> map = h[0].getMap(MAP_NAME);
 
@@ -121,24 +117,6 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
         Thread.sleep(1000);
 
         Assert.assertTrue(map.getLocalMapStats().getHeapCost() == 0);
-
-
-//        for (int i = 0; i< 1024*1024;i++)
-//        {
-//            map.put(++key, new Random().nextInt() );
-//        }
-//
-//        Thread.sleep(60000);
-
-        // System.err.println("map.size()" + map.size());
-
-        // 129554048
-        // 134217728 (128*1024*1024)
-        // System.err.println( map.getLocalMapStats().getHeapCost() );
-        // System.err.println( map.getLocalMapStats().getBackupHeapCost() );
-
-        h[0].getLifecycleService().shutdown();
-
     }
 
     @Test
@@ -155,7 +133,7 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
         final int n = 2;
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
         final HazelcastInstance h[] = factory.newInstances(config);
-
+        warmUpPartitions(h);
 
         final IMap<String, String> noNearCached = h[0].getMap(NO_NEAR_CAHED_MAP);
         noNearCached.put("key", "value");
@@ -178,11 +156,6 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
         }
 
         Assert.assertTrue(nearCachedMap.getLocalMapStats().getHeapCost() > noNearCached.getLocalMapStats().getHeapCost());
-
-        for (int i = 0; i < n; i++) {
-            h[i].getLifecycleService().shutdown();
-        }
-
     }
 
     @Test
@@ -201,6 +174,8 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
         final int n = 2;
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
         final HazelcastInstance[] h = factory.newInstances(config);
+        warmUpPartitions(h);
+
         // populate map.
         final IMap<String, String> binaryMap = h[0].getMap(BINARY_MAP);
         binaryMap.put("key", "value");
@@ -243,10 +218,6 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
             Assert.assertTrue(h[i].getMap(OBJECT_MAP).getLocalMapStats().getHeapCost() == 0);
 
             Assert.assertTrue(h[i].getMap(CACHED_MAP).getLocalMapStats().getHeapCost() == 0);
-        }
-
-        for (int i = 0; i < n; i++) {
-            h[i].getLifecycleService().shutdown();
         }
     }
 

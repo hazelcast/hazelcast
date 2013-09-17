@@ -85,10 +85,6 @@ public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
         invoke(request);
     }
 
-    public String getName() {
-        return name;
-    }
-
     private <T> T invoke(Object req){
         try {
             return getContext().getInvocationService().invokeOnKeyOwner(req, getKey());

@@ -30,8 +30,6 @@ import java.util.*;
  */
 public abstract class CollectionService implements ManagedService, RemoteService, EventPublishingService<CollectionEvent, ItemListener>, TransactionalService, MigrationAwareService {
 
-    protected static final StringPartitioningStrategy PARTITIONING_STRATEGY = new StringPartitioningStrategy();
-
     protected NodeEngine nodeEngine;
 
     protected CollectionService(NodeEngine nodeEngine) {
@@ -49,8 +47,7 @@ public abstract class CollectionService implements ManagedService, RemoteService
         reset();
     }
 
-    public void destroyDistributedObject(Object objectId) {
-        final String name = String.valueOf(objectId);
+    public void destroyDistributedObject(String name) {
         getContainerMap().remove(name);
         nodeEngine.getEventService().deregisterAllListeners(getServiceName(), name);
     }

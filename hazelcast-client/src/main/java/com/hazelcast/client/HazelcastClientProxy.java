@@ -150,8 +150,13 @@ public final class HazelcastClientProxy implements HazelcastInstance {
         return hz != null ? hz.getLifecycleService() : new TerminatedLifecycleService();
     }
 
+    @Deprecated
     public <T extends DistributedObject> T getDistributedObject(String serviceName, Object id) {
         return getClient().getDistributedObject(serviceName, id);
+    }
+
+    public <T extends DistributedObject> T getDistributedObject(String serviceName, String name) {
+        return getClient().getDistributedObject(serviceName, name);
     }
 
     public ConcurrentMap<String, Object> getUserContext() {
@@ -162,7 +167,6 @@ public final class HazelcastClientProxy implements HazelcastInstance {
         return getClient().getClientConfig();
     }
 
-    // to be able destroy instance bean from Spring
     public final void shutdown() {
         getLifecycleService().shutdown();
     }

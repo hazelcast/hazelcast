@@ -25,6 +25,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.AbstractDistributedObject;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.ObjectNamespace;
 
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
@@ -35,23 +36,15 @@ import java.util.concurrent.locks.Condition;
  */
 public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implements ILock {
 
-    final String name;
-    final Data key;
+    private final String name;
     private final LockProxySupport lockSupport;
+    final Data key;
 
-    public LockProxy(NodeEngine nodeEngine, LockServiceImpl lockService, final Object object) {
+    public LockProxy(NodeEngine nodeEngine, LockServiceImpl lockService, final String name) {
         super(nodeEngine, lockService);
-        if (object instanceof String) {
-            name = (String) object;
-            key = getNameAsPartitionAwareData();
-        } else if (object instanceof Data) {
-            key = (Data) object;
-            name = String.valueOf(nodeEngine.getSerializationService().toObject(key));
-        } else {
-            name = convertToStringKey(object, nodeEngine.getSerializationService());
-            key = getNameAsPartitionAwareData();
-        }
-        lockSupport = new LockProxySupport(new InternalLockNamespace());
+        this.name = name;
+        key = getNameAsPartitionAwareData();
+        lockSupport = new LockProxySupport(new InternalLockNamespace(name));
     }
 
     public boolean isLocked() {
@@ -106,10 +99,6 @@ public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implem
         return new ConditionImpl(this, name);
     }
 
-    public Object getId() {
-        return key;
-    }
-
     public String getName() {
         return name;
     }
@@ -118,8 +107,17 @@ public class LockProxy extends AbstractDistributedObject<LockServiceImpl> implem
         return LockService.SERVICE_NAME;
     }
 
+    @Deprecated
     public Object getKey() {
         return getName();
+    }
+
+    int getPartitionId() {
+        return getNodeEngine().getPartitionService().getPartitionId(key);
+    }
+
+    ObjectNamespace getNamespace() {
+        return lockSupport.getNamespace();
     }
 
     // will be removed when HazelcastInstance.getLock(Object key) is removed from API

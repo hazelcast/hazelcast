@@ -18,6 +18,7 @@ package com.hazelcast.instance;
 
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
+import com.hazelcast.concurrent.lock.proxy.LockProxy;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
@@ -166,12 +167,13 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         return getDistributedObject(MultiMapService.SERVICE_NAME, name);
     }
 
+    @Deprecated
     public ILock getLock(Object key) {
         //this method will be deleted in the near future.
         if (key == null) {
             throw new NullPointerException("Retrieving a lock instance with a null key is not allowed!");
         }
-        return getDistributedObject(LockService.SERVICE_NAME, key);
+        return getDistributedObject(LockService.SERVICE_NAME, LockProxy.convertToStringKey(key, node.getSerializationService()));
     }
 
     public ILock getLock(String key) {
@@ -270,8 +272,17 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
     }
 
     @Override
+    @Deprecated
     public <T extends DistributedObject> T getDistributedObject(String serviceName, Object id) {
-        return (T) node.nodeEngine.getProxyService().getDistributedObject(serviceName, id);
+        if (id instanceof String) {
+            return (T) node.nodeEngine.getProxyService().getDistributedObject(serviceName, (String) id);
+        }
+        throw new IllegalArgumentException("'id' must be type of String!");
+    }
+
+    @Override
+    public <T extends DistributedObject> T getDistributedObject(String serviceName, String name) {
+        return (T) node.nodeEngine.getProxyService().getDistributedObject(serviceName, name);
     }
 
     public String addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {

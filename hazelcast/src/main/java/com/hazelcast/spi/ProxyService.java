@@ -28,11 +28,11 @@ public interface ProxyService extends CoreService {
 
     int getProxyCount();
 
-    void initializeDistributedObject(String serviceName, Object objectId);
+    void initializeDistributedObject(String serviceName, String objectId);
 
-    DistributedObject getDistributedObject(String serviceName, Object objectId);
+    DistributedObject getDistributedObject(String serviceName, String objectId);
 
-    void destroyDistributedObject(String serviceName, Object objectId);
+    void destroyDistributedObject(String serviceName, String objectId);
 
     Collection<DistributedObject> getDistributedObjects(String serviceName);
 

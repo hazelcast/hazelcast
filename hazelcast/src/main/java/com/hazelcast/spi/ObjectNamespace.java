@@ -25,6 +25,6 @@ public interface ObjectNamespace extends DataSerializable {
 
     String getServiceName();
 
-    Object getObjectId();
+    String getObjectName();
 
 }

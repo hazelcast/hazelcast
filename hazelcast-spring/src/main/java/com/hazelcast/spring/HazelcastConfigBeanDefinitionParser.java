@@ -19,7 +19,6 @@ package com.hazelcast.spring;
 import com.hazelcast.config.*;
 import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.spring.context.SpringManagedContext;
-import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.*;
 import org.springframework.beans.factory.xml.ParserContext;
 import org.springframework.util.Assert;
@@ -27,8 +26,9 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
-import java.lang.reflect.Method;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDefinitionParser {
 
@@ -41,8 +41,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
     private class SpringXmlConfigBuilder extends SpringXmlBuilderHelper {
 
         private final ParserContext parserContext;
-
-//        private BeanDefinitionBuilder configBuilder;
 
         private ManagedMap mapConfigManagedMap;
         private ManagedMap queueManagedMap;

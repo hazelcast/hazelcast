@@ -97,12 +97,12 @@ public class SemaphoreService implements ManagedService, MigrationAwareService, 
         }
     }
 
-    public SemaphoreProxy createDistributedObject(Object objectId) {
-        return new SemaphoreProxy((String)objectId, this, nodeEngine);
+    public SemaphoreProxy createDistributedObject(String objectId) {
+        return new SemaphoreProxy(objectId, this, nodeEngine);
     }
 
-    public void destroyDistributedObject(Object objectId) {
-        permitMap.remove(String.valueOf(objectId));
+    public void destroyDistributedObject(String objectId) {
+        permitMap.remove(objectId);
     }
 
     public void beforeMigration(PartitionMigrationEvent partitionMigrationEvent) {

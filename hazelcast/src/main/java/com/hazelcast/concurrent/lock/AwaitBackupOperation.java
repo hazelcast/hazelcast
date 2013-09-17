@@ -42,7 +42,7 @@ public class AwaitBackupOperation extends BaseLockOperation implements BackupOpe
     public void run() throws Exception {
         final LockStoreImpl lockStore = getLockStore();
         lockStore.lock(key, originalCaller, threadId);
-        lockStore.removeSignalKey(new ConditionKey(key, conditionId));
+        lockStore.removeSignalKey(new ConditionKey(namespace.getObjectName(), key, conditionId));
         lockStore.removeAwait(key, conditionId, originalCaller, threadId);
         response = true;
     }

@@ -356,8 +356,8 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
                         }
                         request.setService(service);
                         if (request instanceof InitializingObjectRequest) {
-                            Object objectId = ((InitializingObjectRequest) request).getObjectId();
-                            nodeEngine.getProxyService().initializeDistributedObject(serviceName, objectId);
+                            String objectName = ((InitializingObjectRequest) request).getObjectName();
+                            nodeEngine.getProxyService().initializeDistributedObject(serviceName, objectName);
                         }
                     }
                     request.setClientEngine(ClientEngineImpl.this);

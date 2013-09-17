@@ -141,24 +141,6 @@
         </item-listeners>
 
     </queue>
-    <list name="default">
-        <statistics-enabled>false</statistics-enabled>
-        <max-size>0</max-size>
-        <backup-count>1</backup-count>
-        <async-backup-count>0</async-backup-count>
-        <item-listeners>
-            <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
-        </item-listeners>
-    </list>
-    <set name="default">
-        <statistics-enabled>false</statistics-enabled>
-        <max-size>0</max-size>
-        <backup-count>1</backup-count>
-        <async-backup-count>0</async-backup-count>
-        <item-listeners>
-            <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
-        </item-listeners>
-    </set>
     <map name="default">
         <!--
            Data type that will be used for storing recordMap.
@@ -271,11 +253,33 @@
     </map>
 
     <multimap name="default">
+        <backup-count>1</backup-count>
+        <async-backup-count>0</async-backup-count>
         <value-collection-type>SET</value-collection-type>
         <entry-listeners>
             <entry-listener include-value="true" local="true">com.hazelcast.examples.EntryListener</entry-listener>
         </entry-listeners>
     </multimap>
+
+    <list name="default">
+        <statistics-enabled>false</statistics-enabled>
+        <max-size>0</max-size>
+        <backup-count>1</backup-count>
+        <async-backup-count>0</async-backup-count>
+        <item-listeners>
+            <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
+        </item-listeners>
+    </list>
+
+    <set name="default">
+        <statistics-enabled>false</statistics-enabled>
+        <max-size>0</max-size>
+        <backup-count>1</backup-count>
+        <async-backup-count>0</async-backup-count>
+        <item-listeners>
+            <item-listener include-value="true">com.hazelcast.examples.ItemListener</item-listener>
+        </item-listeners>
+    </set>
 
     <topic name="default">
         <message-listeners>
@@ -285,6 +289,8 @@
 
     <semaphore name="default">
         <initial-permits>10</initial-permits>
+        <backup-count>1</backup-count>
+        <async-backup-count>0</async-backup-count>
     </semaphore>
 
     <listeners>

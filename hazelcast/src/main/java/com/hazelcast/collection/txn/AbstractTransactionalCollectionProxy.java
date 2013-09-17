@@ -54,10 +54,6 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
 
     protected abstract Collection<CollectionItem> getCollection();
 
-    public Object getId() {
-        return name;
-    }
-
     public String getName() {
         return name;
     }

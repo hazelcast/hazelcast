@@ -45,7 +45,7 @@ public abstract class TxnMultiMapRequest extends CallableClientRequest implement
         return MultiMapService.SERVICE_NAME;
     }
 
-    public Object getObjectId() {
+    public String getObjectName() {
         return name;
     }
 

@@ -62,12 +62,12 @@ public class ListService extends CollectionService {
         return SERVICE_NAME;
     }
 
-    public DistributedObject createDistributedObject(Object objectId) {
-        return new ListProxyImpl(String.valueOf(objectId), nodeEngine, this);
+    public DistributedObject createDistributedObject(String objectId) {
+        return new ListProxyImpl(objectId, nodeEngine, this);
     }
 
-    public TransactionalListProxy createTransactionalObject(Object id, TransactionSupport transaction) {
-        return new TransactionalListProxy(String.valueOf(id), transaction, nodeEngine, this);
+    public TransactionalListProxy createTransactionalObject(String name, TransactionSupport transaction) {
+        return new TransactionalListProxy(name, transaction, nodeEngine, this);
     }
 
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {

@@ -31,7 +31,9 @@ public interface ILock extends Lock, DistributedObject {
      * Returns the lock object, the key for this lock instance.
      *
      * @return lock object.
+     * @deprecated use {@link #getName()} instead.
      */
+    @Deprecated
     Object getKey();
 
     /**

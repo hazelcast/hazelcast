@@ -19,10 +19,6 @@ package com.hazelcast.concurrent.lock.client;
 import com.hazelcast.concurrent.lock.InternalLockNamespace;
 import com.hazelcast.concurrent.lock.LockPortableHook;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.PortableReader;
-import com.hazelcast.nio.serialization.PortableWriter;
-
-import java.io.IOException;
 
 /**
  * @author mdogan 5/3/13
@@ -41,7 +37,8 @@ public final class LockRequest extends AbstractLockRequest {
     }
 
     protected InternalLockNamespace getNamespace() {
-        return new InternalLockNamespace();
+        String name = (String) getClientEngine().toObject(key);
+        return new InternalLockNamespace(name);
     }
 
     public int getFactoryId() {

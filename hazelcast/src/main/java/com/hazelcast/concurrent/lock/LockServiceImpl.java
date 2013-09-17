@@ -61,7 +61,7 @@ public final class LockServiceImpl implements ManagedService, RemoteService, Mem
             public LockStoreInfo createNew(ObjectNamespace key) {
                 return new LockStoreInfo() {
                     public ObjectNamespace getObjectNamespace() {
-                        return new InternalLockNamespace();
+                        return new InternalLockNamespace("default");
                     }
 
                     public int getBackupCount() {
@@ -203,14 +203,14 @@ public final class LockServiceImpl implements ManagedService, RemoteService, Mem
         clearPartition(partitionId);
     }
 
-    public DistributedObject createDistributedObject(Object objectId) {
+    public DistributedObject createDistributedObject(String objectId) {
         return new LockProxy(nodeEngine, this, objectId);
     }
 
-    public void destroyDistributedObject(Object objectId) {
+    public void destroyDistributedObject(String objectId) {
         final Data key = nodeEngine.getSerializationService().toData(objectId);
         for (LockStoreContainer container : containers) {
-            final LockStoreImpl lockStore = container.getOrCreateLockStore(new InternalLockNamespace());
+            final LockStoreImpl lockStore = container.getOrCreateLockStore(new InternalLockNamespace(objectId));
             lockStore.forceUnlock(key);
         }
     }

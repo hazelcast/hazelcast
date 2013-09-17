@@ -62,7 +62,7 @@ public class MapExecuteOnKeyRequest extends KeyBasedClientRequest implements Por
     }
 
     @Override
-    public Object getObjectId() {
+    public String getObjectName() {
         return name;
     }
 

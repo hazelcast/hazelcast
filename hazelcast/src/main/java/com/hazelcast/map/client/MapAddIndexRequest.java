@@ -59,7 +59,7 @@ public class MapAddIndexRequest extends AllPartitionsClientRequest implements Po
     }
 
     @Override
-    public Object getObjectId() {
+    public String getObjectName() {
         return name;
     }
 
