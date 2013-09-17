@@ -22,12 +22,13 @@ import java.util.Map;
  * date: 9/16/13
  * author: eminn
  */
-public class PartitionWideEntryWithPredicateOperation extends  AbstractMapOperation implements BackupAwareOperation, PartitionAwareOperation{
+public class PartitionWideEntryWithPredicateOperation extends AbstractMapOperation implements BackupAwareOperation, PartitionAwareOperation {
     EntryProcessor entryProcessor;
     MapEntrySet response;
     Predicate predicate;
 
-    public PartitionWideEntryWithPredicateOperation(){}
+    public PartitionWideEntryWithPredicateOperation() {
+    }
 
     public PartitionWideEntryWithPredicateOperation(String name, EntryProcessor entryProcessor, Predicate predicate) {
         super(name);
@@ -43,15 +44,15 @@ public class PartitionWideEntryWithPredicateOperation extends  AbstractMapOperat
         for (Map.Entry<Data, Record> recordEntry : records.entrySet()) {
             Data dataKey = recordEntry.getKey();
             Record record = recordEntry.getValue();
-            queryEntry = new QueryEntry(getNodeEngine().getSerializationService(),dataKey,mapService.toObject(record.getKey()),mapService.toObject(record.getValue()));
+            Object key = mapService.toObject(record.getKey());
+            Object value = mapService.toObject(record.getValue());
+            queryEntry = new QueryEntry(getNodeEngine().getSerializationService(), dataKey, key, value);
             Object result;
-            if(predicate.apply(queryEntry))
-            {
-               Map.Entry mapEntry = new AbstractMap.SimpleEntry(mapService.toObject(record.getKey()),mapService.toObject(record.getValue()));
-               result = entryProcessor.process(mapEntry);
-            }
-            else
-              continue;
+            if (predicate.apply(queryEntry)) {
+                Map.Entry mapEntry = new AbstractMap.SimpleEntry(key, value);
+                result = entryProcessor.process(mapEntry);
+            } else
+                continue;
 
             if (result != null) {
                 response.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(dataKey, mapService.toData(result)));

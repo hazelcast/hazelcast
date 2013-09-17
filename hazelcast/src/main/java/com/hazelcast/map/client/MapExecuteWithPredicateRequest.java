@@ -74,7 +74,7 @@ public class MapExecuteWithPredicateRequest extends AllPartitionsClientRequest i
     }
 
     public int getClassId() {
-        return MapPortableHook.EXECUTE_ON_ALL_KEYS;
+        return MapPortableHook.EXECUTE_WITH_PREDICATE;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
