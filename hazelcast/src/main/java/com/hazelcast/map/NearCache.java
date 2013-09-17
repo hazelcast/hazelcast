@@ -79,7 +79,7 @@ public class NearCache {
         if (evictionPolicy != EvictionPolicy.NONE && cache.size() >= maxSize) {
             fireEvictCache();
         }
-        Object value = inMemoryFormat.equals(MapConfig.InMemoryFormat.BINARY) ? data : mapService.toObject(data);
+        final Object value = inMemoryFormat.equals(MapConfig.InMemoryFormat.BINARY) ? data : mapService.toObject(data);
         final CacheRecord record = new CacheRecord(key, value);
         cache.put(key, record);
         updateSizeEstimator(calculateCost(record));
@@ -212,12 +212,13 @@ public class NearCache {
 
         public long getCost(){
             return key.totalSize()
-                    // todo find object size
-                    //+ ((Data)value).totalSize()
-                    + 2 * Long.SIZE / Byte.SIZE
-                    // todo sizeof atomic integer
-                    + Integer.SIZE / Byte.SIZE;
-
+                    // todo find object size  if not a Data instance.
+                    + (value instanceof Data? ((Data)value).totalSize() + 2*(Integer.SIZE/Byte.SIZE) : 0)
+                    + 2 * (Long.SIZE / Byte.SIZE)
+                    // sizeof atomic integer
+                    + Integer.SIZE / Byte.SIZE
+                    // object references (key, value,hit)
+                    + 3*(Integer.SIZE / Byte.SIZE);
         }
 
         public Data getKey() {
