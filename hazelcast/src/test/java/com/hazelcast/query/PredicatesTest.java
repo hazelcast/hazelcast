@@ -172,6 +172,7 @@ public class PredicatesTest {
 
     @Test
     public void testSqlPredicate() {
+        assertEquals("(name IN (name0,name2) AND age IN (2,5,8))", sql("name in('name0', 'name2') and age   IN ( 2, 5  ,8)"));
         assertEquals("name IN (name0,name2)", sql("name in ('name0', 'name2')"));
         assertEquals("(name LIKE 'joe' AND id=5)", sql("name like 'joe' AND id = 5"));
         assertEquals("active=true", sql("active"));
