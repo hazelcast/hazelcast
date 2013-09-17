@@ -208,6 +208,19 @@ public class PredicatesTest {
         assertEquals("(name IN (name0,name2) AND age IN (2,5,8))", sql("name in('name0', 'name2') and age   IN ( 2, 5  ,8)"));
     }
 
+    @Test
+    public void testSqlPredicateEscape() {
+        assertEquals("(active=true AND name=abc x'yz 1'23)", sql("active AND name='abc x''yz 1''23'"));
+        assertEquals("(active=true AND name=)", sql("active AND name=''"));
+
+        assertTrue(Predicates.like(null, "J.-*.*\\%").apply(new DummyEntry("J.-*.*%")));
+        assertTrue(Predicates.like(null, "J\\_").apply(new DummyEntry("J_")));
+
+        assertTrue(Predicates.like(null, "J%").apply(new DummyEntry("Java")));
+
+
+    }
+
     @Test(expected = RuntimeException.class)
     public void testInvalidSqlPredicate1() {
         new SqlPredicate("invalid sql");
