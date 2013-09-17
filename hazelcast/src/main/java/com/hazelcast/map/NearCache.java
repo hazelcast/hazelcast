@@ -211,9 +211,11 @@ public class NearCache {
         }
 
         public long getCost(){
+            // todo find object size  if not a Data instance.
+            if( !(value instanceof Data) ) return 0;
+            // value is Data
             return key.totalSize()
-                    // todo find object size  if not a Data instance.
-                    + (value instanceof Data? ((Data)value).totalSize() + 2*(Integer.SIZE/Byte.SIZE) : 0)
+                    + ((Data)value).totalSize() + 2*(Integer.SIZE/Byte.SIZE)
                     + 2 * (Long.SIZE / Byte.SIZE)
                     // sizeof atomic integer
                     + Integer.SIZE / Byte.SIZE
