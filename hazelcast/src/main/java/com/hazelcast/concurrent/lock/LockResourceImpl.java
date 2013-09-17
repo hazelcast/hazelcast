@@ -302,6 +302,7 @@ final class LockResourceImpl implements DataSerializable, LockResource {
         out.writeInt(len);
         if (len > 0) {
             for (ConditionKey key : signalKeys) {
+                out.writeUTF(key.getObjectName());
                 out.writeUTF(key.getConditionId());
             }
         }
@@ -338,7 +339,7 @@ final class LockResourceImpl implements DataSerializable, LockResource {
         if (len > 0) {
             signalKeys = new ArrayList<ConditionKey>(len);
             for (int i = 0; i < len; i++) {
-                signalKeys.add(new ConditionKey(key, in.readUTF()));
+                signalKeys.add(new ConditionKey(in.readUTF(), key, in.readUTF()));
             }
         }
 

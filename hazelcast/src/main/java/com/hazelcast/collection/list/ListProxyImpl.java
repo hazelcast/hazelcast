@@ -17,6 +17,7 @@
 package com.hazelcast.collection.list;
 
 import com.hazelcast.collection.AbstractCollectionProxyImpl;
+import com.hazelcast.config.CollectionConfig;
 import com.hazelcast.core.IList;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
@@ -31,6 +32,10 @@ public class ListProxyImpl<E> extends AbstractCollectionProxyImpl<ListService, E
 
     protected ListProxyImpl(String name, NodeEngine nodeEngine, ListService service) {
         super(name, nodeEngine, service);
+    }
+
+    protected CollectionConfig getConfig(NodeEngine nodeEngine) {
+        return nodeEngine.getConfig().getListConfig(name);
     }
 
     public void add(int index, E e) {

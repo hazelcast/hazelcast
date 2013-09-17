@@ -35,9 +35,6 @@ import java.util.concurrent.Future;
  */
 public abstract class MultiMapProxySupport extends AbstractDistributedObject<MultiMapService> {
 
-//    public static final String COLLECTION_LIST_NAME = "hz:list:";
-//    public static final String COLLECTION_SET_NAME = "hz:set:";
-
     protected final MultiMapConfig config;
     protected final String name;
     protected final LockProxySupport lockSupport;
@@ -261,10 +258,6 @@ public abstract class MultiMapProxySupport extends AbstractDistributedObject<Mul
 //            throw ExceptionUtil.rethrow(throwable);
 //        }
 //    }
-
-    public Object getId() {
-        return name;
-    }
 
     public String getServiceName() {
         return MultiMapService.SERVICE_NAME;

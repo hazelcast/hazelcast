@@ -16,7 +16,11 @@
 
 package com.hazelcast.collection;
 
+import com.hazelcast.config.CollectionConfig;
+import com.hazelcast.config.ItemListenerConfig;
+import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.ItemListener;
+import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.SerializableCollection;
@@ -39,16 +43,33 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
         this.partitionId = nodeEngine.getPartitionService().getPartitionId(getNameAsPartitionAwareData());
     }
 
-    public Object getId() {
-        return name;
+    @Override
+    public void initialize() {
+        final NodeEngine nodeEngine = getNodeEngine();
+        CollectionConfig config = getConfig(nodeEngine);
+        final List<ItemListenerConfig> itemListenerConfigs = config.getListenerConfigs();
+        for (ItemListenerConfig itemListenerConfig : itemListenerConfigs) {
+            ItemListener listener = itemListenerConfig.getImplementation();
+            if (listener == null && itemListenerConfig.getClassName() != null) {
+                try {
+                    listener = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), itemListenerConfig.getClassName());
+                } catch (Exception e) {
+                    throw ExceptionUtil.rethrow(e);
+                }
+            }
+            if (listener != null) {
+                if (listener instanceof HazelcastInstanceAware) {
+                    ((HazelcastInstanceAware) listener).setHazelcastInstance(nodeEngine.getHazelcastInstance());
+                }
+                addItemListener(listener, itemListenerConfig.isIncludeValue());
+            }
+        }
     }
+
+    protected abstract CollectionConfig getConfig(NodeEngine nodeEngine);
 
     public String getName() {
         return name;
-    }
-
-    public void initialize() {
-
     }
 
     public boolean add(E e) {

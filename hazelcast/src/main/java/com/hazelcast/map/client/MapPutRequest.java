@@ -78,7 +78,7 @@ public class MapPutRequest extends KeyBasedClientRequest implements Portable, In
         return MapService.SERVICE_NAME;
     }
 
-    public Object getObjectId() {
+    public String getObjectName() {
         return name;
     }
 

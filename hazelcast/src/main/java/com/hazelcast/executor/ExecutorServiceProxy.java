@@ -365,10 +365,6 @@ public class ExecutorServiceProxy extends AbstractDistributedObject<DistributedE
         return DistributedExecutorService.SERVICE_NAME;
     }
 
-    public Object getId() {
-        return name;
-    }
-
     public String getName() {
         return name;
     }

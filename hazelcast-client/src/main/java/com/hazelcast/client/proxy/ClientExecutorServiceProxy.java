@@ -271,10 +271,6 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
         shutdown();
     }
 
-    public String getName() {
-        return name;
-    }
-
     private Data getTaskPartitionKey(Object task) {
         if (task instanceof PartitionAware) {
             final Object partitionKey = ((PartitionAware) task).getPartitionKey();

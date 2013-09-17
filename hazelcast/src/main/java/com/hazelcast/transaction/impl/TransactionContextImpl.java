@@ -89,18 +89,18 @@ final class TransactionContextImpl implements TransactionContext {
     }
 
     @SuppressWarnings("unchecked")
-    public TransactionalObject getTransactionalObject(String serviceName, Object id) {
+    public TransactionalObject getTransactionalObject(String serviceName, String name) {
         if (transaction.getState() != Transaction.State.ACTIVE) {
             throw new TransactionNotActiveException("No transaction is found while accessing " +
-                    "transactional object -> " + serviceName + "[" + id + "]!");
+                    "transactional object -> " + serviceName + "[" + name + "]!");
         }
-        TransactionalObjectKey key = new TransactionalObjectKey(serviceName, id);
+        TransactionalObjectKey key = new TransactionalObjectKey(serviceName, name);
         TransactionalObject obj = txnObjectMap.get(key);
         if (obj == null) {
             final Object service = nodeEngine.getService(serviceName);
             if (service instanceof TransactionalService) {
-                nodeEngine.getProxyService().initializeDistributedObject(serviceName, id);
-                obj = ((TransactionalService) service).createTransactionalObject(id, transaction);
+                nodeEngine.getProxyService().initializeDistributedObject(serviceName, name);
+                obj = ((TransactionalService) service).createTransactionalObject(name, transaction);
                 txnObjectMap.put(key, obj);
             } else {
                 if (service == null) {
@@ -123,11 +123,11 @@ final class TransactionContextImpl implements TransactionContext {
     private class TransactionalObjectKey {
 
         private final String serviceName;
-        private final Object id;
+        private final String name;
 
-        TransactionalObjectKey(String serviceName, Object id) {
+        TransactionalObjectKey(String serviceName, String name) {
             this.serviceName = serviceName;
-            this.id = id;
+            this.name = name;
         }
 
         public boolean equals(Object o) {
@@ -136,7 +136,7 @@ final class TransactionContextImpl implements TransactionContext {
 
             TransactionalObjectKey that = (TransactionalObjectKey) o;
 
-            if (!id.equals(that.id)) return false;
+            if (!name.equals(that.name)) return false;
             if (!serviceName.equals(that.serviceName)) return false;
 
             return true;
@@ -144,7 +144,7 @@ final class TransactionContextImpl implements TransactionContext {
 
         public int hashCode() {
             int result = serviceName.hashCode();
-            result = 31 * result + id.hashCode();
+            result = 31 * result + name.hashCode();
             return result;
         }
     }

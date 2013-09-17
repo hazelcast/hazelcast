@@ -60,7 +60,7 @@ public class AwaitOperation extends BaseLockOperation implements WaitSupport, Ba
     }
 
     public ConditionKey getWaitKey() {
-        return new ConditionKey(key, conditionId);
+        return new ConditionKey(namespace.getObjectName(), key, conditionId);
     }
 
     public boolean shouldWait() {

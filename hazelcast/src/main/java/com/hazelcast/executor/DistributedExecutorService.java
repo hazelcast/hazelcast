@@ -98,13 +98,11 @@ public class DistributedExecutorService implements ManagedService, RemoteService
         return shutdownExecutors.contains(name);
     }
 
-    public ExecutorServiceProxy createDistributedObject(Object objectId) {
-        final String name = String.valueOf(objectId);
+    public ExecutorServiceProxy createDistributedObject(String name) {
         return new ExecutorServiceProxy(name, nodeEngine, this);
     }
 
-    public void destroyDistributedObject(Object objectId) {
-        final String name = String.valueOf(objectId);
+    public void destroyDistributedObject(String name) {
         shutdownExecutors.remove(name);
         executionService.shutdownExecutor(name);
     }

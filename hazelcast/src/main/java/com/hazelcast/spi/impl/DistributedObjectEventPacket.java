@@ -28,15 +28,15 @@ public final class DistributedObjectEventPacket implements DataSerializable {
 
     private EventType eventType;
     private String serviceName;
-    private Object objectId;
+    private String name;
 
     public DistributedObjectEventPacket() {
     }
 
-    public DistributedObjectEventPacket(EventType eventType, String serviceName, Object objectId) {
+    public DistributedObjectEventPacket(EventType eventType, String serviceName, String name) {
         this.eventType = eventType;
         this.serviceName = serviceName;
-        this.objectId = objectId;
+        this.name = name;
     }
 
     public String getServiceName() {
@@ -47,20 +47,20 @@ public final class DistributedObjectEventPacket implements DataSerializable {
         return eventType;
     }
 
-    public Object getObjectId() {
-        return objectId;
+    public String getName() {
+        return name;
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeBoolean(eventType == EventType.CREATED);
         out.writeUTF(serviceName);
-        out.writeObject(objectId);
+        out.writeObject(name); // writing as object for backward-compatibility
     }
 
     public void readData(ObjectDataInput in) throws IOException {
         eventType = in.readBoolean() ? EventType.CREATED : EventType.DESTROYED;
         serviceName = in.readUTF();
-        objectId = in.readObject();
+        name = in.readObject();
     }
 
     @Override
@@ -69,7 +69,7 @@ public final class DistributedObjectEventPacket implements DataSerializable {
         sb.append("DistributedObjectEvent");
         sb.append("{eventType=").append(eventType);
         sb.append(", serviceName='").append(serviceName).append('\'');
-        sb.append(", objectId=").append(objectId);
+        sb.append(", name=").append(name);
         sb.append('}');
         return sb.toString();
     }

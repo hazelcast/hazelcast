@@ -37,7 +37,7 @@ public class GetDistributedObjectsRequest extends ClientRequest implements Porta
         final SerializationService serializationService = getClientEngine().getSerializationService();
         final ArrayList<Data> dataArrayList = new ArrayList<Data>(distributedObjects.size());
         for (DistributedObject distributedObject : distributedObjects) {
-            final DistributedObjectInfo distributedObjectInfo = new DistributedObjectInfo(distributedObject.getServiceName(), distributedObject.getId());
+            final DistributedObjectInfo distributedObjectInfo = new DistributedObjectInfo(distributedObject.getServiceName(), distributedObject.getName());
             dataArrayList.add(serializationService.toData(distributedObjectInfo));
         }
         SerializableCollection collection = new SerializableCollection(dataArrayList);

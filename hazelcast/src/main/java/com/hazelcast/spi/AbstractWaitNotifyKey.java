@@ -22,19 +22,19 @@ package com.hazelcast.spi;
 public abstract class AbstractWaitNotifyKey implements WaitNotifyKey {
 
     private final String service;
-    private final Object id;
+    private final String objectName;
 
-    protected AbstractWaitNotifyKey(String service, Object id) {
+    protected AbstractWaitNotifyKey(String service, String objectName) {
         this.service = service;
-        this.id = id;
+        this.objectName = objectName;
     }
 
     public final String getServiceName() {
         return service;
     }
 
-    public final Object getDistributedObjectId() {
-        return id;
+    public String getObjectName() {
+        return objectName;
     }
 
     @Override
@@ -44,7 +44,7 @@ public abstract class AbstractWaitNotifyKey implements WaitNotifyKey {
 
         AbstractWaitNotifyKey that = (AbstractWaitNotifyKey) o;
 
-        if (id != null ? !id.equals(that.id) : that.id != null) return false;
+        if (objectName != null ? !objectName.equals(that.objectName) : that.objectName != null) return false;
         if (service != null ? !service.equals(that.service) : that.service != null) return false;
 
         return true;
@@ -53,7 +53,7 @@ public abstract class AbstractWaitNotifyKey implements WaitNotifyKey {
     @Override
     public int hashCode() {
         int result = service != null ? service.hashCode() : 0;
-        result = 31 * result + (id != null ? id.hashCode() : 0);
+        result = 31 * result + (objectName != null ? objectName.hashCode() : 0);
         return result;
     }
 }

@@ -37,8 +37,8 @@ public final class LockWaitNotifyKey implements WaitNotifyKey {
         return namespace.getServiceName();
     }
 
-    public Object getDistributedObjectId() {
-        return namespace.getObjectId() != null ? namespace.getObjectId() : key;
+    public String getObjectName() {
+        return namespace.getObjectName();
     }
 
     @Override

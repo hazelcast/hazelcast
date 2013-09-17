@@ -72,8 +72,7 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         return orderingLocks[hash != Integer.MIN_VALUE ? (Math.abs(hash) % orderingLocks.length) : 0];
     }
 
-    public TopicProxy createDistributedObject(Object objectId) {
-        final String name = String.valueOf(objectId);
+    public TopicProxy createDistributedObject(String name) {
         TopicProxy proxy;
         TopicConfig topicConfig = nodeEngine.getConfig().getTopicConfig(name);
         if (topicConfig.isGlobalOrderingEnabled())
@@ -83,9 +82,8 @@ public class TopicService implements ManagedService, RemoteService, EventPublish
         return proxy;
     }
 
-    public void destroyDistributedObject(Object objectId) {
-        statsMap.remove(String.valueOf(objectId));
-
+    public void destroyDistributedObject(String objectId) {
+        statsMap.remove(objectId);
     }
 
     public void dispatchEvent(Object event, Object listener) {

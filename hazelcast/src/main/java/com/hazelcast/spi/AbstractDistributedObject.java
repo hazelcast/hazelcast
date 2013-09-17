@@ -49,7 +49,7 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
 
     public final void destroy() {
         final NodeEngine engine = getNodeEngine();
-        engine.getProxyService().destroyDistributedObject(getServiceName(), getId());
+        engine.getProxyService().destroyDistributedObject(getServiceName(), getName());
     }
 
     public final NodeEngine getNodeEngine() {
@@ -81,6 +81,12 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
     final void invalidate() {
         nodeEngine = null;
         service = null;
+    }
+
+    @Override
+    @Deprecated
+    public final Object getId() {
+        return getName();
     }
 
     @Override

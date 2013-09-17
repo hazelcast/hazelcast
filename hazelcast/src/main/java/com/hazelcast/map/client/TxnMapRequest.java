@@ -143,7 +143,7 @@ public class TxnMapRequest extends CallableClientRequest implements Portable, In
     }
 
     @Override
-    public Object getObjectId() {
+    public String getObjectName() {
         return name;
     }
 

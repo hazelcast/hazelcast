@@ -31,17 +31,17 @@ import java.io.IOException;
  */
 public class LockDestroyRequest extends CallableClientRequest implements Portable, RetryableRequest {
 
-    Object objectId;
+    private String name;
 
     public LockDestroyRequest() {
     }
 
-    public LockDestroyRequest(Object objectId) {
-        this.objectId = objectId;
+    public LockDestroyRequest(String name) {
+        this.name = name;
     }
 
     public Object call() throws Exception {
-        getClientEngine().getProxyService().destroyDistributedObject(getServiceName(), objectId);
+        getClientEngine().getProxyService().destroyDistributedObject(getServiceName(), name);
         return null;
     }
 
@@ -58,10 +58,10 @@ public class LockDestroyRequest extends CallableClientRequest implements Portabl
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
-        writer.getRawDataOutput().writeObject(objectId);
+        writer.getRawDataOutput().writeObject(name);  // writing as object for backward-compatibility
     }
 
     public void readPortable(PortableReader reader) throws IOException {
-        objectId = reader.getRawDataInput().readObject();
+        name = reader.getRawDataInput().readObject();
     }
 }

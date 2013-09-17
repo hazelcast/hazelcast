@@ -46,12 +46,12 @@ public class SetService extends CollectionService {
         return SERVICE_NAME;
     }
 
-    public DistributedObject createDistributedObject(Object objectId) {
-        return new SetProxyImpl(String.valueOf(objectId), nodeEngine, this);
+    public DistributedObject createDistributedObject(String objectId) {
+        return new SetProxyImpl(objectId, nodeEngine, this);
     }
 
-    public TransactionalSetProxy createTransactionalObject(Object id, TransactionSupport transaction) {
-        return new TransactionalSetProxy(String.valueOf(id), transaction, nodeEngine, this);
+    public TransactionalSetProxy createTransactionalObject(String name, TransactionSupport transaction) {
+        return new TransactionalSetProxy(name, transaction, nodeEngine, this);
     }
 
     public Operation prepareReplicationOperation(PartitionReplicationEvent event) {

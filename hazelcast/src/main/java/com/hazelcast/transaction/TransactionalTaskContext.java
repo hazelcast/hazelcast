@@ -69,6 +69,5 @@ public interface TransactionalTaskContext {
     <E> TransactionalSet<E> getSet(String name);
 
 
-    <T extends TransactionalObject> T getTransactionalObject(String serviceName, Object id);
-
+    <T extends TransactionalObject> T getTransactionalObject(String serviceName, String name);
 }

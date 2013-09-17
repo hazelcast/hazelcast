@@ -74,7 +74,7 @@ public class MultiMapService implements ManagedService, RemoteService,
         if (lockService != null) {
             lockService.registerLockStoreConstructor(SERVICE_NAME, new ConstructorFunction<ObjectNamespace, LockStoreInfo>() {
                 public LockStoreInfo createNew(final ObjectNamespace key) {
-                    String name = (String)key.getObjectId();
+                    String name = key.getObjectName();
                     final MultiMapConfig multiMapConfig = nodeEngine.getConfig().getMultiMapConfig(name);
 
                     return new LockStoreInfo() {
@@ -118,19 +118,17 @@ public class MultiMapService implements ManagedService, RemoteService,
         return partitionContainers[partitionId];
     }
 
-    public DistributedObject createDistributedObject(Object objectId) {
-        String name = (String) objectId;
+    public DistributedObject createDistributedObject(String name) {
         return new ObjectMultiMapProxy(this, nodeEngine, name);
-
     }
 
-    public void destroyDistributedObject(Object objectId) {
-        String name = (String) objectId;
+    public void destroyDistributedObject(String name) {
         for (MultiMapPartitionContainer container : partitionContainers) {
             if (container != null) {
                 container.destroyCollection(name);
             }
         }
+        nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, name);
     }
 
     public Set<Data> localKeySet(String name) {
@@ -303,8 +301,7 @@ public class MultiMapService implements ManagedService, RemoteService,
         return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, localMultiMapStatsConstructorFunction);
     }
 
-    public <T extends TransactionalObject> T createTransactionalObject(Object id, TransactionSupport transaction) {
-        String name = (String) id;
+    public <T extends TransactionalObject> T createTransactionalObject(String name, TransactionSupport transaction) {
         return (T) new TransactionalMultiMapProxy(nodeEngine, this, name, transaction);
     }
 

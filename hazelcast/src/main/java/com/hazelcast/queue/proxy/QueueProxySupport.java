@@ -184,10 +184,6 @@ abstract class QueueProxySupport extends AbstractDistributedObject<QueueService>
         return QueueService.SERVICE_NAME;
     }
 
-    public final Object getId() {
-        return name;
-    }
-
     public final String getName() {
         return name;
     }

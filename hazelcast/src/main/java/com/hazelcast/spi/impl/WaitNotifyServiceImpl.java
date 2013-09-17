@@ -201,7 +201,7 @@ class WaitNotifyServiceImpl implements WaitNotifyService {
                 if (waitingOp.isValid()) {
                     WaitNotifyKey wnk = waitingOp.waitSupport.getWaitKey();
                     if (serviceName.equals(wnk.getServiceName())
-                            && objectId.equals(wnk.getDistributedObjectId())) {
+                            && objectId.equals(wnk.getObjectName())) {
                         waitingOp.cancel(cause);
                     }
                 }

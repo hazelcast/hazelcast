@@ -43,6 +43,6 @@ abstract class BaseCountDownLatchOperation extends AbstractNamedOperation implem
     }
 
     protected WaitNotifyKey waitNotifyKey() {
-        return new LatchKey(CountDownLatchService.SERVICE_NAME, name);
+        return new LatchKey(name);
     }
 }

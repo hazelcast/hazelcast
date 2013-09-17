@@ -74,7 +74,7 @@ public class MapExecuteOnAllKeysRequest extends AllPartitionsClientRequest imple
     }
 
     @Override
-    public Object getObjectId() {
+    public String getObjectName() {
         return name;
     }
 

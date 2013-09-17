@@ -21,7 +21,7 @@ import com.hazelcast.transaction.impl.TransactionSupport;
 
 public interface TransactionalService {
 
-    <T extends TransactionalObject> T createTransactionalObject(Object id, TransactionSupport transaction);
+    <T extends TransactionalObject> T createTransactionalObject(String name, TransactionSupport transaction);
 
     void rollbackTransaction(String transactionId);
 }

@@ -37,7 +37,8 @@ public final class UnlockRequest extends AbstractUnlockRequest {
     }
 
     protected InternalLockNamespace getNamespace() {
-        return new InternalLockNamespace();
+        String name = (String) getClientEngine().toObject(key);
+        return new InternalLockNamespace(name);
     }
 
     public int getFactoryId() {

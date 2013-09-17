@@ -131,10 +131,6 @@ public class AbstractClientCollectionProxy<E> extends ClientProxy implements ICo
         invoke(request);
     }
 
-    public String getName() {
-        return (String)getId();
-    }
-
     public String addItemListener(final ItemListener<E> listener, final boolean includeValue) {
         final CollectionAddListenerRequest request = new CollectionAddListenerRequest(getName(), includeValue);
         request.setServiceName(getServiceName());

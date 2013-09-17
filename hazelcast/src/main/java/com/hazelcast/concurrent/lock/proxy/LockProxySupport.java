@@ -165,4 +165,8 @@ public final class LockProxySupport {
             throw ExceptionUtil.rethrow(t);
         }
     }
+
+    public ObjectNamespace getNamespace() {
+        return namespace;
+    }
 }

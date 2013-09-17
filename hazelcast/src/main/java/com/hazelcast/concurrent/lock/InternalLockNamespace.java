@@ -27,12 +27,21 @@ import java.io.IOException;
  */
 public final class InternalLockNamespace implements ObjectNamespace {
 
+    private String name;
+
+    public InternalLockNamespace() {
+    }
+
+    public InternalLockNamespace(String name) {
+        this.name = name;
+    }
+
     public String getServiceName() {
         return LockService.SERVICE_NAME;
     }
 
-    public Object getObjectId() {
-        return null;
+    public String getObjectName() {
+        return name;
     }
 
     @Override
@@ -49,9 +58,11 @@ public final class InternalLockNamespace implements ObjectNamespace {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
     }
 }

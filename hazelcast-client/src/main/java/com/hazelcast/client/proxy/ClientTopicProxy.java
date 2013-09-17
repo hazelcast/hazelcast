@@ -75,10 +75,6 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
         invoke(request);
     }
 
-    public String getName() {
-        return name;
-    }
-
     private Data getKey() {
         if (key == null) {
             key = getContext().getSerializationService().toData(name);

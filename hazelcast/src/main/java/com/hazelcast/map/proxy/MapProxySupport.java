@@ -742,10 +742,6 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return timeunit != null ? timeunit.toMillis(time) : time;
     }
 
-    public final Object getId() {
-        return name;
-    }
-
     public final String getName() {
         return name;
     }
