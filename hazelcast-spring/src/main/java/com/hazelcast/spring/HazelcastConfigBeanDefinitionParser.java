@@ -44,6 +44,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
 
         private ManagedMap mapConfigManagedMap;
         private ManagedMap queueManagedMap;
+        private ManagedMap listManagedMap;
+        private ManagedMap setManagedMap;
         private ManagedMap topicManagedMap;
         private ManagedMap multiMapManagedMap;
         private ManagedMap executorManagedMap;
@@ -54,12 +56,16 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             this.configBuilder = BeanDefinitionBuilder.rootBeanDefinition(Config.class);
             this.mapConfigManagedMap = new ManagedMap();
             this.queueManagedMap = new ManagedMap();
+            this.listManagedMap = new ManagedMap();
+            this.setManagedMap = new ManagedMap();
             this.topicManagedMap = new ManagedMap();
             this.multiMapManagedMap = new ManagedMap();
             this.executorManagedMap = new ManagedMap();
             this.wanReplicationManagedMap = new ManagedMap();
             this.configBuilder.addPropertyValue("mapConfigs", mapConfigManagedMap);
             this.configBuilder.addPropertyValue("queueConfigs", queueManagedMap);
+            this.configBuilder.addPropertyValue("listConfigs", listManagedMap);
+            this.configBuilder.addPropertyValue("setConfigs", setManagedMap);
             this.configBuilder.addPropertyValue("topicConfigs", topicManagedMap);
             this.configBuilder.addPropertyValue("multiMapConfigs", multiMapManagedMap);
             this.configBuilder.addPropertyValue("executorConfigs", executorManagedMap);
@@ -92,6 +98,10 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleMap(node);
                 } else if ("multimap".equals(nodeName)) {
                     handleMultiMap(node);
+                } else if ("list".equals(nodeName)) {
+                    handleList(node);
+                } else if ("set".equals(nodeName)) {
+                    handleSet(node);
                 } else if ("topic".equals(nodeName)) {
                     handleTopic(node);
                 } else if ("wan-replication".equals(nodeName)) {
@@ -277,12 +287,67 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             final String name = getTextContent(attName);
             fillAttributeValues(node, queueConfigBuilder);
             for (org.w3c.dom.Node childNode : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
-                if ("item-listeners".equals(cleanNodeName(childNode))) {
+                final String nodeName = cleanNodeName(childNode);
+                if ("item-listeners".equals(nodeName)) {
                     ManagedList listeners = parseListeners(childNode, ItemListenerConfig.class);
                     queueConfigBuilder.addPropertyValue("itemListenerConfigs", listeners);
+                } else if ("queue-store".equals(nodeName)) {
+                    handleQueueStoreConfig(childNode, queueConfigBuilder);
                 }
             }
             queueManagedMap.put(name, queueConfigBuilder.getBeanDefinition());
+        }
+
+        public void handleQueueStoreConfig(Node node, BeanDefinitionBuilder queueConfigBuilder) {
+            BeanDefinitionBuilder queueStoreConfigBuilder = createBeanBuilder(QueueStoreConfig.class);
+            final AbstractBeanDefinition beanDefinition = queueStoreConfigBuilder.getBeanDefinition();
+            for (org.w3c.dom.Node child : new IterableNodeList(node, Node.ELEMENT_NODE)) {
+                if ("properties".equals(cleanNodeName(child))) {
+                    handleProperties(child, queueStoreConfigBuilder);
+                    break;
+                }
+            }
+            final String implAttrName = "store-implementation";
+            final String factoryImplAttrName = "factory-implementation";
+            fillAttributeValues(node, queueStoreConfigBuilder, implAttrName, factoryImplAttrName);
+            final NamedNodeMap attributes = node.getAttributes();
+            final Node implRef = attributes.getNamedItem(implAttrName);
+            final Node factoryImplRef = attributes.getNamedItem(factoryImplAttrName);
+            if (factoryImplRef != null) {
+                queueStoreConfigBuilder.addPropertyReference(xmlToJavaName(factoryImplAttrName), getTextContent(factoryImplRef));
+            }
+            if (implRef != null) {
+                queueStoreConfigBuilder.addPropertyReference(xmlToJavaName(implAttrName), getTextContent(implRef));
+            }
+            queueConfigBuilder.addPropertyValue("queueStoreConfig", beanDefinition);
+        }
+
+        public void handleList(Node node) {
+            BeanDefinitionBuilder listConfigBuilder = createBeanBuilder(ListConfig.class);
+            final Node attName = node.getAttributes().getNamedItem("name");
+            final String name = getTextContent(attName);
+            fillAttributeValues(node, listConfigBuilder);
+            for (org.w3c.dom.Node childNode : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
+                if ("item-listeners".equals(cleanNodeName(childNode))) {
+                    ManagedList listeners = parseListeners(childNode, ItemListenerConfig.class);
+                    listConfigBuilder.addPropertyValue("itemListenerConfigs", listeners);
+                }
+            }
+            listManagedMap.put(name, listConfigBuilder.getBeanDefinition());
+        }
+
+        public void handleSet(Node node) {
+            BeanDefinitionBuilder setConfigBuilder = createBeanBuilder(SetConfig.class);
+            final Node attName = node.getAttributes().getNamedItem("name");
+            final String name = getTextContent(attName);
+            fillAttributeValues(node, setConfigBuilder);
+            for (org.w3c.dom.Node childNode : new IterableNodeList(node.getChildNodes(), Node.ELEMENT_NODE)) {
+                if ("item-listeners".equals(cleanNodeName(childNode))) {
+                    ManagedList listeners = parseListeners(childNode, ItemListenerConfig.class);
+                    setConfigBuilder.addPropertyValue("itemListenerConfigs", listeners);
+                }
+            }
+            setManagedMap.put(name, setConfigBuilder.getBeanDefinition());
         }
 
         public void handleMap(Node node) {
