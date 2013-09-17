@@ -53,14 +53,14 @@ public abstract class CollectionConfig<T extends CollectionConfig> {
         return (T)this;
     }
 
-    public List<ItemListenerConfig> getListenerConfigs() {
+    public List<ItemListenerConfig> getItemListenerConfigs() {
         if (listenerConfigs == null){
             listenerConfigs = new ArrayList<ItemListenerConfig>();
         }
         return listenerConfigs;
     }
 
-    public T setListenerConfigs(List<ItemListenerConfig> listenerConfigs) {
+    public T setItemListenerConfigs(List<ItemListenerConfig> listenerConfigs) {
         this.listenerConfigs = listenerConfigs;
         return (T)this;
     }
@@ -106,6 +106,6 @@ public abstract class CollectionConfig<T extends CollectionConfig> {
     }
 
     public void addItemListenerConfig(ItemListenerConfig itemListenerConfig){
-        getListenerConfigs().add(itemListenerConfig);
+        getItemListenerConfigs().add(itemListenerConfig);
     }
 }

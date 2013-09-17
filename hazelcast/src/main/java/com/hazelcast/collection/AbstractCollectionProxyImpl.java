@@ -47,7 +47,7 @@ public abstract class AbstractCollectionProxyImpl<S extends RemoteService, E> ex
     public void initialize() {
         final NodeEngine nodeEngine = getNodeEngine();
         CollectionConfig config = getConfig(nodeEngine);
-        final List<ItemListenerConfig> itemListenerConfigs = config.getListenerConfigs();
+        final List<ItemListenerConfig> itemListenerConfigs = config.getItemListenerConfigs();
         for (ItemListenerConfig itemListenerConfig : itemListenerConfigs) {
             ItemListener listener = itemListenerConfig.getImplementation();
             if (listener == null && itemListenerConfig.getClassName() != null) {
