@@ -67,6 +67,21 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
         return str.indexOf("'", start);
     }
 
+    private int getApostropheIndexIgnoringDoubles(String str, int start) {
+        int i = str.indexOf("'", start);
+        int j = str.indexOf("'", i+1);
+        //ignore doubles
+        while(i == j-1){
+            i = str.indexOf("'", j+1);
+            j = str.indexOf("'", i+1);
+        }
+        return i;
+    }
+
+    private String removeEscapes(String phrase) {
+        return (phrase.length() > 2) ? phrase.replace("''","'") : phrase;
+    }
+
     private Predicate createPredicate(String sql) {
         Map<String, String> mapPhrases = new HashMap<String, String>(1);
         int apoIndex = getApostropheIndex(sql, 0);
@@ -76,11 +91,12 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
             while (apoIndex != -1) {
                 phraseId++;
                 int start = apoIndex + 1;
-                int end = getApostropheIndex(sql, apoIndex + 1);
+                int end = getApostropheIndexIgnoringDoubles(sql, apoIndex + 1);
                 if (end == -1) {
                     throw new RuntimeException("Missing ' in sql");
                 }
-                String phrase = sql.substring(start, end);
+                String phrase = removeEscapes(sql.substring(start, end));
+
                 String key = "$" + phraseId;
                 mapPhrases.put(key, phrase);
                 String before = sql.substring(0, apoIndex);
