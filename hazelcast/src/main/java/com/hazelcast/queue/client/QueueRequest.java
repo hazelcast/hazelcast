@@ -61,7 +61,7 @@ public abstract class QueueRequest extends PartitionClientRequest implements Por
         return QueueService.SERVICE_NAME;
     }
 
-    public Object getObjectId() {
+    public String getObjectName() {
         return name;
     }
 

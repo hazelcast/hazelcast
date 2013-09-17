@@ -136,6 +136,8 @@
                                     </xs:element>
                                 </xs:sequence>
                                 <xs:attribute name="name" type="xs:string" use="optional" default="default"/>
+                                <xs:attribute name="backup-count" use="optional" type="xs:string"/>
+                                <xs:attribute name="async-backup-count" use="optional" type="xs:string"/>
                                 <xs:attribute name="value-collection-type" type="xs:string" use="optional"
                                               default="SET"/>
                             </xs:complexType>

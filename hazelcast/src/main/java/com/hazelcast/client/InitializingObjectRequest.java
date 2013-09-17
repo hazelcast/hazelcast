@@ -21,5 +21,5 @@ package com.hazelcast.client;
  */
 public interface InitializingObjectRequest {
 
-    Object getObjectId();
+    String getObjectName();
 }

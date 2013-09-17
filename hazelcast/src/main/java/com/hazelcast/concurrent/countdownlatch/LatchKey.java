@@ -23,7 +23,7 @@ import com.hazelcast.spi.AbstractWaitNotifyKey;
  */
 public class LatchKey extends AbstractWaitNotifyKey {
 
-    protected LatchKey(String service, Object id) {
-        super(service, id);
+    protected LatchKey(String name) {
+        super(CountDownLatchService.SERVICE_NAME, name);
     }
 }

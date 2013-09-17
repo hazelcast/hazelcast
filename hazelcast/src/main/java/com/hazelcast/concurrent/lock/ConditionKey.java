@@ -24,11 +24,14 @@ import com.hazelcast.spi.WaitNotifyKey;
  */
 public final class ConditionKey implements WaitNotifyKey {
 
+    private final String name;
+
     private final Data key;
 
     private final String conditionId;
 
-    public ConditionKey(Data key, String conditionId) {
+    public ConditionKey(String name, Data key, String conditionId) {
+        this.name = name;
         this.key = key;
         this.conditionId = conditionId;
     }
@@ -37,8 +40,8 @@ public final class ConditionKey implements WaitNotifyKey {
         return LockServiceImpl.SERVICE_NAME;
     }
 
-    public Object getDistributedObjectId() {
-        return key;
+    public String getObjectName() {
+        return name;
     }
 
     public Data getKey() {

@@ -300,8 +300,20 @@ public interface HazelcastInstance {
      * @param id identifier of the object
      * @param <T> type of the DistributedObject
      * @return DistributedObject created by the service
+     *
+     * @deprecated use {@link #getDistributedObject(String, String)} instead.
      */
+    @Deprecated
     <T extends DistributedObject> T getDistributedObject(String serviceName, Object id);
+
+    /**
+     *
+     * @param serviceName name of the service
+     * @param name name of the object
+     * @param <T> type of the DistributedObject
+     * @return DistributedObject created by the service
+     */
+    <T extends DistributedObject> T getDistributedObject(String serviceName, String name);
 
     /**
      * Returns a ConcurrentMap that can be used to add user-context to the HazelcastInstance. This can be used

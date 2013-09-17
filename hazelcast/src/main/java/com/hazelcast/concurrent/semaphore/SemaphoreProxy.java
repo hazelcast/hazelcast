@@ -17,9 +17,7 @@
 package com.hazelcast.concurrent.semaphore;
 
 import com.hazelcast.core.ISemaphore;
-import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.Invocation;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.*;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.ExecutionException;
@@ -134,10 +132,6 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
         }
     }
 
-    public Object getId() {
-        return name;
-    }
-
     private <T> T invoke(SemaphoreOperation operation) throws ExecutionException, InterruptedException {
         final NodeEngine nodeEngine = getNodeEngine();
         Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(SemaphoreService.SERVICE_NAME, operation, partitionId).build();
@@ -154,7 +148,6 @@ public class SemaphoreProxy extends AbstractDistributedObject<SemaphoreService> 
     public String getServiceName() {
         return SemaphoreService.SERVICE_NAME;
     }
-
 
     @Override
     public String toString() {

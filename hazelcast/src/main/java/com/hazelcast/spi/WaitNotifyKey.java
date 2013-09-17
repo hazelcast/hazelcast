@@ -23,6 +23,6 @@ public interface WaitNotifyKey {
 
     String getServiceName();
 
-    Object getDistributedObjectId();
+    String getObjectName();
 
 }

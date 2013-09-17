@@ -228,10 +228,6 @@ public abstract class TransactionalMultiMapProxySupport extends AbstractDistribu
         return new TransactionLogKey(name, key);
     }
 
-    public Object getId() {
-        return name;
-    }
-
     public final String getServiceName() {
         return MultiMapService.SERVICE_NAME;
     }

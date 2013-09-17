@@ -52,7 +52,7 @@ public class AddListenerRequest extends CallableClientRequest implements Portabl
         return QueueService.SERVICE_NAME;
     }
 
-    public Object getObjectId() {
+    public String getObjectName() {
         return name;
     }
 

@@ -65,7 +65,7 @@ public class TxnPollRequest extends CallableClientRequest implements Portable, I
         return QueuePortableHook.TXN_POLL;
     }
 
-    public Object getObjectId() {
+    public String getObjectName() {
         return name;
     }
 

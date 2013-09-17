@@ -246,10 +246,6 @@ public final class ClientQueueProxy<E> extends ClientProxy implements IQueue<E>{
         invoke(request);
     }
 
-    public String getName() {
-        return name;
-    }
-
     private <T> T invoke(Object req){
         try {
             return getContext().getInvocationService().invokeOnKeyOwner(req, getPartitionKey());

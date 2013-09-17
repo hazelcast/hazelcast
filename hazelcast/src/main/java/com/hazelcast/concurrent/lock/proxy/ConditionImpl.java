@@ -18,7 +18,6 @@ package com.hazelcast.concurrent.lock.proxy;
 
 import com.hazelcast.concurrent.lock.AwaitOperation;
 import com.hazelcast.concurrent.lock.BeforeAwaitOperation;
-import com.hazelcast.concurrent.lock.InternalLockNamespace;
 import com.hazelcast.concurrent.lock.SignalOperation;
 import com.hazelcast.core.ICondition;
 import com.hazelcast.spi.Invocation;
@@ -42,12 +41,13 @@ final class ConditionImpl implements ICondition {
     private final LockProxy lockProxy;
     private final int partitionId;
     private final String conditionId;
-    private final ObjectNamespace namespace = new InternalLockNamespace();
+    private final ObjectNamespace namespace;
 
     public ConditionImpl(LockProxy lockProxy, String id) {
         this.lockProxy = lockProxy;
-        this.partitionId = lockProxy.getNodeEngine().getPartitionService().getPartitionId(lockProxy.key);
+        this.partitionId = lockProxy.getPartitionId();
         this.conditionId = id;
+        this.namespace = lockProxy.getNamespace();
     }
 
     public void await() throws InterruptedException {

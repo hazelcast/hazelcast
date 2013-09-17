@@ -146,6 +146,11 @@ public final class HazelcastInstanceProxy implements HazelcastInstance {
         return getOriginal().getDistributedObject(serviceName, id);
     }
 
+    @Override
+    public <T extends DistributedObject> T getDistributedObject(String serviceName, String name) {
+        return getOriginal().getDistributedObject(serviceName, name);
+    }
+
     public String addDistributedObjectListener(DistributedObjectListener distributedObjectListener) {
         return getOriginal().addDistributedObjectListener(distributedObjectListener);
     }

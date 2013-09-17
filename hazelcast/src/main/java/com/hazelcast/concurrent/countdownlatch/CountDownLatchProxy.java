@@ -17,9 +17,7 @@
 package com.hazelcast.concurrent.countdownlatch;
 
 import com.hazelcast.core.ICountDownLatch;
-import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.Invocation;
-import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.*;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.concurrent.ExecutionException;
@@ -93,10 +91,6 @@ public class CountDownLatchProxy extends AbstractDistributedObject<CountDownLatc
 
     public String getServiceName() {
         return CountDownLatchService.SERVICE_NAME;
-    }
-
-    public Object getId() {
-        return name;
     }
 
     @Override

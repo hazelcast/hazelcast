@@ -104,12 +104,6 @@
 
         <empty-queue-ttl>-1</empty-queue-ttl>
     </queue>
-    <list name="default">
-        <backup-count>1</backup-count>
-    </list>
-    <set name="default">
-        <backup-count>1</backup-count>
-    </set>
     <map name="default">
         <!--
            Data type that will be used for storing recordMap.
@@ -184,6 +178,19 @@
         <merge-policy>com.hazelcast.map.merge.PassThroughMergePolicy</merge-policy>
 
     </map>
+
+    <multimap name="default">
+        <backup-count>1</backup-count>
+        <value-collection-type>SET</value-collection-type>
+    </multimap>
+
+    <list name="default">
+        <backup-count>1</backup-count>
+    </list>
+
+    <set name="default">
+        <backup-count>1</backup-count>
+    </set>
 
     <semaphore name="default">
         <initial-permits>0</initial-permits>

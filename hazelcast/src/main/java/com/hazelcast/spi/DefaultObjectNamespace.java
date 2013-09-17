@@ -28,22 +28,22 @@ public final class DefaultObjectNamespace implements ObjectNamespace {
 
     private String service;
 
-    private Object objectId;
+    private String objectName;
 
     public DefaultObjectNamespace() {
     }
 
-    public DefaultObjectNamespace(String serviceName, Object objectId) {
+    public DefaultObjectNamespace(String serviceName, String objectName) {
         this.service = serviceName;
-        this.objectId = objectId;
+        this.objectName = objectName;
     }
 
     public String getServiceName() {
         return service;
     }
 
-    public Object getObjectId() {
-        return objectId;
+    public String getObjectName() {
+        return objectName;
     }
 
     @Override
@@ -53,7 +53,7 @@ public final class DefaultObjectNamespace implements ObjectNamespace {
 
         DefaultObjectNamespace that = (DefaultObjectNamespace) o;
 
-        if (objectId != null ? !objectId.equals(that.objectId) : that.objectId != null) return false;
+        if (objectName != null ? !objectName.equals(that.objectName) : that.objectName != null) return false;
         if (service != null ? !service.equals(that.service) : that.service != null) return false;
 
         return true;
@@ -62,18 +62,18 @@ public final class DefaultObjectNamespace implements ObjectNamespace {
     @Override
     public int hashCode() {
         int result = service != null ? service.hashCode() : 0;
-        result = 31 * result + (objectId != null ? objectId.hashCode() : 0);
+        result = 31 * result + (objectName != null ? objectName.hashCode() : 0);
         return result;
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(service);
-        out.writeObject(objectId);
+        out.writeObject(objectName);  // writing as object for backward-compatibility
     }
 
     public void readData(ObjectDataInput in) throws IOException {
         service = in.readUTF();
-        objectId = in.readObject();
+        objectName = in.readObject();
     }
 
     @Override
@@ -81,7 +81,7 @@ public final class DefaultObjectNamespace implements ObjectNamespace {
         final StringBuilder sb = new StringBuilder();
         sb.append("DefaultObjectNamespace");
         sb.append("{service='").append(service).append('\'');
-        sb.append(", objectId=").append(objectId);
+        sb.append(", objectName=").append(objectName);
         sb.append('}');
         return sb.toString();
     }

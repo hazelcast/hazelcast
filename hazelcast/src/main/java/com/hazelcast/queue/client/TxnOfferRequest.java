@@ -68,7 +68,7 @@ public class TxnOfferRequest extends CallableClientRequest implements Portable, 
         return QueuePortableHook.TXN_OFFER;
     }
 
-    public Object getObjectId() {
+    public String getObjectName() {
         return name;
     }
 

@@ -88,24 +88,24 @@ public class TransactionContextProxy implements TransactionContext {
         return getTransactionalObject(SetService.SERVICE_NAME, name);
     }
 
-    public <T extends TransactionalObject> T getTransactionalObject(String serviceName, Object id) {
+    public <T extends TransactionalObject> T getTransactionalObject(String serviceName, String name) {
         if (transaction.getState() != Transaction.State.ACTIVE) {
             throw new TransactionNotActiveException("No transaction is found while accessing " +
-                    "transactional object -> " + serviceName + "[" + id + "]!");
+                    "transactional object -> " + serviceName + "[" + name + "]!");
         }
-        TransactionalObjectKey key = new TransactionalObjectKey(serviceName, id);
+        TransactionalObjectKey key = new TransactionalObjectKey(serviceName, name);
         TransactionalObject obj = txnObjectMap.get(key);
         if (obj == null) {
             if (serviceName.equals(QueueService.SERVICE_NAME)) {
-                obj = new ClientTxnQueueProxy(String.valueOf(id), this);
+                obj = new ClientTxnQueueProxy(name, this);
             } else if (serviceName.equals(MapService.SERVICE_NAME)) {
-                obj = new ClientTxnMapProxy(String.valueOf(id), this);
+                obj = new ClientTxnMapProxy(name, this);
             } else if (serviceName.equals(MultiMapService.SERVICE_NAME)) {
-                obj = new ClientTxnMultiMapProxy(String.valueOf(id), this);
+                obj = new ClientTxnMultiMapProxy(name, this);
             } else if (serviceName.equals(ListService.SERVICE_NAME)) {
-                obj = new ClientTxnListProxy(String.valueOf(id), this);
+                obj = new ClientTxnListProxy(name, this);
             }else if (serviceName.equals(SetService.SERVICE_NAME)) {
-                obj = new ClientTxnSetProxy(String.valueOf(id), this);
+                obj = new ClientTxnSetProxy(name, this);
             }
 
             if (obj == null) {
@@ -142,11 +142,11 @@ public class TransactionContextProxy implements TransactionContext {
     private class TransactionalObjectKey {
 
         private final String serviceName;
-        private final Object id;
+        private final String name;
 
-        TransactionalObjectKey(String serviceName, Object id) {
+        TransactionalObjectKey(String serviceName, String name) {
             this.serviceName = serviceName;
-            this.id = id;
+            this.name = name;
         }
 
         public boolean equals(Object o) {
@@ -155,7 +155,7 @@ public class TransactionContextProxy implements TransactionContext {
 
             TransactionalObjectKey that = (TransactionalObjectKey) o;
 
-            if (!id.equals(that.id)) return false;
+            if (!name.equals(that.name)) return false;
             if (!serviceName.equals(that.serviceName)) return false;
 
             return true;
@@ -163,7 +163,7 @@ public class TransactionContextProxy implements TransactionContext {
 
         public int hashCode() {
             int result = serviceName.hashCode();
-            result = 31 * result + id.hashCode();
+            result = 31 * result + name.hashCode();
             return result;
         }
     }

@@ -53,11 +53,10 @@ public class IdGeneratorService implements ManagedService, RemoteService {
         return nodeEngine.getHazelcastInstance().getAtomicLong(ATOMIC_LONG_NAME + name);
     }
 
-    public DistributedObject createDistributedObject(Object objectId) {
-        String name = String.valueOf(objectId);
+    public DistributedObject createDistributedObject(String name) {
         return new IdGeneratorProxy(getAtomicLong(name), name);
     }
 
-    public void destroyDistributedObject(Object objectId) {
+    public void destroyDistributedObject(String name) {
     }
 }

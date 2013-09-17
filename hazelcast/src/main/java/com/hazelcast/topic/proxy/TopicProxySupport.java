@@ -91,10 +91,6 @@ abstract class TopicProxySupport extends AbstractDistributedObject<TopicService>
         return TopicService.SERVICE_NAME;
     }
 
-    public Object getId() {
-        return name;
-    }
-
     public String getName() {
         return name;
     }

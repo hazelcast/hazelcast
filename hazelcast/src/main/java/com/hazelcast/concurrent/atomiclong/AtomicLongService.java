@@ -68,12 +68,12 @@ public class AtomicLongService implements ManagedService, RemoteService, Migrati
         reset();
     }
 
-    public AtomicLongProxy createDistributedObject(Object objectId) {
-        return new AtomicLongProxy(String.valueOf(objectId), nodeEngine, this);
+    public AtomicLongProxy createDistributedObject(String name) {
+        return new AtomicLongProxy(name, nodeEngine, this);
     }
 
-    public void destroyDistributedObject(Object objectId) {
-        numbers.remove(String.valueOf(objectId));
+    public void destroyDistributedObject(String name) {
+        numbers.remove(name);
     }
 
     public void beforeMigration(PartitionMigrationEvent partitionMigrationEvent) {

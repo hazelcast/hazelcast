@@ -223,10 +223,6 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
         invoke(request);
     }
 
-    public String getName() {
-        return name;
-    }
-
     private <T> T invoke(Object req, Data key) {
         try {
             return getContext().getInvocationService().invokeOnKeyOwner(req, key);
