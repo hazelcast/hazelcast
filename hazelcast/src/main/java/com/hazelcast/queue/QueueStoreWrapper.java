@@ -19,6 +19,7 @@ package com.hazelcast.queue;
 import com.hazelcast.config.QueueStoreConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.QueueStore;
+import com.hazelcast.core.QueueStoreFactory;
 import com.hazelcast.nio.BufferObjectDataOutput;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.IOUtil;
@@ -57,26 +58,40 @@ public class QueueStoreWrapper implements QueueStore<Data> {
         this.serializationService = serializationService;
     }
 
-    public void setConfig(QueueStoreConfig storeConfig) {
+    public void setConfig(QueueStoreConfig storeConfig, String name) {
         if (storeConfig == null) {
             return;
         }
-        this.storeConfig = storeConfig;
-        try {
-            store = storeConfig.getStoreImplementation();
-            if (store == null){
+        store = storeConfig.getStoreImplementation();
+        if (store == null){
+            try {
                 store = ClassLoaderUtil.newInstance(serializationService.getClassLoader(), storeConfig.getClassName());
+            } catch (Exception ignored) {
             }
-            enabled = storeConfig.isEnabled();
-            binary = Boolean.parseBoolean(storeConfig.getProperty("binary"));
-            memoryLimit = parseInt("memory-limit", DEFAULT_MEMORY_LIMIT);
-            bulkLoad = parseInt("bulk-load", DEFAULT_BULK_LOAD);
-            if (bulkLoad < 1) {
-                bulkLoad = 1;
-            }
-        } catch (Exception e) {
-            throw new HazelcastException(e);
         }
+
+        if (store == null){
+            QueueStoreFactory factory = storeConfig.getFactoryImplementation();
+            if (factory == null){
+                try {
+                    factory = ClassLoaderUtil.newInstance(serializationService.getClassLoader(), storeConfig.getFactoryClassName());
+                } catch (Exception ignored) {
+                }
+            }
+            if (factory == null){
+                return;
+            }
+            store = factory.newQueueStore(name, storeConfig.getProperties());
+        }
+        this.storeConfig = storeConfig;
+        enabled = storeConfig.isEnabled();
+        binary = Boolean.parseBoolean(storeConfig.getProperty("binary"));
+        memoryLimit = parseInt("memory-limit", DEFAULT_MEMORY_LIMIT);
+        bulkLoad = parseInt("bulk-load", DEFAULT_BULK_LOAD);
+        if (bulkLoad < 1) {
+            bulkLoad = 1;
+        }
+
     }
 
     public boolean isEnabled() {

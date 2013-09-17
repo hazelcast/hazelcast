@@ -914,7 +914,6 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     }
 
     private QueueStoreConfig createQueueStoreConfig(final org.w3c.dom.Node node) {
-        MapStoreConfig mapStoreConfig = new MapStoreConfig();
         QueueStoreConfig queueStoreConfig = new QueueStoreConfig();
         final NamedNodeMap atts = node.getAttributes();
         for (int a = 0; a < atts.getLength(); a++) {
@@ -928,6 +927,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             final String nodeName = cleanNodeName(n.getNodeName());
             if ("class-name".equals(nodeName)) {
                 queueStoreConfig.setClassName(getTextContent(n).trim());
+            } else if ("factory-class-name".equals(nodeName)) {
+                queueStoreConfig.setFactoryClassName(getTextContent(n).trim());
             } else if ("properties".equals(nodeName)) {
                 fillProperties(n, queueStoreConfig.getProperties());
             }
