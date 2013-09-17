@@ -279,6 +279,31 @@ public final class ConstantSerializers {
         }
     }
 
+    public static final class EnumSerializer extends SingletonSerializer< Enum> {
+
+        public int getTypeId() {
+            return CONSTANT_TYPE_ENUM;
+        }
+
+        public void write(ObjectDataOutput out, Enum obj) throws IOException {
+            out.writeUTF(obj.getClass().getName());
+            out.writeUTF(obj.name());
+        }
+
+        public Enum read(ObjectDataInput in) throws IOException {
+            String clazzName = in.readUTF();
+            Class clazz;
+            try {
+                clazz = in.getClassLoader().loadClass(clazzName);
+            } catch (ClassNotFoundException e) {
+                throw new IOException("Failed to deserialize enum: "+clazzName,e);
+            }
+
+            String name = in.readUTF();
+            return Enum.valueOf(clazz,name);
+        }
+    }
+
     private ConstantSerializers() {}
 
 }
