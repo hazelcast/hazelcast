@@ -61,7 +61,11 @@ public final class SerializationConstants {
 
     public static final int CONSTANT_TYPE_DOUBLE_ARRAY = ID--;
 
+    public static final int CONSTANT_TYPE_ENUM = ID--;
+
     public static final int CONSTANT_SERIALIZERS_LENGTH = -ID - 1;
+
+
 
     // ------------------------------------------------------------
 
