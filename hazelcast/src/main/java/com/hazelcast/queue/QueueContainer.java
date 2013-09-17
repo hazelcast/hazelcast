@@ -565,7 +565,7 @@ public class QueueContainer implements DataSerializable {
         store = new QueueStoreWrapper(nodeEngine.getSerializationService());
         this.config = new QueueConfig(config);
         QueueStoreConfig storeConfig = config.getQueueStoreConfig();
-        store.setConfig(storeConfig);
+        store.setConfig(storeConfig, name);
     }
 
     long nextId() {

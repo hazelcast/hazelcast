@@ -17,6 +17,7 @@
 package com.hazelcast.config;
 
 import com.hazelcast.core.QueueStore;
+import com.hazelcast.core.QueueStoreFactory;
 
 import java.util.Properties;
 
@@ -27,19 +28,12 @@ public class QueueStoreConfig {
 
     private boolean enabled = true;
     private String className = null;
+    private String factoryClassName = null;
     private Properties properties = new Properties();
     private QueueStore storeImplementation;
+    private QueueStoreFactory factoryImplementation;
 
     public QueueStoreConfig() {
-    }
-
-    public QueueStoreConfig(String className, boolean enabled) {
-        this.className = className;
-        this.enabled = enabled;
-    }
-
-    public QueueStoreConfig(QueueStore storeImplementation) {
-        this.storeImplementation = storeImplementation;
     }
 
     public QueueStore getStoreImplementation() {
@@ -84,6 +78,24 @@ public class QueueStoreConfig {
 
     public QueueStoreConfig setProperty(String name, String value){
         properties.put(name, value);
+        return this;
+    }
+
+    public String getFactoryClassName() {
+        return factoryClassName;
+    }
+
+    public QueueStoreConfig setFactoryClassName(String factoryClassName) {
+        this.factoryClassName = factoryClassName;
+        return this;
+    }
+
+    public QueueStoreFactory getFactoryImplementation() {
+        return factoryImplementation;
+    }
+
+    public QueueStoreConfig setFactoryImplementation(QueueStoreFactory factoryImplementation) {
+        this.factoryImplementation = factoryImplementation;
         return this;
     }
 
