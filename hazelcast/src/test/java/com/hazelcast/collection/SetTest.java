@@ -17,12 +17,13 @@
 package com.hazelcast.collection;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.SetConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ISet;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Test;
@@ -50,7 +51,7 @@ public class SetTest extends HazelcastTestSupport {
         Config config = new Config();
         final String name = "defSet";
         final int count = 100;
-        final int insCount = 4;
+        final int insCount = 2;
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
         final HazelcastInstance[] instances = factory.newInstances(config);
 
@@ -120,6 +121,76 @@ public class SetTest extends HazelcastTestSupport {
         assertTrue(latchAdd.await(5, TimeUnit.SECONDS));
         assertTrue(latchRemove.await(5, TimeUnit.SECONDS));
 
+    }
+
+    @Test
+    public void testMigration(){
+        Config config = new Config();
+        final String name = "defSet";
+
+        final int insCount = 4;
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
+
+        HazelcastInstance instance1 = factory.newHazelcastInstance(config);
+
+        ISet set = instance1.getSet(name);
+
+        for (int i=0; i<100; i++){
+            set.add("item" + i);
+        }
+
+        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        assertEquals(100, instance2.getSet(name).size());
+
+
+        HazelcastInstance instance3 = factory.newHazelcastInstance(config);
+        assertEquals(100, instance3.getSet(name).size());
+
+
+
+        instance1.getLifecycleService().shutdown();
+        assertEquals(100, instance3.getSet(name).size());
+
+
+        set = instance2.getSet(name);
+        for (int i=0; i<100; i++){
+            set.add("item-" + i);
+        }
+
+
+        instance2.getLifecycleService().shutdown();
+        assertEquals(200, instance3.getSet(name).size());
+
+
+
+        instance1 = factory.newHazelcastInstance(config);
+        assertEquals(200, instance1.getSet(name).size());
+
+        instance3.getLifecycleService().shutdown();
+        assertEquals(200, instance1.getSet(name).size());
+
+    }
+
+    @Test
+    public void testMaxSize(){
+        Config config = new Config();
+        final String name = "defSet";
+        config.addSetConfig(new SetConfig().setName(name).setBackupCount(1).setMaxSize(100));
+
+        final int insCount = 2;
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
+
+        HazelcastInstance instance1 = factory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+
+        ISet set = instance1.getSet(name);
+
+        for (int i=0; i<100; i++){
+            assertTrue(set.add("item" + i));
+        }
+        assertFalse(set.add("item"));
+        assertNotNull(set.remove("item0"));
+        assertTrue(set.add("item"));
     }
 
     private ISet getSet(HazelcastInstance[] instances, String name){

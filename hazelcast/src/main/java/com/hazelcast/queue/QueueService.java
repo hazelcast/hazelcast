@@ -51,6 +51,8 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         RemoteService, EventPublishingService<QueueEvent, ItemListener> {
 
     public static final String SERVICE_NAME = "hz:impl:queueService";
+    protected static final StringPartitioningStrategy PARTITIONING_STRATEGY = new StringPartitioningStrategy();
+
     private final NodeEngine nodeEngine;
     private final ConcurrentMap<String, QueueContainer> containerMap = new ConcurrentHashMap<String, QueueContainer>();
     private final ConcurrentMap<String, LocalQueueStatsImpl> statsMap = new ConcurrentHashMap<String, LocalQueueStatsImpl>(1000);
@@ -90,8 +92,8 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     public QueueContainer getOrCreateContainer(final String name, boolean fromBackup) throws Exception {
         QueueContainer container = containerMap.get(name);
         if (container == null) {
-            container = new QueueContainer(name, nodeEngine.getConfig().getQueueConfig(name),
-                    nodeEngine, this);
+            container = new QueueContainer(name, nodeEngine.getConfig().getQueueConfig(name), nodeEngine, this);
+
             QueueContainer existing = containerMap.putIfAbsent(name, container);
             if (existing != null) {
                 container = existing;

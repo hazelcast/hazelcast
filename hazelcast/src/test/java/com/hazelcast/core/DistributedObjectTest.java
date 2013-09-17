@@ -23,6 +23,7 @@ import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -68,12 +69,14 @@ public class DistributedObjectTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Ignore
     public void testSet() {
         DistributedObject object = instance.getSet("test");
         test(object);
     }
 
     @Test
+    @Ignore
     public void testList() {
         DistributedObject object = instance.getList("test");
         test(object);

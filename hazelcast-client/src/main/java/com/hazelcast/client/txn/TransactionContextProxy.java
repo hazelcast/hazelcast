@@ -19,11 +19,9 @@ package com.hazelcast.client.txn;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.connection.Connection;
 import com.hazelcast.client.txn.proxy.*;
-import com.hazelcast.collection.CollectionProxyId;
-import com.hazelcast.collection.CollectionProxyType;
-import com.hazelcast.collection.CollectionService;
-import com.hazelcast.collection.list.ObjectListProxy;
-import com.hazelcast.collection.set.ObjectSetProxy;
+import com.hazelcast.collection.list.ListService;
+import com.hazelcast.collection.set.SetService;
+import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.core.*;
 import com.hazelcast.map.MapService;
 import com.hazelcast.queue.QueueService;
@@ -79,15 +77,15 @@ public class TransactionContextProxy implements TransactionContext {
     }
 
     public <K, V> TransactionalMultiMap<K, V> getMultiMap(String name) {
-        return getTransactionalObject(CollectionService.SERVICE_NAME, new CollectionProxyId(name, null, CollectionProxyType.MULTI_MAP));
+        return getTransactionalObject(MultiMapService.SERVICE_NAME, name);
     }
 
     public <E> TransactionalList<E> getList(String name) {
-        return getTransactionalObject(CollectionService.SERVICE_NAME, new CollectionProxyId(ObjectListProxy.COLLECTION_LIST_NAME, name, CollectionProxyType.LIST));
+        return getTransactionalObject(ListService.SERVICE_NAME, name);
     }
 
     public <E> TransactionalSet<E> getSet(String name) {
-        return getTransactionalObject(CollectionService.SERVICE_NAME, new CollectionProxyId(ObjectSetProxy.COLLECTION_SET_NAME, name, CollectionProxyType.SET));
+        return getTransactionalObject(SetService.SERVICE_NAME, name);
     }
 
     public <T extends TransactionalObject> T getTransactionalObject(String serviceName, Object id) {
@@ -102,16 +100,14 @@ public class TransactionContextProxy implements TransactionContext {
                 obj = new ClientTxnQueueProxy(String.valueOf(id), this);
             } else if (serviceName.equals(MapService.SERVICE_NAME)) {
                 obj = new ClientTxnMapProxy(String.valueOf(id), this);
-            } else if (serviceName.equals(CollectionService.SERVICE_NAME)) {
-                CollectionProxyId proxyId = (CollectionProxyId) id;
-                if (proxyId.getType().equals(CollectionProxyType.MULTI_MAP)) {
-                    obj = new ClientTxnMultiMapProxy(proxyId, this);
-                } else if (proxyId.getType().equals(CollectionProxyType.LIST)) {
-                    obj = new ClientTxnListProxy(proxyId, this);
-                } else if (proxyId.getType().equals(CollectionProxyType.SET)) {
-                    obj = new ClientTxnSetProxy(proxyId, this);
-                }
+            } else if (serviceName.equals(MultiMapService.SERVICE_NAME)) {
+                obj = new ClientTxnMultiMapProxy(String.valueOf(id), this);
+            } else if (serviceName.equals(ListService.SERVICE_NAME)) {
+                obj = new ClientTxnListProxy(String.valueOf(id), this);
+            }else if (serviceName.equals(SetService.SERVICE_NAME)) {
+                obj = new ClientTxnSetProxy(String.valueOf(id), this);
             }
+
             if (obj == null) {
                 throw new IllegalArgumentException("Service[" + serviceName + "] is not transactional!");
             }

@@ -16,11 +16,9 @@
 
 package com.hazelcast.transaction.impl;
 
-import com.hazelcast.collection.CollectionProxyId;
-import com.hazelcast.collection.CollectionProxyType;
-import com.hazelcast.collection.CollectionService;
-import com.hazelcast.collection.list.ObjectListProxy;
-import com.hazelcast.collection.set.ObjectSetProxy;
+import com.hazelcast.collection.list.ListService;
+import com.hazelcast.collection.set.SetService;
+import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.core.*;
 import com.hazelcast.map.MapService;
 import com.hazelcast.queue.QueueService;
@@ -77,17 +75,17 @@ final class TransactionContextImpl implements TransactionContext {
 
     @SuppressWarnings("unchecked")
     public <K, V> TransactionalMultiMap<K, V> getMultiMap(String name) {
-        return (TransactionalMultiMap<K, V>) getTransactionalObject(CollectionService.SERVICE_NAME, new CollectionProxyId(name, null, CollectionProxyType.MULTI_MAP));
+        return (TransactionalMultiMap<K, V>) getTransactionalObject(MultiMapService.SERVICE_NAME, name);
     }
 
     @SuppressWarnings("unchecked")
     public <E> TransactionalList<E> getList(String name) {
-        return (TransactionalList<E>) getTransactionalObject(CollectionService.SERVICE_NAME, new CollectionProxyId(ObjectListProxy.COLLECTION_LIST_NAME, name, CollectionProxyType.LIST));
+        return (TransactionalList<E>) getTransactionalObject(ListService.SERVICE_NAME, name);
     }
 
     @SuppressWarnings("unchecked")
     public <E> TransactionalSet<E> getSet(String name) {
-        return (TransactionalSet<E>) getTransactionalObject(CollectionService.SERVICE_NAME, new CollectionProxyId(ObjectSetProxy.COLLECTION_SET_NAME, name, CollectionProxyType.SET));
+        return (TransactionalSet<E>) getTransactionalObject(SetService.SERVICE_NAME, name);
     }
 
     @SuppressWarnings("unchecked")
