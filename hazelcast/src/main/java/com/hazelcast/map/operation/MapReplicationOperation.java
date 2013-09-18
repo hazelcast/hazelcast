@@ -37,6 +37,7 @@ import java.util.Map.Entry;
 public class MapReplicationOperation extends AbstractOperation {
 
     private Map<String, Set<RecordReplicationInfo>> data;
+    private Map<String, Boolean> mapInitialLoadInfo;
 
     public MapReplicationOperation() {
     }
@@ -44,14 +45,22 @@ public class MapReplicationOperation extends AbstractOperation {
     public MapReplicationOperation(PartitionContainer container, int partitionId, int replicaIndex) {
         this.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
         data = new HashMap<String, Set<RecordReplicationInfo>>(container.getMaps().size());
+        mapInitialLoadInfo = new HashMap<String, Boolean>(container.getMaps().size());
+
         for (Entry<String, PartitionRecordStore> entry : container.getMaps().entrySet()) {
-            String name = entry.getKey();
-            RecordStore recordStore = entry.getValue();
-            MapContainer mapContainer = recordStore.getMapContainer();
             final MapConfig mapConfig = entry.getValue().getMapContainer().getMapConfig();
             if (mapConfig.getTotalBackupCount() < replicaIndex) {
                 continue;
             }
+
+            String name = entry.getKey();
+            RecordStore recordStore = entry.getValue();
+            MapContainer mapContainer = recordStore.getMapContainer();
+            // adding if initial data is loaded for the only maps that has mapstore behind
+            if(mapContainer.getStore() != null) {
+                mapInitialLoadInfo.put(name, recordStore.isLoaded());
+            }
+            // now prepare data to migrate records
             Set<RecordReplicationInfo> recordSet = new HashSet<RecordReplicationInfo>(recordStore.getRecords().size());
             for (Entry<Data, Record> recordEntry : recordStore.getRecords().entrySet()) {
                 Data key = recordEntry.getKey();
@@ -71,6 +80,9 @@ public class MapReplicationOperation extends AbstractOperation {
             }
             data.put(name, recordSet);
         }
+
+
+
     }
 
     private RecordReplicationInfo createScheduledRecordState(MapContainer mapContainer, Entry<Data, Record> recordEntry, Data key) {
@@ -117,6 +129,12 @@ public class MapReplicationOperation extends AbstractOperation {
                 }
             }
         }
+        if(mapInitialLoadInfo != null) {
+            for (String mapName : mapInitialLoadInfo.keySet()) {
+                RecordStore recordStore = mapService.getRecordStore(getPartitionId(), mapName);
+                recordStore.setLoaded(mapInitialLoadInfo.get(mapName));
+            }
+        }
     }
 
     private long findDelayMillis(ScheduledEntry entry) {
@@ -140,6 +158,13 @@ public class MapReplicationOperation extends AbstractOperation {
             }
             data.put(name, recordReplicationInfos);
         }
+        size = in.readInt();
+        mapInitialLoadInfo = new HashMap<String, Boolean>(size);
+        for (int i = 0; i < size; i++) {
+            String name = in.readUTF();
+            boolean loaded = in.readBoolean();
+            mapInitialLoadInfo.put(name, loaded);
+        }
     }
 
     protected void writeInternal(final ObjectDataOutput out) throws IOException {
@@ -151,6 +176,11 @@ public class MapReplicationOperation extends AbstractOperation {
             for (RecordReplicationInfo recordReplicationInfo : recordReplicationInfos) {
                 out.writeObject(recordReplicationInfo);
             }
+        }
+        out.writeInt(mapInitialLoadInfo.size());
+        for (Entry<String, Boolean> entry : mapInitialLoadInfo.entrySet()) {
+            out.writeUTF(entry.getKey());
+            out.writeBoolean(entry.getValue());
         }
     }
 
