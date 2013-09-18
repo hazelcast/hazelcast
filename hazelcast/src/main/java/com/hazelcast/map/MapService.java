@@ -888,8 +888,24 @@ public class MapService implements ManagedService, MigrationAwareService,
             }
             if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.USED_HEAP_SIZE
                     || maxSizePolicy == MaxSizeConfig.MaxSizePolicy.USED_HEAP_PERCENTAGE) {
+
+                // find heap cost by iterating on partitions.
+                long heapCost = 0;
+                for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
+                    Address owner = nodeEngine.getPartitionService().getPartitionOwner(i);
+                    if (nodeEngine.getThisAddress().equals(owner)) {
+                        final PartitionContainer container = partitionContainers[i];
+                        if (container == null) {
+                            return false;
+                        }
+                        heapCost += container.getRecordStore(mapName).getHeapCost();
+                    }
+                }
+
+                heapCost += mapContainer.getNearCacheSizeEstimator().getSize();
+
                 final long total = Runtime.getRuntime().totalMemory();
-                final long used = mapContainer.getSizeEstimator().getSize();
+                final long used = heapCost;
                         // (total - Runtime.getRuntime().freeMemory());
                 if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.USED_HEAP_SIZE) {
                     return maxSize < (used / 1024 / 1024);
@@ -935,6 +951,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         long backupEntryMemoryCost = 0;
         long hits = 0;
         long lockedEntryCount = 0;
+        long heapCost = 0;
 
         int backupCount = mapContainer.getTotalBackupCount();
         ClusterService clusterService = nodeEngine.getClusterService();
@@ -946,6 +963,7 @@ public class MapService implements ManagedService, MigrationAwareService,
             if (partition.getOwner().equals(thisAddress)) {
                 PartitionContainer partitionContainer = getPartitionContainer(partitionId);
                 RecordStore recordStore = partitionContainer.getRecordStore(mapName);
+                heapCost += recordStore.getHeapCost();
                 Map<Data, Record> records = recordStore.getRecords();
                 for (Record record : records.values()) {
                     RecordStatistics stats = record.getStatistics();
@@ -975,6 +993,7 @@ public class MapService implements ManagedService, MigrationAwareService,
                     if (replicaAddress != null && replicaAddress.equals(thisAddress)) {
                         PartitionContainer partitionContainer = getPartitionContainer(partitionId);
                         RecordStore recordStore = partitionContainer.getRecordStore(mapName);
+                        heapCost += recordStore.getHeapCost();
                         Map<Data, Record> records = recordStore.getRecords();
                         for (Record record : records.values()) {
                             backupEntryCount++;
@@ -998,7 +1017,9 @@ public class MapService implements ManagedService, MigrationAwareService,
         localMapStats.setBackupEntryCount(zeroOrPositive(backupEntryCount));
         localMapStats.setOwnedEntryMemoryCost(zeroOrPositive(ownedEntryMemoryCost));
         localMapStats.setBackupEntryMemoryCost(zeroOrPositive(backupEntryMemoryCost));
-        localMapStats.setHeapCost( mapContainer.getSizeEstimator().getSize() );
+        // add near cache heap cost.
+        heapCost += mapContainer.getNearCacheSizeEstimator().getSize();
+        localMapStats.setHeapCost( heapCost );
 
         return localMapStats;
     }

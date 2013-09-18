@@ -46,6 +46,8 @@ public class PartitionRecordStore implements RecordStore {
     final MapContainer mapContainer;
     final MapService mapService;
     final LockStore lockStore;
+    final SizeEstimator sizeEstimator;
+    private volatile long heapCost;
 
     public PartitionRecordStore(String name, PartitionContainer partitionContainer) {
         this.name = name;
@@ -55,6 +57,7 @@ public class PartitionRecordStore implements RecordStore {
         final LockService lockService = mapService.getNodeEngine().getSharedService(LockService.SERVICE_NAME);
         this.lockStore = lockService == null ? null :
                 lockService.createLockStore(partitionContainer.getPartitionId(), new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
+        this.sizeEstimator = SizeEstimators.createMapSizeEstimator();
     }
 
     public void flush() {
@@ -150,6 +153,13 @@ public class PartitionRecordStore implements RecordStore {
         return lockStore != null && lockStore.forceUnlock(dataKey);
     }
 
+    @Override
+    public long getHeapCost() {
+        heapCost = getSizeEstimator().getSize();
+        return heapCost;
+    }
+
+
     public boolean isLocked(Data dataKey) {
         return lockStore != null && lockStore.isLocked(dataKey);
     }
@@ -227,7 +237,7 @@ public class PartitionRecordStore implements RecordStore {
             Record record = records.get(key);
             if (record != null) {
                 lockRecords.put(key, record);
-                updateSizeEstimator( calculateRecordSize(record) );
+                updateSizeEstimator(calculateRecordSize(record));
             }
         }
         Set<Data> keysToDelete = records.keySet();
@@ -275,7 +285,7 @@ public class PartitionRecordStore implements RecordStore {
             }
             records.remove(dataKey);
             // reduce size
-            updateSizeEstimator( -calculateRecordSize(record) );
+            updateSizeEstimator(-calculateRecordSize(record));
         }
         return oldValue;
     }
@@ -296,7 +306,7 @@ public class PartitionRecordStore implements RecordStore {
             oldValue = record.getValue();
             records.remove(dataKey);
             // reduce size
-            updateSizeEstimator( -calculateRecordSize(record) );
+            updateSizeEstimator(-calculateRecordSize(record));
             removeIndex(dataKey);
         }
         return oldValue;
@@ -321,7 +331,7 @@ public class PartitionRecordStore implements RecordStore {
             mapStoreDelete(record, dataKey);
             records.remove(dataKey);
             // reduce size
-            updateSizeEstimator( -calculateRecordSize(record) );
+            updateSizeEstimator(-calculateRecordSize(record));
             removed = true;
         }
         return removed;
@@ -337,7 +347,7 @@ public class PartitionRecordStore implements RecordStore {
                     record = mapService.createRecord(name, dataKey, value, -1);
                     records.put(dataKey, record);
                     saveIndex(record);
-                    updateSizeEstimator( calculateRecordSize(record) );
+                    updateSizeEstimator(calculateRecordSize(record));
                 }
                 // below is an optimization. if the record does not exist the next get will return null without looking at mapStore.
                 if (value == null) {
@@ -345,7 +355,7 @@ public class PartitionRecordStore implements RecordStore {
                     if (ttlForNull > 0) {
                         record = mapService.createRecord(name, dataKey, null, ttlForNull * 1000);
                         records.put(dataKey, record);
-                        updateSizeEstimator( calculateRecordSize(record) );
+                        updateSizeEstimator(calculateRecordSize(record));
                     }
                 }
             }
@@ -392,15 +402,15 @@ public class PartitionRecordStore implements RecordStore {
                 Record record = mapService.createRecord(name, dataKey, value, -1);
                 records.put(dataKey, record);
                 saveIndex(record);
-                updateSizeEstimator( calculateRecordSize(record) );
+                updateSizeEstimator(calculateRecordSize(record));
             }
             // below is an optimization. if the record does not exist the next get will return null without looking at mapStore.
             else {
                 int ttlForNull = mapService.getNodeEngine().getGroupProperties().CACHED_NULL_TTL_SECONDS.getInteger();
                 if (ttlForNull > 0) {
-                    Record record = mapService.createRecord(name, dataKey, null, ttlForNull*1000);
+                    Record record = mapService.createRecord(name, dataKey, null, ttlForNull * 1000);
                     records.put(dataKey, record);
-                    updateSizeEstimator( calculateRecordSize(record) );
+                    updateSizeEstimator(calculateRecordSize(record));
                 }
             }
             value = mapService.interceptGet(name, value);
@@ -419,7 +429,7 @@ public class PartitionRecordStore implements RecordStore {
                 if (value != null) {
                     record = mapService.createRecord(name, dataKey, value, -1);
                     records.put(dataKey, record);
-                    updateSizeEstimator( calculateRecordSize(record) );
+                    updateSizeEstimator(calculateRecordSize(record));
                 }
             }
         }
@@ -443,15 +453,15 @@ public class PartitionRecordStore implements RecordStore {
             mapStoreWrite(record, dataKey, value);
             records.put(dataKey, record);
             // increase size.
-            updateSizeEstimator( calculateRecordSize(record) );
+            updateSizeEstimator(calculateRecordSize(record));
         } else {
             value = mapService.interceptPut(name, record.getValue(), value);
             mapStoreWrite(record, dataKey, value);
             // if key exists before, first reduce size
-            updateSizeEstimator( -calculateRecordSize(record) );
+            updateSizeEstimator(-calculateRecordSize(record));
             setRecordValue(record, value);
             // then increase size
-            updateSizeEstimator( calculateRecordSize(record) );
+            updateSizeEstimator(calculateRecordSize(record));
         }
         saveIndex(record);
     }
@@ -467,17 +477,16 @@ public class PartitionRecordStore implements RecordStore {
             record = mapService.createRecord(name, dataKey, value, ttl);
             mapStoreWrite(record, dataKey, value);
             records.put(dataKey, record);
-            updateSizeEstimator( calculateRecordSize(record) );
-        }
-        else {
+            updateSizeEstimator(calculateRecordSize(record));
+        } else {
             oldValue = record.getValue();
             value = mapService.interceptPut(name, oldValue, value);
             mapStoreWrite(record, dataKey, value);
             // if key exists before, first reduce size
-            updateSizeEstimator( -calculateRecordSize(record) );
+            updateSizeEstimator(-calculateRecordSize(record));
             setRecordValue(record, value);
             // then increase size.
-            updateSizeEstimator( calculateRecordSize(record) );
+            updateSizeEstimator(calculateRecordSize(record));
             updateTtl(record, ttl);
         }
         saveIndex(record);
@@ -492,16 +501,16 @@ public class PartitionRecordStore implements RecordStore {
             record = mapService.createRecord(name, dataKey, value, ttl);
             mapStoreWrite(record, dataKey, value);
             records.put(dataKey, record);
-            updateSizeEstimator( calculateRecordSize(record) );
+            updateSizeEstimator(calculateRecordSize(record));
             newRecord = true;
         } else {
             value = mapService.interceptPut(name, record.getValue(), value);
             mapStoreWrite(record, dataKey, value);
             // if key exists before, first reduce size
-            updateSizeEstimator( -calculateRecordSize(record) );
+            updateSizeEstimator(-calculateRecordSize(record));
             setRecordValue(record, value);
             // then increase size.
-            updateSizeEstimator( calculateRecordSize(record) );
+            updateSizeEstimator(calculateRecordSize(record));
             updateTtl(record, ttl);
         }
         saveIndex(record);
@@ -517,7 +526,7 @@ public class PartitionRecordStore implements RecordStore {
             record = mapService.createRecord(name, dataKey, newValue, -1);
             mapStoreWrite(record, dataKey, newValue);
             records.put(dataKey, record);
-            updateSizeEstimator( calculateRecordSize(record) );
+            updateSizeEstimator(calculateRecordSize(record));
         } else {
             Object oldValue = record.getValue();
             EntryView existingEntry = new SimpleEntryView(mapService.toObject(record.getKey()), mapService.toObject(record.getValue()), record);
@@ -527,7 +536,7 @@ public class PartitionRecordStore implements RecordStore {
                 removeIndex(dataKey);
                 mapStoreDelete(record, dataKey);
                 // reduce size.
-                updateSizeEstimator( -calculateRecordSize(record) );
+                updateSizeEstimator(-calculateRecordSize(record));
                 return true;
             }
             // same with the existing entry so no need to mapstore etc operations.
@@ -535,12 +544,12 @@ public class PartitionRecordStore implements RecordStore {
                 return true;
             }
             mapStoreWrite(record, dataKey, newValue);
-            updateSizeEstimator( -calculateRecordSize(record) );
+            updateSizeEstimator(-calculateRecordSize(record));
             if (record instanceof DataRecord)
                 ((DataRecord) record).setValue(mapService.toData(newValue));
             else if (record instanceof ObjectRecord)
                 ((ObjectRecord) record).setValue(mapService.toObject(newValue));
-            updateSizeEstimator( calculateRecordSize(record) );
+            updateSizeEstimator(calculateRecordSize(record));
         }
         saveIndex(record);
         return newValue != null;
@@ -553,9 +562,9 @@ public class PartitionRecordStore implements RecordStore {
             oldValue = record.getValue();
             value = mapService.interceptPut(name, oldValue, value);
             mapStoreWrite(record, dataKey, value);
-            updateSizeEstimator( -calculateRecordSize(record) );
+            updateSizeEstimator(-calculateRecordSize(record));
             setRecordValue(record, value);
-            updateSizeEstimator( calculateRecordSize(record) );
+            updateSizeEstimator(calculateRecordSize(record));
         } else {
             return null;
         }
@@ -571,12 +580,10 @@ public class PartitionRecordStore implements RecordStore {
         if (mapService.compare(name, record.getValue(), testValue)) {
             newValue = mapService.interceptPut(name, record.getValue(), newValue);
             mapStoreWrite(record, dataKey, newValue);
-            updateSizeEstimator( -calculateRecordSize(record) );
+            updateSizeEstimator(-calculateRecordSize(record));
             setRecordValue(record, newValue);
-            updateSizeEstimator( calculateRecordSize(record) );
-        }
-        else
-        {
+            updateSizeEstimator(calculateRecordSize(record));
+        } else {
             return false;
         }
         saveIndex(record);
@@ -590,12 +597,12 @@ public class PartitionRecordStore implements RecordStore {
             value = mapService.interceptPut(name, null, value);
             record = mapService.createRecord(name, dataKey, value, ttl);
             records.put(dataKey, record);
-            updateSizeEstimator( calculateRecordSize(record) );
+            updateSizeEstimator(calculateRecordSize(record));
         } else {
             value = mapService.interceptPut(name, record.getValue(), value);
-            updateSizeEstimator( -calculateRecordSize(record) );
+            updateSizeEstimator(-calculateRecordSize(record));
             setRecordValue(record, value);
-            updateSizeEstimator( calculateRecordSize(record) );
+            updateSizeEstimator(calculateRecordSize(record));
             updateTtl(record, ttl);
         }
         saveIndex(record);
@@ -608,13 +615,13 @@ public class PartitionRecordStore implements RecordStore {
             record = mapService.createRecord(name, dataKey, value, ttl);
             mapStoreWrite(record, dataKey, value);
             records.put(dataKey, record);
-            updateSizeEstimator( calculateRecordSize(record) );
+            updateSizeEstimator(calculateRecordSize(record));
         } else {
             value = mapService.interceptPut(name, record.getValue(), value);
             mapStoreWrite(record, dataKey, value);
-            updateSizeEstimator( -calculateRecordSize(record) );
+            updateSizeEstimator(-calculateRecordSize(record));
             setRecordValue(record, value);
-            updateSizeEstimator( calculateRecordSize(record) );
+            updateSizeEstimator(calculateRecordSize(record));
             updateTtl(record, ttl);
         }
         saveIndex(record);
@@ -631,7 +638,7 @@ public class PartitionRecordStore implements RecordStore {
                 if (oldValue != null) {
                     record = mapService.createRecord(name, dataKey, oldValue, -1);
                     records.put(dataKey, record);
-                    updateSizeEstimator( calculateRecordSize(record) );
+                    updateSizeEstimator(calculateRecordSize(record));
                 }
             }
         } else {
@@ -643,7 +650,7 @@ public class PartitionRecordStore implements RecordStore {
             record = mapService.createRecord(name, dataKey, value, ttl);
             mapStoreWrite(record, dataKey, value);
             records.put(dataKey, record);
-            updateSizeEstimator( calculateRecordSize(record) );
+            updateSizeEstimator(calculateRecordSize(record));
             updateTtl(record, ttl);
         }
         saveIndex(record);
@@ -699,6 +706,10 @@ public class PartitionRecordStore implements RecordStore {
         }
     }
 
+    public SizeEstimator getSizeEstimator() {
+        return sizeEstimator;
+    }
+
     private void updateTtl(Record record, long ttl) {
         if (ttl > 0) {
             mapService.scheduleTtlEviction(name, record, ttl);
@@ -708,16 +719,16 @@ public class PartitionRecordStore implements RecordStore {
 
     }
 
-    private void updateSizeEstimator( long recordSize ) {
-         mapContainer.getSizeEstimator().add( recordSize );
+    private void updateSizeEstimator(long recordSize) {
+        getSizeEstimator().add(recordSize);
     }
 
-    private long calculateRecordSize( Record record ) {
-        return mapContainer.getSizeEstimator().getCost(record);
+    private long calculateRecordSize(Record record) {
+        return getSizeEstimator().getCost(record);
     }
 
     private void resetSizeEstimator() {
-        mapContainer.getSizeEstimator().reset();
+        getSizeEstimator().reset();
     }
 
     private void setRecordValue(Record record, Object value) {
