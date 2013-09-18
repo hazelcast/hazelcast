@@ -49,6 +49,8 @@ public interface RecordStore {
 
     void putTransient(Data dataKey, Object value, long ttl);
 
+    void putFromLoad(Data dataKey, Object value, long ttl);
+
     boolean tryPut(Data dataKey, Object value, long ttl);
 
     Object putIfAbsent(Data dataKey, Object value, long ttl);
@@ -102,4 +104,8 @@ public interface RecordStore {
     void reset();
 
     boolean forceUnlock(Data dataKey);
+
+    boolean isLoaded();
+
+    void setLoaded(boolean loaded);
 }

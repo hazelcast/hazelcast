@@ -22,19 +22,12 @@ import com.hazelcast.config.PartitionStrategyConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.MapLoaderLifecycleSupport;
 import com.hazelcast.core.MapStoreFactory;
-import com.hazelcast.core.Member;
 import com.hazelcast.core.PartitioningStrategy;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.merge.MapMergePolicy;
-import com.hazelcast.map.operation.PutFromLoadOperation;
-import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.IndexService;
-import com.hazelcast.spi.Invocation;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.OperationAccessor;
-import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
@@ -44,9 +37,6 @@ import com.hazelcast.wan.WanReplicationPublisher;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static com.hazelcast.map.MapService.SERVICE_NAME;
 
 public class MapContainer {
 
@@ -58,7 +48,6 @@ public class MapContainer {
     private final Map<String, MapInterceptor> interceptorMap;
     private final IndexService indexService = new IndexService();
     private final boolean nearCacheEnabled;
-    private final AtomicBoolean initialLoaded = new AtomicBoolean(false);
     private final EntryTaskScheduler idleEvictionScheduler;
     private final EntryTaskScheduler ttlEvictionScheduler;
     private final EntryTaskScheduler mapStoreWriteScheduler;
@@ -67,6 +56,8 @@ public class MapContainer {
     private final MapMergePolicy wanMergePolicy;
     private final PartitioningStrategy partitionStrategy;
     private final SizeEstimator sizeEstimator;
+    private final AtomicBoolean keysLoaded = new AtomicBoolean(false);
+    private final Map<Data, Object> initialKeys = new ConcurrentHashMap<Data, Object>();
 
 
     public MapContainer(String name, MapConfig mapConfig, MapService mapService) {
@@ -77,7 +68,7 @@ public class MapContainer {
         MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
         NodeEngine nodeEngine = mapService.getNodeEngine();
 
-        if (mapStoreConfig != null) {
+        if (mapStoreConfig != null && mapStoreConfig.isEnabled()) {
             try {
                 MapStoreFactory factory = (MapStoreFactory) mapStoreConfig.getFactoryImplementation();
                 if (factory == null) {
@@ -104,10 +95,9 @@ public class MapContainer {
             if (store instanceof MapLoaderLifecycleSupport) {
                 ((MapLoaderLifecycleSupport) store).init(nodeEngine.getHazelcastInstance(), mapStoreConfig.getProperties(), name);
             }
-            // only master can initiate the loadAll. master will send other members to loadAll.
-            // the members join later will not load from mapstore.
-            if (initialLoaded.compareAndSet(false, true)) {
-                loadMapFromStore(true);
+
+            if (keysLoaded.compareAndSet(false, true)) {
+                loadInitialKeys();
             }
 
             if (mapStoreConfig.getWriteDelaySeconds() > 0) {
@@ -151,54 +141,30 @@ public class MapContainer {
         }
         partitionStrategy = strategy;
 
-        sizeEstimator = SizeEstimators.createMapSizeEstimator( mapConfig.isStatisticsEnabled() );
+        sizeEstimator = SizeEstimators.createMapSizeEstimator(mapConfig.isStatisticsEnabled());
     }
 
-
-    public void loadMapFromStore(boolean force) {
-        if (force || initialLoaded.compareAndSet(false, true)) {
-            NodeEngine nodeEngine = mapService.getNodeEngine();
-            int chunkSize = nodeEngine.getGroupProperties().MAP_LOAD_CHUNK_SIZE.getInteger();
-            Set keys = storeWrapper.loadAllKeys();
-            if (keys == null || keys.isEmpty()) {
-                return;
-            }
-            Map<Data, Object> chunk = new HashMap<Data, Object>();
-            List<Map<Data, Object>> chunkList = new ArrayList<Map<Data, Object>>();
-            for (Object key : keys) {
-                Data dataKey = mapService.toData(key, partitionStrategy);
-                int partitionId = nodeEngine.getPartitionService().getPartitionId(dataKey);
-                Address partitionOwner = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
-                while (partitionOwner == null) {
-                    partitionOwner = nodeEngine.getPartitionService().getPartitionOwner(partitionId);
-                    try {
-                        Thread.sleep(10);
-                    } catch (InterruptedException e) {
-                        throw ExceptionUtil.rethrow(e);
-                    }
-                }
-                if (partitionOwner.equals(nodeEngine.getClusterService().getThisAddress())) {
-                    chunk.put(dataKey, key);
-                    if (chunk.size() >= chunkSize) {
-                        chunkList.add(chunk);
-                        chunk = new HashMap<Data, Object>();
-                    }
-                }
-            }
-            if (chunk.size() > 0) {
-                chunkList.add(chunk);
-            }
-            int numberOfChunks = chunkList.size();
-            AtomicInteger counter = new AtomicInteger(numberOfChunks);
-            for (Map<Data, Object> currentChunk : chunkList) {
-                try {
-                    nodeEngine.getExecutionService().submit("hz:map-load", new MapLoadAllTask(currentChunk));
-                } catch (Throwable t) {
-                    ExceptionUtil.rethrow(t);
-                }
-            }
-
+    public void loadInitialKeys() {
+        initialKeys.clear();
+        Set keys = storeWrapper.loadAllKeys();
+        if (keys == null || keys.isEmpty()) {
+            return;
         }
+        for (Object key : keys) {
+            Data dataKey = mapService.toData(key, partitionStrategy);
+            initialKeys.put(dataKey, key);
+        }
+        // remove the keys remains more than 20 minutes.
+        mapService.getNodeEngine().getExecutionService().schedule(new Runnable() {
+            @Override
+            public void run() {
+                initialKeys.clear();
+            }
+        }, 20, TimeUnit.MINUTES);
+    }
+
+    public Map<Data, Object> getInitialKeys() {
+        return initialKeys;
     }
 
     public EntryTaskScheduler getIdleEvictionScheduler() {
@@ -283,47 +249,14 @@ public class MapContainer {
     }
 
     public MapStoreWrapper getStore() {
-        return storeWrapper;
+        return storeWrapper != null && storeWrapper.isEnabled() ? storeWrapper : null;
     }
 
     public PartitioningStrategy getPartitionStrategy() {
         return partitionStrategy;
     }
 
-    public SizeEstimator getSizeEstimator(){
+    public SizeEstimator getSizeEstimator() {
         return sizeEstimator;
     }
-
-    private class MapLoadAllTask implements Runnable {
-        private Map<Data, Object> keys;
-
-        private MapLoadAllTask(Map<Data, Object> keys) {
-            this.keys = keys;
-        }
-
-        public void run() {
-            NodeEngine nodeEngine = mapService.getNodeEngine();
-            Map values = storeWrapper.loadAll(keys.values());
-            final CountDownLatch latch = new CountDownLatch(keys.size());
-            for (Data dataKey : keys.keySet()) {
-                Object key = keys.get(dataKey);
-                Data dataValue = mapService.toData(values.get(key));
-                int partitionId = nodeEngine.getPartitionService().getPartitionId(dataKey);
-                PutFromLoadOperation operation = new PutFromLoadOperation(name, dataKey, dataValue, -1);
-                operation.setNodeEngine(nodeEngine);
-                operation.setResponseHandler(new ResponseHandler() {
-                    @Override
-                    public void sendResponse(Object obj) {
-                        latch.countDown();
-                    }
-                });
-                operation.setPartitionId(partitionId);
-                OperationAccessor.setCallerAddress(operation, nodeEngine.getThisAddress());
-                operation.setServiceName(MapService.SERVICE_NAME);
-                nodeEngine.getOperationService().executeOperation(operation);
-            }
-        }
-
-    }
-
 }
