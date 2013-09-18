@@ -379,7 +379,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         MapContainer mapContainer = getMapContainer(name);
         final MapConfig.InMemoryFormat inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
         boolean statisticsEnabled = mapContainer.getMapConfig().isStatisticsEnabled();
-        switch (inMemoryFormat){
+        switch (inMemoryFormat) {
             case BINARY:
                 record = new DataRecord(dataKey, toData(value), statisticsEnabled);
                 break;
@@ -390,10 +390,10 @@ public class MapService implements ManagedService, MigrationAwareService,
                 record = new CachedDataRecord(dataKey, toData(value), statisticsEnabled);
                 break;
             default:
-                throw new IllegalArgumentException("Unrecognized InMemoryFormat: "+inMemoryFormat);
+                throw new IllegalArgumentException("Unrecognized InMemoryFormat: " + inMemoryFormat);
         }
 
-       if (shouldSchedule) {
+        if (shouldSchedule) {
             if (ttl < 0 && mapContainer.getMapConfig().getTimeToLiveSeconds() > 0) {
                 scheduleTtlEviction(name, record, mapContainer.getMapConfig().getTimeToLiveSeconds() * 1000);
             }
@@ -685,7 +685,7 @@ public class MapService implements ManagedService, MigrationAwareService,
 
         MapContainer mapContainer = getMapContainer(mapName);
         MapConfig.InMemoryFormat inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
-        switch (inMemoryFormat){
+        switch (inMemoryFormat) {
             case BINARY:
                 return toData(value1).equals(toData(value2));
             case CACHED:
@@ -693,9 +693,9 @@ public class MapService implements ManagedService, MigrationAwareService,
             case OBJECT:
                 return toObject(value1).equals(toObject(value2));
             default:
-                throw new IllegalStateException("Unrecognized InMemoryFormat: "+inMemoryFormat);
+                throw new IllegalStateException("Unrecognized InMemoryFormat: " + inMemoryFormat);
         }
-     }
+    }
 
     @SuppressWarnings("unchecked")
     public void dispatchEvent(EventData eventData, EntryListener listener) {
@@ -888,9 +888,34 @@ public class MapService implements ManagedService, MigrationAwareService,
             }
             if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.USED_HEAP_SIZE
                     || maxSizePolicy == MaxSizeConfig.MaxSizePolicy.USED_HEAP_PERCENTAGE) {
+
+                // find heap cost by iterating on partitions.
+                long heapCost = 0;
+                for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
+                    final Address address = nodeEngine.getPartitionService().getPartitionOwner(i);
+                    // if owner
+                    if (nodeEngine.getThisAddress().equals(address)) {
+                        final PartitionContainer container = partitionContainers[i];
+                        if (container == null) {
+                            return false;
+                        }
+                        heapCost += container.getRecordStore(mapName).getHeapCost();
+                    }
+                    // if backup
+                    else if (nodeEngine.getPartitionService().getPartition(i).isBackup(address)) {
+                        final PartitionContainer container = partitionContainers[i];
+                        if (container == null) {
+                            return false;
+                        }
+                        heapCost += container.getRecordStore(mapName).getHeapCost();
+                    }
+                }
+
+                heapCost += mapContainer.getNearCacheSizeEstimator().getSize();
+
                 final long total = Runtime.getRuntime().totalMemory();
-                final long used = mapContainer.getSizeEstimator().getSize();
-                        // (total - Runtime.getRuntime().freeMemory());
+                final long used = heapCost;
+                // (total - Runtime.getRuntime().freeMemory());
                 if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.USED_HEAP_SIZE) {
                     return maxSize < (used / 1024 / 1024);
                 } else {
@@ -935,6 +960,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         long backupEntryMemoryCost = 0;
         long hits = 0;
         long lockedEntryCount = 0;
+        long heapCost = 0;
 
         int backupCount = mapContainer.getTotalBackupCount();
         ClusterService clusterService = nodeEngine.getClusterService();
@@ -946,6 +972,7 @@ public class MapService implements ManagedService, MigrationAwareService,
             if (partition.getOwner().equals(thisAddress)) {
                 PartitionContainer partitionContainer = getPartitionContainer(partitionId);
                 RecordStore recordStore = partitionContainer.getRecordStore(mapName);
+                heapCost += recordStore.getHeapCost();
                 Map<Data, Record> records = recordStore.getRecords();
                 for (Record record : records.values()) {
                     RecordStatistics stats = record.getStatistics();
@@ -975,6 +1002,7 @@ public class MapService implements ManagedService, MigrationAwareService,
                     if (replicaAddress != null && replicaAddress.equals(thisAddress)) {
                         PartitionContainer partitionContainer = getPartitionContainer(partitionId);
                         RecordStore recordStore = partitionContainer.getRecordStore(mapName);
+                        heapCost += recordStore.getHeapCost();
                         Map<Data, Record> records = recordStore.getRecords();
                         for (Record record : records.values()) {
                             backupEntryCount++;
@@ -998,7 +1026,9 @@ public class MapService implements ManagedService, MigrationAwareService,
         localMapStats.setBackupEntryCount(zeroOrPositive(backupEntryCount));
         localMapStats.setOwnedEntryMemoryCost(zeroOrPositive(ownedEntryMemoryCost));
         localMapStats.setBackupEntryMemoryCost(zeroOrPositive(backupEntryMemoryCost));
-        localMapStats.setHeapCost( mapContainer.getSizeEstimator().getSize() );
+        // add near cache heap cost.
+        heapCost += mapContainer.getNearCacheSizeEstimator().getSize();
+        localMapStats.setHeapCost(heapCost);
 
         return localMapStats;
     }

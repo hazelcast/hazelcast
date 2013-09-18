@@ -48,6 +48,22 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testPuts() throws InterruptedException{
+        final String MAP_NAME = "default";
+
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        final HazelcastInstance h = factory.newHazelcastInstance(null);
+
+        final IMap<Long, Long> map = h.getMap(MAP_NAME);
+
+        map.put(10L,10L);
+
+
+        Assert.assertTrue(map.getLocalMapStats().getHeapCost() == 152);
+
+    }
+
+    @Test
     public void testPutRemove() throws InterruptedException {
         final String MAP_NAME = "default";
 
@@ -57,28 +73,29 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
         final HazelcastInstance h[] = factory.newInstances(config);
         warmUpPartitions(h);
 
-        final IMap<String, String> map = h[0].getMap(MAP_NAME);
+        final IMap<Long, Long> map = h[0].getMap(MAP_NAME);
+        final IMap<Long, Long> backupMap = h[1].getMap(MAP_NAME);
 
-        map.put("key", "value");
+        map.put(10L, 10L);
 
-        Thread.sleep(1000);
+        Thread.sleep(3000);
 
-        long h1MapCost = h[0].getMap(MAP_NAME).getLocalMapStats().getHeapCost();
+        long h1MapCost = map.getLocalMapStats().getHeapCost();
 
-        long h2MapCost = h[1].getMap(MAP_NAME).getLocalMapStats().getHeapCost();
+        long h2MapCost = backupMap.getLocalMapStats().getHeapCost();
 
-        // one map is backup. so backup & real map cost must be same.
+        // one map is backup. so backup & main map cost must be same.
         Assert.assertEquals(h1MapCost, h2MapCost);
 
         Thread.sleep(1000);
 
-        map.remove("key");
+        map.remove( 10L );
 
         Thread.sleep(1000);
 
-        h1MapCost = h[0].getMap(MAP_NAME).getLocalMapStats().getHeapCost();
+        h1MapCost = map.getLocalMapStats().getHeapCost();
 
-        h2MapCost = h[1].getMap(MAP_NAME).getLocalMapStats().getHeapCost();
+        h2MapCost = backupMap.getLocalMapStats().getHeapCost();
 
         Assert.assertEquals(0, h1MapCost);
         Assert.assertEquals(0, h2MapCost);
@@ -106,9 +123,10 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
         for (int i = 0; i < 1; i++) {
             map.put(++key, 1);
         }
-        /** key 24 bytes look at {@link com.hazelcast.nio.serialization.Data} totalSize method */
-        /** value 104 bytes {@link com.hazelcast.map.record.DataRecord}*/
-        Assert.assertTrue(map.getLocalMapStats().getHeapCost() == 128);
+        long t = map.getLocalMapStats().getHeapCost();
+        /** key 24 bytes  {@link com.hazelcast.nio.serialization.Data} totalSize method */
+        /** value 112 bytes {@link com.hazelcast.map.record.DataRecord}*/
+        Assert.assertTrue(map.getLocalMapStats().getHeapCost() == 148);
 
         Thread.sleep(1000);
 
