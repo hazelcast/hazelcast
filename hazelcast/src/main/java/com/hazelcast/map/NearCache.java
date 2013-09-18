@@ -230,14 +230,14 @@ public class NearCache {
 
 
     private void resetSizeEstimator(){
-        mapService.getMapContainer(mapName).getSizeEstimator().reset();
+        mapService.getMapContainer(mapName).getNearCacheSizeEstimator().reset();
     }
 
     private void updateSizeEstimator( long size ){
-        mapService.getMapContainer(mapName).getSizeEstimator().add( size );
+        mapService.getMapContainer(mapName).getNearCacheSizeEstimator().add( size );
     }
 
     private long calculateCost( CacheRecord record ){
-        return mapService.getMapContainer(mapName).getSizeEstimator().getCost( record );
+        return mapService.getMapContainer(mapName).getNearCacheSizeEstimator().getCost( record );
     }
 }
