@@ -35,11 +35,18 @@ import java.util.Set;
 public class PutAllOperation extends AbstractMapOperation implements PartitionAwareOperation, BackupAwareOperation {
 
     private MapEntrySet entrySet;
+    private boolean initialLoad = false;
     private transient  MapEntrySet backupEntrySet;
 
     public PutAllOperation(String name, MapEntrySet entrySet) {
         super(name);
         this.entrySet = entrySet;
+    }
+
+    public PutAllOperation(String name, MapEntrySet entrySet, boolean initialLoad) {
+        super(name);
+        this.entrySet = entrySet;
+        this.initialLoad = initialLoad;
     }
 
     public PutAllOperation() {
@@ -56,7 +63,13 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
             Data dataKey = entry.getKey();
             Data dataValue = entry.getValue();
             if (partitionId == partitionService.getPartitionId(dataKey)) {
-                Data dataOldValue = mapService.toData(recordStore.put(dataKey, dataValue, -1));
+                Data dataOldValue = null;
+                if(initialLoad) {
+                    recordStore.putFromLoad(dataKey, dataValue, -1);
+                }
+                else {
+                    dataOldValue = mapService.toData(recordStore.put(dataKey, dataValue, -1));
+                }
                 mapService.interceptAfterPut(name, dataValue);
                 EntryEventType eventType = dataOldValue == null ? EntryEventType.ADDED : EntryEventType.UPDATED;
                 mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, dataValue);
@@ -80,7 +93,7 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
 
     @Override
     public Object getResponse() {
-        return entrySet;
+        return true;
     }
 
     @Override
@@ -93,12 +106,14 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
         out.writeObject(entrySet);
+        out.writeBoolean(initialLoad);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
         entrySet = in.readObject();
+        initialLoad = in.readBoolean();
     }
 
     @Override
