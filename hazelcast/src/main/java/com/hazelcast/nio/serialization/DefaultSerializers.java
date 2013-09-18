@@ -210,6 +210,31 @@ public class DefaultSerializers {
         }
     }
 
+    public static final class EnumSerializer extends SingletonSerializer<Enum> {
+
+        public int getTypeId() {
+            return DEFAULT_TYPE_ENUM;
+        }
+
+        public void write(ObjectDataOutput out, Enum obj) throws IOException {
+            out.writeUTF(obj.getClass().getName());
+            out.writeUTF(obj.name());
+        }
+
+        public Enum read(ObjectDataInput in) throws IOException {
+            String clazzName = in.readUTF();
+            Class clazz;
+            try {
+                clazz = ClassLoaderUtil.loadClass(in.getClassLoader(), clazzName);
+            } catch (ClassNotFoundException e) {
+                throw new HazelcastSerializationException("Failed to deserialize enum: " + clazzName, e);
+            }
+
+            String name = in.readUTF();
+            return Enum.valueOf(clazz, name);
+        }
+    }
+
     private abstract static class SingletonSerializer<T> implements StreamSerializer<T> {
 
         public void destroy() {
