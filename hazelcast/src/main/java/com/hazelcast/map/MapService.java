@@ -902,7 +902,7 @@ public class MapService implements ManagedService, MigrationAwareService,
                         heapCost += container.getRecordStore(mapName).getHeapCost();
                     }
                     // if backup
-                    else if( nodeEngine.getPartitionService().getPartition( i ).isBackup(address) ){
+                    else if (nodeEngine.getPartitionService().getPartition(i).isBackup(address)) {
                         final PartitionContainer container = partitionContainers[i];
                         if (container == null) {
                             return false;
