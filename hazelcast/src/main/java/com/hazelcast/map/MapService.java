@@ -993,6 +993,7 @@ public class MapService implements ManagedService, MigrationAwareService,
                     if (replicaAddress != null && replicaAddress.equals(thisAddress)) {
                         PartitionContainer partitionContainer = getPartitionContainer(partitionId);
                         RecordStore recordStore = partitionContainer.getRecordStore(mapName);
+                        heapCost += recordStore.getHeapCost();
                         Map<Data, Record> records = recordStore.getRecords();
                         for (Record record : records.values()) {
                             backupEntryCount++;
