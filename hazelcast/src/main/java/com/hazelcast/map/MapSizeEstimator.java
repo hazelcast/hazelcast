@@ -45,16 +45,25 @@ class MapSizeEstimator extends AbstractSizeEstimator {
         if( record instanceof NearCache.CacheRecord)
         {
             final NearCache.CacheRecord rec = (NearCache.CacheRecord)record;
-            final long keySize = rec.getKey().totalSize();
-            final long valueSize = rec.getCost() ;
-            return keySize + valueSize;
+            final long cost = rec.getCost();
+            // if  cost is zero, type of cached object is not Data.
+            // then omit.
+            if( cost == 0 ) return 0;
+
+            long size = 0;
+            // key ref. size in map.
+            size += ((Integer.SIZE/Byte.SIZE));
+            size += rec.getCost() ;
+            return size;
         }
         else if( record instanceof DataRecord)
         {
             final Record rec = (Record)record;
-            final long keySize = rec.getKey().totalSize();
-            final long valueSize = rec.getCost() ;
-            return keySize + valueSize;
+            long size = 0;
+            // key ref. size in map.
+            size += ((Integer.SIZE/Byte.SIZE));
+            size += rec.getCost() ;
+            return size;
         }
         else if( record instanceof ObjectRecord)
         {
