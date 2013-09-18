@@ -218,9 +218,9 @@ public class NearCache {
                     + ((Data)value).totalSize() + 2*(Integer.SIZE/Byte.SIZE)
                     + 2 * (Long.SIZE / Byte.SIZE)
                     // sizeof atomic integer
-                    + Integer.SIZE / Byte.SIZE
+                    + (Integer.SIZE / Byte.SIZE )
                     // object references (key, value,hit)
-                    + 3*(Integer.SIZE / Byte.SIZE);
+                    + 3 * (Integer.SIZE / Byte.SIZE);
         }
 
         public Data getKey() {

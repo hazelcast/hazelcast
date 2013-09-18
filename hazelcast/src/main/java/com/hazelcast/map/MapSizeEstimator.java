@@ -47,6 +47,7 @@ class MapSizeEstimator extends AbstractSizeEstimator {
             final NearCache.CacheRecord rec = (NearCache.CacheRecord)record;
             final long cost = rec.getCost();
             // if  cost is zero, type of cached object is not Data.
+            // then omit.
             if( cost == 0 ) return 0;
 
             long size = 0;
