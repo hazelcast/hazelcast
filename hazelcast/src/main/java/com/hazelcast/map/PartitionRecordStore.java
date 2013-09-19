@@ -70,9 +70,12 @@ public class PartitionRecordStore implements RecordStore {
                 Map<Data, Object> loadedKeys = mapContainer.getInitialKeys();
                 if (loadedKeys != null && !loadedKeys.isEmpty()) {
                     Map<Data, Object> partitionKeys = new HashMap<Data, Object>();
-                    for (Data data : loadedKeys.keySet()) {
+                    Iterator<Data> iterator = loadedKeys.keySet().iterator();
+                    while(iterator.hasNext()) {
+                        Data data = iterator.next();
                         if (partitionId == nodeEngine.getPartitionService().getPartitionId(data)) {
-                            partitionKeys.put(data, loadedKeys.remove(data));
+                            partitionKeys.put(data, loadedKeys.get(data));
+                            iterator.remove();
                         }
                     }
                     try {
@@ -836,7 +839,7 @@ public class PartitionRecordStore implements RecordStore {
         }
 
         public void run() {
-            NodeEngine nodeEngine = mapService.getNodeEngine();
+            final NodeEngine nodeEngine = mapService.getNodeEngine();
 
             int partitionId = partitionContainer.getPartitionId();
             Map values = mapContainer.getStore().loadAll(keys.values());
@@ -856,7 +859,7 @@ public class PartitionRecordStore implements RecordStore {
                         loaded.set(true);
                     } else {
                         Exception e = (Exception) obj;
-                        e.printStackTrace();
+                        nodeEngine.getLogger(PartitionRecordStore.class).finest(e.getMessage());
                     }
                 }
             });
