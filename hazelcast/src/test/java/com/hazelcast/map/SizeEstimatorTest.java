@@ -56,7 +56,7 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
 
         final IMap<Long, Long> map = h.getMap(MAP_NAME);
 
-        map.put(10L,10L);
+        map.put(10L, 10L);
 
 
         Assert.assertTrue(map.getLocalMapStats().getHeapCost() == 152);
@@ -154,23 +154,17 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
         warmUpPartitions(h);
 
         final IMap<String, String> noNearCached = h[0].getMap(NO_NEAR_CAHED_MAP);
-        noNearCached.put("key", "value");
-        noNearCached.put("key1", "value1");
-        noNearCached.put("key2", "value2");
-        noNearCached.put("key3", "value3");
+        for (int i = 0; i < 1000; i++) {
+            noNearCached.put("key" + i, "value" + i);
+        }
 
         final IMap<String, String> nearCachedMap = h[0].getMap(NEAR_CACHED_MAP);
-        nearCachedMap.put("key", "value");
-        nearCachedMap.put("key1", "value1");
-        nearCachedMap.put("key2", "value2");
-        nearCachedMap.put("key3", "value3");
+        for (int i = 0; i < 1000; i++) {
+            nearCachedMap.put("key" + i, "value" + i);
+        }
 
-        for (int i = 0; i < 100; i++) {
-            nearCachedMap.get("key");
-            nearCachedMap.get("key1");
-            nearCachedMap.get("key2");
-            nearCachedMap.get("key3");
-
+        for (int i = 0; i < 1000; i++) {
+            nearCachedMap.get("key" + i);
         }
 
         Assert.assertTrue(nearCachedMap.getLocalMapStats().getHeapCost() > noNearCached.getLocalMapStats().getHeapCost());
@@ -196,22 +190,19 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
 
         // populate map.
         final IMap<String, String> binaryMap = h[0].getMap(BINARY_MAP);
-        binaryMap.put("key", "value");
-        binaryMap.put("key1", "value1");
-        binaryMap.put("key2", "value2");
-        binaryMap.put("key3", "value3");
+        for (int i = 0; i < 1000; i++) {
+            binaryMap.put("key" + i, "value" + i);
+        }
 
         final IMap<String, String> objectMap = h[0].getMap(OBJECT_MAP);
-        objectMap.put("key", "value");
-        objectMap.put("key1", "value1");
-        objectMap.put("key2", "value2");
-        objectMap.put("key3", "value3");
+        for (int i = 0; i < 1000; i++) {
+            objectMap.put("key" + i, "value" + i);
+        }
 
         final IMap<String, String> cachedMap = h[0].getMap(CACHED_MAP);
-        cachedMap.put("key", "value");
-        cachedMap.put("key1", "value1");
-        cachedMap.put("key2", "value2");
-        cachedMap.put("key3", "value3");
+        for (int i = 0; i < 1000; i++) {
+            cachedMap.put("key" + i, "value" + i);
+        }
 
         Thread.sleep(2000);
         for (int i = 0; i < n; i++) {

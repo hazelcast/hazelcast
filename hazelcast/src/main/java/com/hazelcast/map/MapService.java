@@ -891,18 +891,9 @@ public class MapService implements ManagedService, MigrationAwareService,
 
                 // find heap cost by iterating on partitions.
                 long heapCost = 0;
+                final Address thisAddress = nodeEngine.getThisAddress();
                 for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
-                    final Address address = nodeEngine.getPartitionService().getPartitionOwner(i);
-                    // if owner
-                    if (nodeEngine.getThisAddress().equals(address)) {
-                        final PartitionContainer container = partitionContainers[i];
-                        if (container == null) {
-                            return false;
-                        }
-                        heapCost += container.getRecordStore(mapName).getHeapCost();
-                    }
-                    // if backup
-                    else if (nodeEngine.getPartitionService().getPartition(i).isBackup(address)) {
+                    if (nodeEngine.getPartitionService().getPartition(i).isOwnerOrBackup(thisAddress)) {
                         final PartitionContainer container = partitionContainers[i];
                         if (container == null) {
                             return false;
