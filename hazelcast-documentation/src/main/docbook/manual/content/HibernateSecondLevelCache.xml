@@ -74,19 +74,10 @@
             </para>
         </listitem>
         <listitem>
-            <para>You can set up Hazelcast to connect cluster as LiteMember. LiteMember is a
-                member of the cluster, it has socket connection to every member in the cluster and
-                it knows where the data, but does not contain any data.
-                <programlisting language="xml"><![CDATA[<property name="hibernate.cache.hazelcast.use_lite_member">true</property>
-]]></programlisting>
-            </para>
-        </listitem>
-        <listitem>
             <para>You can set up Hazelcast to connect cluster as Native Client. Native client is not
                 member and it connects to one of the cluster members and delegates all cluster wide
                 operations to it. When the relied cluster member dies, client will transparently
-                switch to another live member. <emphasis role="italic">(Native Client property takes precedence
-                    over LiteMember property.)</emphasis>
+                switch to another live member.
                 <programlisting language="xml"><![CDATA[<property name="hibernate.cache.hazelcast.use_native_client">true</property>
 ]]></programlisting>
                 To setup Native Client properly, you should add Hazelcast 
@@ -108,7 +99,7 @@
                 </emphasis>
             </para>
             <para>
-                <link xlink:href="#NativeClient">Read more about NativeClient &amp; LiteMember</link>
+                <link xlink:href="#NativeClient">Read more about NativeClient</link>
             </para>
         </listitem>
 
