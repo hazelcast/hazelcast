@@ -64,11 +64,13 @@ public final class Predicates {
         public void writeData(ObjectDataOutput out) throws IOException {
             super.writeData(out);
             out.writeObject(to);
+            out.writeObject(from);
         }
 
         public void readData(ObjectDataInput in) throws IOException {
             super.readData(in);
             to = in.readObject();
+            from = in.readObject();
         }
 
         @Override
