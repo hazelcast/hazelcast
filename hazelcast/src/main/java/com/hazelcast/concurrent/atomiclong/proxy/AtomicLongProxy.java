@@ -111,10 +111,6 @@ public class AtomicLongProxy extends AbstractDistributedObject<AtomicLongService
         return getAndAdd(1);
     }
 
-    public Object getId() {
-        return name;
-    }
-
     public String getName() {
         return name;
     }

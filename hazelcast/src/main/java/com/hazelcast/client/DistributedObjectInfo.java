@@ -16,7 +16,6 @@
 
 package com.hazelcast.client;
 
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
@@ -31,15 +30,15 @@ import java.io.IOException;
 public class DistributedObjectInfo implements Portable {
 
     private String serviceName;
-    private Object id;
+    private String name;
 
     DistributedObjectInfo(){
 
     }
 
-    DistributedObjectInfo(String serviceName, Object id) {
+    DistributedObjectInfo(String serviceName, String name) {
         this.serviceName = serviceName;
-        this.id = id;
+        this.name = name;
     }
 
     @Override
@@ -56,21 +55,20 @@ public class DistributedObjectInfo implements Portable {
         return serviceName;
     }
 
-    public Object getId() {
-        return id;
+    public String getName() {
+        return name;
     }
 
     @Override
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeUTF("sn", serviceName);
-        final ObjectDataOutput rawDataOutput = writer.getRawDataOutput();
-        rawDataOutput.writeObject(id);
+        writer.writeUTF("n", name);
     }
 
     @Override
     public void readPortable(PortableReader reader) throws IOException {
         serviceName = reader.readUTF("sn");
-        id = reader.getRawDataInput().readObject();
+        name = reader.readUTF("n");
     }
 
     @Override
@@ -80,7 +78,7 @@ public class DistributedObjectInfo implements Portable {
 
         DistributedObjectInfo that = (DistributedObjectInfo) o;
 
-        if (id != null ? !id.equals(that.id) : that.id != null) return false;
+        if (name != null ? !name.equals(that.name) : that.name != null) return false;
         if (serviceName != null ? !serviceName.equals(that.serviceName) : that.serviceName != null) return false;
 
         return true;
@@ -89,7 +87,7 @@ public class DistributedObjectInfo implements Portable {
     @Override
     public int hashCode() {
         int result = serviceName != null ? serviceName.hashCode() : 0;
-        result = 31 * result + (id != null ? id.hashCode() : 0);
+        result = 31 * result + (name != null ? name.hashCode() : 0);
         return result;
     }
 }

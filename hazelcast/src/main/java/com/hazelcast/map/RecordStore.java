@@ -49,6 +49,8 @@ public interface RecordStore {
 
     void putTransient(Data dataKey, Object value, long ttl);
 
+    void putFromLoad(Data dataKey, Object value, long ttl);
+
     boolean tryPut(Data dataKey, Object value, long ttl);
 
     Object putIfAbsent(Data dataKey, Object value, long ttl);
@@ -91,9 +93,9 @@ public interface RecordStore {
 
     Set<Map.Entry<Data, Data>> entrySetData();
 
-    Map.Entry<Data,Data> getMapEntryData(Data dataKey);
+    Map.Entry<Data, Data> getMapEntryData(Data dataKey);
 
-    Map.Entry<Data,Object> getMapEntryObject(Data dataKey);
+    Map.Entry<Data, Object> getMapEntryObject(Data dataKey);
 
     void flush();
 
@@ -102,4 +104,12 @@ public interface RecordStore {
     void reset();
 
     boolean forceUnlock(Data dataKey);
+
+    long getHeapCost();
+
+    SizeEstimator getSizeEstimator();
+
+    boolean isLoaded();
+
+    void setLoaded(boolean loaded);
 }

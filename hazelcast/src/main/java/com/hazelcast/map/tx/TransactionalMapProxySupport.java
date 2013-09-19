@@ -294,10 +294,6 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         return result;
     }
 
-    public Object getId() {
-        return name;
-    }
-
     public String getName() {
         return name;
     }

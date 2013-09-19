@@ -25,8 +25,8 @@ public class QueueWaitNotifyKey extends AbstractWaitNotifyKey {
 
     private final String type;
 
-    public QueueWaitNotifyKey(Object id, String type) {
-        super(QueueService.SERVICE_NAME, id);
+    public QueueWaitNotifyKey(String name, String type) {
+        super(QueueService.SERVICE_NAME, name);
         this.type = type;
     }
 

@@ -16,11 +16,9 @@
 
 package com.hazelcast.transaction.impl;
 
-import com.hazelcast.collection.CollectionProxyId;
-import com.hazelcast.collection.CollectionProxyType;
-import com.hazelcast.collection.CollectionService;
-import com.hazelcast.collection.list.ObjectListProxy;
-import com.hazelcast.collection.set.ObjectSetProxy;
+import com.hazelcast.collection.list.ListService;
+import com.hazelcast.collection.set.SetService;
+import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.core.*;
 import com.hazelcast.map.MapService;
 import com.hazelcast.queue.QueueService;
@@ -77,32 +75,32 @@ final class TransactionContextImpl implements TransactionContext {
 
     @SuppressWarnings("unchecked")
     public <K, V> TransactionalMultiMap<K, V> getMultiMap(String name) {
-        return (TransactionalMultiMap<K, V>) getTransactionalObject(CollectionService.SERVICE_NAME, new CollectionProxyId(name, null, CollectionProxyType.MULTI_MAP));
+        return (TransactionalMultiMap<K, V>) getTransactionalObject(MultiMapService.SERVICE_NAME, name);
     }
 
     @SuppressWarnings("unchecked")
     public <E> TransactionalList<E> getList(String name) {
-        return (TransactionalList<E>) getTransactionalObject(CollectionService.SERVICE_NAME, new CollectionProxyId(ObjectListProxy.COLLECTION_LIST_NAME, name, CollectionProxyType.LIST));
+        return (TransactionalList<E>) getTransactionalObject(ListService.SERVICE_NAME, name);
     }
 
     @SuppressWarnings("unchecked")
     public <E> TransactionalSet<E> getSet(String name) {
-        return (TransactionalSet<E>) getTransactionalObject(CollectionService.SERVICE_NAME, new CollectionProxyId(ObjectSetProxy.COLLECTION_SET_NAME, name, CollectionProxyType.SET));
+        return (TransactionalSet<E>) getTransactionalObject(SetService.SERVICE_NAME, name);
     }
 
     @SuppressWarnings("unchecked")
-    public TransactionalObject getTransactionalObject(String serviceName, Object id) {
+    public TransactionalObject getTransactionalObject(String serviceName, String name) {
         if (transaction.getState() != Transaction.State.ACTIVE) {
             throw new TransactionNotActiveException("No transaction is found while accessing " +
-                    "transactional object -> " + serviceName + "[" + id + "]!");
+                    "transactional object -> " + serviceName + "[" + name + "]!");
         }
-        TransactionalObjectKey key = new TransactionalObjectKey(serviceName, id);
+        TransactionalObjectKey key = new TransactionalObjectKey(serviceName, name);
         TransactionalObject obj = txnObjectMap.get(key);
         if (obj == null) {
             final Object service = nodeEngine.getService(serviceName);
             if (service instanceof TransactionalService) {
-                nodeEngine.getProxyService().initializeDistributedObject(serviceName, id);
-                obj = ((TransactionalService) service).createTransactionalObject(id, transaction);
+                nodeEngine.getProxyService().initializeDistributedObject(serviceName, name);
+                obj = ((TransactionalService) service).createTransactionalObject(name, transaction);
                 txnObjectMap.put(key, obj);
             } else {
                 if (service == null) {
@@ -125,11 +123,11 @@ final class TransactionContextImpl implements TransactionContext {
     private class TransactionalObjectKey {
 
         private final String serviceName;
-        private final Object id;
+        private final String name;
 
-        TransactionalObjectKey(String serviceName, Object id) {
+        TransactionalObjectKey(String serviceName, String name) {
             this.serviceName = serviceName;
-            this.id = id;
+            this.name = name;
         }
 
         public boolean equals(Object o) {
@@ -138,7 +136,7 @@ final class TransactionContextImpl implements TransactionContext {
 
             TransactionalObjectKey that = (TransactionalObjectKey) o;
 
-            if (!id.equals(that.id)) return false;
+            if (!name.equals(that.name)) return false;
             if (!serviceName.equals(that.serviceName)) return false;
 
             return true;
@@ -146,7 +144,7 @@ final class TransactionContextImpl implements TransactionContext {
 
         public int hashCode() {
             int result = serviceName.hashCode();
-            result = 31 * result + id.hashCode();
+            result = 31 * result + name.hashCode();
             return result;
         }
     }

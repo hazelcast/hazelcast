@@ -483,10 +483,6 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         invoke(request);
     }
 
-    public String getName() {
-        return name;
-    }
-
     private Data toData(Object o) {
         return getContext().getSerializationService().toData(o);
     }

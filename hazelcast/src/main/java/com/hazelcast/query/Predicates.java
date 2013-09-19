@@ -184,7 +184,8 @@ public final class Predicates {
         }
 
         public boolean apply(Map.Entry entry) {
-            String firstVal = (String) readAttribute(entry, attribute);
+            Comparable attribute = readAttribute(entry, this.attribute);
+            String firstVal = attribute == IndexImpl.NULL ? null : (String) attribute;
             if (firstVal == null) {
                 return (regex == null);
             } else if (regex == null) {
@@ -228,14 +229,23 @@ public final class Predicates {
         }
 
         public boolean apply(Map.Entry entry) {
-            String firstVal = (String) readAttribute(entry, attribute);
+            Comparable attribute = readAttribute(entry, this.attribute);
+            String firstVal = attribute == IndexImpl.NULL ? null : (String) attribute;
             if (firstVal == null) {
                 return (second == null);
             } else if (second == null) {
                 return false;
             } else {
                 if (pattern == null) {
-                    pattern = Pattern.compile(second.replaceAll("%", ".*").replaceAll("_", "."));
+                    // we quote the input string then escape then replace % and _
+                    // at the end we have a regex pattern look like : \QSOME_STRING\E.*\QSOME_OTHER_STRING\E
+                    final String quoted = Pattern.quote(second);
+                    String regex = quoted
+                            .replaceAll("(?<!\\\\)[%]", "\\\\E.*\\\\Q")//escaped %
+                            .replaceAll("(?<!\\\\)[_]", "\\\\E.\\\\Q")//escaped _
+                            .replaceAll("\\\\%", "%")//non escaped %
+                            .replaceAll("\\\\_", "_");//non escaped _
+                    pattern = Pattern.compile(regex);
                 }
                 Matcher m = pattern.matcher(firstVal);
                 return m.matches();
@@ -382,14 +392,16 @@ public final class Predicates {
                 if (predicate instanceof IndexAwarePredicate) {
                     IndexAwarePredicate iap = (IndexAwarePredicate) predicate;
                     if (iap.isIndexed(queryContext)) {
-                        Set<QueryableEntry> s = iap.filter((QueryContext) filter(queryContext));
-                        indexedResults.add(s);
+                        Set<QueryableEntry> s = iap.filter(queryContext);
+                        if (s != null) {
+                            indexedResults.add(s);
+                        }
                     } else {
                         return null;
                     }
                 }
             }
-            return new OrResultSet(indexedResults);
+            return indexedResults.isEmpty() ? null : new OrResultSet(indexedResults);
         }
 
         public boolean isIndexed(QueryContext queryContext) {
@@ -399,6 +411,8 @@ public final class Predicates {
                     if (!iap.isIndexed(queryContext)) {
                         return false;
                     }
+                } else {
+                    return false;
                 }
             }
             return true;

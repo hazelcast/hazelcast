@@ -123,7 +123,7 @@ public class MapAddEntryListenerRequest extends CallableClientRequest implements
     }
 
     @Override
-    public Object getObjectId() {
+    public String getObjectName() {
         return name;
     }
 

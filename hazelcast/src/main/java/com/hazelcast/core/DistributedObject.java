@@ -34,8 +34,10 @@ public interface DistributedObject {
     /**
      * Returns the unique id for this object.
      *
+     * @deprecated use {@link #getName()} instead
      * @return id the of this instance
      */
+    @Deprecated
     Object getId();
 
     /**
@@ -48,9 +50,9 @@ public interface DistributedObject {
     String getPartitionKey();
 
     /**
-     * Returns the name for this DistributedObject. Returned value will never be null.
+     * Returns the unique name for this DistributedObject. Returned value will never be null.
      *
-     * @return the name for this object.
+     * @return the unique name for this object.
      */
     String getName();
 

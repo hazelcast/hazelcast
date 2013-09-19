@@ -21,6 +21,8 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.query.SampleObjects;
+import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.SerialTest;
 import com.hazelcast.transaction.TransactionContext;
@@ -46,7 +48,7 @@ public class ClientTxnMapTest {
     static HazelcastInstance second;
 
     @BeforeClass
-    public static void init(){
+    public static void init() {
         server = Hazelcast.newHazelcastInstance();
 //        second = Hazelcast.newHazelcastInstance();
         hz = HazelcastClient.newHazelcastClient(null);
@@ -64,27 +66,29 @@ public class ClientTxnMapTest {
 
         final TransactionContext context = hz.newTransactionContext();
         context.beginTransaction();
-        final TransactionalMap<Object,Object> map = context.getMap(name);
+        final TransactionalMap<Object, Object> map = context.getMap(name);
         assertNull(map.put("key1", "value1"));
         assertEquals("value1", map.get("key1"));
         assertNull(hz.getMap(name).get("key1"));
         context.commitTransaction();
 
-        assertEquals("value1" , hz.getMap(name).get("key1"));
+        assertEquals("value1", hz.getMap(name).get("key1"));
     }
 
 
     @Test
     public void testKeySetValues() throws Exception {
-        final String name = "defMap";
-        IMap<Object,Object> map = hz.getMap(name);
+        final String name = "testKeySetValues";
+        IMap<Object, Object> map = hz.getMap(name);
         map.put("key1", "value1");
         map.put("key2", "value2");
 
         final TransactionContext context = hz.newTransactionContext();
         context.beginTransaction();
-        final TransactionalMap<Object,Object> txMap = context.getMap(name);
+        final TransactionalMap<Object, Object> txMap = context.getMap(name);
         assertNull(txMap.put("key3", "value3"));
+
+
         assertEquals(3, txMap.size());
         assertEquals(3, txMap.keySet().size());
         assertEquals(3, txMap.values().size());
@@ -93,6 +97,36 @@ public class ClientTxnMapTest {
         assertEquals(3, map.size());
         assertEquals(3, map.keySet().size());
         assertEquals(3, map.values().size());
+
+    }
+
+    @Test
+    public void testKeysetAndValuesWithPredicates() throws Exception {
+        final String name = "testKeysetAndValuesWithPredicates";
+        IMap<Object, Object> map = hz.getMap(name);
+
+        final SampleObjects.Employee emp1 = new SampleObjects.Employee("abc-123-xvz", 34, true, 10D);
+        final SampleObjects.Employee emp2 = new SampleObjects.Employee("abc-123-xvz", 20, true, 10D);
+
+        map.put(emp1, emp1);
+
+        final TransactionContext context = hz.newTransactionContext();
+        context.beginTransaction();
+        final TransactionalMap<Object, Object> txMap = context.getMap(name);
+        assertNull(txMap.put(emp2, emp2));
+
+        assertEquals(2, txMap.size());
+        assertEquals(2, txMap.keySet().size());
+        assertEquals(0, txMap.keySet(new SqlPredicate("age = 10")).size());
+        assertEquals(0, txMap.values(new SqlPredicate("age = 10")).size());
+        assertEquals(2, txMap.keySet(new SqlPredicate("age >= 10")).size());
+        assertEquals(2, txMap.values(new SqlPredicate("age >= 10")).size());
+
+        context.commitTransaction();
+
+        assertEquals(2, map.size());
+//        assertEquals(1, txMap.keySet( new SqlPredicate( "age = 20" ) ).size() );
+        assertEquals(2, map.values().size());
 
     }
 

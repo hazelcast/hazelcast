@@ -16,6 +16,7 @@
 
 package com.hazelcast.map;
 
+
 /**
  * Created with IntelliJ IDEA.
  * User: ahmet
@@ -24,37 +25,19 @@ package com.hazelcast.map;
  */
 public final class SizeEstimators {
 
-    private SizeEstimators(){  }
+    private SizeEstimators() {
+    }
 
-    public static SizeEstimator createMapSizeEstimator( boolean statisticsEnabled )
-    {
-        final SizeEstimator mapSizeEstimator = statisticsEnabled ? new MapSizeEstimator() : EMPTY_SIZE_ESTIMATOR;
+    public static SizeEstimator createMapSizeEstimator() {
+        final SizeEstimator mapSizeEstimator = new MapSizeEstimator();
 
         return mapSizeEstimator;
     }
 
-    static final SizeEstimator EMPTY_SIZE_ESTIMATOR = new SizeEstimator(){
+    public static SizeEstimator createNearCacheSizeEstimator() {
+        final SizeEstimator mapSizeEstimator = new NearCacheSizeEstimator();
 
-        @Override
-        public long getSize() {
-            //not implemented
-            return 0;
-        }
+        return mapSizeEstimator;
+    }
 
-        @Override
-        public void add(long size) {
-            //not implemented
-        }
-
-        @Override
-        public <T> long getCost(T record) {
-            //not implemented
-            return 0;
-        }
-
-        @Override
-        public void reset() {
-            //not implemented
-        }
-    };
 }

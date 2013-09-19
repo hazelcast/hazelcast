@@ -51,6 +51,8 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         RemoteService, EventPublishingService<QueueEvent, ItemListener> {
 
     public static final String SERVICE_NAME = "hz:impl:queueService";
+    protected static final StringPartitioningStrategy PARTITIONING_STRATEGY = new StringPartitioningStrategy();
+
     private final NodeEngine nodeEngine;
     private final ConcurrentMap<String, QueueContainer> containerMap = new ConcurrentHashMap<String, QueueContainer>();
     private final ConcurrentMap<String, LocalQueueStatsImpl> statsMap = new ConcurrentHashMap<String, LocalQueueStatsImpl>(1000);
@@ -90,8 +92,8 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
     public QueueContainer getOrCreateContainer(final String name, boolean fromBackup) throws Exception {
         QueueContainer container = containerMap.get(name);
         if (container == null) {
-            container = new QueueContainer(name, nodeEngine.getConfig().getQueueConfig(name),
-                    nodeEngine, this);
+            container = new QueueContainer(name, nodeEngine.getConfig().getQueueConfig(name), nodeEngine, this);
+
             QueueContainer existing = containerMap.putIfAbsent(name, container);
             if (existing != null) {
                 container = existing;
@@ -169,12 +171,11 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         getLocalQueueStatsImpl(event.name).incrementReceivedEvents();
     }
 
-    public QueueProxyImpl createDistributedObject(Object objectId) {
-        return new QueueProxyImpl(String.valueOf(objectId), this, nodeEngine);
+    public QueueProxyImpl createDistributedObject(String objectId) {
+        return new QueueProxyImpl(objectId, this, nodeEngine);
     }
 
-    public void destroyDistributedObject(Object objectId) {
-        final String name = String.valueOf(objectId);
+    public void destroyDistributedObject(String name) {
         containerMap.remove(name);
         nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, name);
     }
@@ -218,8 +219,8 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
         return ConcurrencyUtil.getOrPutIfAbsent(statsMap, name, localQueueStatsConstructorFunction);
     }
 
-    public TransactionalQueueProxy createTransactionalObject(Object id, TransactionSupport transaction) {
-        return new TransactionalQueueProxy(nodeEngine, this, String.valueOf(id), transaction);
+    public TransactionalQueueProxy createTransactionalObject(String name, TransactionSupport transaction) {
+        return new TransactionalQueueProxy(nodeEngine, this, name, transaction);
     }
 
     public void rollbackTransaction(String transactionId) {

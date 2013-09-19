@@ -43,7 +43,8 @@ public final class GetRemainingLeaseRequest extends KeyBasedClientRequest implem
     }
 
     protected final Operation prepareOperation() {
-        return new GetRemainingLeaseTimeOperation(new InternalLockNamespace(), key);
+        String name = (String) getClientEngine().toObject(key);
+        return new GetRemainingLeaseTimeOperation(new InternalLockNamespace(name), key);
     }
 
     protected final Object getKey() {

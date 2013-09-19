@@ -46,7 +46,8 @@ public final class GetLockCountRequest extends KeyBasedClientRequest implements 
     }
 
     protected final Operation prepareOperation() {
-        return new GetLockCountOperation(new InternalLockNamespace(), key);
+        String name = (String) getClientEngine().toObject(key);
+        return new GetLockCountOperation(new InternalLockNamespace(name), key);
     }
 
     protected final Object getKey() {

@@ -63,17 +63,13 @@ public class ClientCountDownLatchProxy extends ClientProxy implements ICountDown
         invoke(request);
     }
 
-    public String getName() {
-        return (String)getId();
-    }
-
     private Data toData(Object o){
         return getContext().getSerializationService().toData(o);
     }
 
     private Data getKey(){
         if (key == null){
-            key = toData(getId());
+            key = toData(getName());
         }
         return key;
     }

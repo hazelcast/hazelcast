@@ -204,6 +204,21 @@ public class PredicatesTest {
         assertEquals("(active=true OR age BETWEEN 10 AND 15)", sql("active or (age between 10 and 15)"));
         assertEquals("(age>10 AND (active=true OR age BETWEEN 10 AND 15))", sql("age>10 AND (active or (age between 10 and 15))"));
         assertEquals("(age<=10 AND (active=true OR NOT(age BETWEEN 10 AND 15)))", sql("age<=10 AND (active or (age not between 10 and 15))"));
+        //issue #594
+        assertEquals("(name IN (name0,name2) AND age IN (2,5,8))", sql("name in('name0', 'name2') and age   IN ( 2, 5  ,8)"));
+    }
+
+    @Test
+    public void testSqlPredicateEscape() {
+        assertEquals("(active=true AND name=abc x'yz 1'23)", sql("active AND name='abc x''yz 1''23'"));
+        assertEquals("(active=true AND name=)", sql("active AND name=''"));
+
+        assertTrue(Predicates.like(null, "J.-*.*\\%").apply(new DummyEntry("J.-*.*%")));
+        assertTrue(Predicates.like(null, "J\\_").apply(new DummyEntry("J_")));
+
+        assertTrue(Predicates.like(null, "J%").apply(new DummyEntry("Java")));
+
+
     }
 
     @Test(expected = RuntimeException.class)

@@ -119,7 +119,7 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
     }
 
     @Override
-    public Object getObjectId() {
+    public String getObjectName() {
         return name;
     }
 

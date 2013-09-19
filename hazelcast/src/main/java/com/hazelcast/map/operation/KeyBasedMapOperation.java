@@ -103,9 +103,6 @@ public abstract class KeyBasedMapOperation extends Operation implements Partitio
         mapContainer = mapService.getMapContainer(name);
         partitionContainer = mapService.getPartitionContainer(getPartitionId());
         recordStore = partitionContainer.getRecordStore(name);
-        if( !(this instanceof BackupOperation || this instanceof PutFromLoadOperation) &&  !mapContainer.isMapReady()) {
-            throw new RetryableHazelcastException("Map is not ready!!!");
-        }
         innerBeforeRun();
     }
 

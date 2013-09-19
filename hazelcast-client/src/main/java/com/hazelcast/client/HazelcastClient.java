@@ -30,11 +30,10 @@ import com.hazelcast.client.spi.impl.ClientInvocationServiceImpl;
 import com.hazelcast.client.spi.impl.ClientPartitionServiceImpl;
 import com.hazelcast.client.txn.TransactionContextProxy;
 import com.hazelcast.client.util.RoundRobinLB;
-import com.hazelcast.collection.CollectionProxyId;
-import com.hazelcast.collection.CollectionProxyType;
-import com.hazelcast.collection.CollectionService;
-import com.hazelcast.collection.list.ObjectListProxy;
-import com.hazelcast.collection.set.ObjectSetProxy;
+import com.hazelcast.collection.list.ListService;
+import com.hazelcast.collection.set.SetService;
+import com.hazelcast.concurrent.lock.proxy.LockProxy;
+import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
@@ -188,14 +187,12 @@ public final class HazelcastClient implements HazelcastInstance {
 
     @Override
     public <E> ISet<E> getSet(String name) {
-        return getDistributedObject(CollectionService.SERVICE_NAME,
-                new CollectionProxyId(ObjectSetProxy.COLLECTION_SET_NAME, name, CollectionProxyType.SET));
+        return getDistributedObject(SetService.SERVICE_NAME, name);
     }
 
     @Override
     public <E> IList<E> getList(String name) {
-        return getDistributedObject(CollectionService.SERVICE_NAME,
-                new CollectionProxyId(ObjectListProxy.COLLECTION_LIST_NAME, name, CollectionProxyType.LIST));
+        return getDistributedObject(ListService.SERVICE_NAME, name);
     }
 
     @Override
@@ -205,8 +202,7 @@ public final class HazelcastClient implements HazelcastInstance {
 
     @Override
     public <K, V> MultiMap<K, V> getMultiMap(String name) {
-        return getDistributedObject(CollectionService.SERVICE_NAME,
-                new CollectionProxyId(name, null, CollectionProxyType.MULTI_MAP));
+        return getDistributedObject(MultiMapService.SERVICE_NAME, name);
     }
 
     @Override
@@ -215,9 +211,10 @@ public final class HazelcastClient implements HazelcastInstance {
     }
 
     @Override
+    @Deprecated
     public ILock getLock(Object key) {
         //this method will be deleted in the near future.
-        return getDistributedObject(LockServiceImpl.SERVICE_NAME, key);
+        return getDistributedObject(LockServiceImpl.SERVICE_NAME, LockProxy.convertToStringKey(key, serializationService));
     }
 
     @Override
@@ -295,7 +292,7 @@ public final class HazelcastClient implements HazelcastInstance {
             final SerializableCollection serializableCollection = (SerializableCollection) invocationService.invokeOnRandomTarget(request);
             for (Data data : serializableCollection) {
                 final DistributedObjectInfo o = (DistributedObjectInfo) serializationService.toObject(data);
-                getDistributedObject(o.getServiceName(), o.getId());
+                getDistributedObject(o.getServiceName(), o.getName());
             }
             return (Collection<DistributedObject>) proxyManager.getDistributedObjects();
         } catch (Exception e) {
@@ -333,8 +330,17 @@ public final class HazelcastClient implements HazelcastInstance {
     }
 
     @Override
+    @Deprecated
     public <T extends DistributedObject> T getDistributedObject(String serviceName, Object id) {
-        return (T) proxyManager.getProxy(serviceName, id);
+        if (id instanceof String) {
+            return (T) proxyManager.getProxy(serviceName, (String) id);
+        }
+        throw new IllegalArgumentException("'id' must be type of String!");
+    }
+
+    @Override
+    public <T extends DistributedObject> T getDistributedObject(String serviceName, String name) {
+        return (T) proxyManager.getProxy(serviceName, name);
     }
 
     @Override

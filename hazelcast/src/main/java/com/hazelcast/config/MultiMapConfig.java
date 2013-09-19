@@ -28,7 +28,7 @@ public class MultiMapConfig {
     private String valueCollectionType = ValueCollectionType.SET.toString();
     private List<EntryListenerConfig> listenerConfigs;
     private boolean binary = true;
-    private int syncBackupCount = DEFAULT_SYNC_BACKUP_COUNT;
+    private int backupCount = DEFAULT_SYNC_BACKUP_COUNT;
     private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
     private boolean statisticsEnabled = true;
 //    private PartitionStrategyConfig partitionStrategyConfig;
@@ -40,7 +40,7 @@ public class MultiMapConfig {
         this.name = defConfig.getName();
         this.valueCollectionType = defConfig.valueCollectionType;
         this.binary = defConfig.binary;
-        this.syncBackupCount = defConfig.syncBackupCount;
+        this.backupCount = defConfig.backupCount;
         this.asyncBackupCount = defConfig.asyncBackupCount;
         this.statisticsEnabled = defConfig.statisticsEnabled;
         this.listenerConfigs = new ArrayList<EntryListenerConfig>(defConfig.getEntryListenerConfigs());
@@ -100,12 +100,23 @@ public class MultiMapConfig {
         return this;
     }
 
+    @Deprecated
     public int getSyncBackupCount() {
-        return syncBackupCount;
+        return backupCount;
     }
 
+    @Deprecated
     public MultiMapConfig setSyncBackupCount(int syncBackupCount) {
-        this.syncBackupCount = syncBackupCount;
+        this.backupCount = syncBackupCount;
+        return this;
+    }
+
+    public int getBackupCount() {
+        return backupCount;
+    }
+
+    public MultiMapConfig setBackupCount(int backupCount) {
+        this.backupCount = backupCount;
         return this;
     }
 
@@ -119,7 +130,7 @@ public class MultiMapConfig {
     }
 
     public int getTotalBackupCount() {
-        return syncBackupCount + asyncBackupCount;
+        return backupCount + asyncBackupCount;
     }
 
     public boolean isStatisticsEnabled() {
@@ -147,7 +158,7 @@ public class MultiMapConfig {
         sb.append(", valueCollectionType='").append(valueCollectionType).append('\'');
         sb.append(", listenerConfigs=").append(listenerConfigs);
         sb.append(", binary=").append(binary);
-        sb.append(", syncBackupCount=").append(syncBackupCount);
+        sb.append(", backupCount=").append(backupCount);
         sb.append(", asyncBackupCount=").append(asyncBackupCount);
         sb.append('}');
         return sb.toString();

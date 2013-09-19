@@ -75,7 +75,7 @@ public class AddMessageListenerRequest extends CallableClientRequest implements 
         return TopicPortableHook.ADD_LISTENER;
     }
 
-    public Object getObjectId() {
+    public String getObjectName() {
         return name;
     }
 

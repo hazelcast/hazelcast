@@ -24,7 +24,7 @@ import com.hazelcast.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.util.Clock;
@@ -37,7 +37,7 @@ import java.util.*;
  * Date: 11/22/12
  * Time: 11:00 AM
  */
-public class QueueContainer implements DataSerializable {
+public class QueueContainer implements IdentifiedDataSerializable {
 
     private LinkedList<QueueItem> itemQueue = null;
     private HashMap<Long, QueueItem> backupMap = null;
@@ -52,9 +52,10 @@ public class QueueContainer implements DataSerializable {
 
     private long idGenerator = 0;
 
-    private final String name;
     private final QueueWaitNotifyKey pollWaitNotifyKey;
     private final QueueWaitNotifyKey offerWaitNotifyKey;
+
+    private String name;
 
     private long minAge = Long.MAX_VALUE;
 
@@ -72,6 +73,7 @@ public class QueueContainer implements DataSerializable {
         pollWaitNotifyKey = new QueueWaitNotifyKey(name, "poll");
         offerWaitNotifyKey = new QueueWaitNotifyKey(name, "offer");
     }
+
 
     public QueueContainer(String name, QueueConfig config, NodeEngine nodeEngine, QueueService service) throws Exception {
         this(name);
@@ -146,8 +148,8 @@ public class QueueContainer implements DataSerializable {
         if (store.isEnabled()) {
             try {
                 store.delete(item.getItemId());
-            } catch (Exception ignored) {
-                logger.severe("Deleting while commit poll backup, itemId" + item.getItemId(), ignored);
+            } catch (Exception e) {
+                logger.severe("Error during store delete: " + item.getItemId(), e);
             }
         }
         return item.getData();
@@ -565,7 +567,7 @@ public class QueueContainer implements DataSerializable {
         store = new QueueStoreWrapper(nodeEngine.getSerializationService());
         this.config = new QueueConfig(config);
         QueueStoreConfig storeConfig = config.getQueueStoreConfig();
-        store.setConfig(storeConfig);
+        store.setConfig(storeConfig, name);
     }
 
     long nextId() {
@@ -648,6 +650,7 @@ public class QueueContainer implements DataSerializable {
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
         out.writeInt(getItemQueue().size());
         for (QueueItem item : getItemQueue()) {
             item.writeData(out);
@@ -659,6 +662,7 @@ public class QueueContainer implements DataSerializable {
     }
 
     public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
         int size = in.readInt();
         for (int j = 0; j < size; j++) {
             QueueItem item = new QueueItem(this, -1, null);
@@ -684,5 +688,13 @@ public class QueueContainer implements DataSerializable {
         }
         txMap.clear();
         dataMap.clear();
+    }
+
+    public int getFactoryId() {
+        return QueueDataSerializerHook.F_ID;
+    }
+
+    public int getId() {
+        return QueueDataSerializerHook.QUEUE_CONTAINER;
     }
 }

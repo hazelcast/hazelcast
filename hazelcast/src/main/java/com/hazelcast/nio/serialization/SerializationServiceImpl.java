@@ -108,12 +108,14 @@ public final class SerializationServiceImpl implements SerializationService {
         registerConstant(float[].class, new FloatArraySerializer());
         registerConstant(double[].class, new DoubleArraySerializer());
         registerConstant(String.class, new StringSerializer());
+
         safeRegister(Date.class, new DateSerializer());
         safeRegister(BigInteger.class, new BigIntegerSerializer());
         safeRegister(BigDecimal.class, new BigDecimalSerializer());
         safeRegister(Externalizable.class, new Externalizer(enableCompression));
         safeRegister(Serializable.class, new ObjectSerializer(enableSharedObject, enableCompression));
         safeRegister(Class.class, new ClassSerializer());
+        safeRegister(Enum.class, new EnumSerializer());
 
         registerClassDefinitions(classDefinitions, checkClassDefErrors);
     }

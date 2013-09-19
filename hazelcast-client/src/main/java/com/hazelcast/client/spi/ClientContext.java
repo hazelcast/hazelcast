@@ -71,7 +71,7 @@ public final class ClientContext {
     }
 
     public void removeProxy(ClientProxy proxy){
-        proxyManager.removeProxy(proxy.getServiceName(), proxy.getId());
+        proxyManager.removeProxy(proxy.getServiceName(), proxy.getName());
     }
 
     public ClientConfig getClientConfig() {

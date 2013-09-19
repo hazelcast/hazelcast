@@ -18,17 +18,22 @@ package com.hazelcast.client.txn.proxy;
 
 import com.hazelcast.client.txn.TransactionContextProxy;
 import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.map.MapKeySet;
 import com.hazelcast.map.MapService;
+import com.hazelcast.map.client.MapDestroyRequest;
+import com.hazelcast.map.MapValueCollection;
 import com.hazelcast.map.client.TxnMapRequest;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
  * @author ali 6/10/13
  */
-public class ClientTxnMapProxy<K,V> extends ClientTxnProxy implements TransactionalMap<K, V> {
+public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements TransactionalMap<K, V> {
 
     public ClientTxnMapProxy(String name, TransactionContextProxy proxy) {
         super(name, proxy);
@@ -97,40 +102,68 @@ public class ClientTxnMapProxy<K,V> extends ClientTxnProxy implements Transactio
         return result;
     }
 
-    @Override
     public Set<K> keySet() {
-        // TODO implement
-        return null;
+        final TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.KEYSET);
+        final MapKeySet result = invoke(request);
+        final Set<Data> dataKeySet = result.getKeySet();
+        final HashSet<K> keySet = new HashSet<K>(dataKeySet.size());
+        for (Data data : dataKeySet) {
+            keySet.add((K) toObject(data));
+        }
+        return keySet;
     }
 
-    @Override
     public Set<K> keySet(Predicate predicate) {
-        // TODO implement
-        return null;
+        if (predicate == null) {
+            throw new NullPointerException("Predicate should not be null!");
+        }
+        final TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.KEYSET_BY_PREDICATE, predicate);
+        final MapKeySet result = invoke(request);
+        final Set<Data> dataKeySet = result.getKeySet();
+        final HashSet<K> keySet = new HashSet<K>(dataKeySet.size());
+        for (Data data : dataKeySet) {
+            keySet.add((K) toObject(data));
+        }
+        return keySet;
     }
 
-    @Override
     public Collection<V> values() {
-        // TODO implement
-        return null;
+        final TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.VALUES);
+        final MapValueCollection result = invoke(request);
+        final Collection<Data> dataValues = result.getValues();
+        final HashSet<V> values = new HashSet<V>(dataValues.size());
+        for (Data value : dataValues) {
+            values.add((V) toObject(value));
+        }
+        return values;
     }
 
-    @Override
     public Collection<V> values(Predicate predicate) {
-        // TODO implement
-        return null;
+        if (predicate == null) {
+            throw new NullPointerException("Predicate should not be null!");
+        }
+        final TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.VALUES_BY_PREDICATE, predicate);
+        final MapValueCollection result = invoke(request);
+        final Collection<Data> dataValues = result.getValues();
+        final HashSet<V> values = new HashSet<V>(dataValues.size());
+        for (Data value : dataValues) {
+            values.add((V) toObject(value));
+        }
+        return values;
     }
+
 
     public String getName() {
-        return (String)getId();
+        return (String) getId();
     }
 
-    @Override
     public String getServiceName() {
         return MapService.SERVICE_NAME;
     }
 
     void onDestroy() {
-        //TODO
+        //TODO what if a non-committed map calls destroy ?
+        MapDestroyRequest request = new MapDestroyRequest(getName());
+        invoke(request);
     }
 }

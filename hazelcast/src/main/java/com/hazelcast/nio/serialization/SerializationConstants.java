@@ -21,61 +21,65 @@ package com.hazelcast.nio.serialization;
  */
 public final class SerializationConstants {
 
-    private static int ID = -1;
+    // WARNING: DON'T CHANGE VALUES!
+    // WARNING: DON'T ADD ANY NEW CONSTANT SERIALIZER!
 
-    // !!! NEVER CHANGE THE ORDER OF SERIALIZERS !!!
+    public static final int CONSTANT_TYPE_PORTABLE = -1;
 
-    public static final int CONSTANT_TYPE_PORTABLE = ID--;
+    public static final int CONSTANT_TYPE_DATA = -2;
 
-    public static final int CONSTANT_TYPE_DATA = ID--;
+    public static final int CONSTANT_TYPE_BYTE = -3;
 
-    public static final int CONSTANT_TYPE_BYTE = ID--;
+    public static final int CONSTANT_TYPE_BOOLEAN = -4;
 
-    public static final int CONSTANT_TYPE_BOOLEAN = ID--;
+    public static final int CONSTANT_TYPE_CHAR = -5;
 
-    public static final int CONSTANT_TYPE_CHAR = ID--;
+    public static final int CONSTANT_TYPE_SHORT = -6;
 
-    public static final int CONSTANT_TYPE_SHORT = ID--;
+    public static final int CONSTANT_TYPE_INTEGER = -7;
 
-    public static final int CONSTANT_TYPE_INTEGER = ID--;
+    public static final int CONSTANT_TYPE_LONG = -8;
 
-    public static final int CONSTANT_TYPE_LONG = ID--;
+    public static final int CONSTANT_TYPE_FLOAT = -9;
 
-    public static final int CONSTANT_TYPE_FLOAT = ID--;
+    public static final int CONSTANT_TYPE_DOUBLE = -10;
 
-    public static final int CONSTANT_TYPE_DOUBLE = ID--;
+    public static final int CONSTANT_TYPE_STRING = -11;
 
-    public static final int CONSTANT_TYPE_STRING = ID--;
+    public static final int CONSTANT_TYPE_BYTE_ARRAY = -12;
 
-    public static final int CONSTANT_TYPE_BYTE_ARRAY = ID--;
+    public static final int CONSTANT_TYPE_CHAR_ARRAY = -13;
 
-    public static final int CONSTANT_TYPE_CHAR_ARRAY = ID--;
+    public static final int CONSTANT_TYPE_SHORT_ARRAY = -14;
 
-    public static final int CONSTANT_TYPE_SHORT_ARRAY = ID--;
+    public static final int CONSTANT_TYPE_INTEGER_ARRAY = -15;
 
-    public static final int CONSTANT_TYPE_INTEGER_ARRAY = ID--;
+    public static final int CONSTANT_TYPE_LONG_ARRAY = -16;
 
-    public static final int CONSTANT_TYPE_LONG_ARRAY = ID--;
+    public static final int CONSTANT_TYPE_FLOAT_ARRAY = -17;
 
-    public static final int CONSTANT_TYPE_FLOAT_ARRAY = ID--;
+    public static final int CONSTANT_TYPE_DOUBLE_ARRAY = -18;
 
-    public static final int CONSTANT_TYPE_DOUBLE_ARRAY = ID--;
-
-    public static final int CONSTANT_SERIALIZERS_LENGTH = -ID - 1;
+    // NUMBER OF CONSTANT SERIALIZERS...
+    public static final int CONSTANT_SERIALIZERS_LENGTH = 18;
 
     // ------------------------------------------------------------
+    // DEFAULT SERIALIZERS
 
-    public static final int DEFAULT_TYPE_CLASS = ID--;
+    public static final int DEFAULT_TYPE_CLASS = -19;
 
-    public static final int DEFAULT_TYPE_DATE = ID--;
+    public static final int DEFAULT_TYPE_DATE = -20;
 
-    public static final int DEFAULT_TYPE_BIG_INTEGER = ID--;
+    public static final int DEFAULT_TYPE_BIG_INTEGER = -21;
 
-    public static final int DEFAULT_TYPE_BIG_DECIMAL = ID--;
+    public static final int DEFAULT_TYPE_BIG_DECIMAL = -22;
 
-    public static final int DEFAULT_TYPE_OBJECT = ID--;
+    public static final int DEFAULT_TYPE_OBJECT = -23;
 
-    public static final int DEFAULT_TYPE_EXTERNALIZABLE = ID--;
+    public static final int DEFAULT_TYPE_EXTERNALIZABLE = -24;
+
+    public static final int DEFAULT_TYPE_ENUM = -25;
+
 
     private SerializationConstants() {}
 }

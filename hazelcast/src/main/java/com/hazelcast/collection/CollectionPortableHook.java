@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,223 +16,143 @@
 
 package com.hazelcast.collection;
 
-import com.hazelcast.collection.operations.client.*;
+import com.hazelcast.collection.client.*;
 import com.hazelcast.nio.serialization.*;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.util.Collection;
 
 /**
- * @author ali 5/9/13
+ * @ali 9/4/13
  */
 public class CollectionPortableHook implements PortableHook {
 
-    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.COLLECTION_PORTABLE_FACTORY, -12);
+    public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.COLLECTION_PORTABLE_FACTORY, -20);
 
+    public static int increment = 1;
 
-    public static final int ADD_ALL = 1;
-    public static final int CLEAR = 2;
-    public static final int COMPARE_AND_REMOVE = 3;
-    public static final int CONTAINS_ALL = 4;
-    public static final int CONTAINS_ENTRY = 5;
-    public static final int CONTAINS = 6;
-    public static final int COUNT = 7;
-    public static final int ENTRY_SET = 8;
-    public static final int GET_ALL = 9;
-    public static final int GET = 10;
-    public static final int INDEX_OF = 11;
-    public static final int KEY_SET = 12;
-    public static final int PUT = 13;
-    public static final int REMOVE_ALL = 14;
-    public static final int REMOVE_INDEX = 15;
-    public static final int REMOVE = 16;
-    public static final int SET = 17;
-    public static final int SIZE = 18;
-    public static final int VALUES = 19;
-    public static final int ADD_ENTRY_LISTENER = 20;
-    public static final int ENTRY_SET_RESPONSE = 21;
-    public static final int LOCK = 22;
-    public static final int UNLOCK = 23;
-    public static final int IS_LOCKED = 24;
-    public static final int ADD_ITEM_LISTENER = 25;
-    public static final int DESTROY = 26;
+    public static final int COLLECTION_SIZE = increment++;
+    public static final int COLLECTION_CONTAINS = increment++;
+    public static final int COLLECTION_ADD = increment++;
+    public static final int COLLECTION_REMOVE = increment++;
+    public static final int COLLECTION_ADD_ALL = increment++;
+    public static final int COLLECTION_COMPARE_AND_REMOVE = increment++;
+    public static final int COLLECTION_CLEAR = increment++;
+    public static final int COLLECTION_GET_ALL = increment++;
+    public static final int COLLECTION_ADD_LISTENER = increment++;
+    public static final int COLLECTION_DESTROY = increment++;
+    public static final int LIST_ADD_ALL = increment++;
+    public static final int LIST_GET = increment++;
+    public static final int LIST_SET = increment++;
+    public static final int LIST_ADD = increment++;
+    public static final int LIST_REMOVE = increment++;
+    public static final int LIST_INDEX_OF = increment++;
+    public static final int LIST_SUB = increment++;
 
-    public static final int TXN_MM_PUT = 27;
-    public static final int TXN_MM_GET = 28;
-    public static final int TXN_MM_REMOVE = 29;
-    public static final int TXN_MM_VALUE_COUNT = 30;
-    public static final int TXN_MM_SIZE = 31;
+    public static final int TXN_LIST_ADD = increment++;
+    public static final int TXN_LIST_REMOVE = increment++;
+    public static final int TXN_LIST_SIZE = increment++;
 
-    public static final int TXN_LIST_ADD = 32;
-    public static final int TXN_LIST_REMOVE = 33;
-    public static final int TXN_LIST_SIZE = 34;
-
-    public static final int TXN_SET_ADD = 35;
-    public static final int TXN_SET_REMOVE = 36;
-    public static final int TXN_SET_SIZE = 37;
-
+    public static final int TXN_SET_ADD = increment++;
+    public static final int TXN_SET_REMOVE = increment++;
+    public static final int TXN_SET_SIZE = increment++;
 
     public int getFactoryId() {
         return F_ID;
     }
 
+    @Override
     public PortableFactory createFactory() {
-        ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[TXN_SET_SIZE +1];
-        constructors[ADD_ALL] = new ConstructorFunction<Integer, Portable>() {
+        ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[increment];
+
+        constructors[COLLECTION_SIZE] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
-                return new AddAllRequest();
+                return new CollectionSizeRequest();
             }
         };
-        constructors[CLEAR] = new ConstructorFunction<Integer, Portable>() {
+        constructors[COLLECTION_CONTAINS] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
-                return new ClearRequest();
+                return new CollectionContainsRequest();
             }
         };
-        constructors[COMPARE_AND_REMOVE] = new ConstructorFunction<Integer, Portable>() {
+        constructors[COLLECTION_ADD] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
-                return new CompareAndRemoveRequest();
+                return new CollectionAddRequest();
             }
         };
-        constructors[CONTAINS_ALL] = new ConstructorFunction<Integer, Portable>() {
+        constructors[COLLECTION_REMOVE] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
-                return new ContainsAllRequest();
+                return new CollectionRemoveRequest();
             }
         };
-        constructors[CONTAINS_ENTRY] = new ConstructorFunction<Integer, Portable>() {
+        constructors[COLLECTION_ADD_ALL] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
-                return new ContainsEntryRequest();
+                return new CollectionAddAllRequest();
             }
         };
-        constructors[CONTAINS] = new ConstructorFunction<Integer, Portable>() {
+        constructors[COLLECTION_COMPARE_AND_REMOVE] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
-                return new ContainsRequest();
+                return new CollectionCompareAndRemoveRequest();
             }
         };
-        constructors[COUNT] = new ConstructorFunction<Integer, Portable>() {
+        constructors[COLLECTION_CLEAR] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
-                return new CountRequest();
+                return new CollectionClearRequest();
             }
         };
-        constructors[ENTRY_SET] = new ConstructorFunction<Integer, Portable>() {
+        constructors[COLLECTION_GET_ALL] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
-                return new EntrySetRequest();
+                return new CollectionGetAllRequest();
             }
         };
-        constructors[GET_ALL] = new ConstructorFunction<Integer, Portable>() {
+        constructors[COLLECTION_ADD_LISTENER] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
-                return new GetAllRequest();
+                return new CollectionAddListenerRequest();
             }
         };
-        constructors[GET] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new GetRequest();
-            }
-        };
-        constructors[INDEX_OF] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new IndexOfRequest();
-            }
-        };
-        constructors[KEY_SET] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new KeySetRequest();
-            }
-        };
-        constructors[PUT] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new PutRequest();
-            }
-        };
-        constructors[REMOVE_ALL] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new RemoveAllRequest();
-            }
-        };
-        constructors[REMOVE_INDEX] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new RemoveIndexRequest();
-            }
-        };
-        constructors[REMOVE] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new RemoveRequest();
-            }
-        };
-        constructors[SET] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new SetRequest();
-            }
-        };
-        constructors[SIZE] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new SizeRequest();
-            }
-        };
-        constructors[VALUES] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new ValuesRequest();
-            }
-        };
-        constructors[ADD_ENTRY_LISTENER] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new AddEntryListenerRequest();
-            }
-        };
-        constructors[ENTRY_SET_RESPONSE] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new PortableEntrySetResponse();
-            }
-        };
-        constructors[LOCK] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new MultiMapLockRequest();
-            }
-        };
-        constructors[UNLOCK] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new MultiMapUnlockRequest();
-            }
-        };
-        constructors[IS_LOCKED] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new MultiMapIsLockedRequest();
-            }
-        };
-        constructors[ADD_ITEM_LISTENER] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new AddItemListenerRequest();
-            }
-        };
-        constructors[DESTROY] = new ConstructorFunction<Integer, Portable>() {
+        constructors[COLLECTION_DESTROY] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
                 return new CollectionDestroyRequest();
             }
         };
-        constructors[TXN_MM_PUT] = new ConstructorFunction<Integer, Portable>() {
+
+
+        constructors[LIST_ADD_ALL] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
-                return new TxnMultiMapPutRequest();
+                return new ListAddAllRequest();
             }
         };
-        constructors[TXN_MM_GET] = new ConstructorFunction<Integer, Portable>() {
+        constructors[LIST_GET] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
-                return new TxnMultiMapGetRequest();
+                return new ListGetRequest();
             }
         };
-        constructors[TXN_MM_REMOVE] = new ConstructorFunction<Integer, Portable>() {
+        constructors[LIST_SET] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
-                return new TxnMultiMapRemoveRequest();
+                return new ListSetRequest();
             }
         };
-        constructors[TXN_MM_VALUE_COUNT] = new ConstructorFunction<Integer, Portable>() {
+        constructors[LIST_ADD] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
-                return new TxnMultiMapValueCountRequest();
+                return new ListAddRequest();
             }
         };
-        constructors[TXN_MM_SIZE] = new ConstructorFunction<Integer, Portable>() {
+        constructors[LIST_REMOVE] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
-                return new TxnMultiMapSizeRequest();
+                return new ListRemoveRequest();
             }
         };
+        constructors[LIST_INDEX_OF] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new ListIndexOfRequest();
+            }
+        };
+        constructors[LIST_SUB] = new ConstructorFunction<Integer, Portable>() {
+            public Portable createNew(Integer arg) {
+                return new ListSubRequest();
+            }
+        };
+
 
         constructors[TXN_LIST_ADD] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
@@ -249,7 +169,6 @@ public class CollectionPortableHook implements PortableHook {
                 return new TxnListSizeRequest();
             }
         };
-
         constructors[TXN_SET_ADD] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
                 return new TxnSetAddRequest();
@@ -269,6 +188,7 @@ public class CollectionPortableHook implements PortableHook {
         return new ArrayPortableFactory(constructors);
     }
 
+    @Override
     public Collection<ClassDefinition> getBuiltinDefinitions() {
         return null;
     }

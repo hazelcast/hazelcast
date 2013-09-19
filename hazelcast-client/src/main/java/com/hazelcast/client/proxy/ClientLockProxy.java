@@ -18,7 +18,6 @@ package com.hazelcast.client.proxy;
 
 import com.hazelcast.client.spi.ClientProxy;
 import com.hazelcast.concurrent.lock.client.*;
-import com.hazelcast.concurrent.lock.proxy.LockProxy;
 import com.hazelcast.core.ICondition;
 import com.hazelcast.core.ILock;
 import com.hazelcast.nio.serialization.Data;
@@ -35,12 +34,13 @@ public class ClientLockProxy extends ClientProxy implements ILock {
 
     private volatile Data key;
 
-    public ClientLockProxy(String serviceName, Object objectId) {
+    public ClientLockProxy(String serviceName, String objectId) {
         super(serviceName, objectId);
     }
 
+    @Deprecated
     public Object getKey() {
-        return getId();
+        return getName();
     }
 
     public boolean isLocked() {
@@ -111,12 +111,8 @@ public class ClientLockProxy extends ClientProxy implements ILock {
     }
 
     protected void onDestroy() {
-        LockDestroyRequest request = new LockDestroyRequest(getId());
+        LockDestroyRequest request = new LockDestroyRequest(getName());
         invoke(request);
-    }
-
-    public String getName() {
-        return String.valueOf(getId());
     }
 
     private Data toData(Object o) {
@@ -125,8 +121,7 @@ public class ClientLockProxy extends ClientProxy implements ILock {
 
     private Data getKeyData() {
         if (key == null) {
-            String name = LockProxy.convertToStringKey(getId(), getContext().getSerializationService());
-            key = toData(name);
+            key = toData(getName());
         }
         return key;
     }

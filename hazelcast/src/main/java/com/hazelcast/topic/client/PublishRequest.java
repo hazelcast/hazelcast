@@ -73,7 +73,7 @@ public class PublishRequest extends PartitionClientRequest implements Portable, 
         return TopicPortableHook.PUBLISH;
     }
 
-    public Object getObjectId() {
+    public String getObjectName() {
         return name;
     }
 

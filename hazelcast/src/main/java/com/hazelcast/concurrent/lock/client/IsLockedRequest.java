@@ -39,7 +39,8 @@ public final class IsLockedRequest extends AbstractIsLockedRequest implements Re
 
     @Override
     protected InternalLockNamespace getNamespace() {
-        return new InternalLockNamespace();
+        String name = (String) getClientEngine().toObject(key);
+        return new InternalLockNamespace(name);
     }
 
     @Override

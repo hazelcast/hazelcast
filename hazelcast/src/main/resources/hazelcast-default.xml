@@ -179,6 +179,19 @@
 
     </map>
 
+    <multimap name="default">
+        <backup-count>1</backup-count>
+        <value-collection-type>SET</value-collection-type>
+    </multimap>
+
+    <list name="default">
+        <backup-count>1</backup-count>
+    </list>
+
+    <set name="default">
+        <backup-count>1</backup-count>
+    </set>
+
     <semaphore name="default">
         <initial-permits>0</initial-permits>
         <backup-count>1</backup-count>

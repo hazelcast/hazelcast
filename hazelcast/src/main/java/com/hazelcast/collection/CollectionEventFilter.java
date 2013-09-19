@@ -16,51 +16,48 @@
 
 package com.hazelcast.collection;
 
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.EventFilter;
 
 import java.io.IOException;
 
 /**
- * @author ali 1/9/13
+ * @author ali 12/24/12
  */
-public class CollectionEventFilter implements EventFilter, DataSerializable {
+public class CollectionEventFilter implements EventFilter, IdentifiedDataSerializable {
 
     boolean includeValue;
-
-    Data key;
 
     public CollectionEventFilter() {
     }
 
-    public CollectionEventFilter(boolean includeValue, Data key) {
+    public CollectionEventFilter(boolean includeValue) {
         this.includeValue = includeValue;
-        this.key = key;
     }
 
     public boolean isIncludeValue() {
         return includeValue;
     }
 
-    public Data getKey() {
-        return key;
+    public boolean eval(Object arg) {
+        return false;
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeBoolean(includeValue);
-        IOUtil.writeNullableData(out, key);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
         includeValue = in.readBoolean();
-        key = IOUtil.readNullableData(in);
     }
 
-    public boolean eval(Object arg) {
-        return false;
+    public int getFactoryId() {
+        return CollectionDataSerializerHook.F_ID;
+    }
+
+    public int getId() {
+        return CollectionDataSerializerHook.COLLECTION_EVENT_FILTER;
     }
 }

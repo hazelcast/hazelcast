@@ -60,7 +60,7 @@ public class MapDeleteRequest extends KeyBasedClientRequest implements Portable,
     }
 
     @Override
-    public Object getObjectId() {
+    public String getObjectName() {
         return name;
     }
 

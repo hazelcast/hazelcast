@@ -20,9 +20,9 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.proxy.*;
-import com.hazelcast.collection.CollectionProxyId;
-import com.hazelcast.collection.CollectionProxyType;
-import com.hazelcast.collection.CollectionService;
+import com.hazelcast.collection.list.ListService;
+import com.hazelcast.collection.set.SetService;
+import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.idgen.IdGeneratorService;
@@ -74,60 +74,58 @@ public final class ProxyManager {
     public void init(ClientConfig config) {
         // register defaults
         register(MapService.SERVICE_NAME, new ClientProxyFactory() {
-            public ClientProxy create(Object id) {
+            public ClientProxy create(String id) {
                 return new ClientMapProxy(MapService.SERVICE_NAME, String.valueOf(id));
             }
         });
         register(QueueService.SERVICE_NAME, new ClientProxyFactory() {
-            public ClientProxy create(Object id) {
+            public ClientProxy create(String id) {
                 return new ClientQueueProxy(QueueService.SERVICE_NAME, String.valueOf(id));
             }
         });
-        register(CollectionService.SERVICE_NAME, new ClientProxyFactory() {
-            public ClientProxy create(Object id) {
-                CollectionProxyId proxyId = (CollectionProxyId) id;
-                final CollectionProxyType type = proxyId.getType();
-                switch (type) {
-                    case MULTI_MAP:
-                        return new ClientMultiMapProxy(CollectionService.SERVICE_NAME, proxyId);
-                    case LIST:
-                        return new ClientListProxy(CollectionService.SERVICE_NAME, proxyId);
-                    case SET:
-                        return new ClientSetProxy(CollectionService.SERVICE_NAME, proxyId);
-                    case QUEUE:
-                        return null;
-                }
-                return null;
+        register(MultiMapService.SERVICE_NAME, new ClientProxyFactory() {
+            public ClientProxy create(String id) {
+                return new ClientMultiMapProxy(MultiMapService.SERVICE_NAME, String.valueOf(id));
+            }
+        });
+        register(ListService.SERVICE_NAME, new ClientProxyFactory() {
+            public ClientProxy create(String id) {
+                return new ClientListProxy(ListService.SERVICE_NAME, String.valueOf(id));
+            }
+        });
+        register(SetService.SERVICE_NAME, new ClientProxyFactory() {
+            public ClientProxy create(String id) {
+                return new ClientSetProxy(SetService.SERVICE_NAME, String.valueOf(id));
             }
         });
         register(SemaphoreService.SERVICE_NAME, new ClientProxyFactory() {
-            public ClientProxy create(Object id) {
+            public ClientProxy create(String id) {
                 return new ClientSemaphoreProxy(SemaphoreService.SERVICE_NAME, String.valueOf(id));
             }
         });
         register(TopicService.SERVICE_NAME, new ClientProxyFactory() {
-            public ClientProxy create(Object id) {
+            public ClientProxy create(String id) {
                 return new ClientTopicProxy(TopicService.SERVICE_NAME, String.valueOf(id));
             }
         });
         register(AtomicLongService.SERVICE_NAME, new ClientProxyFactory() {
-            public ClientProxy create(Object id) {
+            public ClientProxy create(String id) {
                 return new ClientAtomicLongProxy(AtomicLongService.SERVICE_NAME, String.valueOf(id));
             }
         });
         register(DistributedExecutorService.SERVICE_NAME, new ClientProxyFactory() {
-            public ClientProxy create(Object id) {
+            public ClientProxy create(String id) {
                 return new ClientExecutorServiceProxy(DistributedExecutorService.SERVICE_NAME, String.valueOf(id));
             }
         });
         register(LockServiceImpl.SERVICE_NAME, new ClientProxyFactory() {
-            public ClientProxy create(Object id) {
+            public ClientProxy create(String id) {
                 return new ClientLockProxy(LockServiceImpl.SERVICE_NAME, id);
             }
         });
 
         register(IdGeneratorService.SERVICE_NAME, new ClientProxyFactory() {
-            public ClientProxy create(Object id) {
+            public ClientProxy create(String id) {
                 String name = String.valueOf(id);
                 IAtomicLong atomicLong = client.getAtomicLong(IdGeneratorService.ATOMIC_LONG_NAME + name);
                 return new ClientIdGeneratorProxy(IdGeneratorService.SERVICE_NAME, name, atomicLong);
@@ -135,7 +133,7 @@ public final class ProxyManager {
         });
 
         register(CountDownLatchService.SERVICE_NAME, new ClientProxyFactory() {
-            public ClientProxy create(Object id) {
+            public ClientProxy create(String id) {
                 return new ClientCountDownLatchProxy(CountDownLatchService.SERVICE_NAME, String.valueOf(id));
             }
         });
@@ -157,7 +155,7 @@ public final class ProxyManager {
         }
     }
 
-    public ClientProxy getProxy(String service, Object id) {
+    public ClientProxy getProxy(String service, String id) {
         final ObjectNamespace ns = new DefaultObjectNamespace(service, id);
         final ClientProxy proxy = proxies.get(ns);
         if (proxy != null) {
@@ -177,7 +175,7 @@ public final class ProxyManager {
         return clientProxy;
     }
 
-    public ClientProxy removeProxy(String service, Object id) {
+    public ClientProxy removeProxy(String service, String id) {
         final ObjectNamespace ns = new DefaultObjectNamespace(service, id);
         final ClientProxy clientProxy = proxies.remove(ns);
         if (clientProxy != null){

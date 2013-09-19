@@ -85,7 +85,4 @@ public class ClientIdGeneratorProxy extends ClientProxy implements IdGenerator {
         local = null;
     }
 
-    public String getName() {
-        return name;
-    }
 }

@@ -92,6 +92,13 @@ public class ParserTest {
     }
 
     @Test
+    public void testBetweenSimple() {
+        String s = "b between 'ali' and 'veli''s'";
+        List<String> list = parser.toPrefix(s);
+        assertEquals(Arrays.asList("b", "'ali'", "'veli''s'", "between"), list);
+    }
+
+    @Test
     public void testIn() {
         String s = "a and b OR c in ( 4, 5, 6 )";
         List<String> list = parser.toPrefix(s);

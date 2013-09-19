@@ -35,7 +35,7 @@ import java.io.IOException;
  */
 public abstract class AbstractLockRequest extends KeyBasedClientRequest implements Portable {
 
-    private Data key;
+    protected Data key;
 
     private int threadId;
 

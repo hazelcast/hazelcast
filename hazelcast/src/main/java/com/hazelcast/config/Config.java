@@ -53,6 +53,10 @@ public class Config {
 
     private final Map<String, MultiMapConfig> multiMapConfigs = new ConcurrentHashMap<String, MultiMapConfig>();
 
+    private final Map<String, ListConfig> listConfigs = new ConcurrentHashMap<String, ListConfig>();
+
+    private final Map<String, SetConfig> setConfigs = new ConcurrentHashMap<String, SetConfig>();
+
     private final Map<String, ExecutorConfig> executorConfigs = new ConcurrentHashMap<String, ExecutorConfig>();
 
     private final Map<String, SemaphoreConfig> semaphoreConfigs = new ConcurrentHashMap<String, SemaphoreConfig>();
@@ -216,9 +220,6 @@ public class Config {
         return this;
     }
 
-    /**
-     * @return the mapQConfigs
-     */
     public Map<String, QueueConfig> getQueueConfigs() {
         return queueConfigs;
     }
@@ -227,6 +228,74 @@ public class Config {
         this.queueConfigs.clear();
         this.queueConfigs.putAll(queueConfigs);
         for (Entry<String, QueueConfig> entry : queueConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
+        return this;
+    }
+
+    public ListConfig getListConfig(String name) {
+        name = getBaseName(name);
+        ListConfig config;
+        if ((config = lookupByPattern(listConfigs, name)) != null) return config;
+        ListConfig defConfig = listConfigs.get("default");
+        if (defConfig == null) {
+            defConfig = new ListConfig();
+            defConfig.setName("default");
+            addListConfig(defConfig);
+        }
+        config = new ListConfig(defConfig);
+        config.setName(name);
+        addListConfig(config);
+        return config;
+    }
+
+    public Config addListConfig(ListConfig listConfig) {
+        listConfigs.put(listConfig.getName(), listConfig);
+        return this;
+    }
+
+    public Map<String, ListConfig> getListConfigs() {
+        return listConfigs;
+    }
+
+    public Config setListConfigs(Map<String, ListConfig> listConfigs) {
+        this.listConfigs.clear();
+        this.listConfigs.putAll(listConfigs);
+        for (Entry<String, ListConfig> entry : listConfigs.entrySet()) {
+            entry.getValue().setName(entry.getKey());
+        }
+        return this;
+    }
+
+    public SetConfig getSetConfig(String name) {
+        name = getBaseName(name);
+        SetConfig config;
+        if ((config = lookupByPattern(setConfigs, name)) != null) return config;
+        SetConfig defConfig = setConfigs.get("default");
+        if (defConfig == null) {
+            defConfig = new SetConfig();
+            defConfig.setName("default");
+            addSetConfig(defConfig);
+        }
+        config = new SetConfig(defConfig);
+        config.setName(name);
+        addSetConfig(config);
+        return config;
+    }
+
+    public Config addSetConfig(SetConfig setConfig) {
+        setConfigs.put(setConfig.getName(), setConfig);
+        return this;
+    }
+
+    public Map<String, SetConfig> getSetConfigs() {
+        return setConfigs;
+    }
+
+    public Config setSetConfigs(Map<String, SetConfig> setConfigs) {
+        this.setConfigs.clear();
+        this.setConfigs.putAll(setConfigs);
+        for (Entry<String, SetConfig> entry : setConfigs.entrySet()) {
             entry.getValue().setName(entry.getKey());
         }
         return this;

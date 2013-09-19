@@ -92,12 +92,12 @@ public class CountDownLatchService implements ManagedService, RemoteService, Mig
         latches.clear();
     }
 
-    public CountDownLatchProxy createDistributedObject(Object objectId) {
-        return new CountDownLatchProxy(String.valueOf(objectId), nodeEngine);
+    public CountDownLatchProxy createDistributedObject(String name) {
+        return new CountDownLatchProxy(name, nodeEngine);
     }
 
-    public void destroyDistributedObject(Object objectId) {
-        latches.remove(String.valueOf(objectId));
+    public void destroyDistributedObject(String name) {
+        latches.remove(name);
     }
 
     public void beforeMigration(PartitionMigrationEvent partitionMigrationEvent) {

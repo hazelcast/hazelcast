@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,220 +16,341 @@
 
 package com.hazelcast.collection;
 
-import com.hazelcast.concurrent.lock.LockService;
-import com.hazelcast.spi.DefaultObjectNamespace;
-import com.hazelcast.concurrent.lock.LockStore;
-import com.hazelcast.config.MultiMapConfig;
+import com.hazelcast.config.CollectionConfig;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.util.Clock;
+import com.hazelcast.transaction.TransactionException;
 
+import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * @author ali 1/2/13
+ * @ali 8/30/13
  */
-public class CollectionContainer {
+public abstract class CollectionContainer implements DataSerializable {
 
-    final CollectionProxyId proxyId;
+    protected String name;
+    protected NodeEngine nodeEngine;
+    protected CollectionService service;
+    protected ILogger logger;
 
-    final CollectionService service;
+    protected Map<Long, CollectionItem> itemMap = null;
+    protected final Map<Long, TxCollectionItem> txMap = new HashMap<Long, TxCollectionItem>();
 
-    final NodeEngine nodeEngine;
+    private long idGenerator = 0;
 
-    final MultiMapConfig config;
+    protected CollectionContainer() {
+    }
 
-    final ConcurrentMap<Data, CollectionWrapper> collections = new ConcurrentHashMap<Data, CollectionWrapper>(1000);
-
-    final DefaultObjectNamespace lockNamespace;
-
-    final LockStore lockStore;
-
-    final int partitionId;
-
-    final AtomicLong idGen = new AtomicLong();
-    final AtomicLong lastAccessTime = new AtomicLong();
-    final AtomicLong lastUpdateTime = new AtomicLong();
-    final long creationTime;
-
-    public CollectionContainer(CollectionProxyId proxyId, CollectionService service, int partitionId) {
-        this.proxyId = proxyId;
+    protected CollectionContainer(String name, NodeEngine nodeEngine, CollectionService service) {
+        this.name = name;
+        this.nodeEngine = nodeEngine;
         this.service = service;
-        this.nodeEngine = service.getNodeEngine();
-        this.partitionId = partitionId;
-        this.config = nodeEngine.getConfig().getMultiMapConfig(proxyId.name);
-
-        this.lockNamespace = new DefaultObjectNamespace(CollectionService.SERVICE_NAME, proxyId);
-        final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
-        this.lockStore = lockService == null ? null : lockService.createLockStore(partitionId, lockNamespace);
-        creationTime = Clock.currentTimeMillis();
+        logger = nodeEngine.getLogger(getClass());
     }
 
-    public boolean canAcquireLock(Data dataKey, String caller, int threadId) {
-        return lockStore != null && lockStore.canAcquireLock(dataKey, caller, threadId);
+    public void init(NodeEngine nodeEngine, CollectionService service){
+        this.nodeEngine = nodeEngine;
+        this.service = service;
     }
 
-    public boolean isLocked(Data dataKey) {
-        return lockStore != null && lockStore.isLocked(dataKey);
-    }
+    protected abstract CollectionConfig getConfig();
 
-    public boolean txnLock(Data key, String caller, int threadId, long ttl){
-        return lockStore != null && lockStore.txnLock(key, caller, threadId, ttl);
-    }
+    protected abstract Collection<CollectionItem> getCollection();
+    protected abstract Map<Long, CollectionItem> getMap();
 
-    public boolean unlock(Data key, String caller, int threadId){
-        return lockStore != null && lockStore.unlock(key, caller, threadId);
-    }
-
-    public boolean forceUnlock(Data key){
-        return lockStore != null && lockStore.forceUnlock(key);
-    }
-
-    public boolean extendLock(Data key, String caller, int threadId, long ttl) {
-        return lockStore != null && lockStore.extendLeaseTime(key, caller, threadId, ttl);
-    }
-
-    public String getLockOwnerInfo(Data dataKey) {
-        return lockStore != null ? lockStore.getOwnerInfo(dataKey) : null;
-    }
-
-    public long nextId() {
-        return idGen.getAndIncrement();
-    }
-
-    public CollectionWrapper getOrCreateCollectionWrapper(Data dataKey) {
-        CollectionWrapper wrapper = collections.get(dataKey);
-        if (wrapper == null) {
-            Collection<CollectionRecord> coll = service.createNew(proxyId);
-            wrapper = new CollectionWrapper(coll);
-            collections.put(dataKey, wrapper);
+    protected long add(Data value){
+        final CollectionItem item = new CollectionItem(this, nextId(), value);
+        if(getCollection().add(item)){
+            return item.getItemId();
         }
-        return wrapper;
+        return -1;
     }
 
-    public CollectionWrapper getCollectionWrapper(Data dataKey) {
-        return collections.get(dataKey);
+    protected void addBackup(long itemId, Data value){
+        final CollectionItem item = new CollectionItem(this, itemId, value);
+        getMap().put(itemId, item);
     }
 
-    public Collection<CollectionRecord> removeCollection(Data dataKey) {
-        CollectionWrapper wrapper = collections.remove(dataKey);
-        return wrapper != null ? wrapper.getCollection() : null;
-    }
-
-    public Set<Data> keySet() {
-        Set<Data> keySet = collections.keySet();
-        Set<Data> keys = new HashSet<Data>(keySet.size());
-        keys.addAll(keySet);
-        return keys;
-    }
-
-    public Collection<CollectionRecord> values() {
-        Collection<CollectionRecord> valueCollection = new LinkedList<CollectionRecord>();
-        for (CollectionWrapper wrapper : collections.values()) {
-            valueCollection.addAll(wrapper.getCollection());
-        }
-        return valueCollection;
-    }
-
-    public boolean containsKey(Data key) {
-        return collections.containsKey(key);
-    }
-
-    public boolean containsEntry(boolean binary, Data key, Data value) {
-        CollectionWrapper wrapper = collections.get(key);
-        if (wrapper == null) {
-            return false;
-        }
-        CollectionRecord record = new CollectionRecord(binary ? value : nodeEngine.toObject(value));
-        return wrapper.getCollection().contains(record);
-    }
-
-    public boolean containsValue(boolean binary, Data value) {
-        for (Data key : collections.keySet()) {
-            if (containsEntry(binary, key, value)) {
-                return true;
+    protected CollectionItem remove(Data value) {
+        final Iterator<CollectionItem> iterator = getCollection().iterator();
+        while (iterator.hasNext()){
+            final CollectionItem item = iterator.next();
+            if (value.equals(item.getValue())){
+                iterator.remove();
+                return item;
             }
         }
-        return false;
+        return null;
     }
 
-    public Map<Data, Collection<CollectionRecord>> copyCollections() {
-        Map<Data, Collection<CollectionRecord>> map = new HashMap<Data, Collection<CollectionRecord>>(collections.size());
-        for (Map.Entry<Data, CollectionWrapper> entry : collections.entrySet()) {
-            Data key = entry.getKey();
-            Collection<CollectionRecord> col = copyCollection(entry.getValue().getCollection());
-            map.put(key, col);
+    protected void removeBackup(long itemId) {
+        getMap().remove(itemId);
+    }
+
+    protected int size() {
+        return getCollection().size();
+    }
+
+    protected Map<Long, Data> clear() {
+        final Collection<CollectionItem> coll = getCollection();
+        Map<Long, Data> itemIdMap = new HashMap<Long, Data>(coll.size());
+        for (CollectionItem item : coll) {
+            itemIdMap.put(item.getItemId(), (Data) item.getValue());
         }
+        coll.clear();
+        return itemIdMap;
+    }
+
+    protected void clearBackup(Set<Long> itemIdSet) {
+        for (Long itemId : itemIdSet) {
+            removeBackup(itemId);
+        }
+    }
+
+    protected boolean contains(Set<Data> valueSet) {
+        for (Data value : valueSet) {
+            boolean contains = false;
+            for (CollectionItem item : getCollection()) {
+                if (value.equals(item.getValue())){
+                    contains = true;
+                    break;
+                }
+            }
+            if (!contains){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    protected Map<Long, Data> addAll(List<Data> valueList) {
+        final int size = valueList.size();
+        final Map<Long, Data> map = new HashMap<Long, Data>(size);
+        List<CollectionItem> list = new ArrayList<CollectionItem>(size);
+        for (Data value : valueList) {
+            final long itemId = nextId();
+            list.add(new CollectionItem(this, itemId, value));
+            map.put(itemId, value);
+        }
+        getCollection().addAll(list);
+
         return map;
     }
 
-    private Collection<CollectionRecord> copyCollection(Collection<CollectionRecord> coll) {
-        Collection<CollectionRecord> copy = new ArrayList<CollectionRecord>(coll.size());
-        copy.addAll(coll);
-        return copy;
-    }
-
-    public int size() {
-        int size = 0;
-        for (CollectionWrapper wrapper : collections.values()) {
-            size += wrapper.getCollection().size();
+    protected void addAllBackup(Map<Long, Data> valueMap) {
+        Map<Long, CollectionItem> map = new HashMap<Long, CollectionItem>(valueMap.size());
+        for (Map.Entry<Long, CollectionItem> entry : map.entrySet()) {
+            final long itemId = entry.getKey();
+            map.put(itemId, new CollectionItem(this, itemId, entry.getValue()));
         }
-        return size;
+        getMap().putAll(map);
     }
 
-    public void clearCollections() {
-        final Collection<Data> locks = lockStore != null ? lockStore.getLockedKeys() : Collections.<Data>emptySet();
-        Map<Data, CollectionWrapper> temp = new HashMap<Data, CollectionWrapper>(locks.size());
-        for (Data key : locks) {
-            CollectionWrapper wrapper = collections.get(key);
-            if (wrapper != null){
-                temp.put(key, wrapper);
+    protected Map<Long, Data> compareAndRemove(boolean retain, Set<Data> valueSet) {
+        Map<Long, Data> itemIdMap = new HashMap<Long, Data>();
+        final Iterator<CollectionItem> iterator = getCollection().iterator();
+        while (iterator.hasNext()){
+            final CollectionItem item = iterator.next();
+            final boolean contains = valueSet.contains(item.getValue());
+            if ( (contains && !retain) || (!contains && retain)){
+                itemIdMap.put(item.getItemId(), (Data) item.getValue());
+                iterator.remove();
             }
         }
-        collections.clear();
-        collections.putAll(temp);
+        return itemIdMap;
     }
 
-    public NodeEngine getNodeEngine() {
-        return nodeEngine;
-    }
-
-    public MultiMapConfig getConfig() {
-        return config;
-    }
-
-    public void destroy() {
-        final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
-        if (lockService != null) {
-            lockService.clearLockStore(partitionId, lockNamespace);
+    protected Collection<Data> getAll(){
+        final ArrayList<Data> sub = new ArrayList<Data>(getCollection().size());
+        for (CollectionItem item : getCollection()) {
+            sub.add((Data)item.getValue());
         }
-        collections.clear();
+        return sub;
     }
 
-    public void access() {
-        lastAccessTime.set(Clock.currentTimeMillis());
+    protected boolean hasEnoughCapacity(int delta){
+        return getCollection().size() + delta <= getConfig().getMaxSize();
     }
 
-    public void update() {
-        lastUpdateTime.set(Clock.currentTimeMillis());
+
+    /*
+     * TX methods
+     *
+     */
+
+    public long reserveAdd(String transactionId){
+        final long itemId = nextId();
+        txMap.put(itemId, new TxCollectionItem(this, itemId, null, transactionId, false));
+        return itemId;
     }
 
-    public long getLastAccessTime() {
-        return lastAccessTime.get();
+    public void reserveAddBackup(long itemId, String transactionId) {
+        TxCollectionItem item = new TxCollectionItem(this, itemId, null, transactionId, false);
+        Object o = txMap.put(itemId, item);
+        if (o != null) {
+            logger.severe("txnOfferBackupReserve operation-> Item exists already at txMap for itemId: " + itemId);
+        }
     }
 
-    public long getLastUpdateTime() {
-        return lastUpdateTime.get();
+    public CollectionItem reserveRemove(long reservedItemId, Data value, String transactionId) {
+        final Iterator<CollectionItem> iterator = getCollection().iterator();
+        while (iterator.hasNext()){
+            final CollectionItem item = iterator.next();
+            if (value.equals(item.getValue())){
+                iterator.remove();
+                txMap.put(item.getItemId(), new TxCollectionItem(item).setTransactionId(transactionId).setRemoveOperation(true));
+                return item;
+            }
+        }
+        if (reservedItemId != -1){
+            return txMap.remove(reservedItemId);
+        }
+        return null;
     }
 
-    public long getCreationTime() {
-        return creationTime;
+    public void reserveRemoveBackup(long itemId, String transactionId) {
+        final CollectionItem item = getMap().remove(itemId);
+        if (item == null) {
+            throw new TransactionException("Backup reserve failed: " + itemId);
+        }
+        txMap.put(itemId, new TxCollectionItem(item).setTransactionId(transactionId).setRemoveOperation(true));
     }
 
-    public long getLockedCount() {
-        return lockStore.getLockedKeys().size();
+    public void ensureReserve(long itemId) {
+        if (txMap.get(itemId) == null) {
+            throw new TransactionException("No reserve for itemId: " + itemId);
+        }
     }
+
+    public void rollbackAdd(long itemId){
+        if (txMap.remove(itemId) == null) {
+            logger.warning("rollbackAdd operation-> No txn item for itemId: " + itemId);
+        }
+    }
+
+    public void rollbackAddBackup(long itemId){
+        if (txMap.remove(itemId) == null) {
+            logger.warning("rollbackAddBackup operation-> No txn item for itemId: " + itemId);
+        }
+    }
+
+    public void rollbackRemove(long itemId) {
+        final CollectionItem item = txMap.remove(itemId);
+        if (item == null) {
+            logger.warning("rollbackRemove No txn item for itemId: " + itemId);
+        }
+        getCollection().add(item);
+    }
+
+    public void rollbackRemoveBackup(long itemId) {
+        final CollectionItem item = txMap.remove(itemId);
+        if (item == null) {
+            logger.warning("rollbackRemoveBackup No txn item for itemId: " + itemId);
+        }
+    }
+
+    public void commitAdd(long itemId, Data value) {
+        final CollectionItem item = txMap.remove(itemId);
+        if (item == null) {
+            throw new TransactionException("No reserve :" + itemId);
+        }
+        item.setValue(value);
+        getCollection().add(item);
+    }
+
+    public void commitAddBackup(long itemId, Data value) {
+        CollectionItem item = txMap.remove(itemId);
+        if (item == null) {
+            item = new CollectionItem(this, itemId, value);
+        }
+        getMap().put(itemId, item);
+    }
+
+    public CollectionItem commitRemove(long itemId) {
+        final CollectionItem item = txMap.remove(itemId);
+        if (item == null) {
+            logger.warning("commitRemove operation-> No txn item for itemId: " + itemId);
+        }
+        return item;
+    }
+
+    public void commitRemoveBackup(long itemId) {
+        if (txMap.remove(itemId) == null) {
+            logger.warning("commitRemoveBackup operation-> No txn item for itemId: " + itemId);
+        }
+    }
+
+    public void rollbackTransaction(String transactionId) {
+        final Iterator<TxCollectionItem> iterator = txMap.values().iterator();
+
+        while (iterator.hasNext()){
+            final TxCollectionItem item = iterator.next();
+            if (transactionId.equals(item.getTransactionId())){
+                iterator.remove();
+                if (item.isRemoveOperation()){
+                    getCollection().add(item);
+                }
+            }
+        }
+    }
+
+    public long nextId() {
+        return idGenerator++;
+    }
+
+    void setId(long itemId) {
+        idGenerator = Math.max(itemId+1, idGenerator);
+    }
+
+    public void destroy(){
+        onDestroy();
+        if (itemMap != null){
+            itemMap.clear();
+        }
+        txMap.clear();
+    }
+
+    protected abstract void onDestroy();
+
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeUTF(name);
+        final Collection<CollectionItem> collection = getCollection();
+        out.writeInt(collection.size());
+        for (CollectionItem item : collection) {
+            item.writeData(out);
+        }
+        out.writeInt(txMap.size());
+        for (TxCollectionItem txCollectionItem : txMap.values()) {
+            txCollectionItem.writeData(out);
+        }
+    }
+
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readUTF();
+        final int collectionSize = in.readInt();
+        final Collection<CollectionItem> collection = getCollection();
+        for (int i=0; i<collectionSize; i++){
+            final CollectionItem item = new CollectionItem();
+            item.setContainer(this);
+            item.readData(in);
+            collection.add(item);
+            setId(item.getItemId());
+        }
+
+        final int txMapSize = in.readInt();
+        for (int i=0; i<txMapSize; i++){
+            final TxCollectionItem txCollectionItem = new TxCollectionItem();
+            txCollectionItem.setContainer(this);
+            txCollectionItem.readData(in);
+            txMap.put(txCollectionItem.getItemId(), txCollectionItem);
+            setId(txCollectionItem.itemId);
+        }
+    }
+
+
 }

@@ -122,7 +122,7 @@ public class DistributedObjectTest extends HazelcastTestSupport {
     }
 
     private void test(DistributedObject object) {
-        DistributedObject object2 = instance.getDistributedObject(object.getServiceName(), object.getId());
+        DistributedObject object2 = instance.getDistributedObject(object.getServiceName(), object.getName());
         Assert.assertEquals(object.getServiceName(), object2.getServiceName());
         Assert.assertEquals(object.getName(), object2.getName());
         Assert.assertEquals(object.getId(), object2.getId());

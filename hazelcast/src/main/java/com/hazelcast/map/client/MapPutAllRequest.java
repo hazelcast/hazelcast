@@ -79,7 +79,7 @@ public class MapPutAllRequest extends AllPartitionsClientRequest implements Port
     }
 
     @Override
-    public Object getObjectId() {
+    public String getObjectName() {
         return name;
     }
 

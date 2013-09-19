@@ -16,77 +16,59 @@
 
 package com.hazelcast.collection;
 
-import com.hazelcast.core.EntryEventType;
+import com.hazelcast.core.ItemEventType;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import java.io.IOException;
 
 /**
- * @author ali 1/9/13
+ * @author ali 12/24/12
  */
-public class CollectionEvent implements DataSerializable {
+public class CollectionEvent implements IdentifiedDataSerializable {
 
-    CollectionProxyId proxyId;
+    String name;
 
-    Data key;
+    Data data;
 
-    Data value;
-
-    EntryEventType eventType;
+    ItemEventType eventType;
 
     Address caller;
 
     public CollectionEvent() {
     }
 
-    public CollectionEvent(CollectionProxyId proxyId, Data key, Data value, EntryEventType eventType, Address caller) {
-        this.proxyId = proxyId;
-        this.key = key;
-        this.value = value;
+    public CollectionEvent(String name, Data data, ItemEventType eventType, Address caller) {
+        this.name = name;
+        this.data = data;
         this.eventType = eventType;
         this.caller = caller;
     }
 
-    public CollectionProxyId getProxyId() {
-        return proxyId;
-    }
-
-    public Data getValue() {
-        return value;
-    }
-
-    public EntryEventType getEventType() {
-        return eventType;
-    }
-
-    public Address getCaller() {
-        return caller;
-    }
-
-    public Data getKey() {
-        return key;
-    }
-
     public void writeData(ObjectDataOutput out) throws IOException {
-        proxyId.writeData(out);
-        key.writeData(out);
-        IOUtil.writeNullableData(out, value);
+        out.writeUTF(name);
         out.writeInt(eventType.getType());
         caller.writeData(out);
+        IOUtil.writeNullableData(out, data);
     }
 
     public void readData(ObjectDataInput in) throws IOException {
-        proxyId = new CollectionProxyId();
-        proxyId.readData(in);
-        key = IOUtil.readData(in);
-        value = IOUtil.readNullableData(in);
-        eventType = EntryEventType.getByType(in.readInt());
+        name = in.readUTF();
+        eventType = ItemEventType.getByType(in.readInt());
         caller = new Address();
         caller.readData(in);
+        data = IOUtil.readNullableData(in);
+    }
+
+    public int getFactoryId() {
+        return CollectionDataSerializerHook.F_ID;
+    }
+
+    public int getId() {
+        return CollectionDataSerializerHook.COLLECTION_EVENT;
     }
 }
