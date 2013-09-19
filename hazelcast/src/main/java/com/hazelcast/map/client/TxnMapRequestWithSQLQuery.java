@@ -52,8 +52,9 @@ public class TxnMapRequestWithSQLQuery extends AbstractTxnMapRequest {
         if (predicate != null) {
             out.writeBoolean(true);
             out.writeUTF(predicate);
+        } else{
+            out.writeBoolean(false);
         }
-        out.writeBoolean(false);
     }
 
     protected void readDataInner(ObjectDataInput in) throws IOException {
