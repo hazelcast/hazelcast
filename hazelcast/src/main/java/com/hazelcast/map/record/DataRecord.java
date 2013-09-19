@@ -42,21 +42,24 @@ public /*final*/ class DataRecord extends AbstractRecord<Data> implements Record
     * */
     @Override
     public long getCost() {
-
         long size = 0;
-
         // add statistics size if enabled.
         size += ( statistics == null ? 0 : statistics.size() );
-
         // add size of version.
         size += ( Long.SIZE/Byte.SIZE );
-
         // add key size.
         size += key.totalSize();
-
         // add value size.
         size += ( value == null ? 0 : value.totalSize() );
-
+        // add size of object reference types as 4 byte references
+        // ps. 4 byte is an approximation
+        // Data object has 2 reference types in it.
+        // And with its own reference,
+        // eventually one Data object has 3 references
+        // DataRecord has 2 Data objects
+        size += 2*(3*(Integer.SIZE/Byte.SIZE));
+        // reference size of RecordStatistics
+        size += Integer.SIZE/Byte.SIZE;
 
         return size;
     }

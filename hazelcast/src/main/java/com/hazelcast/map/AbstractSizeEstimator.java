@@ -16,7 +16,6 @@
 
 package com.hazelcast.map;
 
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Created with IntelliJ IDEA.
@@ -24,28 +23,26 @@ import java.util.concurrent.atomic.AtomicLong;
  * Date: 05.09.2013
  * Time: 14:36
  */
-public abstract class AbstractSizeEstimator implements SizeEstimator{
+public abstract class AbstractSizeEstimator implements SizeEstimator {
 
-    private final AtomicLong _size ;
+    private long _size;
 
-    protected AbstractSizeEstimator(){
-        _size =  new AtomicLong( 0 );
+    protected AbstractSizeEstimator() {
+        _size = 0L;
     }
 
     @Override
     public long getSize() {
-        return _size.longValue();
+        return _size;
     }
 
-    public void add( long size )
-    {
-        _size.addAndGet(size);
+    public void add(long size) {
+        _size += size;
     }
 
 
-    public void reset()
-    {
-        _size.set( 0 );
+    public void reset() {
+        _size = 0;
     }
 
 }

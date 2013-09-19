@@ -91,9 +91,9 @@ public interface RecordStore {
 
     Set<Map.Entry<Data, Data>> entrySetData();
 
-    Map.Entry<Data,Data> getMapEntryData(Data dataKey);
+    Map.Entry<Data, Data> getMapEntryData(Data dataKey);
 
-    Map.Entry<Data,Object> getMapEntryObject(Data dataKey);
+    Map.Entry<Data, Object> getMapEntryObject(Data dataKey);
 
     void flush();
 
@@ -102,4 +102,9 @@ public interface RecordStore {
     void reset();
 
     boolean forceUnlock(Data dataKey);
+
+    long getHeapCost();
+
+    SizeEstimator getSizeEstimator();
+
 }
