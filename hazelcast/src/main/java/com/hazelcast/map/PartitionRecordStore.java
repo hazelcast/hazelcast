@@ -20,6 +20,7 @@ import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.merge.MapMergePolicy;
+import com.hazelcast.map.operation.PutAllOperation;
 import com.hazelcast.map.record.DataRecord;
 import com.hazelcast.map.record.ObjectRecord;
 import com.hazelcast.map.record.Record;
@@ -29,11 +30,16 @@ import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.query.impl.QueryableEntry;
 import com.hazelcast.spi.DefaultObjectNamespace;
+import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.spi.OperationAccessor;
+import com.hazelcast.spi.ResponseHandler;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
+import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
-
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author enesakar 1/17/13
@@ -48,19 +54,62 @@ public class PartitionRecordStore implements RecordStore {
     final LockStore lockStore;
     final SizeEstimator sizeEstimator;
     private volatile long heapCost;
+    final AtomicBoolean loaded = new AtomicBoolean(false);
 
     public PartitionRecordStore(String name, PartitionContainer partitionContainer) {
         this.name = name;
         this.partitionContainer = partitionContainer;
         this.mapService = partitionContainer.getMapService();
         this.mapContainer = mapService.getMapContainer(name);
-        final LockService lockService = mapService.getNodeEngine().getSharedService(LockService.SERVICE_NAME);
+        NodeEngine nodeEngine = mapService.getNodeEngine();
+        final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
+        int partitionId = partitionContainer.getPartitionId();
         this.lockStore = lockService == null ? null :
-                lockService.createLockStore(partitionContainer.getPartitionId(), new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
+                lockService.createLockStore(partitionId, new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
         this.sizeEstimator = SizeEstimators.createMapSizeEstimator();
+        if (nodeEngine.getThisAddress().equals(nodeEngine.getPartitionService().getPartitionOwner(partitionId))) {
+            if (mapContainer.getStore() != null && !loaded.get()) {
+                Map<Data, Object> loadedKeys = mapContainer.getInitialKeys();
+                if (loadedKeys != null && !loadedKeys.isEmpty()) {
+                    Map<Data, Object> partitionKeys = new HashMap<Data, Object>();
+                    Iterator<Data> iterator = loadedKeys.keySet().iterator();
+                    while(iterator.hasNext()) {
+                        Data data = iterator.next();
+                        if (partitionId == nodeEngine.getPartitionService().getPartitionId(data)) {
+                            partitionKeys.put(data, loadedKeys.get(data));
+                            iterator.remove();
+                        }
+                    }
+                    try {
+                        nodeEngine.getExecutionService().submit("hz:map-load", new MapLoadAllTask(partitionKeys));
+                    } catch (Throwable t) {
+                        throw ExceptionUtil.rethrow(t);
+                    }
+                } else {
+                    loaded.set(true);
+                }
+            }
+        } else {
+            loaded.set(true);
+        }
+    }
+
+    public boolean isLoaded() {
+        return loaded.get();
+    }
+
+    public void setLoaded(boolean isLoaded) {
+        loaded.set(isLoaded);
+    }
+
+    private void checkIfLoaded() {
+        if (mapContainer.getStore() != null && !loaded.get()) {
+            throw ExceptionUtil.rethrow(new RetryableHazelcastException("Map is not ready!!!"));
+        }
     }
 
     public void flush() {
+        checkIfLoaded();
         Set<Data> keys = new HashSet<Data>();
         for (Record record : records.values()) {
             keys.add(record.getKey());
@@ -80,6 +129,7 @@ public class PartitionRecordStore implements RecordStore {
     }
 
     private void flush(Data key) {
+        checkIfLoaded();
         EntryTaskScheduler writeScheduler = mapContainer.getMapStoreWriteScheduler();
         Set<Data> keys = new HashSet<Data>(1);
         keys.add(key);
@@ -107,6 +157,13 @@ public class PartitionRecordStore implements RecordStore {
     }
 
     void clear() {
+        clear(false);
+    }
+
+    void clear(boolean force) {
+        if (!force) {
+            checkIfLoaded();
+        }
         final LockService lockService = mapService.getNodeEngine().getSharedService(LockService.SERVICE_NAME);
         if (lockService != null) {
             lockService.clearLockStore(partitionContainer.getPartitionId(), new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
@@ -122,10 +179,13 @@ public class PartitionRecordStore implements RecordStore {
     }
 
     public int size() {
-        return records.size();
+        checkIfLoaded();
+        int size = records.size();
+        return size;
     }
 
     public boolean containsValue(Object value) {
+        checkIfLoaded();
         for (Record record : records.values()) {
             if (mapService.compare(name, value, record.getValue()))
                 return true;
@@ -134,18 +194,22 @@ public class PartitionRecordStore implements RecordStore {
     }
 
     public boolean lock(Data key, String caller, int threadId, long ttl) {
+        checkIfLoaded();
         return lockStore != null && lockStore.lock(key, caller, threadId, ttl);
     }
 
     public boolean txnLock(Data key, String caller, int threadId, long ttl) {
+        checkIfLoaded();
         return lockStore != null && lockStore.txnLock(key, caller, threadId, ttl);
     }
 
     public boolean extendLock(Data key, String caller, int threadId, long ttl) {
+        checkIfLoaded();
         return lockStore != null && lockStore.extendLeaseTime(key, caller, threadId, ttl);
     }
 
     public boolean unlock(Data key, String caller, int threadId) {
+        checkIfLoaded();
         return lockStore != null && lockStore.unlock(key, caller, threadId);
     }
 
@@ -177,6 +241,7 @@ public class PartitionRecordStore implements RecordStore {
     }
 
     public Set<Map.Entry<Data, Object>> entrySetObject() {
+        checkIfLoaded();
         Map<Data, Object> temp = new HashMap<Data, Object>(records.size());
         for (Data key : records.keySet()) {
             temp.put(key, mapService.toObject(records.get(key).getValue()));
@@ -185,6 +250,7 @@ public class PartitionRecordStore implements RecordStore {
     }
 
     public Set<Map.Entry<Data, Data>> entrySetData() {
+        checkIfLoaded();
         Map<Data, Data> temp = new HashMap<Data, Data>(records.size());
         for (Data key : records.keySet()) {
             temp.put(key, mapService.toData(records.get(key).getValue()));
@@ -193,18 +259,21 @@ public class PartitionRecordStore implements RecordStore {
     }
 
     public Map.Entry<Data, Data> getMapEntryData(Data dataKey) {
+        checkIfLoaded();
         Record record = records.get(dataKey);
         Data data = record != null ? mapService.toData(record.getValue()) : null;
         return new AbstractMap.SimpleImmutableEntry<Data, Data>(dataKey, data);
     }
 
     public Map.Entry<Data, Object> getMapEntryObject(Data dataKey) {
+        checkIfLoaded();
         Record record = records.get(dataKey);
         Object value = record != null ? mapService.toObject(record.getValue()) : null;
         return new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, value);
     }
 
     public Set<Data> keySet() {
+        checkIfLoaded();
         Set<Data> keySet = new HashSet<Data>(records.size());
         for (Data data : records.keySet()) {
             keySet.add(data);
@@ -213,6 +282,7 @@ public class PartitionRecordStore implements RecordStore {
     }
 
     public Collection<Object> valuesObject() {
+        checkIfLoaded();
         Collection<Object> values = new ArrayList<Object>(records.size());
         for (Record record : records.values()) {
             values.add(mapService.toObject(record.getValue()));
@@ -221,6 +291,7 @@ public class PartitionRecordStore implements RecordStore {
     }
 
     public Collection<Data> valuesData() {
+        checkIfLoaded();
         Collection<Data> values = new ArrayList<Data>(records.size());
         for (Record record : records.values()) {
             values.add(mapService.toData(record.getValue()));
@@ -229,6 +300,7 @@ public class PartitionRecordStore implements RecordStore {
     }
 
     public void removeAll() {
+        checkIfLoaded();
         resetSizeEstimator();
         final Collection<Data> locks = lockStore != null ? lockStore.getLockedKeys() : Collections.<Data>emptySet();
         final Map<Data, Record> lockRecords = new HashMap<Data, Record>(locks.size());
@@ -261,11 +333,13 @@ public class PartitionRecordStore implements RecordStore {
     }
 
     public void reset() {
+        checkIfLoaded();
         records.clear();
         resetSizeEstimator();
     }
 
     public Object remove(Data dataKey) {
+        checkIfLoaded();
         Record record = records.get(dataKey);
         Object oldValue = null;
         if (record == null) {
@@ -298,6 +372,7 @@ public class PartitionRecordStore implements RecordStore {
     }
 
     public Object evict(Data dataKey) {
+        checkIfLoaded();
         Record record = records.get(dataKey);
         Object oldValue = null;
         if (record != null) {
@@ -313,6 +388,7 @@ public class PartitionRecordStore implements RecordStore {
     }
 
     public boolean remove(Data dataKey, Object testValue) {
+        checkIfLoaded();
         Record record = records.get(dataKey);
         Object oldValue = null;
         boolean removed = false;
@@ -338,6 +414,7 @@ public class PartitionRecordStore implements RecordStore {
     }
 
     public Object get(Data dataKey) {
+        checkIfLoaded();
         Record record = records.get(dataKey);
         Object value = null;
         if (record == null) {
@@ -370,6 +447,7 @@ public class PartitionRecordStore implements RecordStore {
     }
 
     public MapEntrySet getAll(Set<Data> keySet) {
+        checkIfLoaded();
         final MapEntrySet mapEntrySet = new MapEntrySet();
         Map<Object, Data> keyMapForLoader = null;
         if (mapContainer.getStore() != null) {
@@ -393,8 +471,8 @@ public class PartitionRecordStore implements RecordStore {
         if (mapContainer.getStore() == null || keyMapForLoader.size() == 0) {
             return mapEntrySet;
         }
-        final Map<Object, Object> loaded = mapContainer.getStore().loadAll(keyMapForLoader.keySet());
-        for (Map.Entry entry : loaded.entrySet()) {
+        final Map<Object, Object> loadedKeys = mapContainer.getStore().loadAll(keyMapForLoader.keySet());
+        for (Map.Entry entry : loadedKeys.entrySet()) {
             final Object objectKey = entry.getKey();
             Object value = entry.getValue();
             Data dataKey = keyMapForLoader.get(objectKey);
@@ -422,6 +500,7 @@ public class PartitionRecordStore implements RecordStore {
     }
 
     public boolean containsKey(Data dataKey) {
+        checkIfLoaded();
         Record record = records.get(dataKey);
         if (record == null) {
             if (mapContainer.getStore() != null) {
@@ -444,6 +523,7 @@ public class PartitionRecordStore implements RecordStore {
     }
 
     public void put(Map.Entry<Data, Object> entry) {
+        checkIfLoaded();
         Data dataKey = entry.getKey();
         Object value = entry.getValue();
         Record record = records.get(dataKey);
@@ -467,6 +547,7 @@ public class PartitionRecordStore implements RecordStore {
     }
 
     public Object put(Data dataKey, Object value, long ttl) {
+        checkIfLoaded();
         Record record = records.get(dataKey);
         Object oldValue = null;
         if (record == null) {
@@ -494,6 +575,7 @@ public class PartitionRecordStore implements RecordStore {
     }
 
     public boolean set(Data dataKey, Object value, long ttl) {
+        checkIfLoaded();
         Record record = records.get(dataKey);
         boolean newRecord = false;
         if (record == null) {
@@ -519,6 +601,7 @@ public class PartitionRecordStore implements RecordStore {
     }
 
     public boolean merge(Data dataKey, EntryView mergingEntry, MapMergePolicy mergePolicy) {
+        checkIfLoaded();
         Record record = records.get(dataKey);
         Object newValue = null;
         if (record == null) {
@@ -556,6 +639,7 @@ public class PartitionRecordStore implements RecordStore {
     }
 
     public Object replace(Data dataKey, Object value) {
+        checkIfLoaded();
         Record record = records.get(dataKey);
         Object oldValue = null;
         if (record != null) {
@@ -574,6 +658,7 @@ public class PartitionRecordStore implements RecordStore {
     }
 
     public boolean replace(Data dataKey, Object testValue, Object newValue) {
+        checkIfLoaded();
         Record record = records.get(dataKey);
         if (record == null)
             return false;
@@ -592,6 +677,24 @@ public class PartitionRecordStore implements RecordStore {
     }
 
     public void putTransient(Data dataKey, Object value, long ttl) {
+        checkIfLoaded();
+        Record record = records.get(dataKey);
+        if (record == null) {
+            value = mapService.interceptPut(name, null, value);
+            record = mapService.createRecord(name, dataKey, value, ttl);
+            records.put(dataKey, record);
+            updateSizeEstimator(calculateRecordSize(record));
+        } else {
+            value = mapService.interceptPut(name, record.getValue(), value);
+            updateSizeEstimator(-calculateRecordSize(record));
+            setRecordValue(record, value);
+            updateSizeEstimator(calculateRecordSize(record));
+            updateTtl(record, ttl);
+        }
+        saveIndex(record);
+    }
+
+    public void putFromLoad(Data dataKey, Object value, long ttl) {
         Record record = records.get(dataKey);
         if (record == null) {
             value = mapService.interceptPut(name, null, value);
@@ -609,6 +712,7 @@ public class PartitionRecordStore implements RecordStore {
     }
 
     public boolean tryPut(Data dataKey, Object value, long ttl) {
+        checkIfLoaded();
         Record record = records.get(dataKey);
         if (record == null) {
             value = mapService.interceptPut(name, null, value);
@@ -630,6 +734,7 @@ public class PartitionRecordStore implements RecordStore {
     }
 
     public Object putIfAbsent(Data dataKey, Object value, long ttl) {
+        checkIfLoaded();
         Record record = records.get(dataKey);
         Object oldValue = null;
         if (record == null) {
@@ -716,19 +821,18 @@ public class PartitionRecordStore implements RecordStore {
         } else if (ttl == 0) {
             mapContainer.getTtlEvictionScheduler().cancel(record.getKey());
         }
-
     }
 
     private void updateSizeEstimator(long recordSize) {
-        getSizeEstimator().add(recordSize);
+        sizeEstimator.add(recordSize);
     }
 
     private long calculateRecordSize(Record record) {
-        return getSizeEstimator().getCost(record);
+        return sizeEstimator.getCost(record);
     }
 
     private void resetSizeEstimator() {
-        getSizeEstimator().reset();
+        sizeEstimator.reset();
     }
 
     private void setRecordValue(Record record, Object value) {
@@ -739,4 +843,45 @@ public class PartitionRecordStore implements RecordStore {
         else if (record instanceof ObjectRecord)
             ((ObjectRecord) record).setValue(mapService.toObject(value));
     }
+
+    private class MapLoadAllTask implements Runnable {
+        private Map<Data, Object> keys;
+
+        private MapLoadAllTask(Map<Data, Object> keys) {
+            this.keys = keys;
+        }
+
+        public void run() {
+            final NodeEngine nodeEngine = mapService.getNodeEngine();
+
+            int partitionId = partitionContainer.getPartitionId();
+            Map values = mapContainer.getStore().loadAll(keys.values());
+
+            MapEntrySet entrySet = new MapEntrySet();
+            for (Data dataKey : keys.keySet()) {
+                Object key = keys.get(dataKey);
+                Data dataValue = mapService.toData(values.get(key));
+                entrySet.add(dataKey, dataValue);
+            }
+            PutAllOperation operation = new PutAllOperation(name, entrySet, true);
+            operation.setNodeEngine(nodeEngine);
+            operation.setResponseHandler(new ResponseHandler() {
+                @Override
+                public void sendResponse(Object obj) {
+                    if (!(obj instanceof Exception)) {
+                        loaded.set(true);
+                    } else {
+                        Exception e = (Exception) obj;
+                        nodeEngine.getLogger(PartitionRecordStore.class).finest(e.getMessage());
+                    }
+                }
+            });
+            operation.setPartitionId(partitionId);
+            OperationAccessor.setCallerAddress(operation, nodeEngine.getThisAddress());
+            operation.setServiceName(MapService.SERVICE_NAME);
+            nodeEngine.getOperationService().executeOperation(operation);
+        }
+    }
+
+
 }

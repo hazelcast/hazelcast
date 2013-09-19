@@ -49,6 +49,8 @@ public interface RecordStore {
 
     void putTransient(Data dataKey, Object value, long ttl);
 
+    void putFromLoad(Data dataKey, Object value, long ttl);
+
     boolean tryPut(Data dataKey, Object value, long ttl);
 
     Object putIfAbsent(Data dataKey, Object value, long ttl);
@@ -107,4 +109,7 @@ public interface RecordStore {
 
     SizeEstimator getSizeEstimator();
 
+    boolean isLoaded();
+
+    void setLoaded(boolean loaded);
 }

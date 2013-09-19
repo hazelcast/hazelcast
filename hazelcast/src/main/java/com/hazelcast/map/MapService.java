@@ -141,7 +141,7 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     public void shutdown() {
-        flushMaps();
+        flushMapsBeforeShutdown();
         destroyMapStores();
         final PartitionContainer[] containers = partitionContainers;
         for (PartitionContainer container : containers) {
@@ -165,10 +165,12 @@ public class MapService implements ManagedService, MigrationAwareService,
         }
     }
 
-    private void flushMaps() {
+    private void flushMapsBeforeShutdown() {
         for (PartitionContainer partitionContainer : partitionContainers) {
             for (String mapName : mapContainers.keySet()) {
-                partitionContainer.getRecordStore(mapName).flush();
+                RecordStore recordStore = partitionContainer.getRecordStore(mapName);
+                recordStore.setLoaded(true);
+                recordStore.flush();
             }
         }
     }
@@ -360,7 +362,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         final PartitionContainer container = partitionContainers[partitionId];
         if (container != null) {
             for (PartitionRecordStore mapPartition : container.getMaps().values()) {
-                mapPartition.clear();
+                mapPartition.clear(true);
             }
             container.getMaps().clear();
         }
