@@ -16,6 +16,8 @@
 
 package com.hazelcast.partition;
 
+import com.hazelcast.collection.list.ListService;
+import com.hazelcast.collection.set.SetService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.lock.InternalLockNamespace;
@@ -158,39 +160,33 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
         assertTrue(service.containsQueue(queue.getName()));
     }
 
-//    @Test
-//    public void testList() throws Exception {
-//        String partitionKey = "hazelcast";
-//        HazelcastInstance hz = getHazelcastInstance(partitionKey);
-//
-//        IList list = hz.getList("s@" + partitionKey);
-//        list.add("");
-//        assertEquals("s@" + partitionKey, list.getName());
-//        assertEquals(partitionKey, list.getPartitionKey());
-//
-//        CollectionService service = getNodeEngine(hz).getService(CollectionService.SERVICE_NAME);
-//
-//        Partition partition = instances[0].getPartitionService().getPartition(partitionKey);
-//        CollectionPartitionContainer cpc = service.getPartitionContainer(partition.getPartitionId());
-//        assertTrue(cpc.containsCollection(new CollectionProxyId(ObjectListProxy.COLLECTION_LIST_NAME, list.getName(), CollectionProxyType.LIST)));
-//    }
+    @Test
+    public void testList() throws Exception {
+        String partitionKey = "hazelcast";
+        HazelcastInstance hz = getHazelcastInstance(partitionKey);
 
-//    @Test
-//    public void testSet() throws Exception {
-//        String partitionKey = "hazelcast";
-//        HazelcastInstance hz = getHazelcastInstance(partitionKey);
-//
-//        ISet set = hz.getSet("s@" + partitionKey);
-//        set.add("");
-//        assertEquals("s@" + partitionKey, set.getName());
-//        assertEquals(partitionKey, set.getPartitionKey());
-//
-//        CollectionService service = getNodeEngine(hz).getService(CollectionService.SERVICE_NAME);
-//
-//        Partition partition = instances[0].getPartitionService().getPartition(partitionKey);
-//        CollectionPartitionContainer cpc = service.getPartitionContainer(partition.getPartitionId());
-//        assertTrue(cpc.containsCollection(new CollectionProxyId(ObjectListProxy.COLLECTION_SET_NAME, set.getName(), CollectionProxyType.SET)));
-//    }
+        IList list = hz.getList("s@" + partitionKey);
+        list.add("");
+        assertEquals("s@" + partitionKey, list.getName());
+        assertEquals(partitionKey, list.getPartitionKey());
+
+        ListService service = getNodeEngine(hz).getService(ListService.SERVICE_NAME);
+        assertTrue(service.getContainerMap().containsKey(list.getName()));
+    }
+
+    @Test
+    public void testSet() throws Exception {
+        String partitionKey = "hazelcast";
+        HazelcastInstance hz = getHazelcastInstance(partitionKey);
+
+        ISet set = hz.getSet("s@" + partitionKey);
+        set.add("");
+        assertEquals("s@" + partitionKey, set.getName());
+        assertEquals(partitionKey, set.getPartitionKey());
+
+        SetService service = getNodeEngine(hz).getService(SetService.SERVICE_NAME);
+        assertTrue(service.getContainerMap().containsKey(set.getName()));
+    }
 
     @Test
     public void testCountDownLatch() throws Exception {
