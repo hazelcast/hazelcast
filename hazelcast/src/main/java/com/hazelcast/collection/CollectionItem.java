@@ -18,21 +18,14 @@ public class CollectionItem implements Comparable<CollectionItem>, IdentifiedDat
 
     protected final long creationTime;
 
-    protected transient CollectionContainer container;
-
     public CollectionItem() {
         creationTime = Clock.currentTimeMillis();
     }
 
-    public CollectionItem(CollectionContainer container, long itemId, Object value) {
+    public CollectionItem(long itemId, Object value) {
         this();
-        this.container = container;
         this.itemId = itemId;
         this.value = value;
-    }
-
-    public void setContainer(CollectionContainer container) {
-        this.container = container;
     }
 
     public long getItemId() {

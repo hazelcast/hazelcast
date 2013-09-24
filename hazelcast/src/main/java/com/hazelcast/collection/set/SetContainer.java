@@ -37,7 +37,7 @@ public class SetContainer extends CollectionContainer {
         List<CollectionItem> list = new ArrayList<CollectionItem>(size);
         for (Data value : valueList) {
             final long itemId = nextId();
-            final CollectionItem item = new CollectionItem(this, itemId, value);
+            final CollectionItem item = new CollectionItem(itemId, value);
             if (!getCollection().contains(item)){
                 list.add(item);
                 map.put(itemId, value);

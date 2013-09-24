@@ -64,7 +64,7 @@ public abstract class CollectionContainer implements DataSerializable {
     protected abstract Map<Long, CollectionItem> getMap();
 
     protected long add(Data value){
-        final CollectionItem item = new CollectionItem(this, nextId(), value);
+        final CollectionItem item = new CollectionItem(nextId(), value);
         if(getCollection().add(item)){
             return item.getItemId();
         }
@@ -72,7 +72,7 @@ public abstract class CollectionContainer implements DataSerializable {
     }
 
     protected void addBackup(long itemId, Data value){
-        final CollectionItem item = new CollectionItem(this, itemId, value);
+        final CollectionItem item = new CollectionItem(itemId, value);
         getMap().put(itemId, item);
     }
 
@@ -134,7 +134,7 @@ public abstract class CollectionContainer implements DataSerializable {
         List<CollectionItem> list = new ArrayList<CollectionItem>(size);
         for (Data value : valueList) {
             final long itemId = nextId();
-            list.add(new CollectionItem(this, itemId, value));
+            list.add(new CollectionItem(itemId, value));
             map.put(itemId, value);
         }
         getCollection().addAll(list);
@@ -146,7 +146,7 @@ public abstract class CollectionContainer implements DataSerializable {
         Map<Long, CollectionItem> map = new HashMap<Long, CollectionItem>(valueMap.size());
         for (Map.Entry<Long, CollectionItem> entry : map.entrySet()) {
             final long itemId = entry.getKey();
-            map.put(itemId, new CollectionItem(this, itemId, entry.getValue()));
+            map.put(itemId, new CollectionItem(itemId, entry.getValue()));
         }
         getMap().putAll(map);
     }
@@ -185,12 +185,12 @@ public abstract class CollectionContainer implements DataSerializable {
 
     public long reserveAdd(String transactionId){
         final long itemId = nextId();
-        txMap.put(itemId, new TxCollectionItem(this, itemId, null, transactionId, false));
+        txMap.put(itemId, new TxCollectionItem(itemId, null, transactionId, false));
         return itemId;
     }
 
     public void reserveAddBackup(long itemId, String transactionId) {
-        TxCollectionItem item = new TxCollectionItem(this, itemId, null, transactionId, false);
+        TxCollectionItem item = new TxCollectionItem(itemId, null, transactionId, false);
         Object o = txMap.put(itemId, item);
         if (o != null) {
             logger.severe("txnOfferBackupReserve operation-> Item exists already at txMap for itemId: " + itemId);
@@ -266,7 +266,7 @@ public abstract class CollectionContainer implements DataSerializable {
     public void commitAddBackup(long itemId, Data value) {
         CollectionItem item = txMap.remove(itemId);
         if (item == null) {
-            item = new CollectionItem(this, itemId, value);
+            item = new CollectionItem(itemId, value);
         }
         getMap().put(itemId, item);
     }
@@ -336,7 +336,6 @@ public abstract class CollectionContainer implements DataSerializable {
         final Collection<CollectionItem> collection = getCollection();
         for (int i=0; i<collectionSize; i++){
             final CollectionItem item = new CollectionItem();
-            item.setContainer(this);
             item.readData(in);
             collection.add(item);
             setId(item.getItemId());
@@ -345,7 +344,6 @@ public abstract class CollectionContainer implements DataSerializable {
         final int txMapSize = in.readInt();
         for (int i=0; i<txMapSize; i++){
             final TxCollectionItem txCollectionItem = new TxCollectionItem();
-            txCollectionItem.setContainer(this);
             txCollectionItem.readData(in);
             txMap.put(txCollectionItem.getItemId(), txCollectionItem);
             setId(txCollectionItem.itemId);

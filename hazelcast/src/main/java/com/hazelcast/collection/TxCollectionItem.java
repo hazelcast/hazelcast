@@ -35,16 +35,14 @@ public class TxCollectionItem extends CollectionItem {
     }
 
     public TxCollectionItem(CollectionItem item) {
-        super(item.container, item.itemId, item.value);
+        super(item.itemId, item.value);
     }
 
-    public TxCollectionItem(CollectionContainer container, long itemId, Object value, String transactionId, boolean removeOperation) {
-        super(container, itemId, value);
+    public TxCollectionItem(long itemId, Object value, String transactionId, boolean removeOperation) {
+        super(itemId, value);
         this.transactionId = transactionId;
         this.removeOperation = removeOperation;
     }
-
-
 
     public String getTransactionId() {
         return transactionId;

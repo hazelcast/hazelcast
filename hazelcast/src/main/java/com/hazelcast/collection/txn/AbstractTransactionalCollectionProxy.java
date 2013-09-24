@@ -72,7 +72,7 @@ public abstract class AbstractTransactionalCollectionProxy<S extends RemoteServi
                 if (!itemIdSet.add(itemId)) {
                     throw new TransactionException("Duplicate itemId: " + itemId);
                 }
-                getCollection().add(new CollectionItem(null, itemId, value));
+                getCollection().add(new CollectionItem(itemId, value));
                 tx.addTransactionLog(new CollectionTransactionLog(itemId, name, partitionId, getServiceName(), tx.getTxnId(), new CollectionTxnAddOperation(name, itemId, value)));
                 return true;
             }
