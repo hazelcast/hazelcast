@@ -59,7 +59,7 @@ public final class SerializationServiceBuilder {
 
     private boolean allowUnsafe = false;
 
-    private PartitioningStrategy partitionStrategy;
+    private PartitioningStrategy partitioningStrategy;
 
     private HazelcastInstance hazelcastInstance;
 
@@ -145,8 +145,8 @@ public final class SerializationServiceBuilder {
         return this;
     }
 
-    public SerializationServiceBuilder setPartitionStrategy(PartitioningStrategy partitionStrategy) {
-        this.partitionStrategy = partitionStrategy;
+    public SerializationServiceBuilder setPartitioningStrategy(PartitioningStrategy partitionStrategy) {
+        this.partitioningStrategy = partitionStrategy;
         return this;
     }
 
@@ -162,7 +162,7 @@ public final class SerializationServiceBuilder {
 
         final InputOutputFactory inputOutputFactory = createInputOutputFactory();
         final SerializationService ss = new SerializationServiceImpl(inputOutputFactory, version, classLoader, dataSerializableFactories,
-                portableFactories, classDefinitions, checkClassDefErrors, managedContext, partitionStrategy,
+                portableFactories, classDefinitions, checkClassDefErrors, managedContext, partitioningStrategy,
                 enableCompression, enableSharedObject);
 
         if (config != null) {

@@ -33,6 +33,7 @@ import com.hazelcast.client.util.RoundRobinLB;
 import com.hazelcast.collection.list.ListService;
 import com.hazelcast.collection.set.SetService;
 import com.hazelcast.concurrent.lock.proxy.LockProxy;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.multimap.MultiMapService;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
@@ -45,9 +46,11 @@ import com.hazelcast.core.*;
 import com.hazelcast.executor.DistributedExecutorService;
 import com.hazelcast.logging.LoggingService;
 import com.hazelcast.map.MapService;
+import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.nio.serialization.SerializationServiceBuilder;
+import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.impl.SerializableCollection;
 import com.hazelcast.topic.TopicService;
@@ -95,10 +98,18 @@ public final class HazelcastClient implements HazelcastInstance {
         threadGroup = new ThreadGroup(instanceName);
         lifecycleService = new LifecycleServiceImpl(this);
         try {
+            String partitioningStrategyClassName = System.getProperty(GroupProperties.PROP_PARTITIONING_STRATEGY_CLASS);
+            final PartitioningStrategy partitioningStrategy;
+            if (partitioningStrategyClassName != null && partitioningStrategyClassName.length() > 0) {
+                partitioningStrategy = ClassLoaderUtil.newInstance(config.getClassLoader(), partitioningStrategyClassName);
+            } else {
+                partitioningStrategy = new DefaultPartitioningStrategy();
+            }
             serializationService = new SerializationServiceBuilder()
                     .setManagedContext(new HazelcastClientManagedContext(this, config.getManagedContext()))
                     .setClassLoader(config.getClassLoader())
                     .setConfig(config.getSerializationConfig())
+                    .setPartitioningStrategy(partitioningStrategy)
                     .build();
         } catch (Exception e) {
             throw ExceptionUtil.rethrow(e);

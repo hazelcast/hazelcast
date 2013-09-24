@@ -120,18 +120,18 @@ public class Node {
         this.groupProperties = new GroupProperties(config);
         SerializationService ss;
         try {
-            String partitionStrategyClassName = groupProperties.PARTITIONING_STRATEGY_CLASS.getString();
-            final PartitioningStrategy partitionStrategy;
-            if (partitionStrategyClassName != null && partitionStrategyClassName.length() > 0) {
-                partitionStrategy = ClassLoaderUtil.newInstance(configClassLoader, partitionStrategyClassName);
+            String partitioningStrategyClassName = groupProperties.PARTITIONING_STRATEGY_CLASS.getString();
+            final PartitioningStrategy partitioningStrategy;
+            if (partitioningStrategyClassName != null && partitioningStrategyClassName.length() > 0) {
+                partitioningStrategy = ClassLoaderUtil.newInstance(configClassLoader, partitioningStrategyClassName);
             } else {
-                partitionStrategy = new DefaultPartitioningStrategy();
+                partitioningStrategy = new DefaultPartitioningStrategy();
             }
             ss = new SerializationServiceBuilder()
                     .setClassLoader(configClassLoader)
                     .setConfig(config.getSerializationConfig())
                     .setManagedContext(hazelcastInstance.managedContext)
-                    .setPartitionStrategy(partitionStrategy)
+                    .setPartitioningStrategy(partitioningStrategy)
                     .setHazelcastInstance(hazelcastInstance)
                     .build();
         } catch (Exception e) {

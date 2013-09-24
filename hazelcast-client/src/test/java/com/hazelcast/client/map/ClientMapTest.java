@@ -26,6 +26,7 @@ import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
@@ -522,5 +523,38 @@ public class ClientMapTest {
             map.put("key" + i, "value" + i);
         }
     }
+
+    /**
+     * Issue #923
+     */
+    @Test
+    public void testPartitionAwareKey() {
+        String name = "testPartitionAwareKey";
+        PartitionAwareKey key = new PartitionAwareKey("key", "123");
+        String value = "value";
+
+        IMap<Object, Object> map1 = server.getMap(name);
+        map1.put(key, value);
+        assertEquals(value, map1.get(key));
+
+        IMap<Object, Object> map2 = hz.getMap(name);
+        assertEquals(value, map2.get(key));
+    }
+
+    private static class PartitionAwareKey implements PartitionAware, Serializable {
+        private final String key;
+        private final String pk;
+
+        private PartitionAwareKey(String key, String pk) {
+            this.key = key;
+            this.pk = pk;
+        }
+
+        @Override
+        public Object getPartitionKey() {
+            return pk;
+        }
+    }
+
 
 }
