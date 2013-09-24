@@ -20,19 +20,18 @@ import com.hazelcast.client.AllPartitionsClientRequest;
 import com.hazelcast.client.InitializingObjectRequest;
 import com.hazelcast.map.MapEntrySet;
 import com.hazelcast.map.MapPortableHook;
-import com.hazelcast.map.operation.MapPutAllOperationFactory;
 import com.hazelcast.map.MapService;
+import com.hazelcast.map.operation.MapPutAllOperationFactory;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.spi.OperationFactory;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.Set;
 
 public class MapPutAllRequest extends AllPartitionsClientRequest implements Portable, InitializingObjectRequest {
 
@@ -62,16 +61,14 @@ public class MapPutAllRequest extends AllPartitionsClientRequest implements Port
 
     @Override
     protected Object reduce(Map<Integer, Object> map) {
-        MapEntrySet resultSet = new MapEntrySet();
         MapService mapService = getService();
         for (Map.Entry<Integer, Object> entry : map.entrySet()) {
-            MapEntrySet mapEntrySet = (MapEntrySet) mapService.toObject(entry.getValue());
-            Set<Map.Entry<Data, Data>> set = mapEntrySet.getEntrySet();
-            for (Map.Entry<Data, Data> dataEntry : set) {
-                resultSet.add(dataEntry);
+            Object result = mapService.toObject(entry.getValue());
+            if (result instanceof Throwable) {
+                throw ExceptionUtil.rethrow((Throwable) result);
             }
         }
-        return resultSet;
+        return null;
     }
 
     public String getServiceName() {
