@@ -16,16 +16,14 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.config.PartitionStrategyConfig;
-import com.hazelcast.config.WanReplicationRef;
+import com.hazelcast.config.*;
 import com.hazelcast.core.MapLoaderLifecycleSupport;
 import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.query.impl.IndexFactory;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.ExceptionUtil;
@@ -34,8 +32,13 @@ import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 import com.hazelcast.util.scheduler.ScheduleType;
 import com.hazelcast.wan.WanReplicationPublisher;
 
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MapContainer {
@@ -46,7 +49,7 @@ public class MapContainer {
     private final MapStoreWrapper storeWrapper;
     private final List<MapInterceptor> interceptors;
     private final Map<String, MapInterceptor> interceptorMap;
-    private final IndexService indexService = new IndexService();
+    private final IndexService indexService;
     private final boolean nearCacheEnabled;
     private final EntryTaskScheduler idleEvictionScheduler;
     private final EntryTaskScheduler ttlEvictionScheduler;
@@ -60,7 +63,10 @@ public class MapContainer {
     private final Map<Data, Object> initialKeys = new ConcurrentHashMap<Data, Object>();
 
 
-    public MapContainer(String name, MapConfig mapConfig, MapService mapService) {
+    public MapContainer(
+            String name,
+            MapConfig mapConfig,
+            MapService mapService) {
         Object store = null;
         this.name = name;
         this.mapConfig = mapConfig;
@@ -141,6 +147,25 @@ public class MapContainer {
         }
         partitionStrategy = strategy;
         nearCacheSizeEstimator = SizeEstimators.createNearCacheSizeEstimator();
+
+        // MGR
+        MapIndexFactoryConfig mapIndexFactoryConfig = mapConfig.getMapIndexFactoryConfig();
+        if (mapIndexFactoryConfig == null) {
+            indexService = new IndexService();
+        } else {
+            final IndexFactory indexFactory = mapIndexFactoryConfig.getFactoryImplementation();
+            if (indexFactory != null) {
+                indexService = new IndexService(indexFactory, mapIndexFactoryConfig.getProperties());
+            } else {
+                try {
+                    indexService = new IndexService(
+                            ClassLoaderUtil.<IndexFactory>newInstance(nodeEngine.getConfigClassLoader(), mapIndexFactoryConfig.getFactoryClassName()),
+                            mapIndexFactoryConfig.getProperties());
+                } catch (Exception e) {
+                    throw ExceptionUtil.rethrow(e);
+                }
+            }
+        }
     }
 
     public void loadInitialKeys() {
@@ -201,7 +226,9 @@ public class MapContainer {
         return id;
     }
 
-    public void addInterceptor(String id, MapInterceptor interceptor) {
+    public void addInterceptor(
+            String id,
+            MapInterceptor interceptor) {
         interceptorMap.put(id, interceptor);
         interceptors.add(interceptor);
     }
@@ -255,7 +282,7 @@ public class MapContainer {
         return partitionStrategy;
     }
 
-    public SizeEstimator getNearCacheSizeEstimator(){
+    public SizeEstimator getNearCacheSizeEstimator() {
         return nearCacheSizeEstimator;
     }
 }

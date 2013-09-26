@@ -22,17 +22,22 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
-public class MapConfigTest {
+public class MapConfigTest
+{
 
     /**
      * Test method for {@link com.hazelcast.config.MapConfig#getName()}.
      */
     @Test
-    public void testGetName() {
+    public void testGetName()
+    {
         assertNull(new MapConfig().getName());
     }
 
@@ -40,7 +45,8 @@ public class MapConfigTest {
      * Test method for {@link com.hazelcast.config.MapConfig#setName(java.lang.String)}.
      */
     @Test
-    public void testSetName() {
+    public void testSetName()
+    {
         assertEquals("map-test-name", new MapConfig().setName("map-test-name").getName());
     }
 
@@ -48,7 +54,8 @@ public class MapConfigTest {
      * Test method for {@link com.hazelcast.config.MapConfig#getBackupCount()}.
      */
     @Test
-    public void testGetBackupCount() {
+    public void testGetBackupCount()
+    {
         assertEquals(MapConfig.DEFAULT_BACKUP_COUNT, new MapConfig().getBackupCount());
     }
 
@@ -56,7 +63,8 @@ public class MapConfigTest {
      * Test method for {@link com.hazelcast.config.MapConfig#setBackupCount(int)}.
      */
     @Test
-    public void testSetBackupCount() {
+    public void testSetBackupCount()
+    {
         assertEquals(0, new MapConfig().setBackupCount(0).getBackupCount());
         assertEquals(1, new MapConfig().setBackupCount(1).getBackupCount());
         assertEquals(2, new MapConfig().setBackupCount(2).getBackupCount());
@@ -67,7 +75,8 @@ public class MapConfigTest {
      * Test method for {@link com.hazelcast.config.MapConfig#setBackupCount(int)}.
      */
     @Test(expected = IllegalArgumentException.class)
-    public void testSetBackupCountLowerLimit() {
+    public void testSetBackupCountLowerLimit()
+    {
         new MapConfig().setBackupCount(MapConfig.MIN_BACKUP_COUNT - 1);
     }
 
@@ -75,7 +84,8 @@ public class MapConfigTest {
      * Test method for {@link com.hazelcast.config.MapConfig#getEvictionPercentage()}.
      */
     @Test
-    public void testGetEvictionPercentage() {
+    public void testGetEvictionPercentage()
+    {
         assertEquals(MapConfig.DEFAULT_EVICTION_PERCENTAGE, new MapConfig().getEvictionPercentage());
     }
 
@@ -83,7 +93,8 @@ public class MapConfigTest {
      * Test method for {@link com.hazelcast.config.MapConfig#setEvictionPercentage(int)}.
      */
     @Test
-    public void testSetEvictionPercentage() {
+    public void testSetEvictionPercentage()
+    {
         assertEquals(50, new MapConfig().setEvictionPercentage(50).getEvictionPercentage());
     }
 
@@ -91,7 +102,8 @@ public class MapConfigTest {
      * Test method for {@link com.hazelcast.config.MapConfig#setEvictionPercentage(int)}.
      */
     @Test(expected = IllegalArgumentException.class)
-    public void testSetEvictionPercentageLowerLimit() {
+    public void testSetEvictionPercentageLowerLimit()
+    {
         new MapConfig().setEvictionPercentage(MapConfig.MIN_EVICTION_PERCENTAGE - 1);
     }
 
@@ -99,7 +111,8 @@ public class MapConfigTest {
      * Test method for {@link com.hazelcast.config.MapConfig#setEvictionPercentage(int)}.
      */
     @Test(expected = IllegalArgumentException.class)
-    public void testSetEvictionPercentageUpperLimit() {
+    public void testSetEvictionPercentageUpperLimit()
+    {
         new MapConfig().setEvictionPercentage(MapConfig.MAX_EVICTION_PERCENTAGE + 1);
     }
 
@@ -107,7 +120,8 @@ public class MapConfigTest {
      * Test method for {@link com.hazelcast.config.MapConfig#getTimeToLiveSeconds()}.
      */
     @Test
-    public void testGetTimeToLiveSeconds() {
+    public void testGetTimeToLiveSeconds()
+    {
         assertEquals(MapConfig.DEFAULT_TTL_SECONDS, new MapConfig().getTimeToLiveSeconds());
     }
 
@@ -115,7 +129,8 @@ public class MapConfigTest {
      * Test method for {@link com.hazelcast.config.MapConfig#setTimeToLiveSeconds(int)}.
      */
     @Test
-    public void testSetTimeToLiveSeconds() {
+    public void testSetTimeToLiveSeconds()
+    {
         assertEquals(1234, new MapConfig().setTimeToLiveSeconds(1234).getTimeToLiveSeconds());
     }
 
@@ -123,7 +138,8 @@ public class MapConfigTest {
      * Test method for {@link com.hazelcast.config.MapConfig#getMaxIdleSeconds()}.
      */
     @Test
-    public void testGetMaxIdleSeconds() {
+    public void testGetMaxIdleSeconds()
+    {
         assertEquals(MapConfig.DEFAULT_MAX_IDLE_SECONDS, new MapConfig().getMaxIdleSeconds());
     }
 
@@ -131,22 +147,26 @@ public class MapConfigTest {
      * Test method for {@link com.hazelcast.config.MapConfig#setMaxIdleSeconds(int)}.
      */
     @Test
-    public void testSetMaxIdleSeconds() {
+    public void testSetMaxIdleSeconds()
+    {
         assertEquals(1234, new MapConfig().setMaxIdleSeconds(1234).getMaxIdleSeconds());
     }
 
     @Test
-    public void testGetMaxSize() {
+    public void testGetMaxSize()
+    {
         assertEquals(MapConfig.DEFAULT_MAX_SIZE, new MapConfig().getMaxSizeConfig().getSize());
     }
 
     @Test
-    public void testSetMaxSize() {
+    public void testSetMaxSize()
+    {
         assertEquals(1234, new MapConfig().getMaxSizeConfig().setSize(1234).getSize());
     }
 
     @Test
-    public void testSetMaxSizeMustBePositive() {
+    public void testSetMaxSizeMustBePositive()
+    {
         assertTrue(new MapConfig().getMaxSizeConfig().setSize(-1).getSize() > 0);
     }
 
@@ -154,12 +174,14 @@ public class MapConfigTest {
      * Test method for {@link com.hazelcast.config.MapConfig#getEvictionPolicy()}.
      */
     @Test
-    public void testGetEvictionPolicy() {
+    public void testGetEvictionPolicy()
+    {
         assertEquals(MapConfig.DEFAULT_EVICTION_POLICY, new MapConfig().getEvictionPolicy());
     }
 
     @Test
-    public void testSetEvictionPolicy() {
+    public void testSetEvictionPolicy()
+    {
         assertEquals(MapConfig.EvictionPolicy.LRU, new MapConfig().setEvictionPolicy(MapConfig.EvictionPolicy.LRU).getEvictionPolicy());
     }
 
@@ -167,7 +189,8 @@ public class MapConfigTest {
      * Test method for {@link com.hazelcast.config.MapConfig#getMapStoreConfig()}.
      */
     @Test
-    public void testGetMapStoreConfig() {
+    public void testGetMapStoreConfig()
+    {
         assertNull(new MapConfig().getMapStoreConfig());
     }
 
@@ -175,7 +198,8 @@ public class MapConfigTest {
      * Test method for {@link com.hazelcast.config.MapConfig#setMapStoreConfig(com.hazelcast.config.MapStoreConfig)}.
      */
     @Test
-    public void testSetMapStoreConfig() {
+    public void testSetMapStoreConfig()
+    {
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         assertEquals(mapStoreConfig, new MapConfig().setMapStoreConfig(mapStoreConfig).getMapStoreConfig());
     }
@@ -184,7 +208,8 @@ public class MapConfigTest {
      * Test method for {@link com.hazelcast.config.MapConfig#getNearCacheConfig()}.
      */
     @Test
-    public void testGetNearCacheConfig() {
+    public void testGetNearCacheConfig()
+    {
         assertNull(new MapConfig().getNearCacheConfig());
     }
 
@@ -192,13 +217,34 @@ public class MapConfigTest {
      * Test method for {@link com.hazelcast.config.MapConfig#setNearCacheConfig(com.hazelcast.config.NearCacheConfig)}.
      */
     @Test
-    public void testSetNearCacheConfig() {
+    public void testSetNearCacheConfig()
+    {
         NearCacheConfig nearCacheConfig = new NearCacheConfig();
         assertEquals(nearCacheConfig, new MapConfig().setNearCacheConfig(nearCacheConfig).getNearCacheConfig());
     }
 
+    /**
+     * Test method for {@link com.hazelcast.config.MapConfig#getMapIndexFactoryConfig()}.
+     */
     @Test
-    public void configSetsForDefaultAllwaysIssue466() {
+    public void testGetMapIndexFactoryConfig()
+    {
+        assertNull(new MapConfig().getMapIndexFactoryConfig());
+    }
+
+    /**
+     * Test method for {@link com.hazelcast.config.MapConfig#setMapIndexFactoryConfig(com.hazelcast.config.MapIndexFactoryConfig)}.
+     */
+    @Test
+    public void testSetMapIndexFactoryConfig()
+    {
+        MapIndexFactoryConfig mapIndexFactoryConfig = new MapIndexFactoryConfig();
+        assertEquals(mapIndexFactoryConfig, new MapConfig().setMapIndexFactoryConfig(mapIndexFactoryConfig).getMapIndexFactoryConfig());
+    }
+
+    @Test
+    public void configSetsForDefaultAllwaysIssue466()
+    {
         Config config = new XmlConfigBuilder().build();
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true);

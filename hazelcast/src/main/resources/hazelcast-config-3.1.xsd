@@ -157,6 +157,7 @@
             </xs:element>
             <xs:element name="read-backup-data" type="xs:boolean" minOccurs="0" maxOccurs="1" default="false"/>
             <xs:element name="map-store" type="map-store" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="map-index-factory" type="map-index-factory" minOccurs="0" maxOccurs="1"/>
             <xs:element name="near-cache" type="near-cache" minOccurs="0" maxOccurs="1"/>
             <xs:element name="wan-replication-ref" minOccurs="0" maxOccurs="1">
                 <xs:complexType>
@@ -184,7 +185,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="partition-strategy" type="xs:string" minOccurs="0" maxOccurs="1" />
+            <xs:element name="partition-strategy" type="xs:string" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
         <xs:attribute name="name" use="required">
             <xs:simpleType>
@@ -468,6 +469,13 @@
                 <xs:element name="factory-class-name" type="xs:string"/>
             </xs:choice>
             <xs:element name="write-delay-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0"/>
+            <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute name="enabled" default="true" type="xs:boolean"/>
+    </xs:complexType>
+    <xs:complexType name="map-index-factory">
+        <xs:sequence>
+            <xs:element name="factory-class-name" type="xs:string"/>
             <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
         <xs:attribute name="enabled" default="true" type="xs:boolean"/>

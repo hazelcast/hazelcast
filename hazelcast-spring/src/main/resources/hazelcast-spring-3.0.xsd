@@ -78,6 +78,17 @@
                                             <xs:attribute name="write-delay-seconds" use="required" type="xs:string"/>
                                         </xs:complexType>
                                     </xs:element>
+                                    <xs:element name="map-index-factory" minOccurs="0" maxOccurs="1">
+                                        <xs:complexType>
+                                            <xs:sequence>
+                                                <xs:element name="properties" type="properties" minOccurs="0"
+                                                            maxOccurs="1"/>
+                                            </xs:sequence>
+                                            <xs:attribute name="factory-class-name" use="optional" type="xs:string"/>
+                                            <xs:attribute name="factory-implementation" use="optional"
+                                                          type="xs:string"/>
+                                        </xs:complexType>
+                                    </xs:element>
                                     <xs:element name="near-cache" type="near-cache" minOccurs="0" maxOccurs="1"/>
                                     <xs:element name="wan-replication-ref" minOccurs="0" maxOccurs="1">
                                         <xs:complexType>
@@ -109,7 +120,8 @@
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
                                 <xs:attribute name="in-memory-format" use="optional" type="xs:string" default="BINARY"/>
-                                <xs:attribute name="statistics-enabled" use="optional" type="xs:boolean" default="true"/>
+                                <xs:attribute name="statistics-enabled" use="optional" type="xs:boolean"
+                                              default="true"/>
                                 <xs:attribute name="backup-count" use="optional" type="xs:string"/>
                                 <xs:attribute name="async-backup-count" use="optional" type="xs:string"/>
                                 <xs:attribute name="time-to-live-seconds" use="optional" type="xs:string"/>
@@ -164,15 +176,16 @@
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="data-serializable-factories" >
+    <xs:element name="data-serializable-factories">
         <xs:complexType>
             <xs:sequence>
-                <xs:element name="data-serializable-factory" type="serialization-factory" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="data-serializable-factory" type="serialization-factory" minOccurs="0"
+                            maxOccurs="unbounded"/>
             </xs:sequence>
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="portable-factories" >
+    <xs:element name="portable-factories">
         <xs:complexType>
             <xs:sequence>
                 <xs:element name="portable-factory" type="serialization-factory" minOccurs="0" maxOccurs="unbounded"/>
@@ -180,7 +193,7 @@
         </xs:complexType>
     </xs:element>
 
-    <xs:element name="serializers" >
+    <xs:element name="serializers">
         <xs:complexType>
             <xs:sequence>
                 <xs:element name="global-serializer" type="global-serializer" minOccurs="0" maxOccurs="1"/>
@@ -814,9 +827,9 @@
 
     <xs:complexType name="serialization">
         <xs:sequence>
-            <xs:element ref="data-serializable-factories" minOccurs="0" maxOccurs="1" />
-            <xs:element ref="portable-factories" minOccurs="0" maxOccurs="1" />
-            <xs:element ref="serializers" minOccurs="0" maxOccurs="1" />
+            <xs:element ref="data-serializable-factories" minOccurs="0" maxOccurs="1"/>
+            <xs:element ref="portable-factories" minOccurs="0" maxOccurs="1"/>
+            <xs:element ref="serializers" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
         <xs:attribute name="use-native-byte-order" use="optional" type="xs:string" default="false"/>
         <xs:attribute name="byte-order" use="optional" default="BIG_ENDIAN">
@@ -836,7 +849,7 @@
 
     <xs:complexType name="network-client">
         <xs:sequence>
-            <xs:element name="member" type="member" minOccurs="0" maxOccurs="unbounded" />
+            <xs:element name="member" type="member" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="socket-options" type="socket-options" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
         <xs:attribute name="smart-routing" use="optional" type="xs:boolean" default="false"/>
@@ -870,7 +883,7 @@
 
     <xs:complexType name="listeners">
         <xs:sequence>
-            <xs:element name="listener" type="listener" minOccurs="0" maxOccurs="unbounded" />
+            <xs:element name="listener" type="listener" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
     </xs:complexType>
 

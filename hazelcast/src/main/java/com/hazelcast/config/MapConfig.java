@@ -78,6 +78,9 @@ public class MapConfig {
 
     private PartitionStrategyConfig partitionStrategyConfig;
 
+    // MGR
+    private MapIndexFactoryConfig mapIndexFactoryConfig = null;
+
     public enum InMemoryFormat {
         BINARY, OBJECT, CACHED
     }
@@ -114,6 +117,8 @@ public class MapConfig {
         this.wanReplicationRef = config.wanReplicationRef;
         this.listenerConfigs = new ArrayList<EntryListenerConfig>(config.getEntryListenerConfigs());
         this.partitionStrategyConfig = config.partitionStrategyConfig;
+        // MGR
+        this.mapIndexFactoryConfig = config.mapIndexFactoryConfig;
     }
 
     /**
@@ -149,7 +154,7 @@ public class MapConfig {
      * @throws IllegalArgumentException if inMemoryFormat is null.
      */
     public MapConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
-        this.inMemoryFormat = isNotNull(inMemoryFormat,"inMemoryFormat");
+        this.inMemoryFormat = isNotNull(inMemoryFormat, "inMemoryFormat");
         return this;
     }
 
@@ -427,6 +432,16 @@ public class MapConfig {
         return nearCacheConfig != null;
     }
 
+    // MGR
+    public MapIndexFactoryConfig getMapIndexFactoryConfig() {
+        return mapIndexFactoryConfig;
+    }
+
+    public MapConfig setMapIndexFactoryConfig(final MapIndexFactoryConfig mapIndexFactoryConfig) {
+        this.mapIndexFactoryConfig = mapIndexFactoryConfig;
+        return this;
+    }
+
     public boolean isCompatible(MapConfig other) {
         if (this == other) {
             return true;
@@ -524,6 +539,7 @@ public class MapConfig {
         sb.append(", listenerConfigs=").append(listenerConfigs);
         sb.append(", mapIndexConfigs=").append(mapIndexConfigs);
         sb.append(", storageType=").append(storageType);
+        sb.append(", mapIndexFactoryConfig=").append(mapIndexFactoryConfig);
         sb.append('}');
         return sb.toString();
     }
