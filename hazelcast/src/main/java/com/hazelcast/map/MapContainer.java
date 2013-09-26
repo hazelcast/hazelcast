@@ -148,7 +148,6 @@ public class MapContainer {
         partitionStrategy = strategy;
         nearCacheSizeEstimator = SizeEstimators.createNearCacheSizeEstimator();
 
-        // MGR
         MapIndexFactoryConfig mapIndexFactoryConfig = mapConfig.getMapIndexFactoryConfig();
         if (mapIndexFactoryConfig == null) {
             indexService = new IndexService();

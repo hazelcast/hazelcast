@@ -21,7 +21,7 @@ import com.hazelcast.query.impl.IndexFactory;
 import java.util.Properties;
 
 /**
- * MapIndexFactory configuration
+ * MapIndexFactory configuration.
  */
 public final class MapIndexFactoryConfig {
     private String factoryClassName = null;
@@ -70,6 +70,13 @@ public final class MapIndexFactoryConfig {
         return factoryImplementation;
     }
 
+    /**
+     * Set a property name and value.
+     *
+     * @param name  the property name
+     * @param value the property value
+     * @return this MapIndexFactoryConfig instance
+     */
     public MapIndexFactoryConfig setProperty(
             String name,
             String value) {
@@ -77,19 +84,37 @@ public final class MapIndexFactoryConfig {
         return this;
     }
 
+    /**
+     * Get a property value given a name
+     *
+     * @param name the name of the property
+     * @return the value of the property
+     */
     public String getProperty(String name) {
         return properties.getProperty(name);
     }
 
+    /**
+     * @return the index factory properties
+     */
     public Properties getProperties() {
         return properties;
     }
 
+    /**
+     * Set the index factory properties
+     *
+     * @param properties the index factory properties
+     * @return this MapIndexFactoryConfig instance
+     */
     public MapIndexFactoryConfig setProperties(Properties properties) {
         this.properties = properties;
         return this;
     }
 
+    /**
+     * @return the string representation of the MapIndexFactoryConfig instance
+     */
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("MapIndexFactoryConfig{");

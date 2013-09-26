@@ -37,7 +37,6 @@ public class IndexService {
         this(null, null);
     }
 
-    // MGR
     public IndexService(
             final IndexFactory indexFactory,
             final Properties properties
@@ -57,6 +56,7 @@ public class IndexService {
         if (index != null) {
             return index;
         }
+        // TODO - unit test
         if (indexFactory != null) {
             index = indexFactory.createIndex(attribute, ordered, properties);
         }

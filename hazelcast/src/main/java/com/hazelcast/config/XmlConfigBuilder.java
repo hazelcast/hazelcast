@@ -853,7 +853,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             } else if ("map-store".equals(nodeName)) {
                 MapStoreConfig mapStoreConfig = createMapStoreConfig(n);
                 mapConfig.setMapStoreConfig(mapStoreConfig);
-            } else if ("map-index-factory".equals(nodeName)) {//MGR
+            } else if ("map-index-factory".equals(nodeName)) {// TODO - unit test
                 mapConfig.setMapIndexFactoryConfig(createMapIndexFactoryConfig(n));
             } else if ("near-cache".equals(nodeName)) {
                 handleViaReflection(n, mapConfig, new NearCacheConfig());
@@ -929,7 +929,6 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         return mapStoreConfig;
     }
 
-    // MGR
     private MapIndexFactoryConfig createMapIndexFactoryConfig(final org.w3c.dom.Node node) {
         MapIndexFactoryConfig mapIndexFactoryConfig = new MapIndexFactoryConfig();
         for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {

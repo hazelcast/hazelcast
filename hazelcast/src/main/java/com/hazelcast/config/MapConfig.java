@@ -78,7 +78,6 @@ public class MapConfig {
 
     private PartitionStrategyConfig partitionStrategyConfig;
 
-    // MGR
     private MapIndexFactoryConfig mapIndexFactoryConfig = null;
 
     public enum InMemoryFormat {
@@ -117,7 +116,6 @@ public class MapConfig {
         this.wanReplicationRef = config.wanReplicationRef;
         this.listenerConfigs = new ArrayList<EntryListenerConfig>(config.getEntryListenerConfigs());
         this.partitionStrategyConfig = config.partitionStrategyConfig;
-        // MGR
         this.mapIndexFactoryConfig = config.mapIndexFactoryConfig;
     }
 
@@ -432,7 +430,6 @@ public class MapConfig {
         return nearCacheConfig != null;
     }
 
-    // MGR
     public MapIndexFactoryConfig getMapIndexFactoryConfig() {
         return mapIndexFactoryConfig;
     }

@@ -245,7 +245,7 @@ public class ConfigXmlGenerator {
                 appendProperties(xml, s.getProperties());
                 xml.append("</map-store>");
             }
-            // MGR
+            // TODO - create unit test
             if (m.getMapIndexFactoryConfig() != null) {
                 final MapIndexFactoryConfig s = m.getMapIndexFactoryConfig();
                 xml.append("<map-index-factory>");

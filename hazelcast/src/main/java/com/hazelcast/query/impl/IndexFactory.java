@@ -18,9 +18,27 @@ package com.hazelcast.query.impl;
 import java.util.Properties;
 
 /**
- * MGR
+ * Factory to create custom index.
  */
 public interface IndexFactory {
+    /**
+     * Create a custom index for a map value attribute.
+     * <p/>
+     * An implementation of that interface can be defined in the map configuration.
+     * <code>
+     * MapIndexFactoryConfig mapIndexFactoryConfig = new MapIndexFactoryConfig();
+     * mapIndexFactoryConfig.setFactoryClassName(MyIndexFactory.class.getName());
+     * <p/>
+     * MapConfig mapConfig = new MapConfig("MyMap");
+     * mapConfig.setMapIndexFactoryConfig(mapIndexFactoryConfig);
+     * <p/>
+     * </code>
+     *
+     * @param attribute  the attribute name.
+     * @param ordered    is the index ordered.
+     * @param properties the properties of the index.
+     * @return an Index instance
+     */
     Index createIndex(
             String attribute,
             boolean ordered,
