@@ -227,6 +227,13 @@
             </properties>
         </map-store>
 
+        <map-index-factory>
+            <factory-class-name>com.hazelcast.examples.DummyIndexFactory</factory-class-name>
+            <properties>
+                <property name="dummy.property">value</property>
+            </properties>
+        </map-index-factory>
+
         <near-cache>
             <max-size>10000</max-size>
             <time-to-live-seconds>0</time-to-live-seconds>
