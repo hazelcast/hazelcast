@@ -17,7 +17,9 @@
 package com.hazelcast.examples;
 
 import com.hazelcast.core.*;
-import com.hazelcast.core.Partition;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.util.Clock;
 
 import java.io.*;
@@ -277,7 +279,17 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         } else if ("whoami".equals(first)) {
             println(hazelcast.getCluster().getLocalMember());
         } else if ("who".equals(first)) {
-            println(hazelcast.getCluster());
+            StringBuilder sb = new StringBuilder("\n\nMembers [");
+            final Collection<Member> members = hazelcast.getCluster().getMembers();
+            sb.append(members != null ? members.size() : 0);
+            sb.append("] {");
+            if (members != null) {
+                for (Member member : members) {
+                    sb.append("\n\t").append(member);
+                }
+            }
+            sb.append("\n}\n");
+            println(sb.toString());
         } else if ("jvm".equals(first)) {
             System.gc();
             println("Memory max: " + Runtime.getRuntime().maxMemory() / 1024 / 1024
@@ -1173,20 +1185,27 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
-    public static class Echo extends HazelcastInstanceAwareObject implements Callable<String>, Serializable {
+    public static class Echo extends HazelcastInstanceAwareObject implements Callable<String>, DataSerializable {
         String input = null;
 
         public Echo() {
-            super();
         }
 
         public Echo(String input) {
-            super();
             this.input = input;
         }
 
         public String call() {
+            getHazelcastInstance().getCountDownLatch("latch").countDown();
             return getHazelcastInstance().getCluster().getLocalMember().toString() + ":" + input;
+        }
+
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeUTF(input);
+        }
+
+        public void readData(ObjectDataInput in) throws IOException {
+            input = in.readUTF();
         }
     }
 

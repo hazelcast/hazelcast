@@ -177,9 +177,6 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     IOUtil.closeResource(conn);
                     release = false;
                 }
-                if (e instanceof HazelcastInstanceNotActiveException){
-                    System.err.println("fatal e " + e.getMessage() + " req: " + obj);
-                }
                 if (ErrorHandler.isRetryable(e)) {
                     if (redoOperation || obj instanceof RetryableRequest) {
                         if (logger.isFinestEnabled()) {
