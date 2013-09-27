@@ -680,6 +680,10 @@ public final class Predicates {
         return new LikePredicate(attribute, pattern);
     }
 
+    public static Predicate regex(String attribute, String pattern) {
+        return new RegexPredicate(attribute, pattern);
+    }
+
     public static Predicate greaterThan(String x, Comparable y) {
         return new GreaterLessPredicate(x, y, false, false);
     }
