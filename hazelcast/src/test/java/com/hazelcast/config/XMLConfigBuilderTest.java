@@ -61,10 +61,10 @@ public class XMLConfigBuilderTest {
         XmlConfigBuilder configBuilder = new XmlConfigBuilder(bis);
 
         Properties properties = new Properties();
-        properties.setProperty("name","s");
-        properties.setProperty("initial.permits","25");
-        properties.setProperty("backupcount.part1","1");
-        properties.setProperty("backupcount.part2","0");
+        properties.setProperty("name", "s");
+        properties.setProperty("initial.permits", "25");
+        properties.setProperty("backupcount.part1", "1");
+        properties.setProperty("backupcount.part2", "0");
         configBuilder.setProperties(properties);
 
         Config config = configBuilder.build();
@@ -113,7 +113,7 @@ public class XMLConfigBuilderTest {
     @Test
     public void readPortCount() {
         //check when it is explicitly set.
-         Config config = buildConfig("<hazelcast>\n" +
+        Config config = buildConfig("<hazelcast>\n" +
                 "    <network>\n" +
                 "        <port port-count=\"200\">5701</port>\n" +
                 "    </network>\n" +
@@ -121,7 +121,7 @@ public class XMLConfigBuilderTest {
         assertEquals(200, config.getNetworkConfig().getPortCount());
 
         //check if the default is passed in correctly
-        config = buildConfig( "<hazelcast>\n" +
+        config = buildConfig("<hazelcast>\n" +
                 "    <network>\n" +
                 "        <port>5701</port>\n" +
                 "    </network>\n" +
@@ -140,7 +140,7 @@ public class XMLConfigBuilderTest {
         assertFalse(config.getNetworkConfig().isPortAutoIncrement());
 
         //check if the default is picked up correctly
-        config = buildConfig( "<hazelcast>\n" +
+        config = buildConfig("<hazelcast>\n" +
                 "    <network>\n" +
                 "        <port>5701</port>\n" +
                 "    </network>\n" +
@@ -167,6 +167,29 @@ public class XMLConfigBuilderTest {
         SemaphoreConfig customConfig = config.getSemaphoreConfig("custom");
         assertEquals(1, defaultConfig.getInitialPermits());
         assertEquals(10, customConfig.getInitialPermits());
+    }
+
+    @Test
+    public void readMapIndexFactoryConfig() {
+        String xml = "<hazelcast>" +
+                "<map name=\"testMap\">" +
+                "<map-index-factory>" +
+                "<factory-class-name>factoryClassName</factory-class-name>" +
+                "<properties>" +
+                "<property name=\"foo\">bar</property>" +
+                "</properties>" +
+                "</map-index-factory>" +
+                "</map>" +
+                "</hazelcast>";
+        Config config = buildConfig(xml);
+        MapConfig mapConfig = config.getMapConfig("testMap");
+        assertNotNull(mapConfig);
+        MapIndexFactoryConfig mapIndexFactoryConfig = mapConfig.getMapIndexFactoryConfig();
+        assertNotNull(mapIndexFactoryConfig);
+        assertEquals("factoryClassName", mapIndexFactoryConfig.getFactoryClassName());
+        assertNotNull(mapIndexFactoryConfig.getProperties());
+        assertEquals(1, mapIndexFactoryConfig.getProperties().size());
+        assertEquals("bar", mapIndexFactoryConfig.getProperty("foo"));
     }
 
     @Test

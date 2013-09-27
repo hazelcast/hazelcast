@@ -853,7 +853,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             } else if ("map-store".equals(nodeName)) {
                 MapStoreConfig mapStoreConfig = createMapStoreConfig(n);
                 mapConfig.setMapStoreConfig(mapStoreConfig);
-            } else if ("map-index-factory".equals(nodeName)) {// TODO - unit test
+            } else if ("map-index-factory".equals(nodeName)) {
                 mapConfig.setMapIndexFactoryConfig(createMapIndexFactoryConfig(n));
             } else if ("near-cache".equals(nodeName)) {
                 handleViaReflection(n, mapConfig, new NearCacheConfig());
