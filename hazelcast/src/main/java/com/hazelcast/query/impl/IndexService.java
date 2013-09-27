@@ -56,7 +56,6 @@ public class IndexService {
         if (index != null) {
             return index;
         }
-        // TODO - unit test
         if (indexFactory != null) {
             index = indexFactory.createIndex(attribute, ordered, properties);
         }
