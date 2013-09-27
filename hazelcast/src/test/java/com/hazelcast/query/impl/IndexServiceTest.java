@@ -35,6 +35,7 @@ import static com.hazelcast.instance.TestUtil.toData;
 import static com.hazelcast.query.SampleObjects.Employee;
 import static com.hazelcast.query.SampleObjects.Value;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
@@ -101,9 +102,11 @@ public class IndexServiceTest {
 
     @Test
     public void testIndexWithFactory() throws Exception {
+        final Boolean called[] = new Boolean[]{false};
         IndexFactory indexFactory = new IndexFactory() {
             @Override
             public Index createIndex(String attribute, boolean ordered, Properties properties) {
+                called[0] = true;
                 return new IndexImpl(properties.getProperty("attributeName"), ordered);
             }
         };
@@ -116,6 +119,7 @@ public class IndexServiceTest {
         }
         String name = "name" + (int) Math.floor(100 * Math.random());
         final Set<QueryableEntry> set = indexService.query(new Predicates.EqualPredicate("name", name));
+        assertTrue(called[0]);
         assertEquals(1, set.size());
     }
 }
