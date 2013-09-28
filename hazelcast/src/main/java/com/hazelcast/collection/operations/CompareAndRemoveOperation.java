@@ -20,6 +20,7 @@ import com.hazelcast.collection.CollectionDataSerializerHook;
 import com.hazelcast.collection.CollectionProxyId;
 import com.hazelcast.collection.CollectionRecord;
 import com.hazelcast.collection.CollectionWrapper;
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -35,7 +36,7 @@ import java.util.*;
 public class CompareAndRemoveOperation extends CollectionBackupAwareOperation {
 
     List<Data> dataList;
-    transient Set<Long> idSet;
+    transient Map<Long, CollectionRecord> idMap;
 
     boolean retain;
 
@@ -54,7 +55,7 @@ public class CompareAndRemoveOperation extends CollectionBackupAwareOperation {
             response = false;
             return;
         }
-        idSet = new HashSet<Long>();
+        idMap = new HashMap<Long, CollectionRecord>();
         List objList = dataList;
         if (!isBinary()){
             objList = new ArrayList(dataList.size());
@@ -67,13 +68,22 @@ public class CompareAndRemoveOperation extends CollectionBackupAwareOperation {
             CollectionRecord record = iter.next();
             boolean contains = objList.contains(record.getObject());
             if ((contains && !retain) || (!contains && retain)) {
-                idSet.add(record.getRecordId());
+                idMap.put(record.getRecordId(), record);
                 iter.remove();
             }
         }
-        response = !idSet.isEmpty();
+        response = !idMap.isEmpty();
         if (wrapper.getCollection().isEmpty()){
             removeCollection();
+        }
+    }
+
+    public void afterRun() throws Exception {
+        if (!idMap.isEmpty()){
+            getOrCreateContainer().update();
+            for (CollectionRecord record : idMap.values()) {
+                publishEvent(EntryEventType.REMOVED, dataKey, record.getObject());
+            }
         }
     }
 
@@ -82,7 +92,7 @@ public class CompareAndRemoveOperation extends CollectionBackupAwareOperation {
     }
 
     public Operation getBackupOperation() {
-        return new CompareAndRemoveBackupOperation(proxyId, dataKey, idSet);
+        return new CompareAndRemoveBackupOperation(proxyId, dataKey, idMap.keySet());
     }
 
     public void writeInternal(ObjectDataOutput out) throws IOException {
