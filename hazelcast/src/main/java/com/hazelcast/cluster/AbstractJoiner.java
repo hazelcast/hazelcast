@@ -37,7 +37,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Level;
 
 public abstract class AbstractJoiner implements Joiner {
     private final AtomicLong joinStartTime = new AtomicLong(Clock.currentTimeMillis());
