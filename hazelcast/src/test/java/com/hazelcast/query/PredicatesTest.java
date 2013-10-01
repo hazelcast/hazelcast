@@ -71,6 +71,7 @@ public class PredicatesTest {
         assertTrue(new SqlPredicate("(age >= " + 34 + ") AND (age <= " + 35 + ")").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("age IN (" + 34 + ", " + 35 + ")").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate(" (name LIKE 'abc-%') AND (age <= " + 40 + ")").apply(createEntry("1", value)));
+        assertTrue(new SqlPredicate(" (name REGEX 'abc-.*') AND (age <= " + 40 + ")").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("age = -33").apply(createEntry("1", new Employee("abc-123-xvz", -33, true, 10D))));
         assertFalse(new SqlPredicate("age = 33").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("age = 34").apply(createEntry("1", value)));
@@ -83,10 +84,10 @@ public class PredicatesTest {
         assertTrue(new SqlPredicate("name='abc-123-xvz'").apply(createEntry("1", value)));
         assertTrue(new SqlPredicate("name='abc 123-xvz'").apply(createEntry("1", new Employee("abc 123-xvz", 34, true, 10D))));
         assertTrue(new SqlPredicate("name='abc 123-xvz+(123)'").apply(createEntry("1", new Employee("abc 123-xvz+(123)", 34, true, 10D))));
-        assertFalse(new SqlPredicate("name='abc 123-xvz+(123)'")
-                .apply(createEntry("1", new Employee("abc123-xvz+(123)", 34, true, 10D))));
-        assertTrue(new SqlPredicate("name LIKE 'abc-%'")
-                .apply(createEntry("1", new Employee("abc-123", 34, true, 10D))));
+        assertFalse(new SqlPredicate("name='abc 123-xvz+(123)'").apply(createEntry("1", new Employee("abc123-xvz+(123)", 34, true, 10D))));
+        assertTrue(new SqlPredicate("name LIKE 'abc-%'").apply(createEntry("1", new Employee("abc-123", 34, true, 10D))));
+        assertTrue(new SqlPredicate("name REGEX '^\\w{3}-\\d{3}-\\w{3}$'").apply(createEntry("1", value)));
+        assertFalse(new SqlPredicate("name REGEX '^[^\\w]{3}-\\d{3}-\\w{3}$'").apply(createEntry("1", value)));
         assertTrue(Predicates.equal(null, "value").apply(new DummyEntry("value")));
         assertFalse(Predicates.equal(null, "value1").apply(new DummyEntry("value")));
         assertTrue(Predicates.equal(null, TRUE).apply(new DummyEntry(true)));
@@ -174,9 +175,11 @@ public class PredicatesTest {
     public void testSqlPredicate() {
         assertEquals("name IN (name0,name2)", sql("name in ('name0', 'name2')"));
         assertEquals("(name LIKE 'joe' AND id=5)", sql("name like 'joe' AND id = 5"));
+        assertEquals("(name REGEX '\\w*' AND id=5)", sql("name regex '\\w*' AND id = 5"));
         assertEquals("active=true", sql("active"));
         assertEquals("(active=true AND name=abc xyz 123)", sql("active AND name='abc xyz 123'"));
         assertEquals("(name LIKE 'abc-xyz+(123)' AND name=abc xyz 123)", sql("name like 'abc-xyz+(123)' AND name='abc xyz 123'"));
+        assertEquals("(name REGEX '\\w{3}-\\w{3}+\\(\\d{3}\\)' AND name=abc xyz 123)", sql("name regex '\\w{3}-\\w{3}+\\(\\d{3}\\)' AND name='abc xyz 123'"));
         assertEquals("(active=true AND age>4)", sql("active and age > 4"));
         assertEquals("(active=true AND age>4)", sql("active and age>4"));
         assertEquals("(active=false AND age<=4)", sql("active=false AND age<=4"));
@@ -184,10 +187,15 @@ public class PredicatesTest {
         assertEquals("(active=false AND age>=4)", sql("active=false AND (age>=4)"));
         assertEquals("(active=false OR age>=4)", sql("active =false or (age>= 4)"));
         assertEquals("name LIKE 'J%'", sql("name like 'J%'"));
+        assertEquals("name REGEX 'J.*'", sql("name regex 'J.*'"));
         assertEquals("NOT(name LIKE 'J%')", sql("name not like 'J%'"));
+        assertEquals("NOT(name REGEX 'J.*')", sql("name not regex 'J.*'"));
         assertEquals("(active=false OR name LIKE 'J%')", sql("active =false or name like 'J%'"));
         assertEquals("(active=false OR name LIKE 'Java World')", sql("active =false or name like 'Java World'"));
         assertEquals("(active=false OR name LIKE 'Java W% Again')", sql("active =false or name like 'Java W% Again'"));
+        assertEquals("(active=false OR name REGEX 'J.*')", sql("active =false or name regex 'J.*'"));
+        assertEquals("(active=false OR name REGEX 'Java World')", sql("active =false or name regex 'Java World'"));
+        assertEquals("(active=false OR name REGEX 'Java W.* Again')", sql("active =false or name regex 'Java W.* Again'"));
         assertEquals("i<=-1", sql("i<= -1"));
         assertEquals("age IN (-1)", sql("age in (-1)"));
         assertEquals("age IN (10,15)", sql("age in (10, 15)"));
@@ -217,8 +225,6 @@ public class PredicatesTest {
         assertTrue(Predicates.like(null, "J\\_").apply(new DummyEntry("J_")));
 
         assertTrue(Predicates.like(null, "J%").apply(new DummyEntry("Java")));
-
-
     }
 
     @Test(expected = RuntimeException.class)
