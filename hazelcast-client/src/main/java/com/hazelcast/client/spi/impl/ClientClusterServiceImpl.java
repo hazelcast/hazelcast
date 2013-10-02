@@ -325,7 +325,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         try {
             int connectionAttemptPeriodMs = client.getClientConfig().getConnectionAttemptPeriod();
             int connectionAttempts = client.getClientConfig().getConnectionAttemptLimit();
-            long timeoutMs = connectionAttempts*connectionAttemptPeriodMs+1000;
+            long timeoutMs = ((long)connectionAttempts)*connectionAttemptPeriodMs+1000;
             final Connection connection = f.get(timeoutMs, TimeUnit.MILLISECONDS);
             clusterThread.setInitialConn(connection);
         } catch (Throwable e) {
