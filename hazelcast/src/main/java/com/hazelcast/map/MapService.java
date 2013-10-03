@@ -23,7 +23,6 @@ import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.*;
-import com.hazelcast.elasticmemory.OffHeapRecord;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.merge.*;
@@ -388,9 +387,6 @@ public class MapService implements ManagedService, MigrationAwareService,
                 break;
             case OBJECT:
                 record = new ObjectRecord(dataKey, toObject(value), statisticsEnabled);
-                break;
-            case OFFHEAP:
-                record = new OffHeapRecord(dataKey, null, statisticsEnabled);
                 break;
             default:
                 throw new IllegalArgumentException("Unrecognized InMemoryFormat: " + inMemoryFormat);
