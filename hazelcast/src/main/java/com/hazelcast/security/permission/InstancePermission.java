@@ -1,8 +1,8 @@
 package com.hazelcast.security.permission;
 
-import java.security.Permission;
+import com.hazelcast.config.Config;
 
-import static com.hazelcast.security.SecurityUtil.nameMatches;
+import java.security.Permission;
 
 /**
  * @TODO  Object Permission
@@ -51,7 +51,7 @@ public abstract class InstancePermission extends ClusterPermission {
 			return false;
 		}
 		
-		if(!SecurityUtil.nameMatches(that.getName(), this.getName())) {
+		if(!Config.nameMatches(that.getName(), this.getName())) {
 			return false;
 		}
 		

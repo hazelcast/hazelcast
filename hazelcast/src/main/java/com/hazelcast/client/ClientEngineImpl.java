@@ -361,6 +361,10 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
                         }
                     }
                     request.setClientEngine(ClientEngineImpl.this);
+                    final SecurityContext securityContext = getSecurityContext();
+                    if (securityContext != null && request instanceof SecureRequest) {
+                        securityContext.checkPermission(endpoint.getSubject(), ((SecureRequest) request).getRequiredPermission());
+                    }
                     request.process();
                 } else {
                     Exception exception;

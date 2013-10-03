@@ -1,6 +1,5 @@
 package com.hazelcast.security.permission;
 
-import static com.hazelcast.security.SecurityConstants.*; 
 
 public class CountDownLatchPermission extends InstancePermission {
 	
@@ -16,19 +15,19 @@ public class CountDownLatchPermission extends InstancePermission {
 	protected int initMask(String[] actions) {
 		int mask = NONE;
 		for (int i = 0; i < actions.length; i++) {
-			if(SecurityConstants.ACTION_ALL.equals(actions[i])) {
+			if(ActionConstants.ACTION_ALL.equals(actions[i])) {
 				return ALL;
 			}
 			
-			if(SecurityConstants.ACTION_CREATE.equals(actions[i])) {
+			if(ActionConstants.ACTION_CREATE.equals(actions[i])) {
 				mask |= CREATE;
-			} else if(SecurityConstants.ACTION_DESTROY.equals(actions[i])) {
+			} else if(ActionConstants.ACTION_DESTROY.equals(actions[i])) {
 				mask |= DESTROY;
-			} else if(SecurityConstants.ACTION_COUNTDOWN.equals(actions[i])) {
+			} else if(ActionConstants.ACTION_COUNTDOWN.equals(actions[i])) {
 				mask |= COUNTDOWN;
-			} else if(SecurityConstants.ACTION_STATISTICS.equals(actions[i])) {
+			} else if(ActionConstants.ACTION_STATISTICS.equals(actions[i])) {
 				mask |= STATS;
-			} else if(SecurityConstants.ACTION_SET.equals(actions[i])) {
+			} else if(ActionConstants.ACTION_SET.equals(actions[i])) {
 				mask |= SET;
 			}
 		}

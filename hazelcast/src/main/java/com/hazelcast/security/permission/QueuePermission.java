@@ -1,6 +1,5 @@
 package com.hazelcast.security.permission;
 
-import static com.hazelcast.security.SecurityConstants.*;
 
 public class QueuePermission extends InstancePermission {
 	
@@ -19,25 +18,25 @@ public class QueuePermission extends InstancePermission {
 	protected int initMask(String[] actions) {
 		int mask = NONE;
 		for (int i = 0; i < actions.length; i++) {
-			if(SecurityConstants.ACTION_ALL.equals(actions[i])) {
+			if(ActionConstants.ACTION_ALL.equals(actions[i])) {
 				return ALL;
 			}
 			
-			if(SecurityConstants.ACTION_CREATE.equals(actions[i])) {
+			if(ActionConstants.ACTION_CREATE.equals(actions[i])) {
 				mask |= CREATE;
-			} else if(SecurityConstants.ACTION_OFFER.equals(actions[i])) {
+			} else if(ActionConstants.ACTION_OFFER.equals(actions[i])) {
 				mask |= OFFER;
-			} else if(SecurityConstants.ACTION_GET.equals(actions[i])) {
+			} else if(ActionConstants.ACTION_GET.equals(actions[i])) {
 				mask |= GET;
-			} else if(SecurityConstants.ACTION_REMOVE.equals(actions[i])) {
+			} else if(ActionConstants.ACTION_REMOVE.equals(actions[i])) {
 				mask |= REMOVE;
-			} else if(SecurityConstants.ACTION_POLL.equals(actions[i])) {
+			} else if(ActionConstants.ACTION_POLL.equals(actions[i])) {
 				mask |= POLL;
-			} else if(SecurityConstants.ACTION_DESTROY.equals(actions[i])) {
+			} else if(ActionConstants.ACTION_DESTROY.equals(actions[i])) {
 				mask |= DESTROY;
-			} else if(SecurityConstants.ACTION_LISTEN.equals(actions[i])) {
+			} else if(ActionConstants.ACTION_LISTEN.equals(actions[i])) {
 				mask |= LISTEN;
-			} else if(SecurityConstants.ACTION_STATISTICS.equals(actions[i])) {
+			} else if(ActionConstants.ACTION_STATISTICS.equals(actions[i])) {
 				mask |= STATS;
 			}
 		}
