@@ -25,21 +25,21 @@ import java.util.concurrent.ConcurrentMap;
 public class PartitionContainer {
     private final MapService mapService;
     private final int partitionId;
-    private final ConcurrentMap<String, PartitionRecordStore> maps = new ConcurrentHashMap<String, PartitionRecordStore>(1000);
+    private final ConcurrentMap<String, HeapRecordStore> maps = new ConcurrentHashMap<String, HeapRecordStore>(1000);
 
     public PartitionContainer(final MapService mapService, final int partitionId) {
         this.mapService = mapService;
         this.partitionId = partitionId;
     }
 
-    private final ConstructorFunction<String, PartitionRecordStore> recordStoreConstructor
-            = new ConstructorFunction<String, PartitionRecordStore>() {
-        public PartitionRecordStore createNew(String name) {
-            return new PartitionRecordStore(name, PartitionContainer.this);
+    private final ConstructorFunction<String, HeapRecordStore> recordStoreConstructor
+            = new ConstructorFunction<String, HeapRecordStore>() {
+        public HeapRecordStore createNew(String name) {
+            return new HeapRecordStore(name, mapService, partitionId);
         }
     };
 
-    public ConcurrentMap<String, PartitionRecordStore> getMaps() {
+    public ConcurrentMap<String, HeapRecordStore> getMaps() {
         return maps;
     }
 
@@ -56,13 +56,13 @@ public class PartitionContainer {
     }
 
     void destroyMap(String name) {
-        PartitionRecordStore recordStore = maps.remove(name);
+        HeapRecordStore recordStore = maps.remove(name);
         if (recordStore != null)
             recordStore.clear();
     }
 
     void clear() {
-        for (PartitionRecordStore recordStore : maps.values()) {
+        for (HeapRecordStore recordStore : maps.values()) {
             recordStore.clear();
         }
         maps.clear();

@@ -26,7 +26,7 @@ import java.io.IOException;
 
 public /*final*/ class DataRecord extends AbstractRecord<Data> implements Record<Data>, IdentifiedDataSerializable {
 
-    protected volatile Data value;
+    protected Data value;
 
     public DataRecord(Data keyData, Data value, boolean statisticsEnabled) {
         super(keyData, statisticsEnabled);

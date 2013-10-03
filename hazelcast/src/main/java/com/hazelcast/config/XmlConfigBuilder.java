@@ -17,7 +17,6 @@
 package com.hazelcast.config;
 
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
-import com.hazelcast.config.MapConfig.StorageType;
 import com.hazelcast.config.PartitionGroupConfig.MemberGroupType;
 import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.core.HazelcastException;
@@ -882,8 +881,6 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                         mapConfig.addEntryListenerConfig(new EntryListenerConfig(listenerClass, local, incValue));
                     }
                 }
-            } else if ("storage-type".equals(nodeName)) {
-                mapConfig.setStorageType(StorageType.valueOf(value.toUpperCase()));
             } else if ("partition-strategy".equals(nodeName)) {
                 mapConfig.setPartitionStrategyConfig(new PartitionStrategyConfig(value));
             }

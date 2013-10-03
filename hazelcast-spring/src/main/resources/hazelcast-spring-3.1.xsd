@@ -165,7 +165,6 @@
                                 <xs:attribute name="eviction-policy" use="optional" type="xs:string"/>
                                 <xs:attribute name="merge-policy" use="optional" type="xs:string"/>
                                 <xs:attribute name="read-backup-data" use="optional" type="xs:string"/>
-                                <xs:attribute name="storage-type" use="optional" type="xs:string" default="HEAP"/>
                             </xs:complexType>
                         </xs:element>
                         <xs:element name="multimap" minOccurs="0" maxOccurs="unbounded">

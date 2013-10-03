@@ -46,8 +46,7 @@ public class MapReplicationOperation extends AbstractOperation {
         this.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
         data = new HashMap<String, Set<RecordReplicationInfo>>(container.getMaps().size());
         mapInitialLoadInfo = new HashMap<String, Boolean>(container.getMaps().size());
-
-        for (Entry<String, PartitionRecordStore> entry : container.getMaps().entrySet()) {
+        for (Entry<String, HeapRecordStore> entry : container.getMaps().entrySet()) {
             final MapConfig mapConfig = entry.getValue().getMapContainer().getMapConfig();
             if (mapConfig.getTotalBackupCount() < replicaIndex) {
                 continue;
@@ -66,7 +65,7 @@ public class MapReplicationOperation extends AbstractOperation {
                 Data key = recordEntry.getKey();
                 Record record = recordEntry.getValue();
                 if (record.getValue() == null) {
-                    // see optimization at PartitionRecordStore.get(Data dataKey)
+                    // see optimization at HeapRecordStore.get(Data dataKey)
                     continue;
                 }
                 RecordReplicationInfo recordReplicationInfo = null;
@@ -80,8 +79,6 @@ public class MapReplicationOperation extends AbstractOperation {
             }
             data.put(name, recordSet);
         }
-
-
 
     }
 

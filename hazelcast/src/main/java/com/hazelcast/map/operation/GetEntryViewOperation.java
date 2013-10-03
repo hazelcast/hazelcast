@@ -39,7 +39,7 @@ public class GetEntryViewOperation extends KeyBasedMapOperation {
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
         Record record = recordStore.getRecords().get(dataKey);
         if (record != null){
-            result = new SimpleEntryView(record.getKey(), mapService.toData(record.getValue()), record);
+            result = new SimpleEntryView(record.getKey(), mapService.toData(record.getValue()), record.getStatistics(), record.getVersion());
         }
     }
 

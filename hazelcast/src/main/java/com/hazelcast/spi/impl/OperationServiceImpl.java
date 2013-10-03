@@ -187,6 +187,10 @@ final class OperationServiceImpl implements OperationService {
         }
     }
 
+    public boolean isOperationThread() {
+        return Thread.currentThread() instanceof OperationThread;
+    }
+
     boolean isAllowedToRunInCurrentThread(Operation op) {
         final int partitionId = getPartitionIdForExecution(op);
         if (partitionId > -1) {

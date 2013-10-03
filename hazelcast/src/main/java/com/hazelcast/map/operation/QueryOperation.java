@@ -91,7 +91,7 @@ public class QueryOperation extends AbstractMapOperation {
                     ConcurrentMap<Object, QueryableEntry> partitionResult = null;
                     for (Record record : recordStore.getRecords().values()) {
                         Data key = record.getKey();
-                        Object value = null;
+                        Object value;
                         if (record instanceof CachedDataRecord) {
                             CachedDataRecord cachedDataRecord = (CachedDataRecord) record;
                             value = cachedDataRecord.getCachedValue();

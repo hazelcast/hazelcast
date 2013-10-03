@@ -44,9 +44,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * @author enesakar 1/17/13
  */
-public class PartitionRecordStore implements RecordStore {
+abstract class RecordStoreSupport implements RecordStore {
     final String name;
-    final PartitionContainer partitionContainer;
+    final int partitionId;
     final ConcurrentMap<Data, Record> records = new ConcurrentHashMap<Data, Record>(1000);
     final Set<Data> toBeRemovedKeys = new HashSet<Data>();
     final MapContainer mapContainer;
@@ -56,14 +56,13 @@ public class PartitionRecordStore implements RecordStore {
     private volatile long heapCost;
     final AtomicBoolean loaded = new AtomicBoolean(false);
 
-    public PartitionRecordStore(String name, PartitionContainer partitionContainer) {
+    public RecordStoreSupport(String name, MapService mapService, int partitionId) {
         this.name = name;
-        this.partitionContainer = partitionContainer;
-        this.mapService = partitionContainer.getMapService();
+        this.partitionId = partitionId;
+        this.mapService = mapService;
         this.mapContainer = mapService.getMapContainer(name);
         NodeEngine nodeEngine = mapService.getNodeEngine();
         final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
-        int partitionId = partitionContainer.getPartitionId();
         this.lockStore = lockService == null ? null :
                 lockService.createLockStore(partitionId, new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
         this.sizeEstimator = SizeEstimators.createMapSizeEstimator();
@@ -167,7 +166,7 @@ public class PartitionRecordStore implements RecordStore {
         }
         final LockService lockService = mapService.getNodeEngine().getSharedService(LockService.SERVICE_NAME);
         if (lockService != null) {
-            lockService.clearLockStore(partitionContainer.getPartitionId(), new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
+            lockService.clearLockStore(partitionId, new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
         }
         final IndexService indexService = mapContainer.getIndexService();
         if (indexService.hasIndex()) {
@@ -613,7 +612,8 @@ public class PartitionRecordStore implements RecordStore {
             updateSizeEstimator(calculateRecordSize(record));
         } else {
             Object oldValue = record.getValue();
-            EntryView existingEntry = new SimpleEntryView(mapService.toObject(record.getKey()), mapService.toObject(record.getValue()), record);
+            EntryView existingEntry = new SimpleEntryView(mapService.toObject(record.getKey()), mapService.toObject(record.getValue()),
+                    record.getStatistics(), record.getVersion());
             newValue = mergePolicy.merge(name, mergingEntry, existingEntry);
             if (newValue == null) { // existing entry will be removed
                 records.remove(dataKey);
@@ -855,7 +855,6 @@ public class PartitionRecordStore implements RecordStore {
         public void run() {
             final NodeEngine nodeEngine = mapService.getNodeEngine();
 
-            int partitionId = partitionContainer.getPartitionId();
             Map values = mapContainer.getStore().loadAll(keys.values());
 
             MapEntrySet entrySet = new MapEntrySet();
@@ -873,7 +872,7 @@ public class PartitionRecordStore implements RecordStore {
                         loaded.set(true);
                     } else {
                         Exception e = (Exception) obj;
-                        nodeEngine.getLogger(PartitionRecordStore.class).finest(e.getMessage());
+                        nodeEngine.getLogger(RecordStore.class).finest(e.getMessage());
                     }
                 }
             });
@@ -883,6 +882,4 @@ public class PartitionRecordStore implements RecordStore {
             nodeEngine.getOperationService().executeOperation(operation);
         }
     }
-
-
 }

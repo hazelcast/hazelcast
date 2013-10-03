@@ -27,10 +27,9 @@ import java.io.IOException;
 @SuppressWarnings("VolatileLongOrDoubleField")
 public abstract class AbstractRecord<V> implements Record<V>, DataSerializable {
 
-    // todo ea volatile is needed? if yes then make version atomic
-    protected volatile RecordStatistics statistics;
-    protected volatile Data key;
-    protected volatile long version;
+    protected RecordStatistics statistics;
+    protected Data key;
+    protected long version;
 
     public AbstractRecord(Data key, boolean statisticsEnabled) {
         this.key = key;

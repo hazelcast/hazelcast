@@ -23,6 +23,7 @@ import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.core.*;
+import com.hazelcast.elasticmemory.OffHeapRecord;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.merge.*;
@@ -273,12 +274,12 @@ public class MapService implements ManagedService, MigrationAwareService,
                 MapMergePolicy mergePolicy = getMergePolicy(mergePolicyName);
 
                 // todo number of records may be high. below can be optimized a many records can be send in single invocation
+                final MapMergePolicy finalMergePolicy = mergePolicy;
                 for (final Record record : recordList) {
-                    final MapMergePolicy finalMergePolicy = mergePolicy;
                     // todo too many submission. should submit them in subgroups
                     nodeEngine.getExecutionService().submit("hz:map-merge", new Runnable() {
                         public void run() {
-                            SimpleEntryView entryView = new SimpleEntryView(record.getKey(), toData(record.getValue()), record);
+                            SimpleEntryView entryView = new SimpleEntryView(record.getKey(), toData(record.getValue()), record.getStatistics(), record.getVersion());
                             MergeOperation operation = new MergeOperation(mapContainer.getName(), record.getKey(), entryView, finalMergePolicy);
                             try {
                                 int partitionId = nodeEngine.getPartitionService().getPartitionId(record.getKey());
@@ -333,7 +334,7 @@ public class MapService implements ManagedService, MigrationAwareService,
 
     private void migrateIndex(PartitionMigrationEvent event) {
         final PartitionContainer container = partitionContainers[event.getPartitionId()];
-        for (PartitionRecordStore recordStore : container.getMaps().values()) {
+        for (HeapRecordStore recordStore : container.getMaps().values()) {
             final MapContainer mapContainer = getMapContainer(recordStore.name);
             final IndexService indexService = mapContainer.getIndexService();
             if (indexService.hasIndex()) {
@@ -361,7 +362,7 @@ public class MapService implements ManagedService, MigrationAwareService,
     private void clearPartitionData(final int partitionId) {
         final PartitionContainer container = partitionContainers[partitionId];
         if (container != null) {
-            for (PartitionRecordStore mapPartition : container.getMaps().values()) {
+            for (HeapRecordStore mapPartition : container.getMaps().values()) {
                 mapPartition.clear(true);
             }
             container.getMaps().clear();
@@ -388,8 +389,8 @@ public class MapService implements ManagedService, MigrationAwareService,
             case OBJECT:
                 record = new ObjectRecord(dataKey, toObject(value), statisticsEnabled);
                 break;
-            case CACHED:
-                record = new CachedDataRecord(dataKey, toData(value), statisticsEnabled);
+            case OFFHEAP:
+                record = new OffHeapRecord(dataKey, null, statisticsEnabled);
                 break;
             default:
                 throw new IllegalArgumentException("Unrecognized InMemoryFormat: " + inMemoryFormat);
@@ -690,8 +691,6 @@ public class MapService implements ManagedService, MigrationAwareService,
         switch (inMemoryFormat) {
             case BINARY:
                 return toData(value1).equals(toData(value2));
-            case CACHED:
-                return toObject(value1).equals(toObject(value2));
             case OBJECT:
                 return toObject(value1).equals(toObject(value2));
             default:

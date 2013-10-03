@@ -26,7 +26,7 @@ import java.io.IOException;
 
 public final class ObjectRecord extends AbstractRecord<Object> implements Record<Object>, IdentifiedDataSerializable {
 
-    private volatile Object value;
+    private Object value;
 
     public ObjectRecord(Data keyData, Object value, boolean statisticsEnabled) {
         super(keyData, statisticsEnabled);

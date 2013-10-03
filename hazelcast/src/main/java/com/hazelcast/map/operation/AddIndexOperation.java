@@ -60,7 +60,7 @@ public class AddIndexOperation extends AbstractNamedOperation implements Partiti
             Data key = record.getKey();
             Object value = record.getValue();
             if (value == null) {
-                // see optimization at PartitionRecordStore.get(Data dataKey)
+                // see optimization at HeapRecordStore.get(Data dataKey)
                 continue;
             }
             index.saveEntryIndex(new QueryEntry(ss, key, key, value));

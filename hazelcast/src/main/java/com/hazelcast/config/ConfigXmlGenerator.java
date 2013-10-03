@@ -281,9 +281,6 @@ public class ConfigXmlGenerator {
                 }
                 xml.append("</entry-listeners>");
             }
-            if (m.getStorageType() != null) {
-                xml.append("<storage-type>").append(m.getStorageType().toString()).append("</storage-type>");
-            }
             if (m.getPartitionStrategyConfig() != null) {
                 xml.append("<partition-strategy>");
                 PartitionStrategyConfig psc = m.getPartitionStrategyConfig();

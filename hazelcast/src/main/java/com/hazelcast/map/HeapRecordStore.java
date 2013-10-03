@@ -14,28 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.record;
+package com.hazelcast.map;
 
-import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
+/**
+ * @author enesakar 1/17/13
+ */
+public class HeapRecordStore extends RecordStoreSupport implements RecordStore {
 
-import java.util.Map;
-
-public interface Record<V> extends DataSerializable, Map.Entry<Data,V> {
-
-    Data getKey();
-
-    RecordStatistics getStatistics();
-
-    void setStatistics(RecordStatistics stats);
-
-    void onAccess();
-
-    void onUpdate();
-
-    void onStore();
-
-    long getCost();
-
-    long getVersion();
+    public HeapRecordStore(String name, MapService mapService, int partitionId) {
+        super(name, mapService, partitionId);
+    }
 }

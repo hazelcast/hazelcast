@@ -62,6 +62,8 @@ public class MapConfig {
 
     private boolean readBackupData = false;
 
+    private boolean optimizeQueries = true;
+
     private String mergePolicy = DEFAULT_MAP_MERGE_POLICY;
 
     private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
@@ -72,18 +74,12 @@ public class MapConfig {
 
     private List<MapIndexConfig> mapIndexConfigs;
 
-    private StorageType storageType = null;
-
     private boolean statisticsEnabled = true;
 
     private PartitionStrategyConfig partitionStrategyConfig;
 
     public enum InMemoryFormat {
-        BINARY, OBJECT, CACHED
-    }
-
-    public enum StorageType {
-        HEAP, OFFHEAP
+        BINARY, OBJECT, OFFHEAP, DISK
     }
 
     public enum EvictionPolicy {
@@ -371,15 +367,6 @@ public class MapConfig {
         return this;
     }
 
-    public StorageType getStorageType() {
-        return storageType;
-    }
-
-    public MapConfig setStorageType(StorageType storageType) {
-        this.storageType = storageType;
-        return this;
-    }
-
     public MapConfig addEntryListenerConfig(EntryListenerConfig listenerConfig) {
         getEntryListenerConfigs().add(listenerConfig);
         return this;
@@ -523,7 +510,6 @@ public class MapConfig {
         sb.append(", wanReplicationRef=").append(wanReplicationRef);
         sb.append(", listenerConfigs=").append(listenerConfigs);
         sb.append(", mapIndexConfigs=").append(mapIndexConfigs);
-        sb.append(", storageType=").append(storageType);
         sb.append('}');
         return sb.toString();
     }

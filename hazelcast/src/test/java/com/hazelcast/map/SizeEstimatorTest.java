@@ -174,14 +174,11 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
     public void testInMemoryFormats() throws InterruptedException {
         final String BINARY_MAP = "testBinaryFormat";
         final String OBJECT_MAP = "testObjectFormat";
-        final String CACHED_MAP = "testCachedFormat";
         final Config config = new Config();
         config.getMapConfig(BINARY_MAP).
                 setInMemoryFormat(MapConfig.InMemoryFormat.BINARY).setBackupCount(0);
         config.getMapConfig(OBJECT_MAP).
                 setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT).setBackupCount(0);
-        config.getMapConfig(CACHED_MAP).
-                setInMemoryFormat(MapConfig.InMemoryFormat.CACHED).setBackupCount(0);
 
         final int n = 2;
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
@@ -199,34 +196,21 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
             objectMap.put("key" + i, "value" + i);
         }
 
-        final IMap<String, String> cachedMap = h[0].getMap(CACHED_MAP);
-        for (int i = 0; i < 1000; i++) {
-            cachedMap.put("key" + i, "value" + i);
-        }
-
         Thread.sleep(2000);
         for (int i = 0; i < n; i++) {
-
             Assert.assertTrue(h[i].getMap(BINARY_MAP).getLocalMapStats().getHeapCost() > 0);
-
             Assert.assertTrue(h[i].getMap(OBJECT_MAP).getLocalMapStats().getHeapCost() == 0);
-
-            Assert.assertTrue(h[i].getMap(CACHED_MAP).getLocalMapStats().getHeapCost() > 0);
         }
 
         // clear map
         binaryMap.clear();
         objectMap.clear();
-        cachedMap.clear();
 
         Thread.sleep(2000);
 
         for (int i = 0; i < n; i++) {
             Assert.assertTrue(h[i].getMap(BINARY_MAP).getLocalMapStats().getHeapCost() == 0);
-
             Assert.assertTrue(h[i].getMap(OBJECT_MAP).getLocalMapStats().getHeapCost() == 0);
-
-            Assert.assertTrue(h[i].getMap(CACHED_MAP).getLocalMapStats().getHeapCost() == 0);
         }
     }
 
