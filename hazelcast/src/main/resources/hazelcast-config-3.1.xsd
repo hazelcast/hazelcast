@@ -421,7 +421,7 @@
     </xs:complexType>
     <xs:complexType name="interfaces">
         <xs:sequence>
-            <xs:element name="interface" type="xs:string" default="127.0.0.1"/>
+            <xs:element name="interface" type="xs:string" default="127.0.0.1"  minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
         <xs:attribute name="enabled" type="xs:boolean" use="optional" default="false"/>
     </xs:complexType>
