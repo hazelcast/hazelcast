@@ -619,7 +619,7 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             joinInProgress = false;
             setJoins.clear();
             timeToStartJoin = 0;
-            membersRef.set(null);
+            setMembersRef(Collections.singletonMap(thisAddress, thisMember));
             masterConfirmationTimes.clear();
         } finally {
             lock.unlock();
@@ -642,8 +642,8 @@ public final class ClusterServiceImpl implements ClusterService, ConnectionListe
             final Operation[] postJoinOps = nodeEngine.getPostJoinOperations();
             final PostJoinOperation postJoinOp = postJoinOps != null && postJoinOps.length > 0
                     ? new PostJoinOperation(postJoinOps) : null;
-            final List<Future> calls = new ArrayList<Future>(members.size());
             final int count = members.size() - 1 + setJoins.size();
+            final List<Future> calls = new ArrayList<Future>(count);
             for (MemberInfo member : setJoins) {
                 calls.add(invokeClusterOperation(new FinalizeJoinOperation(memberInfos, postJoinOp, time), member.getAddress()));
             }
