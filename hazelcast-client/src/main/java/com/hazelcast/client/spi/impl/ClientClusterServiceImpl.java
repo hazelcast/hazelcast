@@ -560,7 +560,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
 
     private Collection<InetSocketAddress> getConfigAddresses() {
         final List<InetSocketAddress> socketAddresses = new LinkedList<InetSocketAddress>();
-        for (String address : getClientConfig().getAddressList()) {
+        for (String address : getClientConfig().getAddresses()) {
             socketAddresses.addAll(AddressHelper.getSocketAddresses(address));
         }
         Collections.shuffle(socketAddresses);
