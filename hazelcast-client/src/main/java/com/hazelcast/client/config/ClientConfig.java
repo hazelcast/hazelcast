@@ -229,7 +229,7 @@ public class ClientConfig {
         return this;
     }
 
-    public Collection<String> getAddressList() {
+    public List<String> getAddresses() {
         if (addressList.size() == 0) {
             addAddress("localhost");
         }
