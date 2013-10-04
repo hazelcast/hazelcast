@@ -220,6 +220,28 @@ public class QueueContainer implements IdentifiedDataSerializable {
         }
         return true;
     }
+
+    public QueueItem txnPeek(long offerId, String transactionId) {
+        QueueItem item = getItemQueue().peek();
+        if (item == null) {
+            TxQueueItem txItem = txMap.get(offerId);
+            if (txItem == null){
+                return null;
+            }
+            item = new QueueItem(this, txItem.getItemId(), txItem.getData());
+            return item;
+        }
+        if (store.isEnabled() && item.getData() == null) {
+            try {
+                load(item);
+            } catch (Exception e) {
+                throw new HazelcastException(e);
+            }
+        }
+        txMap.put(item.getItemId(), new TxQueueItem(item).setTransactionId(transactionId));
+        return item;
+    }
+
     //TX Methods Ends
 
 
