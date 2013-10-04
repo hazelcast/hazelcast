@@ -404,6 +404,19 @@ public class BasicTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testMapLocalKeySet() {
+        IMap<String, String> map = getInstance().getMap("testMapKeySet");
+        map.put("key1", "value1");
+        map.put("key2", "value2");
+        map.put("key3", "value3");
+        HashSet<String> actual = new HashSet<String>();
+        actual.add("key1");
+        actual.add("key2");
+        actual.add("key3");
+        assertEquals(map.keySet(), actual);
+    }
+
+    @Test
     public void testMapValues() {
         IMap<String, String> map = getInstance().getMap("testMapValues");
         map.put("key1", "value1");
