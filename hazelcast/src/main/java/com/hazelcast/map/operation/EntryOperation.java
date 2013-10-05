@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.operation;
 
+import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
@@ -32,8 +33,9 @@ import java.util.Map;
 public class EntryOperation extends LockAwareOperation implements BackupAwareOperation {
 
     private EntryProcessor entryProcessor;
-
+    private transient EntryEventType eventType;
     private transient Object response;
+    protected transient Data dataOldValue;
 
     public EntryOperation(String name, Data dataKey, EntryProcessor entryProcessor) {
         super(name, dataKey);
@@ -50,18 +52,27 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     }
 
     public void run() {
-        Map.Entry<Data, Object> mapEntry = recordStore.getMapEntryObject(dataKey);
+        Map.Entry<Data, Data> mapEntry = recordStore.getMapEntryData(dataKey);
+        dataOldValue = mapEntry.getValue();
         Map.Entry entry = new AbstractMap.SimpleEntry(mapService.toObject(dataKey), mapService.toObject(mapEntry.getValue()));
         response = mapService.toData(entryProcessor.process(entry));
         if (entry.getValue() == null) {
             recordStore.remove(dataKey);
+            eventType = EntryEventType.REMOVED;
         } else {
-            recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, entry.getValue()));
+            if (mapEntry.getValue() == null) {
+                eventType = EntryEventType.ADDED;
+            } else {
+                eventType = EntryEventType.UPDATED;
+            }
+            dataValue = mapService.toData(entry.getValue());
+            recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, dataValue));
         }
     }
 
     public void afterRun() throws Exception {
         super.afterRun();
+        mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, dataValue);
         invalidateNearCaches();
     }
 
