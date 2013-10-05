@@ -224,7 +224,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
     public QueueItem txnPeek(long offerId, String transactionId) {
         QueueItem item = getItemQueue().peek();
         if (item == null) {
-            if ( offerId == -1L ){
+            if ( offerId == -1 ){
                 return null;
             }
             TxQueueItem txItem = txMap.get(offerId);
