@@ -20,11 +20,13 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.SimpleEntryView;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
+import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.AbstractMap;
@@ -74,6 +76,15 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         super.afterRun();
         mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, dataValue);
         invalidateNearCaches();
+        if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
+            if (EntryEventType.REMOVED.equals(eventType)) {
+                mapService.publishWanReplicationRemove(name, dataKey, Clock.currentTimeMillis());
+            } else {
+                SimpleEntryView entryView = new SimpleEntryView(dataKey, mapService.toData(dataValue), recordStore.getRecords().get(dataKey));
+                mapService.publishWanReplicationUpdate(name, entryView);
+            }
+        }
+
     }
 
     @Override
