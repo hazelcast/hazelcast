@@ -112,7 +112,7 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
 
     public Data peekInternal(long timeout) {
         final QueueItem offer = offeredQueue.peek();
-        final TxnPeekOperation operation = new TxnPeekOperation(name, timeout, offer == null ? -1L : offer.getItemId(), tx.getTxnId());
+        final TxnPeekOperation operation = new TxnPeekOperation(name, timeout, offer == null ? -1 : offer.getItemId(), tx.getTxnId());
         try {
             final Invocation invocation = getNodeEngine().getOperationService().createInvocationBuilder(QueueService.SERVICE_NAME, operation, partitionId).build();
             final Future<QueueItem> f = invocation.invoke();
