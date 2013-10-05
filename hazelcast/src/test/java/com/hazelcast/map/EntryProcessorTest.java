@@ -18,10 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.core.IMap;
+import com.hazelcast.core.*;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -32,6 +29,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -147,7 +145,6 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     }
 
     private static class IncrementorEntryProcessor implements EntryProcessor, EntryBackupProcessor {
-
         IncrementorEntryProcessor() {
         }
 
@@ -169,6 +166,94 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             entry.setValue((Integer) entry.getValue() + 1);
         }
     }
+
+    @Test
+    public void testMapEntryProcessorEntryListeners() {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
+        Config cfg = new Config();
+        cfg.getMapConfig("default").setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(cfg);
+        IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessorEntryListeners");
+        final AtomicInteger addCount = new AtomicInteger(0);
+        final AtomicInteger updateCount = new AtomicInteger(0);
+        final AtomicInteger removeCount = new AtomicInteger(0);
+        final AtomicInteger addKey1Sum = new AtomicInteger(0);
+        final AtomicInteger updateKey1Sum = new AtomicInteger(0);
+        final AtomicInteger updateKey1OldSum = new AtomicInteger(0);
+        final AtomicInteger removeKey1Sum = new AtomicInteger(0);
+        map.addEntryListener(new EntryListener<Integer, Integer>() {
+            @Override
+            public void entryAdded(EntryEvent<Integer, Integer> event) {
+                addCount.incrementAndGet();
+                if (event.getKey() == 1) {
+                    addKey1Sum.addAndGet(event.getValue());
+                }
+            }
+
+            @Override
+            public void entryRemoved(EntryEvent<Integer, Integer> event) {
+                removeCount.incrementAndGet();
+                if (event.getKey() == 1) {
+                    removeKey1Sum.addAndGet(event.getValue());
+                }
+            }
+
+            @Override
+            public void entryUpdated(EntryEvent<Integer, Integer> event) {
+                updateCount.incrementAndGet();
+                if (event.getKey() == 1) {
+                    updateKey1OldSum.addAndGet(event.getOldValue());
+                    updateKey1Sum.addAndGet(event.getValue());
+                }
+            }
+
+            @Override
+            public void entryEvicted(EntryEvent<Integer, Integer> event) {
+            }
+        }, true);
+
+        map.executeOnKey(1, new ValueSetterEntryProcessor(5));
+        map.executeOnKey(2, new ValueSetterEntryProcessor(7));
+        map.executeOnKey(2, new ValueSetterEntryProcessor(1));
+        map.executeOnKey(1, new ValueSetterEntryProcessor(3));
+        map.executeOnKey(1, new ValueSetterEntryProcessor(1));
+        map.executeOnKey(1, new ValueSetterEntryProcessor(null));
+        assertEquals((Integer) 1, map.get(2));
+        assertEquals(null, map.get(1));
+        assertEquals(2, addCount.get());
+        assertEquals(3, updateCount.get());
+        assertEquals(3, updateCount.get());
+
+        assertEquals(5, addKey1Sum.get());
+        assertEquals(4, updateKey1Sum.get());
+        assertEquals(8, updateKey1OldSum.get());
+        assertEquals(1, removeKey1Sum.get());
+
+    }
+
+    private static class ValueSetterEntryProcessor implements EntryProcessor, EntryBackupProcessor {
+        Integer value;
+
+        ValueSetterEntryProcessor(Integer v) {
+            this.value = v;
+        }
+
+        public Object process(Map.Entry entry) {
+            entry.setValue(value);
+            return value;
+        }
+
+        public EntryBackupProcessor getBackupProcessor() {
+            return ValueSetterEntryProcessor.this;
+        }
+
+        public void processBackup(Map.Entry entry) {
+            entry.setValue(value);
+        }
+    }
+
 
     @Test
     public void testMapEntryProcessorPartitionAware() throws InterruptedException {
