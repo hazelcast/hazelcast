@@ -18,6 +18,7 @@ package com.hazelcast.map.client;
 
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.InitializingObjectRequest;
+import com.hazelcast.client.SecureRequest;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.map.MapKeySet;
 import com.hazelcast.map.MapPortableHook;
@@ -31,9 +32,12 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.transaction.TransactionContext;
 
 import java.io.IOException;
+import java.security.Permission;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -43,7 +47,7 @@ import java.util.Set;
  * Date: 9/18/13
  * Time: 2:28 PM
  */
-public abstract class AbstractTxnMapRequest extends CallableClientRequest implements Portable, InitializingObjectRequest {
+public abstract class AbstractTxnMapRequest extends CallableClientRequest implements Portable, InitializingObjectRequest, SecureRequest {
 
     String name;
     TxnMapRequestType requestType;
@@ -202,5 +206,24 @@ public abstract class AbstractTxnMapRequest extends CallableClientRequest implem
             }
             return null;
         }
+    }
+
+    public Permission getRequiredPermission() {
+        String action = ActionConstants.ACTION_GET;
+        switch (requestType) {
+            case PUT:
+            case PUT_IF_ABSENT:
+            case REPLACE:
+            case REPLACE_IF_SAME:
+            case SET:
+                action =  ActionConstants.ACTION_PUT;
+                break;
+            case REMOVE:
+            case DELETE:
+            case REMOVE_IF_SAME:
+                action =  ActionConstants.ACTION_REMOVE;
+                break;
+        }
+        return new MapPermission(name, action);
     }
 }

@@ -16,10 +16,7 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.InitializingObjectRequest;
-import com.hazelcast.client.InvocationClientRequest;
-import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.client.*;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
@@ -30,18 +27,21 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.Invocation;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryResultSet;
 
 import java.io.IOException;
+import java.security.Permission;
 import java.util.*;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.map.MapService.SERVICE_NAME;
 
-abstract class AbstractMapQueryRequest extends InvocationClientRequest implements Portable, RetryableRequest, InitializingObjectRequest {
+abstract class AbstractMapQueryRequest extends InvocationClientRequest implements Portable, RetryableRequest, InitializingObjectRequest, SecureRequest {
 
     private String name;
     private IterationType iterationType;
@@ -138,4 +138,8 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
     }
 
     protected abstract void readPortableInner(PortableReader reader) throws IOException;
+
+    public Permission getRequiredPermission() {
+        return new MapPermission(name, ActionConstants.ACTION_GET);
+    }
 }

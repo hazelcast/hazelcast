@@ -16,9 +16,11 @@
 
 package com.hazelcast.client.spi;
 
+import com.hazelcast.client.ClientDestroyRequest;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -92,6 +94,12 @@ public abstract class ClientProxy implements DistributedObject {
 
     public final void destroy() {
         onDestroy();
+        ClientDestroyRequest request = new ClientDestroyRequest(objectName, getServiceName());
+        try {
+            context.getInvocationService().invokeOnRandomTarget(request);
+        } catch (Exception e) {
+            throw ExceptionUtil.rethrow(e);
+        }
         context.removeProxy(this);
         context = null;
     }

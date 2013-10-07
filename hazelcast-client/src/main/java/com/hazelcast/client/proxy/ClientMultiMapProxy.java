@@ -219,8 +219,6 @@ public class ClientMultiMapProxy<K, V> extends ClientProxy implements MultiMap<K
     }
 
     protected void onDestroy() {
-        MultiMapDestroyRequest request = new MultiMapDestroyRequest(name);
-        invoke(request);
     }
 
     private <T> T invoke(Object req, Data key) {

@@ -33,7 +33,6 @@ public class AtomicLongPortableHook implements PortableHook {
     public static final int GET_AND_ADD = 3;
     public static final int GET_AND_SET = 4;
     public static final int SET = 5;
-    public static final int DESTROY = 6;
 
 
     public int getFactoryId() {
@@ -54,8 +53,6 @@ public class AtomicLongPortableHook implements PortableHook {
                         return new GetAndSetRequest();
                     case SET:
                         return new SetRequest();
-                    case DESTROY:
-                        return new AtomicLongDestroyRequest();
                 }
                 return null;
             }

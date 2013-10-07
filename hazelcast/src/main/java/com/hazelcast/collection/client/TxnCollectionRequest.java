@@ -18,6 +18,7 @@ package com.hazelcast.collection.client;///*
 
 
 import com.hazelcast.client.CallableClientRequest;
+import com.hazelcast.client.SecureRequest;
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.serialization.Data;
@@ -30,7 +31,7 @@ import java.io.IOException;
 /**
 * @author ali 6/11/13
 */
-public abstract class TxnCollectionRequest extends CallableClientRequest implements Portable {
+public abstract class TxnCollectionRequest extends CallableClientRequest implements Portable, SecureRequest {
 
     String name;
     Data value;

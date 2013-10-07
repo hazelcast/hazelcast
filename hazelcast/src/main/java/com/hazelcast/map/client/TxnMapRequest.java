@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.client;
 
+
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -27,6 +28,7 @@ import java.io.IOException;
 /**
  * @author ali 6/10/13
  */
+
 public class TxnMapRequest extends AbstractTxnMapRequest {
 
     Predicate predicate;

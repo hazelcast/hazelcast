@@ -19,6 +19,7 @@ package com.hazelcast.queue.client;
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.InitializingObjectRequest;
+import com.hazelcast.client.SecureRequest;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
@@ -26,15 +27,18 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.queue.QueuePortableHook;
 import com.hazelcast.queue.QueueService;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.QueuePermission;
 import com.hazelcast.transaction.TransactionContext;
 
 import java.io.IOException;
+import java.security.Permission;
 import java.util.concurrent.TimeUnit;
 
 /**
  * @author ali 6/5/13
  */
-public class TxnOfferRequest extends CallableClientRequest implements Portable, InitializingObjectRequest {
+public class TxnOfferRequest extends CallableClientRequest implements Portable, InitializingObjectRequest, SecureRequest {
 
     String name;
     long timeout;
@@ -83,5 +87,9 @@ public class TxnOfferRequest extends CallableClientRequest implements Portable, 
         timeout = reader.readLong("t");
         data = new Data();
         data.readData(reader.getRawDataInput());
+    }
+
+    public Permission getRequiredPermission() {
+        return new QueuePermission(name, ActionConstants.ACTION_OFFER);
     }
 }

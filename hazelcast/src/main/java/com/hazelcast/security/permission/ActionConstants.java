@@ -16,6 +16,21 @@
 
 package com.hazelcast.security.permission;
 
+import com.hazelcast.collection.list.ListService;
+import com.hazelcast.collection.set.SetService;
+import com.hazelcast.concurrent.atomiclong.AtomicLongService;
+import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
+import com.hazelcast.concurrent.idgen.IdGeneratorService;
+import com.hazelcast.concurrent.lock.LockService;
+import com.hazelcast.concurrent.semaphore.SemaphoreService;
+import com.hazelcast.executor.DistributedExecutorService;
+import com.hazelcast.map.MapService;
+import com.hazelcast.multimap.MultiMapService;
+import com.hazelcast.queue.QueueService;
+import com.hazelcast.topic.TopicService;
+
+import java.security.Permission;
+
 /**
  * @ali 10/3/13
  */
@@ -31,21 +46,51 @@ public final class ActionConstants {
     public static final String ACTION_REMOVE = "remove";
     public static final String ACTION_OFFER = "offer";
     public static final String ACTION_POLL = "poll";
-    public static final String ACTION_TAKE = "take";
     public static final String ACTION_LOCK = "lock";
     public static final String ACTION_LISTEN = "listen";
     public static final String ACTION_PUBLISH = "publish";
-    public static final String ACTION_INCREMENT = "increment";
-    public static final String ACTION_DECREMENT = "decrement";
+    public static final String ACTION_READ = "read";
+    public static final String ACTION_MODIFY = "modify";
     public static final String ACTION_EXECUTE = "execute";
     public static final String ACTION_COUNTDOWN = "countdown";
     public static final String ACTION_ACQUIRE = "acquire";
     public static final String ACTION_RELEASE = "release";
+    public static final String ACTION_INDEX = "index";
+    public static final String ACTION_INTERCEPT = "intercept";
     public static final String ACTION_DRAIN = "drain";
     public static final String ACTION_STATISTICS = "statistics";
 
     public static final String LISTENER_INSTANCE = "instance";
     public static final String LISTENER_MEMBER = "member";
     public static final String LISTENER_MIGRATION = "migration";
+
+    public static Permission getPermission(String name, String serviceName, String... actions){
+        if (QueueService.SERVICE_NAME.equals(serviceName)){
+            return new QueuePermission(name, actions);
+        } else if (MapService.SERVICE_NAME.equals(serviceName)){
+            return new MapPermission(name, actions);
+        } else if (MultiMapService.SERVICE_NAME.equals(serviceName)){
+            return new MultiMapPermission(name, actions);
+        } else if (ListService.SERVICE_NAME.equals(serviceName)){
+            return new ListPermission(name, actions);
+        } else if (SetService.SERVICE_NAME.equals(serviceName)){
+            return new SetPermission(name, actions);
+        } else if (AtomicLongService.SERVICE_NAME.equals(serviceName)){
+            return new AtomicLongPermission(name, actions);
+        } else if (CountDownLatchService.SERVICE_NAME.equals(serviceName)){
+            return new CountDownLatchPermission(name, actions);
+        } else if (SemaphoreService.SERVICE_NAME.equals(serviceName)){
+            return new SemaphorePermission(name, actions);
+        } else if (TopicService.SERVICE_NAME.equals(serviceName)){
+            return new TopicPermission(name, actions);
+        } else if (LockService.SERVICE_NAME.equals(serviceName)){
+            return new LockPermission(name, actions);
+        } else if (DistributedExecutorService.SERVICE_NAME.equals(serviceName)){
+            return new ExecutorServicePermission(name, actions);
+        } else if (IdGeneratorService.SERVICE_NAME.equals(serviceName)){
+            return new AtomicLongPermission(IdGeneratorService.ATOMIC_LONG_NAME+name, serviceName);
+        }
+        throw new IllegalArgumentException("No service matched!!!");
+    }
 
 }

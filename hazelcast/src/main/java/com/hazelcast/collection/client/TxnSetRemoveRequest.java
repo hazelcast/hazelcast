@@ -19,6 +19,10 @@ package com.hazelcast.collection.client;
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.collection.set.SetService;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.SetPermission;
+
+import java.security.Permission;
 
 /**
  * @ali 9/4/13
@@ -42,5 +46,9 @@ public class TxnSetRemoveRequest extends TxnCollectionRequest {
 
     public int getClassId() {
         return CollectionPortableHook.TXN_SET_REMOVE;
+    }
+
+    public Permission getRequiredPermission() {
+        return new SetPermission(name, ActionConstants.ACTION_REMOVE);
     }
 }

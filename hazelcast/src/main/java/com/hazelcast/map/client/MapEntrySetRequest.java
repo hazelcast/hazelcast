@@ -18,6 +18,7 @@ package com.hazelcast.map.client;
 
 import com.hazelcast.client.AllPartitionsClientRequest;
 import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.client.SecureRequest;
 import com.hazelcast.map.operation.EntrySetOperationFactory;
 import com.hazelcast.map.MapEntrySet;
 import com.hazelcast.map.MapPortableHook;
@@ -26,13 +27,16 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
+import java.security.Permission;
 import java.util.Map;
 import java.util.Set;
 
-public class MapEntrySetRequest extends AllPartitionsClientRequest implements Portable, RetryableRequest {
+public class MapEntrySetRequest extends AllPartitionsClientRequest implements Portable, RetryableRequest, SecureRequest {
 
     private String name;
 
@@ -80,5 +84,9 @@ public class MapEntrySetRequest extends AllPartitionsClientRequest implements Po
 
     public void readPortable(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
+    }
+
+    public Permission getRequiredPermission() {
+        return new MapPermission(name, ActionConstants.ACTION_GET);
     }
 }

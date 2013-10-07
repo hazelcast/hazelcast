@@ -17,19 +17,23 @@
 package com.hazelcast.concurrent.atomiclong.client;
 
 import com.hazelcast.client.PartitionClientRequest;
+import com.hazelcast.client.SecureRequest;
 import com.hazelcast.concurrent.atomiclong.AtomicLongPortableHook;
 import com.hazelcast.concurrent.atomiclong.AtomicLongService;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.AtomicLongPermission;
 
 import java.io.IOException;
+import java.security.Permission;
 
 /**
  * @author ali 5/13/13
  */
-public abstract class AtomicLongRequest extends PartitionClientRequest implements Portable {
+public abstract class AtomicLongRequest extends PartitionClientRequest implements Portable, SecureRequest {
 
     String name;
 
@@ -68,5 +72,9 @@ public abstract class AtomicLongRequest extends PartitionClientRequest implement
     public void readPortable(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         delta = reader.readLong("d");
+    }
+
+    public Permission getRequiredPermission() {
+        return new AtomicLongPermission(name, ActionConstants.ACTION_MODIFY);
     }
 }

@@ -19,7 +19,11 @@ package com.hazelcast.concurrent.semaphore.client;
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.concurrent.semaphore.AvailableOperation;
 import com.hazelcast.concurrent.semaphore.SemaphorePortableHook;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.SemaphorePermission;
 import com.hazelcast.spi.Operation;
+
+import java.security.Permission;
 
 /**
  * @author ali 5/13/13
@@ -39,5 +43,9 @@ public class AvailableRequest extends SemaphoreRequest implements RetryableReque
 
     public int getClassId() {
         return SemaphorePortableHook.AVAILABLE;
+    }
+
+    public Permission getRequiredPermission() {
+        return new SemaphorePermission(name, ActionConstants.ACTION_GET);
     }
 }

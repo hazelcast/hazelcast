@@ -154,9 +154,6 @@ public class AbstractClientCollectionProxy<E> extends ClientProxy implements ICo
     }
 
     protected void onDestroy() {
-        final CollectionDestroyRequest request = new CollectionDestroyRequest(getName());
-        request.setServiceName(getServiceName());
-        invoke(request);
     }
 
     protected  <T> T invoke(Object req) {

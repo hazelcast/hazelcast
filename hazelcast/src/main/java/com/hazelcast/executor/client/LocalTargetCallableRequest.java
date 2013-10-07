@@ -16,6 +16,7 @@
 
 package com.hazelcast.executor.client;
 
+import com.hazelcast.client.SecureRequest;
 import com.hazelcast.client.TargetClientRequest;
 import com.hazelcast.executor.CallableTaskOperation;
 import com.hazelcast.executor.DistributedExecutorService;
@@ -24,15 +25,18 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.ExecutorServicePermission;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
+import java.security.Permission;
 import java.util.concurrent.Callable;
 
 /**
  * @author ali 5/26/13
  */
-public final class LocalTargetCallableRequest extends TargetClientRequest implements IdentifiedDataSerializable {
+public final class LocalTargetCallableRequest extends TargetClientRequest implements IdentifiedDataSerializable, SecureRequest {
 
     private String name;
     private Callable callable;
@@ -73,5 +77,9 @@ public final class LocalTargetCallableRequest extends TargetClientRequest implem
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         callable = in.readObject();
+    }
+
+    public Permission getRequiredPermission() {
+        return new ExecutorServicePermission(name, ActionConstants.ACTION_EXECUTE);
     }
 }

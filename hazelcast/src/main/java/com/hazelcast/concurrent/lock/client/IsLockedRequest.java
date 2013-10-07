@@ -20,6 +20,10 @@ import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.concurrent.lock.InternalLockNamespace;
 import com.hazelcast.concurrent.lock.LockPortableHook;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.LockPermission;
+
+import java.security.Permission;
 
 /**
  * @author mdogan 5/3/13
@@ -37,20 +41,21 @@ public final class IsLockedRequest extends AbstractIsLockedRequest implements Re
         super(key, threadId);
     }
 
-    @Override
     protected InternalLockNamespace getNamespace() {
         String name = (String) getClientEngine().toObject(key);
         return new InternalLockNamespace(name);
     }
 
-    @Override
     public int getFactoryId() {
         return LockPortableHook.FACTORY_ID;
     }
 
-    @Override
     public int getClassId() {
         return LockPortableHook.IS_LOCKED;
+    }
+
+    public Permission getRequiredPermission() {
+        return new LockPermission(key, ActionConstants.ACTION_LOCK);
     }
 
 }

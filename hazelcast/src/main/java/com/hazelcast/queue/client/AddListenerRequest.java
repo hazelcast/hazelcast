@@ -16,10 +16,7 @@
 
 package com.hazelcast.queue.client;
 
-import com.hazelcast.client.CallableClientRequest;
-import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.ClientEngine;
-import com.hazelcast.client.InitializingObjectRequest;
+import com.hazelcast.client.*;
 import com.hazelcast.core.ItemEvent;
 import com.hazelcast.core.ItemListener;
 import com.hazelcast.nio.serialization.Data;
@@ -28,14 +25,17 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.queue.QueuePortableHook;
 import com.hazelcast.queue.QueueService;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.QueuePermission;
 import com.hazelcast.spi.impl.PortableItemEvent;
 
 import java.io.IOException;
+import java.security.Permission;
 
 /**
  * @author ali 5/9/13
  */
-public class AddListenerRequest extends CallableClientRequest implements Portable, InitializingObjectRequest {
+public class AddListenerRequest extends CallableClientRequest implements Portable, InitializingObjectRequest, SecureRequest {
 
     private String name;
     private boolean includeValue;
@@ -99,5 +99,9 @@ public class AddListenerRequest extends CallableClientRequest implements Portabl
         String registrationId = service.addItemListener(name, listener, includeValue);
         endpoint.setListenerRegistration(QueueService.SERVICE_NAME, name, registrationId);
         return registrationId;
+    }
+
+    public Permission getRequiredPermission() {
+        return new QueuePermission(name, ActionConstants.ACTION_LISTEN);
     }
 }

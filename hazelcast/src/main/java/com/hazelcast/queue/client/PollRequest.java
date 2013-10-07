@@ -18,7 +18,11 @@ package com.hazelcast.queue.client;
 
 import com.hazelcast.queue.PollOperation;
 import com.hazelcast.queue.QueuePortableHook;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.QueuePermission;
 import com.hazelcast.spi.Operation;
+
+import java.security.Permission;
 
 /**
  * @author ali 5/8/13
@@ -42,5 +46,9 @@ public class PollRequest extends QueueRequest {
 
     public int getClassId() {
         return QueuePortableHook.POLL;
+    }
+
+    public Permission getRequiredPermission() {
+        return new QueuePermission(name, ActionConstants.ACTION_POLL);
     }
 }

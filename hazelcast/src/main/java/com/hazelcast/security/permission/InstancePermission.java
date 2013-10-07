@@ -13,8 +13,8 @@ public abstract class InstancePermission extends ClusterPermission {
 	protected final static int CREATE 		= 0x1;
 	protected final static int DESTROY 		= 0x2;
 	
-	private final int mask;
-	private final String actions;
+	protected final int mask;
+	protected final String actions;
 
 	public InstancePermission(String name) {
 		this(name, new String[0]);

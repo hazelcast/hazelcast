@@ -18,7 +18,11 @@ package com.hazelcast.concurrent.atomiclong.client;
 
 import com.hazelcast.concurrent.atomiclong.AtomicLongPortableHook;
 import com.hazelcast.concurrent.atomiclong.GetAndAddOperation;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.AtomicLongPermission;
 import com.hazelcast.spi.Operation;
+
+import java.security.Permission;
 
 /**
  * @author ali 5/13/13
@@ -38,5 +42,12 @@ public class GetAndAddRequest extends AtomicLongRequest {
 
     public int getClassId() {
         return AtomicLongPortableHook.GET_AND_ADD;
+    }
+
+    public Permission getRequiredPermission() {
+        if (delta == 0){
+            return new AtomicLongPermission(name, ActionConstants.ACTION_READ);
+        }
+        return new AtomicLongPermission(name, ActionConstants.ACTION_MODIFY);
     }
 }

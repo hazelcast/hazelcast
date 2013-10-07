@@ -24,10 +24,13 @@ import com.hazelcast.multimap.operations.RemoveAllOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.impl.PortableCollection;
 
 import java.io.IOException;
+import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -77,5 +80,9 @@ public class RemoveAllRequest extends MultiMapKeyBasedRequest implements Initial
             return new PortableCollection(collection);
         }
         return super.filter(response);
+    }
+
+    public Permission getRequiredPermission() {
+        return new MultiMapPermission(name, ActionConstants.ACTION_REMOVE);
     }
 }

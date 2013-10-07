@@ -24,9 +24,12 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.LockPermission;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
+import java.security.Permission;
 
 /**
  * @author mdogan 5/3/13
@@ -74,6 +77,10 @@ public final class GetRemainingLeaseRequest extends KeyBasedClientRequest implem
         ObjectDataInput in = reader.getRawDataInput();
         key = new Data();
         key.readData(in);
+    }
+
+    public Permission getRequiredPermission() {
+        return new LockPermission(key, ActionConstants.ACTION_LOCK);
     }
 
 }

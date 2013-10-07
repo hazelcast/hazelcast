@@ -22,10 +22,13 @@ import com.hazelcast.concurrent.lock.client.AbstractLockRequest;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
 
 import java.io.IOException;
+import java.security.Permission;
 
 /**
  * @author ali 5/23/13
@@ -67,5 +70,9 @@ public class MultiMapLockRequest extends AbstractLockRequest {
 
     public int getClassId() {
         return MultiMapPortableHook.LOCK;
+    }
+
+    public Permission getRequiredPermission() {
+        return new MultiMapPermission(name, ActionConstants.ACTION_LOCK);
     }
 }

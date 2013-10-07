@@ -18,6 +18,7 @@ package com.hazelcast.collection.client;
 
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.collection.CollectionSizeOperation;
+import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.spi.Operation;
 
 /**
@@ -38,5 +39,9 @@ public class CollectionSizeRequest extends CollectionRequest {
 
     public int getClassId() {
         return CollectionPortableHook.COLLECTION_SIZE;
+    }
+
+    public String getRequiredAction() {
+        return ActionConstants.ACTION_GET;
     }
 }
