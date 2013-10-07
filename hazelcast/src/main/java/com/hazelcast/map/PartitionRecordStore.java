@@ -72,11 +72,12 @@ public class PartitionRecordStore implements RecordStore {
                 Map<Data, Object> loadedKeys = mapContainer.getInitialKeys();
                 if (loadedKeys != null && !loadedKeys.isEmpty()) {
                     Map<Data, Object> partitionKeys = new HashMap<Data, Object>();
-                    Iterator<Data> iterator = loadedKeys.keySet().iterator();
+                    Iterator<Map.Entry<Data,Object>> iterator = loadedKeys.entrySet().iterator();
                     while(iterator.hasNext()) {
-                        Data data = iterator.next();
+                        final Map.Entry<Data,Object> entry = iterator.next();
+                        final Data data = entry.getKey();
                         if (partitionId == nodeEngine.getPartitionService().getPartitionId(data)) {
-                            partitionKeys.put(data, loadedKeys.get(data));
+                            partitionKeys.put(data, entry.getValue());
                             iterator.remove();
                         }
                     }
