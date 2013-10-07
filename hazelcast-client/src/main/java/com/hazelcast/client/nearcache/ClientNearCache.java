@@ -36,8 +36,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class ClientNearCache {
 
-    final int evictionPercentage = 20;
-    final int cleanupInterval = 5000;
+    static final int evictionPercentage = 20;
+    static final int cleanupInterval = 5000;
     final int maxSize;
     volatile long lastCleanup;
     final long maxIdleMillis;
