@@ -20,9 +20,13 @@ import com.hazelcast.map.MapDataSerializerHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.map.RecordStore;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.BackupOperation;
+
+import java.io.IOException;
 
 public final class RemoveBackupOperation extends KeyBasedMapOperation implements BackupOperation, IdentifiedDataSerializable {
 
@@ -57,6 +61,17 @@ public final class RemoveBackupOperation extends KeyBasedMapOperation implements
     public Object getResponse() {
         return Boolean.TRUE;
     }
+
+    protected void writeInternal(ObjectDataOutput out) throws IOException {
+        super.writeInternal(out);
+        out.writeBoolean(unlockKey);
+    }
+
+    protected void readInternal(ObjectDataInput in) throws IOException {
+        super.readInternal(in);
+        unlockKey = in.readBoolean();
+    }
+
 
     public int getFactoryId() {
         return MapDataSerializerHook.F_ID;
