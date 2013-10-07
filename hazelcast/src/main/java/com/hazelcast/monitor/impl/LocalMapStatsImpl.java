@@ -46,7 +46,6 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
     private long backupEntryMemoryCost;
     // total heap cost with map &  nearcache  & backup
     private long heapCost;
-    private long backupHeapCost;
     private long creationTime;
     private long lockedEntryCount;
     private long dirtyEntryCount;
@@ -78,7 +77,6 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         out.writeLong(maxGetLatency.get());
         out.writeLong(maxPutLatency.get());
         out.writeLong(maxRemoveLatency.get());
-        out.writeLong(backupHeapCost);
         out.writeLong(heapCost);
     }
 
@@ -104,7 +102,6 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         maxGetLatency.set(in.readLong());
         maxPutLatency.set(in.readLong());
         maxRemoveLatency.set(in.readLong());
-        backupHeapCost = in.readLong();
         heapCost = in.readLong();
     }
 
@@ -262,16 +259,8 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
         this.heapCost = heapCost;
     }
 
-    public void setBackupHeapCost(long backupHeapCost) {
-        this.backupHeapCost = backupHeapCost;
-    }
-
     public long getHeapCost() {
         return heapCost;
-    }
-
-    public long getBackupHeapCost() {
-        return backupHeapCost;
     }
 
     public String toString() {
@@ -294,7 +283,6 @@ public class LocalMapStatsImpl implements LocalMapStats, IdentifiedDataSerializa
                 ", creationTime=" + creationTime +
                 ", lockedEntryCount=" + lockedEntryCount +
                 ", dirtyEntryCount=" + dirtyEntryCount +
-                ", backupHeapCost=" + backupHeapCost +
                 ", heapCost=" + heapCost +
                 '}';
     }
