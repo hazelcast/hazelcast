@@ -388,8 +388,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                             mapService.toData(entry.getValue())));
                 }
 
-                for (Integer partitionId : entryMap.keySet()) {
-                    PutAllOperation op = new PutAllOperation(name, entryMap.get(partitionId));
+                for (final Map.Entry<Integer, MapEntrySet> entry: entryMap.entrySet()) {
+                    final Integer partitionId = entry.getKey();
+                    final PutAllOperation op = new PutAllOperation(name, entry.getValue());
                     op.setPartitionId(partitionId);
                     flist.add(operationService.createInvocationBuilder(SERVICE_NAME, op, partitionId).build().invoke());
                 }
