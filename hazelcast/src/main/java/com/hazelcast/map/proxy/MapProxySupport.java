@@ -414,6 +414,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     protected Set<Data> keySetInternal() {
         final NodeEngine nodeEngine = getNodeEngine();
         try {
+            // todo you can optimize keyset by taking keys without lock then re-fetch missing ones. see localKeySet
             Map<Integer, Object> results = nodeEngine.getOperationService()
                     .invokeOnAllPartitions(SERVICE_NAME, new BinaryOperationFactory(new MapKeySetOperation(name), nodeEngine));
             Set<Data> keySet = new HashSet<Data>();
@@ -429,13 +430,13 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     protected Set<Data> localKeySetInternal() {
         final NodeEngine nodeEngine = getNodeEngine();
+        final MapService mapService = getService();
+        Set<Data> keySet = new HashSet<Data>();
         try {
-            Map<Integer, Object> results = nodeEngine.getOperationService()
-                    .invokeOnTargetPartitions(SERVICE_NAME, new BinaryOperationFactory(new MapKeySetOperation(name), nodeEngine), nodeEngine.getThisAddress());
-            Set<Data> keySet = new HashSet<Data>();
-            for (Object result : results.values()) {
-                Set keys = ((MapKeySet) getService().toObject(result)).getKeySet();
-                keySet.addAll(keys);
+            List<Integer> memberPartitions = nodeEngine.getPartitionService().getMemberPartitions(nodeEngine.getThisAddress());
+            for (Integer memberPartition : memberPartitions) {
+                RecordStore recordStore = mapService.getRecordStore(memberPartition, name);
+                keySet.addAll(recordStore.getRecords().keySet());
             }
             return keySet;
         } catch (Throwable t) {
