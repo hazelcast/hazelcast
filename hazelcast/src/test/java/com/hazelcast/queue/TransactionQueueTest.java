@@ -137,11 +137,6 @@ public class TransactionQueueTest extends HazelcastTestSupport {
         assertNull(instances[0].getMap(mapName).get("lock1"));
     }
 
-    private IQueue getQueue(HazelcastInstance[] instances, String name) {
-        final Random rnd = new Random(System.currentTimeMillis());
-        return instances[rnd.nextInt(instances.length)].getQueue(name);
-    }
-
     @Test
     public void testRollbackQueue() throws Throwable {
         Config config = new Config();
@@ -254,6 +249,38 @@ public class TransactionQueueTest extends HazelcastTestSupport {
         } finally {
             moveMessage1.active = false;
         }
+    }
+
+    @Test
+    public void testPeekMethod() throws Exception {
+        final Config config = new Config();
+        final int insCount = 4;
+        final String name = "defQueue";
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
+        final HazelcastInstance[] instances = factory.newInstances(config);
+
+        final TransactionContext context = instances[0].newTransactionContext();
+        context.beginTransaction();
+        try {
+            TransactionalQueue<String> q = context.getQueue(name);
+            final String response1 = q.peek(10, TimeUnit.SECONDS);
+            assertNull(response1);
+
+            assertTrue(q.offer("ali"));
+
+            final String response2 = q.peek();
+            assertEquals("ali", response2);
+            context.commitTransaction();
+        } catch (TransactionException e) {
+            context.rollbackTransaction();
+            throw e;
+        }
+        assertEquals(1, getQueue(instances, name).size());
+    }
+
+    private IQueue getQueue(HazelcastInstance[] instances, String name) {
+        final Random rnd = new Random(System.currentTimeMillis());
+        return instances[rnd.nextInt(instances.length)].getQueue(name);
     }
 
 }

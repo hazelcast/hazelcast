@@ -109,6 +109,22 @@ public class ClientTxnQueueTest {
         assertEquals("item0", hz.getQueue(name1).poll());
     }
 
+    @Test
+    public void testTransactionalPeek() throws Exception {
+        final String name = "defQueue";
+
+        final TransactionContext context = hz.newTransactionContext();
+        context.beginTransaction();
+        TransactionalQueue<String> q = context.getQueue(name);
+        assertTrue(q.offer("ali"));
+        String s = q.peek();
+        assertEquals("ali",s);
+        s = q.peek();
+        assertEquals("ali",s);
+        context.commitTransaction();
+        assertEquals(1, hz.getQueue(name).size());
+    }
+
 
 //    @Test
 //    public void testQueueWithMap() throws Exception {

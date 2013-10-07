@@ -110,6 +110,25 @@ public abstract class TransactionalQueueProxySupport extends AbstractDistributed
         return null;
     }
 
+    public Data peekInternal(long timeout) {
+        final QueueItem offer = offeredQueue.peek();
+        final TxnPeekOperation operation = new TxnPeekOperation(name, timeout, offer == null ? -1 : offer.getItemId(), tx.getTxnId());
+        try {
+            final Invocation invocation = getNodeEngine().getOperationService().createInvocationBuilder(QueueService.SERVICE_NAME, operation, partitionId).build();
+            final Future<QueueItem> f = invocation.invoke();
+            final QueueItem item = f.get();
+            if (item != null) {
+                if (offer != null && item.getItemId() == offer.getItemId()) {
+                    return offer.getData();
+                }
+                return item.getData();
+            }
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
+        return null;
+    }
+
     public int size() {
         checkTransactionState();
         SizeOperation operation = new SizeOperation(name);
