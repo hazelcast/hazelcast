@@ -20,6 +20,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.IndexAwarePredicate;
 import com.hazelcast.query.Predicate;
 
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -28,16 +29,39 @@ import java.util.concurrent.atomic.AtomicReference;
 public class IndexService {
     final ConcurrentMap<String, Index> mapIndexes = new ConcurrentHashMap<String, Index>(3);
     final AtomicReference<Index[]> indexes = new AtomicReference<Index[]>();
+    final IndexFactory indexFactory;
+    final Properties properties;
     volatile boolean hasIndex = false;
+
+    public IndexService() {
+        this(null, null);
+    }
+
+    public IndexService(
+            final IndexFactory indexFactory,
+            final Properties properties
+    ) {
+        this.indexFactory = indexFactory;
+        this.properties = properties;
+    }
 
     public synchronized Index destroyIndex(String attribute) {
         return mapIndexes.remove(attribute);
     }
 
-    public synchronized Index addOrGetIndex(String attribute, boolean ordered) {
+    public synchronized Index addOrGetIndex(
+            String attribute,
+            boolean ordered) {
         Index index = mapIndexes.get(attribute);
-        if (index != null) return index;
-        index = new IndexImpl(attribute, ordered);
+        if (index != null) {
+            return index;
+        }
+        if (indexFactory != null) {
+            index = indexFactory.createIndex(attribute, ordered, properties);
+        }
+        if (index == null) {
+            index = new IndexImpl(attribute, ordered);
+        }
         mapIndexes.put(attribute, index);
         Object[] indexObjects = mapIndexes.values().toArray();
         Index[] newIndexes = new Index[indexObjects.length];

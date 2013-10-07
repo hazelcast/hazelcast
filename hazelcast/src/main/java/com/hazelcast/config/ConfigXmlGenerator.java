@@ -66,7 +66,7 @@ public class ConfigXmlGenerator {
      * @return the XML string.
      */
     public String generate(Config config) {
-        isNotNull(config,"Config");
+        isNotNull(config, "Config");
 
         final StringBuilder xml = new StringBuilder();
         xml.append("<hazelcast ")
@@ -245,6 +245,18 @@ public class ConfigXmlGenerator {
                 appendProperties(xml, s.getProperties());
                 xml.append("</map-store>");
             }
+            if (m.getMapIndexFactoryConfig() != null) {
+                final MapIndexFactoryConfig s = m.getMapIndexFactoryConfig();
+                xml.append("<map-index-factory>");
+                final String factoryClass = s.getFactoryImplementation() != null
+                        ? s.getFactoryImplementation().getClass().getName()
+                        : s.getFactoryClassName();
+                if (factoryClass != null) {
+                    xml.append("<factory-class-name>").append(factoryClass).append("</factory-class-name>");
+                }
+                appendProperties(xml, s.getProperties());
+                xml.append("</map-index-factory>");
+            }
             if (m.getNearCacheConfig() != null) {
                 final NearCacheConfig n = m.getNearCacheConfig();
                 xml.append("<near-cache>");
@@ -360,7 +372,9 @@ public class ConfigXmlGenerator {
         return format(xml.toString(), 5);
     }
 
-    private String format(final String input, int indent) {
+    private String format(
+            final String input,
+            int indent) {
         if (!formatted) {
             return input;
         }
@@ -374,7 +388,7 @@ public class ConfigXmlGenerator {
             try {
                 transformerFactory.setAttribute("indent-number", indent);
             } catch (IllegalArgumentException e) {
-                logger.finest( "Failed to set indent-number attribute; cause: " + e.getMessage());
+                logger.finest("Failed to set indent-number attribute; cause: " + e.getMessage());
             }
             Transformer transformer = transformerFactory.newTransformer();
             transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
@@ -386,7 +400,7 @@ public class ConfigXmlGenerator {
             try {
                 transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", Integer.toString(indent));
             } catch (IllegalArgumentException e) {
-                logger.finest( "Failed to set indent-amount property; cause: " + e.getMessage());
+                logger.finest("Failed to set indent-amount property; cause: " + e.getMessage());
             }
             transformer.transform(xmlInput, xmlOutput);
             return xmlOutput.getWriter().toString();
@@ -396,7 +410,9 @@ public class ConfigXmlGenerator {
         }
     }
 
-    private void appendProperties(StringBuilder xml, Properties props) {
+    private void appendProperties(
+            StringBuilder xml,
+            Properties props) {
         if (!props.isEmpty()) {
             xml.append("<properties>");
             Set keys = props.keySet();

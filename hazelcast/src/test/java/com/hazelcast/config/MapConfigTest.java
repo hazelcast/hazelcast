@@ -197,6 +197,23 @@ public class MapConfigTest {
         assertEquals(nearCacheConfig, new MapConfig().setNearCacheConfig(nearCacheConfig).getNearCacheConfig());
     }
 
+    /**
+     * Test method for {@link com.hazelcast.config.MapConfig#getMapIndexFactoryConfig()}.
+     */
+    @Test
+    public void testGetMapIndexFactoryConfig() {
+        assertNull(new MapConfig().getMapIndexFactoryConfig());
+    }
+
+    /**
+     * Test method for {@link com.hazelcast.config.MapConfig#setMapIndexFactoryConfig(com.hazelcast.config.MapIndexFactoryConfig)}.
+     */
+    @Test
+    public void testSetMapIndexFactoryConfig() {
+        MapIndexFactoryConfig mapIndexFactoryConfig = new MapIndexFactoryConfig();
+        assertEquals(mapIndexFactoryConfig, new MapConfig().setMapIndexFactoryConfig(mapIndexFactoryConfig).getMapIndexFactoryConfig());
+    }
+
     @Test
     public void configSetsForDefaultAllwaysIssue466() {
         Config config = new XmlConfigBuilder().build();

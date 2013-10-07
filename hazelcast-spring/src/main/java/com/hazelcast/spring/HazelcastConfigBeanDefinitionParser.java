@@ -373,6 +373,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 final String nodeName = cleanNodeName(childNode.getNodeName());
                 if ("map-store".equals(nodeName)) {
                     handleMapStoreConfig(childNode, mapConfigBuilder);
+                } else if ("map-index-factory".equals(nodeName)) {
+                    handleMapIndexFactoryConfig(childNode, mapConfigBuilder);
                 } else if ("near-cache".equals(nodeName)) {
                     handleNearCacheConfig(childNode, mapConfigBuilder);
                 } else if ("wan-replication-ref".equals(nodeName)) {
@@ -467,6 +469,32 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
 
         public void handleNearCacheConfig(Node node, BeanDefinitionBuilder mapConfigBuilder) {
             createAndFillBeanBuilder(node, NearCacheConfig.class, "nearCacheConfig", mapConfigBuilder);
+        }
+
+        public void handleMapIndexFactoryConfig(Node node, BeanDefinitionBuilder mapConfigBuilder) {
+            BeanDefinitionBuilder mapIndexFactoryConfigBuilder = createBeanBuilder(MapIndexFactoryConfig.class);
+            final AbstractBeanDefinition beanDefinition = mapIndexFactoryConfigBuilder.getBeanDefinition();
+            for (org.w3c.dom.Node child : new IterableNodeList(node, Node.ELEMENT_NODE)) {
+                if ("properties".equals(cleanNodeName(child))) {
+                    handleProperties(child, mapIndexFactoryConfigBuilder);
+                    break;
+                }
+            }
+            final String implAttrName = "implementation";
+            final String factoryImplAttrName = "factory-implementation";
+            fillAttributeValues(node, mapIndexFactoryConfigBuilder, implAttrName, factoryImplAttrName);
+            final NamedNodeMap attrs = node.getAttributes();
+            final Node implRef = attrs.getNamedItem(implAttrName);
+            final Node factoryImplRef = attrs.getNamedItem(factoryImplAttrName);
+            if (factoryImplRef != null) {
+                mapIndexFactoryConfigBuilder
+                        .addPropertyReference(xmlToJavaName(factoryImplAttrName), getTextContent(factoryImplRef));
+            }
+            if (implRef != null) {
+                mapIndexFactoryConfigBuilder.addPropertyReference(xmlToJavaName(implAttrName), getTextContent(implRef));
+            }
+            mapConfigBuilder.addPropertyValue("mapIndexFactoryConfig", beanDefinition);
+            mapIndexFactoryConfigBuilder = null;
         }
 
         public void handleMapStoreConfig(Node node, BeanDefinitionBuilder mapConfigBuilder) {

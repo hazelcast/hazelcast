@@ -59,7 +59,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     /**
      * Constructs a XmlConfigBuilder that reads from the provided file.
      *
-     * @param xmlFileName  the name of the XML file
+     * @param xmlFileName the name of the XML file
      * @throws FileNotFoundException if the file can't be found.
      */
     public XmlConfigBuilder(String xmlFileName) throws FileNotFoundException {
@@ -69,11 +69,11 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     /**
      * Constructs a XmlConfigBuilder that reads from the given InputStream.
      *
-     * @param inputStream  the InputStream containing the XML configuration.
+     * @param inputStream the InputStream containing the XML configuration.
      * @throws IllegalArgumentException if inputStream is null.
      */
     public XmlConfigBuilder(InputStream inputStream) {
-        if(inputStream == null){
+        if (inputStream == null) {
             throw new IllegalArgumentException("inputStream can't be null");
         }
         this.in = inputStream;
@@ -91,7 +91,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 if (!configurationFile.exists()) {
                     String msg = "Config file at '" + configurationFile.getAbsolutePath() + "' doesn't exist.";
                     msg += "\nHazelcast will try to use the hazelcast.xml config file in the working directory.";
-                    logger.warning( msg);
+                    logger.warning(msg);
                     configurationFile = null;
                 }
             }
@@ -145,7 +145,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
     /**
      * Gets the current used properties. Can be null if no properties are set.
      *
-     * @return  the used properties.
+     * @return the used properties.
      * @see #setProperties(java.util.Properties)
      */
     public Properties getProperties() {
@@ -154,7 +154,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
 
     /**
      * Sets the used properties. Can be null if no properties should be used.
-     *
+     * <p/>
      * Properties are used to resolve ${variable} occurrences in the XML file.
      *
      * @param properties the new properties.
@@ -446,7 +446,10 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         }
     }
 
-    private void handleViaReflection(final org.w3c.dom.Node node, Object parent, Object target) throws Exception {
+    private void handleViaReflection(
+            final org.w3c.dom.Node node,
+            Object parent,
+            Object target) throws Exception {
         final NamedNodeMap atts = node.getAttributes();
         if (atts != null) {
             for (int a = 0; a < atts.getLength(); a++) {
@@ -472,12 +475,17 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         method.invoke(parent, new Object[]{target});
     }
 
-    private void invoke(Object target, Method method, String value) {
-        if (method == null)
+    private void invoke(
+            Object target,
+            Method method,
+            String value) {
+        if (method == null) {
             return;
+        }
         Class<?>[] args = method.getParameterTypes();
-        if (args == null || args.length == 0)
+        if (args == null || args.length == 0) {
             return;
+        }
         Class<?> arg = method.getParameterTypes()[0];
         try {
             if (arg == String.class) {
@@ -494,7 +502,9 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         }
     }
 
-    private Method getMethod(Object target, String methodName) {
+    private Method getMethod(
+            Object target,
+            String methodName) {
         Method[] methods = target.getClass().getMethods();
         for (Method method : methods) {
             if (method.getName().equalsIgnoreCase(methodName)) {
@@ -643,7 +653,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
 
             if ("auto-increment".equals(att.getNodeName())) {
                 networkConfig.setPortAutoIncrement(checkTrue(value));
-            } else if("port-count".equals(att.getNodeName())){
+            } else if ("port-count".equals(att.getNodeName())) {
                 int portCount = Integer.parseInt(value);
                 networkConfig.setPortCount(portCount);
             }
@@ -843,6 +853,8 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             } else if ("map-store".equals(nodeName)) {
                 MapStoreConfig mapStoreConfig = createMapStoreConfig(n);
                 mapConfig.setMapStoreConfig(mapStoreConfig);
+            } else if ("map-index-factory".equals(nodeName)) {
+                mapConfig.setMapIndexFactoryConfig(createMapIndexFactoryConfig(n));
             } else if ("near-cache".equals(nodeName)) {
                 handleViaReflection(n, mapConfig, new NearCacheConfig());
             } else if ("merge-policy".equals(nodeName)) {
@@ -915,6 +927,19 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             }
         }
         return mapStoreConfig;
+    }
+
+    private MapIndexFactoryConfig createMapIndexFactoryConfig(final org.w3c.dom.Node node) {
+        MapIndexFactoryConfig mapIndexFactoryConfig = new MapIndexFactoryConfig();
+        for (org.w3c.dom.Node n : new IterableNodeList(node.getChildNodes())) {
+            final String nodeName = cleanNodeName(n.getNodeName());
+            if ("factory-class-name".equals(nodeName)) {
+                mapIndexFactoryConfig.setFactoryClassName(getTextContent(n).trim());
+            } else if ("properties".equals(nodeName)) {
+                fillProperties(n, mapIndexFactoryConfig.getProperties());
+            }
+        }
+        return mapIndexFactoryConfig;
     }
 
     private QueueStoreConfig createQueueStoreConfig(final org.w3c.dom.Node node) {
@@ -1095,7 +1120,9 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         }
     }
 
-    private void handleLoginModules(final org.w3c.dom.Node node, boolean member) throws Exception {
+    private void handleLoginModules(
+            final org.w3c.dom.Node node,
+            boolean member) throws Exception {
         final SecurityConfig cfg = config.getSecurityConfig();
         for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
             final String nodeName = cleanNodeName(child.getNodeName());
@@ -1185,7 +1212,9 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         }
     }
 
-    private void handleSecurityPermission(final org.w3c.dom.Node node, PermissionType type) throws Exception {
+    private void handleSecurityPermission(
+            final org.w3c.dom.Node node,
+            PermissionType type) throws Exception {
         final SecurityConfig cfg = config.getSecurityConfig();
         final NamedNodeMap attrs = node.getAttributes();
         Node nameNode = attrs.getNamedItem("name");
@@ -1204,7 +1233,9 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         }
     }
 
-    private void handleSecurityPermissionEndpoints(final org.w3c.dom.Node node, PermissionConfig permConfig)
+    private void handleSecurityPermissionEndpoints(
+            final org.w3c.dom.Node node,
+            PermissionConfig permConfig)
             throws Exception {
         for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
             final String nodeName = cleanNodeName(child.getNodeName());
@@ -1214,7 +1245,9 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         }
     }
 
-    private void handleSecurityPermissionActions(final org.w3c.dom.Node node, PermissionConfig permConfig)
+    private void handleSecurityPermissionActions(
+            final org.w3c.dom.Node node,
+            PermissionConfig permConfig)
             throws Exception {
         for (org.w3c.dom.Node child : new IterableNodeList(node.getChildNodes())) {
             final String nodeName = cleanNodeName(child.getNodeName());

@@ -18,6 +18,7 @@ package com.hazelcast.query.impl;
 
 import com.hazelcast.query.EntryObject;
 import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.ParallelTest;
@@ -27,12 +28,14 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.HashSet;
+import java.util.Properties;
 import java.util.Set;
 
 import static com.hazelcast.instance.TestUtil.toData;
 import static com.hazelcast.query.SampleObjects.Employee;
 import static com.hazelcast.query.SampleObjects.Value;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
@@ -95,5 +98,28 @@ public class IndexServiceTest {
         indexService.saveEntryIndex(new QueryEntry(null, toData(8), 8, new Value("def")));
         indexService.saveEntryIndex(new QueryEntry(null, toData(9), 9, new Value("qwx")));
         assertEquals(8, new HashSet(indexService.query(new SqlPredicate("name > 'aac'"))).size());
+    }
+
+    @Test
+    public void testIndexWithFactory() throws Exception {
+        final Boolean called[] = new Boolean[]{false};
+        IndexFactory indexFactory = new IndexFactory() {
+            @Override
+            public Index createIndex(String attribute, boolean ordered, Properties properties) {
+                called[0] = true;
+                return new IndexImpl(properties.getProperty("attributeName"), ordered);
+            }
+        };
+        Properties properties = new Properties();
+        properties.setProperty("attributeName", "name");
+        IndexService indexService = new IndexService(indexFactory, properties);
+        indexService.addOrGetIndex("name", true);
+        for (int i = 0; i < 100; i++) {
+            indexService.saveEntryIndex(new QueryEntry(null, toData(i), i, new Employee(i, "name" + i, 42, true, 10.0)));
+        }
+        String name = "name" + (int) Math.floor(100 * Math.random());
+        final Set<QueryableEntry> set = indexService.query(new Predicates.EqualPredicate("name", name));
+        assertTrue(called[0]);
+        assertEquals(1, set.size());
     }
 }

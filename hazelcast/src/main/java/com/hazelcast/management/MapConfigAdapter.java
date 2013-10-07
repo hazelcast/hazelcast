@@ -27,18 +27,22 @@ import java.io.IOException;
 /**
  * @author mdogan 6/11/13
  */
-public class MapConfigAdapter implements DataSerializable {
+public class MapConfigAdapter implements DataSerializable
+{
 
     private MapConfig config;
 
-    public MapConfigAdapter() {
+    public MapConfigAdapter()
+    {
     }
 
-    public MapConfigAdapter(MapConfig mapConfig) {
+    public MapConfigAdapter(MapConfig mapConfig)
+    {
         this.config = mapConfig;
     }
 
-    public void readData(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException
+    {
         config = new MapConfig();
         config.setName(in.readUTF());
         config.setInMemoryFormat(MapConfig.InMemoryFormat.valueOf(in.readUTF()));
@@ -54,7 +58,8 @@ public class MapConfigAdapter implements DataSerializable {
         config.setMergePolicy(in.readUTF());
     }
 
-    public void writeData(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException
+    {
         out.writeUTF(config.getName());
         out.writeUTF(config.getInMemoryFormat().toString());
         out.writeInt(config.getBackupCount());
@@ -69,7 +74,8 @@ public class MapConfigAdapter implements DataSerializable {
         out.writeUTF(config.getMergePolicy());
     }
 
-    public MapConfig getMapConfig() {
+    public MapConfig getMapConfig()
+    {
         return config;
     }
 }
