@@ -241,7 +241,6 @@ public class QueueContainer implements IdentifiedDataSerializable {
                 throw new HazelcastException(e);
             }
         }
-        txMap.put(item.getItemId(), new TxQueueItem(item).setTransactionId(transactionId));
         return item;
     }
 
