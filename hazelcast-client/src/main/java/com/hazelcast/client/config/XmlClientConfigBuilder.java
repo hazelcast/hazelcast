@@ -189,8 +189,8 @@ public class XmlClientConfigBuilder extends AbstractXmlConfigHelper {
                 nearCacheConfig.setMaxIdleSeconds(Integer.parseInt(getTextContent(child)));
             } else if ("eviction-policy".equals(nodeName)){
                 nearCacheConfig.setEvictionPolicy(getTextContent(child));
-            } else if ("in-memory-format".equals(nodeName)){
-                nearCacheConfig.setInMemoryFormat(MapConfig.InMemoryFormat.valueOf(getTextContent(child)));
+            } else if ("storage-format".equals(nodeName)){
+                nearCacheConfig.setStorageFormat(MapConfig.StorageFormat.valueOf(getTextContent(child)));
             } else if ("invalidate-on-change".equals(nodeName)){
                 nearCacheConfig.setInvalidateOnChange(Boolean.parseBoolean(getTextContent(child)));
             }

@@ -14,14 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map;
+package com.hazelcast.storage;
+
+import com.hazelcast.nio.serialization.Data;
 
 /**
- * @author enesakar 1/17/13
+ * Plain storage interface for off-heap, disk etc access.
+ *
+ * Note: Can be extended to allow querying stored items...
+ *
  */
-public class HeapRecordStore extends RecordStoreSupport implements RecordStore {
+public interface Storage<P extends DataRef> {
 
-    public HeapRecordStore(String name, MapService mapService, int partitionId) {
-        super(name, mapService, partitionId);
-    }
+    P put(int hash, Data data);
+
+    Data get(int hash, P ref);
+
+    void remove(int hash, P ref);
+
+    void destroy();
 }

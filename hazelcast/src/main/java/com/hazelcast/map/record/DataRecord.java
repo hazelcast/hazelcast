@@ -16,15 +16,9 @@
 
 package com.hazelcast.map.record;
 
-import com.hazelcast.map.MapDataSerializerHook;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-import java.io.IOException;
-
-public /*final*/ class DataRecord extends AbstractRecord<Data> implements Record<Data>, IdentifiedDataSerializable {
+public /*final*/ class DataRecord extends AbstractRecord<Data> implements Record<Data> {
 
     protected Data value;
 
@@ -42,25 +36,10 @@ public /*final*/ class DataRecord extends AbstractRecord<Data> implements Record
     * */
     @Override
     public long getCost() {
-        long size = 0;
-        // add statistics size if enabled.
-        size += ( statistics == null ? 0 : statistics.size() );
-        // add size of version.
-        size += ( Long.SIZE/Byte.SIZE );
-        // add key size.
-        size += key.totalSize();
-        // add value size.
-        size += ( value == null ? 0 : value.totalSize() );
-        // add size of object reference types as 4 byte references
-        // ps. 4 byte is an approximation
-        // Data object has 2 reference types in it.
-        // And with its own reference,
-        // eventually one Data object has 3 references
-        // DataRecord has 2 Data objects
-        size += 2*(3*(Integer.SIZE/Byte.SIZE));
-        // reference size of RecordStatistics
-        size += Integer.SIZE/Byte.SIZE;
+        long size = super.getCost();
 
+        // add value size.
+        size += 4 + (value == null ? 0 : value.getHeapCost());
         return size;
     }
 
@@ -68,30 +47,11 @@ public /*final*/ class DataRecord extends AbstractRecord<Data> implements Record
         return value;
     }
 
-    public Data setValue(Data o) {
-        Data old = value;
-        this.value = o;
-        return old;
+    public void setValue(Data o) {
+        value = o;
     }
 
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        super.writeData(out);
-        value.writeData(out);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        super.readData(in);
-        value = new Data();
-        value.readData(in);
-    }
-
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
-    }
-
-    public int getId() {
-        return MapDataSerializerHook.DATA_RECORD;
+    public void invalidate() {
+        value = null;
     }
 }

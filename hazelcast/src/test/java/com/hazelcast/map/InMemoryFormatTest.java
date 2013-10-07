@@ -42,8 +42,8 @@ public class InMemoryFormatTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
 
         Config config = new Config();
-        config.addMapConfig(new MapConfig("objectMap").setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT));
-        config.addMapConfig(new MapConfig("binaryMap").setInMemoryFormat(MapConfig.InMemoryFormat.BINARY));
+        config.addMapConfig(new MapConfig("objectMap").setStorageFormat(MapConfig.StorageFormat.OBJECT));
+        config.addMapConfig(new MapConfig("binaryMap").setStorageFormat(MapConfig.StorageFormat.BINARY));
 
         HazelcastInstance hz = factory.newHazelcastInstance(config);
 

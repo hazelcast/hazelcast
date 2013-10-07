@@ -17,13 +17,16 @@
 package com.hazelcast.map.record;
 
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
 
-import java.util.Map;
-
-public interface Record<V> extends DataSerializable, Map.Entry<Data,V> {
+public interface Record<V> {
 
     Data getKey();
+
+    V getValue();
+
+    void setValue(V value);
+
+    void invalidate();
 
     RecordStatistics getStatistics();
 

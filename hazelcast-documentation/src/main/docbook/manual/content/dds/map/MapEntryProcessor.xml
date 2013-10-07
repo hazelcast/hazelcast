@@ -22,7 +22,7 @@
     <para>Starting with version 3.0, Hazelcast supports entry processing. The interface EntryProcessor gives you the ability
         to execute your code on an entry in an atomic way. You do not need any explicit lock on entry.
         Practically, hazelcast locks the entry runs the EntryProcessor, then unlocks the entry.
-        If entry processing is the major operation for a map and the map consists of complex objects then using Object type as in-memory-format
+        If entry processing is the major operation for a map and the map consists of complex objects then using Object type as storage-format
         is recommended to minimize serialization cost.
     </para>
     <para>

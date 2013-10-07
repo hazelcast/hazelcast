@@ -131,6 +131,7 @@ public final class HazelcastInstanceFactory {
     public static void shutdownAll() {
         final List<HazelcastInstanceProxy> instances = new ArrayList<HazelcastInstanceProxy>(INSTANCE_MAP.values());
         INSTANCE_MAP.clear();
+        OutOfMemoryErrorDispatcher.clear();
         ManagementService.shutdownAll();
         Collections.sort(instances, new Comparator<HazelcastInstanceProxy>() {
             public int compare(HazelcastInstanceProxy o1, HazelcastInstanceProxy o2) {

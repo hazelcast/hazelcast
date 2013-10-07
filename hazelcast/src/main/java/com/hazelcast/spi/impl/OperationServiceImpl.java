@@ -462,9 +462,14 @@ final class OperationServiceImpl implements OperationService {
             OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) e);
         }
         op.logError(e);
-        if (node.isActive() && op.returnsResponse() && op.getResponseHandler() != null) {
+        ResponseHandler responseHandler = op.getResponseHandler();
+        if (op.returnsResponse() && responseHandler != null) {
             try {
-                op.getResponseHandler().sendResponse(e);
+                if (node.isActive()) {
+                    responseHandler.sendResponse(e);
+                } else if (responseHandler.isLocal()) {
+                    responseHandler.sendResponse(new HazelcastInstanceNotActiveException());
+                }
             } catch (Throwable t) {
                 logger.warning("While sending op error...", t);
             }

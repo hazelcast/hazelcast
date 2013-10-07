@@ -27,7 +27,7 @@ import java.util.Set;
 
 public interface RecordStore {
 
-    Record createRecord();
+    String getName();
 
     Object remove(Data dataKey);
 
@@ -59,7 +59,13 @@ public interface RecordStore {
 
     boolean merge(Data dataKey, EntryView mergingEntryView, MapMergePolicy mergePolicy);
 
-    Map<Data, Record> getRecords();
+    Record getRecord(Data key);
+
+    void putRecord(Data key, Record record);
+
+    void deleteRecord(Data key);
+
+    Map<Data, Record> getReadonlyRecordMap();
 
     Set<Data> keySet();
 
@@ -114,4 +120,8 @@ public interface RecordStore {
     boolean isLoaded();
 
     void setLoaded(boolean loaded);
+
+    void clear();
+
+    boolean isEmpty();
 }

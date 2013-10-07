@@ -139,6 +139,16 @@ public final class Data implements IdentifiedDataSerializable {
         return total;
     }
 
+    public int getHeapCost() {
+        int total = 0;
+        total += 4; // type
+        total += 4; // cd
+        total += 16; // buffer array ref (12: array header, 4: length)
+        total += bufferSize(); // buffer itself
+        total += 4; // partition-hash
+        return total;
+    }
+
     @Override
     public int hashCode() {
 //        int h = hash;

@@ -16,7 +16,7 @@
   -->
 
 
-<sect2 xml:id="MapInMemoryFormat" version="5.0" xmlns="http://docbook.org/ns/docbook"
+<sect2 xml:id="MapStorageFormat" version="5.0" xmlns="http://docbook.org/ns/docbook"
        xmlns:xi="http://www.w3.org/2001/XInclude"
        xmlns:xlink="http://www.w3.org/1999/xlink"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -24,10 +24,10 @@
         http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
     <title>In Memory Format</title>
     <para>
-        With version 3.0, in-memory-format configuration option has been added to distributed map.
+        With version 3.0, storage-format configuration option has been added to distributed map.
         By default Hazelcast stores data into memory in binary (serialized) format.
         But sometimes it can be efficient to store the entries in their objects form especially in cases of local processing like entry processor and queries.
-        Setting in-memory-format in map's configuration, you can decide how the data will be store in memory.
+        Setting storage-format in map's configuration, you can decide how the data will be store in memory.
         There are three options.
     </para>
     <para>

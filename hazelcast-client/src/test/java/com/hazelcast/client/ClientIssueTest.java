@@ -136,7 +136,7 @@ public class ClientIssueTest {
         final ClientConfig clientConfig = new ClientConfig();
         clientConfig.setSmartRouting(false);
 
-        clientConfig.addNearCacheConfig("map*", new NearCacheConfig().setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT));
+        clientConfig.addNearCacheConfig("map*", new NearCacheConfig().setStorageFormat(MapConfig.StorageFormat.OBJECT));
 
         final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 

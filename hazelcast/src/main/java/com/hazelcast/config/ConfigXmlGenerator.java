@@ -219,7 +219,7 @@ public class ConfigXmlGenerator {
         final Collection<MapConfig> mCfgs = config.getMapConfigs().values();
         for (MapConfig m : mCfgs) {
             xml.append("<map name=\"").append(m.getName()).append("\">");
-            xml.append("<in-memory-format>").append(m.getInMemoryFormat()).append("</in-memory-format>");
+            xml.append("<storage-format>").append(m.getStorageFormat()).append("</storage-format>");
             xml.append("<backup-count>").append(m.getBackupCount()).append("</backup-count>");
             xml.append("<async-backup-count>").append(m.getAsyncBackupCount()).append("</async-backup-count>");
             xml.append("<time-to-live-seconds>").append(m.getTimeToLiveSeconds()).append("</time-to-live-seconds>");
@@ -253,7 +253,7 @@ public class ConfigXmlGenerator {
                 xml.append("<max-idle-seconds>").append(n.getMaxIdleSeconds()).append("</max-idle-seconds>");
                 xml.append("<eviction-policy>").append(n.getEvictionPolicy()).append("</eviction-policy>");
                 xml.append("<invalidate-on-change>").append(n.isInvalidateOnChange()).append("</invalidate-on-change>");
-                xml.append("<in-memory-format>").append(n.getInMemoryFormat()).append("</in-memory-format>");
+                xml.append("<storage-format>").append(n.getStorageFormat()).append("</storage-format>");
                 xml.append("</near-cache>");
             }
             if (m.getWanReplicationRef() != null) {
@@ -310,8 +310,8 @@ public class ConfigXmlGenerator {
 //            if (mm.getPartitionStrategyConfig() != null) {
 //                xml.append("<partition-strategy>");
 //                PartitionStrategyConfig psc = mm.getPartitionStrategyConfig();
-//                if (psc.getPartitionStrategy() != null) {
-//                    xml.append(psc.getPartitionStrategy().getClass().getName());
+//                if (psc.getPartitioningStrategy() != null) {
+//                    xml.append(psc.getPartitioningStrategy().getClass().getName());
 //                } else {
 //                    xml.append(psc.getPartitionStrategyClass());
 //                }

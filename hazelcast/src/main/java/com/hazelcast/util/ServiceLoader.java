@@ -26,7 +26,6 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.*;
-import java.util.logging.Level;
 
 /**
  * @author mdogan 10/2/12
@@ -44,26 +43,26 @@ public class ServiceLoader {
     }
 
     public static <T> Iterator<T> iterator(final Class<T> clazz, final String factoryId, final ClassLoader classLoader) throws Exception {
-        final Set<ServiceDefinition> classDefinitions = parse(factoryId, classLoader);
+        final Set<ServiceDefinition> serviceDefinitions = parse(factoryId, classLoader);
         // If we are in a multi class-loader environment like JEE we need to ask the Hazelcast class-loader for default services
         final ClassLoader systemClassLoader = ServiceLoader.class.getClassLoader();
         if (classLoader != null && systemClassLoader != classLoader) {
             final Set<ServiceDefinition> systemDefinitions = parse(factoryId, systemClassLoader);
-            classDefinitions.addAll(systemDefinitions);
+            serviceDefinitions.addAll(systemDefinitions);
         }
 
         return new Iterator<T>() {
-            final Iterator<ServiceDefinition> classIter = classDefinitions.iterator();
+            final Iterator<ServiceDefinition> iterator = serviceDefinitions.iterator();
 
             public boolean hasNext() {
-                return classIter.hasNext();
+                return iterator.hasNext();
             }
 
             public T next() {
-                final ServiceDefinition classDefinition = classIter.next();
+                final ServiceDefinition definition = iterator.next();
                 try {
-                    String className = classDefinition.className;
-                    ClassLoader classLoader = classDefinition.classLoader;
+                    String className = definition.className;
+                    ClassLoader classLoader = definition.classLoader;
                     return clazz.cast(ClassLoaderUtil.newInstance(classLoader, className));
                 } catch (Exception e) {
                     throw new HazelcastException(e);

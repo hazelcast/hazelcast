@@ -84,6 +84,7 @@ public final class OutOfMemoryErrorDispatcher {
                     Helper.tryShutdown(instance);
                 }
             }
+            System.err.println(oom);
         }
     }
 

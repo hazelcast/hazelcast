@@ -44,7 +44,7 @@ public class ClientNearCache {
     final long timeToLiveMillis;
     final boolean invalidateOnChange;
     final EvictionPolicy evictionPolicy;
-    final MapConfig.InMemoryFormat inMemoryFormat;
+    final MapConfig.StorageFormat storageFormat;
     final String mapName;
     final ClientContext context;
     final AtomicBoolean canCleanUp;
@@ -56,7 +56,7 @@ public class ClientNearCache {
         this.context = context;
         maxSize = nearCacheConfig.getMaxSize();
         maxIdleMillis = nearCacheConfig.getMaxIdleSeconds() * 1000;
-        inMemoryFormat = nearCacheConfig.getInMemoryFormat();
+        storageFormat = nearCacheConfig.getStorageFormat();
         timeToLiveMillis = nearCacheConfig.getTimeToLiveSeconds() * 1000;
         invalidateOnChange = nearCacheConfig.isInvalidateOnChange();
         evictionPolicy = EvictionPolicy.valueOf(nearCacheConfig.getEvictionPolicy());
@@ -78,7 +78,7 @@ public class ClientNearCache {
         if (evictionPolicy != EvictionPolicy.NONE && cache.size() >= maxSize) {
             fireEvictCache();
         }
-        Object value = inMemoryFormat.equals(MapConfig.InMemoryFormat.BINARY) ? context.getSerializationService().toData(object) : object;
+        Object value = storageFormat.equals(MapConfig.StorageFormat.BINARY) ? context.getSerializationService().toData(object) : object;
         cache.put(key, new CacheRecord(key, value));
     }
 
@@ -146,7 +146,7 @@ public class ClientNearCache {
                 cache.remove(key);
                 return null;
             }
-            return inMemoryFormat.equals(MapConfig.InMemoryFormat.BINARY) ? context.getSerializationService().toObject((Data)record.value) : record.value;
+            return storageFormat.equals(MapConfig.StorageFormat.BINARY) ? context.getSerializationService().toObject((Data)record.value) : record.value;
         } else {
             return null;
         }

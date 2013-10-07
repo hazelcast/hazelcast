@@ -200,7 +200,7 @@ public class MapService implements ManagedService, MigrationAwareService,
                     if (!recordMap.containsKey(mapContainer)) {
                         recordMap.put(mapContainer, new ArrayList<Record>());
                     }
-                    recordMap.get(mapContainer).addAll(recordStore.getRecords().values());
+                    recordMap.get(mapContainer).addAll(recordStore.getReadonlyRecordMap().values());
                 }
                 // clear all records either owned or backup
                 recordStore.reset();
@@ -218,7 +218,7 @@ public class MapService implements ManagedService, MigrationAwareService,
             MapMergePolicy mergePolicy = replicationUpdate.getMergePolicy();
             String mapName = replicationUpdate.getMapName();
             MapContainer mapContainer = getMapContainer(mapName);
-            MergeOperation operation = new MergeOperation(mapName, toData(entryView.getKey(), mapContainer.getPartitionStrategy()), entryView, mergePolicy);
+            MergeOperation operation = new MergeOperation(mapName, toData(entryView.getKey(), mapContainer.getPartitioningStrategy()), entryView, mergePolicy);
             try {
                 int partitionId = nodeEngine.getPartitionService().getPartitionId(entryView.getKey());
                 Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId).build();
@@ -333,11 +333,11 @@ public class MapService implements ManagedService, MigrationAwareService,
 
     private void migrateIndex(PartitionMigrationEvent event) {
         final PartitionContainer container = partitionContainers[event.getPartitionId()];
-        for (HeapRecordStore recordStore : container.getMaps().values()) {
-            final MapContainer mapContainer = getMapContainer(recordStore.name);
+        for (RecordStore recordStore : container.getMaps().values()) {
+            final MapContainer mapContainer = getMapContainer(recordStore.getName());
             final IndexService indexService = mapContainer.getIndexService();
             if (indexService.hasIndex()) {
-                for (Record record : recordStore.getRecords().values()) {
+                for (Record record : recordStore.getReadonlyRecordMap().values()) {
                     if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
                         indexService.removeEntryIndex(record.getKey());
                     } else {
@@ -361,8 +361,8 @@ public class MapService implements ManagedService, MigrationAwareService,
     private void clearPartitionData(final int partitionId) {
         final PartitionContainer container = partitionContainers[partitionId];
         if (container != null) {
-            for (HeapRecordStore mapPartition : container.getMaps().values()) {
-                mapPartition.clear(true);
+            for (RecordStore mapPartition : container.getMaps().values()) {
+                mapPartition.clear();
             }
             container.getMaps().clear();
         }
@@ -377,20 +377,8 @@ public class MapService implements ManagedService, MigrationAwareService,
     }
 
     public Record createRecord(String name, Data dataKey, Object value, long ttl, boolean shouldSchedule) {
-        Record record;
         MapContainer mapContainer = getMapContainer(name);
-        final MapConfig.InMemoryFormat inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
-        boolean statisticsEnabled = mapContainer.getMapConfig().isStatisticsEnabled();
-        switch (inMemoryFormat) {
-            case BINARY:
-                record = new DataRecord(dataKey, toData(value), statisticsEnabled);
-                break;
-            case OBJECT:
-                record = new ObjectRecord(dataKey, toObject(value), statisticsEnabled);
-                break;
-            default:
-                throw new IllegalArgumentException("Unrecognized InMemoryFormat: " + inMemoryFormat);
-        }
+        Record record = mapContainer.getRecordFactory().newRecord(dataKey, value);
 
         if (shouldSchedule) {
             if (ttl < 0 && mapContainer.getMapConfig().getTimeToLiveSeconds() > 0) {
@@ -683,15 +671,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         }
 
         MapContainer mapContainer = getMapContainer(mapName);
-        MapConfig.InMemoryFormat inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
-        switch (inMemoryFormat) {
-            case BINARY:
-                return toData(value1).equals(toData(value2));
-            case OBJECT:
-                return toObject(value1).equals(toObject(value2));
-            default:
-                throw new IllegalStateException("Unrecognized InMemoryFormat: " + inMemoryFormat);
-        }
+        return mapContainer.getRecordFactory().equals(value1, value2);
     }
 
     @SuppressWarnings("unchecked")
@@ -762,19 +742,29 @@ public class MapService implements ManagedService, MigrationAwareService,
         private void evictMap(MapContainer mapContainer) {
             MapConfig mapConfig = mapContainer.getMapConfig();
             MapConfig.EvictionPolicy evictionPolicy = mapConfig.getEvictionPolicy();
-            Comparator comparator = null;
+            Comparator<Record> comparator = null;
             if (evictionPolicy == MapConfig.EvictionPolicy.LRU) {
-                comparator = new Comparator<AbstractRecord>() {
-                    public int compare(AbstractRecord o1, AbstractRecord o2) {
-                        return o1.getLastAccessTime().compareTo(o2.getLastAccessTime());
+                comparator = new Comparator<Record>() {
+                    public int compare(Record o1, Record o2) {
+                        RecordStatistics stats1 = o1.getStatistics();
+                        RecordStatistics stats2 = o2.getStatistics();
+                        Long t1 = stats1 != null ? stats1.getLastAccessTime() : -1L;
+                        Long t2 = stats2 != null ? stats2.getLastAccessTime() : -1L;
+                        return t1.compareTo(t2);
                     }
                 };
             } else if (evictionPolicy == MapConfig.EvictionPolicy.LFU) {
-                comparator = new Comparator<AbstractRecord>() {
-                    public int compare(AbstractRecord o1, AbstractRecord o2) {
-                        return o1.getHits().compareTo(o2.getHits());
+                comparator = new Comparator<Record>() {
+                    public int compare(Record o1, Record o2) {
+                        RecordStatistics stats1 = o1.getStatistics();
+                        RecordStatistics stats2 = o2.getStatistics();
+                        Integer h1 = stats1 != null ? stats1.getHits() : -1;
+                        Integer h2 = stats2 != null ? stats2.getHits() : -1;
+                        return h1.compareTo(h2);
                     }
                 };
+            } else {
+                throw new IllegalArgumentException("Illegal eviction policy: " + evictionPolicy);
             }
             final int evictionPercentage = mapConfig.getEvictionPercentage();
             int memberCount = nodeEngine.getClusterService().getMembers().size();
@@ -795,13 +785,13 @@ public class MapService implements ManagedService, MigrationAwareService,
 
         private class EvictRunner implements Runnable {
             final int mod;
-            String mapName;
-            int targetSizePerPartition;
-            Comparator comparator;
-            MaxSizeConfig.MaxSizePolicy maxSizePolicy;
-            int evictionPercentage;
+            final String mapName;
+            final int targetSizePerPartition;
+            final Comparator<Record> comparator;
+            final MaxSizeConfig.MaxSizePolicy maxSizePolicy;
+            final int evictionPercentage;
 
-            private EvictRunner(int mod, MapConfig mapConfig, int targetSizePerPartition, Comparator comparator, int evictionPercentage) {
+            private EvictRunner(int mod, MapConfig mapConfig, int targetSizePerPartition, Comparator<Record> comparator, int evictionPercentage) {
                 this.mod = mod;
                 mapName = mapConfig.getName();
                 this.targetSizePerPartition = targetSizePerPartition;
@@ -811,7 +801,6 @@ public class MapService implements ManagedService, MigrationAwareService,
             }
 
             public void run() {
-                MapContainer mapContainer = getMapContainer(mapName);
                 for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
                     if ((i % ExecutorConfig.DEFAULT_POOL_SIZE) != mod) {
                         continue;
@@ -821,7 +810,7 @@ public class MapService implements ManagedService, MigrationAwareService,
                         final PartitionContainer pc = partitionContainers[i];
                         final RecordStore recordStore = pc.getRecordStore(mapName);
                         TreeSet<Record> sortedRecords = new TreeSet<Record>(comparator);
-                        sortedRecords.addAll(recordStore.getRecords().values());
+                        sortedRecords.addAll(recordStore.getReadonlyRecordMap().values());
                         int evictSize;
                         if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_NODE || maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_PARTITION) {
                             evictSize = Math.max((sortedRecords.size() - targetSizePerPartition), (sortedRecords.size() * evictionPercentage / 100 + 1));
@@ -832,8 +821,8 @@ public class MapService implements ManagedService, MigrationAwareService,
                         if (evictSize == 0)
                             continue;
 
-                        Set<Record> recordSet = new HashSet();
-                        Set<Data> keySet = new HashSet();
+                        Set<Record> recordSet = new HashSet<Record>();
+                        Set<Data> keySet = new HashSet<Data>();
                         Iterator iterator = sortedRecords.iterator();
                         while (iterator.hasNext() && evictSize-- > 0) {
                             Record rec = (Record) iterator.next();
@@ -871,7 +860,7 @@ public class MapService implements ManagedService, MigrationAwareService,
                         if (container == null) {
                             return false;
                         }
-                        int size = container.getRecordStore(mapName).getRecords().size();
+                        int size = container.getRecordStore(mapName).size();
                         if (maxSizePolicy == MaxSizeConfig.MaxSizePolicy.PER_PARTITION) {
                             if (size >= maxSize) {
                                 return true;
@@ -918,7 +907,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         final QueryResult result = new QueryResult();
         PartitionContainer container = getPartitionContainer(partitionId);
         RecordStore recordStore = container.getRecordStore(mapName);
-        Map<Data, Record> records = recordStore.getRecords();
+        Map<Data, Record> records = recordStore.getReadonlyRecordMap();
         SerializationService serializationService = nodeEngine.getSerializationService();
         for (Record record : records.values()) {
             Data key = record.getKey();
@@ -961,7 +950,8 @@ public class MapService implements ManagedService, MigrationAwareService,
                 PartitionContainer partitionContainer = getPartitionContainer(partitionId);
                 RecordStore recordStore = partitionContainer.getRecordStore(mapName);
                 heapCost += recordStore.getHeapCost();
-                Map<Data, Record> records = recordStore.getRecords();
+
+                Map<Data, Record> records = recordStore.getReadonlyRecordMap();
                 for (Record record : records.values()) {
                     RecordStatistics stats = record.getStatistics();
                     // there is map store and the record is dirty (waits to be stored)
@@ -991,7 +981,8 @@ public class MapService implements ManagedService, MigrationAwareService,
                         PartitionContainer partitionContainer = getPartitionContainer(partitionId);
                         RecordStore recordStore = partitionContainer.getRecordStore(mapName);
                         heapCost += recordStore.getHeapCost();
-                        Map<Data, Record> records = recordStore.getRecords();
+
+                        Map<Data, Record> records = recordStore.getReadonlyRecordMap();
                         for (Record record : records.values()) {
                             backupEntryCount++;
                             backupEntryMemoryCost += record.getCost();

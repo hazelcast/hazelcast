@@ -35,6 +35,8 @@ import com.hazelcast.partition.MigrationInfo;
 import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.*;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.storage.DataRef;
+import com.hazelcast.storage.Storage;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.impl.TransactionManagerServiceImpl;
 import com.hazelcast.wan.WanReplicationService;
@@ -333,6 +335,10 @@ public class NodeEngineImpl implements NodeEngine {
 
     public long getClusterTime() {
         return node.getClusterService().getClusterTime();
+    }
+
+    public Storage<DataRef> getOffHeapStorage() {
+        return node.initializer.getOffHeapStorage();
     }
 
     @PrivateApi

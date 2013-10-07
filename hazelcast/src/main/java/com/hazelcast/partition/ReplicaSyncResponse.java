@@ -101,6 +101,10 @@ public class ReplicaSyncResponse extends Operation implements PartitionAwareOper
                 logger.severe(t);
             }
         }
+
+        public boolean isLocal() {
+            return true;
+        }
     }
 
     public void afterRun() throws Exception {

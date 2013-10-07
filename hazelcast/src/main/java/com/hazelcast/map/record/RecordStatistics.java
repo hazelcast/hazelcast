@@ -86,7 +86,7 @@ public class RecordStatistics implements DataSerializable {
         lastStoredTime = Clock.currentTimeMillis();
     }
 
-    public Long getLastAccessTime() {
+    public long getLastAccessTime() {
         return lastAccessTime;
     }
 
@@ -106,9 +106,9 @@ public class RecordStatistics implements DataSerializable {
         this.lastUpdateTime = lastUpdateTime;
     }
 
-    public long size(){
+    public long size() {
         //size of the instance.
-        return 6*(Long.SIZE/Byte.SIZE) + 1*(Integer.SIZE/Byte.SIZE);
+        return 6 * (Long.SIZE / Byte.SIZE) + (Integer.SIZE / Byte.SIZE);
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
@@ -126,7 +126,6 @@ public class RecordStatistics implements DataSerializable {
         lastAccessTime = in.readLong();
         cost = in.readLong();
     }
-
 
 
 }

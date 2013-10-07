@@ -47,7 +47,7 @@ public class TxnSetOperation extends BasePutOperation implements MapTxnOperation
     @Override
     public void run() {
         recordStore.unlock(dataKey, getCallerUuid(), getThreadId());
-        Record record = recordStore.getRecords().get(dataKey);
+        Record record = recordStore.getRecord(dataKey);
         if (record == null || version == record.getVersion()){
             recordStore.set(dataKey, dataValue, ttl);
             shouldBackup = true;

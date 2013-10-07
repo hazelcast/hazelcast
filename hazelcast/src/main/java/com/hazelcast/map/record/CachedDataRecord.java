@@ -16,11 +16,9 @@
 
 package com.hazelcast.map.record;
 
-import com.hazelcast.map.MapDataSerializerHook;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-public final class CachedDataRecord extends DataRecord implements IdentifiedDataSerializable {
+public final class CachedDataRecord extends DataRecord {
 
     private transient volatile Object cachedValue;
 
@@ -31,9 +29,9 @@ public final class CachedDataRecord extends DataRecord implements IdentifiedData
         super(keyData, value, statisticsEnabled);
     }
 
-    public Data setValue(Data o) {
+    public void setValue(Data o) {
         cachedValue = null;
-        return super.setValue(o);
+        super.setValue(o);
     }
 
     public Object getCachedValue() {
@@ -44,11 +42,8 @@ public final class CachedDataRecord extends DataRecord implements IdentifiedData
         this.cachedValue = cachedValue;
     }
 
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
-    }
-
-    public int getId() {
-        return MapDataSerializerHook.CACHED_RECORD;
+    public void invalidate() {
+        super.invalidate();
+        cachedValue = null;
     }
 }

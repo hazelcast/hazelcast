@@ -14,25 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map;
+package com.hazelcast.storage;
 
+public interface DataRef {
 
-/**
- * User: ahmet
- * Date: 08.09.2013
- */
-public final class SizeEstimators {
+    int size();
 
-    private SizeEstimators() {
-    }
-
-    public static SizeEstimator createMapSizeEstimator() {
-        return new MapSizeEstimator();
-    }
-
-    public static SizeEstimator createNearCacheSizeEstimator() {
-        return new NearCacheSizeEstimator();
-    }
-
+    int heapCost();
 }
-

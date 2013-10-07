@@ -21,7 +21,7 @@ public class NearCacheConfig {
     public final static int DEFAULT_MAX_IDLE_SECONDS = 0;
     public final static int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
     public final static String DEFAULT_EVICTION_POLICY = "LRU";
-    public final static MapConfig.InMemoryFormat DEFAULT_MEMORY_FORMAT = MapConfig.InMemoryFormat.BINARY;
+    public final static MapConfig.StorageFormat DEFAULT_MEMORY_FORMAT = MapConfig.StorageFormat.BINARY;
 
     private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
 
@@ -33,17 +33,17 @@ public class NearCacheConfig {
 
     private boolean invalidateOnChange = true;
 
-    private MapConfig.InMemoryFormat inMemoryFormat = DEFAULT_MEMORY_FORMAT;
+    private MapConfig.StorageFormat storageFormat = DEFAULT_MEMORY_FORMAT;
 
     private String name="default";
 
-    public NearCacheConfig(int timeToLiveSeconds, int maxSize, String evictionPolicy, int maxIdleSeconds, boolean invalidateOnChange, MapConfig.InMemoryFormat inMemoryFormat) {
+    public NearCacheConfig(int timeToLiveSeconds, int maxSize, String evictionPolicy, int maxIdleSeconds, boolean invalidateOnChange, MapConfig.StorageFormat storageFormat) {
         this.timeToLiveSeconds = timeToLiveSeconds;
         this.maxSize = maxSize;
         this.evictionPolicy = evictionPolicy;
         this.maxIdleSeconds = maxIdleSeconds;
         this.invalidateOnChange = invalidateOnChange;
-        this.inMemoryFormat = inMemoryFormat;
+        this.storageFormat = storageFormat;
     }
 
     public NearCacheConfig() {
@@ -102,18 +102,18 @@ public class NearCacheConfig {
         return this;
     }
 
-    public MapConfig.InMemoryFormat getInMemoryFormat() {
-        return inMemoryFormat;
+    public MapConfig.StorageFormat getStorageFormat() {
+        return storageFormat;
     }
 
-    public NearCacheConfig setInMemoryFormat(MapConfig.InMemoryFormat inMemoryFormat) {
-        this.inMemoryFormat = inMemoryFormat;
+    public NearCacheConfig setStorageFormat(MapConfig.StorageFormat storageFormat) {
+        this.storageFormat = storageFormat;
         return this;
     }
 
     // this setter is for reflection based configuration building
     public NearCacheConfig setInMemoryFormat(String inMemoryFormat) {
-        this.inMemoryFormat = MapConfig.InMemoryFormat.valueOf(inMemoryFormat);
+        this.storageFormat = MapConfig.StorageFormat.valueOf(inMemoryFormat);
         return this;
     }
 
@@ -126,7 +126,7 @@ public class NearCacheConfig {
         sb.append(", evictionPolicy='").append(evictionPolicy).append('\'');
         sb.append(", maxIdleSeconds=").append(maxIdleSeconds);
         sb.append(", invalidateOnChange=").append(invalidateOnChange);
-        sb.append(", inMemoryFormat=").append(inMemoryFormat);
+        sb.append(", storageFormat=").append(storageFormat);
         sb.append('}');
         return sb.toString();
     }

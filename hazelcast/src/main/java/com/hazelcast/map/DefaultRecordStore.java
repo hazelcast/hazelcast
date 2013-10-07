@@ -21,9 +21,8 @@ import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.operation.PutAllOperation;
-import com.hazelcast.map.record.DataRecord;
-import com.hazelcast.map.record.ObjectRecord;
 import com.hazelcast.map.record.Record;
+import com.hazelcast.map.record.RecordFactory;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.query.impl.IndexService;
@@ -36,31 +35,35 @@ import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
+
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.config.MapConfig.StorageFormat;
+
 /**
  * @author enesakar 1/17/13
  */
-abstract class RecordStoreSupport implements RecordStore {
-    final String name;
-    final int partitionId;
-    final ConcurrentMap<Data, Record> records = new ConcurrentHashMap<Data, Record>(1000);
-    final Set<Data> toBeRemovedKeys = new HashSet<Data>();
-    final MapContainer mapContainer;
-    final MapService mapService;
-    final LockStore lockStore;
+public class DefaultRecordStore implements RecordStore {
+    private final String name;
+    private final int partitionId;
+    private final ConcurrentMap<Data, Record> records = new ConcurrentHashMap<Data, Record>(1000);
+    private final Set<Data> toBeRemovedKeys = new HashSet<Data>();
+    private final MapContainer mapContainer;
+    private final MapService mapService;
+    private final LockStore lockStore;
+    private final RecordFactory recordFactory;
     final SizeEstimator sizeEstimator;
-    private volatile long heapCost;
     final AtomicBoolean loaded = new AtomicBoolean(false);
 
-    public RecordStoreSupport(String name, MapService mapService, int partitionId) {
+    public DefaultRecordStore(String name, MapService mapService, int partitionId) {
         this.name = name;
         this.partitionId = partitionId;
         this.mapService = mapService;
         this.mapContainer = mapService.getMapContainer(name);
+        recordFactory = mapContainer.getRecordFactory();
         NodeEngine nodeEngine = mapService.getNodeEngine();
         final LockService lockService = nodeEngine.getSharedService(LockService.SERVICE_NAME);
         this.lockStore = lockService == null ? null :
@@ -108,6 +111,10 @@ abstract class RecordStoreSupport implements RecordStore {
         }
     }
 
+    public String getName() {
+        return name;
+    }
+
     public void flush() {
         checkIfLoaded();
         Set<Data> keys = new HashSet<Data>();
@@ -152,18 +159,26 @@ abstract class RecordStoreSupport implements RecordStore {
         return mapContainer;
     }
 
-    public Map<Data, Record> getRecords() {
-        return records;
+    public Record getRecord(Data key) {
+        return records.get(key);
     }
 
-    void clear() {
-        clear(false);
+    public void putRecord(Data key, Record record) {
+        records.put(key, record);
     }
 
-    void clear(boolean force) {
-        if (!force) {
-            checkIfLoaded();
+    public void deleteRecord(Data key) {
+        Record record = records.remove(key);
+        if (record != null) {
+            record.invalidate();
         }
+    }
+
+    public Map<Data, Record> getReadonlyRecordMap() {
+        return Collections.unmodifiableMap(records);
+    }
+
+    public void clear() {
         final LockService lockService = mapService.getNodeEngine().getSharedService(LockService.SERVICE_NAME);
         if (lockService != null) {
             lockService.clearLockStore(partitionId, new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
@@ -174,14 +189,44 @@ abstract class RecordStoreSupport implements RecordStore {
                 indexService.removeEntryIndex(key);
             }
         }
-        records.clear();
+        clearRecordsMap(Collections.<Data, Record>emptyMap());
         resetSizeEstimator();
+    }
+
+    private void clearRecordsMap(Map<Data, Record> excludeRecords) {
+        StorageFormat storageFormat = recordFactory.getStorageFormat();
+        switch (storageFormat) {
+            case BINARY:
+            case OBJECT:
+                records.clear();
+                if (excludeRecords != null && !excludeRecords.isEmpty()) {
+                    records.putAll(excludeRecords);
+                }
+                return;
+
+            case OFFHEAP:
+                Iterator<Record> iter = records.values().iterator();
+                while (iter.hasNext()) {
+                    Record record = iter.next();
+                    if (excludeRecords == null || !excludeRecords.containsKey(record.getKey())) {
+                        record.invalidate();
+                        iter.remove();
+                    }
+                }
+                return;
+
+            default:
+                throw new IllegalArgumentException("Unknown storage format: " + storageFormat);
+        }
     }
 
     public int size() {
         checkIfLoaded();
-        int size = records.size();
-        return size;
+        return records.size();
+    }
+
+    public boolean isEmpty() {
+        return records.isEmpty();
     }
 
     public boolean containsValue(Object value) {
@@ -219,10 +264,8 @@ abstract class RecordStoreSupport implements RecordStore {
 
     @Override
     public long getHeapCost() {
-        heapCost = getSizeEstimator().getSize();
-        return heapCost;
+        return getSizeEstimator().getSize();
     }
-
 
     public boolean isLocked(Data dataKey) {
         return lockStore != null && lockStore.isLocked(dataKey);
@@ -302,18 +345,18 @@ abstract class RecordStoreSupport implements RecordStore {
     public void removeAll() {
         checkIfLoaded();
         resetSizeEstimator();
-        final Collection<Data> locks = lockStore != null ? lockStore.getLockedKeys() : Collections.<Data>emptySet();
-        final Map<Data, Record> lockRecords = new HashMap<Data, Record>(locks.size());
-//        keys with locks will be re-inserted
-        for (Data key : locks) {
+        final Collection<Data> lockedKeys = lockStore != null ? lockStore.getLockedKeys() : Collections.<Data>emptySet();
+        final Map<Data, Record> lockedRecords = new HashMap<Data, Record>(lockedKeys.size());
+        // Locked records should not be removed!
+        for (Data key : lockedKeys) {
             Record record = records.get(key);
             if (record != null) {
-                lockRecords.put(key, record);
+                lockedRecords.put(key, record);
                 updateSizeEstimator(calculateRecordSize(record));
             }
         }
         Set<Data> keysToDelete = records.keySet();
-        keysToDelete.removeAll(lockRecords.keySet());
+        keysToDelete.removeAll(lockedRecords.keySet());
 
         final MapStoreWrapper store = mapContainer.getStore();
         Set<Object> keysObject = new HashSet<Object>();
@@ -328,13 +371,12 @@ abstract class RecordStoreSupport implements RecordStore {
             toBeRemovedKeys.clear();
         }
 
-        records.clear();
-        records.putAll(lockRecords);
+        clearRecordsMap(lockedRecords);
     }
 
     public void reset() {
         checkIfLoaded();
-        records.clear();
+        clearRecordsMap(Collections.<Data, Record>emptyMap());
         resetSizeEstimator();
     }
 
@@ -357,9 +399,9 @@ abstract class RecordStoreSupport implements RecordStore {
                 removeIndex(dataKey);
                 mapStoreDelete(record, dataKey);
             }
-            records.remove(dataKey);
             // reduce size
             updateSizeEstimator(-calculateRecordSize(record));
+            deleteRecord(dataKey);
         }
         return oldValue;
     }
@@ -379,7 +421,7 @@ abstract class RecordStoreSupport implements RecordStore {
             flush(dataKey);
             mapService.interceptRemove(name, record.getValue());
             oldValue = record.getValue();
-            records.remove(dataKey);
+            deleteRecord(dataKey);
             // reduce size
             updateSizeEstimator(-calculateRecordSize(record));
             removeIndex(dataKey);
@@ -405,7 +447,7 @@ abstract class RecordStoreSupport implements RecordStore {
             mapService.interceptRemove(name, oldValue);
             removeIndex(dataKey);
             mapStoreDelete(record, dataKey);
-            records.remove(dataKey);
+            deleteRecord(dataKey);
             // reduce size
             updateSizeEstimator(-calculateRecordSize(record));
             removed = true;
@@ -616,7 +658,7 @@ abstract class RecordStoreSupport implements RecordStore {
                     record.getStatistics(), record.getVersion());
             newValue = mergePolicy.merge(name, mergingEntry, existingEntry);
             if (newValue == null) { // existing entry will be removed
-                records.remove(dataKey);
+                deleteRecord(dataKey);
                 removeIndex(dataKey);
                 mapStoreDelete(record, dataKey);
                 // reduce size.
@@ -629,10 +671,7 @@ abstract class RecordStoreSupport implements RecordStore {
             }
             mapStoreWrite(record, dataKey, newValue);
             updateSizeEstimator(-calculateRecordSize(record));
-            if (record instanceof DataRecord)
-                ((DataRecord) record).setValue(mapService.toData(newValue));
-            else if (record instanceof ObjectRecord)
-                ((ObjectRecord) record).setValue(mapService.toObject(newValue));
+            recordFactory.setValue(record, newValue);
             updateSizeEstimator(calculateRecordSize(record));
         }
         saveIndex(record);
@@ -839,10 +878,7 @@ abstract class RecordStoreSupport implements RecordStore {
     private void setRecordValue(Record record, Object value) {
         accessRecord(record);
         record.onUpdate();
-        if (record instanceof DataRecord)
-            ((DataRecord) record).setValue(mapService.toData(value));
-        else if (record instanceof ObjectRecord)
-            ((ObjectRecord) record).setValue(mapService.toObject(value));
+        recordFactory.setValue(record, value);
     }
 
     private class MapLoadAllTask implements Runnable {
@@ -874,6 +910,10 @@ abstract class RecordStoreSupport implements RecordStore {
                         Exception e = (Exception) obj;
                         nodeEngine.getLogger(RecordStore.class).finest(e.getMessage());
                     }
+                }
+
+                public boolean isLocal() {
+                    return true;
                 }
             });
             operation.setPartitionId(partitionId);

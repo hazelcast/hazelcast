@@ -26,7 +26,6 @@ import com.hazelcast.util.ResponseQueueFactory;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
-import java.util.logging.Level;
 
 public final class PartitionIteratingOperation extends AbstractOperation implements IdentifiedDataSerializable {
     private List<Integer> partitions;
@@ -102,6 +101,10 @@ public final class PartitionIteratingOperation extends AbstractOperation impleme
 
         public Object get() throws InterruptedException {
             return b.take();
+        }
+
+        public boolean isLocal() {
+            return true;
         }
     }
 

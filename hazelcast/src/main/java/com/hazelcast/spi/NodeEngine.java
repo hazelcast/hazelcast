@@ -26,6 +26,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.partition.PartitionService;
+import com.hazelcast.storage.DataRef;
+import com.hazelcast.storage.Storage;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.wan.WanReplicationService;
 
@@ -80,4 +82,5 @@ public interface NodeEngine {
 
     <T extends SharedService> T getSharedService(String serviceName);
 
+    Storage<DataRef> getOffHeapStorage();
 }

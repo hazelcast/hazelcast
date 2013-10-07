@@ -14,35 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map;
+package com.hazelcast.map.record;
 
+import com.hazelcast.nio.serialization.Data;
+
+import static com.hazelcast.config.MapConfig.StorageFormat;
 
 /**
- * Created with IntelliJ IDEA.
- * User: ahmet
- * Date: 05.09.2013
- * Time: 14:36
+ * TODO: need a better name than RecordFactory!
+ *
+ * @author mdogan 10/3/13
  */
-public abstract class AbstractSizeEstimator implements SizeEstimator {
+public interface RecordFactory<T> {
 
-    private long _size;
+    Record<T> newRecord(Data key, Object value);
 
-    protected AbstractSizeEstimator() {
-        _size = 0L;
-    }
+    void setValue(Record<T> record, Object value);
 
-    @Override
-    public long getSize() {
-        return _size;
-    }
+    boolean equals(Object value1, Object value2);
 
-    public void add(long size) {
-        _size += size;
-    }
-
-
-    public void reset() {
-        _size = 0;
-    }
-
+    StorageFormat getStorageFormat();
 }

@@ -58,7 +58,7 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         super(nodeEngine, mapService);
         this.name = name;
         this.tx = transaction;
-        this.partitionStrategy = mapService.getMapContainer(name).getPartitionStrategy();
+        this.partitionStrategy = mapService.getMapContainer(name).getPartitioningStrategy();
     }
 
     protected void checkTransactionState() {

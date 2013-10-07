@@ -40,7 +40,7 @@ public class InterceptorTest extends HazelcastTestSupport {
     public void testMapInterceptor() throws InterruptedException {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
-        cfg.getMapConfig("default").setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT);
+        cfg.getMapConfig("default").setStorageFormat(MapConfig.StorageFormat.OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         final IMap<Object, Object> map = instance1.getMap("testMapInterceptor");
@@ -125,7 +125,7 @@ public class InterceptorTest extends HazelcastTestSupport {
     public void testMapInterceptorOnNewMember() throws InterruptedException {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
-        cfg.getMapConfig("default").setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT);
+        cfg.getMapConfig("default").setStorageFormat(MapConfig.StorageFormat.OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         IMap map = instance1.getMap("map");
         for (int i = 0; i < 100; i++) {

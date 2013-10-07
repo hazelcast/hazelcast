@@ -45,7 +45,7 @@
             <xs:element name="max-idle-seconds" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0"/>
             <xs:element name="eviction-policy" type="eviction-policy" minOccurs="0" maxOccurs="1" default="LRU"/>
             <xs:element name="invalidate-on-change" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
-            <xs:element name="in-memory-format" type="in-memory-format" minOccurs="0" maxOccurs="1" default="BINARY"/>
+            <xs:element name="storage-format" type="storage-format" minOccurs="0" maxOccurs="1" default="BINARY"/>
         </xs:sequence>
     </xs:complexType>
     <xs:simpleType name="eviction-policy">
@@ -56,11 +56,12 @@
         </xs:restriction>
     </xs:simpleType>
 
-    <xs:simpleType name="in-memory-format">
+    <xs:simpleType name="storage-format">
         <xs:restriction base="non-space-string">
             <xs:enumeration value="BINARY"/>
             <xs:enumeration value="OBJECT"/>
-            <xs:enumeration value="CACHED"/>
+            <xs:enumeration value="OFFHEAP"/>
+            <!--<xs:enumeration value="DISK"/>-->
         </xs:restriction>
     </xs:simpleType>
 

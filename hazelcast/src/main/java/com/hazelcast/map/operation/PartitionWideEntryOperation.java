@@ -49,7 +49,7 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
         response = new MapEntrySet();
         Map.Entry entry;
         RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
-        Map<Data, Record> records = recordStore.getRecords();
+        Map<Data, Record> records = recordStore.getReadonlyRecordMap();
         for (Map.Entry<Data, Record> recordEntry : records.entrySet()) {
             Data dataKey = recordEntry.getKey();
             Record record = recordEntry.getValue();

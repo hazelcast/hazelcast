@@ -153,7 +153,7 @@
                                     </xs:element>
                                 </xs:sequence>
                                 <xs:attribute name="name" use="required" type="xs:string"/>
-                                <xs:attribute name="in-memory-format" use="optional" type="xs:string" default="BINARY"/>
+                                <xs:attribute name="storage-format" use="optional" type="xs:string" default="BINARY"/>
                                 <xs:attribute name="statistics-enabled" use="optional" type="xs:boolean" default="true"/>
                                 <xs:attribute name="backup-count" use="optional" type="xs:string"/>
                                 <xs:attribute name="async-backup-count" use="optional" type="xs:string"/>
@@ -967,7 +967,7 @@
         <xs:attribute name="max-idle-seconds" use="optional" type="xs:string" default="0"/>
         <xs:attribute name="eviction-policy" use="optional" type="eviction-policy" default="LRU"/>
         <xs:attribute name="invalidate-on-change" use="optional" type="xs:string" default="true"/>
-        <xs:attribute name="in-memory-format" type="in-memory-format" use="optional" default="BINARY"/>
+        <xs:attribute name="storage-format" type="storage-format" use="optional" default="BINARY"/>
     </xs:complexType>
 
     <xs:simpleType name="eviction-policy">
@@ -978,7 +978,7 @@
         </xs:restriction>
     </xs:simpleType>
 
-    <xs:simpleType name="in-memory-format">
+    <xs:simpleType name="storage-format">
         <xs:restriction base="non-space-string">
             <xs:enumeration value="BINARY"/>
             <xs:enumeration value="OBJECT"/>

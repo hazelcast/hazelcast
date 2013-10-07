@@ -38,7 +38,7 @@ public class MapConfig {
     public final static int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
     public final static EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.NONE;
     public final static String DEFAULT_MAP_MERGE_POLICY = PutIfAbsentMapMergePolicy.class.getName();
-    public final static InMemoryFormat DEFAULT_IN_MEMORY_FORMAT = InMemoryFormat.BINARY;
+    public final static StorageFormat DEFAULT_IN_MEMORY_FORMAT = StorageFormat.BINARY;
 
     private String name = null;
 
@@ -62,11 +62,11 @@ public class MapConfig {
 
     private boolean readBackupData = false;
 
-    private boolean optimizeQueries = true;
+    private boolean optimizeQueries = false;
 
     private String mergePolicy = DEFAULT_MAP_MERGE_POLICY;
 
-    private InMemoryFormat inMemoryFormat = DEFAULT_IN_MEMORY_FORMAT;
+    private StorageFormat storageFormat = DEFAULT_IN_MEMORY_FORMAT;
 
     private WanReplicationRef wanReplicationRef;
 
@@ -78,8 +78,8 @@ public class MapConfig {
 
     private PartitionStrategyConfig partitionStrategyConfig;
 
-    public enum InMemoryFormat {
-        BINARY, OBJECT, OFFHEAP, DISK
+    public enum StorageFormat {
+        BINARY, OBJECT, OFFHEAP /*, DISK*/
     }
 
     public enum EvictionPolicy {
@@ -101,7 +101,7 @@ public class MapConfig {
         this.maxIdleSeconds = config.maxIdleSeconds;
         this.maxSizeConfig = config.maxSizeConfig;
         this.evictionPolicy = config.evictionPolicy;
-        this.inMemoryFormat = config.inMemoryFormat;
+        this.storageFormat = config.storageFormat;
         this.mapStoreConfig = config.mapStoreConfig;
         this.nearCacheConfig = config.nearCacheConfig;
         this.readBackupData = config.readBackupData;
@@ -130,8 +130,8 @@ public class MapConfig {
     /**
      * @return data type that will be used for storing records.
      */
-    public InMemoryFormat getInMemoryFormat() {
-        return inMemoryFormat;
+    public StorageFormat getStorageFormat() {
+        return storageFormat;
     }
 
     /**
@@ -141,11 +141,11 @@ public class MapConfig {
      * OBJECT : values will be stored in their object forms
      * CACHED: object form of values will be cached
      *
-     * @param inMemoryFormat the record type to set
-     * @throws IllegalArgumentException if inMemoryFormat is null.
+     * @param storageFormat the record type to set
+     * @throws IllegalArgumentException if storageFormat is null.
      */
-    public MapConfig setInMemoryFormat(InMemoryFormat inMemoryFormat) {
-        this.inMemoryFormat = isNotNull(inMemoryFormat,"inMemoryFormat");
+    public MapConfig setStorageFormat(StorageFormat storageFormat) {
+        this.storageFormat = isNotNull(storageFormat,"storageFormat");
         return this;
     }
 
@@ -414,6 +414,15 @@ public class MapConfig {
         return nearCacheConfig != null;
     }
 
+    public boolean isOptimizeQueries() {
+        return optimizeQueries;
+    }
+
+    public MapConfig setOptimizeQueries(boolean optimizeQueries) {
+        this.optimizeQueries = optimizeQueries;
+        return this;
+    }
+
     public boolean isCompatible(MapConfig other) {
         if (this == other) {
             return true;
@@ -481,7 +490,7 @@ public class MapConfig {
                         this.timeToLiveSeconds == other.timeToLiveSeconds &&
                         this.readBackupData == other.readBackupData &&
                         (this.mergePolicy != null ? this.mergePolicy.equals(other.mergePolicy) : other.mergePolicy == null) &&
-                        (this.inMemoryFormat != null ? this.inMemoryFormat.equals(other.inMemoryFormat) : other.inMemoryFormat == null) &&
+                        (this.storageFormat != null ? this.storageFormat.equals(other.storageFormat) : other.storageFormat == null) &&
                         (this.evictionPolicy != null ? this.evictionPolicy.equals(other.evictionPolicy)
                                 : other.evictionPolicy == null) &&
                         (this.mapStoreConfig != null ? this.mapStoreConfig.equals(other.mapStoreConfig)
@@ -495,7 +504,7 @@ public class MapConfig {
         final StringBuilder sb = new StringBuilder();
         sb.append("MapConfig");
         sb.append("{name='").append(name).append('\'');
-        sb.append(", inMemoryFormat=").append(inMemoryFormat).append('\'');
+        sb.append(", storageFormat=").append(storageFormat).append('\'');
         sb.append(", backupCount=").append(backupCount);
         sb.append(", asyncBackupCount=").append(asyncBackupCount);
         sb.append(", timeToLiveSeconds=").append(timeToLiveSeconds);

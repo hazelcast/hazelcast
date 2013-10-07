@@ -76,7 +76,7 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
                 mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, dataValue);
                 invalidateNearCaches(dataKey);
                 if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
-                    Record record = recordStore.getRecords().get(dataKey);
+                    Record record = recordStore.getRecord(dataKey);
                     SimpleEntryView entryView = new SimpleEntryView(dataKey, mapService.toData(dataValue), record.getStatistics(), record.getVersion());
                     mapService.publishWanReplicationUpdate(name, entryView);
                 }

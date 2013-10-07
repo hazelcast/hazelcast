@@ -41,7 +41,7 @@ public class MapConfigAdapter implements DataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         config = new MapConfig();
         config.setName(in.readUTF());
-        config.setInMemoryFormat(MapConfig.InMemoryFormat.valueOf(in.readUTF()));
+        config.setStorageFormat(MapConfig.StorageFormat.valueOf(in.readUTF()));
         config.setBackupCount(in.readInt());
         config.setAsyncBackupCount(in.readInt());
         config.setEvictionPercentage(in.readInt());
@@ -56,7 +56,7 @@ public class MapConfigAdapter implements DataSerializable {
 
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(config.getName());
-        out.writeUTF(config.getInMemoryFormat().toString());
+        out.writeUTF(config.getStorageFormat().toString());
         out.writeInt(config.getBackupCount());
         out.writeInt(config.getAsyncBackupCount());
         out.writeInt(config.getEvictionPercentage());

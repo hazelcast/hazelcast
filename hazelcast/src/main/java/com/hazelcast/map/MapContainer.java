@@ -24,6 +24,10 @@ import com.hazelcast.core.MapLoaderLifecycleSupport;
 import com.hazelcast.core.MapStoreFactory;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.map.merge.MapMergePolicy;
+import com.hazelcast.map.record.DataRecordFactory;
+import com.hazelcast.map.record.ObjectRecordFactory;
+import com.hazelcast.map.record.OffHeapRecordFactory;
+import com.hazelcast.map.record.RecordFactory;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.impl.IndexService;
@@ -34,14 +38,20 @@ import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 import com.hazelcast.util.scheduler.ScheduleType;
 import com.hazelcast.wan.WanReplicationPublisher;
 
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MapContainer {
 
     private final String name;
     private final MapConfig mapConfig;
+    private final RecordFactory recordFactory;
     private final MapService mapService;
     private final MapStoreWrapper storeWrapper;
     private final List<MapInterceptor> interceptors;
@@ -54,20 +64,35 @@ public class MapContainer {
     private final EntryTaskScheduler mapStoreDeleteScheduler;
     private final WanReplicationPublisher wanReplicationPublisher;
     private final MapMergePolicy wanMergePolicy;
-    private final PartitioningStrategy partitionStrategy;
     private final SizeEstimator nearCacheSizeEstimator;
     private final AtomicBoolean keysLoaded = new AtomicBoolean(false);
     private final Map<Data, Object> initialKeys = new ConcurrentHashMap<Data, Object>();
-
+    private final PartitioningStrategy partitioningStrategy;
 
     public MapContainer(String name, MapConfig mapConfig, MapService mapService) {
         Object store = null;
         this.name = name;
         this.mapConfig = mapConfig;
         this.mapService = mapService;
-        MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
-        NodeEngine nodeEngine = mapService.getNodeEngine();
+        this.partitioningStrategy = createPartitioningStrategy();
 
+        NodeEngine nodeEngine = mapService.getNodeEngine();
+        switch (mapConfig.getStorageFormat()) {
+            case BINARY:
+                recordFactory = new DataRecordFactory(mapConfig, nodeEngine.getSerializationService(), partitioningStrategy);
+                break;
+            case OBJECT:
+                recordFactory = new ObjectRecordFactory(mapConfig, nodeEngine.getSerializationService());
+                break;
+            case OFFHEAP:
+                recordFactory = new OffHeapRecordFactory(mapConfig, nodeEngine.getOffHeapStorage(), nodeEngine.getSerializationService(), partitioningStrategy);
+                break;
+
+            default:
+                throw new IllegalArgumentException("Invalid storage format: " + mapConfig.getStorageFormat());
+        }
+
+        MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
         if (mapStoreConfig != null && mapStoreConfig.isEnabled()) {
             try {
                 MapStoreFactory factory = (MapStoreFactory) mapStoreConfig.getFactoryImplementation();
@@ -126,21 +151,23 @@ public class MapContainer {
         interceptors = new CopyOnWriteArrayList<MapInterceptor>();
         interceptorMap = new ConcurrentHashMap<String, MapInterceptor>();
         nearCacheEnabled = mapConfig.getNearCacheConfig() != null;
+        nearCacheSizeEstimator = SizeEstimators.createNearCacheSizeEstimator();
+    }
 
+    private PartitioningStrategy createPartitioningStrategy() {
         PartitioningStrategy strategy = null;
         PartitionStrategyConfig partitionStrategyConfig = mapConfig.getPartitionStrategyConfig();
         if (partitionStrategyConfig != null) {
             strategy = partitionStrategyConfig.getPartitionStrategy();
             if (strategy == null && partitionStrategyConfig.getPartitionStrategyClass() != null) {
                 try {
-                    strategy = ClassLoaderUtil.newInstance(nodeEngine.getConfigClassLoader(), partitionStrategyConfig.getPartitionStrategyClass());
+                    strategy = ClassLoaderUtil.newInstance(mapService.getNodeEngine().getConfigClassLoader(), partitionStrategyConfig.getPartitionStrategyClass());
                 } catch (Exception e) {
                     throw ExceptionUtil.rethrow(e);
                 }
             }
         }
-        partitionStrategy = strategy;
-        nearCacheSizeEstimator = SizeEstimators.createNearCacheSizeEstimator();
+        return strategy;
     }
 
     public void loadInitialKeys() {
@@ -150,7 +177,7 @@ public class MapContainer {
             return;
         }
         for (Object key : keys) {
-            Data dataKey = mapService.toData(key, partitionStrategy);
+            Data dataKey = mapService.toData(key, partitioningStrategy);
             initialKeys.put(dataKey, key);
         }
         // remove the keys remains more than 20 minutes.
@@ -251,11 +278,19 @@ public class MapContainer {
         return storeWrapper != null && storeWrapper.isEnabled() ? storeWrapper : null;
     }
 
-    public PartitioningStrategy getPartitionStrategy() {
-        return partitionStrategy;
+    public PartitioningStrategy getPartitioningStrategy() {
+        return partitioningStrategy;
     }
 
     public SizeEstimator getNearCacheSizeEstimator(){
         return nearCacheSizeEstimator;
+    }
+
+    public RecordFactory getRecordFactory() {
+        return recordFactory;
+    }
+
+    public MapService getMapService() {
+        return mapService;
     }
 }
