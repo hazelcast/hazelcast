@@ -62,6 +62,22 @@ public class TransactionalQueueProxy<E> extends TransactionalQueueProxySupport i
     }
 
     @Override
+    public E peek() {
+        try {
+            return peek(0, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException ignored) {
+        }
+        return null;
+    }
+
+    @Override
+    public E peek(long timeout, TimeUnit unit) throws InterruptedException {
+        checkTransactionState();
+        Data data = peekInternal(unit.toMillis(timeout));
+        return getNodeEngine().toObject(data);
+    }
+
+    @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("TransactionalQueue{");
         sb.append("name=").append(name);
