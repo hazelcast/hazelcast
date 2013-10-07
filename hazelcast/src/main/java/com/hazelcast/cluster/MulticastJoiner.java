@@ -22,13 +22,13 @@ import com.hazelcast.instance.Node;
 import com.hazelcast.nio.Address;
 import com.hazelcast.nio.Connection;
 import com.hazelcast.util.Clock;
+import com.hazelcast.util.RandomPicker;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 
 public class MulticastJoiner extends AbstractJoiner {
 
@@ -183,7 +183,7 @@ public class MulticastJoiner extends AbstractJoiner {
         try {
             lastDigits = Integer.valueOf(host.substring(host.lastIndexOf(".") + 1));
         } catch (NumberFormatException e) {
-            lastDigits = (int) (512 * Math.random());
+            lastDigits = RandomPicker.getInt(512);
         }
         lastDigits = lastDigits % 100;
         int portDiff = node.getThisAddress().getPort() - networkConfig.getPort();

@@ -43,10 +43,10 @@ public class CloudyUtility {
 
     public static String getQueryString(Map<String, String> attributes) {
         StringBuilder query = new StringBuilder();
-        for (Iterator<String> iterator = attributes.keySet().iterator(); iterator.hasNext(); ) {
-            String key = iterator.next();
-            String value = attributes.get(key);
-            query.append(AwsURLEncoder.urlEncode(key)).append("=").append(AwsURLEncoder.urlEncode(value)).append("&");
+        for (Iterator<Map.Entry<String,String>> iterator = attributes.entrySet().iterator(); iterator.hasNext(); ) {
+            final Map.Entry<String,String> entry = iterator.next();
+            final String value = entry.getValue();
+            query.append(AwsURLEncoder.urlEncode(entry.getKey())).append("=").append(AwsURLEncoder.urlEncode(value)).append("&");
         }
         String result = query.toString();
         if (result != null && !result.equals(""))
