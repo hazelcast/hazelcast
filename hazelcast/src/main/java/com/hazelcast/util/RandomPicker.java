@@ -10,6 +10,8 @@ import java.util.Random;
  */
 public final class RandomPicker {
 
+    private RandomPicker() {}
+
     private static Random randomNumberGenerator;
 
     private static synchronized void initRNG() {
