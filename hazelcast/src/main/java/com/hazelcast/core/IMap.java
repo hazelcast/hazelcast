@@ -16,7 +16,10 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.map.EntryMapper;
 import com.hazelcast.map.EntryProcessor;
+
+import com.hazelcast.map.EntryReducer;
 import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.monitor.LocalMapStats;
 import com.hazelcast.query.Predicate;
@@ -943,4 +946,6 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      */
     Map<K,Object> executeOnEntries(EntryProcessor entryProcessor);
 
+    <KEYIN,VALIN,KEYMAP,VALMAP,KEYRED,VALRED> Map<KEYRED,VALRED> mapReduce(EntryMapper<KEYIN,VALIN,KEYMAP,VALMAP> mapper, EntryReducer<KEYMAP,VALMAP,KEYRED,VALRED> reducer);
+    <KEYIN,VALIN,KEYMAP,VALMAP,KEYRED,VALRED> Map<KEYRED,VALRED> mapReduce(EntryMapper<KEYIN,VALIN,KEYMAP,VALMAP> mapper, EntryReducer<KEYMAP,VALMAP,KEYMAP,VALMAP> combiner, EntryReducer<KEYMAP,VALMAP,KEYRED,VALRED> reducer);
 }

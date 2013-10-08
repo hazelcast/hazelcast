@@ -32,6 +32,7 @@ public interface ExecutionService {
     static final String CLIENT_EXECUTOR = "hz:client";
     static final String QUERY_EXECUTOR = "hz:query";
     static final String IO_EXECUTOR = "hz:io";
+    static final String MAPREDUCE_EXECUTOR= "hz:mapred";
 
     void execute(String name, Runnable command);
 

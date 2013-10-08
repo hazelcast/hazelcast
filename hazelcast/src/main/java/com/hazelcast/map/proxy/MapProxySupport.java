@@ -613,6 +613,67 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         return result;
     }
 
+    public <KEYIN, VALIN, KEYMAP, VALMAP, KEYRED, VALRED> Map<KEYRED, VALRED> mapReduce(
+            EntryMapper<KEYIN, VALIN, KEYMAP, VALMAP> mapper,
+            EntryReducer<KEYMAP, VALMAP, KEYRED, VALRED> reducer) {
+        return mapReduce(mapper, null, reducer);
+    }
+
+    public <KEYIN, VALIN, KEYMAP, VALMAP, KEYRED, VALRED> Map<KEYRED, VALRED> mapReduce(
+            EntryMapper<KEYIN, VALIN, KEYMAP, VALMAP> mapper,
+            EntryReducer<KEYMAP, VALMAP, KEYMAP, VALMAP> combiner,
+            EntryReducer<KEYMAP, VALMAP, KEYRED, VALRED> reducer) {
+        MapReduceOutputImpl<KEYRED,VALRED> result = new MapReduceOutputImpl<KEYRED,VALRED>();
+        Map<KEYMAP,List<VALMAP>> temp = new HashMap<KEYMAP,List<VALMAP>>();
+
+        final NodeEngine nodeEngine = getNodeEngine();
+        OperationService operationService = nodeEngine.getOperationService();
+        Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+        try {
+            List<Future<?>> flist = new ArrayList<Future<?>>();
+            for (MemberImpl member : members) {
+                Invocation invocation = operationService.createInvocationBuilder(SERVICE_NAME, new MapCombineOperation(name, mapper, combiner), member.getAddress()).build();
+                Future<MapEntrySet> future = invocation.invoke();
+                flist.add(future);
+            }
+
+            final MapService service = getService();
+            for (Future<?> future : flist) {
+                MapEntrySet mapCombineResult = (MapEntrySet)future.get();
+
+                long num = 0;
+                long size = 0L;
+                for (Entry<Data, Data> entry : mapCombineResult.getEntrySet()) {
+                    num++;
+                    size += entry.getKey().bufferSize();
+                    size += entry.getValue().bufferSize();
+                }
+                System.out.println("MAP REDUCE RESULTS NUM:  " + num);
+                System.out.println("MAP REDUCE RESULTS SIZE: " + size);
+
+                for (Entry<Data, Data> entry : mapCombineResult.getEntrySet()) {
+                    KEYMAP key = (KEYMAP)service.toObject(entry.getKey());
+                    List<VALMAP> values = (List<VALMAP>)service.toObject(entry.getValue());
+                    List<VALMAP> combineResults = temp.get(key);
+                    if (combineResults == null) {
+                        combineResults = new ArrayList<VALMAP>();
+                        temp.put(key, combineResults);
+                    }
+
+                    combineResults.addAll(values);
+                }
+            }
+
+            for (Map.Entry<KEYMAP,List<VALMAP>> entry : temp.entrySet()) {
+                reducer.process(entry.getKey(), entry.getValue(), result);
+            }
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
+
+        return result.getStorage();
+    }
+
     protected Set queryLocal(final Predicate predicate, final IterationType iterationType, final boolean dataResult) {
         final NodeEngine nodeEngine = getNodeEngine();
         OperationService operationService = nodeEngine.getOperationService();
@@ -750,5 +811,18 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
     public final String getServiceName() {
         return SERVICE_NAME;
+    }
+
+    private static final class MapReduceOutputImpl<K,V> implements MapReduceOutput<K,V> {
+        private final Map<K,V> storage = new HashMap<K,V>();
+
+        @Override
+        public void write(K key, V value) {
+            storage.put(key, value);
+        }
+
+        public Map<K,V> getStorage() {
+            return storage;
+        }
     }
 }

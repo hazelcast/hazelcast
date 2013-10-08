@@ -52,6 +52,7 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
     private final ManagedExecutorServiceMBean clientExecutorMBean;
     private final ManagedExecutorServiceMBean queryExecutorMBean;
     private final ManagedExecutorServiceMBean ioExecutorMBean;
+    private final ManagedExecutorServiceMBean mapredExecutorMBean;
     private final PartitionServiceMBean partitionServiceMBean;
 
     protected InstanceMBean(HazelcastInstanceImpl hazelcastInstance, ManagementService managementService) {
@@ -117,6 +118,10 @@ public class InstanceMBean extends HazelcastMBean<HazelcastInstanceImpl> {
         ioExecutorMBean = new ManagedExecutorServiceMBean(
                 hazelcastInstance, executionService.getExecutor(ExecutionService.IO_EXECUTOR), service);
         register(ioExecutorMBean);
+
+        mapredExecutorMBean = new ManagedExecutorServiceMBean(
+                hazelcastInstance, executionService.getExecutor(ExecutionService.MAPREDUCE_EXECUTOR), service);
+        register(mapredExecutorMBean);
     }
 
     public PartitionServiceMBean getPartitionServiceMBean() {

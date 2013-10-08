@@ -68,6 +68,7 @@ public class MapPortableHook implements PortableHook {
     public static final int DESTROY = 41;
     public static final int TXN_REQUEST = 42;
     public static final int TXN_REQUEST_WITH_SQL_QUERY = 43;
+    public static final int MAPCOMBINE_ON_ALL_KEYS = 44;
 
 
     public int getFactoryId() {
@@ -76,7 +77,7 @@ public class MapPortableHook implements PortableHook {
 
     public PortableFactory createFactory() {
         return new PortableFactory() {
-            final ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[TXN_REQUEST_WITH_SQL_QUERY+1];
+            final ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[MAPCOMBINE_ON_ALL_KEYS+1];
 
             {
                 constructors[GET] = new ConstructorFunction<Integer, Portable>() {
@@ -307,6 +308,11 @@ public class MapPortableHook implements PortableHook {
                     }
                 };
 
+                constructors[MAPCOMBINE_ON_ALL_KEYS] = new ConstructorFunction<Integer, Portable>() {
+                    public Portable createNew(Integer arg) {
+                        return new MapMapCombineOnAllKeysRequest();
+                    }
+                };
 
 
             }
