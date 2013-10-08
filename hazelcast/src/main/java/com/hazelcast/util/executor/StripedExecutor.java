@@ -80,6 +80,10 @@ public final class StripedExecutor implements Executor {
         }
     }
 
+    public boolean isLive() {
+        return live;
+    }
+
     private class Worker implements Executor, Runnable {
 
         private final AtomicBoolean scheduled = new AtomicBoolean(false);

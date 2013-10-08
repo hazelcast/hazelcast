@@ -612,9 +612,7 @@ final class OperationServiceImpl implements OperationService {
     @PrivateApi
     void notifyBackupCall(long callId) {
         final Semaphore lock = backupCalls.get(callId);
-        if (lock == null) {
-            logger.warning("No backup record found for call[" + callId + "]!");
-        } else {
+        if (lock != null) {
             lock.release();
         }
     }
@@ -636,7 +634,7 @@ final class OperationServiceImpl implements OperationService {
     void registerBackupCall(long callId) {
         final Semaphore current = backupCalls.put(callId, new Semaphore(0));
         if (current != null) {
-            logger.warning( "There is already a record for call[" + callId + "]!");
+            logger.warning( "Already registered a backup record for call[" + callId + "]!");
         }
     }
 
