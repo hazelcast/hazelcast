@@ -481,26 +481,26 @@ public interface IPermissionPolicy {
                     </para>
                 </listitem>
 
-                <listitem>
-                    <para>
-                        <emphasis role="bold">Listener Permission</emphasis>
-                    </para>
-                    <para>
-                        <programlisting language="xml"><![CDATA[
-<listener-permission name="name" principal="principal">
-    <endpoints>
-        ...
-    </endpoints>
-</listener-permission>
-]]></programlisting>
-                    </para>
-                    <para>
-                        <emphasis role="bold">Names:</emphasis>
-                        <emphasis role="italic">all, instance,
-                            member
-                        </emphasis>
-                    </para>
-                </listitem>
+                <!--<listitem>-->
+                    <!--<para>-->
+                        <!--<emphasis role="bold">Listener Permission</emphasis>-->
+                    <!--</para>-->
+                    <!--<para>-->
+                        <!--<programlisting language="xml"><![CDATA[-->
+<!--<listener-permission name="name" principal="principal">-->
+    <!--<endpoints>-->
+        <!--...-->
+    <!--</endpoints>-->
+<!--</listener-permission>-->
+<!--]]></programlisting>-->
+                    <!--</para>-->
+                    <!--<para>-->
+                        <!--<emphasis role="bold">Names:</emphasis>-->
+                        <!--<emphasis role="italic">all, instance,-->
+                            <!--member-->
+                        <!--</emphasis>-->
+                    <!--</para>-->
+                <!--</listitem>-->
 
                 <listitem>
                     <para>

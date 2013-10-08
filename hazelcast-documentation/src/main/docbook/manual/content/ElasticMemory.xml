@@ -72,7 +72,7 @@
             <listitem>
                 <para>
                     Configure maps you want them to use Elastic Memory by setting
-                    <literal>StorageType</literal>
+                    <literal>StorageFormat</literal>
                     to<code>OFFHEAP</code>.
                     Default value is<code>HEAP</code>.
                 </para>
@@ -82,26 +82,26 @@
     ...
     <map name="default">
         ...
-        <storage-type>OFFHEAP</storage-type>
+        <storage-format>OFFHEAP</storage-format>
     </map>
 </hazelcast>]]></programlisting>
                 </para>
                 <para>
                     Using Config API:
                     <programlisting language="java"><![CDATA[MapConfig mapConfig = new MapConfig();
-mapConfig.setStorageType(StorageType.OFFHEAP);]]></programlisting>
+mapConfig.setStorageFormat(StorageFormat.OFFHEAP);]]></programlisting>
                 </para>
             </listitem>
         </itemizedlist>
     </para>
 
-    <para>
-        If
-        <literal>NearCache</literal>
-        is defined for a map, all near cached items are also going to be
-        stored on the same off-heap. So off-heap storage is used for both near cache and distributed object
-        storage.
-    </para>
+    <!--<para>-->
+        <!--If-->
+        <!--<literal>NearCache</literal>-->
+        <!--is defined for a map, all near cached items are also going to be-->
+        <!--stored on the same off-heap. So off-heap storage is used for both near cache and distributed object-->
+        <!--storage.-->
+    <!--</para>-->
 
     <para>
         <emphasis role="italic">Also see how to <link xlink:href="#EnterpriseConfig">configure license key</link>.</emphasis>
