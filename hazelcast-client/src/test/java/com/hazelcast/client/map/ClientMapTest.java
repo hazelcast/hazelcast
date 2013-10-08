@@ -19,13 +19,22 @@ package com.hazelcast.client.map;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
+import com.hazelcast.map.EntryMapper;
+import com.hazelcast.map.EntryReducer;
+
+import com.hazelcast.map.MapReduceOutput;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.SerialTest;
+
 import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
@@ -516,6 +525,74 @@ public class ClientMapTest {
         final Set<Map.Entry<String, String>> set1 = map.entrySet(new SqlPredicate("this == value1"));
         assertEquals("key1",set1.iterator().next().getKey());
         assertEquals("value1",set1.iterator().next().getValue());
+    }
+
+    public static final class TestClientMapper implements EntryMapper<Long,String,Character,Long>, Serializable {
+        @Override
+        public void process(Long key, String value, MapReduceOutput<Character,Long> output) {
+            for (int i = 0, e = value.length(); i < e; ++i) {
+                output.write(value.charAt(i), 1L);
+            }
+        }
+    };
+
+    public static final class TestClientCombiner implements EntryReducer<Character,Long,Character,Long>, Serializable {
+        @Override
+        public void process(Character key, Iterable<Long> values, MapReduceOutput<Character,Long> output) {
+            long num = 0L;
+            for (Long value : values) {
+                num += value.longValue();
+            }
+
+            output.write(key, num);
+        }
+    };
+    
+    public static final class TestClientReducer implements EntryReducer<Character,Long,Character,Long>, Serializable {
+        @Override
+        public void process(Character key, Iterable<Long> values, MapReduceOutput<Character,Long> output) {
+            long num = 0L;
+            for (Long value : values) {
+                num += value.longValue();
+            }
+
+            output.write(key, num);
+        }
+    };
+    
+    @Test
+    public void testMapReduce(){
+        EntryMapper mapper = new TestClientMapper();
+        EntryReducer combiner = new TestClientCombiner();
+        EntryReducer reducer = new TestClientReducer();
+
+        map.put(0L, "aaaaa");
+        map.put(1L, "bbbbb");
+        map.put(2L, "ccccc");
+        map.put(3L, "ddddd");
+        map.put(4L, "eeeee");
+        
+        Map<Character,Long> result = map.mapReduce(mapper, combiner, reducer);
+        assertEquals(true, result.containsKey('a'));
+        assertEquals(true, result.containsKey('b'));
+        assertEquals(true, result.containsKey('c'));
+        assertEquals(true, result.containsKey('d'));
+        assertEquals(true, result.containsKey('e'));
+
+        for (Map.Entry<Character,Long> entry : result.entrySet()) {
+            assertEquals(Long.valueOf(5), entry.getValue());
+        }
+        
+        result = map.mapReduce(mapper, null, reducer);
+        assertEquals(true, result.containsKey('a'));
+        assertEquals(true, result.containsKey('b'));
+        assertEquals(true, result.containsKey('c'));
+        assertEquals(true, result.containsKey('d'));
+        assertEquals(true, result.containsKey('e'));
+
+        for (Map.Entry<Character,Long> entry : result.entrySet()) {
+            assertEquals(Long.valueOf(5), entry.getValue());
+        }
     }
 
     private void fillMap(){

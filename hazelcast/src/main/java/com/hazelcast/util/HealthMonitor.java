@@ -138,6 +138,7 @@ public class HealthMonitor extends Thread {
         private final int activeConnectionCount;
         private final int connectionCount;
         private final int ioExecutorQueueSize;
+        private final int mapredExecutorQueueSize;
 
         public HealthMetrics() {
             memoryFree = runtime.freeMemory();
@@ -158,6 +159,7 @@ public class HealthMonitor extends Thread {
             scheduledExecutorQueueSize = executionService.getExecutor(ExecutionService.SCHEDULED_EXECUTOR).queueSize();
             systemExecutorQueueSize = executionService.getExecutor(ExecutionService.SYSTEM_EXECUTOR).queueSize();
             ioExecutorQueueSize = executionService.getExecutor(ExecutionService.IO_EXECUTOR).queueSize();
+            mapredExecutorQueueSize = executionService.getExecutor(ExecutionService.MAPREDUCE_EXECUTOR).queueSize();
              eventQueueSize = eventService.getEventQueueSize();
             operationServiceOperationExecutorQueueSize = operationService.getOperationExecutorQueueSize();
             operationServiceOperationResponseQueueSize = operationService.getResponseQueueSize();
@@ -209,6 +211,7 @@ public class HealthMonitor extends Thread {
             sb.append("executor.q.query.size=").append(queryExecutorQueueSize).append(", ");
             sb.append("executor.q.scheduled.size=").append(scheduledExecutorQueueSize).append(", ");
             sb.append("executor.q.io.size=").append(ioExecutorQueueSize).append(", ");
+            sb.append("executor.q.mapred.size=").append(mapredExecutorQueueSize).append(", ");
             sb.append("executor.q.system.size=").append(systemExecutorQueueSize).append(", ");
             sb.append("executor.q.operation.size=").append(operationServiceOperationExecutorQueueSize).append(", ");
             sb.append("executor.q.response.size=").append(operationServiceOperationResponseQueueSize).append(", ");

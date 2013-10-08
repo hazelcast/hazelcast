@@ -34,6 +34,7 @@ import com.hazelcast.util.QueryResultSet;
 import com.hazelcast.util.ThreadUtil;
 
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -470,6 +471,49 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     public void clear() {
         MapClearRequest request = new MapClearRequest(name);
         invoke(request);
+    }
+
+    public <KEYIN, VALIN, KEYMAP, VALMAP, KEYRED, VALRED> Map<KEYRED, VALRED> mapReduce(
+            EntryMapper<KEYIN, VALIN, KEYMAP, VALMAP> mapper,
+            EntryReducer<KEYMAP, VALMAP, KEYRED, VALRED> reducer) {
+        return mapReduce(mapper, null, reducer);
+    }
+
+    public <KEYIN, VALIN, KEYMAP, VALMAP, KEYRED, VALRED> Map<KEYRED, VALRED> mapReduce(
+            EntryMapper<KEYIN, VALIN, KEYMAP, VALMAP> mapper,
+            EntryReducer<KEYMAP, VALMAP, KEYMAP, VALMAP> combiner,
+            EntryReducer<KEYMAP, VALMAP, KEYRED, VALRED> reducer) {
+        MapMapCombineOnAllKeysRequest request = new MapMapCombineOnAllKeysRequest(name, mapper, combiner);
+        MapEntrySet entrySet = invoke(request);
+
+        Map<KEYMAP,List<VALMAP>> temp = new HashMap<KEYMAP,List<VALMAP>>();
+        for (Entry<Data, Data> dataEntry : entrySet.getEntrySet()) {
+            final Data keyData = dataEntry.getKey();
+            final Data valueData = dataEntry.getValue();
+            KEYMAP key = toObject(keyData);
+            List<VALMAP> values = toObject(valueData);
+            List<VALMAP> combineResults = temp.get(key);
+            if (combineResults == null) {
+                combineResults = new ArrayList<VALMAP>();
+                temp.put(key, combineResults);
+            }
+
+            combineResults.addAll(values);
+        }
+
+        final Map<KEYRED, VALRED> result = new HashMap<KEYRED, VALRED>();
+        MapReduceOutput output = new MapReduceOutput<KEYRED, VALRED>() {
+            @Override
+            public void write(KEYRED key, VALRED value) {
+                result.put(key,value);
+            }
+        };
+        
+        for (Map.Entry<KEYMAP,List<VALMAP>> entry : temp.entrySet()) {
+            reducer.process(entry.getKey(), entry.getValue(), output);
+        }
+
+        return result;
     }
 
     protected void onDestroy() {
