@@ -238,7 +238,9 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
             try {
                 eventExecutor.execute(new LocalEventDispatcher(serviceName, event, reg.listener, orderKey, eventQueueTimeoutMs));
             } catch (RejectedExecutionException e) {
-                logger.warning("EventQueue overloaded! " + event + " failed to publish to " + reg.serviceName + ":" + reg.topic);
+                if (eventExecutor.isLive()) {
+                    logger.warning("EventQueue overloaded! " + event + " failed to publish to " + reg.serviceName + ":" + reg.topic);
+                }
             }
         }
     }
@@ -279,7 +281,9 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
             try {
                 eventExecutor.execute(eventRunnable);
             } catch (RejectedExecutionException e) {
-                logger.warning("EventQueue overloaded! Failed to execute event process: "  + eventRunnable);
+                if (eventExecutor.isLive()) {
+                    logger.warning("EventQueue overloaded! Failed to execute event process: "  + eventRunnable);
+                }
             }
         }
     }
@@ -289,9 +293,11 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
         try {
             eventExecutor.execute(new RemoteEventPacketProcessor(packet));
         } catch (RejectedExecutionException e) {
-            final Connection conn = packet.getConn();
-            String endpoint = conn.getEndPoint() != null ? conn.getEndPoint().toString() : conn.toString();
-            logger.warning("EventQueue overloaded! Failed to process event packet sent from: "  + endpoint);
+            if (eventExecutor.isLive()) {
+                final Connection conn = packet.getConn();
+                String endpoint = conn.getEndPoint() != null ? conn.getEndPoint().toString() : conn.toString();
+                logger.warning("EventQueue overloaded! Failed to process event packet sent from: "  + endpoint);
+            }
         }
     }
 
@@ -424,17 +430,23 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
             final String serviceName = eventPacket.serviceName;
             EventPublishingService<Object, Object> service = nodeEngine.getService(serviceName);
             if (service == null) {
-                logger.warning("There is no service named: " + serviceName);
+                if (nodeEngine.isActive()) {
+                    logger.warning("There is no service named: " + serviceName);
+                }
                 return;
             }
             EventServiceSegment segment = getSegment(serviceName, false);
             if (segment == null) {
-                logger.warning("No service registration found for " + serviceName);
+                if (nodeEngine.isActive()) {
+                    logger.warning("No service registration found for " + serviceName);
+                }
                 return;
             }
             Registration registration = segment.registrationIdMap.get(eventPacket.id);
             if (registration == null) {
-                logger.warning("No registration found for " + serviceName + " / " + eventPacket.id);
+                if (nodeEngine.isActive()) {
+                    logger.warning("No registration found for " + serviceName + " / " + eventPacket.id);
+                }
                 return;
             }
             if (!registration.isLocal()) {
