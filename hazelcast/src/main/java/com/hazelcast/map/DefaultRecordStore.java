@@ -41,7 +41,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.hazelcast.config.MapConfig.StorageFormat;
+import com.hazelcast.config.StorageFormat;
 
 /**
  * @author enesakar 1/17/13
@@ -196,8 +196,8 @@ public class DefaultRecordStore implements RecordStore {
     private void clearRecordsMap(Map<Data, Record> excludeRecords) {
         StorageFormat storageFormat = recordFactory.getStorageFormat();
         switch (storageFormat) {
-            case BINARY:
-            case OBJECT:
+            case HEAP_BINARY:
+            case HEAP_OBJECT:
                 records.clear();
                 if (excludeRecords != null && !excludeRecords.isEmpty()) {
                     records.putAll(excludeRecords);

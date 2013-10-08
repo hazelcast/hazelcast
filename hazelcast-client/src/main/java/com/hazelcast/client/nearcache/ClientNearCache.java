@@ -17,8 +17,8 @@
 package com.hazelcast.client.nearcache;
 
 import com.hazelcast.client.spi.ClientContext;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.StorageFormat;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
@@ -44,7 +44,7 @@ public class ClientNearCache {
     final long timeToLiveMillis;
     final boolean invalidateOnChange;
     final EvictionPolicy evictionPolicy;
-    final MapConfig.StorageFormat storageFormat;
+    final StorageFormat storageFormat;
     final String mapName;
     final ClientContext context;
     final AtomicBoolean canCleanUp;
@@ -78,7 +78,7 @@ public class ClientNearCache {
         if (evictionPolicy != EvictionPolicy.NONE && cache.size() >= maxSize) {
             fireEvictCache();
         }
-        Object value = storageFormat.equals(MapConfig.StorageFormat.BINARY) ? context.getSerializationService().toData(object) : object;
+        Object value = storageFormat.equals(StorageFormat.HEAP_BINARY) ? context.getSerializationService().toData(object) : object;
         cache.put(key, new CacheRecord(key, value));
     }
 
@@ -146,7 +146,7 @@ public class ClientNearCache {
                 cache.remove(key);
                 return null;
             }
-            return storageFormat.equals(MapConfig.StorageFormat.BINARY) ? context.getSerializationService().toObject((Data)record.value) : record.value;
+            return storageFormat.equals(StorageFormat.HEAP_BINARY) ? context.getSerializationService().toObject((Data)record.value) : record.value;
         } else {
             return null;
         }

@@ -17,7 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.StorageFormat;
 import com.hazelcast.core.*;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -41,7 +41,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     public void testMapEntryProcessor() throws InterruptedException {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
-        cfg.getMapConfig("default").setStorageFormat(MapConfig.StorageFormat.OBJECT);
+        cfg.getMapConfig("default").setStorageFormat(StorageFormat.HEAP_OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
@@ -55,7 +55,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     public void testNotExistingEntryProcessor() throws InterruptedException {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
-        cfg.getMapConfig("default").setStorageFormat(MapConfig.StorageFormat.OBJECT);
+        cfg.getMapConfig("default").setStorageFormat(StorageFormat.HEAP_OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
@@ -68,7 +68,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     public void testMapEntryProcessorAllKeys() throws InterruptedException {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
-        cfg.getMapConfig("default").setStorageFormat(MapConfig.StorageFormat.OBJECT);
+        cfg.getMapConfig("default").setStorageFormat(StorageFormat.HEAP_OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
@@ -93,7 +93,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     public void testBackupMapEntryProcessorAllKeys() throws InterruptedException {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         Config cfg = new Config();
-        cfg.getMapConfig("default").setStorageFormat(MapConfig.StorageFormat.OBJECT);
+        cfg.getMapConfig("default").setStorageFormat(StorageFormat.HEAP_OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(cfg);
@@ -119,7 +119,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     public void testBackups() throws InterruptedException {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         Config cfg = new Config();
-        cfg.getMapConfig("default").setStorageFormat(MapConfig.StorageFormat.OBJECT);
+        cfg.getMapConfig("default").setStorageFormat(StorageFormat.HEAP_OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(cfg);
@@ -147,7 +147,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     public void testIssue825MapEntryProcessorDeleteSettingNull() throws InterruptedException {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
-        cfg.getMapConfig("default").setStorageFormat(MapConfig.StorageFormat.OBJECT);
+        cfg.getMapConfig("default").setStorageFormat(StorageFormat.HEAP_OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
@@ -194,7 +194,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     public void testMapEntryProcessorEntryListeners() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         Config cfg = new Config();
-        cfg.getMapConfig("default").setStorageFormat(MapConfig.StorageFormat.OBJECT);
+        cfg.getMapConfig("default").setStorageFormat(StorageFormat.HEAP_OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance3 = nodeFactory.newHazelcastInstance(cfg);
@@ -284,7 +284,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         Config cfg = new Config();
         String map1 = "default";
         String map2 = "default-2";
-        cfg.getMapConfig(map1).setStorageFormat(MapConfig.StorageFormat.OBJECT);
+        cfg.getMapConfig(map1).setStorageFormat(StorageFormat.HEAP_OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         IMap<Integer, Integer> map = instance1.getMap(map1);

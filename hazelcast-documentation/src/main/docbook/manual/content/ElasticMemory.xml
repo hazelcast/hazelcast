@@ -74,7 +74,7 @@
                     Configure maps you want them to use Elastic Memory by setting
                     <literal>StorageFormat</literal>
                     to<code>OFFHEAP</code>.
-                    Default value is<code>HEAP</code>.
+                    Default value is<code>HEAP_BINARY</code>.
                 </para>
                 <para>
                     Using XML configuration:

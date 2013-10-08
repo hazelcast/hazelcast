@@ -17,6 +17,7 @@
 package com.hazelcast.map.record;
 
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.StorageFormat;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
 
@@ -34,8 +35,8 @@ public class ObjectRecordFactory implements RecordFactory<Object> {
     }
 
     @Override
-    public MapConfig.StorageFormat getStorageFormat() {
-        return MapConfig.StorageFormat.OBJECT;
+    public StorageFormat getStorageFormat() {
+        return StorageFormat.HEAP_OBJECT;
     }
 
     @Override

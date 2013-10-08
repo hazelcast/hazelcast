@@ -17,8 +17,8 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.StorageFormat;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.Clock;
@@ -42,7 +42,7 @@ public class NearCache {
     final long timeToLiveMillis;
     final boolean invalidateOnChange;
     final EvictionPolicy evictionPolicy;
-    final MapConfig.StorageFormat storageFormat;
+    final StorageFormat storageFormat;
     final String mapName;
     final MapService mapService;
     final NodeEngine nodeEngine;
@@ -82,7 +82,7 @@ public class NearCache {
         if (evictionPolicy != EvictionPolicy.NONE && cache.size() >= maxSize) {
             fireEvictCache();
         }
-        final Object value = storageFormat.equals(MapConfig.StorageFormat.BINARY) ? data : mapService.toObject(data);
+        final Object value = storageFormat.equals(StorageFormat.HEAP_OBJECT) ? mapService.toObject(data) : data;
         final CacheRecord record = new CacheRecord(key, value);
         cache.put(key, record);
         updateSizeEstimator(calculateCost(record));

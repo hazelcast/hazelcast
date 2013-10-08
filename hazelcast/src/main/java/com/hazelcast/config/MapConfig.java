@@ -38,7 +38,7 @@ public class MapConfig {
     public final static int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
     public final static EvictionPolicy DEFAULT_EVICTION_POLICY = EvictionPolicy.NONE;
     public final static String DEFAULT_MAP_MERGE_POLICY = PutIfAbsentMapMergePolicy.class.getName();
-    public final static StorageFormat DEFAULT_IN_MEMORY_FORMAT = StorageFormat.BINARY;
+    public final static StorageFormat DEFAULT_IN_MEMORY_FORMAT = StorageFormat.HEAP_BINARY;
 
     private String name = null;
 
@@ -77,10 +77,6 @@ public class MapConfig {
     private boolean statisticsEnabled = true;
 
     private PartitionStrategyConfig partitionStrategyConfig;
-
-    public enum StorageFormat {
-        BINARY, OBJECT, OFFHEAP /*, DISK*/
-    }
 
     public enum EvictionPolicy {
         LRU, LFU, NONE
@@ -137,8 +133,8 @@ public class MapConfig {
     /**
      * Data type that will be used for storing records.
      * Possible values:
-     * BINARY (default): keys and values will be stored as binary data
-     * OBJECT : values will be stored in their object forms
+     * HEAP_BINARY (default): keys and values will be stored as binary data
+     * HEAP_OBJECT : values will be stored in their object forms
      * CACHED: object form of values will be cached
      *
      * @param storageFormat the record type to set

@@ -14,24 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.record;
-
-import com.hazelcast.nio.serialization.Data;
-
-import com.hazelcast.config.StorageFormat;
+package com.hazelcast.config;
 
 /**
- * TODO: need a better name than RecordFactory!
+ * Storage format type of values stored in cluster
  *
- * @author mdogan 10/3/13
- */
-public interface RecordFactory<T> {
-
-    Record<T> newRecord(Data key, Object value);
-
-    void setValue(Record<T> record, Object value);
-
-    boolean equals(Object value1, Object value2);
-
-    StorageFormat getStorageFormat();
+* @author mdogan 10/8/13
+*/
+public enum StorageFormat {
+    HEAP_BINARY, HEAP_OBJECT, OFFHEAP /*, DISK*/
 }

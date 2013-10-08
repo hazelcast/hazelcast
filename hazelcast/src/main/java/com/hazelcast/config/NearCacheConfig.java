@@ -21,7 +21,7 @@ public class NearCacheConfig {
     public final static int DEFAULT_MAX_IDLE_SECONDS = 0;
     public final static int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
     public final static String DEFAULT_EVICTION_POLICY = "LRU";
-    public final static MapConfig.StorageFormat DEFAULT_MEMORY_FORMAT = MapConfig.StorageFormat.BINARY;
+    public final static StorageFormat DEFAULT_MEMORY_FORMAT = StorageFormat.HEAP_BINARY;
 
     private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
 
@@ -33,11 +33,11 @@ public class NearCacheConfig {
 
     private boolean invalidateOnChange = true;
 
-    private MapConfig.StorageFormat storageFormat = DEFAULT_MEMORY_FORMAT;
+    private StorageFormat storageFormat = DEFAULT_MEMORY_FORMAT;
 
     private String name="default";
 
-    public NearCacheConfig(int timeToLiveSeconds, int maxSize, String evictionPolicy, int maxIdleSeconds, boolean invalidateOnChange, MapConfig.StorageFormat storageFormat) {
+    public NearCacheConfig(int timeToLiveSeconds, int maxSize, String evictionPolicy, int maxIdleSeconds, boolean invalidateOnChange, StorageFormat storageFormat) {
         this.timeToLiveSeconds = timeToLiveSeconds;
         this.maxSize = maxSize;
         this.evictionPolicy = evictionPolicy;
@@ -102,21 +102,20 @@ public class NearCacheConfig {
         return this;
     }
 
-    public MapConfig.StorageFormat getStorageFormat() {
+    public StorageFormat getStorageFormat() {
         return storageFormat;
     }
 
-    public NearCacheConfig setStorageFormat(MapConfig.StorageFormat storageFormat) {
+    public NearCacheConfig setStorageFormat(StorageFormat storageFormat) {
         this.storageFormat = storageFormat;
         return this;
     }
 
     // this setter is for reflection based configuration building
     public NearCacheConfig setInMemoryFormat(String inMemoryFormat) {
-        this.storageFormat = MapConfig.StorageFormat.valueOf(inMemoryFormat);
+        this.storageFormat = StorageFormat.valueOf(inMemoryFormat);
         return this;
     }
-
 
     @Override
     public String toString() {
