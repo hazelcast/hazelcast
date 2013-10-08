@@ -55,7 +55,8 @@ public final class IsLockedRequest extends AbstractIsLockedRequest implements Re
     }
 
     public Permission getRequiredPermission() {
-        return new LockPermission(key, ActionConstants.ACTION_LOCK);
+        String name = (String) getClientEngine().toObject(key);
+        return new LockPermission(name, ActionConstants.ACTION_LOCK);
     }
 
 }

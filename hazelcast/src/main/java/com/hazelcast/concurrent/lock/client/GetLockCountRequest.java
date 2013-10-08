@@ -84,6 +84,7 @@ public final class GetLockCountRequest extends KeyBasedClientRequest implements 
     }
 
     public Permission getRequiredPermission() {
-        return new LockPermission(key, ActionConstants.ACTION_LOCK);
+        String name = (String) getClientEngine().toObject(key);
+        return new LockPermission(name, ActionConstants.ACTION_LOCK);
     }
 }

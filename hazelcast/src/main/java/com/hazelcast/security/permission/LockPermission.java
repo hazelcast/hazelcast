@@ -7,8 +7,8 @@ public class LockPermission extends InstancePermission {
 	private final static int STATS	 		= 0x8;
 	private final static int ALL 			= CREATE | DESTROY | LOCK | STATS;
 
-	public LockPermission(Object key, String... actions) {
-		super(String.valueOf(key), actions);
+	public LockPermission(String key, String... actions) {
+		super(key, actions);
 	}
 
 	protected int initMask(String[] actions) {
