@@ -34,9 +34,13 @@ import com.hazelcast.util.scheduler.EntryTaskSchedulerFactory;
 import com.hazelcast.util.scheduler.ScheduleType;
 import com.hazelcast.wan.WanReplicationPublisher;
 
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 
 public class MapContainer {
 
@@ -56,7 +60,6 @@ public class MapContainer {
     private final MapMergePolicy wanMergePolicy;
     private final PartitioningStrategy partitionStrategy;
     private final SizeEstimator nearCacheSizeEstimator;
-    private final AtomicBoolean keysLoaded = new AtomicBoolean(false);
     private final Map<Data, Object> initialKeys = new ConcurrentHashMap<Data, Object>();
 
 
@@ -95,10 +98,7 @@ public class MapContainer {
             if (store instanceof MapLoaderLifecycleSupport) {
                 ((MapLoaderLifecycleSupport) store).init(nodeEngine.getHazelcastInstance(), mapStoreConfig.getProperties(), name);
             }
-
-            if (keysLoaded.compareAndSet(false, true)) {
-                loadInitialKeys();
-            }
+            loadInitialKeys();
 
             if (mapStoreConfig.getWriteDelaySeconds() > 0) {
                 mapStoreWriteScheduler = EntryTaskSchedulerFactory.newScheduler(nodeEngine.getExecutionService().getScheduledExecutor(), new MapStoreWriteProcessor(this, mapService), ScheduleType.FOR_EACH);
