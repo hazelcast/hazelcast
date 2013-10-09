@@ -45,7 +45,7 @@ public class ThreadDumpRequest implements ConsoleRequest {
     }
 
     public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
-        String threadDump = (String) mcs.call(target, new ThreadDumpOperation(isDeadlock));
+        String threadDump = (String) mcs.callOnAddress(target, new ThreadDumpOperation(isDeadlock));
         if (threadDump != null) {
             dos.writeBoolean(true);
             writeLongString(dos, threadDump);
