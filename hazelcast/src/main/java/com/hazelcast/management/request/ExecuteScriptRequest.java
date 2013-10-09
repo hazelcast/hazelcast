@@ -82,13 +82,8 @@ public class ExecuteScriptRequest implements ConsoleRequest {
             result = list;
         }
 
-        if (result instanceof Collection) {
-            dos.writeByte(COLLECTION);
-            writeCollection(dos, (Collection) result);
-        } else {
-            dos.writeByte(OTHER);
-            dos.writeObject(result);
-        }
+        dos.writeByte(COLLECTION);
+        writeCollection(dos, (Collection) result);
     }
 
     public Object readResponse(ObjectDataInput in) throws IOException {
