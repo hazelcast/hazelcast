@@ -148,7 +148,7 @@ public class MulticastJoiner extends AbstractJoiner {
         }
     }
 
-    private final int publishInterval = 100;
+    private static final int publishInterval = 100;
 
     private Address findMasterWithMulticast() {
         try {

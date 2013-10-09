@@ -19,6 +19,7 @@ package com.hazelcast.util.scheduler;
 import com.hazelcast.util.Clock;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -235,10 +236,10 @@ final class SecondsBasedEntryTaskScheduler<K, V> implements EntryTaskScheduler<K
             final ConcurrentMap<Object, ScheduledEntry<K, V>> entries = scheduledEntries.remove(second);
             if (entries == null || entries.isEmpty()) return;
             Set<ScheduledEntry<K, V>> values = new HashSet<ScheduledEntry<K, V>>(entries.size());
-            for (Object key : entries.keySet()) {
-                Integer removed = secondsOfKeys.remove(key);
+            for (Map.Entry<Object, ScheduledEntry<K, V>> entry : entries.entrySet()) {
+                Integer removed = secondsOfKeys.remove(entry.getKey());
                 if (removed != null) {
-                    values.add(entries.get(key));
+                    values.add(entry.getValue());
                 }
             }
             entryProcessor.process(SecondsBasedEntryTaskScheduler.this, values);

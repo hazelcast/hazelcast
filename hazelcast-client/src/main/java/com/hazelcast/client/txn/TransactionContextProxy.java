@@ -37,7 +37,7 @@ import java.util.Map;
  */
 public class TransactionContextProxy implements TransactionContext {
 
-    final int CONNECTION_TRY_COUNT = 5;
+    static final int CONNECTION_TRY_COUNT = 5;
     final HazelcastClient client;
     final TransactionProxy transaction;
     final Connection connection;

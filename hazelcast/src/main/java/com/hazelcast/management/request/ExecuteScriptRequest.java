@@ -81,19 +81,13 @@ public class ExecuteScriptRequest implements ConsoleRequest {
             }
             result = list;
         }
-        if (result != null) {
-            if (result instanceof Map) {
-                dos.writeByte(MAP);
-                writeMap(dos, (Map) result);
-            } else if (result instanceof Collection) {
-                dos.writeByte(COLLECTION);
-                writeCollection(dos, (Collection) result);
-            } else {
-                dos.writeByte(OTHER);
-                dos.writeObject(result);
-            }
+
+        if (result instanceof Collection) {
+            dos.writeByte(COLLECTION);
+            writeCollection(dos, (Collection) result);
         } else {
-            dos.writeByte(NULL);
+            dos.writeByte(OTHER);
+            dos.writeObject(result);
         }
     }
 
