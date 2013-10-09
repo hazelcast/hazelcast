@@ -16,6 +16,8 @@
 
 package com.hazelcast.management.request;
 
+import com.hazelcast.core.Member;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.management.operation.ScriptExecutorOperation;
 import com.hazelcast.nio.Address;
@@ -32,7 +34,6 @@ public class ExecuteScriptRequest implements ConsoleRequest {
     private static final byte MAP = 1;
     private static final byte COLLECTION = 2;
     private static final byte OTHER = -1;
-
     private String script;
     private String engine;
     private Set<Address> targets;
@@ -66,15 +67,19 @@ public class ExecuteScriptRequest implements ConsoleRequest {
 
     public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
         Object result = null;
-        ScriptExecutorOperation operation = new ScriptExecutorOperation(engine, script, bindings);
         if (targetAllMembers) {
-            result = mcs.callOnAllMembers(operation);
-        } else if (targets.isEmpty()) {
-            result = NULL;
-        } else if (targets.size() == 1) {
-            result = mcs.call(targets.iterator().next(), operation);
+            final Set<Member> members = mcs.getHazelcastInstance().getCluster().getMembers();
+            final ArrayList list = new ArrayList(members.size());
+            for (Member member : members) {
+                list.add(mcs.callOnMember(member, new ScriptExecutorOperation(engine, script, bindings)));
+            }
+            result = list;
         } else {
-            result = mcs.callOnAddresses(targets, operation);
+            final ArrayList list = new ArrayList(targets.size());
+            for (Address address : targets) {
+                list.add(mcs.callOnAddress(address, new ScriptExecutorOperation(engine, script, bindings)));
+            }
+            result = list;
         }
         if (result != null) {
             if (result instanceof Map) {
