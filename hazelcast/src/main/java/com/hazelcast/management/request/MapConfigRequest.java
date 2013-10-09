@@ -17,6 +17,7 @@
 package com.hazelcast.management.request;
 
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.core.Member;
 import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.management.MapConfigAdapter;
 import com.hazelcast.management.operation.GetMapConfigOperation;
@@ -26,6 +27,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
 import java.io.IOException;
+import java.util.Set;
 
 public class MapConfigRequest implements ConsoleRequest {
 
@@ -67,10 +69,13 @@ public class MapConfigRequest implements ConsoleRequest {
             throws Exception {
         dos.writeBoolean(update);
         if (update) {
-            mcs.callOnAllMembers(new UpdateMapConfigOperation(map, config));
+            final Set<Member> members = mcs.getHazelcastInstance().getCluster().getMembers();
+            for (Member member : members) {
+                mcs.callOnMember(member, new UpdateMapConfigOperation(map, config));
+            }
             dos.writeUTF("success");
         } else {
-            MapConfig cfg = (MapConfig) mcs.call(target, new GetMapConfigOperation(map));
+            MapConfig cfg = (MapConfig) mcs.callOnAddress(target, new GetMapConfigOperation(map));
             if (cfg != null) {
                 dos.writeBoolean(true);
                 new MapConfigAdapter(cfg).writeData(dos);
