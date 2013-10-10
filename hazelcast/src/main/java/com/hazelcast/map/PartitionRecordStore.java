@@ -544,7 +544,7 @@ public class PartitionRecordStore implements RecordStore {
             //check if putting the same value again.
             if (mapService.compare(name, oldValue, value)) {
                 accessRecord(record);
-            }//otherwise this is an update operation.
+            }//otherwise this is a full update operation.
             else {
                 mapStoreWrite(record, dataKey, value);
                 // if key exists before, first reduce size
@@ -579,7 +579,7 @@ public class PartitionRecordStore implements RecordStore {
             if (mapService.compare(name, oldValue, value)) {
                 accessRecord(record);
                 updateTtl(record, ttl);
-            }//otherwise this is an update operation.
+            }//otherwise this is a full update operation.
             else {
                 mapStoreWrite(record, dataKey, value);
                 // if key exists before, first reduce size
