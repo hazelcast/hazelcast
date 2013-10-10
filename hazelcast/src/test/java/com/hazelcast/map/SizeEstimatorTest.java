@@ -17,8 +17,8 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.StorageFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
@@ -64,7 +64,7 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
         final String MAP_NAME = "default";
 
         final Config config = new Config();
-        config.getMapConfig(MAP_NAME).setBackupCount(1).setStorageFormat(MapConfig.StorageFormat.BINARY);
+        config.getMapConfig(MAP_NAME).setBackupCount(1).setStorageFormat(StorageFormat.HEAP_BINARY);
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance h[] = factory.newInstances(config);
         warmUpPartitions(h);
@@ -95,7 +95,7 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
 
         final Config config = new Config();
         final NearCacheConfig nearCacheConfig = new NearCacheConfig();
-        nearCacheConfig.setStorageFormat(MapConfig.StorageFormat.BINARY);
+        nearCacheConfig.setStorageFormat(StorageFormat.HEAP_BINARY);
         config.getMapConfig(NEAR_CACHED_MAP).setNearCacheConfig(nearCacheConfig).setBackupCount(0);
         config.getMapConfig(NO_NEAR_CACHED_MAP).setBackupCount(0);
 
@@ -127,9 +127,9 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
         final String OBJECT_MAP = "testObjectFormat";
         final Config config = new Config();
         config.getMapConfig(BINARY_MAP).
-                setStorageFormat(MapConfig.StorageFormat.BINARY).setBackupCount(0);
+                setStorageFormat(StorageFormat.HEAP_BINARY).setBackupCount(0);
         config.getMapConfig(OBJECT_MAP).
-                setStorageFormat(MapConfig.StorageFormat.OBJECT).setBackupCount(0);
+                setStorageFormat(StorageFormat.HEAP_OBJECT).setBackupCount(0);
 
         final int n = 2;
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);

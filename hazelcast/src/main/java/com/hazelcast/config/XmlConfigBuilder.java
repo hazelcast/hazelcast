@@ -799,7 +799,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             if ("backup-count".equals(nodeName)) {
                 mapConfig.setBackupCount(getIntegerValue("backup-count", value, MapConfig.DEFAULT_BACKUP_COUNT));
             } else if ("storage-format".equals(nodeName)) {
-                mapConfig.setStorageFormat(MapConfig.StorageFormat.valueOf(value));
+                mapConfig.setStorageFormat(StorageFormat.valueOf(value));
             } else if ("async-backup-count".equals(nodeName)) {
                 mapConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value, MapConfig.MIN_BACKUP_COUNT));
             } else if ("eviction-policy".equals(nodeName)) {

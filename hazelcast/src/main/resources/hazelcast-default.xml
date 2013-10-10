@@ -108,11 +108,11 @@
         <!--
            Data type that will be used for storing recordMap.
            Possible values:
-           BINARY (default): keys and values will be stored as binary data
-           OBJECT : values will be stored in their object forms
-           CACHED: object form of values will be cached
+           HEAP_BINARY (default): keys and values will be stored as binary data
+           HEAP_OBJECT : values will be stored in their object forms
+           OFFHEAP : values will be stored in non-heap region of JVM
         -->
-        <storage-format>BINARY</storage-format>
+        <storage-format>HEAP_BINARY</storage-format>
 
         <!--
             Number of backups. If 1 is set as the backup-count for example,

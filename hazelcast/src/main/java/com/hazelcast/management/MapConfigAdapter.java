@@ -18,6 +18,7 @@ package com.hazelcast.management;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizeConfig;
+import com.hazelcast.config.StorageFormat;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -41,7 +42,7 @@ public class MapConfigAdapter implements DataSerializable {
     public void readData(ObjectDataInput in) throws IOException {
         config = new MapConfig();
         config.setName(in.readUTF());
-        config.setStorageFormat(MapConfig.StorageFormat.valueOf(in.readUTF()));
+        config.setStorageFormat(StorageFormat.valueOf(in.readUTF()));
         config.setBackupCount(in.readInt());
         config.setAsyncBackupCount(in.readInt());
         config.setEvictionPercentage(in.readInt());

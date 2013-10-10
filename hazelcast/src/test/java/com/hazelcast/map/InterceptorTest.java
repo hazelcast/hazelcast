@@ -17,7 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.StorageFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -40,7 +40,7 @@ public class InterceptorTest extends HazelcastTestSupport {
     public void testMapInterceptor() throws InterruptedException {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
-        cfg.getMapConfig("default").setStorageFormat(MapConfig.StorageFormat.OBJECT);
+        cfg.getMapConfig("default").setStorageFormat(StorageFormat.HEAP_OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
         final IMap<Object, Object> map = instance1.getMap("testMapInterceptor");
@@ -125,7 +125,7 @@ public class InterceptorTest extends HazelcastTestSupport {
     public void testMapInterceptorOnNewMember() throws InterruptedException {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
-        cfg.getMapConfig("default").setStorageFormat(MapConfig.StorageFormat.OBJECT);
+        cfg.getMapConfig("default").setStorageFormat(StorageFormat.HEAP_OBJECT);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
         IMap map = instance1.getMap("map");
         for (int i = 0; i < 100; i++) {

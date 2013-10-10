@@ -78,10 +78,10 @@ public class MapContainer {
 
         NodeEngine nodeEngine = mapService.getNodeEngine();
         switch (mapConfig.getStorageFormat()) {
-            case BINARY:
+            case HEAP_BINARY:
                 recordFactory = new DataRecordFactory(mapConfig, nodeEngine.getSerializationService(), partitioningStrategy);
                 break;
-            case OBJECT:
+            case HEAP_OBJECT:
                 recordFactory = new ObjectRecordFactory(mapConfig, nodeEngine.getSerializationService());
                 break;
             case OFFHEAP:

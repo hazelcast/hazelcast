@@ -58,8 +58,8 @@
 
     <xs:simpleType name="storage-format">
         <xs:restriction base="non-space-string">
-            <xs:enumeration value="BINARY"/>
-            <xs:enumeration value="OBJECT"/>
+            <xs:enumeration value="HEAP_BINARY"/>
+            <xs:enumeration value="HEAP_OBJECT"/>
             <xs:enumeration value="OFFHEAP"/>
             <!--<xs:enumeration value="DISK"/>-->
         </xs:restriction>

@@ -18,6 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.StorageFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
@@ -42,8 +43,8 @@ public class InMemoryFormatTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
 
         Config config = new Config();
-        config.addMapConfig(new MapConfig("objectMap").setStorageFormat(MapConfig.StorageFormat.OBJECT));
-        config.addMapConfig(new MapConfig("binaryMap").setStorageFormat(MapConfig.StorageFormat.BINARY));
+        config.addMapConfig(new MapConfig("objectMap").setStorageFormat(StorageFormat.HEAP_OBJECT));
+        config.addMapConfig(new MapConfig("binaryMap").setStorageFormat(StorageFormat.HEAP_BINARY));
 
         HazelcastInstance hz = factory.newHazelcastInstance(config);
 
