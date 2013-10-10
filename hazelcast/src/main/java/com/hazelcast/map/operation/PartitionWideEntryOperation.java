@@ -37,7 +37,6 @@ import java.util.Map;
 public class PartitionWideEntryOperation extends AbstractMapOperation implements BackupAwareOperation, PartitionAwareOperation {
 
     private static final EntryEventType __NO_NEED_TO_FIRE_EVENT = null;
-    private transient EntryEventType eventType;
     EntryProcessor entryProcessor;
     MapEntrySet response;
 
@@ -66,6 +65,7 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
                 dataValue = mapService.toData(result);
                 response.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(dataKey, dataValue));
 
+                EntryEventType eventType = null;
                 if (valueAfterProcess == null) {
                     recordStore.remove(dataKey);
                     eventType = EntryEventType.REMOVED;
