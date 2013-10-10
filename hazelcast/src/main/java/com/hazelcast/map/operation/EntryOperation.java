@@ -32,12 +32,19 @@ import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.Map;
 
+/**
+ *
+ * GOTCHA : This operation does not use map store data for now. Only uses data already in memory.
+ *
+ * */
 public class EntryOperation extends LockAwareOperation implements BackupAwareOperation {
 
+    private static final EntryEventType __NO_NEED_TO_FIRE_EVENT = null;
     private EntryProcessor entryProcessor;
     private transient EntryEventType eventType;
     private transient Object response;
     protected transient Data dataOldValue;
+
 
     public EntryOperation(String name, Data dataKey, EntryProcessor entryProcessor) {
         super(name, dataKey);
@@ -56,14 +63,26 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     public void run() {
         Map.Entry<Data, Data> mapEntry = recordStore.getMapEntryData(dataKey);
         dataOldValue = mapEntry.getValue();
-        Map.Entry entry = new AbstractMap.SimpleEntry(mapService.toObject(dataKey), mapService.toObject(mapEntry.getValue()));
+        final Object valueBeforeProcess = mapService.toObject(dataOldValue);
+        final Map.Entry entry = new AbstractMap.SimpleEntry(mapService.toObject(dataKey), valueBeforeProcess);
         response = mapService.toData(entryProcessor.process(entry));
-        if (entry.getValue() == null) {
+        final Object valueAfterProcess = entry.getValue();
+
+        // no matching data by key.
+        if( dataOldValue == null && valueAfterProcess == null ){
+            eventType = __NO_NEED_TO_FIRE_EVENT;
+        }
+        else if (valueAfterProcess == null) {
             recordStore.remove(dataKey);
             eventType = EntryEventType.REMOVED;
         } else {
-            if (mapEntry.getValue() == null) {
+            if (dataOldValue == null) {
                 eventType = EntryEventType.ADDED;
+            }
+            // take this case as a read so no need to fire an event.
+            // no event fired when putting the same value again.
+            else if (mapService.compare(recordStore.getMapContainer().getName(), valueBeforeProcess, valueAfterProcess)) {
+                eventType = __NO_NEED_TO_FIRE_EVENT;
             } else {
                 eventType = EntryEventType.UPDATED;
             }
@@ -74,6 +93,9 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
 
     public void afterRun() throws Exception {
         super.afterRun();
+        if (eventType == __NO_NEED_TO_FIRE_EVENT) {
+            return;
+        }
         mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, dataValue);
         invalidateNearCaches();
         if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
