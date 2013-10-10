@@ -24,13 +24,13 @@ import com.hazelcast.nio.serialization.Data;
  * Note: Can be extended to allow querying stored items...
  *
  */
-public interface Storage<P extends DataRef> {
+public interface Storage<REF extends DataRef> {
 
-    P put(int hash, Data data);
+    REF put(int hash, Data data);
 
-    Data get(int hash, P ref);
+    Data get(int hash, REF ref);
 
-    void remove(int hash, P ref);
+    void remove(int hash, REF ref);
 
     void destroy();
 }

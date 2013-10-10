@@ -67,5 +67,6 @@ public class OffHeapRecord extends AbstractRecord<Data> {
         if (valueRef != null && valueRef.size() > 0) {
             storage.remove(key.getPartitionHash(), valueRef);
         }
+        valueRef = null;
     }
 }

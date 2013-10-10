@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.serialization;
+package com.hazelcast.nio;
 
+import com.hazelcast.core.HazelcastException;
 import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
@@ -34,25 +35,25 @@ import java.lang.reflect.Field;
  *
  * @author mdogan 6/14/13
  */
-final class UnsafeHelper {
+public final class UnsafeHelper {
 
-    static final Unsafe UNSAFE;
+    public static final Unsafe UNSAFE;
 
-    static final long BYTE_ARRAY_BASE_OFFSET;
-    static final long SHORT_ARRAY_BASE_OFFSET;
-    static final long CHAR_ARRAY_BASE_OFFSET;
-    static final long INT_ARRAY_BASE_OFFSET;
-    static final long FLOAT_ARRAY_BASE_OFFSET;
-    static final long LONG_ARRAY_BASE_OFFSET;
-    static final long DOUBLE_ARRAY_BASE_OFFSET;
+    public static final long BYTE_ARRAY_BASE_OFFSET;
+    public static final long SHORT_ARRAY_BASE_OFFSET;
+    public static final long CHAR_ARRAY_BASE_OFFSET;
+    public static final long INT_ARRAY_BASE_OFFSET;
+    public static final long FLOAT_ARRAY_BASE_OFFSET;
+    public static final long LONG_ARRAY_BASE_OFFSET;
+    public static final long DOUBLE_ARRAY_BASE_OFFSET;
 
-    static final int BYTE_ARRAY_INDEX_SCALE;
-    static final int SHORT_ARRAY_INDEX_SCALE;
-    static final int CHAR_ARRAY_INDEX_SCALE;
-    static final int INT_ARRAY_INDEX_SCALE;
-    static final int FLOAT_ARRAY_INDEX_SCALE;
-    static final int LONG_ARRAY_INDEX_SCALE;
-    static final int DOUBLE_ARRAY_INDEX_SCALE;
+    public static final int BYTE_ARRAY_INDEX_SCALE;
+    public static final int SHORT_ARRAY_INDEX_SCALE;
+    public static final int CHAR_ARRAY_INDEX_SCALE;
+    public static final int INT_ARRAY_INDEX_SCALE;
+    public static final int FLOAT_ARRAY_INDEX_SCALE;
+    public static final int LONG_ARRAY_INDEX_SCALE;
+    public static final int DOUBLE_ARRAY_INDEX_SCALE;
 
     static {
         try {
@@ -88,7 +89,7 @@ final class UnsafeHelper {
 
             UNSAFE = unsafe;
         } catch (Throwable e) {
-            throw new HazelcastSerializationException(e);
+            throw new HazelcastException(e);
         }
     }
 }
