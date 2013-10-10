@@ -116,11 +116,10 @@ public class CollectionAddListenerRequest extends CallableClientRequest implemen
     }
 
     public Permission getRequiredPermission() {
-        final String action = ActionConstants.ACTION_LISTEN;
         if (ListService.SERVICE_NAME.equals(serviceName)){
-            return new ListPermission(name, action);
+            return new ListPermission(name, ActionConstants.ACTION_LISTEN);
         } else if (SetService.SERVICE_NAME.equals(serviceName)){
-            return new SetPermission(name, action);
+            return new SetPermission(name, ActionConstants.ACTION_LISTEN);
         }
         throw new IllegalArgumentException("No service matched!!!");
     }

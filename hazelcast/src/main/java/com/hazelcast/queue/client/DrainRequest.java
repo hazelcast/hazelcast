@@ -73,6 +73,6 @@ public class DrainRequest extends QueueRequest {
     }
 
     public Permission getRequiredPermission() {
-        return new QueuePermission(name, ActionConstants.ACTION_POLL);
+        return new QueuePermission(name, ActionConstants.ACTION_REMOVE);
     }
 }

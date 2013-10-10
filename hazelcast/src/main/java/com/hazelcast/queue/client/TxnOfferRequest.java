@@ -90,6 +90,6 @@ public class TxnOfferRequest extends CallableClientRequest implements Portable, 
     }
 
     public Permission getRequiredPermission() {
-        return new QueuePermission(name, ActionConstants.ACTION_OFFER);
+        return new QueuePermission(name, ActionConstants.ACTION_ADD);
     }
 }

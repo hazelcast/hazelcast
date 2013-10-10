@@ -45,6 +45,6 @@ public class DrainRequest extends SemaphoreRequest {
     }
 
     public Permission getRequiredPermission() {
-        return new SemaphorePermission(name, ActionConstants.ACTION_DRAIN);
+        return new SemaphorePermission(name, ActionConstants.ACTION_ACQUIRE);
     }
 }

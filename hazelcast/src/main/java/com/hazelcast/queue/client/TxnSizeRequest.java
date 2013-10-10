@@ -74,6 +74,6 @@ public class TxnSizeRequest extends CallableClientRequest implements Portable, S
     }
 
     public Permission getRequiredPermission() {
-        return new QueuePermission(name, ActionConstants.ACTION_GET);
+        return new QueuePermission(name, ActionConstants.ACTION_READ);
     }
 }

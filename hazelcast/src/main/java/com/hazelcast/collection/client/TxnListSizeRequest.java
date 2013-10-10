@@ -48,6 +48,6 @@ public class TxnListSizeRequest extends TxnCollectionRequest {
     }
 
     public Permission getRequiredPermission() {
-        return new ListPermission(name, ActionConstants.ACTION_GET);
+        return new ListPermission(name, ActionConstants.ACTION_READ);
     }
 }

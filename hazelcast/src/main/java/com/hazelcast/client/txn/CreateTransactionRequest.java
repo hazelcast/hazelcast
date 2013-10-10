@@ -19,19 +19,22 @@ package com.hazelcast.client.txn;
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
 import com.hazelcast.client.ClientEngineImpl;
+import com.hazelcast.client.SecureRequest;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.TransactionPermission;
 import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionManagerService;
 import com.hazelcast.transaction.TransactionOptions;
 
 import java.io.IOException;
+import java.security.Permission;
 
 /**
  * @author ali 6/6/13
  */
-public class CreateTransactionRequest extends CallableClientRequest implements Portable {
+public class CreateTransactionRequest extends CallableClientRequest implements Portable, SecureRequest {
 
     TransactionOptions options;
 
@@ -71,5 +74,9 @@ public class CreateTransactionRequest extends CallableClientRequest implements P
     public void readPortable(PortableReader reader) throws IOException {
         options = new TransactionOptions();
         options.readData(reader.getRawDataInput());
+    }
+
+    public Permission getRequiredPermission() {
+        return new TransactionPermission();
     }
 }

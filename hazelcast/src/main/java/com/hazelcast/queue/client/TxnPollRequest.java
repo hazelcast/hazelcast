@@ -84,6 +84,6 @@ public class TxnPollRequest extends CallableClientRequest implements Portable, I
     }
 
     public Permission getRequiredPermission() {
-        return new QueuePermission(name, ActionConstants.ACTION_POLL);
+        return new QueuePermission(name, ActionConstants.ACTION_REMOVE);
     }
 }

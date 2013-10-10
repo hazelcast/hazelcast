@@ -209,7 +209,7 @@ public abstract class AbstractTxnMapRequest extends CallableClientRequest implem
     }
 
     public Permission getRequiredPermission() {
-        String action = ActionConstants.ACTION_GET;
+        String action = ActionConstants.ACTION_READ;
         switch (requestType) {
             case PUT:
             case PUT_IF_ABSENT:

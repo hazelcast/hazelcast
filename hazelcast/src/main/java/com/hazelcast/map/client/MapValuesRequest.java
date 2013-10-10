@@ -85,6 +85,6 @@ public class MapValuesRequest extends AllPartitionsClientRequest implements Port
     }
 
     public Permission getRequiredPermission() {
-        return new MapPermission(name, ActionConstants.ACTION_GET);
+        return new MapPermission(name, ActionConstants.ACTION_READ);
     }
 }

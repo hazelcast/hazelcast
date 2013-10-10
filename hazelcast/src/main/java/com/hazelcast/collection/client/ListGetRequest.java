@@ -59,6 +59,6 @@ public class ListGetRequest extends CollectionRequest{
     }
 
     public String getRequiredAction() {
-        return ActionConstants.ACTION_GET;
+        return ActionConstants.ACTION_READ;
     }
 }

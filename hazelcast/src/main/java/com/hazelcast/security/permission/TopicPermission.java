@@ -4,8 +4,7 @@ public class TopicPermission extends InstancePermission {
 	
 	private final static int PUBLISH 		= 0x4;
 	private final static int LISTEN 		= 0x8;
-	private final static int STATS	 		= 0x16;
-	private final static int ALL 			= CREATE | DESTROY | LISTEN | PUBLISH | STATS;
+	private final static int ALL 			= CREATE | DESTROY | LISTEN | PUBLISH ;
 
 	public TopicPermission(String name, String... actions) {
 		super(name, actions);
@@ -26,8 +25,6 @@ public class TopicPermission extends InstancePermission {
 				mask |= DESTROY;
 			} else if(ActionConstants.ACTION_LISTEN.equals(actions[i])) {
 				mask |= LISTEN;
-			} else if(ActionConstants.ACTION_STATISTICS.equals(actions[i])) {
-				mask |= STATS;
 			}
 		}
 		return mask;

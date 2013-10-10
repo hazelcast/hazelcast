@@ -66,6 +66,6 @@ public class ListSetRequest extends CollectionRequest {
     }
 
     public String getRequiredAction() {
-        return ActionConstants.ACTION_SET;
+        return ActionConstants.ACTION_READ;
     }
 }

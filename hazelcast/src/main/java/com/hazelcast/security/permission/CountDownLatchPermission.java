@@ -3,11 +3,9 @@ package com.hazelcast.security.permission;
 
 public class CountDownLatchPermission extends InstancePermission {
 	
-	private final static int COUNTDOWN 		= 0x4;
-	private final static int SET	 		= 0x8;
-	private final static int GET	 		= 0x16;
-    private final static int STATS	 		= 0x32;
-	private final static int ALL 			= CREATE | DESTROY | COUNTDOWN | STATS | SET | GET;
+	private final static int READ 		= 0x4;
+	private final static int MODIFY	 		= 0x8;
+	private final static int ALL 			= CREATE | DESTROY | READ | MODIFY;
 
 	public CountDownLatchPermission(String name, String... actions) {
 		super(name, actions);
@@ -24,14 +22,10 @@ public class CountDownLatchPermission extends InstancePermission {
 				mask |= CREATE;
 			} else if(ActionConstants.ACTION_DESTROY.equals(actions[i])) {
 				mask |= DESTROY;
-			} else if(ActionConstants.ACTION_COUNTDOWN.equals(actions[i])) {
-				mask |= COUNTDOWN;
-			} else if(ActionConstants.ACTION_GET.equals(actions[i])) {
-                mask |= GET;
-            } else if(ActionConstants.ACTION_STATISTICS.equals(actions[i])) {
-				mask |= STATS;
-			} else if(ActionConstants.ACTION_SET.equals(actions[i])) {
-				mask |= SET;
+			} else if(ActionConstants.ACTION_READ.equals(actions[i])) {
+				mask |= READ;
+			} else if(ActionConstants.ACTION_MODIFY.equals(actions[i])) {
+                mask |= MODIFY;
 			}
 		}
 		return mask;

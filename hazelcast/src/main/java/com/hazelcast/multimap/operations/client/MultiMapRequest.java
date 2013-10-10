@@ -68,6 +68,6 @@ public abstract class MultiMapRequest extends PartitionClientRequest implements 
     }
 
     public Permission getRequiredPermission() {
-        return new MultiMapPermission(name, ActionConstants.ACTION_GET);
+        return new MultiMapPermission(name, ActionConstants.ACTION_READ);
     }
 }

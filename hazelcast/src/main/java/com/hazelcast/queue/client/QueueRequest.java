@@ -84,6 +84,6 @@ public abstract class QueueRequest extends PartitionClientRequest implements Por
     }
 
     public Permission getRequiredPermission() {
-        return new QueuePermission(name, ActionConstants.ACTION_GET);
+        return new QueuePermission(name, ActionConstants.ACTION_READ);
     }
 }

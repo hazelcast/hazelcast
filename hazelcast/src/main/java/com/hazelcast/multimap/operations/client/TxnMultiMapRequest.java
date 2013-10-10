@@ -70,6 +70,6 @@ public abstract class TxnMultiMapRequest extends CallableClientRequest implement
     }
 
     public Permission getRequiredPermission() {
-        return new MultiMapPermission(name, ActionConstants.ACTION_GET);
+        return new MultiMapPermission(name, ActionConstants.ACTION_READ);
     }
 }

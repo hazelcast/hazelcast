@@ -3,9 +3,7 @@ package com.hazelcast.security.permission;
 
 public class ExecutorServicePermission extends InstancePermission {
 	
-	private final static int EXECUTE 		= 0x4;
-	
-	private final static int ALL 			= CREATE | DESTROY | EXECUTE;
+	private final static int ALL 			= CREATE | DESTROY ;
 
 	public ExecutorServicePermission(String name, String... actions) {
 		super(name, actions);
@@ -20,8 +18,6 @@ public class ExecutorServicePermission extends InstancePermission {
 			
 			if(ActionConstants.ACTION_CREATE.equals(actions[i])) {
 				mask |= CREATE;
-			} else if(ActionConstants.ACTION_EXECUTE.equals(actions[i])) {
-				mask |= EXECUTE;
 			} else if(ActionConstants.ACTION_DESTROY.equals(actions[i])) {
 				mask |= DESTROY;
 			}

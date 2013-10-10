@@ -81,7 +81,7 @@ public final class GetRemainingLeaseRequest extends KeyBasedClientRequest implem
 
     public Permission getRequiredPermission() {
         String name = (String) getClientEngine().toObject(key);
-        return new LockPermission(name, ActionConstants.ACTION_LOCK);
+        return new LockPermission(name, ActionConstants.ACTION_READ);
     }
 
 }

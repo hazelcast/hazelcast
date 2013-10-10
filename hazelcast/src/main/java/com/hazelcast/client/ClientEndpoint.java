@@ -73,7 +73,7 @@ public final class ClientEndpoint implements Client {
         this.loginContext = loginContext;
     }
 
-    Subject getSubject() {
+    public Subject getSubject() {
         return loginContext != null ? loginContext.getSubject() : null;
     }
 

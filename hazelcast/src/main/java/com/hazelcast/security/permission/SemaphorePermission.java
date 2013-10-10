@@ -5,11 +5,9 @@ public class SemaphorePermission extends InstancePermission {
 	
 	private final static int ACQUIRE 		= 0x4;
 	private final static int RELEASE 		= 0x8;
-	private final static int DRAIN 			= 0x16;
-	private final static int STATS	 		= 0x32;
-    private final static int GET	 		= 0x64;
+    private final static int READ	 		= 0x16;
 	
-	private final static int ALL 			= CREATE | DESTROY | ACQUIRE | RELEASE | DRAIN | STATS | GET;
+	private final static int ALL 			= CREATE | DESTROY | ACQUIRE | RELEASE | READ;
 
 	public SemaphorePermission(String name, String... actions) {
 		super(name, actions);
@@ -30,12 +28,8 @@ public class SemaphorePermission extends InstancePermission {
 				mask |= RELEASE;
 			} else if(ActionConstants.ACTION_DESTROY.equals(actions[i])) {
 				mask |= DESTROY;
-			} else if(ActionConstants.ACTION_DRAIN.equals(actions[i])) {
-				mask |= DRAIN;
-			} else if(ActionConstants.ACTION_STATISTICS.equals(actions[i])) {
-				mask |= STATS;
-			} else if(ActionConstants.ACTION_GET.equals(actions[i])) {
-                mask |= GET;
+			} else if(ActionConstants.ACTION_READ.equals(actions[i])) {
+				mask |= READ;
             }
 		}
 		return mask;

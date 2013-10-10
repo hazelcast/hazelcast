@@ -83,6 +83,6 @@ public class MapGetRequest extends KeyBasedClientRequest implements Portable, Re
     }
 
     public MapPermission getRequiredPermission() {
-        return new MapPermission(name, ActionConstants.ACTION_GET);
+        return new MapPermission(name, ActionConstants.ACTION_READ);
     }
 }

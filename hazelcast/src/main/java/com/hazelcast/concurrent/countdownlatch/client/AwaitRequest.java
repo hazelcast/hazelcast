@@ -86,6 +86,6 @@ public final class AwaitRequest extends KeyBasedClientRequest implements Portabl
     }
 
     public Permission getRequiredPermission() {
-        return new CountDownLatchPermission(name, ActionConstants.ACTION_GET);
+        return new CountDownLatchPermission(name, ActionConstants.ACTION_READ);
     }
 }

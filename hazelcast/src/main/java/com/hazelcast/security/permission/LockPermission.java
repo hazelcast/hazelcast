@@ -4,8 +4,8 @@ package com.hazelcast.security.permission;
 public class LockPermission extends InstancePermission {
 	
 	private final static int LOCK	 		= 0x4;
-	private final static int STATS	 		= 0x8;
-	private final static int ALL 			= CREATE | DESTROY | LOCK | STATS;
+    private final static int READ	 		= 0x8;
+	private final static int ALL 			= CREATE | DESTROY | LOCK | READ;
 
 	public LockPermission(String key, String... actions) {
 		super(key, actions);
@@ -24,9 +24,9 @@ public class LockPermission extends InstancePermission {
 				mask |= DESTROY;
 			} else if(ActionConstants.ACTION_LOCK.equals(actions[i])) {
 				mask |= LOCK;
-			} else if(ActionConstants.ACTION_STATISTICS.equals(actions[i])) {
-				mask |= STATS;
-			}  
+            } else if(ActionConstants.ACTION_READ.equals(actions[i])) {
+                mask |= READ;
+			}
 		}
 		return mask;
 	}

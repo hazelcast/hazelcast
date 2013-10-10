@@ -72,6 +72,6 @@ public class OfferRequest extends QueueRequest {
     }
 
     public Permission getRequiredPermission() {
-        return new QueuePermission(name, ActionConstants.ACTION_OFFER);
+        return new QueuePermission(name, ActionConstants.ACTION_ADD);
     }
 }

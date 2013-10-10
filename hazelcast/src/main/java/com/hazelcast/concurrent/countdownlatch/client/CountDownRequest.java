@@ -82,6 +82,6 @@ public final class CountDownRequest extends KeyBasedClientRequest implements Por
     }
 
     public Permission getRequiredPermission() {
-        return new CountDownLatchPermission(name, ActionConstants.ACTION_COUNTDOWN);
+        return new CountDownLatchPermission(name, ActionConstants.ACTION_READ);
     }
 }

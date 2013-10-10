@@ -46,6 +46,6 @@ public class AvailableRequest extends SemaphoreRequest implements RetryableReque
     }
 
     public Permission getRequiredPermission() {
-        return new SemaphorePermission(name, ActionConstants.ACTION_GET);
+        return new SemaphorePermission(name, ActionConstants.ACTION_READ);
     }
 }

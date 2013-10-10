@@ -87,6 +87,6 @@ public class MapEntrySetRequest extends AllPartitionsClientRequest implements Po
     }
 
     public Permission getRequiredPermission() {
-        return new MapPermission(name, ActionConstants.ACTION_GET);
+        return new MapPermission(name, ActionConstants.ACTION_READ);
     }
 }

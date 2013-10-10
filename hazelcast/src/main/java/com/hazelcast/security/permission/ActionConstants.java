@@ -39,26 +39,18 @@ public final class ActionConstants {
     public static final String ACTION_ALL = "all";
     public static final String ACTION_CREATE = "create";
     public static final String ACTION_DESTROY = "destroy";
-    public static final String ACTION_PUT = "put";
-    public static final String ACTION_ADD = "add";
-    public static final String ACTION_GET = "get";
-    public static final String ACTION_SET = "set";
+    public static final String ACTION_MODIFY = "modify";
+    public static final String ACTION_READ = "read";
     public static final String ACTION_REMOVE = "remove";
-    public static final String ACTION_OFFER = "offer";
-    public static final String ACTION_POLL = "poll";
     public static final String ACTION_LOCK = "lock";
     public static final String ACTION_LISTEN = "listen";
-    public static final String ACTION_PUBLISH = "publish";
-    public static final String ACTION_READ = "read";
-    public static final String ACTION_MODIFY = "modify";
-    public static final String ACTION_EXECUTE = "execute";
-    public static final String ACTION_COUNTDOWN = "countdown";
-    public static final String ACTION_ACQUIRE = "acquire";
     public static final String ACTION_RELEASE = "release";
+    public static final String ACTION_ACQUIRE = "acquire";
+    public static final String ACTION_PUT = "put";
+    public static final String ACTION_ADD = "add";
     public static final String ACTION_INDEX = "index";
     public static final String ACTION_INTERCEPT = "intercept";
-    public static final String ACTION_DRAIN = "drain";
-    public static final String ACTION_STATISTICS = "statistics";
+    public static final String ACTION_PUBLISH = "publish";
 
     public static final String LISTENER_INSTANCE = "instance";
     public static final String LISTENER_MEMBER = "member";
@@ -88,7 +80,7 @@ public final class ActionConstants {
         } else if (DistributedExecutorService.SERVICE_NAME.equals(serviceName)){
             return new ExecutorServicePermission(name, actions);
         } else if (IdGeneratorService.SERVICE_NAME.equals(serviceName)){
-            return new AtomicLongPermission(IdGeneratorService.ATOMIC_LONG_NAME+name, serviceName);
+            return new AtomicLongPermission(IdGeneratorService.ATOMIC_LONG_NAME+name, actions);
         }
         throw new IllegalArgumentException("No service matched!!!");
     }

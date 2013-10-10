@@ -90,6 +90,6 @@ public class MapContainsValueRequest extends AllPartitionsClientRequest implemen
     }
 
     public Permission getRequiredPermission() {
-        return new MapPermission(name, ActionConstants.ACTION_GET);
+        return new MapPermission(name, ActionConstants.ACTION_READ);
     }
 }

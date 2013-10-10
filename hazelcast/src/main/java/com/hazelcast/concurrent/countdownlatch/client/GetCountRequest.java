@@ -83,6 +83,6 @@ public final class GetCountRequest extends KeyBasedClientRequest implements Port
     }
 
     public Permission getRequiredPermission() {
-        return new CountDownLatchPermission(name, ActionConstants.ACTION_GET);
+        return new CountDownLatchPermission(name, ActionConstants.ACTION_READ);
     }
 }

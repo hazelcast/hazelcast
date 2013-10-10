@@ -5,9 +5,8 @@ public class AtomicLongPermission extends InstancePermission {
 	
 	private final static int READ 		= 0x4;
 	private final static int MODIFY 		= 0x8;
-	private final static int STATS 			= 0x16;
 
-	private final static int ALL 			= READ | MODIFY | CREATE | DESTROY | STATS;
+	private final static int ALL 			= READ | MODIFY | CREATE | DESTROY;
 
 	public AtomicLongPermission(String name, String... actions) {
 		super(name, actions);
@@ -28,8 +27,6 @@ public class AtomicLongPermission extends InstancePermission {
 				mask |= MODIFY;
 			} else if(ActionConstants.ACTION_DESTROY.equals(actions[i])) {
 				mask |= DESTROY;
-			} else if(ActionConstants.ACTION_STATISTICS.equals(actions[i])) {
-				mask |= STATS;
 			}
 		}
 		return mask;
