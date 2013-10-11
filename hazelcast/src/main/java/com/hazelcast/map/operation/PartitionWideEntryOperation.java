@@ -64,37 +64,37 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
             if (result != null) {
                 dataValue = mapService.toData(result);
                 response.add(new AbstractMap.SimpleImmutableEntry<Data, Data>(dataKey, dataValue));
+            }
 
-                EntryEventType eventType = null;
-                if (valueAfterProcess == null) {
-                    recordStore.remove(dataKey);
-                    eventType = EntryEventType.REMOVED;
-                } else {
-                    if (valueBeforeProcess == null) {
-                        eventType = EntryEventType.ADDED;
-                    }
-                    // take this case as a read so no need to fire an event.
-                    else if (!entry.isModified()) {
-                        eventType = __NO_NEED_TO_FIRE_EVENT;
-                    } else {
-                        eventType = EntryEventType.UPDATED;
-                    }
-                    recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, valueAfterProcess));
+            EntryEventType eventType = null;
+            if (valueAfterProcess == null) {
+                recordStore.remove(dataKey);
+                eventType = EntryEventType.REMOVED;
+            } else {
+                if (valueBeforeProcess == null) {
+                    eventType = EntryEventType.ADDED;
                 }
+                // take this case as a read so no need to fire an event.
+                else if (!entry.isModified()) {
+                    eventType = __NO_NEED_TO_FIRE_EVENT;
+                } else {
+                    eventType = EntryEventType.UPDATED;
+                }
+                recordStore.put(new AbstractMap.SimpleImmutableEntry<Data, Object>(dataKey, valueAfterProcess));
+            }
 
-                if (eventType != __NO_NEED_TO_FIRE_EVENT) {
-                    mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, mapService.toData(record.getValue()), dataValue);
-                    if (mapContainer.isNearCacheEnabled()
-                            && mapContainer.getMapConfig().getNearCacheConfig().isInvalidateOnChange()) {
-                        mapService.invalidateAllNearCaches(name, dataKey);
-                    }
-                    if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
-                        if (EntryEventType.REMOVED.equals(eventType)) {
-                            mapService.publishWanReplicationRemove(name, dataKey, Clock.currentTimeMillis());
-                        } else {
-                            SimpleEntryView entryView = new SimpleEntryView(dataKey, mapService.toData(dataValue), recordStore.getRecords().get(dataKey));
-                            mapService.publishWanReplicationUpdate(name, entryView);
-                        }
+            if (eventType != __NO_NEED_TO_FIRE_EVENT) {
+                mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, mapService.toData(record.getValue()), dataValue);
+                if (mapContainer.isNearCacheEnabled()
+                        && mapContainer.getMapConfig().getNearCacheConfig().isInvalidateOnChange()) {
+                    mapService.invalidateAllNearCaches(name, dataKey);
+                }
+                if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
+                    if (EntryEventType.REMOVED.equals(eventType)) {
+                        mapService.publishWanReplicationRemove(name, dataKey, Clock.currentTimeMillis());
+                    } else {
+                        SimpleEntryView entryView = new SimpleEntryView(dataKey, mapService.toData(dataValue), recordStore.getRecords().get(dataKey));
+                        mapService.publishWanReplicationUpdate(name, entryView);
                     }
                 }
             }
