@@ -50,7 +50,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
 
 public class Node {
 
@@ -217,16 +216,25 @@ public class Node {
             if (listener instanceof HazelcastInstanceAware) {
                 ((HazelcastInstanceAware) listener).setHazelcastInstance(hazelcastInstance);
             }
+            boolean known = false;
             if (listener instanceof DistributedObjectListener) {
                 final ProxyServiceImpl proxyService = (ProxyServiceImpl) nodeEngine.getProxyService();
                 proxyService.addProxyListener((DistributedObjectListener) listener);
-            } else if (listener instanceof MembershipListener) {
+                known = true;
+            }
+            if (listener instanceof MembershipListener) {
                 clusterService.addMembershipListener((MembershipListener) listener);
-            } else if (listener instanceof MigrationListener) {
+                known = true;
+            }
+            if (listener instanceof MigrationListener) {
                 partitionService.addMigrationListener((MigrationListener) listener);
-            } else if (listener instanceof LifecycleListener) {
+                known = true;
+            }
+            if (listener instanceof LifecycleListener) {
                 hazelcastInstance.lifecycleService.addLifecycleListener((LifecycleListener) listener);
-            } else if (listener != null) {
+                known = true;
+            }
+            if (listener != null && !known) {
                 final String error = "Unknown listener type: " + listener.getClass();
                 Throwable t = new IllegalArgumentException(error);
                 logger.warning(error, t);
