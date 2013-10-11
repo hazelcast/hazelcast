@@ -248,8 +248,6 @@
             <entry-listener include-value="true" local="false">com.hazelcast.examples.EntryListener</entry-listener>
         </entry-listeners>
 
-        <!-- HEAP or OFFHEAP -->
-        <storage-type>HEAP</storage-type>
     </map>
 
     <multimap name="default">
