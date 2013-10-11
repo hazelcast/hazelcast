@@ -236,7 +236,7 @@ public class MapContainer {
     }
 
     public long getWriteDelayMillis() {
-        return mapConfig.getMapStoreConfig().getWriteDelaySeconds() * 1000;
+        return TimeUnit.SECONDS.toMillis(mapConfig.getMapStoreConfig().getWriteDelaySeconds());
     }
 
     public int getAsyncBackupCount() {

@@ -36,9 +36,11 @@ import com.hazelcast.spi.ResponseHandler;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.util.ExceptionUtil;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
+
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -72,9 +74,9 @@ public class PartitionRecordStore implements RecordStore {
                 Map<Data, Object> loadedKeys = mapContainer.getInitialKeys();
                 if (loadedKeys != null && !loadedKeys.isEmpty()) {
                     Map<Data, Object> partitionKeys = new HashMap<Data, Object>();
-                    Iterator<Map.Entry<Data,Object>> iterator = loadedKeys.entrySet().iterator();
-                    while(iterator.hasNext()) {
-                        final Map.Entry<Data,Object> entry = iterator.next();
+                    Iterator<Map.Entry<Data, Object>> iterator = loadedKeys.entrySet().iterator();
+                    while (iterator.hasNext()) {
+                        final Map.Entry<Data, Object> entry = iterator.next();
                         final Data data = entry.getKey();
                         if (partitionId == nodeEngine.getPartitionService().getPartitionId(data)) {
                             partitionKeys.put(data, entry.getValue());
@@ -535,16 +537,25 @@ public class PartitionRecordStore implements RecordStore {
             records.put(dataKey, record);
             // increase size.
             updateSizeEstimator(calculateRecordSize(record));
+            saveIndex(record);
         } else {
-            value = mapService.interceptPut(name, record.getValue(), value);
-            mapStoreWrite(record, dataKey, value);
-            // if key exists before, first reduce size
-            updateSizeEstimator(-calculateRecordSize(record));
-            setRecordValue(record, value);
-            // then increase size
-            updateSizeEstimator(calculateRecordSize(record));
+            final Object oldValue = record.getValue();
+            value = mapService.interceptPut(name, oldValue, value);
+            //check if putting the same value again.
+            if (mapService.compare(name, oldValue, value)) {
+                accessRecord(record);
+            }//otherwise this is a full update operation.
+            else {
+                mapStoreWrite(record, dataKey, value);
+                // if key exists before, first reduce size
+                updateSizeEstimator(-calculateRecordSize(record));
+                setRecordValue(record, value);
+                // then increase size
+                updateSizeEstimator(calculateRecordSize(record));
+                saveIndex(record);
+            }
         }
-        saveIndex(record);
+
     }
 
     public Object put(Data dataKey, Object value, long ttl) {
@@ -560,18 +571,27 @@ public class PartitionRecordStore implements RecordStore {
             mapStoreWrite(record, dataKey, value);
             records.put(dataKey, record);
             updateSizeEstimator(calculateRecordSize(record));
+            saveIndex(record);
         } else {
             oldValue = record.getValue();
             value = mapService.interceptPut(name, oldValue, value);
-            mapStoreWrite(record, dataKey, value);
-            // if key exists before, first reduce size
-            updateSizeEstimator(-calculateRecordSize(record));
-            setRecordValue(record, value);
-            // then increase size.
-            updateSizeEstimator(calculateRecordSize(record));
-            updateTtl(record, ttl);
+            //check if putting the same value again.
+            if (mapService.compare(name, oldValue, value)) {
+                accessRecord(record);
+                updateTtl(record, ttl);
+            }//otherwise this is a full update operation.
+            else {
+                mapStoreWrite(record, dataKey, value);
+                // if key exists before, first reduce size
+                updateSizeEstimator(-calculateRecordSize(record));
+                setRecordValue(record, value);
+                // then increase size.
+                updateSizeEstimator(calculateRecordSize(record));
+                updateTtl(record, ttl);
+                saveIndex(record);
+            }
         }
-        saveIndex(record);
+
         return oldValue;
     }
 
@@ -766,9 +786,9 @@ public class PartitionRecordStore implements RecordStore {
 
     private void accessRecord(Record record) {
         record.onAccess();
-        int maxIdleSeconds = mapContainer.getMapConfig().getMaxIdleSeconds();
+        final int maxIdleSeconds = mapContainer.getMapConfig().getMaxIdleSeconds();
         if (maxIdleSeconds > 0) {
-            mapService.scheduleIdleEviction(name, record.getKey(), maxIdleSeconds * 1000);
+            mapService.scheduleIdleEviction(name, record.getKey(), TimeUnit.SECONDS.toMillis(maxIdleSeconds));
         }
     }
 
