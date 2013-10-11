@@ -22,7 +22,6 @@ import com.hazelcast.core.*;
 import com.hazelcast.executor.RunnableAdapter;
 import com.hazelcast.executor.client.IsShutdownRequest;
 import com.hazelcast.executor.client.LocalTargetCallableRequest;
-import com.hazelcast.executor.client.ShutdownRequest;
 import com.hazelcast.executor.client.TargetCallableRequest;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.monitor.LocalExecutorStats;
@@ -208,8 +207,7 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
     }
 
     public void shutdown() {
-        ShutdownRequest request = new ShutdownRequest(name);
-        invoke(request);
+        destroy();
     }
 
     public List<Runnable> shutdownNow() {
@@ -268,7 +266,6 @@ public class ClientExecutorServiceProxy extends ClientProxy implements IExecutor
 
 
     protected void onDestroy() {
-        shutdown();
     }
 
     private Data getTaskPartitionKey(Object task) {

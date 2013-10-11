@@ -14,12 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.semaphore.client;
+package com.hazelcast.spi.impl;
 
-import com.hazelcast.client.CallableClientRequest;
-import com.hazelcast.client.RetryableRequest;
-import com.hazelcast.concurrent.semaphore.SemaphorePortableHook;
-import com.hazelcast.concurrent.semaphore.SemaphoreService;
+import com.hazelcast.core.DistributedObjectEvent;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
@@ -27,41 +24,54 @@ import com.hazelcast.nio.serialization.PortableWriter;
 import java.io.IOException;
 
 /**
- * @author ali 5/24/13
+ * @ali 10/7/13
  */
-public class SemaphoreDestroyRequest extends CallableClientRequest implements Portable, RetryableRequest {
+public class PortableDistributedObjectEvent implements Portable {
+
+    private DistributedObjectEvent.EventType eventType;
 
     private String name;
 
-    public SemaphoreDestroyRequest() {
+    private String serviceName;
+
+    public PortableDistributedObjectEvent() {
     }
 
-    public SemaphoreDestroyRequest(String name) {
+    public PortableDistributedObjectEvent(DistributedObjectEvent.EventType eventType, String name, String serviceName) {
+        this.eventType = eventType;
         this.name = name;
+        this.serviceName = serviceName;
     }
 
-    public Object call() throws Exception {
-        getClientEngine().getProxyService().destroyDistributedObject(getServiceName(), name);
-        return null;
+    public DistributedObjectEvent.EventType getEventType() {
+        return eventType;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public String getServiceName() {
-        return SemaphoreService.SERVICE_NAME;
+        return serviceName;
     }
 
     public int getFactoryId() {
-        return SemaphorePortableHook.F_ID;
+        return SpiPortableHook.ID;
     }
 
     public int getClassId() {
-        return SemaphorePortableHook.DESTROY;
+        return SpiPortableHook.DISTRIBUTED_OBJECT_EVENT;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
-        writer.writeUTF("n", name);
+        writer.writeUTF("n",name);
+        writer.writeUTF("s",serviceName);
+        writer.writeUTF("t",eventType.name());
     }
 
     public void readPortable(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
+        serviceName = reader.readUTF("s");
+        eventType = DistributedObjectEvent.EventType.valueOf(reader.readUTF("t"));
     }
 }

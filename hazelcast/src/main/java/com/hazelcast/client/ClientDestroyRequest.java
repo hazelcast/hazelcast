@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2012, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,34 +14,35 @@
  * limitations under the License.
  */
 
-package com.hazelcast.collection.client;
+package com.hazelcast.client;
 
-import com.hazelcast.client.CallableClientRequest;
-import com.hazelcast.client.RetryableRequest;
-import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
 
 import java.io.IOException;
+import java.security.Permission;
 
 /**
- * @ali 9/4/13
+ * @ali 10/7/13
  */
-public class CollectionDestroyRequest extends CallableClientRequest implements Portable, RetryableRequest {
+public class ClientDestroyRequest extends CallableClientRequest implements Portable, RetryableRequest, SecureRequest{
 
-    String name;
+    private String name;
 
-    String serviceName;
+    private String serviceName;
 
-    public CollectionDestroyRequest() {
+    public ClientDestroyRequest() {
     }
 
-    public CollectionDestroyRequest(String name) {
+    public ClientDestroyRequest(String name, String serviceName) {
         this.name = name;
+        this.serviceName = serviceName;
     }
 
     public Object call() throws Exception {
+        getClientEngine().getProxyService().destroyDistributedObject(getServiceName(), name);
         return null;
     }
 
@@ -49,25 +50,25 @@ public class CollectionDestroyRequest extends CallableClientRequest implements P
         return serviceName;
     }
 
-    public void setServiceName(String serviceName) {
-        this.serviceName = serviceName;
-    }
-
     public int getFactoryId() {
-        return CollectionPortableHook.F_ID;
+        return ClientPortableHook.ID;
     }
 
     public int getClassId() {
-        return CollectionPortableHook.COLLECTION_DESTROY;
+        return ClientPortableHook.DESTROY_PROXY;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
         writer.writeUTF("n",name);
-        writer.writeUTF("s",serviceName);
+        writer.writeUTF("s", serviceName);
     }
 
     public void readPortable(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         serviceName = reader.readUTF("s");
+    }
+
+    public Permission getRequiredPermission() {
+        return ActionConstants.getPermission(name, serviceName, ActionConstants.ACTION_DESTROY);
     }
 }

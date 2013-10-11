@@ -130,7 +130,7 @@
                     read-backup-data="true"
                     eviction-policy="NONE"
                     merge-policy="PUT_IF_ABSENT"
-                    storage-type="HEAP">
+                    in-memory-format="BINARY">
                 <hz:map-store enabled="true" class-name="com.hazelcast.spring.DummyStore" write-delay-seconds="0"/>
                 <hz:near-cache time-to-live-seconds="0" max-idle-seconds="60" eviction-policy="LRU" max-size="5000"
                                invalidate-on-change="true"/>

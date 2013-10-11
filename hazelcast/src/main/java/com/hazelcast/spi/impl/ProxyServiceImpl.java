@@ -299,7 +299,11 @@ public class ProxyServiceImpl implements ProxyService, PostJoinAwareService,
         public void run() {
             DistributedObjectEvent event = new DistributedObjectEvent(type, serviceName, object);
             for (DistributedObjectListener listener : listeners.values()) {
-                listener.distributedObjectCreated(event);
+                if (EventType.CREATED.equals(type)){
+                    listener.distributedObjectCreated(event);
+                } else if (EventType.DESTROYED.equals(type)){
+                    listener.distributedObjectDestroyed(event);
+                }
             }
         }
 

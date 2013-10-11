@@ -63,7 +63,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
         super(nodeEngine, service);
         this.name = name;
         mapConfig = service.getMapContainer(name).getMapConfig();
-        partitionStrategy = service.getMapContainer(name).getPartitionStrategy();
+        partitionStrategy = service.getMapContainer(name).getPartitioningStrategy();
         localMapStats = service.getLocalMapStatsImpl(name);
         lockSupport = new LockProxySupport(new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
     }
@@ -437,7 +437,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             List<Integer> memberPartitions = nodeEngine.getPartitionService().getMemberPartitions(nodeEngine.getThisAddress());
             for (Integer memberPartition : memberPartitions) {
                 RecordStore recordStore = mapService.getRecordStore(memberPartition, name);
-                keySet.addAll(recordStore.getRecords().keySet());
+                keySet.addAll(recordStore.getReadonlyRecordMap().keySet());
             }
             return keySet;
         } catch (Throwable t) {

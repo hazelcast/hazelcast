@@ -136,6 +136,10 @@ public final class MigrationOperation extends BaseMigrationOperation {
         public void sendResponse(final Object obj) {
             throw new HazelcastException("Migration operations can not send response!");
         }
+
+        public boolean isLocal() {
+            return true;
+        }
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

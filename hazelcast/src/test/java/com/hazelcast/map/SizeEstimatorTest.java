@@ -17,9 +17,8 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MaxSizeConfig;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
@@ -40,27 +39,24 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
         final String MAP_NAME = "default";
 
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance h = factory.newHazelcastInstance(null);
+        final HazelcastInstance h = factory.newHazelcastInstance(new Config());
 
         final IMap<String, String> map = h.getMap(MAP_NAME);
 
-        Assert.assertTrue(map.getLocalMapStats().getHeapCost() == 0);
+        Assert.assertEquals(0, map.getLocalMapStats().getHeapCost());
     }
 
     @Test
-    public void testPuts() throws InterruptedException{
+    public void testPuts() throws InterruptedException {
         final String MAP_NAME = "default";
 
+        Config config = new Config();
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance h = factory.newHazelcastInstance(null);
+        final HazelcastInstance h = factory.newHazelcastInstance(config);
 
-        final IMap<Long, Long> map = h.getMap(MAP_NAME);
-
-        map.put(10L, 10L);
-
-
-        Assert.assertTrue(map.getLocalMapStats().getHeapCost() == 152);
-
+        final IMap<Integer, Long> map = h.getMap(MAP_NAME);
+        map.put(0, 10L);
+        Assert.assertEquals(156, map.getLocalMapStats().getHeapCost());
     }
 
     @Test
@@ -68,92 +64,47 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
         final String MAP_NAME = "default";
 
         final Config config = new Config();
-        config.getMapConfig(MAP_NAME).setBackupCount(1).setInMemoryFormat(MapConfig.InMemoryFormat.BINARY);
+        config.getMapConfig(MAP_NAME).setBackupCount(1).setInMemoryFormat(InMemoryFormat.BINARY);
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance h[] = factory.newInstances(config);
         warmUpPartitions(h);
 
-        final IMap<Long, Long> map = h[0].getMap(MAP_NAME);
-        final IMap<Long, Long> backupMap = h[1].getMap(MAP_NAME);
+        final IMap<String, String> map = h[0].getMap(MAP_NAME);
+        map.put("key", "value");
 
-        map.put(10L, 10L);
+        long h1MapCost = h[0].getMap(MAP_NAME).getLocalMapStats().getHeapCost();
+        long h2MapCost = h[1].getMap(MAP_NAME).getLocalMapStats().getHeapCost();
 
-        Thread.sleep(3000);
-
-        long h1MapCost = map.getLocalMapStats().getHeapCost();
-
-        long h2MapCost = backupMap.getLocalMapStats().getHeapCost();
-
+        Assert.assertTrue(h1MapCost > 0);
+        Assert.assertTrue(h2MapCost > 0);
         // one map is backup. so backup & main map cost must be same.
         Assert.assertEquals(h1MapCost, h2MapCost);
+        map.remove("key");
 
-        Thread.sleep(1000);
-
-        map.remove( 10L );
-
-        Thread.sleep(1000);
-
-        h1MapCost = map.getLocalMapStats().getHeapCost();
-
-        h2MapCost = backupMap.getLocalMapStats().getHeapCost();
+        h1MapCost = h[0].getMap(MAP_NAME).getLocalMapStats().getHeapCost();
+        h2MapCost = h[1].getMap(MAP_NAME).getLocalMapStats().getHeapCost();
 
         Assert.assertEquals(0, h1MapCost);
         Assert.assertEquals(0, h2MapCost);
     }
 
     @Test
-    public void testEvictionPolicy() throws InterruptedException {
-        final String MAP_NAME = "default";
-
-        final Config config = new Config();
-        final MaxSizeConfig mapMaxSizeConfig = new MaxSizeConfig();
-        mapMaxSizeConfig.setSize(1).setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.USED_HEAP_SIZE);
-        config.getMapConfig(MAP_NAME)
-                .setEvictionPolicy(MapConfig.EvictionPolicy.LFU).
-                setMaxSizeConfig(mapMaxSizeConfig).setEvictionPercentage(100);
-
-        final int n = 1;
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
-        final HazelcastInstance h[] = factory.newInstances(config);
-        warmUpPartitions(h);
-
-        final IMap<Long, Integer> map = h[0].getMap(MAP_NAME);
-
-        Long key = 0L;
-        for (int i = 0; i < 1; i++) {
-            map.put(++key, 1);
-        }
-        long t = map.getLocalMapStats().getHeapCost();
-        /** key 24 bytes  {@link com.hazelcast.nio.serialization.Data} totalSize method */
-        /** value 112 bytes {@link com.hazelcast.map.record.DataRecord}*/
-        Assert.assertTrue(map.getLocalMapStats().getHeapCost() == 148);
-
-        Thread.sleep(1000);
-
-        map.clear();
-
-        Thread.sleep(1000);
-
-        Assert.assertTrue(map.getLocalMapStats().getHeapCost() == 0);
-    }
-
-    @Test
     public void testNearCache() throws InterruptedException {
-        final String NO_NEAR_CAHED_MAP = "testIssue833";
+        final String NO_NEAR_CACHED_MAP = "testIssue833";
         final String NEAR_CACHED_MAP = "testNearCache";
 
         final Config config = new Config();
         final NearCacheConfig nearCacheConfig = new NearCacheConfig();
-        nearCacheConfig.setInMemoryFormat(MapConfig.InMemoryFormat.BINARY);
+        nearCacheConfig.setInMemoryFormat(InMemoryFormat.BINARY);
         config.getMapConfig(NEAR_CACHED_MAP).setNearCacheConfig(nearCacheConfig).setBackupCount(0);
-        config.getMapConfig(NO_NEAR_CAHED_MAP).setBackupCount(0);
+        config.getMapConfig(NO_NEAR_CACHED_MAP).setBackupCount(0);
 
         final int n = 2;
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
         final HazelcastInstance h[] = factory.newInstances(config);
         warmUpPartitions(h);
 
-        final IMap<String, String> noNearCached = h[0].getMap(NO_NEAR_CAHED_MAP);
+        final IMap<String, String> noNearCached = h[0].getMap(NO_NEAR_CACHED_MAP);
         for (int i = 0; i < 1000; i++) {
             noNearCached.put("key" + i, "value" + i);
         }
@@ -174,14 +125,11 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
     public void testInMemoryFormats() throws InterruptedException {
         final String BINARY_MAP = "testBinaryFormat";
         final String OBJECT_MAP = "testObjectFormat";
-        final String CACHED_MAP = "testCachedFormat";
         final Config config = new Config();
         config.getMapConfig(BINARY_MAP).
-                setInMemoryFormat(MapConfig.InMemoryFormat.BINARY).setBackupCount(0);
+                setInMemoryFormat(InMemoryFormat.BINARY).setBackupCount(0);
         config.getMapConfig(OBJECT_MAP).
-                setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT).setBackupCount(0);
-        config.getMapConfig(CACHED_MAP).
-                setInMemoryFormat(MapConfig.InMemoryFormat.CACHED).setBackupCount(0);
+                setInMemoryFormat(InMemoryFormat.OBJECT).setBackupCount(0);
 
         final int n = 2;
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(n);
@@ -199,34 +147,18 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
             objectMap.put("key" + i, "value" + i);
         }
 
-        final IMap<String, String> cachedMap = h[0].getMap(CACHED_MAP);
-        for (int i = 0; i < 1000; i++) {
-            cachedMap.put("key" + i, "value" + i);
-        }
-
-        Thread.sleep(2000);
         for (int i = 0; i < n; i++) {
-
             Assert.assertTrue(h[i].getMap(BINARY_MAP).getLocalMapStats().getHeapCost() > 0);
-
-            Assert.assertTrue(h[i].getMap(OBJECT_MAP).getLocalMapStats().getHeapCost() == 0);
-
-            Assert.assertTrue(h[i].getMap(CACHED_MAP).getLocalMapStats().getHeapCost() > 0);
+            Assert.assertEquals(0, h[i].getMap(OBJECT_MAP).getLocalMapStats().getHeapCost());
         }
 
         // clear map
         binaryMap.clear();
         objectMap.clear();
-        cachedMap.clear();
-
-        Thread.sleep(2000);
 
         for (int i = 0; i < n; i++) {
-            Assert.assertTrue(h[i].getMap(BINARY_MAP).getLocalMapStats().getHeapCost() == 0);
-
-            Assert.assertTrue(h[i].getMap(OBJECT_MAP).getLocalMapStats().getHeapCost() == 0);
-
-            Assert.assertTrue(h[i].getMap(CACHED_MAP).getLocalMapStats().getHeapCost() == 0);
+            Assert.assertEquals(0, h[i].getMap(BINARY_MAP).getLocalMapStats().getHeapCost());
+            Assert.assertEquals(0, h[i].getMap(OBJECT_MAP).getLocalMapStats().getHeapCost());
         }
     }
 

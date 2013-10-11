@@ -632,7 +632,7 @@ public class Config {
         return t;
     }
 
-    private static boolean nameMatches(final String name, final String pattern) {
+    public static boolean nameMatches(final String name, final String pattern) {
         final int index = pattern.indexOf('*');
         if (index == -1) {
             return name.equals(pattern);

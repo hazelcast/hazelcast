@@ -18,6 +18,7 @@ package com.hazelcast.collection.client;
 
 import com.hazelcast.collection.CollectionClearOperation;
 import com.hazelcast.collection.CollectionPortableHook;
+import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.spi.Operation;
 
 /**
@@ -38,5 +39,9 @@ public class CollectionClearRequest extends CollectionRequest {
 
     public int getClassId() {
         return CollectionPortableHook.COLLECTION_CLEAR;
+    }
+
+    public String getRequiredAction() {
+        return ActionConstants.ACTION_REMOVE;
     }
 }

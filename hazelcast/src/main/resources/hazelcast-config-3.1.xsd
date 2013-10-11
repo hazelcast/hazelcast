@@ -174,16 +174,6 @@
                 </xs:complexType>
             </xs:element>
             <xs:element name="entry-listeners" type="entry-listeners" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="storage-type" type="xs:string" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        Storage type for Hazelcast Enterprise map configuration.
-                        Valid values are HEAP and OFFHEAP.
-                        Default is HEAP.
-                        Not configurable for Hazelcast Community Edition.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
             <xs:element name="partition-strategy" type="xs:string" minOccurs="0" maxOccurs="1" />
         </xs:sequence>
         <xs:attribute name="name" use="required">
@@ -642,7 +632,6 @@
             <xs:element name="executor-service-permission" type="instance-permission" minOccurs="0"
                         maxOccurs="unbounded"/>
             <xs:element name="transaction-permission" type="base-permission" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="listener-permission" type="listener-permission" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
     </xs:complexType>
     <xs:complexType name="base-permission">
@@ -688,21 +677,6 @@
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
-    <xs:complexType name="listener-permission">
-        <xs:complexContent>
-            <xs:extension base="base-permission">
-                <xs:attribute name="name" use="required">
-                    <xs:simpleType>
-                        <xs:restriction base="xs:string">
-                            <xs:enumeration value="all"/>
-                            <xs:enumeration value="instance"/>
-                            <xs:enumeration value="member"/>
-                        </xs:restriction>
-                    </xs:simpleType>
-                </xs:attribute>
-            </xs:extension>
-        </xs:complexContent>
-    </xs:complexType>
     <xs:complexType name="actions">
         <xs:sequence>
             <xs:element name="action" minOccurs="1" maxOccurs="unbounded">
@@ -716,25 +690,18 @@
                         <xs:enumeration value="all"/>
                         <xs:enumeration value="create"/>
                         <xs:enumeration value="destroy"/>
-                        <xs:enumeration value="put"/>
-                        <xs:enumeration value="add"/>
-                        <xs:enumeration value="get"/>
-                        <xs:enumeration value="set"/>
+                        <xs:enumeration value="modify"/>
+                        <xs:enumeration value="read"/>
                         <xs:enumeration value="remove"/>
-                        <xs:enumeration value="offer"/>
-                        <xs:enumeration value="poll"/>
-                        <xs:enumeration value="take"/>
                         <xs:enumeration value="lock"/>
                         <xs:enumeration value="listen"/>
-                        <xs:enumeration value="publish"/>
-                        <xs:enumeration value="increment"/>
-                        <xs:enumeration value="decrement"/>
-                        <xs:enumeration value="execute"/>
-                        <xs:enumeration value="countdown"/>
-                        <xs:enumeration value="acquire"/>
                         <xs:enumeration value="release"/>
-                        <xs:enumeration value="drain"/>
-                        <xs:enumeration value="statistics"/>
+                        <xs:enumeration value="acquire"/>
+                        <xs:enumeration value="put"/>
+                        <xs:enumeration value="add"/>
+                        <xs:enumeration value="index"/>
+                        <xs:enumeration value="intercept"/>
+                        <xs:enumeration value="publish"/>
                     </xs:restriction>
                 </xs:simpleType>
             </xs:element>

@@ -18,18 +18,22 @@ package com.hazelcast.map.client;
 
 import com.hazelcast.client.AllPartitionsClientRequest;
 import com.hazelcast.client.RetryableRequest;
+import com.hazelcast.client.SecureRequest;
 import com.hazelcast.map.operation.ClearOperationFactory;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
+import java.security.Permission;
 import java.util.Map;
 
-public class MapClearRequest extends AllPartitionsClientRequest implements Portable, RetryableRequest {
+public class MapClearRequest extends AllPartitionsClientRequest implements Portable, RetryableRequest, SecureRequest {
 
     private String name;
 
@@ -69,5 +73,9 @@ public class MapClearRequest extends AllPartitionsClientRequest implements Porta
     @Override
     protected Object reduce(Map<Integer, Object> map) {
         return null;
+    }
+
+    public Permission getRequiredPermission() {
+        return new MapPermission(name, ActionConstants.ACTION_REMOVE);
     }
 }

@@ -51,6 +51,9 @@ public class TestHibernateApplicationContext {
     @Resource(name = "localRegionFactory")
     private HazelcastLocalCacheRegionFactory localRegionFactory;
 
+    @Resource(name = "localRegionFactory2")
+    private HazelcastLocalCacheRegionFactory localRegionFactory2;
+
     @BeforeClass
     @AfterClass
     public static void start() {
@@ -74,5 +77,8 @@ public class TestHibernateApplicationContext {
 
         assertNotNull(localRegionFactory);
         assertEquals(localRegionFactory.getHazelcastInstance(), instance);
+
+        assertNotNull(localRegionFactory2);
+        assertEquals(localRegionFactory2.getHazelcastInstance(), instance);
     }
 }

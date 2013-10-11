@@ -48,7 +48,7 @@ public class MergeOperation extends BasePutOperation {
         entryView.setValue(mapService.toObject(mergingEntry.getValue()));
         merged = recordStore.merge(dataKey, mergingEntry, mergePolicy);
         if (merged) {
-            Record record = recordStore.getRecords().get(dataKey);
+            Record record = recordStore.getRecord(dataKey);
             if (record != null)
                 dataValue = mapService.toData(record.getValue());
         }

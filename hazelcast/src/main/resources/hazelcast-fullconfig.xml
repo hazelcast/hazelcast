@@ -147,7 +147,7 @@
            Possible values:
            BINARY (default): keys and values will be stored as binary data
            OBJECT : values will be stored in their object forms
-           CACHED: object form of values will be cached in queries
+           OFFHEAP : values will be stored in non-heap region of JVM
         -->
         <in-memory-format>BINARY</in-memory-format>
         <!--
@@ -248,8 +248,6 @@
             <entry-listener include-value="true" local="false">com.hazelcast.examples.EntryListener</entry-listener>
         </entry-listeners>
 
-        <!-- HEAP or OFFHEAP -->
-        <storage-type>HEAP</storage-type>
     </map>
 
     <multimap name="default">

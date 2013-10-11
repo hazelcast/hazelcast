@@ -17,7 +17,6 @@
 package com.hazelcast.client.txn.proxy;
 
 import com.hazelcast.client.txn.TransactionContextProxy;
-import com.hazelcast.collection.client.CollectionDestroyRequest;
 
 /**
  * @ali 9/4/13
@@ -29,9 +28,6 @@ public abstract class AbstractClientTxnCollectionProxy<E> extends ClientTxnProxy
     }
 
     void onDestroy() {
-        final CollectionDestroyRequest request = new CollectionDestroyRequest(getName());
-        request.setServiceName(getServiceName());
-        invoke(request);
     }
 
     public String getName() {

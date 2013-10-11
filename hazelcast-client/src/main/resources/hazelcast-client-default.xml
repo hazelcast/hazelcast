@@ -15,7 +15,7 @@
   ~ limitations under the License.
   -->
 
-<hazelcast-client xsi:schemaLocation="http://www.hazelcast.com/schema/client-config hazelcast-client-config-3.0.xsd"
+<hazelcast-client xsi:schemaLocation="http://www.hazelcast.com/schema/client-config hazelcast-client-config-3.1.xsd"
            xmlns="http://www.hazelcast.com/schema/client-config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
@@ -40,8 +40,8 @@
         <time-to-live-seconds>100</time-to-live-seconds>
         <max-idle-seconds>100</max-idle-seconds>
         <eviction-policy>LFU</eviction-policy>
-        <in-memory-format>OBJECT</in-memory-format>
         <invalidate-on-change>true</invalidate-on-change>
+        <in-memory-format>OBJECT</in-memory-format>
     </near-cache>
 
 </hazelcast-client>

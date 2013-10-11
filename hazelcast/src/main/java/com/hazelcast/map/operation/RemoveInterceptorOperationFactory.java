@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.operation;
 
-import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
@@ -28,7 +27,6 @@ public class RemoveInterceptorOperationFactory implements OperationFactory {
 
     String id;
     String name;
-    MapInterceptor mapInterceptor;   //TODO @ali interceptor not used?
 
     public RemoveInterceptorOperationFactory() {
     }

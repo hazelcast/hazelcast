@@ -17,7 +17,6 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.config.*;
-import com.hazelcast.config.MapConfig.StorageType;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.nio.SocketInterceptor;
@@ -135,7 +134,6 @@ public class TestFullApplicationContext {
         assertEquals(0, testMapConfig.getTimeToLiveSeconds());
         assertEquals("PUT_IF_ABSENT", testMapConfig.getMergePolicy());
         assertTrue(testMapConfig.isReadBackupData());
-        assertEquals(StorageType.HEAP, testMapConfig.getStorageType());
         assertEquals(2, testMapConfig.getMapIndexConfigs().size());
         for (MapIndexConfig index : testMapConfig.getMapIndexConfigs()) {
             if ("name".equals(index.getAttribute())) {

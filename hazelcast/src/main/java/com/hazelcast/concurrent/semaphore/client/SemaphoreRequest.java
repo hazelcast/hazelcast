@@ -17,6 +17,7 @@
 package com.hazelcast.concurrent.semaphore.client;
 
 import com.hazelcast.client.PartitionClientRequest;
+import com.hazelcast.client.SecureRequest;
 import com.hazelcast.concurrent.semaphore.SemaphorePortableHook;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.nio.serialization.Data;
@@ -29,7 +30,7 @@ import java.io.IOException;
 /**
  * @author ali 5/13/13
  */
-public abstract class SemaphoreRequest extends PartitionClientRequest implements Portable {
+public abstract class SemaphoreRequest extends PartitionClientRequest implements Portable, SecureRequest {
 
     String name;
 

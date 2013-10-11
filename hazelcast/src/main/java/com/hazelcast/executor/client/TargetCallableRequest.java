@@ -24,6 +24,7 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
@@ -48,43 +49,41 @@ public final class TargetCallableRequest extends TargetClientRequest implements 
     }
 
     @SuppressWarnings("unchecked")
-    @Override
     protected Operation prepareOperation() {
+        final SecurityContext securityContext = getClientEngine().getSecurityContext();
+        if (securityContext != null){
+            callable = securityContext.createSecureCallable(getEndpoint().getSubject(), callable);
+        }
         return new CallableTaskOperation(name, null, callable);
     }
 
-    @Override
     public Address getTarget() {
         return target;
     }
 
-    @Override
     public String getServiceName() {
         return DistributedExecutorService.SERVICE_NAME;
     }
 
-    @Override
     public int getFactoryId() {
         return ExecutorDataSerializerHook.F_ID;
     }
 
-    @Override
     public int getId() {
         return ExecutorDataSerializerHook.TARGET_CALLABLE_REQUEST;
     }
 
-    @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
         out.writeObject(callable);
         target.writeData(out);
     }
 
-    @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
         callable = in.readObject();
         target = new Address();
         target.readData(in);
     }
+
 }

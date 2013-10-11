@@ -16,17 +16,11 @@
 
 package com.hazelcast.map.record;
 
-import com.hazelcast.map.MapDataSerializerHook;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
-import java.io.IOException;
+public final class ObjectRecord extends AbstractRecord<Object> implements Record<Object> {
 
-public final class ObjectRecord extends AbstractRecord<Object> implements Record<Object>, IdentifiedDataSerializable {
-
-    private volatile Object value;
+    private Object value;
 
     public ObjectRecord(Data keyData, Object value, boolean statisticsEnabled) {
         super(keyData, statisticsEnabled);
@@ -39,50 +33,18 @@ public final class ObjectRecord extends AbstractRecord<Object> implements Record
     // as there is no easy way to calculate the size of Object cost is not implemented for ObjectRecord
     @Override
     public long getCost() {
-        long size = 0;
-
-        // add statistics size if enabled.
-        //size += ( statistics == null ? 0 : statistics.size() );
-
-        // add size of version.
-        //size += ( Long.SIZE/Byte.SIZE );
-
-        // add key size.
-        //size += key.totalSize();
-
-        // todo add object size
-        //size += ( value == null ? 0 : value.totalSize() );
-
-        return size;
+        return 0;
     }
 
     public Object getValue() {
         return value;
     }
 
-    public Object setValue(Object o) {
-        Object old = value;
+    public void setValue(Object o) {
         value = o;
-        return old;
     }
 
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        super.writeData(out);
-        out.writeObject(value);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        super.readData(in);
-        value = in.readObject();
-    }
-
-    public int getFactoryId() {
-        return MapDataSerializerHook.F_ID;
-    }
-
-    public int getId() {
-        return MapDataSerializerHook.OBJECT_RECORD;
+    public void invalidate() {
+        value = null;
     }
 }

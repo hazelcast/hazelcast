@@ -17,6 +17,7 @@
 package com.hazelcast.concurrent.lock.client;
 
 import com.hazelcast.client.KeyBasedClientRequest;
+import com.hazelcast.client.SecureRequest;
 import com.hazelcast.concurrent.lock.GetLockCountOperation;
 import com.hazelcast.concurrent.lock.InternalLockNamespace;
 import com.hazelcast.concurrent.lock.LockPortableHook;
@@ -27,14 +28,17 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.LockPermission;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
+import java.security.Permission;
 
 /**
  * @author mdogan 5/3/13
  */
-public final class GetLockCountRequest extends KeyBasedClientRequest implements Portable {
+public final class GetLockCountRequest extends KeyBasedClientRequest implements Portable, SecureRequest {
 
     private Data key;
 
@@ -79,4 +83,8 @@ public final class GetLockCountRequest extends KeyBasedClientRequest implements 
         key.readData(in);
     }
 
+    public Permission getRequiredPermission() {
+        String name = (String) getClientEngine().toObject(key);
+        return new LockPermission(name, ActionConstants.ACTION_READ);
+    }
 }

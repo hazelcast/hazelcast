@@ -61,7 +61,7 @@ public class ClientTxnQueueTest {
 
     @Test
     public void testTransactionalOfferPoll1() throws Exception {
-        final String name = "defQueue";
+        final String name = "testTransactionalOfferPoll1";
 
         final TransactionContext context = hz.newTransactionContext();
         context.beginTransaction();
@@ -124,30 +124,5 @@ public class ClientTxnQueueTest {
         context.commitTransaction();
         assertEquals(1, hz.getQueue(name).size());
     }
-
-
-//    @Test
-//    public void testQueueWithMap() throws Exception {
-//        final String queueName = "defQueue";
-//        final String mapName = "defMap";
-//        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(insCount);
-//        final HazelcastInstance[] instances = factory.newInstances(config);
-//        instances[0].getMap(mapName).lock("lock1");
-//
-//        try {
-//            final TransactionContext context = instances[1].newTransactionContext(new TransactionOptions().setTimeout(5, TimeUnit.SECONDS));
-//            context.beginTransaction();
-//
-//            boolean offered = context.getQueue(queueName).offer("item1");
-//            assertTrue(offered);
-//            context.getMap(mapName).put("lock1", "value1");
-//            fail();
-//
-//        } catch (TransactionException ex) {
-//            // expected
-//        }
-//        assertEquals(0, instances[0].getQueue(queueName).size());
-//        assertNull(instances[0].getMap(mapName).get("lock1"));
-//    }
 
 }

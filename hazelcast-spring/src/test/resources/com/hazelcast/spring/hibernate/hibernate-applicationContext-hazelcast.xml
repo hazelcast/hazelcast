@@ -62,4 +62,8 @@
     <hz:hibernate-region-factory id="regionFactory" instance-ref="instance"/>
     <hz:hibernate-region-factory id="localRegionFactory" instance-ref="instance" mode="LOCAL" />
 
+    <bean id="localRegionFactory2" class="com.hazelcast.hibernate.HazelcastLocalCacheRegionFactory">
+        <constructor-arg ref="instance" />
+    </bean>
+
 </beans>

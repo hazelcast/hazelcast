@@ -25,7 +25,6 @@ import java.util.concurrent.Callable;
 /**
  * A secure callable that runs in a sandbox.
  */
-public interface SecureCallable<V> extends Callable<V>, Serializable,
-        HazelcastInstanceAware, NodeAware {
+public interface SecureCallable<V> extends Callable<V>, Serializable, HazelcastInstanceAware, NodeAware {
 
 }

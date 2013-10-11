@@ -23,6 +23,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
@@ -77,5 +78,9 @@ public class CollectionContainsRequest extends CollectionRequest {
             value.readData(in);
             valueSet.add(value);
         }
+    }
+
+    public String getRequiredAction() {
+        return ActionConstants.ACTION_READ;
     }
 }

@@ -19,8 +19,11 @@ package com.hazelcast.multimap.operations.client;
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.multimap.operations.MultiMapOperationFactory;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MultiMapPermission;
 import com.hazelcast.spi.OperationFactory;
 
+import java.security.Permission;
 import java.util.Map;
 
 /**
@@ -45,5 +48,9 @@ public class ClearRequest extends MultiMapAllPartitionRequest implements Retryab
 
     public int getClassId() {
         return MultiMapPortableHook.CLEAR;
+    }
+
+    public Permission getRequiredPermission() {
+        return new MultiMapPermission(name, ActionConstants.ACTION_REMOVE);
     }
 }

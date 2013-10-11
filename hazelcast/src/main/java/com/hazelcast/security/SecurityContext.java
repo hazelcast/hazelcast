@@ -21,7 +21,6 @@ import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.security.AccessControlException;
 import java.security.Permission;
-import java.security.PrivilegedExceptionAction;
 import java.util.concurrent.Callable;
 
 /**
@@ -62,17 +61,7 @@ public interface SecurityContext {
      * @param permission
      * @throws AccessControlException
      */
-    void checkPermission(Permission permission) throws AccessControlException;
-
-    /**
-     * Performs privileged work as a particular <code>Subject</code>.
-     *
-     * @param subject
-     * @param action
-     * @return result returned by the PrivilegedExceptionAction run method.
-     * @throws SecurityException
-     */
-    <T> T doAsPrivileged(Subject subject, PrivilegedExceptionAction<T> action) throws Exception, SecurityException;
+    void checkPermission(Subject subject, Permission permission) throws AccessControlException;
 
     /**
      * Creates secure callable that runs in a sandbox.

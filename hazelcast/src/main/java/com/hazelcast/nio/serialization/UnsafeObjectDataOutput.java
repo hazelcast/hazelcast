@@ -16,6 +16,8 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.nio.UnsafeHelper;
+
 import java.io.IOException;
 import java.nio.ByteOrder;
 

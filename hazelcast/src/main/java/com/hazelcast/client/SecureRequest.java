@@ -14,35 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map;
+package com.hazelcast.client;
 
+import java.security.Permission;
 
 /**
- * Created with IntelliJ IDEA.
- * User: ahmet
- * Date: 05.09.2013
- * Time: 14:36
+ * @ali 10/3/13
  */
-public abstract class AbstractSizeEstimator implements SizeEstimator {
+public interface SecureRequest {
 
-    private long _size;
-
-    protected AbstractSizeEstimator() {
-        _size = 0L;
-    }
-
-    @Override
-    public long getSize() {
-        return _size;
-    }
-
-    public void add(long size) {
-        _size += size;
-    }
-
-
-    public void reset() {
-        _size = 0;
-    }
+    Permission getRequiredPermission();
 
 }

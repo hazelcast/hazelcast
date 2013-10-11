@@ -31,7 +31,6 @@ public class LockPortableHook implements PortableHook {
     public static final int LOCK = 1;
     public static final int UNLOCK = 2;
     public static final int IS_LOCKED = 3;
-    public static final int DESTROY = 4;
     public static final int GET_LOCK_COUNT = 5;
     public static final int GET_REMAINING_LEASE = 6;
 
@@ -51,8 +50,6 @@ public class LockPortableHook implements PortableHook {
                         return new UnlockRequest();
                     case IS_LOCKED:
                         return new IsLockedRequest();
-                    case DESTROY:
-                        return new LockDestroyRequest();
                     case GET_LOCK_COUNT:
                         return new GetLockCountRequest();
                     case GET_REMAINING_LEASE:

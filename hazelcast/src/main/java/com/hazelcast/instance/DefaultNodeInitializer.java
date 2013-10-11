@@ -18,10 +18,11 @@ package com.hazelcast.instance;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.SecurityContext;
+import com.hazelcast.storage.DataRef;
+import com.hazelcast.storage.Storage;
 
 import java.io.InputStream;
 import java.util.Properties;
-import java.util.logging.Level;
 
 public class DefaultNodeInitializer implements NodeInitializer {
 
@@ -88,6 +89,11 @@ public class DefaultNodeInitializer implements NodeInitializer {
     public SecurityContext getSecurityContext() {
         logger.warning("Security features are only available on Hazelcast Enterprise Edition!");
         return null;
+    }
+
+    @Override
+    public Storage<DataRef> getOffHeapStorage() {
+        throw new UnsupportedOperationException("Offheap feature is only available on Hazelcast Enterprise Edition!");
     }
 
     public void destroy() {

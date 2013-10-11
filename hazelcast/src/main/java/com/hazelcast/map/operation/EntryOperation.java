@@ -20,7 +20,9 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.MapEntrySimple;
 import com.hazelcast.map.SimpleEntryView;
+import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -32,12 +34,19 @@ import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.Map;
 
+/**
+ *
+ * GOTCHA : This operation does not load missing keys from mapstore for now.
+ *
+ * */
 public class EntryOperation extends LockAwareOperation implements BackupAwareOperation {
 
+    private static final EntryEventType __NO_NEED_TO_FIRE_EVENT = null;
     private EntryProcessor entryProcessor;
     private transient EntryEventType eventType;
     private transient Object response;
     protected transient Data dataOldValue;
+
 
     public EntryOperation(String name, Data dataKey, EntryProcessor entryProcessor) {
         super(name, dataKey);
@@ -56,14 +65,25 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     public void run() {
         Map.Entry<Data, Data> mapEntry = recordStore.getMapEntryData(dataKey);
         dataOldValue = mapEntry.getValue();
-        Map.Entry entry = new AbstractMap.SimpleEntry(mapService.toObject(dataKey), mapService.toObject(mapEntry.getValue()));
+        final Object valueBeforeProcess = mapService.toObject(dataOldValue);
+        final MapEntrySimple entry = new MapEntrySimple(mapService.toObject(dataKey), valueBeforeProcess);
         response = mapService.toData(entryProcessor.process(entry));
-        if (entry.getValue() == null) {
+        final Object valueAfterProcess = entry.getValue();
+
+        // no matching data by key.
+        if( dataOldValue == null && valueAfterProcess == null ){
+            eventType = __NO_NEED_TO_FIRE_EVENT;
+        }
+        else if (valueAfterProcess == null) {
             recordStore.remove(dataKey);
             eventType = EntryEventType.REMOVED;
         } else {
-            if (mapEntry.getValue() == null) {
+            if (dataOldValue == null) {
                 eventType = EntryEventType.ADDED;
+            }
+            // take this case as a read so no need to fire an event.
+            else if (!entry.isModified()) {
+                eventType = __NO_NEED_TO_FIRE_EVENT;
             } else {
                 eventType = EntryEventType.UPDATED;
             }
@@ -74,13 +94,17 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
 
     public void afterRun() throws Exception {
         super.afterRun();
+        if (eventType == __NO_NEED_TO_FIRE_EVENT) {
+            return;
+        }
         mapService.publishEvent(getCallerAddress(), name, eventType, dataKey, dataOldValue, dataValue);
         invalidateNearCaches();
         if (mapContainer.getWanReplicationPublisher() != null && mapContainer.getWanMergePolicy() != null) {
             if (EntryEventType.REMOVED.equals(eventType)) {
                 mapService.publishWanReplicationRemove(name, dataKey, Clock.currentTimeMillis());
             } else {
-                SimpleEntryView entryView = new SimpleEntryView(dataKey, mapService.toData(dataValue), recordStore.getRecords().get(dataKey));
+                Record record = recordStore.getRecord(dataKey);
+                SimpleEntryView entryView = new SimpleEntryView(dataKey, mapService.toData(dataValue), record.getStatistics(), record.getVersion());
                 mapService.publishWanReplicationUpdate(name, entryView);
             }
         }

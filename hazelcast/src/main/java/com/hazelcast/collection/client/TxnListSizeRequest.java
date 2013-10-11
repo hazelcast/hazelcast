@@ -18,6 +18,10 @@ package com.hazelcast.collection.client;
 
 import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.collection.list.ListService;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.ListPermission;
+
+import java.security.Permission;
 
 /**
  * @ali 9/4/13
@@ -41,5 +45,9 @@ public class TxnListSizeRequest extends TxnCollectionRequest {
 
     public int getClassId() {
         return CollectionPortableHook.TXN_LIST_SIZE;
+    }
+
+    public Permission getRequiredPermission() {
+        return new ListPermission(name, ActionConstants.ACTION_READ);
     }
 }

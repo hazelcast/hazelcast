@@ -17,6 +17,7 @@
 package com.hazelcast.concurrent.lock.client;
 
 import com.hazelcast.client.KeyBasedClientRequest;
+import com.hazelcast.client.SecureRequest;
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.UnlockOperation;
 import com.hazelcast.nio.ObjectDataInput;
@@ -33,7 +34,7 @@ import java.io.IOException;
 /**
  * @author mdogan 5/3/13
  */
-public abstract class AbstractUnlockRequest extends KeyBasedClientRequest implements Portable  {
+public abstract class AbstractUnlockRequest extends KeyBasedClientRequest implements Portable, SecureRequest {
 
     protected Data key;
 

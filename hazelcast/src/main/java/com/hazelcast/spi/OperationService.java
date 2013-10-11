@@ -46,6 +46,8 @@ public interface OperationService {
 
     long  getExecutedOperationCount();
 
+    boolean isOperationThread();
+
     /**
      * Runs operation in calling thread.
      *

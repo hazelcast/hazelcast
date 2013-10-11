@@ -22,6 +22,7 @@ import com.hazelcast.core.DuplicateInstanceNameException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
 import com.hazelcast.jmx.ManagementService;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.util.ExceptionUtil;
 
@@ -79,11 +80,15 @@ public final class HazelcastInstanceFactory {
     }
 
     public static HazelcastInstance newHazelcastInstance(Config config, String instanceName, NodeContext nodeContext) {
+        final ClassLoader tccl = Thread.currentThread().getContextClassLoader();
+
         if (instanceName == null || instanceName.trim().length() == 0) {
             instanceName = createInstanceName(config);
         }
         HazelcastInstanceProxy proxy;
         try {
+            Thread.currentThread().setContextClassLoader(HazelcastInstanceFactory.class.getClassLoader());
+
             final HazelcastInstanceImpl hazelcastInstance = new HazelcastInstanceImpl(instanceName, config, nodeContext);
             OutOfMemoryErrorDispatcher.register(hazelcastInstance);
             proxy = new HazelcastInstanceProxy(hazelcastInstance);
@@ -124,6 +129,8 @@ public final class HazelcastInstanceFactory {
             hazelcastInstance.lifecycleService.fireLifecycleEvent(STARTED);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
+        } finally {
+            Thread.currentThread().setContextClassLoader(tccl);
         }
         return proxy;
     }
@@ -131,6 +138,7 @@ public final class HazelcastInstanceFactory {
     public static void shutdownAll() {
         final List<HazelcastInstanceProxy> instances = new ArrayList<HazelcastInstanceProxy>(INSTANCE_MAP.values());
         INSTANCE_MAP.clear();
+        OutOfMemoryErrorDispatcher.clear();
         ManagementService.shutdownAll();
         Collections.sort(instances, new Comparator<HazelcastInstanceProxy>() {
             public int compare(HazelcastInstanceProxy o1, HazelcastInstanceProxy o2) {

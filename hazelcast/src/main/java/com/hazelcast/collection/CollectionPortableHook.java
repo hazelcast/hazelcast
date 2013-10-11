@@ -29,33 +29,31 @@ public class CollectionPortableHook implements PortableHook {
 
     public static final int F_ID = FactoryIdHelper.getFactoryId(FactoryIdHelper.COLLECTION_PORTABLE_FACTORY, -20);
 
-    public static int increment = 1;
 
-    public static final int COLLECTION_SIZE = increment++;
-    public static final int COLLECTION_CONTAINS = increment++;
-    public static final int COLLECTION_ADD = increment++;
-    public static final int COLLECTION_REMOVE = increment++;
-    public static final int COLLECTION_ADD_ALL = increment++;
-    public static final int COLLECTION_COMPARE_AND_REMOVE = increment++;
-    public static final int COLLECTION_CLEAR = increment++;
-    public static final int COLLECTION_GET_ALL = increment++;
-    public static final int COLLECTION_ADD_LISTENER = increment++;
-    public static final int COLLECTION_DESTROY = increment++;
-    public static final int LIST_ADD_ALL = increment++;
-    public static final int LIST_GET = increment++;
-    public static final int LIST_SET = increment++;
-    public static final int LIST_ADD = increment++;
-    public static final int LIST_REMOVE = increment++;
-    public static final int LIST_INDEX_OF = increment++;
-    public static final int LIST_SUB = increment++;
+    public static final int COLLECTION_SIZE = 1;
+    public static final int COLLECTION_CONTAINS = 2;
+    public static final int COLLECTION_ADD = 3;
+    public static final int COLLECTION_REMOVE = 4;
+    public static final int COLLECTION_ADD_ALL = 5;
+    public static final int COLLECTION_COMPARE_AND_REMOVE = 6;
+    public static final int COLLECTION_CLEAR = 7;
+    public static final int COLLECTION_GET_ALL = 8;
+    public static final int COLLECTION_ADD_LISTENER = 9;
+    public static final int LIST_ADD_ALL = 10;
+    public static final int LIST_GET = 11;
+    public static final int LIST_SET = 12;
+    public static final int LIST_ADD = 13;
+    public static final int LIST_REMOVE = 14;
+    public static final int LIST_INDEX_OF = 15;
+    public static final int LIST_SUB = 16;
 
-    public static final int TXN_LIST_ADD = increment++;
-    public static final int TXN_LIST_REMOVE = increment++;
-    public static final int TXN_LIST_SIZE = increment++;
+    public static final int TXN_LIST_ADD = 17;
+    public static final int TXN_LIST_REMOVE = 18;
+    public static final int TXN_LIST_SIZE = 19;
 
-    public static final int TXN_SET_ADD = increment++;
-    public static final int TXN_SET_REMOVE = increment++;
-    public static final int TXN_SET_SIZE = increment++;
+    public static final int TXN_SET_ADD = 20;
+    public static final int TXN_SET_REMOVE = 21;
+    public static final int TXN_SET_SIZE = 22;
 
     public int getFactoryId() {
         return F_ID;
@@ -63,7 +61,7 @@ public class CollectionPortableHook implements PortableHook {
 
     @Override
     public PortableFactory createFactory() {
-        ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[increment];
+        ConstructorFunction<Integer, Portable> constructors[] = new ConstructorFunction[TXN_SET_SIZE+1];
 
         constructors[COLLECTION_SIZE] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
@@ -110,12 +108,6 @@ public class CollectionPortableHook implements PortableHook {
                 return new CollectionAddListenerRequest();
             }
         };
-        constructors[COLLECTION_DESTROY] = new ConstructorFunction<Integer, Portable>() {
-            public Portable createNew(Integer arg) {
-                return new CollectionDestroyRequest();
-            }
-        };
-
 
         constructors[LIST_ADD_ALL] = new ConstructorFunction<Integer, Portable>() {
             public Portable createNew(Integer arg) {
