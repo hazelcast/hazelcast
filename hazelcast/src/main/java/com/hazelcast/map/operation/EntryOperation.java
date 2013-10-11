@@ -20,6 +20,7 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.map.EntryBackupProcessor;
 import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.MapEntrySimple;
 import com.hazelcast.map.SimpleEntryView;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -64,7 +65,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
         Map.Entry<Data, Data> mapEntry = recordStore.getMapEntryData(dataKey);
         dataOldValue = mapEntry.getValue();
         final Object valueBeforeProcess = mapService.toObject(dataOldValue);
-        final Map.Entry entry = new AbstractMap.SimpleEntry(mapService.toObject(dataKey), valueBeforeProcess);
+        final MapEntrySimple entry = new MapEntrySimple(mapService.toObject(dataKey), valueBeforeProcess);
         response = mapService.toData(entryProcessor.process(entry));
         final Object valueAfterProcess = entry.getValue();
 
@@ -81,7 +82,7 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
             }
             // take this case as a read so no need to fire an event.
             // no event fired when putting the same value again.
-            else if (mapService.compare(recordStore.getMapContainer().getName(), valueBeforeProcess, valueAfterProcess)) {
+            else if (!entry.isModified()) {
                 eventType = __NO_NEED_TO_FIRE_EVENT;
             } else {
                 eventType = EntryEventType.UPDATED;

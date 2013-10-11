@@ -50,14 +50,14 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
 
     public void run() {
         response = new MapEntrySet();
-        Map.Entry entry;
+        MapEntrySimple entry;
         final RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
         final Map<Data, Record> records = recordStore.getRecords();
         for (final Map.Entry<Data, Record> recordEntry : records.entrySet()) {
             final Data dataKey = recordEntry.getKey();
             final Record record = recordEntry.getValue();
             final Object valueBeforeProcess = mapService.toObject(record.getValue());
-            entry = new AbstractMap.SimpleEntry(mapService.toObject(record.getKey()), valueBeforeProcess);
+            entry = new MapEntrySimple(mapService.toObject(record.getKey()), valueBeforeProcess);
             final Object result = entryProcessor.process(entry);
             final Object valueAfterProcess = entry.getValue();
             Data dataValue = null;
@@ -75,7 +75,7 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
                     }
                     // take this case as a read so no need to fire an event.
                     // so do not fire any event if putting the same value again.
-                    else if (mapService.compare(recordStore.getMapContainer().getName(), valueBeforeProcess, valueAfterProcess)) {
+                    else if (!entry.isModified()) {
                         eventType = __NO_NEED_TO_FIRE_EVENT;
                     } else {
                         eventType = EntryEventType.UPDATED;
