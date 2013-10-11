@@ -74,7 +74,6 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
                         eventType = EntryEventType.ADDED;
                     }
                     // take this case as a read so no need to fire an event.
-                    // so do not fire any event if putting the same value again.
                     else if (!entry.isModified()) {
                         eventType = __NO_NEED_TO_FIRE_EVENT;
                     } else {

@@ -81,7 +81,6 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
                 eventType = EntryEventType.ADDED;
             }
             // take this case as a read so no need to fire an event.
-            // no event fired when putting the same value again.
             else if (!entry.isModified()) {
                 eventType = __NO_NEED_TO_FIRE_EVENT;
             } else {
