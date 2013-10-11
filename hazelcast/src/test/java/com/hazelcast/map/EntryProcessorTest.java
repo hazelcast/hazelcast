@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastJUnit4ClassRunner.class)
@@ -191,6 +192,24 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
     }
 
+    private static class RemoveEntryProcessor implements EntryProcessor, EntryBackupProcessor {
+        RemoveEntryProcessor() {
+        }
+
+        public Object process(Map.Entry entry) {
+              entry.setValue(null);
+              return entry;
+        }
+
+        public EntryBackupProcessor getBackupProcessor() {
+            return RemoveEntryProcessor.this;
+        }
+
+        public void processBackup(Map.Entry entry) {
+
+        }
+    }
+
     @Test
     public void testMapEntryProcessorEntryListeners() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
@@ -276,6 +295,143 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         public void processBackup(Map.Entry entry) {
             entry.setValue(value);
         }
+    }
+
+    @Test
+    public void testIssue969() {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
+        Config cfg = new Config();
+        cfg.getMapConfig("default").setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessorEntryListeners");
+        final AtomicInteger addCount = new AtomicInteger(0);
+        final AtomicInteger updateCount = new AtomicInteger(0);
+        final AtomicInteger removeCount = new AtomicInteger(0);
+        map.addEntryListener(new EntryListener<Integer, Integer>() {
+            @Override
+            public void entryAdded(EntryEvent<Integer, Integer> event) {
+                addCount.incrementAndGet();
+            }
+
+            @Override
+            public void entryRemoved(EntryEvent<Integer, Integer> event) {
+                removeCount.incrementAndGet();
+            }
+
+            @Override
+            public void entryUpdated(EntryEvent<Integer, Integer> event) {
+                updateCount.incrementAndGet();
+            }
+
+            @Override
+            public void entryEvicted(EntryEvent<Integer, Integer> event) {
+            }
+        }, true);
+
+        map.executeOnKey(1, new ValueReaderEntryProcessor());
+        assertNull(map.get(1));
+        map.executeOnKey(1, new ValueReaderEntryProcessor());
+
+        map.put(1, 3);
+        assertNotNull(map.get(1));
+        map.executeOnKey(1, new ValueReaderEntryProcessor());
+
+        map.put(2,2);
+        ValueReaderEntryProcessor valueReaderEntryProcessor = new ValueReaderEntryProcessor();
+        map.executeOnKey(2, valueReaderEntryProcessor);
+        assertEquals(2, valueReaderEntryProcessor.getValue().intValue());
+
+        map.put(2,5);
+        map.executeOnKey(2, valueReaderEntryProcessor);
+        assertEquals(5,valueReaderEntryProcessor.getValue().intValue());
+
+
+        assertEquals(2, addCount.get());
+        assertEquals(0, removeCount.get());
+        assertEquals(1, updateCount.get());
+
+
+    }
+
+    private static class ValueReaderEntryProcessor implements EntryProcessor, EntryBackupProcessor {
+        Integer value;
+
+        ValueReaderEntryProcessor() {
+        }
+
+        public Object process(Map.Entry entry) {
+            value = (Integer) entry.getValue();
+            return value;
+        }
+
+        public EntryBackupProcessor getBackupProcessor() {
+            return ValueReaderEntryProcessor.this;
+        }
+
+        public void processBackup(Map.Entry entry) {
+        }
+
+        public Integer getValue() {
+            return value;
+        }
+    }
+
+    @Test
+    public void testIssue969MapEntryProcessorAllKeys() throws InterruptedException {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        cfg.getMapConfig("default").setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+        IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
+        final AtomicInteger addCount = new AtomicInteger(0);
+        final AtomicInteger updateCount = new AtomicInteger(0);
+        final AtomicInteger removeCount = new AtomicInteger(0);
+        map.addEntryListener(new EntryListener<Integer, Integer>() {
+            @Override
+            public void entryAdded(EntryEvent<Integer, Integer> event) {
+                addCount.incrementAndGet();
+            }
+
+            @Override
+            public void entryRemoved(EntryEvent<Integer, Integer> event) {
+                removeCount.incrementAndGet();
+            }
+
+            @Override
+            public void entryUpdated(EntryEvent<Integer, Integer> event) {
+                updateCount.incrementAndGet();
+            }
+
+            @Override
+            public void entryEvicted(EntryEvent<Integer, Integer> event) {
+            }
+        }, true);
+        int size = 100;
+        for (int i = 0; i < size; i++) {
+            map.put(i, i);
+        }
+        final EntryProcessor entryProcessor = new IncrementorEntryProcessor();
+        Map<Integer, Object> res = map.executeOnEntries(entryProcessor);
+
+        for (int i = 0; i < size; i++) {
+            assertEquals(map.get(i), (Object) (i + 1));
+        }
+        for (int i = 0; i < size; i++) {
+            assertEquals(map.get(i), res.get(i));
+        }
+
+        final RemoveEntryProcessor removeEntryProcessor = new RemoveEntryProcessor();
+        map.executeOnEntries(removeEntryProcessor);
+
+        assertEquals(0,map.size());
+
+        assertEquals(100,addCount.get());
+        assertEquals(100,removeCount.get());
+        assertEquals(100,updateCount.get());
+
+        instance1.getLifecycleService().shutdown();
+        instance2.getLifecycleService().shutdown();
     }
 
 
