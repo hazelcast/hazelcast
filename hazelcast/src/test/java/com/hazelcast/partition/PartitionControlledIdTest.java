@@ -25,7 +25,7 @@ import com.hazelcast.concurrent.lock.LockServiceImpl;
 import com.hazelcast.concurrent.lock.LockStore;
 import com.hazelcast.concurrent.semaphore.SemaphoreService;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.PartitionStrategyConfig;
+import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.Node;
 import com.hazelcast.instance.TestUtil;
@@ -61,7 +61,7 @@ public class PartitionControlledIdTest extends HazelcastTestSupport {
     public void setUp() throws InterruptedException {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(4);
         Config config = new Config();
-        config.getMapConfig("default").setPartitionStrategyConfig(new PartitionStrategyConfig(new StringAndPartitionAwarePartitioningStrategy()));
+        config.getMapConfig("default").setPartitioningStrategyConfig(new PartitioningStrategyConfig(new StringAndPartitionAwarePartitioningStrategy()));
         instances = factory.newInstances(config);
         warmUpPartitions(instances);
     }

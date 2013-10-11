@@ -31,7 +31,7 @@ public class MultiMapConfig {
     private int backupCount = DEFAULT_SYNC_BACKUP_COUNT;
     private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
     private boolean statisticsEnabled = true;
-//    private PartitionStrategyConfig partitionStrategyConfig;
+//    private PartitioningStrategyConfig partitionStrategyConfig;
 
     public MultiMapConfig() {
     }
@@ -44,7 +44,7 @@ public class MultiMapConfig {
         this.asyncBackupCount = defConfig.asyncBackupCount;
         this.statisticsEnabled = defConfig.statisticsEnabled;
         this.listenerConfigs = new ArrayList<EntryListenerConfig>(defConfig.getEntryListenerConfigs());
-//        this.partitionStrategyConfig = defConfig.getPartitionStrategyConfig();
+//        this.partitionStrategyConfig = defConfig.getPartitioningStrategyConfig();
     }
 
     public enum ValueCollectionType {
@@ -142,11 +142,11 @@ public class MultiMapConfig {
         return this;
     }
 
-//    public PartitionStrategyConfig getPartitionStrategyConfig() {
+//    public PartitioningStrategyConfig getPartitioningStrategyConfig() {
 //        return partitionStrategyConfig;
 //    }
 //
-//    public MultiMapConfig setPartitionStrategyConfig(PartitionStrategyConfig partitionStrategyConfig) {
+//    public MultiMapConfig setPartitioningStrategyConfig(PartitioningStrategyConfig partitionStrategyConfig) {
 //        this.partitionStrategyConfig = partitionStrategyConfig;
 //        return this;
 //    }

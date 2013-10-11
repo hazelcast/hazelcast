@@ -22,7 +22,6 @@
        xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
        http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
     <title>J2EE Integration</title>
-    <para>Not yet implemented as of version 3.0</para>
     <para>Hazelcast can be integrated into J2EE containers via Hazelcast Resource Adapter (
         hazelcast-ra.rar ). After proper configuration, Hazelcast can participate in standard J2EE
         transactions.

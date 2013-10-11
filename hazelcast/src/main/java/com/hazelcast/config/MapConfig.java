@@ -76,7 +76,7 @@ public class MapConfig {
 
     private boolean statisticsEnabled = true;
 
-    private PartitionStrategyConfig partitionStrategyConfig;
+    private PartitioningStrategyConfig partitioningStrategyConfig;
 
     public enum EvictionPolicy {
         LRU, LFU, NONE
@@ -105,7 +105,7 @@ public class MapConfig {
         this.mergePolicy = config.mergePolicy;
         this.wanReplicationRef = config.wanReplicationRef;
         this.listenerConfigs = new ArrayList<EntryListenerConfig>(config.getEntryListenerConfigs());
-        this.partitionStrategyConfig = config.partitionStrategyConfig;
+        this.partitioningStrategyConfig = config.partitioningStrategyConfig;
     }
 
     /**
@@ -397,12 +397,12 @@ public class MapConfig {
         return this;
     }
 
-    public PartitionStrategyConfig getPartitionStrategyConfig() {
-        return partitionStrategyConfig;
+    public PartitioningStrategyConfig getPartitioningStrategyConfig() {
+        return partitioningStrategyConfig;
     }
 
-    public MapConfig setPartitionStrategyConfig(PartitionStrategyConfig partitionStrategyConfig) {
-        this.partitionStrategyConfig = partitionStrategyConfig;
+    public MapConfig setPartitioningStrategyConfig(PartitioningStrategyConfig partitioningStrategyConfig) {
+        this.partitioningStrategyConfig = partitioningStrategyConfig;
         return this;
     }
 

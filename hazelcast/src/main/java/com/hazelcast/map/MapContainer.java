@@ -18,7 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
-import com.hazelcast.config.PartitionStrategyConfig;
+import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.core.MapLoaderLifecycleSupport;
 import com.hazelcast.core.MapStoreFactory;
@@ -151,12 +151,12 @@ public class MapContainer {
 
     private PartitioningStrategy createPartitioningStrategy() {
         PartitioningStrategy strategy = null;
-        PartitionStrategyConfig partitionStrategyConfig = mapConfig.getPartitionStrategyConfig();
-        if (partitionStrategyConfig != null) {
-            strategy = partitionStrategyConfig.getPartitionStrategy();
-            if (strategy == null && partitionStrategyConfig.getPartitionStrategyClass() != null) {
+        PartitioningStrategyConfig partitioningStrategyConfig = mapConfig.getPartitioningStrategyConfig();
+        if (partitioningStrategyConfig != null) {
+            strategy = partitioningStrategyConfig.getPartitioningStrategy();
+            if (strategy == null && partitioningStrategyConfig.getPartitioningStrategyClass() != null) {
                 try {
-                    strategy = ClassLoaderUtil.newInstance(mapService.getNodeEngine().getConfigClassLoader(), partitionStrategyConfig.getPartitionStrategyClass());
+                    strategy = ClassLoaderUtil.newInstance(mapService.getNodeEngine().getConfigClassLoader(), partitioningStrategyConfig.getPartitioningStrategyClass());
                 } catch (Exception e) {
                     throw ExceptionUtil.rethrow(e);
                 }

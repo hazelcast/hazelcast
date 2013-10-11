@@ -365,7 +365,7 @@
                     <action>create</action>
                     <action>destroy</action>
                     <action>put</action>
-                    <action>get</action>
+                    <action>read</action>
                 </actions>
             </map-permission>
             <map-permission name="custom" principal="dev">
@@ -376,7 +376,7 @@
                     <action>create</action>
                     <action>destroy</action>
                     <action>put</action>
-                    <action>get</action>
+                    <action>read</action>
                 </actions>
             </map-permission>
             <queue-permission name="default" principal="dev">
@@ -386,12 +386,11 @@
                 <actions>
                     <action>create</action>
                     <action>destroy</action>
-                    <action>offer</action>
-                    <action>poll</action>
+                    <action>add</action>
+                    <action>remove</action>
                 </actions>
             </queue-permission>
             <transaction-permission/>
-            <listener-permission name="instance"/>
         </client-permissions>
     </security>
 

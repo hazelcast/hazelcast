@@ -281,13 +281,13 @@ public class ConfigXmlGenerator {
                 }
                 xml.append("</entry-listeners>");
             }
-            if (m.getPartitionStrategyConfig() != null) {
+            if (m.getPartitioningStrategyConfig() != null) {
                 xml.append("<partition-strategy>");
-                PartitionStrategyConfig psc = m.getPartitionStrategyConfig();
-                if (psc.getPartitionStrategy() != null) {
-                    xml.append(psc.getPartitionStrategy().getClass().getName());
+                PartitioningStrategyConfig psc = m.getPartitioningStrategyConfig();
+                if (psc.getPartitioningStrategy() != null) {
+                    xml.append(psc.getPartitioningStrategy().getClass().getName());
                 } else {
-                    xml.append(psc.getPartitionStrategyClass());
+                    xml.append(psc.getPartitioningStrategyClass());
                 }
                 xml.append("</partition-strategy>");
             }
@@ -307,13 +307,13 @@ public class ConfigXmlGenerator {
                 }
                 xml.append("</entry-listeners>");
             }
-//            if (mm.getPartitionStrategyConfig() != null) {
+//            if (mm.getPartitioningStrategyConfig() != null) {
 //                xml.append("<partition-strategy>");
-//                PartitionStrategyConfig psc = mm.getPartitionStrategyConfig();
+//                PartitioningStrategyConfig psc = mm.getPartitioningStrategyConfig();
 //                if (psc.getPartitioningStrategy() != null) {
 //                    xml.append(psc.getPartitioningStrategy().getClass().getName());
 //                } else {
-//                    xml.append(psc.getPartitionStrategyClass());
+//                    xml.append(psc.getPartitioningStrategyClass());
 //                }
 //                xml.append("</partition-strategy>");
 //            }

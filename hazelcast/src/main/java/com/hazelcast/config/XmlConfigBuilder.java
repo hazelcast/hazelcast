@@ -783,7 +783,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             } else if ("statistics-enabled".equals(nodeName)) {
                 multiMapConfig.setStatisticsEnabled(checkTrue(value));
 //            } else if ("partition-strategy".equals(nodeName)) {
-//                multiMapConfig.setPartitionStrategyConfig(new PartitionStrategyConfig(value));
+//                multiMapConfig.setPartitioningStrategyConfig(new PartitioningStrategyConfig(value));
             }
         }
         this.config.addMultiMapConfig(multiMapConfig);
@@ -882,7 +882,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                     }
                 }
             } else if ("partition-strategy".equals(nodeName)) {
-                mapConfig.setPartitionStrategyConfig(new PartitionStrategyConfig(value));
+                mapConfig.setPartitioningStrategyConfig(new PartitioningStrategyConfig(value));
             }
         }
         this.config.addMapConfig(mapConfig);

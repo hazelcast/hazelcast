@@ -1,0 +1,137 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!--
+  ~ Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<sect1 xml:id="WhatsNew31" version='5.0' xmlns='http://docbook.org/ns/docbook'
+       xmlns:xlink="http://www.w3.org/1999/xlink"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://docbook.org/ns/docbook http://www.docbook.org/xml/5.0/xsd/docbook.xsd
+      http://www.w3.org/1999/xlink http://www.w3.org/1999/xlink.xsd">
+    <title>What's new in 3.1?</title>
+    <para>
+        <emphasis role="bold">Elastic Memory<superscript>(Enterprise Edition Only)</superscript></emphasis>
+        <itemizedlist>
+            <listitem>
+                Elastic Memory is now available.
+                For additional info see <link xlink:href="#ElasticMemory">Elastic Memory</link> section.
+            </listitem>
+        </itemizedlist>
+    </para>
+
+    <para>
+        <emphasis role="bold">Security<superscript>(Enterprise Edition Only)</superscript></emphasis>
+        <itemizedlist>
+            <listitem>
+                Hazelcast Security is now available.
+                For additional info see <link xlink:href="#Security">Security</link> section.
+            </listitem>
+        </itemizedlist>
+    </para>
+
+    <para>
+        <emphasis role="bold">JCA</emphasis>
+        <itemizedlist>
+            <listitem>
+                Hazelcast JCA integration is back. For additional info see <link xlink:href="#JEEIntegration">J2EE Integration</link> section.
+            </listitem>
+        </itemizedlist>
+    </para>
+
+    <para>
+        <emphasis role="bold">Controlled Partitioning</emphasis>
+        <itemizedlist>
+            <listitem>
+                Controlled Partitioning is the ability to control the partition of certain DistributedObjects like the IQueue,
+                IAtomicLong or ILock. This will make collocating related data easier.
+
+                For additional info see our blog post:
+                <link xlink:href="http://blog.hazelcast.com/blog/2013/08/25/controlled-partitioning/">Controlled Partitioning</link>
+            </listitem>
+            <listitem>
+                Hazelcast map also supports custom partitioning strategies. A <code>PartitioningStrategy</code> can be defined
+                in map configuration.
+            </listitem>
+        </itemizedlist>
+    </para>
+
+    <para>
+        <emphasis role="bold">Map</emphasis>
+        <itemizedlist>
+            <listitem>
+                <code>TransactionalMap</code> now supports <code>keySet()</code>, <code>keySet(predicate)</code>,
+                <code>values()</code> and <code>values(predicate)</code> methods.
+            </listitem>
+            <listitem>
+                Eviction based on <code>USED_HEAP_PERCENTAGE</code> or <code>USED_HEAP_SIZE</code> now takes account
+                real heap memory size consumed by map.
+            </listitem>
+            <listitem>
+                <code>SqlPredicate</code> now supports '\' as escape character. See <link xlink:href="#MapQuery">MapQuery</link> section for more info.
+            </listitem>
+            <listitem>
+                <code>SqlPredicate</code> now supports regular expressions using <code>REGEX</code> keyword.
+                For example; <code>map.values(new SqlPredicate("name REGEX .*earl$"))</code>
+                See <link xlink:href="#MapQuery">MapQuery</link> section for more info.
+            </listitem>
+        </itemizedlist>
+    </para>
+    <para>
+        <emphasis role="bold">Queue</emphasis>
+        <itemizedlist>
+            <listitem>
+                Hazelcast queue now supports <code>QueueStoreFactory</code> that will be used to create custom <code>QueueStore</code>s
+                for persistent queues. <code>QueueStoreFactory</code> is similar to map's <code>MapStoreFactory</code>.
+            </listitem>
+            <listitem>
+                <code>TransactionalQueue</code> now supports <code>peek()</code> and <code>peek(timeout, timeunit)</code> methods.
+            </listitem>
+        </itemizedlist>
+    </para>
+
+    <para>
+        <emphasis role="bold">Client</emphasis>
+        <itemizedlist>
+            <listitem>
+                Client now has SSL support. See <link xlink:href="#SSL">SSL</link> section.
+            </listitem>
+            <listitem>
+                Client also supports custom socket implementations using <code>SocketFactory</code> API.
+                A custom socket factory can be defined in <code>ClientConfig</code>;
+                <code>clientConfig.getSocketOptions().setSocketFactory(socketFactory)</code>.
+            </listitem>
+        </itemizedlist>
+    </para>
+
+    <para>
+        <emphasis role="bold">Others</emphasis>
+        <itemizedlist>
+            <listitem>
+                Hazelcast <code>IList</code> and <code>ISet</code> now have their own configurations. They can be configured
+                using config API, xml and Spring. See <code>ListConfig</code> and <code>SetConfig</code> classes.
+            </listitem>
+            <listitem>
+                <code>HazelcastInstance.shutdown()</code> method added back.
+            </listitem>
+            <listitem>
+                OSGI compatibility is improved significantly.
+            </listitem>
+        </itemizedlist>
+    </para>
+
+    <para>
+        <link xlink:href="https://github.com/hazelcast/hazelcast/issues?milestone=23&state=closed"><emphasis role="bold">Fixed Issues</emphasis></link>
+    </para>
+</sect1>

@@ -79,6 +79,16 @@ public class MySSLContextFactory implements SSLContextFactory {
 </hazelcast>
 ]]></programlisting>
 
+    By version 3.1, Hazelcast client has SSL support too. Client SSL configuration can be defined using config API.
+        <programlisting language="java"><![CDATA[
+Properties props = new Properties();
+...
+ClientConfig config = new ClientConfig();
+config.getSocketOptions().setSocketFactory(new SSLSocketFactory(props));
+
+]]></programlisting>
+
+
     You can also set <literal>keyStore</literal> and <literal>keyStorePassword</literal> through
     <literal>javax.net.ssl.keyStore</literal> and <literal>javax.net.ssl.keyStorePassword</literal> system properties.
 

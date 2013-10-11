@@ -18,45 +18,45 @@ package com.hazelcast.config;
 
 import com.hazelcast.core.PartitioningStrategy;
 
-public class PartitionStrategyConfig {
+public class PartitioningStrategyConfig {
 
-    private String partitionStrategyClass;
+    private String partitioningStrategyClass;
 
     private PartitioningStrategy partitionStrategy;
 
-    public PartitionStrategyConfig() {
+    public PartitioningStrategyConfig() {
     }
 
-    public PartitionStrategyConfig(String partitionStrategyClass) {
-        this.partitionStrategyClass = partitionStrategyClass;
+    public PartitioningStrategyConfig(String partitioningStrategyClass) {
+        this.partitioningStrategyClass = partitioningStrategyClass;
     }
 
-    public PartitionStrategyConfig(PartitioningStrategy partitionStrategy) {
+    public PartitioningStrategyConfig(PartitioningStrategy partitionStrategy) {
         this.partitionStrategy = partitionStrategy;
     }
 
-    public String getPartitionStrategyClass() {
-        return partitionStrategyClass;
+    public String getPartitioningStrategyClass() {
+        return partitioningStrategyClass;
     }
 
-    public PartitionStrategyConfig setPartitionStrategyClass(String partitionStrategyClass) {
-        this.partitionStrategyClass = partitionStrategyClass;
+    public PartitioningStrategyConfig setPartitioningStrategyClass(String partitionStrategyClass) {
+        this.partitioningStrategyClass = partitionStrategyClass;
         return this;
     }
 
-    public PartitioningStrategy getPartitionStrategy() {
+    public PartitioningStrategy getPartitioningStrategy() {
         return partitionStrategy;
     }
 
-    public PartitionStrategyConfig setPartitionStrategy(PartitioningStrategy partitionStrategy) {
+    public PartitioningStrategyConfig setPartitionStrategy(PartitioningStrategy partitionStrategy) {
         this.partitionStrategy = partitionStrategy;
         return this;
     }
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("PartitionStrategyConfig{");
-        sb.append("partitionStrategyClass='").append(partitionStrategyClass).append('\'');
+        final StringBuilder sb = new StringBuilder("PartitioningStrategyConfig{");
+        sb.append("partitioningStrategyClass='").append(partitioningStrategyClass).append('\'');
         sb.append(", partitionStrategy=").append(partitionStrategy);
         sb.append('}');
         return sb.toString();
