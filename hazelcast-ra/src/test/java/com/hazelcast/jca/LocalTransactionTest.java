@@ -19,15 +19,15 @@ package com.hazelcast.jca;
 
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.test.annotation.SerialTest;
 import org.jboss.arquillian.junit.Arquillian;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.resource.cci.LocalTransaction;
-import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 /**
@@ -35,6 +35,7 @@ import static org.junit.Assert.assertNull;
  *
  * @author asimarslan
  */
+@Category(SerialTest.class)
 @RunWith(Arquillian.class)
 public class LocalTransactionTest extends AbstractDeploymentTest {
 

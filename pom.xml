@@ -35,9 +35,7 @@
         <module>hazelcast-wm</module>
         <module>hazelcast-spring</module>
         <module>hazelcast-cloud</module>
-
-        <!--ra module is not available atm-->
-        <!--<module>hazelcast-ra</module>-->
+        <module>hazelcast-ra</module>
     </modules>
 
     <properties>

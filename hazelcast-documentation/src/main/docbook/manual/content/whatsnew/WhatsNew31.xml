@@ -116,7 +116,7 @@
     </para>
 
     <para>
-        <emphasis role="bold">Others</emphasis>
+        <emphasis role="bold">Other Features</emphasis>
         <itemizedlist>
             <listitem>
                 Hazelcast <code>IList</code> and <code>ISet</code> now have their own configurations. They can be configured
@@ -132,6 +132,11 @@
     </para>
 
     <para>
-        <link xlink:href="https://github.com/hazelcast/hazelcast/issues?milestone=23&state=closed"><emphasis role="bold">Fixed Issues</emphasis></link>
+        <emphasis role="bold">Fixed Issues</emphasis>
+        <itemizedlist>
+            <listitem>
+                <link xlink:href="https://github.com/hazelcast/hazelcast/issues?milestone=23&amp;state=closed">Version `3.1</link>
+            </listitem>
+        </itemizedlist>
     </para>
 </sect1>

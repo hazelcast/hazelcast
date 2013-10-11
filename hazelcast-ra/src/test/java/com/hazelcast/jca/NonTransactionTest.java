@@ -19,24 +19,22 @@ package com.hazelcast.jca;
 
 import com.hazelcast.core.IList;
 import com.hazelcast.core.IMap;
+import com.hazelcast.test.annotation.SerialTest;
 import org.jboss.arquillian.junit.Arquillian;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Map;
-
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
 /**
  * no transaction tests using connection from container
  *
  * @author asimarslan
  */
+@Category(SerialTest.class)
 @RunWith(Arquillian.class)
 public class NonTransactionTest extends AbstractDeploymentTest {
-
-
 
     @Test
     public void testMap() throws Throwable {

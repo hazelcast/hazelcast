@@ -17,18 +17,14 @@
 package com.hazelcast.jca;
 
 import com.hazelcast.core.TransactionalMap;
+import com.hazelcast.test.annotation.SerialTest;
 import org.jboss.arquillian.junit.Arquillian;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.annotation.Resource;
-import javax.naming.NamingException;
-import javax.sql.DataSource;
 import javax.transaction.UserTransaction;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
 
 import static org.junit.Assert.assertEquals;
 
@@ -37,6 +33,7 @@ import static org.junit.Assert.assertEquals;
  *
  * @author asimarslan
  */
+@Category(SerialTest.class)
 @RunWith(Arquillian.class)
 public class XATransactionTest extends AbstractDeploymentTest {
 
