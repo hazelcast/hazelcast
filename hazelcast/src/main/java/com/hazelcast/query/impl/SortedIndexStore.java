@@ -80,7 +80,7 @@ public class SortedIndexStore implements IndexStore {
 
     public void newIndex(Comparable newValue, QueryableEntry record) {
         ConcurrentMap<Data, QueryableEntry> records = mapRecords.get(newValue);
-        final boolean isNullObject = newValue.equals(IndexImpl.NULL);
+        final boolean isNullObject = newValue instanceof IndexImpl.NullObject;
         if (records == null && !isNullObject) {
             records = new ConcurrentHashMap<Data, QueryableEntry>(1, 0.75f, 1);
             mapRecords.put(newValue, records);
