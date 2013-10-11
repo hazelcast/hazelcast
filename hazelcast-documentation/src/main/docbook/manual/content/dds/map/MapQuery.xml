@@ -129,7 +129,7 @@ Set<Employee> employees = (Set<Employee>) map.values(new SqlPredicate("active AN
                                     </listitem>
                                     <listitem>
                                         <para>
-                                            <literal>name ="Joe"</literal>
+                                            <literal>name ='Joe'</literal>
                                         </para>
                                     </listitem>
                                     <listitem>
@@ -185,6 +185,7 @@ Set<Employee> employees = (Set<Employee>) map.values(new SqlPredicate("active AN
                                 <literal>_</literal>
                                 (underscore) is placeholder for
                                 only one character.
+                                <literal>\</literal>(Backslash) is used to escape these characters
                                 <itemizedlist>
                                     <listitem>
                                         <para>
@@ -212,6 +213,12 @@ Set<Employee> employees = (Set<Employee>) map.values(new SqlPredicate("active AN
                                             <literal>name LIKE 'J_s%'</literal>
                                             (true for
                                             'Josh', 'Joseph'; false 'John', 'Joe')
+                                        </para>
+                                    </listitem>
+                                   <listitem>
+                                        <para>
+                                            <literal>name LIKE 'J\%'</literal>
+                                            (true for 'J%')
                                         </para>
                                     </listitem>
                                 </itemizedlist>
@@ -243,6 +250,11 @@ Set<Employee> employees = (Set<Employee>) map.values(new SqlPredicate("active AN
                             </para>
                         </listitem>
                     </itemizedlist>
+                </para>
+            </listitem>
+            <listitem>
+                <para>Please note that single quote character should be escaped using two consecutive quotes in a quoted string , example: "text = 'name''s'"  ,  "adv = 'He''s brave, I''m strong'"
+
                 </para>
             </listitem>
         </itemizedlist>
