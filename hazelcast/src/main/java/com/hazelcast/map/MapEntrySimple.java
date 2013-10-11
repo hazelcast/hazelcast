@@ -16,10 +16,6 @@ public class MapEntrySimple<K,V> extends AbstractMap.SimpleEntry<K,V> {
         super(key, value);
     }
 
-    public MapEntrySimple(Map.Entry entry) {
-        super(entry);
-    }
-
     @Override
     public V setValue(V value) {
         modified = true;
