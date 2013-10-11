@@ -81,8 +81,6 @@ public class ClientAtomicLongProxy extends ClientProxy implements IAtomicLong {
     }
 
     protected void onDestroy() {
-        AtomicLongDestroyRequest request = new AtomicLongDestroyRequest(name);
-        invoke(request);
     }
 
     private <T> T invoke(Object req){

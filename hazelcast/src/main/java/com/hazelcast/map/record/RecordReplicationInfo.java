@@ -18,35 +18,52 @@ package com.hazelcast.map.record;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.DataSerializable;
 
 import java.io.IOException;
 
 public class RecordReplicationInfo implements DataSerializable {
 
-    private Record record;
+    private Data key;
+    private Data value;
+    private RecordStatistics statistics;
     private long idleDelayMillis = -1;
     private long ttlDelayMillis = -1;
     private long mapStoreWriteDelayMillis = -1;
     private long mapStoreDeleteDelayMillis = -1;
 
-    public RecordReplicationInfo(Record record, long idleDelayMillis, long ttlDelayMillis, long mapStoreWriteDelayMillis, long mapStoreDeleteDelayMillis) {
-        this.record = record;
+    public RecordReplicationInfo(Data key, Data value, RecordStatistics statistics,
+                                 long idleDelayMillis, long ttlDelayMillis, long mapStoreWriteDelayMillis,
+                                 long mapStoreDeleteDelayMillis) {
+        this.key = key;
+        this.value = value;
+        this.statistics = statistics;
         this.idleDelayMillis = idleDelayMillis;
         this.ttlDelayMillis = ttlDelayMillis;
         this.mapStoreWriteDelayMillis = mapStoreWriteDelayMillis;
         this.mapStoreDeleteDelayMillis = mapStoreDeleteDelayMillis;
     }
 
-    public RecordReplicationInfo(Record record) {
-        this.record = record;
+    public RecordReplicationInfo(Data key, Data value, RecordStatistics statistics) {
+        this.key = key;
+        this.value = value;
+        this.statistics = statistics;
     }
 
     public RecordReplicationInfo() {
     }
 
-    public Record getRecord() {
-        return record;
+    public Data getKey() {
+        return key;
+    }
+
+    public Data getValue() {
+        return value;
+    }
+
+    public RecordStatistics getStatistics() {
+        return statistics;
     }
 
     public long getIdleDelayMillis() {
@@ -67,7 +84,14 @@ public class RecordReplicationInfo implements DataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(record);
+        key.writeData(out);
+        value.writeData(out);
+        if (statistics != null) {
+            out.writeBoolean(true);
+            statistics.writeData(out);
+        } else {
+            out.writeBoolean(false);
+        }
         out.writeLong(idleDelayMillis);
         out.writeLong(ttlDelayMillis);
         out.writeLong(mapStoreWriteDelayMillis);
@@ -77,7 +101,15 @@ public class RecordReplicationInfo implements DataSerializable {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        record = in.readObject();
+        key = new Data();
+        key.readData(in);
+        value = new Data();
+        value.readData(in);
+        boolean statsEnabled = in.readBoolean();
+        if (statsEnabled) {
+            statistics = new RecordStatistics();
+            statistics.readData(in);
+        }
         idleDelayMillis = in.readLong();
         ttlDelayMillis = in.readLong();
         mapStoreWriteDelayMillis = in.readLong();

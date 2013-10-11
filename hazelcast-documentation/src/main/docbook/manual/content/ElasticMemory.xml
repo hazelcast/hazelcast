@@ -62,19 +62,26 @@
             </listitem>
             <listitem>
                 <para>
-                    Set the chunk size in KB by setting
+                    Set the chunk size by setting
                     <literal>hazelcast.elastic.memory.chunk.size</literal>
                     <link xlink:href="#ConfigurationProperties">Hazelcast Config Property</link>.
-                    Hazelcast will partition the entire offheap memory into chunks.
-                    Default chunk size is 1. Chunk size has to be power of 2 such as 1, 2, 4 and 8.
+                    Hazelcast will partition the entire offheap memory into chunks. Default chunk size is 1K.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    You can enable <code>sun.misc.Unsafe</code> based off-heap storage implementation
+                    instead of <code>java.nio.DirectByteBuffer</code> based one by setting
+                    <literal>hazelcast.elastic.memory.unsafe.enabled</literal> property to true.
+                    Default value is false.
                 </para>
             </listitem>
             <listitem>
                 <para>
                     Configure maps you want them to use Elastic Memory by setting
-                    <literal>StorageType</literal>
+                    <literal>StorageFormat</literal>
                     to<code>OFFHEAP</code>.
-                    Default value is<code>HEAP</code>.
+                    Default value is<code>BINARY</code>.
                 </para>
                 <para>
                     Using XML configuration:
@@ -82,26 +89,26 @@
     ...
     <map name="default">
         ...
-        <storage-type>OFFHEAP</storage-type>
+        <in-memory-format>OFFHEAP</in-memory-format>
     </map>
 </hazelcast>]]></programlisting>
                 </para>
                 <para>
                     Using Config API:
                     <programlisting language="java"><![CDATA[MapConfig mapConfig = new MapConfig();
-mapConfig.setStorageType(StorageType.OFFHEAP);]]></programlisting>
+mapConfig.setStorageFormat(StorageFormat.OFFHEAP);]]></programlisting>
                 </para>
             </listitem>
         </itemizedlist>
     </para>
 
-    <para>
-        If
-        <literal>NearCache</literal>
-        is defined for a map, all near cached items are also going to be
-        stored on the same off-heap. So off-heap storage is used for both near cache and distributed object
-        storage.
-    </para>
+    <!--<para>-->
+        <!--If-->
+        <!--<literal>NearCache</literal>-->
+        <!--is defined for a map, all near cached items are also going to be-->
+        <!--stored on the same off-heap. So off-heap storage is used for both near cache and distributed object-->
+        <!--storage.-->
+    <!--</para>-->
 
     <para>
         <emphasis role="italic">Also see how to <link xlink:href="#EnterpriseConfig">configure license key</link>.</emphasis>

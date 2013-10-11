@@ -52,7 +52,7 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
         response = new MapEntrySet();
         MapEntrySimple entry;
         final RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
-        final Map<Data, Record> records = recordStore.getRecords();
+        final Map<Data, Record> records = recordStore.getReadonlyRecordMap();
         for (final Map.Entry<Data, Record> recordEntry : records.entrySet()) {
             final Data dataKey = recordEntry.getKey();
             final Record record = recordEntry.getValue();
@@ -93,7 +93,8 @@ public class PartitionWideEntryOperation extends AbstractMapOperation implements
                     if (EntryEventType.REMOVED.equals(eventType)) {
                         mapService.publishWanReplicationRemove(name, dataKey, Clock.currentTimeMillis());
                     } else {
-                        SimpleEntryView entryView = new SimpleEntryView(dataKey, mapService.toData(dataValue), recordStore.getRecords().get(dataKey));
+                        Record r = recordStore.getRecord(dataKey);
+                        SimpleEntryView entryView = new SimpleEntryView(dataKey, mapService.toData(dataValue), r.getStatistics(), r.getVersion());
                         mapService.publishWanReplicationUpdate(name, entryView);
                     }
                 }

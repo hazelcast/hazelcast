@@ -16,10 +16,7 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.CallableClientRequest;
-import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.ClientEngine;
-import com.hazelcast.client.InitializingObjectRequest;
+import com.hazelcast.client.*;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.map.EntryEventFilter;
@@ -33,12 +30,15 @@ import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.EventFilter;
 import com.hazelcast.spi.impl.PortableEntryEvent;
 
 import java.io.IOException;
+import java.security.Permission;
 
-public class MapAddEntryListenerRequest extends CallableClientRequest implements Portable, InitializingObjectRequest {
+public class MapAddEntryListenerRequest extends CallableClientRequest implements Portable, InitializingObjectRequest, SecureRequest {
 
     private String name;
     private Data key;
@@ -156,5 +156,9 @@ public class MapAddEntryListenerRequest extends CallableClientRequest implements
             key = new Data();
             key.readData(in);
         }
+    }
+
+    public Permission getRequiredPermission() {
+        return new MapPermission(name, ActionConstants.ACTION_LISTEN);
     }
 }

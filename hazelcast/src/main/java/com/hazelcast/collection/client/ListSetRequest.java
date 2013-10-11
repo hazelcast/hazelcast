@@ -21,6 +21,7 @@ import com.hazelcast.collection.list.ListSetOperation;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
@@ -62,5 +63,9 @@ public class ListSetRequest extends CollectionRequest {
         index = reader.readInt("i");
         value = new Data();
         value.readData(reader.getRawDataInput());
+    }
+
+    public String getRequiredAction() {
+        return ActionConstants.ACTION_READ;
     }
 }

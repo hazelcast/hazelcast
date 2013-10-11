@@ -14,54 +14,61 @@
  * limitations under the License.
  */
 
-package com.hazelcast.concurrent.lock.client;
+package com.hazelcast.client;
 
-import com.hazelcast.client.CallableClientRequest;
-import com.hazelcast.client.RetryableRequest;
-import com.hazelcast.concurrent.lock.LockPortableHook;
-import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
 
 import java.io.IOException;
+import java.security.Permission;
 
 /**
- * @author ali 5/28/13
+ * @ali 10/7/13
  */
-public class LockDestroyRequest extends CallableClientRequest implements Portable, RetryableRequest {
+public class ClientCreateRequest extends CallableClientRequest implements Portable, RetryableRequest, SecureRequest{
 
     private String name;
 
-    public LockDestroyRequest() {
+    private String serviceName;
+
+    public ClientCreateRequest() {
     }
 
-    public LockDestroyRequest(String name) {
+    public ClientCreateRequest(String name, String serviceName) {
         this.name = name;
+        this.serviceName = serviceName;
     }
 
     public Object call() throws Exception {
-        getClientEngine().getProxyService().destroyDistributedObject(getServiceName(), name);
+        clientEngine.getProxyService().initializeDistributedObject(serviceName, name);
         return null;
     }
 
     public String getServiceName() {
-        return LockService.SERVICE_NAME;
+        return serviceName;
     }
 
     public int getFactoryId() {
-        return LockPortableHook.FACTORY_ID;
+        return ClientPortableHook.ID;
     }
 
     public int getClassId() {
-        return LockPortableHook.DESTROY;
+        return ClientPortableHook.CREATE_PROXY;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {
-        writer.getRawDataOutput().writeObject(name);  // writing as object for backward-compatibility
+        writer.writeUTF("n",name);
+        writer.writeUTF("s",serviceName);
     }
 
     public void readPortable(PortableReader reader) throws IOException {
-        name = reader.getRawDataInput().readObject();
+        name = reader.readUTF("n");
+        serviceName = reader.readUTF("s");
+    }
+
+    public Permission getRequiredPermission() {
+        return ActionConstants.getPermission(name, serviceName, ActionConstants.ACTION_CREATE);
     }
 }

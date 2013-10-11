@@ -16,21 +16,15 @@
 
 package com.hazelcast.map.record;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.nio.serialization.DataSerializable;
-
-import java.io.IOException;
 
 
 @SuppressWarnings("VolatileLongOrDoubleField")
-public abstract class AbstractRecord<V> implements Record<V>, DataSerializable {
+public abstract class AbstractRecord<V> implements Record<V> {
 
-    // todo ea volatile is needed? if yes then make version atomic
-    protected volatile RecordStatistics statistics;
-    protected volatile Data key;
-    protected volatile long version;
+    protected RecordStatistics statistics;
+    protected Data key;
+    protected long version;
 
     public AbstractRecord(Data key, boolean statisticsEnabled) {
         this.key = key;
@@ -43,67 +37,51 @@ public abstract class AbstractRecord<V> implements Record<V>, DataSerializable {
     public AbstractRecord() {
     }
 
-    public Data getKey() {
+    public final Data getKey() {
         return key;
     }
 
-    public RecordStatistics getStatistics() {
+    public final RecordStatistics getStatistics() {
         return statistics;
     }
 
-    public void setStatistics(RecordStatistics stats) {
+    public final void setStatistics(RecordStatistics stats) {
         this.statistics = stats;
     }
 
-    public Integer getHits() {
-        return statistics == null ? -1 : statistics.getHits();
-    }
-
-    public Long getLastAccessTime() {
-        return statistics == null ? -1 : statistics.getLastAccessTime();
-    }
-
-    public abstract long getCost();
-
-    public long getVersion() {
+    public final long getVersion() {
         return version;
     }
 
-    public void onAccess() {
+    public final void onAccess() {
         if (statistics != null)
             statistics.access();
     }
 
-    public void onStore() {
+    public final void onStore() {
         if (statistics != null)
             statistics.store();
     }
 
-    public void onUpdate() {
+    public final void onUpdate() {
         if (statistics != null) {
             statistics.update();
         }
         version++;
     }
 
-    public void writeData(ObjectDataOutput out) throws IOException {
-        key.writeData(out);
-        if (statistics != null) {
-            out.writeBoolean(true);
-            statistics.writeData(out);
-        } else {
-            out.writeBoolean(false);
-        }
-    }
+    @Override
+    public long getCost() {
+        int size = 0 ;
+        // statistics
+        size += 4 + (statistics == null ? 0 : statistics.size());
 
-    public void readData(ObjectDataInput in) throws IOException {
-        key = new Data();
-        key.readData(in);
-        boolean statsEnabled = in.readBoolean();
-        if (statsEnabled) {
-            statistics = new RecordStatistics();
-            statistics.readData(in);
-        }
+        // add size of version.
+        size += (Long.SIZE / Byte.SIZE);
+
+        // add key size.
+        size += 4 + key.getHeapCost();
+        return size;
     }
 
     @Override
@@ -125,9 +103,7 @@ public abstract class AbstractRecord<V> implements Record<V>, DataSerializable {
 
     @Override
     public String toString() {
-        return "AbstractRecord{" +
-                "key=" + key +
-                '}';
+        return "Record{" + "key=" + key + '}';
     }
 
 }

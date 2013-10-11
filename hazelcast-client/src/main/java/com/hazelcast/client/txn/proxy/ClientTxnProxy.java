@@ -16,6 +16,7 @@
 
 package com.hazelcast.client.txn.proxy;
 
+import com.hazelcast.client.ClientDestroyRequest;
 import com.hazelcast.client.spi.impl.ClientClusterServiceImpl;
 import com.hazelcast.client.txn.TransactionContextProxy;
 import com.hazelcast.core.HazelcastException;
@@ -31,11 +32,11 @@ import java.io.IOException;
  */
 abstract class ClientTxnProxy implements TransactionalObject {
 
-    final Object id;
+    final String objectName;
     final TransactionContextProxy proxy;
 
-    ClientTxnProxy(Object id, TransactionContextProxy proxy) {
-        this.id = id;
+    ClientTxnProxy(String objectName, TransactionContextProxy proxy) {
+        this.objectName = objectName;
         this.proxy = proxy;
     }
 
@@ -52,10 +53,12 @@ abstract class ClientTxnProxy implements TransactionalObject {
 
     public final void destroy(){
         onDestroy();
+        ClientDestroyRequest request = new ClientDestroyRequest(objectName, getServiceName());
+        invoke(request);
     }
 
     public Object getId() {
-        return id;
+        return objectName;
     }
 
     public String getPartitionKey() {

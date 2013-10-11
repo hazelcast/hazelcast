@@ -17,19 +17,26 @@
 package com.hazelcast.map.operation;
 
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.map.*;
+import com.hazelcast.map.MapContainer;
+import com.hazelcast.map.MapService;
+import com.hazelcast.map.PartitionContainer;
+import com.hazelcast.map.RecordStore;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordReplicationInfo;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.nio.serialization.SerializationService;
 import com.hazelcast.spi.AbstractOperation;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 /**
  * @author mdogan 7/24/12
@@ -44,44 +51,41 @@ public class MapReplicationOperation extends AbstractOperation {
 
     public MapReplicationOperation(PartitionContainer container, int partitionId, int replicaIndex) {
         this.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
+        SerializationService ss = container.getMapService().getSerializationService();
         data = new HashMap<String, Set<RecordReplicationInfo>>(container.getMaps().size());
         mapInitialLoadInfo = new HashMap<String, Boolean>(container.getMaps().size());
-
-        for (Entry<String, PartitionRecordStore> entry : container.getMaps().entrySet()) {
-            final MapConfig mapConfig = entry.getValue().getMapContainer().getMapConfig();
+        for (Entry<String, RecordStore> entry : container.getMaps().entrySet()) {
+            RecordStore recordStore = entry.getValue();
+            MapContainer mapContainer = recordStore.getMapContainer();
+            final MapConfig mapConfig = mapContainer.getMapConfig();
             if (mapConfig.getTotalBackupCount() < replicaIndex) {
                 continue;
             }
 
             String name = entry.getKey();
-            RecordStore recordStore = entry.getValue();
-            MapContainer mapContainer = recordStore.getMapContainer();
             // adding if initial data is loaded for the only maps that has mapstore behind
             if(mapContainer.getStore() != null) {
                 mapInitialLoadInfo.put(name, recordStore.isLoaded());
             }
             // now prepare data to migrate records
-            Set<RecordReplicationInfo> recordSet = new HashSet<RecordReplicationInfo>(recordStore.getRecords().size());
-            for (Entry<Data, Record> recordEntry : recordStore.getRecords().entrySet()) {
+            Set<RecordReplicationInfo> recordSet = new HashSet<RecordReplicationInfo>(recordStore.size());
+            for (Entry<Data, Record> recordEntry : recordStore.getReadonlyRecordMap().entrySet()) {
                 Data key = recordEntry.getKey();
                 Record record = recordEntry.getValue();
                 if (record.getValue() == null) {
-                    // see optimization at PartitionRecordStore.get(Data dataKey)
+                    // see optimization at DefaultRecordStore.get(Data dataKey)
                     continue;
                 }
-                RecordReplicationInfo recordReplicationInfo = null;
-                if(replicaIndex == 0) {
+                RecordReplicationInfo recordReplicationInfo;
+                if (replicaIndex == 0) {
                     recordReplicationInfo = createScheduledRecordState(mapContainer, recordEntry, key);
-                }
-                else {
-                    recordReplicationInfo = new RecordReplicationInfo(record);
+                } else {
+                    recordReplicationInfo = new RecordReplicationInfo(record.getKey(), ss.toData(record.getValue()), record.getStatistics());
                 }
                 recordSet.add(recordReplicationInfo);
             }
             data.put(name, recordSet);
         }
-
-
 
     }
 
@@ -98,7 +102,10 @@ public class MapReplicationOperation extends AbstractOperation {
         ScheduledEntry deleteScheduledEntry = mapContainer.getMapStoreDeleteScheduler() == null ? null : mapContainer.getMapStoreDeleteScheduler().cancel(key);
         long deleteDelay = deleteScheduledEntry == null ? -1 : findDelayMillis(deleteScheduledEntry);
 
-        return new RecordReplicationInfo(recordEntry.getValue(), idleDelay, ttlDelay, writeDelay, deleteDelay);
+        Record record = recordEntry.getValue();
+        SerializationService ss = mapContainer.getMapService().getSerializationService();
+        return new RecordReplicationInfo(record.getKey(), ss.toData(record.getValue()), record.getStatistics(),
+                idleDelay, ttlDelay, writeDelay, deleteDelay);
     }
 
     public void run() {
@@ -109,21 +116,20 @@ public class MapReplicationOperation extends AbstractOperation {
                 final String mapName = dataEntry.getKey();
                 RecordStore recordStore = mapService.getRecordStore(getPartitionId(), mapName);
                 for (RecordReplicationInfo recordReplicationInfo : recordReplicationInfos) {
-                    Record inputRecord = recordReplicationInfo.getRecord();
-                    Data key = inputRecord.getKey();
-                    Record record = mapService.createRecord(mapName, key, inputRecord.getValue(), -1, false);
-                    record.setStatistics(inputRecord.getStatistics());
-                    recordStore.getRecords().put(key, record);
-                    if(recordReplicationInfo.getIdleDelayMillis() >= 0) {
+                    Data key = recordReplicationInfo.getKey();
+                    Record newRecord = mapService.createRecord(mapName, key, recordReplicationInfo.getValue(), -1, false);
+                    newRecord.setStatistics(recordReplicationInfo.getStatistics());
+                    recordStore.putRecord(key, newRecord);
+                    if (recordReplicationInfo.getIdleDelayMillis() >= 0) {
                         mapService.scheduleIdleEviction(mapName, key, recordReplicationInfo.getIdleDelayMillis());
                     }
-                    if(recordReplicationInfo.getTtlDelayMillis() >= 0) {
-                        mapService.scheduleTtlEviction(mapName, record, recordReplicationInfo.getTtlDelayMillis());
+                    if (recordReplicationInfo.getTtlDelayMillis() >= 0) {
+                        mapService.scheduleTtlEviction(mapName, newRecord, recordReplicationInfo.getTtlDelayMillis());
                     }
-                    if(recordReplicationInfo.getMapStoreWriteDelayMillis() >= 0) {
-                        mapService.scheduleMapStoreWrite(mapName, key, record.getValue(), recordReplicationInfo.getMapStoreWriteDelayMillis());
+                    if (recordReplicationInfo.getMapStoreWriteDelayMillis() >= 0) {
+                        mapService.scheduleMapStoreWrite(mapName, key, newRecord.getValue(), recordReplicationInfo.getMapStoreWriteDelayMillis());
                     }
-                    if(recordReplicationInfo.getMapStoreDeleteDelayMillis() >= 0) {
+                    if (recordReplicationInfo.getMapStoreDeleteDelayMillis() >= 0) {
                         mapService.scheduleMapStoreDelete(mapName, key, recordReplicationInfo.getMapStoreDeleteDelayMillis());
                     }
                 }

@@ -20,7 +20,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.util.ServiceLoader;
 
-import java.util.logging.Level;
+import java.util.Iterator;
 
 public final class NodeInitializerFactory {
 
@@ -28,17 +28,18 @@ public final class NodeInitializerFactory {
     private static final String FACTORY_ID = "com.hazelcast.NodeInitializer";
 
     public static NodeInitializer create(ClassLoader classLoader) {
-        NodeInitializer initializer = null;
         try {
-            initializer = ServiceLoader.load(NodeInitializer.class, FACTORY_ID, classLoader);
+            Iterator<NodeInitializer> iter = ServiceLoader.iterator(NodeInitializer.class, FACTORY_ID, classLoader);
+            while (iter.hasNext()) {
+                NodeInitializer initializer = iter.next();
+                if (!(initializer.getClass().equals(DefaultNodeInitializer.class))) {
+                    return initializer;
+                }
+            }
         } catch (Exception e) {
             logger.warning("NodeInitializer could not be instantiated! => "
                                       + e.getClass().getName() + ": " + e.getMessage());
         }
-        return initializer != null ? initializer : createDefault();
-    }
-
-    public static NodeInitializer createDefault() {
         return new DefaultNodeInitializer();
     }
 }

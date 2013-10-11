@@ -80,6 +80,7 @@ public class GroupProperties {
     public static final String PROP_ELASTIC_MEMORY_TOTAL_SIZE = "hazelcast.elastic.memory.total.size";
     public static final String PROP_ELASTIC_MEMORY_CHUNK_SIZE = "hazelcast.elastic.memory.chunk.size";
     public static final String PROP_ELASTIC_MEMORY_SHARED_STORAGE = "hazelcast.elastic.memory.shared.storage";
+    public static final String PROP_ELASTIC_MEMORY_UNSAFE_ENABLED = "hazelcast.elastic.memory.unsafe.enabled";
     public static final String PROP_ENTERPRISE_LICENSE_KEY = "hazelcast.enterprise.license.key";
 
     public final GroupProperty OPERATION_THREAD_COUNT;
@@ -196,6 +197,8 @@ public class GroupProperties {
 
     public final GroupProperty ELASTIC_MEMORY_SHARED_STORAGE;
 
+    public final GroupProperty ELASTIC_MEMORY_UNSAFE_ENABLED;
+
     public final GroupProperty ENTERPRISE_LICENSE_KEY;
 
     public GroupProperties(Config config) {
@@ -258,6 +261,7 @@ public class GroupProperties {
         ELASTIC_MEMORY_TOTAL_SIZE = new GroupProperty(config, PROP_ELASTIC_MEMORY_TOTAL_SIZE, "128M");
         ELASTIC_MEMORY_CHUNK_SIZE = new GroupProperty(config, PROP_ELASTIC_MEMORY_CHUNK_SIZE, "1K");
         ELASTIC_MEMORY_SHARED_STORAGE = new GroupProperty(config, PROP_ELASTIC_MEMORY_SHARED_STORAGE, "false");
+        ELASTIC_MEMORY_UNSAFE_ENABLED = new GroupProperty(config, PROP_ELASTIC_MEMORY_UNSAFE_ENABLED, "false");
         ENTERPRISE_LICENSE_KEY = new GroupProperty(config, PROP_ENTERPRISE_LICENSE_KEY);
     }
 

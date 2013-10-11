@@ -651,8 +651,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     type = PermissionType.ID_GENERATOR;
                 } else if ("executor-service-permission".equals(nodeName)) {
                     type = PermissionType.EXECUTOR_SERVICE;
-                } else if ("listener-permission".equals(nodeName)) {
-                    type = PermissionType.LISTENER;
                 } else if ("transaction-permission".equals(nodeName)) {
                     type = PermissionType.TRANSACTION;
                 } else if ("all-permissions".equals(nodeName)) {

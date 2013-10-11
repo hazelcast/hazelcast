@@ -19,7 +19,11 @@ package com.hazelcast.queue.client;
 import com.hazelcast.client.RetryableRequest;
 import com.hazelcast.queue.ClearOperation;
 import com.hazelcast.queue.QueuePortableHook;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.QueuePermission;
 import com.hazelcast.spi.Operation;
+
+import java.security.Permission;
 
 /**
  * @author ali 5/8/13
@@ -39,5 +43,9 @@ public class ClearRequest extends QueueRequest implements RetryableRequest {
 
     public int getClassId() {
         return QueuePortableHook.CLEAR;
+    }
+
+    public Permission getRequiredPermission() {
+        return new QueuePermission(name, ActionConstants.ACTION_REMOVE);
     }
 }

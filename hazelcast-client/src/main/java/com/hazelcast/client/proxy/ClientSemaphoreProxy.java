@@ -107,8 +107,6 @@ public class ClientSemaphoreProxy extends ClientProxy implements ISemaphore {
     }
 
     protected void onDestroy() {
-        SemaphoreDestroyRequest request = new SemaphoreDestroyRequest(name);
-        invoke(request);
     }
 
     private <T> T invoke(Object req){

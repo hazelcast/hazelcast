@@ -174,16 +174,6 @@
                 </xs:complexType>
             </xs:element>
             <xs:element name="entry-listeners" type="entry-listeners" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="storage-type" type="xs:string" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        Storage type for Hazelcast Enterprise map configuration.
-                        Valid values are HEAP and OFFHEAP.
-                        Default is HEAP.
-                        Not configurable for Hazelcast Community Edition.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
             <xs:element name="partition-strategy" type="xs:string" minOccurs="0" maxOccurs="1" />
         </xs:sequence>
         <xs:attribute name="name" use="required">
@@ -642,7 +632,6 @@
             <xs:element name="executor-service-permission" type="instance-permission" minOccurs="0"
                         maxOccurs="unbounded"/>
             <xs:element name="transaction-permission" type="base-permission" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="listener-permission" type="listener-permission" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
     </xs:complexType>
     <xs:complexType name="base-permission">
@@ -684,21 +673,6 @@
                             Name of the permission. Wildcards(*) can be used.
                         </xs:documentation>
                     </xs:annotation>
-                </xs:attribute>
-            </xs:extension>
-        </xs:complexContent>
-    </xs:complexType>
-    <xs:complexType name="listener-permission">
-        <xs:complexContent>
-            <xs:extension base="base-permission">
-                <xs:attribute name="name" use="required">
-                    <xs:simpleType>
-                        <xs:restriction base="xs:string">
-                            <xs:enumeration value="all"/>
-                            <xs:enumeration value="instance"/>
-                            <xs:enumeration value="member"/>
-                        </xs:restriction>
-                    </xs:simpleType>
                 </xs:attribute>
             </xs:extension>
         </xs:complexContent>

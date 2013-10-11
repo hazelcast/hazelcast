@@ -19,4 +19,6 @@ package com.hazelcast.spi;
 public interface ResponseHandler {
 
     void sendResponse(Object obj);
+
+    boolean isLocal();
 }

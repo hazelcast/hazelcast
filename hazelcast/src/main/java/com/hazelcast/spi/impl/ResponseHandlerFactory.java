@@ -23,7 +23,6 @@ import com.hazelcast.spi.*;
 import com.hazelcast.spi.exception.ResponseAlreadySentException;
 
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
 
 /**
  * @author mdogan 8/2/12
@@ -61,6 +60,10 @@ public final class ResponseHandlerFactory {
     private static class NoResponseHandler implements ResponseHandler {
         public void sendResponse(final Object obj) {
         }
+
+        public boolean isLocal() {
+            return false;
+        }
     }
 
     public static ResponseHandler createErrorLoggingResponseHandler(ILogger logger) {
@@ -79,6 +82,10 @@ public final class ResponseHandlerFactory {
                 Throwable t = (Throwable) obj;
                 logger.severe(t);
             }
+        }
+
+        public boolean isLocal() {
+            return true;
         }
     }
 
@@ -104,6 +111,10 @@ public final class ResponseHandlerFactory {
             OperationAccessor.setCallId(responseOp, callId);
             nodeEngine.getOperationService().send(responseOp, conn);
         }
+
+        public boolean isLocal() {
+            return false;
+        }
     }
 
     private static class LocalInvocationResponseHandler implements ResponseHandler {
@@ -123,6 +134,10 @@ public final class ResponseHandlerFactory {
                         + ", current-response: : " + obj);
             }
             callback.notify(obj);
+        }
+
+        public boolean isLocal() {
+            return true;
         }
     }
 

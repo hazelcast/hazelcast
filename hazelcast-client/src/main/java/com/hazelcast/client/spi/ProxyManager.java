@@ -16,6 +16,8 @@
 
 package com.hazelcast.client.spi;
 
+import com.hazelcast.client.ClientCreateRequest;
+import com.hazelcast.client.DistributedObjectListenerRequest;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
@@ -41,7 +43,9 @@ import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.queue.QueueService;
 import com.hazelcast.spi.DefaultObjectNamespace;
 import com.hazelcast.spi.ObjectNamespace;
+import com.hazelcast.spi.impl.PortableDistributedObjectEvent;
 import com.hazelcast.topic.TopicService;
+import com.hazelcast.util.ExceptionUtil;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -57,7 +61,7 @@ public final class ProxyManager {
     private final HazelcastClient client;
     private final ConcurrentMap<String, ClientProxyFactory> proxyFactories = new ConcurrentHashMap<String, ClientProxyFactory>();
     private final ConcurrentMap<ObjectNamespace, ClientProxy> proxies = new ConcurrentHashMap<ObjectNamespace, ClientProxy>();
-    private final ConcurrentMap<String, DistributedObjectListener> listeners = new ConcurrentHashMap<String, DistributedObjectListener>();
+    private final ConcurrentMap<String, ListenerSupport> listeners = new ConcurrentHashMap<String, ListenerSupport>();
 
     public ProxyManager(HazelcastClient client) {
         this.client = client;
@@ -171,20 +175,21 @@ public final class ProxyManager {
         if (current != null){
             return current;
         }
-        triggerListeners(clientProxy, false);
         return clientProxy;
     }
 
     public ClientProxy removeProxy(String service, String id) {
         final ObjectNamespace ns = new DefaultObjectNamespace(service, id);
-        final ClientProxy clientProxy = proxies.remove(ns);
-        if (clientProxy != null){
-            triggerListeners(clientProxy, true);
-        }
-        return clientProxy;
+        return proxies.remove(ns);
     }
 
     private void initialize(ClientProxy clientProxy) {
+        final ClientCreateRequest request = new ClientCreateRequest(clientProxy.getName(), clientProxy.getServiceName());
+        try {
+            client.getInvocationService().invokeOnRandomTarget(request);
+        } catch (Exception e) {
+            ExceptionUtil.rethrow(e);
+        }
         clientProxy.setContext(new ClientContext(client.getSerializationService(), client.getClientClusterService(),
                 client.getClientPartitionService(), client.getInvocationService(), client.getClientExecutionService(), this, client.getClientConfig()));
     }
@@ -198,35 +203,38 @@ public final class ProxyManager {
         listeners.clear();
     }
 
-    private void triggerListeners(final ClientProxy proxy, final boolean removed) {
-        client.getClientExecutionService().execute(new Runnable() {
-            public void run() {
-                final DistributedObjectEvent event;
-                if (removed) {
-                    event = new DistributedObjectEvent(DistributedObjectEvent.EventType.DESTROYED, proxy.getServiceName(), proxy);
-                } else {
-                    event = new DistributedObjectEvent(DistributedObjectEvent.EventType.CREATED, proxy.getServiceName(), proxy);
+    public String addDistributedObjectListener(final DistributedObjectListener listener) {
+        final DistributedObjectListenerRequest request = new DistributedObjectListenerRequest();
+        ClientContext context = new ClientContext(client.getSerializationService(), client.getClientClusterService(),
+                client.getClientPartitionService(), client.getInvocationService(), client.getClientExecutionService(), this, client.getClientConfig());
+
+        final EventHandler<PortableDistributedObjectEvent> eventHandler = new EventHandler<PortableDistributedObjectEvent>(){
+            public void handle(PortableDistributedObjectEvent e) {
+                final ObjectNamespace ns = new DefaultObjectNamespace(e.getServiceName(), e.getName());
+                ClientProxy proxy = proxies.get(ns);
+                if (proxy == null){
+                    proxy = getProxy(e.getServiceName(), e.getName());
                 }
-                for (DistributedObjectListener listener : listeners.values()) {
-                    if (removed) {
-                        listener.distributedObjectDestroyed(event);
-                    } else {
-                        listener.distributedObjectCreated(event);
-                    }
+                final DistributedObjectEvent event = new DistributedObjectEvent(e.getEventType(), e.getServiceName(), proxy);
+                if (DistributedObjectEvent.EventType.CREATED.equals(e.getEventType())){
+                    listener.distributedObjectCreated(event);
+                } else if (DistributedObjectEvent.EventType.DESTROYED.equals(e.getEventType())){
+                    listener.distributedObjectDestroyed(event);
                 }
             }
-        });
-
-
-    }
-
-    public String addDistributedObjectListener(DistributedObjectListener listener) {
-        String id = UUID.randomUUID().toString();
-        listeners.put(id, listener);
-        return id;
+        };
+        ListenerSupport listenerSupport = new ListenerSupport(context, request, eventHandler, null);
+        final String registrationId = listenerSupport.listen();
+        listeners.put(registrationId, listenerSupport);
+        return registrationId;
     }
 
     public boolean removeDistributedObjectListener(String id) {
-        return listeners.remove(id) != null;
+        final ListenerSupport listenerSupport = listeners.remove(id);
+        if (listenerSupport != null){
+            listenerSupport.stop();
+            return true;
+        }
+        return false;
     }
 }

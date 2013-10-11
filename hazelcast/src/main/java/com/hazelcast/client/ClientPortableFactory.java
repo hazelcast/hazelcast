@@ -40,6 +40,12 @@ public class ClientPortableFactory implements PortableFactory {
 
             case ClientPortableHook.DISTRIBUTED_OBJECT_INFO:
                 return new DistributedObjectInfo();
+            case ClientPortableHook.CREATE_PROXY:
+                return new ClientCreateRequest();
+            case ClientPortableHook.DESTROY_PROXY:
+                return new ClientDestroyRequest();
+            case ClientPortableHook.LISTENER:
+                return new DistributedObjectListenerRequest();
         }
         return null;
     }

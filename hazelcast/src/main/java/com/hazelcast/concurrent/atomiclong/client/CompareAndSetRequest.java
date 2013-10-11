@@ -56,4 +56,5 @@ public class CompareAndSetRequest extends AtomicLongRequest {
         super.readPortable(reader);
         expect = reader.readLong("e");
     }
+
 }

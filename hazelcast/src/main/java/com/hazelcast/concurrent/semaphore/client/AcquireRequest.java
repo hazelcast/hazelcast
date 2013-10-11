@@ -20,9 +20,12 @@ import com.hazelcast.concurrent.semaphore.AcquireOperation;
 import com.hazelcast.concurrent.semaphore.SemaphorePortableHook;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.SemaphorePermission;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
+import java.security.Permission;
 
 /**
  * @author ali 5/13/13
@@ -55,5 +58,9 @@ public class AcquireRequest extends SemaphoreRequest {
     public void readPortable(PortableReader reader) throws IOException {
         super.readPortable(reader);
         timeout = reader.readLong("t");
+    }
+
+    public Permission getRequiredPermission() {
+        return new SemaphorePermission(name, ActionConstants.ACTION_ACQUIRE);
     }
 }

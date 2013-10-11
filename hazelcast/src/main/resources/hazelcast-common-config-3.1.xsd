@@ -60,7 +60,7 @@
         <xs:restriction base="non-space-string">
             <xs:enumeration value="BINARY"/>
             <xs:enumeration value="OBJECT"/>
-            <xs:enumeration value="CACHED"/>
+            <xs:enumeration value="OFFHEAP"/>
         </xs:restriction>
     </xs:simpleType>
 

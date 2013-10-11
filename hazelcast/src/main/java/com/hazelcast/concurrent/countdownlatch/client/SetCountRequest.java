@@ -17,21 +17,25 @@
 package com.hazelcast.concurrent.countdownlatch.client;
 
 import com.hazelcast.client.KeyBasedClientRequest;
+import com.hazelcast.client.SecureRequest;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchPortableHook;
 import com.hazelcast.concurrent.countdownlatch.CountDownLatchService;
 import com.hazelcast.concurrent.countdownlatch.SetCountOperation;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.CountDownLatchPermission;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
+import java.security.Permission;
 
 /**
  * @author mdogan 5/14/13
  */
 
-public final class SetCountRequest extends KeyBasedClientRequest implements Portable {
+public final class SetCountRequest extends KeyBasedClientRequest implements Portable, SecureRequest {
 
     private String name;
     private int count;
@@ -79,5 +83,9 @@ public final class SetCountRequest extends KeyBasedClientRequest implements Port
     public void readPortable(PortableReader reader) throws IOException {
         name = reader.readUTF("name");
         count = reader.readInt("count");
+    }
+
+    public Permission getRequiredPermission() {
+        return new CountDownLatchPermission(name, ActionConstants.ACTION_MODIFY);
     }
 }

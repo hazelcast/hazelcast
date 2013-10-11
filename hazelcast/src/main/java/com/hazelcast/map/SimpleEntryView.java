@@ -17,7 +17,6 @@
 package com.hazelcast.map;
 
 import com.hazelcast.core.EntryView;
-import com.hazelcast.map.record.Record;
 import com.hazelcast.map.record.RecordStatistics;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -38,10 +37,9 @@ public class SimpleEntryView<K,V> implements EntryView<K,V>, IdentifiedDataSeria
     private long lastUpdateTime;
     private long version;
 
-    public SimpleEntryView(K key, V value, Record record) {
+    public SimpleEntryView(K key, V value, RecordStatistics statistics, long recordVersion) {
         this.key = key;
         this.value = value;
-        final RecordStatistics statistics = record.getStatistics();
         cost = statistics == null ? -1 : statistics.getCost();
         creationTime = statistics == null ? -1 : statistics.getCreationTime();
         expirationTime = statistics == null ? -1 : statistics.getExpirationTime();
@@ -49,7 +47,7 @@ public class SimpleEntryView<K,V> implements EntryView<K,V>, IdentifiedDataSeria
         lastAccessTime = statistics == null ? -1 : statistics.getLastAccessTime();
         lastStoredTime = statistics == null ? -1 : statistics.getLastStoredTime();
         lastUpdateTime = statistics == null ? -1 : statistics.getLastUpdateTime();
-        version = record.getVersion();
+        version = recordVersion;
     }
 
     public SimpleEntryView() {

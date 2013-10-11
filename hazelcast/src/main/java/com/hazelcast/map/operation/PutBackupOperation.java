@@ -16,9 +16,7 @@
 
 package com.hazelcast.map.operation;
 
-import com.hazelcast.map.record.DataRecord;
 import com.hazelcast.map.MapDataSerializerHook;
-import com.hazelcast.map.record.ObjectRecord;
 import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -45,24 +43,19 @@ public final class PutBackupOperation extends KeyBasedMapOperation implements Ba
     }
 
     public void run() {
-        Record record = recordStore.getRecords().get(dataKey);
+        Record record = recordStore.getRecord(dataKey);
         if (record == null) {
             record = mapService.createRecord(name, dataKey, dataValue, ttl, false);
-            updateSizeEstimator( calculateRecordSize(record) );
-            recordStore.getRecords().put(dataKey, record);
+            updateSizeEstimator(calculateRecordSize(record));
+            recordStore.putRecord(dataKey, record);
+        } else {
+            updateSizeEstimator(-calculateRecordSize(record));
+            mapContainer.getRecordFactory().setValue(record, dataValue);
+            updateSizeEstimator(calculateRecordSize(record));
         }
-        else {
-            updateSizeEstimator( -calculateRecordSize(record) );
-            if (record instanceof DataRecord){
-                ((DataRecord) record).setValue(dataValue);
-            }
-            else if (record instanceof ObjectRecord) {
-                ((ObjectRecord) record).setValue(mapService.toObject(dataValue));
-            }
-            updateSizeEstimator( calculateRecordSize(record) );
-        }
-        if(unlockKey)
+        if (unlockKey) {
             recordStore.forceUnlock(dataKey);
+        }
     }
 
     @Override

@@ -32,7 +32,6 @@ public final class CountDownLatchPortableHook implements PortableHook {
     public static final int AWAIT = 2;
     public static final int SET_COUNT = 3;
     public static final int GET_COUNT = 4;
-    public static final int DESTROY = 5;
 
 
     public int getFactoryId() {
@@ -51,8 +50,6 @@ public final class CountDownLatchPortableHook implements PortableHook {
                         return new SetCountRequest();
                     case GET_COUNT:
                         return new GetCountRequest();
-                    case DESTROY:
-                        return new CountDownLatchDestroyRequest();
                 }
                 return null;
             }

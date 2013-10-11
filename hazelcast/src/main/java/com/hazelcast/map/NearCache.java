@@ -17,14 +17,15 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
-import java.util.*;
+import java.util.Map;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.RejectedExecutionException;
@@ -41,18 +42,20 @@ public class NearCache {
     final long timeToLiveMillis;
     final boolean invalidateOnChange;
     final EvictionPolicy evictionPolicy;
-    final MapConfig.InMemoryFormat inMemoryFormat;
+    final InMemoryFormat inMemoryFormat;
     final String mapName;
     final MapService mapService;
     final NodeEngine nodeEngine;
     final AtomicBoolean canCleanUp;
     final AtomicBoolean canEvict;
     final ConcurrentMap<Data, CacheRecord> cache;
+    final MapContainer mapContainer;
 
     public NearCache(String mapName, MapService mapService) {
         this.mapName = mapName;
         this.mapService = mapService;
         this.nodeEngine = mapService.getNodeEngine();
+        this.mapContainer = mapService.getMapContainer(mapName);
         Config config = nodeEngine.getConfig();
         NearCacheConfig nearCacheConfig = config.getMapConfig(mapName).getNearCacheConfig();
         maxSize = nearCacheConfig.getMaxSize() <= 0 ? Integer.MAX_VALUE : nearCacheConfig.getMaxSize();
@@ -79,7 +82,7 @@ public class NearCache {
         if (evictionPolicy != EvictionPolicy.NONE && cache.size() >= maxSize) {
             fireEvictCache();
         }
-        final Object value = inMemoryFormat.equals(MapConfig.InMemoryFormat.BINARY) ? data : mapService.toObject(data);
+        final Object value = inMemoryFormat.equals(InMemoryFormat.OBJECT) ? mapService.toObject(data) : data;
         final CacheRecord record = new CacheRecord(key, value);
         cache.put(key, record);
         updateSizeEstimator(calculateCost(record));
@@ -93,7 +96,7 @@ public class NearCache {
                         try {
                             TreeSet<CacheRecord> records = new TreeSet<CacheRecord>(cache.values());
                             int evictSize = cache.size() * evictionPercentage / 100;
-                            int i=0;
+                            int i = 0;
                             for (CacheRecord record : records) {
                                 cache.remove(record.key);
                                 updateSizeEstimator(-calculateCost(record));
@@ -126,7 +129,7 @@ public class NearCache {
                             for (Map.Entry<Data, CacheRecord> entry : cache.entrySet()) {
                                 if (entry.getValue().expired()) {
                                     final Data key = entry.getKey();
-                                    final CacheRecord record = cache.remove( key );
+                                    final CacheRecord record = cache.remove(key);
                                     if (record != null)//if a mapping exists.
                                     {
                                         updateSizeEstimator(-calculateCost(record));
@@ -164,7 +167,7 @@ public class NearCache {
 
     public void invalidate(Data key) {
         final CacheRecord record = cache.remove(key);
-        if( record != null ) // if a mapping exists for the key.
+        if (record != null) // if a mapping exists for the key.
         {
             updateSizeEstimator(-calculateCost(record));
         }
@@ -178,9 +181,9 @@ public class NearCache {
     public class CacheRecord implements Comparable<CacheRecord> {
         final Data key;
         final Object value;
-        volatile long lastAccessTime;
         final long creationTime;
         final AtomicInteger hit;
+        volatile long lastAccessTime;
 
         CacheRecord(Data key, Object value) {
             this.key = key;
@@ -210,34 +213,38 @@ public class NearCache {
             return 0;
         }
 
-        public long getCost(){
+        public long getCost() {
             // todo find object size  if not a Data instance.
-            if( !(value instanceof Data) ) return 0;
+            if (!(value instanceof Data)) return 0;
+
             // value is Data
-            return key.totalSize()
-                    + ((Data)value).totalSize() + 2*(Integer.SIZE/Byte.SIZE)
+            return key.getHeapCost()
+                    + ((Data) value).getHeapCost()
                     + 2 * (Long.SIZE / Byte.SIZE)
                     // sizeof atomic integer
-                    + (Integer.SIZE / Byte.SIZE )
-                    // object references (key, value,hit)
+                    + (Integer.SIZE / Byte.SIZE)
+                    // object references (key, value, hit)
                     + 3 * (Integer.SIZE / Byte.SIZE);
         }
 
         public Data getKey() {
             return key;
         }
+
+        public Object getValue() {
+            return value;
+        }
     }
 
-
-    private void resetSizeEstimator(){
-        mapService.getMapContainer(mapName).getNearCacheSizeEstimator().reset();
+    private void resetSizeEstimator() {
+        mapContainer.getNearCacheSizeEstimator().reset();
     }
 
-    private void updateSizeEstimator( long size ){
-        mapService.getMapContainer(mapName).getNearCacheSizeEstimator().add( size );
+    private void updateSizeEstimator(long size) {
+        mapContainer.getNearCacheSizeEstimator().add(size);
     }
 
-    private long calculateCost( CacheRecord record ){
-        return mapService.getMapContainer(mapName).getNearCacheSizeEstimator().getCost( record );
+    private long calculateCost(CacheRecord record) {
+        return mapContainer.getNearCacheSizeEstimator().getCost(record);
     }
 }

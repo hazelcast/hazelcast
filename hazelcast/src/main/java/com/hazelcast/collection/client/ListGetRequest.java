@@ -20,6 +20,7 @@ import com.hazelcast.collection.CollectionPortableHook;
 import com.hazelcast.collection.list.ListGetOperation;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.spi.Operation;
 
 import java.io.IOException;
@@ -55,5 +56,9 @@ public class ListGetRequest extends CollectionRequest{
     public void readPortable(PortableReader reader) throws IOException {
         super.readPortable(reader);
         index = reader.readInt("i");
+    }
+
+    public String getRequiredAction() {
+        return ActionConstants.ACTION_READ;
     }
 }

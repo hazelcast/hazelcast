@@ -17,6 +17,8 @@
 package com.hazelcast.instance;
 
 import com.hazelcast.security.SecurityContext;
+import com.hazelcast.storage.DataRef;
+import com.hazelcast.storage.Storage;
 
 public interface NodeInitializer {
 
@@ -33,6 +35,8 @@ public interface NodeInitializer {
     String getVersion();
 
     SecurityContext getSecurityContext();
+
+    Storage<DataRef> getOffHeapStorage();
 
     void destroy();
 }

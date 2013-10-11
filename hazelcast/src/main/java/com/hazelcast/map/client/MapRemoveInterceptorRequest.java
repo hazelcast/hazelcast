@@ -17,25 +17,26 @@
 package com.hazelcast.map.client;
 
 import com.hazelcast.client.MultiTargetClientRequest;
+import com.hazelcast.client.SecureRequest;
 import com.hazelcast.instance.MemberImpl;
-import com.hazelcast.map.MapInterceptor;
 import com.hazelcast.map.MapPortableHook;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.operation.RemoveInterceptorOperationFactory;
 import com.hazelcast.nio.Address;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.OperationFactory;
 
 import java.io.IOException;
+import java.security.Permission;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 
-public class MapRemoveInterceptorRequest extends MultiTargetClientRequest implements Portable {
+public class MapRemoveInterceptorRequest extends MultiTargetClientRequest implements Portable, SecureRequest {
 
     private String name;
     private String id;
@@ -89,5 +90,9 @@ public class MapRemoveInterceptorRequest extends MultiTargetClientRequest implem
     public void readPortable(PortableReader reader) throws IOException {
         name = reader.readUTF("n");
         id = reader.readUTF("id");
+    }
+
+    public Permission getRequiredPermission() {
+        return new MapPermission(name, ActionConstants.ACTION_INTERCEPT);
     }
 }

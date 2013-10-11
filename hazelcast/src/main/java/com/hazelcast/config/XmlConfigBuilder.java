@@ -17,7 +17,6 @@
 package com.hazelcast.config;
 
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
-import com.hazelcast.config.MapConfig.StorageType;
 import com.hazelcast.config.PartitionGroupConfig.MemberGroupType;
 import com.hazelcast.config.PermissionConfig.PermissionType;
 import com.hazelcast.core.HazelcastException;
@@ -800,7 +799,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
             if ("backup-count".equals(nodeName)) {
                 mapConfig.setBackupCount(getIntegerValue("backup-count", value, MapConfig.DEFAULT_BACKUP_COUNT));
             } else if ("in-memory-format".equals(nodeName)) {
-                mapConfig.setInMemoryFormat(MapConfig.InMemoryFormat.valueOf(value));
+                mapConfig.setInMemoryFormat(InMemoryFormat.valueOf(value));
             } else if ("async-backup-count".equals(nodeName)) {
                 mapConfig.setAsyncBackupCount(getIntegerValue("async-backup-count", value, MapConfig.MIN_BACKUP_COUNT));
             } else if ("eviction-policy".equals(nodeName)) {
@@ -882,8 +881,6 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                         mapConfig.addEntryListenerConfig(new EntryListenerConfig(listenerClass, local, incValue));
                     }
                 }
-            } else if ("storage-type".equals(nodeName)) {
-                mapConfig.setStorageType(StorageType.valueOf(value.toUpperCase()));
             } else if ("partition-strategy".equals(nodeName)) {
                 mapConfig.setPartitionStrategyConfig(new PartitionStrategyConfig(value));
             }
@@ -1073,7 +1070,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 handleLoginModules(child, false);
             } else if ("client-permission-policy".equals(nodeName)) {
                 handlePermissionPolicy(child);
-            } else if ("client-permissions".equals(nodeName)) {
+            } else if ("client-permissions".equals(nodeName)) { //listener-permission
                 handleSecurityPermissions(child);
             }
         }
@@ -1172,8 +1169,6 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 type = PermissionType.ID_GENERATOR;
             } else if ("executor-service-permission".equals(nodeName)) {
                 type = PermissionType.EXECUTOR_SERVICE;
-            } else if ("listener-permission".equals(nodeName)) {
-                type = PermissionType.LISTENER;
             } else if ("transaction-permission".equals(nodeName)) {
                 type = PermissionType.TRANSACTION;
             } else if ("all-permissions".equals(nodeName)) {

@@ -27,7 +27,6 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.topic.client.AddMessageListenerRequest;
 import com.hazelcast.topic.client.PortableMessage;
 import com.hazelcast.topic.client.PublishRequest;
-import com.hazelcast.topic.client.TopicDestroyRequest;
 import com.hazelcast.util.ExceptionUtil;
 
 /**
@@ -71,8 +70,6 @@ public class ClientTopicProxy<E> extends ClientProxy implements ITopic<E> {
     }
 
     protected void onDestroy() {
-        TopicDestroyRequest request = new TopicDestroyRequest(name);
-        invoke(request);
     }
 
     private Data getKey() {

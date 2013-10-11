@@ -41,6 +41,7 @@ import com.hazelcast.util.ConstructorFunction;
 import com.hazelcast.util.UuidUtil;
 
 import javax.security.auth.login.LoginException;
+import java.security.Permission;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Level;
@@ -258,7 +259,7 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
         }
     }
 
-    SecurityContext getSecurityContext() {
+    public SecurityContext getSecurityContext() {
         return node.securityContext;
     }
 
@@ -361,6 +362,13 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
                         }
                     }
                     request.setClientEngine(ClientEngineImpl.this);
+                    final SecurityContext securityContext = getSecurityContext();
+                    if (securityContext != null && request instanceof SecureRequest) {
+                        final Permission permission = ((SecureRequest) request).getRequiredPermission();
+                        if (permission != null){
+                            securityContext.checkPermission(endpoint.getSubject(), permission);
+                        }
+                    }
                     request.process();
                 } else {
                     Exception exception;

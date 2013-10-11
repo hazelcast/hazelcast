@@ -37,13 +37,13 @@ public class MergeRemoveOperation extends BaseRemoveOperation {
     }
 
     public void run() {
-        Record record = recordStore.getRecords().get(dataKey);
+        Record record = recordStore.getRecord(dataKey);
         // todo what if statistics is disabled. currently it accepts the remove
         // check if there is newer update or insert. If so then cancel the remove
         if (record.getStatistics() != null && (record.getStatistics().getCreationTime() > removeTime || record.getStatistics().getLastUpdateTime() > removeTime ) ) {
             return;
         }
-        recordStore.getRecords().remove(dataKey);
+        recordStore.deleteRecord(dataKey);
         merged = true;
     }
 

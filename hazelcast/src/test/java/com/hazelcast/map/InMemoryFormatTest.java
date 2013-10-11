@@ -17,6 +17,7 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -24,7 +25,6 @@ import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelTest;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -43,9 +43,8 @@ public class InMemoryFormatTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
 
         Config config = new Config();
-        config.addMapConfig(new MapConfig("objectMap").setInMemoryFormat(MapConfig.InMemoryFormat.OBJECT));
-        config.addMapConfig(new MapConfig("cachedMap").setInMemoryFormat(MapConfig.InMemoryFormat.CACHED));
-        config.addMapConfig(new MapConfig("binaryMap").setInMemoryFormat(MapConfig.InMemoryFormat.BINARY));
+        config.addMapConfig(new MapConfig("objectMap").setInMemoryFormat(InMemoryFormat.OBJECT));
+        config.addMapConfig(new MapConfig("binaryMap").setInMemoryFormat(InMemoryFormat.BINARY));
 
         HazelcastInstance hz = factory.newHazelcastInstance(config);
 
@@ -53,18 +52,13 @@ public class InMemoryFormatTest extends HazelcastTestSupport {
         Pair v2 = new Pair("a", "2");
 
         IMap<String, Pair> objectMap = hz.getMap("objectMap");
-        IMap<String, Pair> cachedMap = hz.getMap("cachedMap");
         IMap<String, Pair> binaryMap = hz.getMap("binaryMap");
 
         objectMap.put("1", v1);
-        cachedMap.put("1", v1);
         binaryMap.put("1", v1);
 
         assertTrue(objectMap.containsValue(v1));
         assertTrue(objectMap.containsValue(v2));
-
-        assertTrue(cachedMap.containsValue(v1));
-        assertTrue(cachedMap.containsValue(v2));
 
         assertTrue(binaryMap.containsValue(v1));
         assertFalse(binaryMap.containsValue(v2));

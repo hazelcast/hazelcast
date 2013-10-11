@@ -16,17 +16,15 @@
 
 package com.hazelcast.map;
 
-
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Created with IntelliJ IDEA.
  * User: ahmet
  * Date: 06.09.2013
  * <p/>
  * Time: 07:51
  */
-class NearCacheSizeEstimator implements SizeEstimator {
+class NearCacheSizeEstimator implements SizeEstimator<NearCache.CacheRecord> {
 
     private final AtomicLong _size = new AtomicLong(0L);
 
@@ -34,33 +32,22 @@ class NearCacheSizeEstimator implements SizeEstimator {
         super();
     }
 
-
     @Override
-    public <T> long getCost(T record) {
-
+    public long getCost(NearCache.CacheRecord record) {
         // immediate check nothing to do if record is null
         if (record == null) {
             return 0;
         }
+        final long cost = record.getCost();
+        // if  cost is zero, type of cached object is not Data.
+        // then omit.
+        if (cost == 0) return 0;
 
-        if (record instanceof NearCache.CacheRecord) {
-            final NearCache.CacheRecord rec = (NearCache.CacheRecord) record;
-            final long cost = rec.getCost();
-            // if  cost is zero, type of cached object is not Data.
-            // then omit.
-            if (cost == 0) return 0;
-
-            long size = 0;
-            // key ref. size in map.
-            size += 4 * ((Integer.SIZE / Byte.SIZE));
-            size += rec.getCost();
-            return size;
-        }
-
-        final String msg = "NearCacheSizeEstimator::not known object for near cache heap cost" +
-                " calculation [" + record.getClass().getCanonicalName() + "]";
-
-        throw new RuntimeException(msg);
+        long size = 0;
+        // entry size in CHM
+        size += 4 * ((Integer.SIZE / Byte.SIZE));
+        size += cost;
+        return size;
     }
 
     @Override
@@ -72,10 +59,7 @@ class NearCacheSizeEstimator implements SizeEstimator {
         _size.addAndGet(size);
     }
 
-
     public void reset() {
         _size.set(0L);
     }
-
-
 }

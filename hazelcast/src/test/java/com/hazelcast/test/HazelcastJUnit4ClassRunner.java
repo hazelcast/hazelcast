@@ -28,7 +28,7 @@ import java.util.Random;
 /**
  * Run the tests randomly and log the running test.
  */
-public final class HazelcastJUnit4ClassRunner extends BlockJUnit4ClassRunner {
+public class HazelcastJUnit4ClassRunner extends BlockJUnit4ClassRunner {
 
     static {
         final String logging = "hazelcast.logging.type";

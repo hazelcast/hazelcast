@@ -19,6 +19,10 @@ package com.hazelcast.concurrent.lock.client;
 import com.hazelcast.concurrent.lock.InternalLockNamespace;
 import com.hazelcast.concurrent.lock.LockPortableHook;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.security.permission.ActionConstants;
+import com.hazelcast.security.permission.LockPermission;
+
+import java.security.Permission;
 
 /**
  * @author mdogan 5/3/13
@@ -47,6 +51,11 @@ public final class UnlockRequest extends AbstractUnlockRequest {
 
     public int getClassId() {
         return LockPortableHook.UNLOCK;
+    }
+
+    public Permission getRequiredPermission() {
+        String name = (String) getClientEngine().toObject(key);
+        return new LockPermission(name, ActionConstants.ACTION_LOCK);
     }
 
 }

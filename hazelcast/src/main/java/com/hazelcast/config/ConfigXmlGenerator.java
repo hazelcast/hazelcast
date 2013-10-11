@@ -281,9 +281,6 @@ public class ConfigXmlGenerator {
                 }
                 xml.append("</entry-listeners>");
             }
-            if (m.getStorageType() != null) {
-                xml.append("<storage-type>").append(m.getStorageType().toString()).append("</storage-type>");
-            }
             if (m.getPartitionStrategyConfig() != null) {
                 xml.append("<partition-strategy>");
                 PartitionStrategyConfig psc = m.getPartitionStrategyConfig();
@@ -313,8 +310,8 @@ public class ConfigXmlGenerator {
 //            if (mm.getPartitionStrategyConfig() != null) {
 //                xml.append("<partition-strategy>");
 //                PartitionStrategyConfig psc = mm.getPartitionStrategyConfig();
-//                if (psc.getPartitionStrategy() != null) {
-//                    xml.append(psc.getPartitionStrategy().getClass().getName());
+//                if (psc.getPartitioningStrategy() != null) {
+//                    xml.append(psc.getPartitioningStrategy().getClass().getName());
 //                } else {
 //                    xml.append(psc.getPartitionStrategyClass());
 //                }
