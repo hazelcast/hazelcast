@@ -81,7 +81,7 @@ HazelcastInstance client = HazelcastClient.newHazelcastClient(credentials, "loca
             permission policy
             implementation that uses permission configurations defined in Hazelcast security configuration. Default
             policy permission checks are done
-            against instance types (map, queue...), instance names (map, queue etc. name), instance actions (put, get,
+            against instance types (map, queue...), instance names (map, queue etc. name), instance actions (put, read,
             remove, add...),
             client endpoint addresses and client principal defined by
             <literal>Credentials</literal>
@@ -107,18 +107,18 @@ HazelcastInstance client = HazelcastClient.newHazelcastClient(credentials, "loca
         </all-permissions>
         
         <!-- Principals named 'dev' from all endpoints have 'create', 'destroy', 
-            'put', 'get' permissions for map named 'default'. -->
+            'put', 'read' permissions for map named 'default'. -->
         <map-permission name="default" principal="dev">
             <actions>
                 <action>create</action>
                 <action>destroy</action>
                 <action>put</action>
-                <action>get</action>
+                <action>read</action>
             </actions>
         </map-permission>
         
         <!-- All principals from endpoints '127.0.0.1' or matching to '10.10.*.*' 
-            have 'put', 'get', 'remove' permissions for map 
+            have 'put', 'read', 'remove' permissions for map
             whose name matches to 'com.foo.entity.*'. -->
         <map-permission name="com.foo.entity.*">
             <endpoints>
@@ -127,14 +127,14 @@ HazelcastInstance client = HazelcastClient.newHazelcastClient(credentials, "loca
             </endpoints>
             <actions>
                 <action>put</action>
-                <action>get</action>
+                <action>read</action>
                 <action>remove</action>
             </actions>
         </map-permission>
         
         <!-- Principals named 'dev' from endpoints matching to either 
             '192.168.1.1-100' or '192.168.2.*' 
-            have 'create', 'offer', 'poll' permissions for all queues. -->
+            have 'create', 'add', 'remove' permissions for all queues. -->
         <queue-permission name="*" principal="dev">
             <endpoints>
                 <endpoint>192.168.1.1-100</endpoint>
@@ -142,8 +142,8 @@ HazelcastInstance client = HazelcastClient.newHazelcastClient(credentials, "loca
             </endpoints>
             <actions>
                 <action>create</action>
-                <action>offer</action>
-                <action>poll</action>
+                <action>add</action>
+                <action>remove</action>
             </actions>
         </queue-permission>
         
@@ -236,7 +236,7 @@ public interface IPermissionPolicy {
                     <para>
                         <emphasis role="bold">Actions:</emphasis>
                         <emphasis role="italic">all, create, destroy,
-                            put, get, remove, listen, lock, stats
+                            put, read, remove, lock, intercept, index, listen
                         </emphasis>
                     </para>
                 </listitem>
@@ -260,7 +260,7 @@ public interface IPermissionPolicy {
                     <para>
                         <emphasis role="bold">Actions:</emphasis>
                         <emphasis role="italic">all, create, destroy,
-                            offer, poll, get, remove, listen, stats
+                            add, remove, read, listen
                         </emphasis>
                     </para>
                 </listitem>
@@ -284,7 +284,7 @@ public interface IPermissionPolicy {
                     <para>
                         <emphasis role="bold">Actions:</emphasis>
                         <emphasis role="italic">all, create, destroy,
-                            put, get, remove, listen, lock, stats
+                            put, read, remove, listen, lock
                         </emphasis>
                     </para>
                 </listitem>
@@ -308,7 +308,7 @@ public interface IPermissionPolicy {
                     <para>
                         <emphasis role="bold">Actions:</emphasis>
                         <emphasis role="italic">create, destroy,
-                            publish, listen, stats
+                            publish, listen
                         </emphasis>
                     </para>
                 </listitem>
@@ -332,7 +332,7 @@ public interface IPermissionPolicy {
                     <para>
                         <emphasis role="bold">Actions:</emphasis>
                         <emphasis role="italic">all, create, destroy,
-                            add, set, get, remove, listen
+                            add, read, remove, listen
                         </emphasis>
                     </para>
                 </listitem>
@@ -356,7 +356,7 @@ public interface IPermissionPolicy {
                     <para>
                         <emphasis role="bold">Actions:</emphasis>
                         <emphasis role="italic">all, create, destroy,
-                            add, get, remove, listen
+                            add, read, remove, listen
                         </emphasis>
                     </para>
                 </listitem>
@@ -380,7 +380,7 @@ public interface IPermissionPolicy {
                     <para>
                         <emphasis role="bold">Actions:</emphasis>
                         <emphasis role="italic">all, create, destroy,
-                            lock, stats
+                            lock, read
                         </emphasis>
                     </para>
                 </listitem>
@@ -404,7 +404,7 @@ public interface IPermissionPolicy {
                     <para>
                         <emphasis role="bold">Actions:</emphasis>
                         <emphasis role="italic">all, create, destroy,
-                            increment, decrement, get, set, add, stats
+                            read, modify
                         </emphasis>
                     </para>
                 </listitem>
@@ -428,7 +428,7 @@ public interface IPermissionPolicy {
                     <para>
                         <emphasis role="bold">Actions:</emphasis>
                         <emphasis role="italic">all, create, destroy,
-                            countdown, set, stats
+                            modify, read
                         </emphasis>
                     </para>
                 </listitem>
@@ -452,7 +452,7 @@ public interface IPermissionPolicy {
                     <para>
                         <emphasis role="bold">Actions:</emphasis>
                         <emphasis role="italic">all, create, destroy,
-                            acquire, release, drain, stats
+                            acquire, release, read
                         </emphasis>
                     </para>
                 </listitem>
@@ -475,9 +475,7 @@ public interface IPermissionPolicy {
                     </para>
                     <para>
                         <emphasis role="bold">Actions:</emphasis>
-                        <emphasis role="italic">all, create, destroy,
-                            execute
-                        </emphasis>
+                        <emphasis role="italic">all, create, destroy</emphasis>
                     </para>
                 </listitem>
 

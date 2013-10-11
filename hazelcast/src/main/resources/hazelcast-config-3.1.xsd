@@ -632,7 +632,6 @@
             <xs:element name="executor-service-permission" type="instance-permission" minOccurs="0"
                         maxOccurs="unbounded"/>
             <xs:element name="transaction-permission" type="base-permission" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="listener-permission" type="listener-permission" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
     </xs:complexType>
     <xs:complexType name="base-permission">
@@ -674,21 +673,6 @@
                             Name of the permission. Wildcards(*) can be used.
                         </xs:documentation>
                     </xs:annotation>
-                </xs:attribute>
-            </xs:extension>
-        </xs:complexContent>
-    </xs:complexType>
-    <xs:complexType name="listener-permission">
-        <xs:complexContent>
-            <xs:extension base="base-permission">
-                <xs:attribute name="name" use="required">
-                    <xs:simpleType>
-                        <xs:restriction base="xs:string">
-                            <xs:enumeration value="all"/>
-                            <xs:enumeration value="instance"/>
-                            <xs:enumeration value="member"/>
-                        </xs:restriction>
-                    </xs:simpleType>
                 </xs:attribute>
             </xs:extension>
         </xs:complexContent>

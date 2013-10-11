@@ -1070,7 +1070,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 handleLoginModules(child, false);
             } else if ("client-permission-policy".equals(nodeName)) {
                 handlePermissionPolicy(child);
-            } else if ("client-permissions".equals(nodeName)) {
+            } else if ("client-permissions".equals(nodeName)) { //listener-permission
                 handleSecurityPermissions(child);
             }
         }
@@ -1169,8 +1169,6 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
                 type = PermissionType.ID_GENERATOR;
             } else if ("executor-service-permission".equals(nodeName)) {
                 type = PermissionType.EXECUTOR_SERVICE;
-            } else if ("listener-permission".equals(nodeName)) {
-                type = PermissionType.LISTENER;
             } else if ("transaction-permission".equals(nodeName)) {
                 type = PermissionType.TRANSACTION;
             } else if ("all-permissions".equals(nodeName)) {
