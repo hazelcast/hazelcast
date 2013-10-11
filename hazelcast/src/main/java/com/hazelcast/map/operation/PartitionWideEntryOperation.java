@@ -32,7 +32,7 @@ import java.util.AbstractMap;
 import java.util.Map;
 
 /**
- * GOTCHA : This operation does not use mapstore data for now. Only uses data already in memory.
+ * GOTCHA : This operation does not load missing keys from mapstore for now.
  */
 public class PartitionWideEntryOperation extends AbstractMapOperation implements BackupAwareOperation, PartitionAwareOperation {
 
