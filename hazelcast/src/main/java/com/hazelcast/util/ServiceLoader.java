@@ -51,6 +51,9 @@ public class ServiceLoader {
             final Set<ServiceDefinition> systemDefinitions = parse(factoryId, systemClassLoader);
             classDefinitions.addAll(systemDefinitions);
         }
+        if(classDefinitions.isEmpty()){
+            Logger.getLogger(ServiceLoader.class).warning("Service loader could not load 'META-INF/services/"+factoryId +"' It may be empty or does not exist.");
+        }
 
         return new Iterator<T>() {
             final Iterator<ServiceDefinition> classIter = classDefinitions.iterator();
