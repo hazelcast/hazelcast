@@ -981,7 +981,7 @@ public class XmlConfigBuilder extends AbstractXmlConfigHelper implements ConfigB
         final boolean enabled = enabledNode != null && checkTrue(getTextContent(enabledNode));
         final Node intervalNode = attrs.getNamedItem("update-interval");
         final int interval = intervalNode != null ? getIntegerValue("update-interval",
-                getTextContent(intervalNode), 3) : 3;
+                getTextContent(intervalNode), 5) : 5;
         config.getManagementCenterConfig().setEnabled(enabled);
         config.getManagementCenterConfig().setUpdateInterval(interval);
         config.getManagementCenterConfig().setUrl(getTextContent(node));
