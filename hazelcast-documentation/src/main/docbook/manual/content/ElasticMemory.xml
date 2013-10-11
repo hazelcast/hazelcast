@@ -62,11 +62,18 @@
             </listitem>
             <listitem>
                 <para>
-                    Set the chunk size in KB by setting
+                    Set the chunk size by setting
                     <literal>hazelcast.elastic.memory.chunk.size</literal>
                     <link xlink:href="#ConfigurationProperties">Hazelcast Config Property</link>.
-                    Hazelcast will partition the entire offheap memory into chunks.
-                    Default chunk size is 1. Chunk size has to be power of 2 such as 1, 2, 4 and 8.
+                    Hazelcast will partition the entire offheap memory into chunks. Default chunk size is 1K.
+                </para>
+            </listitem>
+            <listitem>
+                <para>
+                    You can enable <code>sun.misc.Unsafe</code> based off-heap storage implementation
+                    instead of <code>java.nio.DirectByteBuffer</code> based one by setting
+                    <literal>hazelcast.elastic.memory.unsafe.enabled</literal> property to true.
+                    Default value is false.
                 </para>
             </listitem>
             <listitem>
