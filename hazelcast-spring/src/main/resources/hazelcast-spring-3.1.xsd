@@ -819,25 +819,18 @@
                                 <xs:enumeration value="all"/>
                                 <xs:enumeration value="create"/>
                                 <xs:enumeration value="destroy"/>
-                                <xs:enumeration value="put"/>
-                                <xs:enumeration value="add"/>
-                                <xs:enumeration value="get"/>
-                                <xs:enumeration value="set"/>
+                                <xs:enumeration value="modify"/>
+                                <xs:enumeration value="read"/>
                                 <xs:enumeration value="remove"/>
-                                <xs:enumeration value="offer"/>
-                                <xs:enumeration value="poll"/>
-                                <xs:enumeration value="take"/>
                                 <xs:enumeration value="lock"/>
                                 <xs:enumeration value="listen"/>
-                                <xs:enumeration value="publish"/>
-                                <xs:enumeration value="increment"/>
-                                <xs:enumeration value="decrement"/>
-                                <xs:enumeration value="execute"/>
-                                <xs:enumeration value="countdown"/>
-                                <xs:enumeration value="acquire"/>
                                 <xs:enumeration value="release"/>
-                                <xs:enumeration value="drain"/>
-                                <xs:enumeration value="statistics"/>
+                                <xs:enumeration value="acquire"/>
+                                <xs:enumeration value="put"/>
+                                <xs:enumeration value="add"/>
+                                <xs:enumeration value="index"/>
+                                <xs:enumeration value="intercept"/>
+                                <xs:enumeration value="publish"/>
                             </xs:restriction>
                         </xs:simpleType>
                         <xs:simpleType>
