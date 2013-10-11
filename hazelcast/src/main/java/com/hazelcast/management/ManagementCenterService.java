@@ -49,7 +49,6 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
 
 public class ManagementCenterService implements LifecycleListener, MembershipListener {
 
@@ -129,8 +128,11 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             GroupConfig groupConfig = instance.getConfig().getGroupConfig();
             if (!(groupConfig.getName().equals(groupName) && groupConfig.getPassword().equals(groupPass)))
                 return HttpCommand.RES_403;
-            ManagementCenterConfigOperation operation = new ManagementCenterConfigOperation(newUrl);
-            sendToAllMembers(operation);
+
+            final Collection<MemberImpl> memberList = instance.node.clusterService.getMemberList();
+            for (MemberImpl member : memberList) {
+                send(member.getAddress(), new ManagementCenterConfigOperation(newUrl));
+            }
         } catch (Throwable throwable) {
             logger.warning("New web server url cannot be assigned.", throwable);
             return HttpCommand.RES_500;
@@ -143,7 +145,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             Member member = membershipEvent.getMember();
             if (member != null && instance.node.isMaster() && urlChanged) {
                 ManagementCenterConfigOperation operation = new ManagementCenterConfigOperation(webServerUrl);
-                call(((MemberImpl) member).getAddress(), operation);
+                callOnMember(member, operation);
             }
         } catch (Exception e) {
             logger.warning("Web server url cannot be send to the newly joined member", e);
@@ -352,8 +354,20 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
         }
     }
 
-    public Object call(Address address, Operation operation) {
+    public Object callOnAddress(Address address, Operation operation) {
         Invocation invocation = instance.node.nodeEngine.getOperationService().createInvocationBuilder(MapService.SERVICE_NAME, operation, address).build();
+        final Future future = invocation.invoke();
+        try {
+            return future.get();
+        } catch (Throwable t) {
+            StringWriter s = new StringWriter();
+            t.printStackTrace(new PrintWriter(s));
+            return s.toString();
+        }
+    }
+
+    public Object callOnMember(Member member, Operation operation) {
+        Invocation invocation = instance.node.nodeEngine.getOperationService().createInvocationBuilder(MapService.SERVICE_NAME, operation, ((MemberImpl) member).getAddress()).build();
         final Future future = invocation.invoke();
         try {
             return future.get();
@@ -367,31 +381,6 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
     public void send(Address address, Operation operation) {
         Invocation invocation = instance.node.nodeEngine.getOperationService().createInvocationBuilder(MapService.SERVICE_NAME, operation, address).build();
         invocation.invoke();
-    }
-
-    public Collection callOnAddresses(Set<Address> addresses, Operation operation) {
-        final ArrayList list = new ArrayList(addresses.size());
-        for (Address address : addresses) {
-            list.add(call(address, operation));
-        }
-        return list;
-    }
-
-    public Collection callOnAllMembers(Operation operation) {
-        Collection<MemberImpl> members = instance.node.clusterService.getMemberList();
-        final ArrayList list = new ArrayList(members.size());
-        for (MemberImpl member : members) {
-            list.add(call(member.getAddress(), operation));
-
-        }
-        return list;
-    }
-
-    public void sendToAllMembers(Operation operation) {
-        Collection<MemberImpl> members = instance.node.clusterService.getMemberList();
-        for (MemberImpl member : members) {
-            send(member.getAddress(), operation);
-        }
     }
 
     private TimedMemberState getTimedMemberState() {
