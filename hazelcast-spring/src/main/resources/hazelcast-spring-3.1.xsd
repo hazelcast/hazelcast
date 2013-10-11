@@ -722,15 +722,6 @@
                         <xs:element name="executor-service-permission" type="instance-permission" minOccurs="0"
                                     maxOccurs="unbounded"/>
                         <xs:element name="transaction-permission" type="base-permission" minOccurs="0" maxOccurs="1"/>
-                        <xs:element name="listener-permission" minOccurs="0" maxOccurs="unbounded">
-                            <xs:complexType>
-                                <xs:complexContent>
-                                    <xs:extension base="base-permission">
-                                        <xs:attribute name="name" type="non-space-string" use="required"/>
-                                    </xs:extension>
-                                </xs:complexContent>
-                            </xs:complexType>
-                        </xs:element>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
