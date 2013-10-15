@@ -102,10 +102,20 @@ public class ExecutorManager extends BaseManager {
         parallelExecutorService = new ParallelExecutorService(node.getLogger(ParallelExecutorService.class.getName()), threadPoolExecutor);
         defaultExecutorService = getOrCreateNamedExecutorService(DEFAULT_EXECUTOR_SERVICE);
         mapStoreExecutorService = getOrCreateNamedExecutorService(STORE_EXECUTOR_SERVICE);
-        queryExecutorService = getOrCreateNamedExecutorService(QUERY_EXECUTOR_SERVICE, gp.EXECUTOR_QUERY_THREAD_COUNT);
-        eventExecutorService = getOrCreateNamedExecutorService(EVENT_EXECUTOR_SERVICE, gp.EXECUTOR_EVENT_THREAD_COUNT);
-        mapLoaderExecutorService = parallelExecutorService.newParallelExecutor(gp.MAP_LOAD_THREAD_COUNT.getInteger());
-        asyncExecutorService = parallelExecutorService.newBlockingParallelExecutor(gp.EXECUTOR_QUERY_THREAD_COUNT.getInteger(), 1000);
+        queryExecutorService = getOrCreateNamedExecutorService(
+                QUERY_EXECUTOR_SERVICE,
+                gp.EXECUTOR_QUERY_THREAD_COUNT,
+                gp.EXECUTOR_QUERY_QUEUE_CAPACITY.getInteger());
+        eventExecutorService = getOrCreateNamedExecutorService(
+                EVENT_EXECUTOR_SERVICE,
+                gp.EXECUTOR_EVENT_THREAD_COUNT,
+                gp.EXECUTOR_EVENT_QUEUE_CAPACITY.getInteger());
+        mapLoaderExecutorService = parallelExecutorService.newParallelExecutor(
+                gp.MAP_LOAD_THREAD_COUNT.getInteger(),
+                gp.MAP_LOAD_QUEUE_CAPACITY.getInteger());
+        asyncExecutorService = parallelExecutorService.newBlockingParallelExecutor(
+                gp.EXECUTOR_ASYNC_THREAD_COUNT.getInteger(),
+                gp.EXECUTOR_ASYNC_QUEUE_CAPACITY.getInteger());
         newNamedExecutorService(Prefix.EXECUTOR_SERVICE + "hz.initialization", new ExecutorConfig("hz.initialization",
                 Integer.MAX_VALUE, Integer.MAX_VALUE, 60));
         registerPacketProcessor(EXECUTE, new ExecutionOperationHandler());
@@ -130,6 +140,10 @@ public class ExecutorManager extends BaseManager {
     }
 
     private NamedExecutorService getOrCreateNamedExecutorService(String name, GroupProperties.GroupProperty groupProperty) {
+       return getOrCreateNamedExecutorService(name, groupProperty, Integer.MAX_VALUE);
+    }
+
+    private NamedExecutorService getOrCreateNamedExecutorService(String name, GroupProperties.GroupProperty groupProperty, int capacity) {
         NamedExecutorService namedExecutorService = mapExecutors.get(name);
         if (namedExecutorService == null) {
             synchronized (CREATE_LOCK) {
@@ -140,7 +154,7 @@ public class ExecutorManager extends BaseManager {
                         executorConfig.setCorePoolSize(groupProperty.getInteger());
                         executorConfig.setMaxPoolSize(groupProperty.getInteger());
                     }
-                    namedExecutorService = newNamedExecutorService(name, executorConfig);
+                    namedExecutorService = newNamedExecutorService(name, executorConfig, capacity);
                 }
             }
         }
@@ -148,9 +162,13 @@ public class ExecutorManager extends BaseManager {
     }
 
     private NamedExecutorService newNamedExecutorService(String name, ExecutorConfig executorConfig) {
+        return newNamedExecutorService(name,executorConfig, Integer.MAX_VALUE);
+    }
+
+    private NamedExecutorService newNamedExecutorService(String name, ExecutorConfig executorConfig, int capacity) {
         logger.log(Level.FINEST, "creating new named executor service " + name);
         int concurrencyLevel = executorConfig.getMaxPoolSize();
-        ParallelExecutor parallelExecutor = parallelExecutorService.newParallelExecutor(concurrencyLevel);
+        ParallelExecutor parallelExecutor = parallelExecutorService.newParallelExecutor(concurrencyLevel,capacity);
         NamedExecutorService es = new NamedExecutorService(name, parallelExecutor);
         mapExecutors.put(name, es);
         return es;

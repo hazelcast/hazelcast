@@ -55,10 +55,14 @@ public class ParallelExecutorService {
     }
 
     public ParallelExecutor newParallelExecutor(int concurrencyLevel) {
+        return newParallelExecutor(concurrencyLevel, Integer.MAX_VALUE);
+    }
+
+    public ParallelExecutor newParallelExecutor(int concurrencyLevel, int capacity) {
         ParallelExecutor parallelExecutor;
         //todo: what if concurrencyLevel == 0?
         if (concurrencyLevel > 0 && concurrencyLevel < Integer.MAX_VALUE) {
-            parallelExecutor = new ParallelExecutorImpl(concurrencyLevel, Integer.MAX_VALUE);
+            parallelExecutor = new ParallelExecutorImpl(concurrencyLevel, capacity);
         } else {
             parallelExecutor = new FullyParallelExecutorImpl();
         }
