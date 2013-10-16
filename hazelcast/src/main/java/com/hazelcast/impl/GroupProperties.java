@@ -33,6 +33,7 @@ public class GroupProperties {
     public static final String PROP_MAP_LOAD_CHUNK_SIZE = "hazelcast.map.load.chunk.size";
     public static final String PROP_MAP_LOAD_THREAD_COUNT = "hazelcast.map.load.thread.count";
     public static final String PROP_MAP_LOAD_QUEUE_CAPACITY = "hazelcast.map.load.queue.capacity";
+    public static final String PROP_MAP_LOAD_QUEUE_TIMEOUT_MILLIS = "hazelcast.map.load.queue.timeout.millis";
     public static final String PROP_IN_THREAD_PRIORITY = "hazelcast.in.thread.priority";
     public static final String PROP_OUT_THREAD_PRIORITY = "hazelcast.out.thread.priority";
     public static final String PROP_SERVICE_THREAD_PRIORITY = "hazelcast.service.thread.priority";
@@ -76,10 +77,13 @@ public class GroupProperties {
     public static final String PROP_CLEANUP_DELAY_SECONDS = "hazelcast.map.cleanup.delay.seconds";
     public static final String PROP_EXECUTOR_QUERY_THREAD_COUNT = "hazelcast.executor.query.thread.count";
     public static final String PROP_EXECUTOR_QUERY_QUEUE_CAPACITY = "hazelcast.executor.query.queue.capacity";
+    public static final String PROP_EXECUTOR_QUERY_QUEUE_TIMEOUT_MILLIS = "hazelcast.executor.query.queue.timeout.millis";
     public static final String PROP_EXECUTOR_EVENT_THREAD_COUNT = "hazelcast.executor.event.thread.count";
     public static final String PROP_EXECUTOR_EVENT_QUEUE_CAPACITY = "hazelcast.executor.event.queue.capacity";
+    public static final String PROP_EXECUTOR_EVENT_QUEUE_TIMEOUT_MILLIS = "hazelcast.executor.event.queue.timeout.millis";
     public static final String PROP_EXECUTOR_ASYNC_THREAD_COUNT = "hazelcast.executor.async.thread.count";
     public static final String PROP_EXECUTOR_ASYNC_QUEUE_CAPACITY = "hazelcast.executor.async.queue.capacity";
+    public static final String PROP_EXECUTOR_ASYNC_QUEUE_TIMEOUT_MILLIS = "hazelcast.executor.async.queue.timeout.millis";
     public static final String PROP_EXECUTOR_CLIENT_THREAD_COUNT = "hazelcast.executor.client.thread.count";
     public static final String PROP_EXECUTOR_STORE_THREAD_COUNT = "hazelcast.executor.store.thread.count";
     public static final String PROP_LOGGING_TYPE = "hazelcast.logging.type";
@@ -146,7 +150,7 @@ public class GroupProperties {
     public final GroupProperty MAP_LOAD_THREAD_COUNT;
 
     public final GroupProperty MAP_LOAD_QUEUE_CAPACITY;
-
+    public final GroupProperty MAP_LOAD_QUEUE_TIMEOUT_MILLIS;
     public final GroupProperty MERGE_FIRST_RUN_DELAY_SECONDS;
 
     public final GroupProperty MERGE_NEXT_RUN_DELAY_SECONDS;
@@ -219,13 +223,19 @@ public class GroupProperties {
 
     public final GroupProperty EXECUTOR_QUERY_QUEUE_CAPACITY;
 
+    public final GroupProperty EXECUTOR_QUERY_QUEUE_TIMEOUT_MILLIS;
+
     public final GroupProperty EXECUTOR_ASYNC_THREAD_COUNT;
 
     public final GroupProperty EXECUTOR_ASYNC_QUEUE_CAPACITY;
 
+    public final GroupProperty EXECUTOR_ASYNC_QUEUE_TIMEOUT_MILLIS;
+
     public final GroupProperty EXECUTOR_EVENT_THREAD_COUNT;
 
     public final GroupProperty EXECUTOR_EVENT_QUEUE_CAPACITY;
+
+    public final GroupProperty EXECUTOR_EVENT_QUEUE_TIMEOUT_MILLIS;
 
     public final GroupProperty EXECUTOR_CLIENT_THREAD_COUNT;
 
@@ -301,6 +311,7 @@ public class GroupProperties {
         MAP_LOAD_CHUNK_SIZE = new GroupProperty(config, PROP_MAP_LOAD_CHUNK_SIZE, "1000");
         MAP_LOAD_THREAD_COUNT = new GroupProperty(config, PROP_MAP_LOAD_THREAD_COUNT, "40");
         MAP_LOAD_QUEUE_CAPACITY = new GroupProperty(config, PROP_MAP_LOAD_QUEUE_CAPACITY, ""+Integer.MAX_VALUE);
+        MAP_LOAD_QUEUE_TIMEOUT_MILLIS = new GroupProperty(config, PROP_MAP_LOAD_QUEUE_TIMEOUT_MILLIS, ""+Integer.MAX_VALUE);
         IN_THREAD_PRIORITY = new GroupProperty(config, PROP_IN_THREAD_PRIORITY, "7");
         OUT_THREAD_PRIORITY = new GroupProperty(config, PROP_OUT_THREAD_PRIORITY, "7");
         SERVICE_THREAD_PRIORITY = new GroupProperty(config, PROP_SERVICE_THREAD_PRIORITY, "8");
@@ -341,10 +352,13 @@ public class GroupProperties {
         CLEANUP_DELAY_SECONDS = new GroupProperty(config, PROP_CLEANUP_DELAY_SECONDS, "10");
         EXECUTOR_QUERY_THREAD_COUNT = new GroupProperty(config, PROP_EXECUTOR_QUERY_THREAD_COUNT, "8");
         EXECUTOR_QUERY_QUEUE_CAPACITY = new GroupProperty(config, PROP_EXECUTOR_QUERY_QUEUE_CAPACITY, ""+Integer.MAX_VALUE);
+        EXECUTOR_QUERY_QUEUE_TIMEOUT_MILLIS = new GroupProperty(config, PROP_EXECUTOR_QUERY_QUEUE_TIMEOUT_MILLIS, ""+Integer.MAX_VALUE);
         EXECUTOR_ASYNC_THREAD_COUNT = new GroupProperty(config, PROP_EXECUTOR_ASYNC_THREAD_COUNT, "24");
         EXECUTOR_ASYNC_QUEUE_CAPACITY = new GroupProperty(config, PROP_EXECUTOR_ASYNC_QUEUE_CAPACITY, "1000");
+        EXECUTOR_ASYNC_QUEUE_TIMEOUT_MILLIS = new GroupProperty(config, PROP_EXECUTOR_ASYNC_QUEUE_TIMEOUT_MILLIS, ""+Integer.MAX_VALUE);
         EXECUTOR_EVENT_THREAD_COUNT = new GroupProperty(config, PROP_EXECUTOR_EVENT_THREAD_COUNT, "16");
         EXECUTOR_EVENT_QUEUE_CAPACITY = new GroupProperty(config, PROP_EXECUTOR_EVENT_QUEUE_CAPACITY, ""+Integer.MAX_VALUE);
+        EXECUTOR_EVENT_QUEUE_TIMEOUT_MILLIS = new GroupProperty(config, PROP_EXECUTOR_EVENT_QUEUE_TIMEOUT_MILLIS, ""+Integer.MAX_VALUE);
         EXECUTOR_CLIENT_THREAD_COUNT = new GroupProperty(config, PROP_EXECUTOR_CLIENT_THREAD_COUNT, "40");
         EXECUTOR_STORE_THREAD_COUNT = new GroupProperty(config, PROP_EXECUTOR_STORE_THREAD_COUNT, "16");
         LOG_STATE = new GroupProperty(config, PROP_LOG_STATE, "false");
