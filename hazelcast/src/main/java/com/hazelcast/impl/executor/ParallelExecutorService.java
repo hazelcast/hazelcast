@@ -16,13 +16,11 @@
 
 package com.hazelcast.impl.executor;
 
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.logging.ILogger;
 
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -49,20 +47,24 @@ public class ParallelExecutorService {
     }
 
     public ParallelExecutor newBlockingParallelExecutor(int concurrencyLevel, int capacity) {
-        ParallelExecutor p = new ParallelExecutorImpl(concurrencyLevel, capacity);
+         return newBlockingParallelExecutor(concurrencyLevel, capacity,Integer.MAX_VALUE);
+    }
+
+    public ParallelExecutor newBlockingParallelExecutor(int concurrencyLevel, int capacity, int timeoutMs) {
+        ParallelExecutor p = new ParallelExecutorImpl(concurrencyLevel, capacity, timeoutMs);
         lsParallelExecutors.add(p);
         return p;
     }
 
     public ParallelExecutor newParallelExecutor(int concurrencyLevel) {
-        return newParallelExecutor(concurrencyLevel, Integer.MAX_VALUE);
+        return newParallelExecutor(concurrencyLevel, Integer.MAX_VALUE,Integer.MAX_VALUE);
     }
 
-    public ParallelExecutor newParallelExecutor(int concurrencyLevel, int capacity) {
+    public ParallelExecutor newParallelExecutor(int concurrencyLevel, int capacity, int timeoutMs) {
         ParallelExecutor parallelExecutor;
         //todo: what if concurrencyLevel == 0?
         if (concurrencyLevel > 0 && concurrencyLevel < Integer.MAX_VALUE) {
-            parallelExecutor = new ParallelExecutorImpl(concurrencyLevel, capacity);
+            parallelExecutor = new ParallelExecutorImpl(concurrencyLevel, capacity,timeoutMs);
         } else {
             parallelExecutor = new FullyParallelExecutorImpl();
         }
@@ -97,6 +99,7 @@ public class ParallelExecutorService {
         private final ExecutionSegment[] executionSegments;
         private final AtomicInteger offerIndex = new AtomicInteger();
         private final AtomicInteger activeCount = new AtomicInteger();
+        private final int timeoutMs;
 
         /**
          * Creates a new ParallelExecutorImpl
@@ -107,7 +110,8 @@ public class ParallelExecutorService {
          *                         offering a task to be executed can block until there is capacity to store the
          *                         task.
          */
-        private ParallelExecutorImpl(int concurrencyLevel, int segmentCapacity) {
+        private ParallelExecutorImpl(int concurrencyLevel, int segmentCapacity, int timeoutMs) {
+            this.timeoutMs = timeoutMs;
             this.executionSegments = new ExecutionSegment[concurrencyLevel];
             for (int i = 0; i < concurrencyLevel; i++) {
                 executionSegments[i] = new ExecutionSegment(segmentCapacity);
@@ -157,14 +161,23 @@ public class ParallelExecutorService {
             }
 
             private void offer(Runnable command) {
+                long timeoutMs = ParallelExecutorImpl.this.timeoutMs;
+
                 //put the item on the queue uninterruptibly.
                 boolean interrupted = false;
                 try {
                     for (; ; ) {
+                        long startMs = System.currentTimeMillis();
+
                         try {
-                            q.put(command);
-                            break;
+                            if(q.offer(command, timeoutMs, TimeUnit.MILLISECONDS)){
+                                break;
+                            }else{
+                                throw new OperationTimeoutException("Timeout: Could not place task:"+command);
+                            }
                         } catch (InterruptedException ie) {
+                            long durationMs = System.currentTimeMillis()-startMs;
+                            timeoutMs-=durationMs;
                             interrupted = true;
                         }
                     }
@@ -173,6 +186,7 @@ public class ParallelExecutorService {
                         Thread.currentThread().interrupt();
                     }
                 }
+
                 //if the segment is active we don't need to schedule.
                 if (active.get()) {
                     return;
