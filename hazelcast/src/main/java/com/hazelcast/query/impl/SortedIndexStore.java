@@ -83,7 +83,9 @@ public class SortedIndexStore implements IndexStore {
         if (records == null) {
             records = new ConcurrentHashMap<Data, QueryableEntry>(1, 0.75f, 1);
             mapRecords.put(newValue, records);
-            sortedSet.add(newValue);
+            if (!(newValue instanceof IndexImpl.NullObject)) {
+                sortedSet.add(newValue);
+            }
         }
         records.put(record.getIndexKey(), record);
     }

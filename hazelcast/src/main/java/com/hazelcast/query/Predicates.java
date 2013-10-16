@@ -597,8 +597,11 @@ public final class Predicates {
         }
 
         protected Comparable convert(Map.Entry mapEntry, Comparable entryValue, Comparable attributeValue) {
-            if (attributeValue == null) {
+            if (attributeValue == null ) {
                 return null;
+            }
+            if( attributeValue instanceof IndexImpl.NullObject ){
+                return IndexImpl.NULL;
             }
             AttributeType type = attributeType;
             if (type == null) {
@@ -631,11 +634,11 @@ public final class Predicates {
 
         protected Comparable readAttribute(Map.Entry entry) {
             QueryableEntry queryableEntry = (QueryableEntry) entry;
-            Comparable value = queryableEntry.getAttribute(attribute);
-            if (value != null && value.getClass().isEnum()) {
-                value = value.toString();
+            Comparable val = queryableEntry.getAttribute(attribute);
+            if (val != null && val.getClass().isEnum()) {
+                val = val.toString();
             }
-            return value;
+            return val;
         }
 
         public void writeData(ObjectDataOutput out) throws IOException {
