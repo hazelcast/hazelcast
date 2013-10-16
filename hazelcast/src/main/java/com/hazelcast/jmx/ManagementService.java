@@ -191,28 +191,28 @@ public class ManagementService implements DistributedObjectListener {
 
     private String getObjectType(DistributedObject distributedObject){
         if (distributedObject instanceof IList){
-            return "List";
+            return "IList";
         }
         if (distributedObject instanceof IAtomicLong){
-            return "AtomicLong";
+            return "IAtomicLong";
         }
         if (distributedObject instanceof ICountDownLatch){
-            return "CountDownLatch";
+            return "ICountDownLatch";
         }
         if (distributedObject instanceof ILock){
-            return "Lock";
+            return "ILock";
         }
         if (distributedObject instanceof IMap){
-            return "Map";
+            return "IMap";
         }
         if (distributedObject instanceof MultiMap){
             return "MultiMap";
         }
         if (distributedObject instanceof IQueue){
-            return "Queue";
+            return "IQueue";
         }
         if (distributedObject instanceof ISemaphore){
-            return "Semaphore";
+            return "ISemaphore";
         }
         if (distributedObject instanceof ISet){
             return "ISet";
