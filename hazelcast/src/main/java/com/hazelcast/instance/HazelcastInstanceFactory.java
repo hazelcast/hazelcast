@@ -56,6 +56,26 @@ public final class HazelcastInstanceFactory {
         }
     }
 
+    public static HazelcastInstance getOrCreateHazelcastInstance(Config config) {
+        if(config == null){
+            throw new NullPointerException("config can't be null");
+        }
+
+        String instanceName = config.getInstanceName();
+        if(instanceName == null|| instanceName.trim().length() == 0) {
+            throw new IllegalArgumentException("instance name can't be null or empty");
+        }
+
+        synchronized (INSTANCE_NAME_LOCK) {
+            HazelcastInstance hz = INSTANCE_MAP.get(instanceName);
+            if(hz == null){
+                hz = newHazelcastInstance(config);
+            }
+
+            return hz;
+        }
+    }
+
     public static HazelcastInstance newHazelcastInstance(Config config) {
         if (config == null) {
             config = new XmlConfigBuilder().build();
