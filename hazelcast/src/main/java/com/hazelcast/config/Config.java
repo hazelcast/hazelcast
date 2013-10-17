@@ -84,6 +84,10 @@ public class Config {
     public Config() {
     }
 
+    public Config(String instanceName){
+        this.instanceName = instanceName;
+    }
+
     /**
      * Returns the class-loader that will be used in serialization.
      * <p> If null, then thread context class-loader will be used instead.

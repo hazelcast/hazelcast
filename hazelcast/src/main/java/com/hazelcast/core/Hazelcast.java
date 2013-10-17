@@ -103,6 +103,20 @@ public final class Hazelcast {
     }
 
     /**
+     * Gets or creates the HazelcastInstance with a certain name.
+     *
+     * If a Hazelcast with the same name as the configuration exists, then it is returned, otherwise it is created.
+     *
+     * @param config the Config.
+     * @return the HazelcastInstance
+     * @throws NullPointerException if config is null.
+     */
+    public static HazelcastInstance getOrCreateHazelcastInstance(Config config) {
+        return HazelcastInstanceFactory.getOrCreateHazelcastInstance(config);
+    }
+
+
+    /**
      * Returns all active/running HazelcastInstances on this JVM.
      * <p/>
      * To shutdown all running HazelcastInstances (all members on this JVM)
