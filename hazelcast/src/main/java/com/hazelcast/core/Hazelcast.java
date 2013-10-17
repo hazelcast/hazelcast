@@ -110,6 +110,7 @@ public final class Hazelcast {
      * @param config the Config.
      * @return the HazelcastInstance
      * @throws NullPointerException if config is null.
+     * @throws IllegalArgumentException if the instancename of the config is null or empty.
      */
     public static HazelcastInstance getOrCreateHazelcastInstance(Config config) {
         return HazelcastInstanceFactory.getOrCreateHazelcastInstance(config);
