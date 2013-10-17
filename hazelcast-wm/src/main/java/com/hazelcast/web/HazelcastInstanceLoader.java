@@ -90,15 +90,7 @@ final class HazelcastInstanceLoader {
 
         if (!isEmpty(instanceName)) {
             config.setInstanceName(instanceName);
-            HazelcastInstance instance = Hazelcast.getHazelcastInstanceByName(instanceName);
-            if (instance == null) {
-                try {
-                    instance = Hazelcast.newHazelcastInstance(config);
-                } catch (DuplicateInstanceNameException ignored) {
-                    instance = Hazelcast.getHazelcastInstanceByName(instanceName);
-                }
-            }
-            return instance;
+            return Hazelcast.getOrCreateHazelcastInstance(config);
         } else {
             return Hazelcast.newHazelcastInstance(config);
         }
