@@ -22,6 +22,7 @@ import com.hazelcast.multimap.operations.MultiMapBackupAwareOperation;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Notifier;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.WaitNotifyKey;
@@ -69,7 +70,13 @@ public class TxnCommitOperation extends MultiMapBackupAwareOperation implements 
     }
 
     public Operation getBackupOperation() {
-        return new TxnCommitBackupOperation(name, dataKey, opList, getCallerUuid(), threadId);
+        List<Operation> backupOpList = new ArrayList<Operation>();
+        for (Operation operation : opList) {
+            if (operation instanceof BackupAwareOperation){
+                backupOpList.add(operation);
+            }
+        }
+        return new TxnCommitBackupOperation(name, dataKey, backupOpList, getCallerUuid(), threadId);
     }
 
     public boolean shouldNotify() {
