@@ -256,4 +256,26 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
     public String toString() {
         return predicate.toString();
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof SqlPredicate)) {
+            return false;
+        }
+
+        SqlPredicate that = (SqlPredicate) o;
+
+        if (!sql.equals(that.sql)) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return sql.hashCode();
+    }
 }
