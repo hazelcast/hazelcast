@@ -148,11 +148,12 @@ public final class QueueConfig {
     public String toString() {
         final StringBuilder sb = new StringBuilder("QueueConfig{");
         sb.append("name='").append(name).append('\'');
-        sb.append(", maxSize=").append(maxSize);
+        sb.append(", listenerConfigs=").append(listenerConfigs);
         sb.append(", backupCount=").append(backupCount);
         sb.append(", asyncBackupCount=").append(asyncBackupCount);
+        sb.append(", maxSize=").append(maxSize);
+        sb.append(", emptyQueueTtl=").append(emptyQueueTtl);
         sb.append(", queueStoreConfig=").append(queueStoreConfig);
-        sb.append(", listenerConfigs=").append(listenerConfigs);
         sb.append(", statisticsEnabled=").append(statisticsEnabled);
         sb.append('}');
         return sb.toString();
