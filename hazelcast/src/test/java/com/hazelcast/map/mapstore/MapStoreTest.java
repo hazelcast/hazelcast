@@ -778,6 +778,40 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertEquals("value", map.get("key"));
     }
 
+    @Test
+    public void testIssue991EvictedNullIssue() throws InterruptedException {
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setImplementation(new MapLoader<String, String>() {
+            @Override
+            public String load(String key) {
+                return null;
+            }
+
+            @Override
+            public Map<String, String> loadAll(Collection<String> keys) {
+                return null;
+            }
+
+            @Override
+            public Set<String> loadAllKeys() {
+                return null;
+            }
+        });
+        Config config = new Config();
+        config
+                .getMapConfig("testIssue991EvictedNullIssue")
+                .setMapStoreConfig(mapStoreConfig);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        HazelcastInstance hc = nodeFactory.newHazelcastInstance(config);
+        IMap<Object, Object> map = hc.getMap("testIssue991EvictedNullIssue");
+        map.get("key");
+        assertNull(map.get("key"));
+        map.put("key", "value");
+        Thread.sleep(2000);
+        assertEquals("value", map.get("key"));
+    }
+
     public static Config newConfig(Object storeImpl, int writeDelaySeconds) {
         return newConfig("default", storeImpl, writeDelaySeconds);
     }
