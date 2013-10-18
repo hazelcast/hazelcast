@@ -16,44 +16,36 @@
 
 package com.hazelcast.multimap.txn;
 
-import com.hazelcast.multimap.*;
+import com.hazelcast.multimap.MultiMapContainer;
+import com.hazelcast.multimap.MultiMapDataSerializerHook;
+import com.hazelcast.multimap.MultiMapRecord;
+import com.hazelcast.multimap.MultiMapWrapper;
 import com.hazelcast.multimap.operations.MultiMapKeyBasedOperation;
-import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
-import com.hazelcast.spi.BackupAwareOperation;
-import com.hazelcast.spi.Operation;
-import com.hazelcast.util.Clock;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.LinkedList;
 
 /**
- * @author ali 4/10/13
+ * @ali 10/18/13
  */
-public class TxnRemoveAllOperation extends MultiMapKeyBasedOperation implements BackupAwareOperation {
+public class TxnRemoveAllBackupOperation extends MultiMapKeyBasedOperation {
 
     Collection<Long> recordIds;
-    transient long begin = -1;
-    transient Collection<MultiMapRecord> removed;
 
-    public TxnRemoveAllOperation() {
+    public TxnRemoveAllBackupOperation() {
     }
 
-    public TxnRemoveAllOperation(String name, Data dataKey, Collection<MultiMapRecord> records) {
+    public TxnRemoveAllBackupOperation(String name, Data dataKey, Collection<Long> recordIds) {
         super(name, dataKey);
-        this.recordIds = new ArrayList<Long>();
-        for (MultiMapRecord record: records){
-            recordIds.add(record.getRecordId());
-        }
+        this.recordIds = recordIds;
     }
 
     public void run() throws Exception {
-        begin = Clock.currentTimeMillis();
         MultiMapContainer container = getOrCreateContainer();
         MultiMapWrapper wrapper = container.getOrCreateMultiMapWrapper(dataKey);
         response = true;
@@ -64,14 +56,12 @@ public class TxnRemoveAllOperation extends MultiMapKeyBasedOperation implements 
             }
         }
         Collection<MultiMapRecord> coll = wrapper.getCollection();
-        removed = new LinkedList<MultiMapRecord>();
         for (Long recordId: recordIds){
             Iterator<MultiMapRecord> iter = coll.iterator();
             while (iter.hasNext()){
                 MultiMapRecord record = iter.next();
                 if (record.getRecordId() == recordId){
                     iter.remove();
-                    removed.add(record);
                     break;
                 }
             }
@@ -79,31 +69,6 @@ public class TxnRemoveAllOperation extends MultiMapKeyBasedOperation implements 
         if (coll.isEmpty()) {
             remove();
         }
-
-    }
-
-    public void afterRun() throws Exception {
-        long elapsed = Math.max(0, Clock.currentTimeMillis()-begin);
-        final MultiMapService service = getService();
-        service.getLocalMultiMapStatsImpl(name).incrementRemoves(elapsed);
-        if (removed != null) {
-            getOrCreateContainer().update();
-            for (MultiMapRecord record : removed) {
-                publishEvent(EntryEventType.REMOVED, dataKey, record.getObject());
-            }
-        }
-    }
-
-    public boolean shouldBackup() {
-        return Boolean.TRUE.equals(response);
-    }
-
-    public Operation getBackupOperation() {
-        return new TxnRemoveAllBackupOperation(name, dataKey, recordIds);
-    }
-
-    public Collection<Long> getRecordIds() {
-        return recordIds;
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
@@ -124,6 +89,6 @@ public class TxnRemoveAllOperation extends MultiMapKeyBasedOperation implements 
     }
 
     public int getId() {
-        return MultiMapDataSerializerHook.TXN_REMOVE_ALL;
+        return MultiMapDataSerializerHook.TXN_REMOVE_ALL_BACKUP;
     }
 }
