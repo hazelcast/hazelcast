@@ -73,7 +73,7 @@ public class TxnCommitOperation extends MultiMapBackupAwareOperation implements 
         List<Operation> backupOpList = new ArrayList<Operation>();
         for (Operation operation : opList) {
             if (operation instanceof BackupAwareOperation){
-                backupOpList.add(operation);
+                backupOpList.add(((BackupAwareOperation) operation).getBackupOperation());
             }
         }
         return new TxnCommitBackupOperation(name, dataKey, backupOpList, getCallerUuid(), threadId);
