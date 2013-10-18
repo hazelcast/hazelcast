@@ -133,6 +133,7 @@ public class TxnMultiMapTest extends HazelcastTestSupport {
         String mapName = "mm";
         long key = 1L;
         String value = "value";
+        String value2 = "value2";
         final Config config = new Config();
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
@@ -148,16 +149,25 @@ public class TxnMultiMapTest extends HazelcastTestSupport {
         ctx1.getMultiMap(mapName).put(key, value);
         ctx1.commitTransaction();
 
-
         TransactionContext ctx2 = instance2.newTransactionContext();
         ctx2.beginTransaction();
         ctx2.getMultiMap(mapName).remove(key, value);
         ctx2.commitTransaction();
 
+        TransactionContext ctx3 = instance2.newTransactionContext();
+        ctx3.beginTransaction();
+        ctx3.getMultiMap(mapName).put(key, value2);
+        ctx3.commitTransaction();
+
+        TransactionContext ctx4 = instance1.newTransactionContext();
+        ctx4.beginTransaction();
+        ctx4.getMultiMap(mapName).remove(key, value2);
+        ctx4.commitTransaction();
+
         Thread.sleep(100);
 
-        assertEquals(1, listener.addedCount);
-        assertEquals(1, listener.removedCount);
+        assertEquals(2, listener.addedCount);
+        assertEquals(2, listener.removedCount);
     }
 
     private class CountingEntryListener<K,V> extends EntryAdapter<K,V> {

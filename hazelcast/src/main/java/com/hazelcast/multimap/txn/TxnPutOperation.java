@@ -22,6 +22,8 @@ import com.hazelcast.core.EntryEventType;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.BackupAwareOperation;
+import com.hazelcast.spi.Operation;
 import com.hazelcast.util.Clock;
 
 import java.io.IOException;
@@ -30,7 +32,7 @@ import java.util.Collection;
 /**
  * @author ali 4/2/13
  */
-public class TxnPutOperation extends MultiMapKeyBasedOperation {
+public class TxnPutOperation extends MultiMapKeyBasedOperation implements BackupAwareOperation {
 
     long recordId;
     Data value;
@@ -70,6 +72,14 @@ public class TxnPutOperation extends MultiMapKeyBasedOperation {
 
     public long getRecordId() {
         return recordId;
+    }
+
+    public boolean shouldBackup() {
+        return Boolean.TRUE.equals(response);
+    }
+
+    public Operation getBackupOperation() {
+        return new TxnPutBackupOperation(name, dataKey, recordId, value);
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {

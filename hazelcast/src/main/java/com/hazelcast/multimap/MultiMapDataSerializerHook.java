@@ -63,29 +63,21 @@ public class MultiMapDataSerializerHook implements DataSerializerHook {
     public static final int TXN_PREPARE_BACKUP = 31;
     public static final int TXN_PREPARE = 32;
     public static final int TXN_PUT = 33;
-    public static final int TXN_REMOVE_ALL = 34;
+    public static final int TXN_PUT_BACKUP = 34;
     public static final int TXN_REMOVE = 35;
-    public static final int TXN_ROLLBACK_BACKUP = 36;
-    public static final int TXN_ROLLBACK = 37;
+    public static final int TXN_REMOVE_BACKUP = 36;
+    public static final int TXN_REMOVE_ALL = 37;
+    public static final int TXN_REMOVE_ALL_BACKUP = 38;
+    public static final int TXN_ROLLBACK = 39;
+    public static final int TXN_ROLLBACK_BACKUP = 40;
 
-    public static final int COLLECTION_PROXY_ID = 38;
 
     public int getFactoryId() {
         return F_ID;
     }
 
     public DataSerializableFactory createFactory() {
-        ConstructorFunction<Integer, IdentifiedDataSerializable> constructors[] = new ConstructorFunction[39];
-//        constructors[ADD_ALL_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-//            public IdentifiedDataSerializable createNew(Integer arg) {
-//                return new AddAllBackupOperation();
-//            }
-//        };
-//        constructors[ADD_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-//            public IdentifiedDataSerializable createNew(Integer arg) {
-//                return new AddAllOperation();
-//            }
-//        };
+        ConstructorFunction<Integer, IdentifiedDataSerializable> constructors[] = new ConstructorFunction[TXN_ROLLBACK_BACKUP+1];
         constructors[CLEAR_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new ClearBackupOperation();
@@ -96,31 +88,11 @@ public class MultiMapDataSerializerHook implements DataSerializerHook {
                 return new ClearOperation();
             }
         };
-//        constructors[COMPARE_AND_REMOVE_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-//            public IdentifiedDataSerializable createNew(Integer arg) {
-//                return new CompareAndRemoveBackupOperation();
-//            }
-//        };
-//        constructors[COMPARE_AND_REMOVE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-//            public IdentifiedDataSerializable createNew(Integer arg) {
-//                return new CompareAndRemoveOperation();
-//            }
-//        };
-//        constructors[CONTAINS_ALL] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-//            public IdentifiedDataSerializable createNew(Integer arg) {
-//                return new ContainsAllOperation();
-//            }
-//        };
         constructors[CONTAINS_ENTRY] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new ContainsEntryOperation();
             }
         };
-//        constructors[CONTAINS] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-//            public IdentifiedDataSerializable createNew(Integer arg) {
-//                return new ContainsOperation();
-//            }
-//        };
         constructors[COUNT] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new CountOperation();
@@ -136,16 +108,6 @@ public class MultiMapDataSerializerHook implements DataSerializerHook {
                 return new GetAllOperation();
             }
         };
-//        constructors[GET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-//            public IdentifiedDataSerializable createNew(Integer arg) {
-//                return new GetOperation();
-//            }
-//        };
-//        constructors[INDEX_OF] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-//            public IdentifiedDataSerializable createNew(Integer arg) {
-//                return new IndexOfOperation();
-//            }
-//        };
         constructors[KEY_SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new KeySetOperation();
@@ -181,26 +143,6 @@ public class MultiMapDataSerializerHook implements DataSerializerHook {
                 return new RemoveOperation();
             }
         };
-//        constructors[REMOVE_INDEX_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-//            public IdentifiedDataSerializable createNew(Integer arg) {
-//                return new RemoveIndexBackupOperation();
-//            }
-//        };
-//        constructors[REMOVE_INDEX] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-//            public IdentifiedDataSerializable createNew(Integer arg) {
-//                return new RemoveIndexOperation();
-//            }
-//        };
-//        constructors[SET_BACKUP] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-//            public IdentifiedDataSerializable createNew(Integer arg) {
-//                return new SetBackupOperation();
-//            }
-//        };
-//        constructors[SET] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-//            public IdentifiedDataSerializable createNew(Integer arg) {
-//                return new SetOperation();
-//            }
-//        };
         constructors[SIZE] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
             public IdentifiedDataSerializable createNew(Integer arg) {
                 return new SizeOperation();
@@ -270,11 +212,6 @@ public class MultiMapDataSerializerHook implements DataSerializerHook {
             }
         };
 
-//        constructors[COLLECTION_PROXY_ID] = new ConstructorFunction<Integer, IdentifiedDataSerializable>() {
-//            public IdentifiedDataSerializable createNew(Integer arg) {
-//                return new CollectionProxyId();
-//            }
-//        };
         return new ArrayDataSerializableFactory(constructors);
     }
 }
