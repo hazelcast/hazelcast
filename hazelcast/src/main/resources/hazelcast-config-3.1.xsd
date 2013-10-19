@@ -21,7 +21,7 @@
            elementFormDefault="qualified"
            attributeFormDefault="unqualified">
 
-    <xs:include schemaLocation="http://www.hazelcast.com/schema/config/hazelcast-common-config-3.1.xsd"/>
+    <xs:include schemaLocation="hazelcast-common-config-3.1.xsd"/>
 
     <xs:element name="hazelcast">
         <xs:complexType>

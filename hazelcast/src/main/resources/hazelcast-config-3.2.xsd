@@ -21,7 +21,7 @@
            elementFormDefault="qualified"
            attributeFormDefault="unqualified">
 
-    <xs:include schemaLocation="hazelcast-common-config-3.0.xsd"/>
+    <xs:include schemaLocation="hazelcast-common-config-3.2.xsd"/>
 
     <xs:element name="hazelcast">
         <xs:complexType>
@@ -37,6 +37,8 @@
                 <xs:element name="queue" type="queue" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="map" type="map" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="multimap" type="multimap" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="list" type="list" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="set" type="set" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="topic" type="topic" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="semaphore" type="semaphore" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="listeners" type="listeners" minOccurs="0" maxOccurs="1"/>
@@ -172,16 +174,7 @@
                 </xs:complexType>
             </xs:element>
             <xs:element name="entry-listeners" type="entry-listeners" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="storage-type" type="xs:string" minOccurs="0" maxOccurs="1">
-                <xs:annotation>
-                    <xs:documentation>
-                        Storage type for Hazelcast Enterprise map configuration.
-                        Valid values are HEAP and OFFHEAP.
-                        Default is HEAP.
-                        Not configurable for Hazelcast Community Edition.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
+            <xs:element name="partition-strategy" type="xs:string" minOccurs="0" maxOccurs="1" />
         </xs:sequence>
         <xs:attribute name="name" use="required">
             <xs:simpleType>
@@ -220,8 +213,64 @@
             </xs:simpleType>
         </xs:attribute>
     </xs:complexType>
+    <xs:complexType name="list">
+        <xs:sequence>
+            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
+            <xs:element name="max-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Maximum size.
+                        Any integer between 0 and Integer.MAX_VALUE. 0 means Integer.MAX_VALUE. Default is 0.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="1"/>
+            <xs:element name="async-backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="0"/>
+            <xs:element name="item-listeners" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="item-listener" type="item-listener" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="name" use="optional" default="default">
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
+    <xs:complexType name="set">
+        <xs:sequence>
+            <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
+            <xs:element name="max-size" type="xs:unsignedInt" minOccurs="0" maxOccurs="1" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Maximum size.
+                        Any integer between 0 and Integer.MAX_VALUE. 0 means Integer.MAX_VALUE. Default is 0.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="1"/>
+            <xs:element name="async-backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="0"/>
+            <xs:element name="item-listeners" minOccurs="0" maxOccurs="1">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element name="item-listener" type="item-listener" minOccurs="0" maxOccurs="unbounded"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+        <xs:attribute name="name" use="optional" default="default">
+            <xs:simpleType>
+                <xs:restriction base="xs:string"/>
+            </xs:simpleType>
+        </xs:attribute>
+    </xs:complexType>
     <xs:complexType name="multimap">
         <xs:sequence>
+            <xs:element name="backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="1"/>
+            <xs:element name="async-backup-count" type="backup-count" minOccurs="0" maxOccurs="1" default="0"/>
             <xs:element name="statistics-enabled" type="xs:boolean" minOccurs="0" maxOccurs="1" default="true"/>
             <xs:element name="value-collection-type" minOccurs="0" maxOccurs="1">
                 <xs:simpleType>
@@ -232,6 +281,7 @@
                 </xs:simpleType>
             </xs:element>
             <xs:element name="entry-listeners" type="entry-listeners" minOccurs="0" maxOccurs="1"/>
+            <!--<xs:element name="partition-strategy" type="xs:string" minOccurs="0" maxOccurs="1" />-->
         </xs:sequence>
         <xs:attribute name="name" use="required">
             <xs:simpleType>
@@ -417,6 +467,7 @@
             <xs:sequence>
                 <xs:choice minOccurs="0" maxOccurs="1">
                     <xs:element name="class-name" type="xs:string"/>
+                    <xs:element name="factory-class-name" type="xs:string"/>
                 </xs:choice>
                 <xs:element name="properties" type="properties" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
@@ -581,7 +632,6 @@
             <xs:element name="executor-service-permission" type="instance-permission" minOccurs="0"
                         maxOccurs="unbounded"/>
             <xs:element name="transaction-permission" type="base-permission" minOccurs="0" maxOccurs="1"/>
-            <xs:element name="listener-permission" type="listener-permission" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
     </xs:complexType>
     <xs:complexType name="base-permission">
@@ -627,21 +677,6 @@
             </xs:extension>
         </xs:complexContent>
     </xs:complexType>
-    <xs:complexType name="listener-permission">
-        <xs:complexContent>
-            <xs:extension base="base-permission">
-                <xs:attribute name="name" use="required">
-                    <xs:simpleType>
-                        <xs:restriction base="xs:string">
-                            <xs:enumeration value="all"/>
-                            <xs:enumeration value="instance"/>
-                            <xs:enumeration value="member"/>
-                        </xs:restriction>
-                    </xs:simpleType>
-                </xs:attribute>
-            </xs:extension>
-        </xs:complexContent>
-    </xs:complexType>
     <xs:complexType name="actions">
         <xs:sequence>
             <xs:element name="action" minOccurs="1" maxOccurs="unbounded">
@@ -655,25 +690,18 @@
                         <xs:enumeration value="all"/>
                         <xs:enumeration value="create"/>
                         <xs:enumeration value="destroy"/>
-                        <xs:enumeration value="put"/>
-                        <xs:enumeration value="add"/>
-                        <xs:enumeration value="get"/>
-                        <xs:enumeration value="set"/>
+                        <xs:enumeration value="modify"/>
+                        <xs:enumeration value="read"/>
                         <xs:enumeration value="remove"/>
-                        <xs:enumeration value="offer"/>
-                        <xs:enumeration value="poll"/>
-                        <xs:enumeration value="take"/>
                         <xs:enumeration value="lock"/>
                         <xs:enumeration value="listen"/>
-                        <xs:enumeration value="publish"/>
-                        <xs:enumeration value="increment"/>
-                        <xs:enumeration value="decrement"/>
-                        <xs:enumeration value="execute"/>
-                        <xs:enumeration value="countdown"/>
-                        <xs:enumeration value="acquire"/>
                         <xs:enumeration value="release"/>
-                        <xs:enumeration value="drain"/>
-                        <xs:enumeration value="statistics"/>
+                        <xs:enumeration value="acquire"/>
+                        <xs:enumeration value="put"/>
+                        <xs:enumeration value="add"/>
+                        <xs:enumeration value="index"/>
+                        <xs:enumeration value="intercept"/>
+                        <xs:enumeration value="publish"/>
                     </xs:restriction>
                 </xs:simpleType>
             </xs:element>

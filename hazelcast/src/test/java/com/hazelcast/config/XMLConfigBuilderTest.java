@@ -23,6 +23,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.xml.sax.SAXException;
 
+import javax.xml.XMLConstants;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
@@ -31,6 +32,7 @@ import javax.xml.validation.Validator;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.Properties;
 
 import static org.junit.Assert.*;
@@ -198,10 +200,10 @@ public class XMLConfigBuilderTest {
     }
 
     private void testXSDConfigXML(String xmlFileName) throws SAXException, IOException {
-        SchemaFactory factory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");
-        final InputStream schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResourceAsStream("hazelcast-config-3.1.xsd");
-        final InputStream xmlResource = XMLConfigBuilderTest.class.getClassLoader().getResourceAsStream(xmlFileName);
-        Schema schema = factory.newSchema(new StreamSource(schemaResource));
+        SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+        URL schemaResource = XMLConfigBuilderTest.class.getClassLoader().getResource("hazelcast-config-3.2.xsd");
+        InputStream xmlResource = XMLConfigBuilderTest.class.getClassLoader().getResourceAsStream(xmlFileName);
+        Schema schema = factory.newSchema(schemaResource);
         Source source = new StreamSource(xmlResource);
         Validator validator = schema.newValidator();
         try {
