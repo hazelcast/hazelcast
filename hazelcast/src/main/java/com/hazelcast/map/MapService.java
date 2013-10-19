@@ -383,9 +383,10 @@ public class MapService implements ManagedService, MigrationAwareService,
         if (shouldSchedule) {
             if (ttl < 0 && mapContainer.getMapConfig().getTimeToLiveSeconds() > 0) {
                 scheduleTtlEviction(name, record, mapContainer.getMapConfig().getTimeToLiveSeconds() * 1000);
-            }
-            if (ttl > 0) {
+            } else if (ttl > 0) {
                 scheduleTtlEviction(name, record, ttl);
+            } else if (mapContainer.getStore() != null) { // following line cancels eviction due to evictable-null optimization. Optimization is only possible with mapstore usage
+                mapContainer.getTtlEvictionScheduler().cancel(record.getKey());
             }
             if (mapContainer.getMapConfig().getMaxIdleSeconds() > 0) {
                 scheduleIdleEviction(name, dataKey, mapContainer.getMapConfig().getMaxIdleSeconds() * 1000);
