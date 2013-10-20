@@ -40,7 +40,7 @@
         </init-param>
         <init-param>
             <param-name>instance-name</param-name>
-            <param-value>node-1</param-value>
+            <param-value>node-2</param-value>
         </init-param>
         <init-param>
             <param-name>shutdown-on-destroy</param-name>
@@ -51,7 +51,7 @@
             <param-value>false</param-value>
         </init-param>
         <init-param>
-            <param-name>cache-locally</param-name>
+            <param-name>deferred-write</param-name>
             <param-value>true</param-value>
         </init-param>
         <init-param>

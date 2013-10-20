@@ -48,10 +48,10 @@
         </init-param>
         <init-param>
             <param-name>use-client</param-name>
-            <param-value>true</param-value>
+            <param-value>false</param-value>
         </init-param>
         <init-param>
-            <param-name>cache-locally</param-name>
+            <param-name>deferred-write</param-name>
             <param-value>true</param-value>
         </init-param>
         <init-param>

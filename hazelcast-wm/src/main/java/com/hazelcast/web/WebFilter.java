@@ -98,7 +98,7 @@ public class WebFilter implements Filter {
 
     private boolean shutdownOnDestroy = true;
 
-    private boolean cacheLocally = false;
+    private boolean deferredWrite = false;
 
     private Properties properties;
 
@@ -163,9 +163,9 @@ public class WebFilter implements Filter {
         if (shutdownOnDestroyParam != null) {
             shutdownOnDestroy = Boolean.valueOf(shutdownOnDestroyParam);
         }
-        String cacheLocallyParam = getParam("cache-locally");
-        if (cacheLocallyParam != null) {
-            cacheLocally = Boolean.parseBoolean(cacheLocallyParam);
+        String deferredWriteParam = getParam("deferred-write");
+        if (deferredWriteParam != null) {
+            deferredWrite = Boolean.parseBoolean(deferredWriteParam);
         }
         if (!stickySession) {
             getClusterMap().addEntryListener(new EntryListener<String, Object>() {
@@ -246,7 +246,7 @@ public class WebFilter implements Filter {
             log("Original session exists!!!");
         }
         HttpSession originalSession = requestWrapper.getOriginalSession(true);
-        HazelcastHttpSession hazelcastSession = new HazelcastHttpSession(WebFilter.this, id, originalSession, cacheLocally);
+        HazelcastHttpSession hazelcastSession = new HazelcastHttpSession(WebFilter.this, id, originalSession, deferredWrite);
         mapSessions.put(hazelcastSession.getId(), hazelcastSession);
         String oldHazelcastSessionId = mapOriginalSessions.put(originalSession.getId(), hazelcastSession.getId());
         if (oldHazelcastSessionId != null) {
@@ -255,7 +255,7 @@ public class WebFilter implements Filter {
         log("Created new session with id: " + id);
         log(mapSessions.size() + " is sessions.size and originalSessions.size: " + mapOriginalSessions.size());
         addSessionCookie(requestWrapper, id);
-        if (cacheLocally) {
+        if (deferredWrite) {
             loadHazelcastSession(hazelcastSession);
         }
         return hazelcastSession;
@@ -278,7 +278,7 @@ public class WebFilter implements Filter {
     }
 
     private void prepareReloadingSession(HazelcastHttpSession hazelcastSession) {
-        if (cacheLocally && hazelcastSession != null) {
+        if (deferredWrite && hazelcastSession != null) {
             Map<String, LocalCacheEntry> cache = hazelcastSession.localCache;
             for (LocalCacheEntry cacheEntry : cache.values()) {
                 cacheEntry.reload = true;
@@ -407,7 +407,7 @@ public class WebFilter implements Filter {
             if (hazelcastSession == null && create) {
                 hazelcastSession = createNewSession(RequestWrapper.this, null);
             }
-            if (cacheLocally) {
+            if (deferredWrite) {
                 prepareReloadingSession(hazelcastSession);
             }
             return hazelcastSession;
@@ -431,7 +431,7 @@ public class WebFilter implements Filter {
     private class HazelcastHttpSession implements HttpSession {
         private final Map<String, LocalCacheEntry> localCache;
 
-        private final boolean cacheLocally;
+        private final boolean deferredWrite;
 
         volatile boolean valid = true;
 
@@ -441,16 +441,16 @@ public class WebFilter implements Filter {
 
         final WebFilter webFilter;
 
-        public HazelcastHttpSession(WebFilter webFilter, final String sessionId, HttpSession originalSession, boolean cacheLocally) {
+        public HazelcastHttpSession(WebFilter webFilter, final String sessionId, HttpSession originalSession, boolean deferredWrite) {
             this.webFilter = webFilter;
             this.id = sessionId;
             this.originalSession = originalSession;
-            this.cacheLocally = cacheLocally;
-            this.localCache = cacheLocally ? new ConcurrentHashMap<String, LocalCacheEntry>() : null;
+            this.deferredWrite = deferredWrite;
+            this.localCache = deferredWrite ? new ConcurrentHashMap<String, LocalCacheEntry>() : null;
         }
 
         public Object getAttribute(final String name) {
-            if (cacheLocally) {
+            if (deferredWrite) {
                 LocalCacheEntry cacheEntry = localCache.get(name);
                 if (cacheEntry == null || cacheEntry.reload) {
                     Object value = getClusterMap().get(buildAttributeName(name));
@@ -521,7 +521,7 @@ public class WebFilter implements Filter {
         }
 
         public void removeAttribute(final String name) {
-            if (cacheLocally) {
+            if (deferredWrite) {
                 LocalCacheEntry entry = localCache.get(name);
                 if (entry != null) {
                     entry.value = null;
@@ -544,7 +544,7 @@ public class WebFilter implements Filter {
             if (!(value instanceof Serializable) && !(value instanceof DataSerializable) && !(value instanceof Portable)) {
                 throw new IllegalArgumentException(new NotSerializableException(value.getClass().getName()));
             }
-            if (cacheLocally) {
+            if (deferredWrite) {
                 LocalCacheEntry entry = localCache.get(name);
                 if (entry == null) {
                     entry = new LocalCacheEntry();
@@ -562,7 +562,7 @@ public class WebFilter implements Filter {
         }
 
         public boolean sessionChanged() {
-            if (!cacheLocally) {
+            if (!deferredWrite) {
                 return false;
             }
             for (Entry<String, LocalCacheEntry> entry : localCache.entrySet()) {
@@ -601,9 +601,9 @@ public class WebFilter implements Filter {
             return id + HAZELCAST_SESSION_ATTRIBUTE_SEPERATOR + name;
         }
 
-        private void sessionCommit() {
+        private void sessionDefferedWrite() {
             IMap<String, Object> clusterMap = getClusterMap();
-            if (cacheLocally) {
+            if (deferredWrite) {
                 Iterator<Entry<String, LocalCacheEntry>> iterator = localCache.entrySet().iterator();
                 while(iterator.hasNext()) {
                     Entry<String, LocalCacheEntry> entry = iterator.next();
@@ -625,7 +625,7 @@ public class WebFilter implements Filter {
         }
 
         private Set<String> selectKeys() {
-            if (!cacheLocally) {
+            if (!deferredWrite) {
                 return getClusterMap().keySet(new SessionAttributePredicate(id));
             }
             Set<String> keys = new HashSet<String>();
@@ -710,9 +710,9 @@ public class WebFilter implements Filter {
             req = null; // for easy debugging. reqWrapper should be used
             HazelcastHttpSession session = reqWrapper.getSession(false);
             if (session != null && session.isValid()) {
-                if (session.sessionChanged() || !cacheLocally) {
+                if (session.sessionChanged() || !deferredWrite) {
                     log("PUTTING SESSION " + session.getId());
-                    session.sessionCommit();
+                    session.sessionDefferedWrite();
                 }
             }
         }
