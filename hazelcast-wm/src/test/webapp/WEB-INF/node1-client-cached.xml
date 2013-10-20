@@ -40,7 +40,7 @@
         </init-param>
         <init-param>
             <param-name>instance-name</param-name>
-            <param-value>default</param-value>
+            <param-value>node-1</param-value>
         </init-param>
         <init-param>
             <param-name>shutdown-on-destroy</param-name>
@@ -48,7 +48,11 @@
         </init-param>
         <init-param>
             <param-name>use-client</param-name>
-            <param-value>false</param-value>
+            <param-value>true</param-value>
+        </init-param>
+        <init-param>
+            <param-name>cache-locally</param-name>
+            <param-value>true</param-value>
         </init-param>
         <init-param>
             <param-name>client-config-location</param-name>
@@ -63,9 +67,18 @@
         <dispatcher>REQUEST</dispatcher>
     </filter-mapping>
 
+    <servlet>
+      <servlet-name>test-servlet</servlet-name>
+      <servlet-class>com.hazelcast.wm.test.TestServlet</servlet-class>
+      <load-on-startup>1</load-on-startup>
+    </servlet>
+
+    <servlet-mapping>
+      <servlet-name>test-servlet</servlet-name>
+      <url-pattern>/*</url-pattern>
+    </servlet-mapping>
+
     <listener>
-        <listener-class>
-            com.hazelcast.web.SessionListener
-        </listener-class>
+        <listener-class>com.hazelcast.web.SessionListener</listener-class>
     </listener>
 </web-app>
