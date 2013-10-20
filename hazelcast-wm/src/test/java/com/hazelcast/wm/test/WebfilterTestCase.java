@@ -16,8 +16,9 @@
 
 package com.hazelcast.wm.test;
 
-import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -41,9 +42,12 @@ public class WebfilterTestCase extends AbstractWebfilterTestCase {
 
     @Parameters(name = "Executing: {0}")
     public static Collection<Object[]> parameters() {
-        return Arrays.asList(new Object[][] { new Object[] { "node - not cached", "node1-node.xml", "node2-node.xml" },
-                new Object[] { "node - cached", "node1-node-cached.xml", "node2-node-cached.xml" }, new Object[] { "client - not cached", "node1-client.xml", "node2-client.xml" },
-                new Object[] { "client - cached", "node1-client-cached.xml", "node2-client-cached.xml" } });
+        return Arrays.asList(new Object[][] { //
+                new Object[] { "node - not deferred", "node1-node.xml", "node2-node.xml" }, //
+                        new Object[] { "node - deferred", "node1-node-deferred.xml", "node2-node-deferred.xml" }, //
+                        new Object[] { "client - not deferred", "node1-client.xml", "node2-client.xml" }, //
+                        new Object[] { "client - deferred", "node1-client-deferred.xml", "node2-client-deferred.xml" } //
+                });
     }
 
     public WebfilterTestCase(String name, String serverXml1, String serverXml2) {
