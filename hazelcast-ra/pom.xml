@@ -234,7 +234,6 @@
 				<artifactId>maven-rar-plugin</artifactId>
 				<version>${maven.rar.plugin.version}</version>
 				<configuration>
-                    <finalName>${project.name}</finalName>
 					<raXmlFile>src/main/rar/ra.xml</raXmlFile>
 				</configuration>
 			</plugin>
