@@ -76,6 +76,9 @@ public class GroupProperties {
     public static final String PROP_PARTITIONING_STRATEGY_CLASS = "hazelcast.partitioning.strategy.class";
     public static final String PROP_GRACEFUL_SHUTDOWN_MAX_WAIT = "hazelcast.graceful.shutdown.max.wait";
     public static final String PROP_SYSTEM_LOG_ENABLED = "hazelcast.system.log.enabled";
+    public static final String PROP_SERIALIZATION_GZIP_ENABLED = "hazelcast.serialization.gzip.enabled";
+    public static final String PROP_SERIALIZATION_READ_SHARED_ENABLED = "hazelcast.serialization.read.shared.enabled";
+    public static final String PROP_SERIALIZATION_BUFFER_SIZE = "hazelcast.serialization.buffer.size";
     public static final String PROP_ELASTIC_MEMORY_ENABLED = "hazelcast.elastic.memory.enabled";
     public static final String PROP_ELASTIC_MEMORY_TOTAL_SIZE = "hazelcast.elastic.memory.total.size";
     public static final String PROP_ELASTIC_MEMORY_CHUNK_SIZE = "hazelcast.elastic.memory.chunk.size";
@@ -88,7 +91,9 @@ public class GroupProperties {
     public final GroupProperty EVENT_THREAD_COUNT;
 
     public final GroupProperty HEALTH_MONITORING_LEVEL;
+
     public final GroupProperty HEALTH_MONITORING_DELAY_SECONDS;
+
     public final GroupProperty IO_THREAD_COUNT;
 
     public final GroupProperty EVENT_QUEUE_CAPACITY;
@@ -189,6 +194,12 @@ public class GroupProperties {
 
     public final GroupProperty SYSTEM_LOG_ENABLED;
 
+    public final GroupProperty SERIALIZATION_GZIP_ENABLED;
+
+    public final GroupProperty SERIALIZATION_READ_SHARED_ENABLED;
+
+    public final GroupProperty SERIALIZATION_BUFFER_SIZE;
+
     public final GroupProperty ELASTIC_MEMORY_ENABLED;
 
     public final GroupProperty ELASTIC_MEMORY_TOTAL_SIZE;
@@ -257,6 +268,9 @@ public class GroupProperties {
         PARTITIONING_STRATEGY_CLASS = new GroupProperty(config, PROP_PARTITIONING_STRATEGY_CLASS, "");
         GRACEFUL_SHUTDOWN_MAX_WAIT = new GroupProperty(config, PROP_GRACEFUL_SHUTDOWN_MAX_WAIT, "600");
         SYSTEM_LOG_ENABLED = new GroupProperty(config, PROP_SYSTEM_LOG_ENABLED, "true");
+        SERIALIZATION_GZIP_ENABLED = new GroupProperty(config, PROP_SERIALIZATION_GZIP_ENABLED, "false");
+        SERIALIZATION_READ_SHARED_ENABLED = new GroupProperty(config, PROP_SERIALIZATION_READ_SHARED_ENABLED, "false");
+        SERIALIZATION_BUFFER_SIZE = new GroupProperty(config, PROP_SERIALIZATION_BUFFER_SIZE, "4096");
         ELASTIC_MEMORY_ENABLED = new GroupProperty(config, PROP_ELASTIC_MEMORY_ENABLED, "false");
         ELASTIC_MEMORY_TOTAL_SIZE = new GroupProperty(config, PROP_ELASTIC_MEMORY_TOTAL_SIZE, "128M");
         ELASTIC_MEMORY_CHUNK_SIZE = new GroupProperty(config, PROP_ELASTIC_MEMORY_CHUNK_SIZE, "1K");

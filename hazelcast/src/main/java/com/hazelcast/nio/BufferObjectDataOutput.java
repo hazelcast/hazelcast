@@ -49,7 +49,4 @@ public interface BufferObjectDataOutput extends ObjectDataOutput, Closeable {
     byte[] getBuffer();
 
     void clear();
-
-    byte[] toByteArray();
-
 }
