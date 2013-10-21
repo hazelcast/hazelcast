@@ -3,17 +3,17 @@ package com.hazelcast.web;
 import java.io.IOException;
 import java.util.Map.Entry;
 
-import com.hazelcast.map.EntryBackupProcessor;
-import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 
-public class InvalidateEntryProcessor implements EntryProcessor<String, Object>, DataSerializable {
+public class InvalidateEntryProcessor extends AbstractEntryProcessor<String, Object> implements DataSerializable {
     private String sessionId;
     
     // Serialization Constructor
     public InvalidateEntryProcessor() {
+        super(true);
     }
     
     public InvalidateEntryProcessor(String sessionId) {
@@ -30,11 +30,6 @@ public class InvalidateEntryProcessor implements EntryProcessor<String, Object>,
             }
         }
         return false;
-    }
-
-    @Override
-    public EntryBackupProcessor<String, Object> getBackupProcessor() {
-        return null;
     }
 
     @Override
