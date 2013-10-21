@@ -1,12 +1,12 @@
 package com.hazelcast.web;
 
-import java.io.IOException;
-import java.util.Map.Entry;
-
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.Predicate;
+
+import java.io.IOException;
+import java.util.Map.Entry;
 
 public class SessionAttributePredicate implements Predicate, DataSerializable {
     private String sessionId;
@@ -24,7 +24,7 @@ public class SessionAttributePredicate implements Predicate, DataSerializable {
         Object key = mapEntry.getKey();
         if (key instanceof String) {
             String k = (String) key;
-            return k.startsWith(sessionId + WebFilter.HAZELCAST_SESSION_ATTRIBUTE_SEPERATOR);
+            return k.startsWith(sessionId + WebFilter.HAZELCAST_SESSION_ATTRIBUTE_SEPARATOR);
         }
         return false;
     }

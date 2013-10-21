@@ -16,40 +16,6 @@
 
 package com.hazelcast.web;
 
-import static com.hazelcast.web.HazelcastInstanceLoader.CLIENT_CONFIG_LOCATION;
-import static com.hazelcast.web.HazelcastInstanceLoader.CONFIG_LOCATION;
-import static com.hazelcast.web.HazelcastInstanceLoader.INSTANCE_NAME;
-import static com.hazelcast.web.HazelcastInstanceLoader.USE_CLIENT;
-
-import java.io.IOException;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Properties;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.logging.Level;
-
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpServletResponseWrapper;
-import javax.servlet.http.HttpSession;
-import javax.servlet.http.HttpSessionContext;
-
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryEvent;
@@ -58,6 +24,17 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+
+import javax.servlet.*;
+import javax.servlet.http.*;
+import java.io.IOException;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.logging.Level;
+
+import static com.hazelcast.web.HazelcastInstanceLoader.*;
 
 @SuppressWarnings("deprecation")
 public class WebFilter implements Filter {
@@ -70,7 +47,7 @@ public class WebFilter implements Filter {
 
     private static final String HAZELCAST_SESSION_COOKIE_NAME = "hazelcast.sessionId";
 
-    static final String HAZELCAST_SESSION_ATTRIBUTE_SEPERATOR = "::hz::";
+    static final String HAZELCAST_SESSION_ATTRIBUTE_SEPARATOR = "::hz::";
 
     private static final ConcurrentMap<String, String> mapOriginalSessions = new ConcurrentHashMap<String, String>(1000);
 
@@ -128,7 +105,7 @@ public class WebFilter implements Filter {
             Config hzConfig = hazelcastInstance.getConfig();
             String sessionTTL = getParam("session-ttl-seconds");
             if (sessionTTL != null) {
-                MapConfig mapConfig = new MapConfig(clusterMapName);
+                MapConfig mapConfig = hzConfig.getMapConfig(clusterMapName);
                 mapConfig.setTimeToLiveSeconds(Integer.valueOf(sessionTTL));
                 hzConfig.addMapConfig(mapConfig);
             }
@@ -233,7 +210,7 @@ public class WebFilter implements Filter {
     }
 
     private String extractAttributeKey(String key) {
-        return key.substring(key.indexOf(HAZELCAST_SESSION_ATTRIBUTE_SEPERATOR) + HAZELCAST_SESSION_ATTRIBUTE_SEPERATOR.length());
+        return key.substring(key.indexOf(HAZELCAST_SESSION_ATTRIBUTE_SEPARATOR) + HAZELCAST_SESSION_ATTRIBUTE_SEPARATOR.length());
     }
 
     private HazelcastHttpSession createNewSession(RequestWrapper requestWrapper, String existingSessionId) {
@@ -295,8 +272,9 @@ public class WebFilter implements Filter {
         session.destroy();
         if (removeGlobalSession) {
             log("Destroying cluster session: " + session.getId() + " => Ignore-timeout: true");
-            getClusterMap().delete(session.getId());
-            getClusterMap().executeOnEntries(new InvalidateEntryProcessor(session.getId()));
+            IMap<String, Object> clusterMap = getClusterMap();
+            clusterMap.delete(session.getId());
+            clusterMap.executeOnEntries(new InvalidateEntryProcessor(session.getId()));
         }
     }
 
@@ -446,10 +424,11 @@ public class WebFilter implements Filter {
         }
 
         public Object getAttribute(final String name) {
+            IMap<String, Object> clusterMap = getClusterMap();
             if (deferredWrite) {
                 LocalCacheEntry cacheEntry = localCache.get(name);
                 if (cacheEntry == null || cacheEntry.reload) {
-                    Object value = getClusterMap().get(buildAttributeName(name));
+                    Object value = clusterMap.get(buildAttributeName(name));
                     if (value == null) {
                         cacheEntry = NULL_ENTRY;
                     } else {
@@ -461,7 +440,7 @@ public class WebFilter implements Filter {
                 }
                 return cacheEntry != NULL_ENTRY ? cacheEntry.value : null;
             }
-            return getClusterMap().get(buildAttributeName(name));
+            return clusterMap.get(buildAttributeName(name));
         }
 
         public Enumeration<String> getAttributeNames() {
@@ -591,10 +570,10 @@ public class WebFilter implements Filter {
         }
 
         private String buildAttributeName(String name) {
-            return id + HAZELCAST_SESSION_ATTRIBUTE_SEPERATOR + name;
+            return id + HAZELCAST_SESSION_ATTRIBUTE_SEPARATOR + name;
         }
 
-        private void sessionDefferedWrite() {
+        private void sessionDeferredWrite() {
             IMap<String, Object> clusterMap = getClusterMap();
             if (deferredWrite) {
                 Iterator<Entry<String, LocalCacheEntry>> iterator = localCache.entrySet().iterator();
@@ -695,17 +674,13 @@ public class WebFilter implements Filter {
             if (existingReq != null) {
                 reqWrapper.setHazelcastSession(existingReq.hazelcastSession, existingReq.requestedSessionId);
             }
-            req = null;
-            res = null;
-            httpReq = null;
             chain.doFilter(reqWrapper, resWrapper);
             if (existingReq != null) return;
-            req = null; // for easy debugging. reqWrapper should be used
             HazelcastHttpSession session = reqWrapper.getSession(false);
             if (session != null && session.isValid()) {
                 if (session.sessionChanged() || !deferredWrite) {
                     log("PUTTING SESSION " + session.getId());
-                    session.sessionDefferedWrite();
+                    session.sessionDeferredWrite();
                 }
             }
         }

@@ -1,10 +1,10 @@
 package com.hazelcast.wm.test;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.ServerSocket;
-import java.util.Map.Entry;
-
+import com.hazelcast.config.FileSystemXmlConfig;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+import com.hazelcast.test.TestEnvironment;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.CookieStore;
@@ -18,13 +18,37 @@ import org.eclipse.jetty.webapp.WebAppContext;
 import org.junit.After;
 import org.junit.Before;
 
-import com.hazelcast.core.Hazelcast;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+import java.io.File;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.util.Map.Entry;
+import java.util.Random;
 
 public abstract class AbstractWebfilterTestCase {
 
-    protected static final String HAZELCAST_SESSION_ATTRIBUTE_SEPERATOR = "::hz::";
+    static {
+        final String logging = "hazelcast.logging.type";
+        if (System.getProperty(logging) == null) {
+            System.setProperty(logging, "log4j");
+        }
+        if (System.getProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK) == null) {
+            System.setProperty(TestEnvironment.HAZELCAST_TEST_USE_NETWORK, "false");
+        }
+        System.setProperty("hazelcast.version.check.enabled", "false");
+        System.setProperty("hazelcast.mancenter.enabled", "false");
+        System.setProperty("hazelcast.wait.seconds.before.join", "1");
+        System.setProperty("hazelcast.local.localAddress", "127.0.0.1");
+        System.setProperty("java.net.preferIPv4Stack", "true");
+
+        // randomize multicast group...
+        Random rand = new Random();
+        int g1 = rand.nextInt(255);
+        int g2 = rand.nextInt(255);
+        int g3 = rand.nextInt(255);
+        System.setProperty("hazelcast.multicast.group", "224." + g1 + "." + g2 + "." + g3);
+    }
+
+    protected static final String HAZELCAST_SESSION_ATTRIBUTE_SEPARATOR = "::hz::";
     
     protected String serverXml1;
     protected String serverXml2;
@@ -37,9 +61,9 @@ public abstract class AbstractWebfilterTestCase {
 
     @Before
     public void setup() throws Exception {
-        hz = Hazelcast.newHazelcastInstance();
         final String baseDir = new File("").getAbsolutePath().replace("\\", "/");
         final String sourceDir = baseDir + (baseDir.toLowerCase().endsWith("target") ? "/../src/test/webapp" : "/src/test/webapp");
+        hz = Hazelcast.newHazelcastInstance(new FileSystemXmlConfig(new File(sourceDir + "/WEB-INF/", "hazelcast.xml")));
         serverPort1 = availablePort();
         serverPort2 = availablePort();
         server1 = buildServer(serverPort1, sourceDir, serverXml1);
@@ -68,7 +92,7 @@ public abstract class AbstractWebfilterTestCase {
 
     protected String findHazelcastSessionId(IMap<String, Object> map) {
         for (Entry<String, Object> entry : map.entrySet()) {
-            if (!entry.getKey().contains(HAZELCAST_SESSION_ATTRIBUTE_SEPERATOR)) {
+            if (!entry.getKey().contains(HAZELCAST_SESSION_ATTRIBUTE_SEPARATOR)) {
                 return entry.getKey();
             }
         }

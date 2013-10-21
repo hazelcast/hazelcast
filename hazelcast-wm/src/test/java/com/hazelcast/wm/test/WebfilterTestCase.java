@@ -16,28 +16,25 @@
 
 package com.hazelcast.wm.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
+import com.hazelcast.core.IMap;
+import com.hazelcast.test.annotation.SerialTest;
+import org.apache.http.client.CookieStore;
+import org.apache.http.impl.client.BasicCookieStore;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.apache.http.client.CookieStore;
-import org.apache.http.impl.client.BasicCookieStore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
+import static org.junit.Assert.*;
 
-import com.hazelcast.core.IMap;
-
-/**
- * @author mdogan 5/11/12
- */
 @RunWith(Parameterized.class)
+@Category(SerialTest.class)
 public class WebfilterTestCase extends AbstractWebfilterTestCase {
 
     @Parameters(name = "Executing: {0}")
@@ -154,8 +151,8 @@ public class WebfilterTestCase extends AbstractWebfilterTestCase {
         entrySet = map.entrySet();
         assertEquals(3, entrySet.size());
         assertEquals(Boolean.TRUE, map.get(newSessionId));
-        assertEquals("first-value", map.get(newSessionId + HAZELCAST_SESSION_ATTRIBUTE_SEPERATOR + "first-key"));
-        assertEquals("second-value", map.get(newSessionId + HAZELCAST_SESSION_ATTRIBUTE_SEPERATOR + "second-key"));
+        assertEquals("first-value", map.get(newSessionId + HAZELCAST_SESSION_ATTRIBUTE_SEPARATOR + "first-key"));
+        assertEquals("second-value", map.get(newSessionId + HAZELCAST_SESSION_ATTRIBUTE_SEPARATOR + "second-key"));
 
         assertNotEquals(oldSessionId, newSessionId);
     }

@@ -1,12 +1,12 @@
 package com.hazelcast.web;
 
-import java.io.IOException;
-import java.util.Map.Entry;
-
 import com.hazelcast.map.AbstractEntryProcessor;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+
+import java.io.IOException;
+import java.util.Map.Entry;
 
 public class InvalidateEntryProcessor extends AbstractEntryProcessor<String, Object> implements DataSerializable {
     private String sessionId;
@@ -25,7 +25,7 @@ public class InvalidateEntryProcessor extends AbstractEntryProcessor<String, Obj
         Object key = entry.getKey();
         if (key instanceof String) {
             String k = (String) key;
-            if (k.startsWith(sessionId + WebFilter.HAZELCAST_SESSION_ATTRIBUTE_SEPERATOR)) {
+            if (k.startsWith(sessionId + WebFilter.HAZELCAST_SESSION_ATTRIBUTE_SEPARATOR)) {
                 entry.setValue(null);
             }
         }
