@@ -39,7 +39,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public final class SerializationServiceImpl implements SerializationService {
 
-    private static final int OUTPUT_BUFFER_SIZE = 4 * 1024;
     private static final int CONSTANT_SERIALIZERS_SIZE = SerializationConstants.CONSTANT_SERIALIZERS_LENGTH;
 
     private static final PartitioningStrategy EMPTY_PARTITIONING_STRATEGY = new PartitioningStrategy() {
@@ -65,6 +64,7 @@ public final class SerializationServiceImpl implements SerializationService {
     private final ManagedContext managedContext;
     private final SerializationContextImpl serializationContext;
     private final PartitioningStrategy globalPartitioningStrategy;
+    private final int outputBufferSize;
 
     private volatile boolean active = true;
 
@@ -73,12 +73,14 @@ public final class SerializationServiceImpl implements SerializationService {
                              Map<Integer, ? extends PortableFactory> portableFactories,
                              Collection<ClassDefinition> classDefinitions, boolean checkClassDefErrors,
                              ManagedContext managedContext, PartitioningStrategy partitionStrategy,
+                             int initialOutputBufferSize,
                              boolean enableCompression, boolean enableSharedObject) {
 
         this.inputOutputFactory = inputOutputFactory;
         this.classLoader = classLoader;
         this.managedContext = managedContext;
         this.globalPartitioningStrategy = partitionStrategy;
+        this.outputBufferSize = initialOutputBufferSize;
 
         PortableHookLoader loader = new PortableHookLoader(portableFactories, classLoader);
         serializationContext = new SerializationContextImpl(this, loader.getFactories().keySet(), version);
@@ -293,7 +295,7 @@ public final class SerializationServiceImpl implements SerializationService {
     BufferObjectDataOutput pop() {
         BufferObjectDataOutput out = outputPool.poll();
         if (out == null) {
-            out = inputOutputFactory.createOutput(OUTPUT_BUFFER_SIZE, this);
+            out = inputOutputFactory.createOutput(outputBufferSize, this);
         }
         return out;
     }
