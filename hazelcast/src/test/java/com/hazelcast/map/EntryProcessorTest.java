@@ -19,6 +19,9 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.*;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -27,6 +30,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -162,8 +166,9 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     }
 
 
-    private static class IncrementorEntryProcessor implements EntryProcessor, EntryBackupProcessor {
+    private static class IncrementorEntryProcessor extends AbstractEntryProcessor implements DataSerializable {
         IncrementorEntryProcessor() {
+            super(true);
         }
 
         public Object process(Map.Entry entry) {
@@ -180,30 +185,22 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             return value;
         }
 
-        public EntryBackupProcessor getBackupProcessor() {
-            return IncrementorEntryProcessor.this;
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
         }
 
-        public void processBackup(Map.Entry entry) {
-            entry.setValue((Integer) entry.getValue() + 1);
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
         }
     }
 
-    private static class RemoveEntryProcessor implements EntryProcessor, EntryBackupProcessor {
+    private static class RemoveEntryProcessor extends AbstractEntryProcessor {
         RemoveEntryProcessor() {
         }
 
         public Object process(Map.Entry entry) {
               entry.setValue(null);
               return entry;
-        }
-
-        public EntryBackupProcessor getBackupProcessor() {
-            return RemoveEntryProcessor.this;
-        }
-
-        public void processBackup(Map.Entry entry) {
-
         }
     }
 
@@ -273,7 +270,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
     }
 
-    private static class ValueSetterEntryProcessor implements EntryProcessor, EntryBackupProcessor {
+    private static class ValueSetterEntryProcessor extends AbstractEntryProcessor {
         Integer value;
 
         ValueSetterEntryProcessor(Integer v) {
@@ -283,14 +280,6 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         public Object process(Map.Entry entry) {
             entry.setValue(value);
             return value;
-        }
-
-        public EntryBackupProcessor getBackupProcessor() {
-            return ValueSetterEntryProcessor.this;
-        }
-
-        public void processBackup(Map.Entry entry) {
-            entry.setValue(value);
         }
     }
 
@@ -350,7 +339,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
     }
 
-    private static class ValueReaderEntryProcessor implements EntryProcessor, EntryBackupProcessor {
+    private static class ValueReaderEntryProcessor extends AbstractEntryProcessor {
         Integer value;
 
         ValueReaderEntryProcessor() {
@@ -359,13 +348,6 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         public Object process(Map.Entry entry) {
             value = (Integer) entry.getValue();
             return value;
-        }
-
-        public EntryBackupProcessor getBackupProcessor() {
-            return ValueReaderEntryProcessor.this;
-        }
-
-        public void processBackup(Map.Entry entry) {
         }
 
         public Integer getValue() {
