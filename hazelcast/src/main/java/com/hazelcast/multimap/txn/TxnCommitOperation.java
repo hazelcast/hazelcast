@@ -36,6 +36,7 @@ import java.util.List;
 public class TxnCommitOperation extends MultiMapBackupAwareOperation implements Notifier {
 
     List<Operation> opList;
+    transient List<Operation> backupOpList;
     long version;
     transient boolean notify = true;
 
@@ -55,11 +56,15 @@ public class TxnCommitOperation extends MultiMapBackupAwareOperation implements 
             return;
         }
         wrapper.incrementAndGetVersion();
+        backupOpList = new ArrayList<Operation>();
         for (Operation op: opList){
             op.setNodeEngine(getNodeEngine()).setServiceName(getServiceName()).setPartitionId(getPartitionId());
             op.beforeRun();
             op.run();
             op.afterRun();
+            if (Boolean.TRUE.equals(op.getResponse())){
+                backupOpList.add(op);
+            }
         }
         getOrCreateContainer().unlock(dataKey, getCallerUuid(), threadId);
     }
@@ -69,7 +74,7 @@ public class TxnCommitOperation extends MultiMapBackupAwareOperation implements 
     }
 
     public Operation getBackupOperation() {
-        return new TxnCommitBackupOperation(name, dataKey, opList, getCallerUuid(), threadId);
+        return new TxnCommitBackupOperation(name, dataKey, backupOpList, getCallerUuid(), threadId);
     }
 
     public boolean shouldNotify() {
