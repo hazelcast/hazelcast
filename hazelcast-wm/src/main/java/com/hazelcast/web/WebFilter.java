@@ -22,8 +22,6 @@ import static com.hazelcast.web.HazelcastInstanceLoader.INSTANCE_NAME;
 import static com.hazelcast.web.HazelcastInstanceLoader.USE_CLIENT;
 
 import java.io.IOException;
-import java.io.NotSerializableException;
-import java.io.Serializable;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -60,8 +58,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.nio.serialization.Portable;
 
 @SuppressWarnings("deprecation")
 public class WebFilter implements Filter {
@@ -540,9 +536,6 @@ public class WebFilter implements Filter {
             }
             if (value == null) {
                 throw new IllegalArgumentException("value must not be null");
-            }
-            if (!(value instanceof Serializable) && !(value instanceof DataSerializable) && !(value instanceof Portable)) {
-                throw new IllegalArgumentException(new NotSerializableException(value.getClass().getName()));
             }
             if (deferredWrite) {
                 LocalCacheEntry entry = localCache.get(name);
