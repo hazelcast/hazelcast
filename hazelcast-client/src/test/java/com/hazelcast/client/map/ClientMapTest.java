@@ -580,7 +580,7 @@ public class ClientMapTest {
 
         final EntryListener listener = new EntListener(gateAdd, gateRemove, gateEvict, gateUpdate);
 
-        clientMap.addEntryListener(listener, new SqlPredicate("id=1"), true);
+        clientMap.addEntryListener(listener, new SqlPredicate("id=1"), 2, true);
         clientMap.put(2, new Deal(1));
         clientMap.put(2, new Deal(1));
         clientMap.remove(2);
