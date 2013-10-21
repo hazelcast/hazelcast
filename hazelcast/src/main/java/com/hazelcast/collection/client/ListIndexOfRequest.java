@@ -36,7 +36,6 @@ public class ListIndexOfRequest extends CollectionRequest {
     boolean last;
 
     public ListIndexOfRequest() {
-        this.value = value;
     }
 
     public ListIndexOfRequest(String name, Data value, boolean last) {
