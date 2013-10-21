@@ -30,10 +30,6 @@ final class UnsafeObjectDataOutput extends ByteArrayObjectDataOutput {
         super(size, service);
     }
 
-    UnsafeObjectDataOutput(byte[] buffer, SerializationService service) {
-        super(buffer, service);
-    }
-
     public void writeChar(final int v) throws IOException {
         ensureAvailable(2);
         UnsafeHelper.UNSAFE.putChar(buffer, UnsafeHelper.BYTE_ARRAY_BASE_OFFSET + pos, (char) v);
