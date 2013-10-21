@@ -136,7 +136,8 @@ public class MapAddEntryListenerRequest extends CallableClientRequest implements
             writer.writeBoolean("pre", false);
         } else {
             writer.writeBoolean("pre", true);
-            writer.writePortable("p",(Portable)predicate);
+            final ObjectDataOutput out = writer.getRawDataOutput();
+            out.writeObject(predicate);
         }
         if (hasKey) {
             final ObjectDataOutput out = writer.getRawDataOutput();
@@ -149,7 +150,8 @@ public class MapAddEntryListenerRequest extends CallableClientRequest implements
         includeValue = reader.readBoolean("i");
         boolean hasKey = reader.readBoolean("key");
         if (reader.readBoolean("pre")){
-            predicate = (Predicate)reader.readPortable("p");
+            final ObjectDataInput in = reader.getRawDataInput();
+            predicate = in.readObject();
         }
         if (hasKey) {
             final ObjectDataInput in = reader.getRawDataInput();
