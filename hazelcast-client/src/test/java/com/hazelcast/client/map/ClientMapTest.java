@@ -49,7 +49,7 @@ public class ClientMapTest {
     static IMap map;
 
     @BeforeClass
-    public static void init(){
+    public static void init() {
         Config config = new Config();
         server = Hazelcast.newHazelcastInstance(config);
         hz = HazelcastClient.newHazelcastClient(null);
@@ -87,10 +87,10 @@ public class ClientMapTest {
             public void entryEvicted(EntryEvent event) {
                 final Object value = event.getValue();
                 final Object oldValue = event.getOldValue();
-                if (value != null){
+                if (value != null) {
                     nullLatch.countDown();
                 }
-                if (oldValue != null){
+                if (oldValue != null) {
                     nullLatch.countDown();
                 }
                 latch.countDown();
@@ -125,29 +125,29 @@ public class ClientMapTest {
     }
 
     @Test
-    public void testGet(){
+    public void testGet() {
         fillMap();
-        for (int i=0; i<10; i++){
-            Object o = map.get("key"+i);
-            assertEquals("value"+i,o);
+        for (int i = 0; i < 10; i++) {
+            Object o = map.get("key" + i);
+            assertEquals("value" + i, o);
         }
     }
 
     @Test
-    public void testRemoveAndDelete(){
+    public void testRemoveAndDelete() {
         fillMap();
         assertNull(map.remove("key10"));
         map.delete("key9");
         assertEquals(9, map.size());
-        for (int i=0; i<9; i++){
+        for (int i = 0; i < 9; i++) {
             Object o = map.remove("key" + i);
-            assertEquals("value"+i,o);
+            assertEquals("value" + i, o);
         }
         assertEquals(0, map.size());
     }
 
     @Test
-    public void testRemoveIfSame(){
+    public void testRemoveIfSame() {
         fillMap();
         assertFalse(map.remove("key2", "value"));
         assertEquals(10, map.size());
@@ -157,7 +157,7 @@ public class ClientMapTest {
     }
 
     @Test
-    public void flush(){
+    public void flush() {
         //TODO map store
     }
 
@@ -183,38 +183,38 @@ public class ClientMapTest {
     }
 
     @Test
-    public void testAsyncGet() throws Exception{
+    public void testAsyncGet() throws Exception {
         fillMap();
         Future f = map.getAsync("key1");
         Object o = null;
         try {
             o = f.get(0, TimeUnit.MILLISECONDS);
-        } catch (TimeoutException e){
+        } catch (TimeoutException e) {
         }
         assertNull(o);
         o = f.get();
-        assertEquals("value1",o);
+        assertEquals("value1", o);
     }
 
     @Test
-    public void testAsyncPut() throws Exception{
+    public void testAsyncPut() throws Exception {
         fillMap();
         Future f = map.putAsync("key3", "value");
 
         Object o = null;
         try {
             o = f.get(0, TimeUnit.MILLISECONDS);
-        } catch (TimeoutException e){
+        } catch (TimeoutException e) {
         }
         assertNull(o);
         o = f.get();
-        assertEquals("value3",o);
+        assertEquals("value3", o);
         assertEquals("value", map.get("key3"));
     }
 
 
     @Test
-    public void testAsyncPutWithTtl() throws Exception{
+    public void testAsyncPutWithTtl() throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         map.addEntryListener(new EntryAdapter<String, String>() {
             public void entryEvicted(EntryEvent<String, String> event) {
@@ -238,7 +238,7 @@ public class ClientMapTest {
         Object o = null;
         try {
             o = f.get(0, TimeUnit.MILLISECONDS);
-        } catch (TimeoutException e){
+        } catch (TimeoutException e) {
         }
         assertNull(o);
         o = f.get();
@@ -255,19 +255,19 @@ public class ClientMapTest {
 
         final CountDownLatch latch = new CountDownLatch(2);
 
-        new Thread(){
+        new Thread() {
             public void run() {
                 boolean result = map.tryPut("key1", "value3", 1, TimeUnit.SECONDS);
-                if (!result){
+                if (!result) {
                     latch.countDown();
                 }
             }
         }.start();
 
-        new Thread(){
+        new Thread() {
             public void run() {
                 boolean result = map.tryRemove("key2", 1, TimeUnit.SECONDS);
-                if (!result){
+                if (!result) {
                     latch.countDown();
                 }
             }
@@ -332,9 +332,9 @@ public class ClientMapTest {
         assertEquals("value1", map.get("key1"));
         map.lock("key1");
         final CountDownLatch latch = new CountDownLatch(1);
-        new Thread(){
+        new Thread() {
             public void run() {
-                map.tryPut("key1","value2", 1, TimeUnit.SECONDS);
+                map.tryPut("key1", "value2", 1, TimeUnit.SECONDS);
                 latch.countDown();
             }
         }.start();
@@ -349,9 +349,9 @@ public class ClientMapTest {
         assertEquals("value1", map.get("key1"));
         map.lock("key1", 2, TimeUnit.SECONDS);
         final CountDownLatch latch = new CountDownLatch(1);
-        new Thread(){
+        new Thread() {
             public void run() {
-                map.tryPut("key1","value2", 5, TimeUnit.SECONDS);
+                map.tryPut("key1", "value2", 5, TimeUnit.SECONDS);
                 latch.countDown();
             }
         }.start();
@@ -390,10 +390,10 @@ public class ClientMapTest {
 
         assertTrue(tempMap.tryLock("key1", 2, TimeUnit.SECONDS));
         final CountDownLatch latch = new CountDownLatch(1);
-        new Thread(){
+        new Thread() {
             public void run() {
                 try {
-                    if(!tempMap.tryLock("key1", 2, TimeUnit.SECONDS)){
+                    if (!tempMap.tryLock("key1", 2, TimeUnit.SECONDS)) {
                         latch.countDown();
                     }
                 } catch (InterruptedException e) {
@@ -406,10 +406,10 @@ public class ClientMapTest {
         assertTrue(tempMap.isLocked("key1"));
 
         final CountDownLatch latch2 = new CountDownLatch(1);
-        new Thread(){
+        new Thread() {
             public void run() {
                 try {
-                    if(tempMap.tryLock("key1", 20, TimeUnit.SECONDS)){
+                    if (tempMap.tryLock("key1", 20, TimeUnit.SECONDS)) {
                         latch2.countDown();
                     }
                 } catch (InterruptedException e) {
@@ -428,7 +428,7 @@ public class ClientMapTest {
     public void testForceUnlock() throws Exception {
         map.lock("key1");
         final CountDownLatch latch = new CountDownLatch(1);
-        new Thread(){
+        new Thread() {
             public void run() {
                 map.forceUnlock("key1");
                 latch.countDown();
@@ -449,9 +449,9 @@ public class ClientMapTest {
 
     @Test
     public void testReplace() throws Exception {
-        assertNull(map.replace("key1","value1"));
-        map.put("key1","value1");
-        assertEquals("value1", map.replace("key1","value2"));
+        assertNull(map.replace("key1", "value1"));
+        map.put("key1", "value1");
+        assertEquals("value1", map.replace("key1", "value2"));
         assertEquals("value2", map.get("key1"));
 
         assertFalse(map.replace("key1", "value1", "value3"));
@@ -472,6 +472,7 @@ public class ClientMapTest {
             public void entryAdded(EntryEvent event) {
                 latch1Add.countDown();
             }
+
             public void entryRemoved(EntryEvent event) {
                 latch1Remove.countDown();
             }
@@ -481,6 +482,7 @@ public class ClientMapTest {
             public void entryAdded(EntryEvent event) {
                 latch2Add.countDown();
             }
+
             public void entryRemoved(EntryEvent event) {
                 latch2Remove.countDown();
             }
@@ -507,19 +509,19 @@ public class ClientMapTest {
     }
 
     @Test
-    public void testBasicPredicate(){
+    public void testBasicPredicate() {
         fillMap();
         final Collection collection = map.values(new SqlPredicate("this == value1"));
         assertEquals("value1", collection.iterator().next());
         final Set set = map.keySet(new SqlPredicate("this == value1"));
         assertEquals("key1", set.iterator().next());
         final Set<Map.Entry<String, String>> set1 = map.entrySet(new SqlPredicate("this == value1"));
-        assertEquals("key1",set1.iterator().next().getKey());
-        assertEquals("value1",set1.iterator().next().getValue());
+        assertEquals("key1", set1.iterator().next().getKey());
+        assertEquals("value1", set1.iterator().next().getValue());
     }
 
-    private void fillMap(){
-        for (int i=0; i<10; i++){
+    private void fillMap() {
+        for (int i = 0; i < 10; i++) {
             map.put("key" + i, "value" + i);
         }
     }
@@ -553,6 +555,92 @@ public class ClientMapTest {
         @Override
         public Object getPartitionKey() {
             return pk;
+        }
+    }
+
+
+    /**
+     * Issue #996
+     */
+    @Test
+    public void testEntryListener() throws InterruptedException {
+        final CountDownLatch gateAdd = new CountDownLatch(2);
+        final CountDownLatch gateRemove = new CountDownLatch(1);
+        final CountDownLatch gateEvict = new CountDownLatch(1);
+        final CountDownLatch gateUpdate = new CountDownLatch(1);
+
+        final String mapName = "testEntryListener";
+
+        final IMap<Object, Object> serverMap = server.getMap(mapName);
+        serverMap.put(3, new Deal(3));
+
+        final IMap<Object, Object> clientMap = hz.getMap(mapName);
+
+        assertEquals(1, clientMap.size());
+
+        final EntryListener listener = new EntListener(gateAdd, gateRemove, gateEvict, gateUpdate);
+
+        clientMap.addEntryListener(listener, new SqlPredicate("id=1"), 2, true);
+        clientMap.put(2, new Deal(1));
+        clientMap.put(2, new Deal(1));
+        clientMap.remove(2);
+
+        clientMap.put(2, new Deal(1));
+        clientMap.evict(2);
+
+        assertTrue(gateAdd.await(10, TimeUnit.SECONDS));
+        assertTrue(gateRemove.await(10, TimeUnit.SECONDS));
+        assertTrue(gateEvict.await(10, TimeUnit.SECONDS));
+        assertTrue(gateUpdate.await(10, TimeUnit.SECONDS));
+    }
+
+    static class EntListener implements EntryListener<Integer, Deal>, Serializable {
+        private final CountDownLatch _gateAdd;
+        private final CountDownLatch _gateRemove;
+        private final CountDownLatch _gateEvict;
+        private final CountDownLatch _gateUpdate;
+
+        EntListener(CountDownLatch gateAdd, CountDownLatch gateRemove, CountDownLatch gateEvict, CountDownLatch gateUpdate) {
+            _gateAdd = gateAdd;
+            _gateRemove = gateRemove;
+            _gateEvict = gateEvict;
+            _gateUpdate = gateUpdate;
+        }
+
+        @Override
+        public void entryAdded(EntryEvent<Integer, Deal> arg0) {
+            _gateAdd.countDown();
+        }
+
+        @Override
+        public void entryEvicted(EntryEvent<Integer, Deal> arg0) {
+            _gateEvict.countDown();
+        }
+
+        @Override
+        public void entryRemoved(EntryEvent<Integer, Deal> arg0) {
+            _gateRemove.countDown();
+        }
+
+        @Override
+        public void entryUpdated(EntryEvent<Integer, Deal> arg0) {
+            _gateUpdate.countDown();
+        }
+    }
+
+    static class Deal implements Serializable {
+        Integer id;
+
+        Deal(Integer id) {
+            this.id = id;
+        }
+
+        public Integer getId() {
+            return id;
+        }
+
+        public void setId(Integer id) {
+            this.id = id;
         }
     }
 
