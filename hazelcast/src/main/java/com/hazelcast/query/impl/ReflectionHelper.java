@@ -27,6 +27,9 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
+import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
+
 public class ReflectionHelper {
 
     private final static ConcurrentMap<String, Getter> getterCache = new ConcurrentHashMap<String, Getter>(1000);
@@ -74,13 +77,13 @@ public class ReflectionHelper {
 
     private static Getter createGetter(QueryableEntry entry, String attribute) {
         Object obj;
-        if(attribute.startsWith(QueryEntry.KEY_ATTRIBUTE_NAME)){
-           obj = entry.getKey();
-           if(attribute.length()>QueryEntry.KEY_ATTRIBUTE_NAME.length()){
-               attribute = attribute.substring(QueryEntry.KEY_ATTRIBUTE_NAME.length()+1);
-           }
-        }else{
-           obj = entry.getValue();
+        if (attribute.startsWith(KEY_ATTRIBUTE_NAME)) {
+            obj = entry.getKey();
+            if (attribute.length() > KEY_ATTRIBUTE_NAME.length()) {
+                attribute = attribute.substring(KEY_ATTRIBUTE_NAME.length() + 1);
+            }
+        } else {
+            obj = entry.getValue();
         }
 
         Class clazz = obj.getClass();
@@ -97,7 +100,7 @@ public class ReflectionHelper {
                 final String camelName = Character.toUpperCase(name.charAt(0)) + name.substring(1);
                 possibleMethodNames.add("get" + camelName);
                 possibleMethodNames.add("is" + camelName);
-                if (name.equals("this")) {
+                if (name.equals(THIS_ATTRIBUTE_NAME)) {
                     localGetter = new ThisGetter(parent, obj);
                 } else {
                     for (String methodName : possibleMethodNames) {

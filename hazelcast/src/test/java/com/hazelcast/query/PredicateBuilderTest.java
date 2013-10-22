@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.query;
 
 import com.hazelcast.core.HazelcastInstance;
@@ -27,17 +43,17 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
 
         EntryObject e = new PredicateBuilder().getEntryObject();
 
-        Predicate predicate = e.key().get("id").equal("10");
+        Predicate predicate = e.key().get("id").equal("10").and(e.get("name").equal("value1"));
 
-        IMap<Id, Integer> hazelcastLookupMap = hz.getMap("somemap");
+        IMap<Id, Value> hazelcastLookupMap = hz.getMap("somemap");
 
-        hazelcastLookupMap.put(new Id("10"), 1);
-        hazelcastLookupMap.put(new Id("20"), 2);
-        hazelcastLookupMap.put(new Id("30"), 3);
+        hazelcastLookupMap.put(new Id("10"), new Value("value1"));
+        hazelcastLookupMap.put(new Id("20"), new Value("value2"));
+        hazelcastLookupMap.put(new Id("30"), new Value("value3"));
 
-        Collection<Integer> result = hazelcastLookupMap.values(predicate);
+        Collection<Value> result = hazelcastLookupMap.values(predicate);
         assertEquals(1, result.size());
-        assertTrue(result.contains(1));
+        assertTrue(result.contains(new Value("value1")));
     }
 
     @Test
@@ -98,7 +114,7 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
         assertTrue(result.contains(new Id("10")));
     }
 
-    public static class Id implements Serializable {
+    private static class Id implements Serializable {
         private String id;
 
         public Id(String id) {
@@ -124,6 +140,35 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
         @Override
         public int hashCode() {
             return id != null ? id.hashCode() : 0;
+        }
+    }
+
+    private static class Value implements Serializable {
+        private String name;
+
+        private Value(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Value value = (Value) o;
+
+            if (name != null ? !name.equals(value.name) : value.name != null) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return name != null ? name.hashCode() : 0;
         }
     }
 }

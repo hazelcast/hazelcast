@@ -20,11 +20,12 @@ import com.hazelcast.nio.serialization.*;
 
 import java.io.IOException;
 
+import static com.hazelcast.query.QueryConstants.KEY_ATTRIBUTE_NAME;
+import static com.hazelcast.query.QueryConstants.THIS_ATTRIBUTE_NAME;
+
 public class QueryEntry implements QueryableEntry {
 
     private static final PortableExtractor extractor = new PortableExtractor();
-    public static final String KEY_ATTRIBUTE_NAME = "__key";
-    private static final String THIS_ATTRIBUTE_NAME = "this";
 
     private final SerializationService serializationService;
     private final Data indexKey;
