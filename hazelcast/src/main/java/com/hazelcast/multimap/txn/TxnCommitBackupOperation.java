@@ -52,9 +52,9 @@ public class TxnCommitBackupOperation extends MultiMapKeyBasedOperation implemen
             op.setNodeEngine(getNodeEngine()).setServiceName(getServiceName()).setPartitionId(getPartitionId());
             op.beforeRun();
             op.run();
-            op.afterRun();
-            boolean response = (Boolean)op.getResponse();
+            //op.afterRun();
         }
+        getOrCreateContainer().unlock(dataKey, getCallerUuid(), threadId);
     }
 
     protected void writeInternal(ObjectDataOutput out) throws IOException {
