@@ -16,6 +16,8 @@
 
 package com.hazelcast.query;
 
+import com.hazelcast.query.impl.QueryEntry;
+
 public class EntryObject {
     PredicateBuilder qb;
 
@@ -24,7 +26,21 @@ public class EntryObject {
     }
 
     public EntryObject get(String attribute) {
-        qb.attribute = attribute;
+        if(QueryEntry.KEY_ATTRIBUTE_NAME.equals(qb.attribute)){
+            qb.attribute = QueryEntry.KEY_ATTRIBUTE_NAME+"#"+attribute;
+        }else{
+            qb.attribute = attribute;
+        }
+        return this;
+    }
+
+    public EntryObject key() {
+        if(qb.attribute == null){
+            qb.attribute=QueryEntry.KEY_ATTRIBUTE_NAME;
+        }else if(!qb.attribute.startsWith(QueryEntry.KEY_ATTRIBUTE_NAME)){
+            qb.attribute = QueryEntry.KEY_ATTRIBUTE_NAME+"#"+qb.attribute;
+        }
+
         return this;
     }
 
@@ -34,11 +50,6 @@ public class EntryObject {
 
     public PredicateBuilder isNot(String attribute) {
         return addPredicate(Predicates.notEqual(attribute, true));
-    }
-
-    public EntryObject key() {
-        qb.attribute = "__key";
-        return this;
     }
 
     public PredicateBuilder equal(Comparable value) {

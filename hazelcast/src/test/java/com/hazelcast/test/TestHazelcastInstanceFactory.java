@@ -55,6 +55,10 @@ public final class TestHazelcastInstanceFactory {
         }
     }
 
+    public HazelcastInstance newHazelcastInstance() {
+        return newHazelcastInstance(new Config());
+    }
+
     public HazelcastInstance newHazelcastInstance(Config config) {
         if (mockNetwork) {
             if (nodeIndex.get() >= addresses.length) {
