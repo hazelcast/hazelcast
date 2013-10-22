@@ -69,7 +69,7 @@ public class SqlPredicate extends AbstractPredicate implements IndexAwarePredica
 
     private int getApostropheIndexIgnoringDoubles(String str, int start) {
         int i = str.indexOf("'", start);
-        int j = str.indexOf("'", i+1);
+        int j = str.indexOf("'", i + 1);
         //ignore doubles
         while(i == j-1){
             i = str.indexOf("'", j+1);
