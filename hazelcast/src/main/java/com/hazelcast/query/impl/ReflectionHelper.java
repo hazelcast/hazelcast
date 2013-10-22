@@ -73,7 +73,16 @@ public class ReflectionHelper {
     }
 
     private static Getter createGetter(QueryableEntry entry, String attribute) {
-        Object obj = entry.getValue();
+        Object obj;
+        if(attribute.startsWith(QueryEntry.KEY_ATTRIBUTE_NAME)){
+           obj = entry.getKey();
+           if(attribute.length()>QueryEntry.KEY_ATTRIBUTE_NAME.length()){
+               attribute = attribute.substring(QueryEntry.KEY_ATTRIBUTE_NAME.length()+1);
+           }
+        }else{
+           obj = entry.getValue();
+        }
+
         Class clazz = obj.getClass();
         final String cacheKey = clazz.getName() + ":" + attribute;
         Getter getter = getterCache.get(cacheKey);
@@ -125,7 +134,7 @@ public class ReflectionHelper {
                     }
                 }
                 if (localGetter == null) {
-                    throw new IllegalArgumentException("There is no suitable accessor for '" + name + "'");
+                    throw new IllegalArgumentException("There is no suitable accessor for '" + name + "' on class '"+clazz+"'");
                 }
                 parent = localGetter;
             }
