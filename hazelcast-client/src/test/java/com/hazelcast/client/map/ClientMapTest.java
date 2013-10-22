@@ -525,6 +525,92 @@ public class ClientMapTest {
     }
 
     /**
+     * Issue #996
+     */
+    @Test
+    public void testEntryListener() throws InterruptedException {
+        final CountDownLatch gateAdd = new CountDownLatch(2);
+        final CountDownLatch gateRemove = new CountDownLatch(1);
+        final CountDownLatch gateEvict = new CountDownLatch(1);
+        final CountDownLatch gateUpdate = new CountDownLatch(1);
+
+        final String mapName = "testEntryListener";
+
+        final IMap<Object, Object> serverMap = server.getMap(mapName);
+        serverMap.put(3, new Deal(3));
+
+        final IMap<Object, Object> clientMap = hz.getMap(mapName);
+
+        assertEquals(1, clientMap.size());
+
+        final EntryListener listener = new EntListener(gateAdd, gateRemove, gateEvict, gateUpdate);
+
+        clientMap.addEntryListener(listener, new SqlPredicate("id=1"), 2, true);
+        clientMap.put(2, new Deal(1));
+        clientMap.put(2, new Deal(1));
+        clientMap.remove(2);
+
+        clientMap.put(2, new Deal(1));
+        clientMap.evict(2);
+
+        assertTrue(gateAdd.await(10, TimeUnit.SECONDS));
+        assertTrue(gateRemove.await(10, TimeUnit.SECONDS));
+        assertTrue(gateEvict.await(10, TimeUnit.SECONDS));
+        assertTrue(gateUpdate.await(10, TimeUnit.SECONDS));
+    }
+
+    static class EntListener implements EntryListener<Integer, Deal>, Serializable {
+        private final CountDownLatch _gateAdd;
+        private final CountDownLatch _gateRemove;
+        private final CountDownLatch _gateEvict;
+        private final CountDownLatch _gateUpdate;
+
+        EntListener(CountDownLatch gateAdd, CountDownLatch gateRemove, CountDownLatch gateEvict, CountDownLatch gateUpdate) {
+            _gateAdd = gateAdd;
+            _gateRemove = gateRemove;
+            _gateEvict = gateEvict;
+            _gateUpdate = gateUpdate;
+        }
+
+        @Override
+        public void entryAdded(EntryEvent<Integer, Deal> arg0) {
+            _gateAdd.countDown();
+        }
+
+        @Override
+        public void entryEvicted(EntryEvent<Integer, Deal> arg0) {
+            _gateEvict.countDown();
+        }
+
+        @Override
+        public void entryRemoved(EntryEvent<Integer, Deal> arg0) {
+            _gateRemove.countDown();
+        }
+
+        @Override
+        public void entryUpdated(EntryEvent<Integer, Deal> arg0) {
+            _gateUpdate.countDown();
+        }
+    }
+
+    static class Deal implements Serializable {
+        Integer id;
+
+        Deal(Integer id) {
+            this.id = id;
+        }
+
+        public Integer getId() {
+            return id;
+        }
+
+        public void setId(Integer id) {
+            this.id = id;
+        }
+    }
+
+
+    /**
      * Issue #923
      */
     @Test
@@ -555,6 +641,5 @@ public class ClientMapTest {
             return pk;
         }
     }
-
 
 }

@@ -134,14 +134,19 @@ public class MapAddEntryListenerRequest extends CallableClientRequest implements
         writer.writeBoolean("key", hasKey);
         if (predicate == null){
             writer.writeBoolean("pre", false);
+            if (hasKey) {
+                final ObjectDataOutput out = writer.getRawDataOutput();
+                key.writeData(out);
+            }
         } else {
             writer.writeBoolean("pre", true);
-            writer.writePortable("p",(Portable)predicate);
-        }
-        if (hasKey) {
             final ObjectDataOutput out = writer.getRawDataOutput();
-            key.writeData(out);
+            out.writeObject(predicate);
+            if (hasKey) {
+                key.writeData(out);
+            }
         }
+
     }
 
     public void readPortable(PortableReader reader) throws IOException {
@@ -149,16 +154,20 @@ public class MapAddEntryListenerRequest extends CallableClientRequest implements
         includeValue = reader.readBoolean("i");
         boolean hasKey = reader.readBoolean("key");
         if (reader.readBoolean("pre")){
-            predicate = (Predicate)reader.readPortable("p");
-        }
-        if (hasKey) {
             final ObjectDataInput in = reader.getRawDataInput();
-            key = new Data();
-            key.readData(in);
+            predicate = in.readObject();
+            if (hasKey) {
+                key = in.readObject();
+            }
+        }
+        else if (hasKey) {
+            final ObjectDataInput in = reader.getRawDataInput();
+            key = in.readObject();
         }
     }
 
     public Permission getRequiredPermission() {
         return new MapPermission(name, ActionConstants.ACTION_LISTEN);
     }
+
 }
