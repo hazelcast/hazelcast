@@ -79,7 +79,7 @@ public class ExecuteScriptRequest implements ConsoleRequest {
         }
 
         dos.writeByte(COLLECTION);//This line left here for compatibility among 3.x
-        //TODO Currently returning complex data structures like map,array are not possible.
+        //TODO: Currently returning complex data structures like map,array are not possible.
         writeCollection(dos, result);
     }
 
