@@ -17,7 +17,6 @@
 package com.hazelcast.management.request;
 
 import com.hazelcast.core.Member;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.management.ManagementCenterService;
 import com.hazelcast.management.operation.ScriptExecutorOperation;
 import com.hazelcast.nio.Address;
@@ -30,10 +29,7 @@ import java.util.Map.Entry;
 
 public class ExecuteScriptRequest implements ConsoleRequest {
 
-    private static final byte NULL = 0;
-    private static final byte MAP = 1;
     private static final byte COLLECTION = 2;
-    private static final byte OTHER = -1;
     private String script;
     private String engine;
     private Set<Address> targets;
@@ -66,7 +62,7 @@ public class ExecuteScriptRequest implements ConsoleRequest {
     }
 
     public void writeResponse(ManagementCenterService mcs, ObjectDataOutput dos) throws Exception {
-        Object result = null;
+        ArrayList result;
         if (targetAllMembers) {
             final Set<Member> members = mcs.getHazelcastInstance().getCluster().getMembers();
             final ArrayList list = new ArrayList(members.size());
@@ -82,19 +78,15 @@ public class ExecuteScriptRequest implements ConsoleRequest {
             result = list;
         }
 
-        dos.writeByte(COLLECTION);
-        writeCollection(dos, (Collection) result);
+        dos.writeByte(COLLECTION);//This line left here for compatibility among 3.x
+        //TODO Currently returning complex data structures like map,array are not possible.
+        writeCollection(dos, result);
     }
 
     public Object readResponse(ObjectDataInput in) throws IOException {
-        byte flag = in.readByte();
-        switch (flag) {
-            case MAP:
-                return readMap(in);
-            case COLLECTION:
-                return readCollection(in);
-            case OTHER:
-                return in.readObject();
+        byte flag = in.readByte();//This line left here for compatibility among 3.x
+        if (flag == COLLECTION) {
+            return readCollection(in);
         }
         return null;
     }
