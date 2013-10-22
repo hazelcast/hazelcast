@@ -242,10 +242,10 @@ public abstract class Operation implements DataSerializable {
         final ILogger logger = getLogger();
         if (e instanceof RetryableException) {
             final Level level = returnsResponse() ? Level.FINEST : Level.WARNING;
-            logger.log(level, e.getClass() + ": " + e.getMessage());
+            logger.log(level, e.getClass().getName() + ": " + e.getMessage());
         } else if (e instanceof OutOfMemoryError) {
             try {
-                logger.log(Level.SEVERE, "", e);
+                logger.log(Level.SEVERE, e.getMessage(), e);
             } catch (Throwable ignored) {
             }
         } else {
