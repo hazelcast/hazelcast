@@ -36,6 +36,8 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
@@ -346,7 +348,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testIssue969() {
+    public void testIssue969() throws InterruptedException {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         Config cfg = new Config();
         cfg.getMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
@@ -355,20 +357,25 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         final AtomicInteger addCount = new AtomicInteger(0);
         final AtomicInteger updateCount = new AtomicInteger(0);
         final AtomicInteger removeCount = new AtomicInteger(0);
+        final CountDownLatch latch = new CountDownLatch(3);
+
         map.addEntryListener(new EntryListener<Integer, Integer>() {
             @Override
             public void entryAdded(EntryEvent<Integer, Integer> event) {
                 addCount.incrementAndGet();
+                latch.countDown();
             }
 
             @Override
             public void entryRemoved(EntryEvent<Integer, Integer> event) {
                 removeCount.incrementAndGet();
+                latch.countDown();
             }
 
             @Override
             public void entryUpdated(EntryEvent<Integer, Integer> event) {
                 updateCount.incrementAndGet();
+                latch.countDown();
             }
 
             @Override
@@ -393,12 +400,10 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         map.executeOnKey(2, valueReaderEntryProcessor);
         assertEquals(5,valueReaderEntryProcessor.getValue().intValue());
 
-
+        assertTrue(latch.await(1, TimeUnit.MINUTES));
         assertEquals(2, addCount.get());
         assertEquals(0, removeCount.get());
         assertEquals(1, updateCount.get());
-
-
     }
 
     private static class ValueReaderEntryProcessor extends AbstractEntryProcessor {
