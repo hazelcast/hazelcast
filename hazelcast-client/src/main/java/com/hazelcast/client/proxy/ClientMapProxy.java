@@ -72,15 +72,15 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         initNearCache();
 
         final Data keyData = toData(key);
-        if (nearCache != null){
+        if (nearCache != null) {
             Object cached = nearCache.get(keyData);
-            if (cached != null){
+            if (cached != null) {
                 return (V) cached;
             }
         }
         MapGetRequest request = new MapGetRequest(name, keyData);
         final V result = invoke(request, keyData);
-        if (nearCache != null){
+        if (nearCache != null) {
             nearCache.put(keyData, result);
         }
         return result;
@@ -378,7 +378,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         QueryResultSet result = invoke(request);
         Set<K> keySet = new HashSet<K>(result.size());
         for (Object data : result) {
-            K key = toObject((Data)data);
+            K key = toObject((Data) data);
             keySet.add(key);
         }
         return keySet;
@@ -389,7 +389,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         QueryResultSet result = invoke(request);
         Set<Entry<K, V>> entrySet = new HashSet<Entry<K, V>>(result.size());
         for (Object data : result) {
-            AbstractMap.SimpleImmutableEntry<Data ,Data > dataEntry = (AbstractMap.SimpleImmutableEntry<Data ,Data >)data;
+            AbstractMap.SimpleImmutableEntry<Data, Data> dataEntry = (AbstractMap.SimpleImmutableEntry<Data, Data>) data;
             K key = toObject(dataEntry.getKey());
             V value = toObject(dataEntry.getValue());
             entrySet.add(new AbstractMap.SimpleEntry<K, V>(key, value));
@@ -402,7 +402,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         QueryResultSet result = invoke(request);
         Collection<V> values = new ArrayList<V>(result.size());
         for (Object data : result) {
-            V value = toObject((Data)data);
+            V value = toObject((Data) data);
             values.add(value);
         }
         return values;
@@ -444,6 +444,19 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         return result;
     }
 
+    public Map<K, Object> executeOnEntries(EntryProcessor entryProcessor, Predicate predicate) {
+        MapExecuteWithPredicateRequest request = new MapExecuteWithPredicateRequest(name, entryProcessor, predicate);
+        MapEntrySet entrySet = invoke(request);
+        Map<K, Object> result = new HashMap<K, Object>();
+        for (Entry<Data, Data> dataEntry : entrySet.getEntrySet()) {
+            final Data keyData = dataEntry.getKey();
+            final Data valueData = dataEntry.getValue();
+            K key = toObject(keyData);
+            result.put(key, toObject(valueData));
+        }
+        return result;
+    }
+
     public void set(K key, V value) {
         set(key, value, -1, null);
     }
@@ -473,10 +486,10 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     }
 
     protected void onDestroy() {
-        if (nearCacheListenerId != null){
+        if (nearCacheListenerId != null) {
             removeEntryListener(nearCacheListenerId);
         }
-        if (nearCache != null){
+        if (nearCache != null) {
             nearCache.clear();
         }
     }
@@ -540,14 +553,14 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         };
     }
 
-    private void initNearCache(){
-        if (nearCacheInitialized.compareAndSet(false, true)){
+    private void initNearCache() {
+        if (nearCacheInitialized.compareAndSet(false, true)) {
             final NearCacheConfig nearCacheConfig = getContext().getClientConfig().getNearCacheConfig(name);
-            if (nearCacheConfig == null){
+            if (nearCacheConfig == null) {
                 return;
             }
             ClientNearCache _nearCache = new ClientNearCache(name, getContext(), nearCacheConfig);
-            if (nearCacheConfig.isInvalidateOnChange()){
+            if (nearCacheConfig.isInvalidateOnChange()) {
                 try {
                     nearCacheListenerId = addEntryListener(new EntryListener<K, V>() {
                         public void entryAdded(EntryEvent<K, V> event) {
@@ -566,7 +579,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
                             invalidate(event);
                         }
 
-                        void invalidate(EntryEvent<K, V> event){
+                        void invalidate(EntryEvent<K, V> event) {
                             final Data key = toData(event.getKey());
                             nearCache.invalidate(key);
                         }
