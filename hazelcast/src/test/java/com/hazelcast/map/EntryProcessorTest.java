@@ -22,6 +22,10 @@ import com.hazelcast.core.*;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.query.EntryObject;
+import com.hazelcast.query.Predicate;
+import com.hazelcast.query.PredicateBuilder;
+import com.hazelcast.query.SampleObjects;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -119,6 +123,37 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testMapEntryProcessorWithPredicate() throws InterruptedException {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        cfg.getMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+        IMap<Integer, SampleObjects.Employee> map = instance1.getMap("testMapEntryProcessor");
+        int size = 10;
+        for (int i = 0; i < size; i++) {
+            map.put(i, new SampleObjects.Employee(i, "", 0, false, 0D, SampleObjects.State.STATE1));
+        }
+        EntryProcessor entryProcessor = new ChangeStateEntryProcessor();
+        EntryObject e = new PredicateBuilder().getEntryObject();
+        Predicate p = e.get("id").lessThan(5);
+        Map<Integer, Object> res = map.executeOnEntries(entryProcessor, p);
+
+        for (int i = 0; i < 5; i++) {
+            assertEquals(SampleObjects.State.STATE2, map.get(i).getState());
+        }
+        for (int i = 5; i < size; i++) {
+            assertEquals(SampleObjects.State.STATE1, map.get(i).getState());
+        }
+        for (int i = 0; i < 5; i++) {
+            assertEquals(((SampleObjects.Employee) res.get(i)).getState(), SampleObjects.State.STATE2);
+        }
+        instance1.getLifecycleService().shutdown();
+        instance2.getLifecycleService().shutdown();
+
+    }
+
+    @Test
     public void testBackups() throws InterruptedException {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         Config cfg = new Config();
@@ -191,6 +226,33 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
+        }
+
+        public void processBackup(Map.Entry entry) {
+            entry.setValue((Integer) entry.getValue() + 1);
+        }
+    }
+
+    private static class ChangeStateEntryProcessor implements EntryProcessor, EntryBackupProcessor {
+
+        ChangeStateEntryProcessor() {
+        }
+
+        public Object process(Map.Entry entry) {
+            SampleObjects.Employee value = (SampleObjects.Employee) entry.getValue();
+            value.setState(SampleObjects.State.STATE2);
+            entry.setValue(value);
+            return value;
+        }
+
+        public EntryBackupProcessor getBackupProcessor() {
+            return ChangeStateEntryProcessor.this;
+        }
+
+        public void processBackup(Map.Entry entry) {
+            SampleObjects.Employee value = (SampleObjects.Employee) entry.getValue();
+            value.setState(SampleObjects.State.STATE2);
+            entry.setValue(value);
         }
     }
 
