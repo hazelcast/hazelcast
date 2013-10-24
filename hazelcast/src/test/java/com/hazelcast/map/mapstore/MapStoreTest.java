@@ -764,7 +764,6 @@ public class MapStoreTest extends HazelcastTestSupport {
         final ConcurrentMap<String, String> store = new ConcurrentHashMap<String, String>();
         final MapStore<String, String> myMapStore = new SimpleMapStore<String, String>(store);
         Config config = new Config();
-        config.setProperty(GroupProperties.PROP_CACHED_NULL_TTL_SECONDS, "0");
         config
                 .getMapConfig("testIssue806CustomTTLForNull")
                 .setMapStoreConfig(new MapStoreConfig()
@@ -810,6 +809,24 @@ public class MapStoreTest extends HazelcastTestSupport {
         map.put("key", "value");
         Thread.sleep(2000);
         assertEquals("value", map.get("key"));
+    }
+
+    @Test
+    public void testIssue1019() {
+        Config config = new Config();
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setImplementation(new MapStoreAdapter<String,String>());
+        config.getMapConfig("map").setMapStoreConfig(mapStoreConfig);
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
+        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
+        final IMap map = instance.getMap("map");
+        for (int i = 0; i < 1000; i++) {
+            map.put(i,i);
+        }
+        for (int i = 10000; i < 10100; i++) {
+            map.get(i);
+        }
+        assertEquals(1000, map.values().size());
     }
 
     public static Config newConfig(Object storeImpl, int writeDelaySeconds) {
