@@ -469,15 +469,6 @@ public class DefaultRecordStore implements RecordStore {
                     saveIndex(record);
                     updateSizeEstimator(calculateRecordSize(record));
                 }
-                // below is an optimization. if the record does not exist the next get will return null without looking at mapStore.
-                if (value == null) {
-                    int ttlForNull = mapService.getNodeEngine().getGroupProperties().CACHED_NULL_TTL_SECONDS.getInteger();
-                    if (ttlForNull > 0) {
-                        record = mapService.createRecord(name, dataKey, null, ttlForNull * 1000);
-                        records.put(dataKey, record);
-                        updateSizeEstimator(calculateRecordSize(record));
-                    }
-                }
             }
 
         } else {
@@ -525,15 +516,6 @@ public class DefaultRecordStore implements RecordStore {
                 saveIndex(record);
                 updateSizeEstimator(calculateRecordSize(record));
             }
-            // below is an optimization. if the record does not exist the next get will return null without looking at mapStore.
-            else {
-                int ttlForNull = mapService.getNodeEngine().getGroupProperties().CACHED_NULL_TTL_SECONDS.getInteger();
-                if (ttlForNull > 0) {
-                    Record record = mapService.createRecord(name, dataKey, null, ttlForNull * 1000);
-                    records.put(dataKey, record);
-                    updateSizeEstimator(calculateRecordSize(record));
-                }
-            }
             value = mapService.interceptGet(name, value);
             if (value != null) {
                 mapEntrySet.add(new AbstractMap.SimpleImmutableEntry(dataKey, mapService.toData(value)));
@@ -556,9 +538,7 @@ public class DefaultRecordStore implements RecordStore {
             }
         }
 
-        // because of a get optimization (see above), there may be a record with a null value,
-        // which means map-store returned null while loading the key.
-        boolean contains = record != null && record.getValue() != null;
+        boolean contains = record != null;
         if (contains) {
             accessRecord(record);
         }
@@ -570,7 +550,7 @@ public class DefaultRecordStore implements RecordStore {
         Data dataKey = entry.getKey();
         Object value = entry.getValue();
         Record record = records.get(dataKey);
-        if (record == null || record.getValue() == null) {
+        if (record == null) {
             value = mapService.interceptPut(name, null, value);
             record = mapService.createRecord(name, dataKey, value, -1);
             mapStoreWrite(record, dataKey, value);
@@ -602,7 +582,7 @@ public class DefaultRecordStore implements RecordStore {
         checkIfLoaded();
         Record record = records.get(dataKey);
         Object oldValue = null;
-        if (record == null || record.getValue() == null) {
+        if (record == null) {
             if (mapContainer.getStore() != null) {
                 oldValue = mapContainer.getStore().load(mapService.toObject(dataKey));
             }
@@ -638,7 +618,7 @@ public class DefaultRecordStore implements RecordStore {
         checkIfLoaded();
         Record record = records.get(dataKey);
         boolean newRecord = false;
-        if (record == null || record.getValue() == null) {
+        if (record == null) {
             value = mapService.interceptPut(name, null, value);
             record = mapService.createRecord(name, dataKey, value, ttl);
             mapStoreWrite(record, dataKey, value);
@@ -664,7 +644,7 @@ public class DefaultRecordStore implements RecordStore {
         checkIfLoaded();
         Record record = records.get(dataKey);
         Object newValue = null;
-        if (record == null || record.getValue() == null) {
+        if (record == null) {
             newValue = mergingEntry.getValue();
             record = mapService.createRecord(name, dataKey, newValue, -1);
             mapStoreWrite(record, dataKey, newValue);
@@ -718,7 +698,7 @@ public class DefaultRecordStore implements RecordStore {
     public boolean replace(Data dataKey, Object testValue, Object newValue) {
         checkIfLoaded();
         Record record = records.get(dataKey);
-        if (record == null || record.getValue() == null)
+        if (record == null)
             return false;
         if (mapService.compare(name, record.getValue(), testValue)) {
             newValue = mapService.interceptPut(name, record.getValue(), newValue);
@@ -737,7 +717,7 @@ public class DefaultRecordStore implements RecordStore {
     public void putTransient(Data dataKey, Object value, long ttl) {
         checkIfLoaded();
         Record record = records.get(dataKey);
-        if (record == null || record.getValue() == null) {
+        if (record == null) {
             value = mapService.interceptPut(name, null, value);
             record = mapService.createRecord(name, dataKey, value, ttl);
             records.put(dataKey, record);
@@ -754,7 +734,7 @@ public class DefaultRecordStore implements RecordStore {
 
     public void putFromLoad(Data dataKey, Object value, long ttl) {
         Record record = records.get(dataKey);
-        if (record == null || record.getValue() == null) {
+        if (record == null) {
             value = mapService.interceptPut(name, null, value);
             record = mapService.createRecord(name, dataKey, value, ttl);
             records.put(dataKey, record);
@@ -772,7 +752,7 @@ public class DefaultRecordStore implements RecordStore {
     public boolean tryPut(Data dataKey, Object value, long ttl) {
         checkIfLoaded();
         Record record = records.get(dataKey);
-        if (record == null || record.getValue() == null) {
+        if (record == null) {
             value = mapService.interceptPut(name, null, value);
             record = mapService.createRecord(name, dataKey, value, ttl);
             mapStoreWrite(record, dataKey, value);
@@ -795,7 +775,7 @@ public class DefaultRecordStore implements RecordStore {
         checkIfLoaded();
         Record record = records.get(dataKey);
         Object oldValue = null;
-        if (record == null || record.getValue() == null) {
+        if (record == null) {
             if (mapContainer.getStore() != null) {
                 oldValue = mapContainer.getStore().load(mapService.toObject(dataKey));
                 if (oldValue != null) {
