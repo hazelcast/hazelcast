@@ -35,12 +35,7 @@ public class EntryObject {
     }
 
     public EntryObject key() {
-        if (qb.attribute == null) {
-            qb.attribute = KEY_ATTRIBUTE_NAME;
-        } else if (!qb.attribute.startsWith(KEY_ATTRIBUTE_NAME)) {
-            qb.attribute = KEY_ATTRIBUTE_NAME + "#" + qb.attribute;
-        }
-
+        qb.attribute = KEY_ATTRIBUTE_NAME;
         return this;
     }
 
