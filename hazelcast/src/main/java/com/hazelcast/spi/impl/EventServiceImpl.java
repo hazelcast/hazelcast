@@ -471,7 +471,7 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
             }
             if (!registration.isLocal()) {
                 if (nodeEngine.getThisAddress().equals(registration.getSubscriber())) {
-                    logger.warning("Somethings seem wrong! Subscriber is local but listener instance is null! " + registration);
+                    logger.warning("Something seems wrong! Subscriber is local but listener instance is null! " + registration);
                 } else {
                     logger.warning("Invalid target for  " + registration);
                 }
