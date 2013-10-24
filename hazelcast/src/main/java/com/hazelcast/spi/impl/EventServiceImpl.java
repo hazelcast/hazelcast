@@ -118,6 +118,9 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
     }
 
     private boolean handleRegistration(Registration reg) {
+        if (nodeEngine.getThisAddress().equals(reg.getSubscriber())) {
+            return false;
+        }
         EventServiceSegment segment = getSegment(reg.serviceName, true);
         return segment.addRegistration(reg.topic, reg);
     }
@@ -467,7 +470,11 @@ public class EventServiceImpl implements EventService, PostJoinAwareService {
                 return;
             }
             if (!registration.isLocal()) {
-                logger.warning("Invalid target for  " + registration);
+                if (nodeEngine.getThisAddress().equals(registration.getSubscriber())) {
+                    logger.warning("Somethings seem wrong! Subscriber is local but listener instance is null! " + registration);
+                } else {
+                    logger.warning("Invalid target for  " + registration);
+                }
                 return;
             }
             service.dispatchEvent(eventObject, registration.listener);
