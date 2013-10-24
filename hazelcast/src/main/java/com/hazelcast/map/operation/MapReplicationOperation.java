@@ -73,7 +73,6 @@ public class MapReplicationOperation extends AbstractOperation {
                 Data key = recordEntry.getKey();
                 Record record = recordEntry.getValue();
                 if (record.getValue() == null) {
-                    // see optimization at DefaultRecordStore.get(Data dataKey)
                     continue;
                 }
                 RecordReplicationInfo recordReplicationInfo;
