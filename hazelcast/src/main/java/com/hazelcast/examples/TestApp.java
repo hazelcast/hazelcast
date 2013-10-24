@@ -43,6 +43,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 
     private IMap<Object, Object> map = null;
 
+    private MultiMap<Object, Object> multiMap = null;
+
     private ISet<Object> set = null;
 
     private IList<Object> list = null;
@@ -85,6 +87,14 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 //        }
         return map;
     }
+
+    public MultiMap<Object, Object> getMultiMap() {
+//        if (map == null) {
+        multiMap = hazelcast.getMultiMap(namespace);
+//        }
+        return multiMap;
+    }
+
 
     public IAtomicLong getAtomicNumber() {
         atomicNumber = hazelcast.getAtomicLong(namespace);
@@ -393,6 +403,24 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             handleRemoveListener(args);
         } else if (first.equals("m.unlock")) {
             handleMapUnlock(args);
+        } else if (first.equals("mm.put")) {
+            handleMultiMapPut(args);
+        } else if (first.equals("mm.get")) {
+            handleMultiMapGet(args);
+        } else if (first.equals("mm.remove")) {
+            handleMultiMapRemove(args);
+        } else if (command.equals("mm.keys")) {
+            handleMultiMapKeys();
+        } else if (command.equals("mm.values")) {
+            handleMultiMapValues();
+        } else if (command.equals("mm.entries")) {
+            handleMultiMapEntries();
+        } else if (first.equals("mm.lock")) {
+            handleMultiMapLock(args);
+        } else if (first.equalsIgnoreCase("mm.tryLock")) {
+            handleMultiMapTryLock(args);
+        } else if (first.equals("mm.unlock")) {
+            handleMultiMapUnlock(args);
         } else if (first.equals("l.add")) {
             handleListAdd(args);
         } else if (first.equals("l.set")) {
@@ -488,6 +516,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
+    // ==================== list ===================================
+
     protected void handleListContains(String[] args) {
         println(getList().contains(args[1]));
     }
@@ -520,6 +550,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         final int index = Integer.parseInt(args[1]);
         println(getList().set(index, args[2]));
     }
+
+    // ==================== map ===================================
 
     protected void handleMapPut(String[] args) {
         println(getMap().put(args[1], args[2]));
@@ -597,17 +629,6 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         }
     }
 
-    private void handStats(String[] args) {
-        String iteratorStr = args[0];
-        if (iteratorStr.startsWith("s.")) {
-        } else if (iteratorStr.startsWith("m.")) {
-            println(getMap().getLocalMapStats());
-        } else if (iteratorStr.startsWith("q.")) {
-            println(getQueue().getLocalQueueStats());
-        } else if (iteratorStr.startsWith("l.")) {
-        }
-    }
-
     protected void handleMapGetMany(String[] args) {
         int count = 1;
         if (args.length > 1)
@@ -637,6 +658,113 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("true");
     }
 
+    protected void handleMapTryLock(String[] args) {
+        String key = args[1];
+        long time = (args.length > 2) ? Long.valueOf(args[2]) : 0;
+        boolean locked = false;
+        if (time == 0)
+            locked = getMap().tryLock(key);
+        else
+            try {
+                locked = getMap().tryLock(key, time, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                locked = false;
+            }
+        println(locked);
+    }
+
+    protected void handleMapUnlock(String[] args) {
+        getMap().unlock(args[1]);
+        println("true");
+    }
+
+    // ==================== multimap ===================================
+
+    protected void handleMultiMapPut(String[] args) {
+        println(getMultiMap().put(args[1], args[2]));
+    }
+
+    protected void handleMultiMapGet(String[] args) {
+        println(getMultiMap().get(args[1]));
+    }
+
+    protected void handleMultiMapRemove(String[] args) {
+        println(getMultiMap().remove(args[1]));
+    }
+    protected void handleMultiMapKeys() {
+        Set set = getMultiMap().keySet();
+        Iterator it = set.iterator();
+        int count = 0;
+        while (it.hasNext()) {
+            count++;
+            println(it.next());
+        }
+        println("Total " + count);
+    }
+
+    protected void handleMultiMapEntries() {
+        Set set = getMultiMap().entrySet();
+        Iterator it = set.iterator();
+        int count = 0;
+        while (it.hasNext()) {
+            count++;
+            Map.Entry entry = (Entry) it.next();
+            println(entry.getKey() + " : " + entry.getValue());
+        }
+        println("Total " + count);
+    }
+
+    protected void handleMultiMapValues() {
+        Collection set = getMultiMap().values();
+        Iterator it = set.iterator();
+        int count = 0;
+        while (it.hasNext()) {
+            count++;
+            println(it.next());
+        }
+        println("Total " + count);
+    }
+
+    protected void handleMultiMapLock(String[] args) {
+        getMultiMap().lock(args[1]);
+        println("true");
+    }
+
+    protected void handleMultiMapTryLock(String[] args) {
+        String key = args[1];
+        long time = (args.length > 2) ? Long.valueOf(args[2]) : 0;
+        boolean locked = false;
+        if (time == 0)
+            locked = getMultiMap().tryLock(key);
+        else
+            try {
+                locked = getMultiMap().tryLock(key, time, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                locked = false;
+            }
+        println(locked);
+    }
+
+    protected void handleMultiMapUnlock(String[] args) {
+        getMultiMap().unlock(args[1]);
+        println("true");
+    }
+
+    // =======================================================
+
+    private void handStats(String[] args) {
+        String iteratorStr = args[0];
+        if (iteratorStr.startsWith("s.")) {
+        } else if (iteratorStr.startsWith("m.")) {
+            println(getMap().getLocalMapStats());
+        } else if (iteratorStr.startsWith("mm.")) {
+            println(getMultiMap().getLocalMultiMapStats());
+        } else if (iteratorStr.startsWith("q.")) {
+            println(getQueue().getLocalQueueStats());
+        } else if (iteratorStr.startsWith("l.")) {
+        }
+    }
+
     @SuppressWarnings("LockAcquiredButNotSafelyReleased")
     protected void handleLock(String[] args) {
         String lockStr = args[0];
@@ -662,28 +790,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             }
         }
     }
-
-    protected void handleMapTryLock(String[] args) {
-        String key = args[1];
-        long time = (args.length > 2) ? Long.valueOf(args[2]) : 0;
-        boolean locked = false;
-        if (time == 0)
-            locked = getMap().tryLock(key);
-        else
-            try {
-                locked = getMap().tryLock(key, time, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                locked = false;
-            }
-        println(locked);
-    }
-
-    protected void handleMapUnlock(String[] args) {
-        getMap().unlock(args[1]);
-        println("true");
-    }
-
-    protected void handleAddListener(String[] args) {
+  protected void handleAddListener(String[] args) {
         String first = args[0];
         if (first.startsWith("s.")) {
             getSet().addItemListener(this, true);
@@ -692,6 +799,12 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
                 getMap().addEntryListener(this, args[1], true);
             } else {
                 getMap().addEntryListener(this, true);
+            }
+        } else if (first.startsWith("mm.")) {
+            if (args.length > 1) {
+                getMultiMap().addEntryListener(this, args[1], true);
+            } else {
+                getMultiMap().addEntryListener(this, true);
             }
         } else if (first.startsWith("q.")) {
             getQueue().addItemListener(this, true);
@@ -793,23 +906,6 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
                 + " evt/s");
     }
 
-    protected void handleListAddMany(String[] args) {
-        int count = 1;
-        if (args.length > 1)
-            count = Integer.parseInt(args[1]);
-        int successCount = 0;
-        long t0 = Clock.currentTimeMillis();
-        for (int i = 0; i < count; i++) {
-            boolean success = getList().add("obj" + i);
-            if (success)
-                successCount++;
-        }
-        long t1 = Clock.currentTimeMillis();
-        println("Added " + successCount + " objects.");
-        println("size = " + list.size() + ", " + successCount * 1000 / (t1 - t0)
-                + " evt/s");
-    }
-
     protected void handleSetRemoveMany(String[] args) {
         int count = 1;
         if (args.length > 1)
@@ -827,6 +923,23 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
                 + " evt/s");
     }
 
+    protected void handleListAddMany(String[] args) {
+        int count = 1;
+        if (args.length > 1)
+            count = Integer.parseInt(args[1]);
+        int successCount = 0;
+        long t0 = Clock.currentTimeMillis();
+        for (int i = 0; i < count; i++) {
+            boolean success = getList().add("obj" + i);
+            if (success)
+                successCount++;
+        }
+        long t1 = Clock.currentTimeMillis();
+        println("Added " + successCount + " objects.");
+        println("size = " + list.size() + ", " + successCount * 1000 / (t1 - t0)
+                + " evt/s");
+    }
+
     protected void handleIterator(String[] args) {
         Iterator it = null;
         String iteratorStr = args[0];
@@ -834,6 +947,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             it = getSet().iterator();
         } else if (iteratorStr.startsWith("m.")) {
             it = getMap().keySet().iterator();
+        } else if (iteratorStr.startsWith("mm.")) {
+            it = getMultiMap().keySet().iterator();
         } else if (iteratorStr.startsWith("q.")) {
             it = getQueue().iterator();
         } else if (iteratorStr.startsWith("l.")) {
@@ -872,6 +987,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             result = getSet().contains(data);
         } else if (iteratorStr.startsWith("m.")) {
             result = (key) ? getMap().containsKey(data) : getMap().containsValue(data);
+        } else if (iteratorStr.startsWith("mmm.")) {
+            result = (key) ? getMultiMap().containsKey(data) : getMultiMap().containsValue(data);
         } else if (iteratorStr.startsWith("q.")) {
             result = getQueue().contains(data);
         } else if (iteratorStr.startsWith("l.")) {
@@ -887,6 +1004,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             size = getSet().size();
         } else if (iteratorStr.startsWith("m.")) {
             size = getMap().size();
+        } else if (iteratorStr.startsWith("mm.")) {
+            size = getMultiMap().size();
         } else if (iteratorStr.startsWith("q.")) {
             size = getQueue().size();
         } else if (iteratorStr.startsWith("l.")) {
@@ -901,6 +1020,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             getSet().clear();
         } else if (iteratorStr.startsWith("m.")) {
             getMap().clear();
+        } else if (iteratorStr.startsWith("mm.")) {
+            getMultiMap().clear();
         } else if (iteratorStr.startsWith("q.")) {
             getQueue().clear();
         } else if (iteratorStr.startsWith("l.")) {
@@ -915,6 +1036,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             getSet().destroy();
         } else if (iteratorStr.startsWith("m.")) {
             getMap().destroy();
+        } else if (iteratorStr.startsWith("mm.")) {
+            getMultiMap().destroy();
         } else if (iteratorStr.startsWith("q.")) {
             getQueue().destroy();
         } else if (iteratorStr.startsWith("l.")) {
@@ -1239,6 +1362,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("ns <string>                          //switch the namespace for using the distributed queue/map/set/list <string> (defaults to \"default\"");
         println("@<file>                              //executes the given <file> script. Use '//' for comments in the script");
         println("");
+
         println("-- Queue commands");
         println("q.offer <string>                     //adds a string object to the queue");
         println("q.poll                               //takes an object from the queue");
@@ -1248,6 +1372,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("q.size                               //size of the queue");
         println("q.clear                              //clears the queue");
         println("");
+
         println("-- Set commands");
         println("s.add <string>                       //adds a string object to the set");
         println("s.remove <string>                    //removes the string object from the set");
@@ -1257,12 +1382,14 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("s.size                               //size of the set");
         println("s.clear                              //clears the set");
         println("");
+
         println("-- Lock commands");
         println("lock <key>                           //same as Hazelcast.getLock(key).lock()");
         println("tryLock <key>                        //same as Hazelcast.getLock(key).tryLock()");
         println("tryLock <key> <time>                 //same as tryLock <key> with timeout in seconds");
         println("unlock <key>                         //same as Hazelcast.getLock(key).unlock()");
         println("");
+
         println("-- Map commands");
         println("m.put <key> <value>                  //puts an entry to the map");
         println("m.remove <key>                       //removes the entry of given key from the map");
@@ -1281,7 +1408,27 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("m.tryLock <key>                      //tries to lock the key and returns immediately");
         println("m.tryLock <key> <time>               //tries to lock the key within given seconds");
         println("m.unlock <key>                       //unlocks the key");
+        println("m.stats                              //shows the local stats of the map");
         println("");
+
+        println("-- MultiMap commands");
+        println("mm.put <key> <value>                  //puts an entry to the multimap");
+        println("mm.get <key>                          //returns the value of given key from the multimap");
+        println("mm.remove <key>                       //removes the entry of given key from the multimap");
+        println("mm.size                               //size of the multimap");
+        println("mm.clear                              //clears the multimap");
+        println("mm.destroy                            //destroys the multimap");
+        println("mm.iterator [remove]                  //iterates the keys of the multimap, remove if specified");
+        println("mm.keys                               //iterates the keys of the multimap");
+        println("mm.values                             //iterates the values of the multimap");
+        println("mm.entries                            //iterates the entries of the multimap");
+        println("mm.lock <key>                         //locks the key");
+        println("mm.tryLock <key>                      //tries to lock the key and returns immediately");
+        println("mm.tryLock <key> <time>               //tries to lock the key within given seconds");
+        println("mm.unlock <key>                       //unlocks the key");
+        println("mm.stats                              //shows the local stats of the multimap");
+        println("");
+
         println("-- List commands:");
         println("l.add <string>");
         println("l.add <index> <string>");
@@ -1293,12 +1440,14 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("l.size");
         println("l.clear");
         print("");
+
         println("-- IAtomicLong commands:");
         println("a.get");
         println("a.set <long>");
         println("a.inc");
         println("a.dec");
         print("");
+
         println("-- Executor Service commands:");
         println("execute	<echo-input>				//executes an echo task on random member");
         println("execute0nKey	<echo-input> <key>		//executes an echo task on the member that owns the given key");
