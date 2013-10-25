@@ -36,6 +36,7 @@ import static org.junit.Assert.assertTrue;
 @Category(ParallelTest.class)
 public class PredicateBuilderTest extends HazelcastTestSupport {
 
+
     @Test
     public void get_keyAttribute() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
