@@ -16,6 +16,8 @@
 
 package com.hazelcast.examples;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.ExecutorConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -53,7 +55,9 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 
     private IAtomicLong atomicNumber;
 
-    private IExecutorService executorService = null;
+    private IExecutorService executor1Service = null;
+
+    private IExecutorService executor8Service = null;
 
     private String namespace = "default";
 
@@ -105,9 +109,12 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         return atomicNumber;
     }
 
-    public IExecutorService getExecutorService(){
-        executorService = hazelcast.getExecutorService(namespace);
-        return executorService;
+    public IExecutorService getExecutor1Service(){
+        return hazelcast.getExecutorService("e1");
+    }
+
+    public IExecutorService getExecutor8Service(){
+        return hazelcast.getExecutorService("e8");
     }
 
     public ISet<Object> getSet() {
@@ -133,12 +140,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         topic = null;
     }
 
-    public static void main(String[] args) throws Exception {
-        TestApp testApp = new TestApp(Hazelcast.newHazelcastInstance(null));
-        testApp.start(args);
-    }
-
-    public void stop() {
+     public void stop() {
         running = false;
     }
 
@@ -411,17 +413,18 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             handleInstances(args);
         } else if (first.equalsIgnoreCase("quit") || first.equalsIgnoreCase("exit")) {
             System.exit(0);
-        }else if(first.startsWith("e.simulateLoad")){
-             handleExecutorSimulate(args);
+        }else if(first.startsWith("e1.simulateLoad")){
+             handleExecutorSimulate(getExecutor1Service(),args);
+        }else if(first.startsWith("e8.simulateLoad")){
+            handleExecutorSimulate(getExecutor8Service(),args);
         } else {
             println("type 'help' for help");
         }
     }
 
-    private void handleExecutorSimulate(String[] args) {
+    private void handleExecutorSimulate(IExecutorService executorService,String[] args) {
         int taskCount = Integer.parseInt(args[1]);
         int durationSec = Integer.parseInt(args[2]);
-        IExecutorService executorService = getExecutorService();
 
         long startMs = System.currentTimeMillis();
 
@@ -1539,7 +1542,9 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("execute0nKey	<echo-input> <key>		//executes an echo task on the member that owns the given key");
         println("execute0nMember <echo-input> <key>	//executes an echo task on the member with given index");
         println("execute0nMembers <echo-input> 		//executes an echo task on all of the members");
-        println("e.simulateLoad <task-count><delaySeconds> 		//simulates load on executor");
+        println("e1.simulateLoad <task-count> <delaySeconds> 		//simulates load on executor with 1 thread");
+        println("e8.simulateLoad <task-count> <delaySeconds> 		//simulates load on executor with 8 thread");
+
         println("");
         silent = silentBefore;
     }
@@ -1553,4 +1558,15 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         if (!silent)
             System.out.print(obj);
     }
+
+    public static void main(String[] args) throws Exception {
+        Config config = new Config();
+
+        config.addExecutorConfig(new ExecutorConfig("e1").setPoolSize(1));
+        config.addExecutorConfig(new ExecutorConfig("e8").setPoolSize(8));
+
+        TestApp testApp = new TestApp(Hazelcast.newHazelcastInstance(config));
+        testApp.start(args);
+    }
+
 }
