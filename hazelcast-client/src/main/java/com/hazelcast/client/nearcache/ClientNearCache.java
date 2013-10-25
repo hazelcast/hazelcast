@@ -50,6 +50,7 @@ public class ClientNearCache {
     final AtomicBoolean canCleanUp;
     final AtomicBoolean canEvict;
     final ConcurrentMap<Data, CacheRecord> cache;
+    public static final Object NULL_OBJECT = new Object();
 
     public ClientNearCache(String mapName, ClientContext context, NearCacheConfig nearCacheConfig) {
         this.mapName = mapName;
@@ -78,7 +79,12 @@ public class ClientNearCache {
         if (evictionPolicy != EvictionPolicy.NONE && cache.size() >= maxSize) {
             fireEvictCache();
         }
-        Object value = inMemoryFormat.equals(InMemoryFormat.BINARY) ? context.getSerializationService().toData(object) : object;
+        Object value;
+        if (object == null){
+            value = NULL_OBJECT;
+        } else {
+            value = inMemoryFormat.equals(InMemoryFormat.BINARY) ? context.getSerializationService().toData(object) : object;
+        }
         cache.put(key, new CacheRecord(key, value));
     }
 
@@ -145,6 +151,9 @@ public class ClientNearCache {
             if (record.expired()) {
                 cache.remove(key);
                 return null;
+            }
+            if (record.value.equals(NULL_OBJECT)){
+                return record.value;
             }
             return inMemoryFormat.equals(InMemoryFormat.BINARY) ? context.getSerializationService().toObject((Data)record.value) : record.value;
         } else {

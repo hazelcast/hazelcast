@@ -75,6 +75,9 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
         if (nearCache != null){
             Object cached = nearCache.get(keyData);
             if (cached != null){
+                if (cached.equals(ClientNearCache.NULL_OBJECT)){
+                    return null;
+                }
                 return (V) cached;
             }
         }
