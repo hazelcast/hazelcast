@@ -18,6 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -27,7 +28,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -340,12 +343,12 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         assertNotNull(map.get(1));
         map.executeOnKey(1, new ValueReaderEntryProcessor());
 
-        map.put(2,2);
+        map.put(2, 2);
         ValueReaderEntryProcessor valueReaderEntryProcessor = new ValueReaderEntryProcessor();
         map.executeOnKey(2, valueReaderEntryProcessor);
         assertEquals(2, valueReaderEntryProcessor.getValue().intValue());
 
-        map.put(2,5);
+        map.put(2, 5);
         map.executeOnKey(2, valueReaderEntryProcessor);
         assertEquals(5,valueReaderEntryProcessor.getValue().intValue());
 
@@ -426,11 +429,11 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         final RemoveEntryProcessor removeEntryProcessor = new RemoveEntryProcessor();
         map.executeOnEntries(removeEntryProcessor);
 
-        assertEquals(0,map.size());
+        assertEquals(0, map.size());
 
         assertEquals(100,addCount.get());
-        assertEquals(100,removeCount.get());
-        assertEquals(100,updateCount.get());
+        assertEquals(100, removeCount.get());
+        assertEquals(100, updateCount.get());
 
         instance1.getLifecycleService().shutdown();
         instance2.getLifecycleService().shutdown();
@@ -477,5 +480,36 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
             this.hz = hazelcastInstance;
         }
+    }
+
+    @Test
+    public void testIssue1022() throws InterruptedException {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setImplementation(new MapLoader<Integer,Integer>() {
+            public Integer load(Integer key) {
+                return 123;
+            }
+
+            public Map<Integer, Integer> loadAll(Collection<Integer> keys) {
+                return null;
+            }
+
+            public Set<Integer> loadAllKeys() {
+                return null;
+            }
+
+        });
+        cfg.getMapConfig("default").setMapStoreConfig(mapStoreConfig);
+        HazelcastInstance hz = nodeFactory.newHazelcastInstance(cfg);
+
+        EntryProcessor entryProcessor = new IncrementorEntryProcessor();
+        hz.getMap("default").executeOnKey(1,entryProcessor);
+
+        assertEquals(124,hz.getMap("default").get(1));
+
+        hz.getLifecycleService().shutdown();
     }
 }

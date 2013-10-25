@@ -36,7 +36,7 @@ import java.util.Map;
 
 /**
  *
- * GOTCHA : This operation does not load missing keys from mapstore for now.
+ * GOTCHA : This operation loads missing keys from mapstore, in contrast with PartitionWideEntryOperation.
  *
  * */
 public class EntryOperation extends LockAwareOperation implements BackupAwareOperation {
@@ -63,13 +63,13 @@ public class EntryOperation extends LockAwareOperation implements BackupAwareOpe
     }
 
     public void run() {
+        //todo calls to map get interceptor is arguable.
         Map.Entry<Data, Data> mapEntry = recordStore.getMapEntryData(dataKey);
         dataOldValue = mapEntry.getValue();
         final Object valueBeforeProcess = mapService.toObject(dataOldValue);
         final MapEntrySimple entry = new MapEntrySimple(mapService.toObject(dataKey), valueBeforeProcess);
         response = mapService.toData(entryProcessor.process(entry));
         final Object valueAfterProcess = entry.getValue();
-
         // no matching data by key.
         if( dataOldValue == null && valueAfterProcess == null ){
             eventType = __NO_NEED_TO_FIRE_EVENT;
