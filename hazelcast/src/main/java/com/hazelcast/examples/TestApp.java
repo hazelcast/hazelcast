@@ -29,6 +29,8 @@ import java.util.Map.Entry;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.Lock;
 
+import static java.lang.String.format;
+
 /**
  * Special thanks to Alexandre Vasseur for providing this very nice test
  * application.
@@ -409,10 +411,57 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             handleInstances(args);
         } else if (first.equalsIgnoreCase("quit") || first.equalsIgnoreCase("exit")) {
             System.exit(0);
-        }else if(first.startsWith("e.simulate")){
-
+        }else if(first.startsWith("e.simulateLoad")){
+             handleExecutorSimulate(args);
         } else {
             println("type 'help' for help");
+        }
+    }
+
+    private void handleExecutorSimulate(String[] args) {
+        int taskCount = Integer.parseInt(args[1]);
+        int durationSec = Integer.parseInt(args[2]);
+        IExecutorService executorService = getExecutorService();
+
+        long startMs = System.currentTimeMillis();
+
+        List<Future> futures = new LinkedList<Future>();
+        for(int k=0;k<taskCount;k++){
+            Future f = executorService.submit(new SimulateLoadTask(durationSec, k));
+            futures.add(f);
+        }
+
+        for(Future f: futures){
+            try {
+                f.get();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+        }
+
+        long durationMs = System.currentTimeMillis()-startMs;
+        println(format("Executed %s tasks in %s ms", taskCount,durationMs));
+    }
+
+    private static class SimulateLoadTask implements Runnable,Serializable{
+        private final int delay;
+        private final int taskId;
+
+        private SimulateLoadTask(int delay, int taskId) {
+            this.delay = delay;
+            this.taskId = taskId;
+        }
+
+        @Override
+        public void run() {
+            try {
+                Thread.sleep(delay*1000);
+            } catch (InterruptedException e) {
+            }
+
+            System.out.println("Finished task:"+taskId);
         }
     }
 
@@ -1490,6 +1539,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("execute0nKey	<echo-input> <key>		//executes an echo task on the member that owns the given key");
         println("execute0nMember <echo-input> <key>	//executes an echo task on the member with given index");
         println("execute0nMembers <echo-input> 		//executes an echo task on all of the members");
+        println("e.simulateLoad <task-count><delaySeconds> 		//simulates load on executor");
         println("");
         silent = silentBefore;
     }
