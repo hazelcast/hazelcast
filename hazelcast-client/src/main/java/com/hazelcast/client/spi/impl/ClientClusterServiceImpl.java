@@ -520,6 +520,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     private Connection connectToOne(final Collection<InetSocketAddress> socketAddresses) throws Exception {
+        active = false;
         final int connectionAttemptLimit = getClientConfig().getConnectionAttemptLimit();
         final ManagerAuthenticator authenticator = new ManagerAuthenticator();
         int attempt = 0;
@@ -529,7 +530,9 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             for (InetSocketAddress isa : socketAddresses) {
                 Address address = new Address(isa);
                 try {
-                    return getConnectionManager().firstConnection(address, authenticator);
+                    final Connection connection = getConnectionManager().firstConnection(address, authenticator);
+                    active = true;
+                    return connection;
                 } catch (IOException e) {
                     lastError = e;
                     logger.finest( "IO error during initial connection...", e);
