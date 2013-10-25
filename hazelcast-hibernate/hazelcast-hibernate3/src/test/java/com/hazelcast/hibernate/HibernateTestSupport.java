@@ -28,7 +28,6 @@ import org.junit.BeforeClass;
 
 import java.net.URL;
 import java.util.Properties;
-import java.util.logging.Level;
 
 public abstract class HibernateTestSupport {
 
@@ -51,10 +50,9 @@ public abstract class HibernateTestSupport {
 
     protected void sleep(int seconds) {
         try {
-            logger.info("Waiting " + seconds + " seconds...");
             Thread.sleep(1000 * seconds);
         } catch (InterruptedException e) {
-            logger.severe("", e);
+            logger.warning("", e);
         }
     }
 
