@@ -18,6 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -35,7 +36,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -522,4 +525,36 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             this.hz = hazelcastInstance;
         }
     }
+
+    @Test
+    public void testIssue1022() throws InterruptedException {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setImplementation(new MapLoader<Integer,Integer>() {
+            public Integer load(Integer key) {
+                return 123;
+            }
+
+            public Map<Integer, Integer> loadAll(Collection<Integer> keys) {
+                return null;
+            }
+
+            public Set<Integer> loadAllKeys() {
+                return null;
+            }
+
+        });
+        cfg.getMapConfig("default").setMapStoreConfig(mapStoreConfig);
+        HazelcastInstance hz = nodeFactory.newHazelcastInstance(cfg);
+
+        EntryProcessor entryProcessor = new IncrementorEntryProcessor();
+        hz.getMap("default").executeOnKey(1,entryProcessor);
+
+        assertEquals(124,hz.getMap("default").get(1));
+
+        hz.getLifecycleService().shutdown();
+    }
+
 }
