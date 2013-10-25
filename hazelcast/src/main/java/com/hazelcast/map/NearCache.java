@@ -34,6 +34,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class NearCache {
 
+    public static final Object NULL_OBJECT = new Object();
+
     static final int evictionPercentage = 20;
     static final int cleanupInterval = 5000;
     final int maxSize;
@@ -82,7 +84,12 @@ public class NearCache {
         if (evictionPolicy != EvictionPolicy.NONE && cache.size() >= maxSize) {
             fireEvictCache();
         }
-        final Object value = inMemoryFormat.equals(InMemoryFormat.OBJECT) ? mapService.toObject(data) : data;
+        final Object value;
+        if (data == null){
+            value = NULL_OBJECT;
+        } else {
+            value = inMemoryFormat.equals(InMemoryFormat.OBJECT) ? mapService.toObject(data) : data;
+        }
         final CacheRecord record = new CacheRecord(key, value);
         cache.put(key, record);
         updateSizeEstimator(calculateCost(record));
