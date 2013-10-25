@@ -16,7 +16,6 @@
 
 package com.hazelcast.nio;
 
-import com.hazelcast.cluster.Endpoint;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.util.AddressUtil;
@@ -27,7 +26,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
-public final class Address implements IdentifiedDataSerializable, Endpoint {
+public final class Address implements IdentifiedDataSerializable {
 
     public static final int ID = 1;
 

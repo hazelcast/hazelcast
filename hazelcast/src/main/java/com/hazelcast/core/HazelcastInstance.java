@@ -134,6 +134,21 @@ public interface HazelcastInstance {
      */
     Cluster getCluster();
 
+
+    /**
+     * Returns the local Endpoint which this HazelcastInstance is belongs to.
+     * <p/>
+     *
+     * Returned endpoint will be a {@link Member} instance for cluster nodes
+     * and a {@link Client} instance for clients.
+     *
+     * @see Member
+     * @see Client
+     *
+     * @return local endpoint
+     */
+    Endpoint getLocalEndpoint();
+
     /**
      * Returns the distributed executor service for the given
      * name.

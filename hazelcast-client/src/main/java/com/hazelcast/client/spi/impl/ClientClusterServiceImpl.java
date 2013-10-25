@@ -135,6 +135,12 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         return _sendAndReceive(new TargetConnectionFactory(address), obj);
     }
 
+    public Client getLocalClient() {
+        ClientPrincipal cp = principal;
+        Connection conn = clusterThread.conn;
+        return new ClientImpl(cp != null ? cp.getUuid() : null, conn != null ? conn.getLocalSocketAddress() : null);
+    }
+
     private interface ConnectionFactory {
         Connection create() throws IOException;
     }
@@ -595,7 +601,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         connection.write(serializationService.toData(auth));
         final Data addressData = connection.read();
         Address address = ErrorHandler.returnResultOrThrowException(serializationService.toObject(addressData));
-        connection.setEndpoint(address);
+        connection.setRemoteEndpoint(address);
 
         final Data data = connection.read();
         return ErrorHandler.returnResultOrThrowException(serializationService.toObject(data));

@@ -117,6 +117,10 @@ public final class HazelcastInstanceProxy implements HazelcastInstance {
         return getOriginal().getCluster();
     }
 
+    public Member getLocalEndpoint() {
+        return getOriginal().getLocalEndpoint();
+    }
+
     public Collection<DistributedObject> getDistributedObjects() {
         return getOriginal().getDistributedObjects();
     }

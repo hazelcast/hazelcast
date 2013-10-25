@@ -28,7 +28,7 @@ import java.net.InetSocketAddress;
  * @see Cluster
  * @see MembershipListener
  */
-public interface Member extends DataSerializable {
+public interface Member extends DataSerializable, Endpoint {
 
     /**
      * Returns if this member is the local member.
@@ -42,8 +42,18 @@ public interface Member extends DataSerializable {
      * Returns the InetSocketAddress of this member.
      *
      * @return InetSocketAddress of this member
+     *
+     * @deprecated use {@link #getSocketAddress()} instead
      */
+    @Deprecated
     InetSocketAddress getInetSocketAddress();
+
+    /**
+     * Returns the socket address of this member.
+     *
+     * @return socket address of this member
+     */
+    InetSocketAddress getSocketAddress();
 
     /**
      * Returns UUID of this member.
