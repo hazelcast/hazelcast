@@ -22,6 +22,7 @@ import com.hazelcast.hibernate.entity.DummyEntity;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.cfg.Environment;
+import org.hibernate.stat.Statistics;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -50,9 +51,8 @@ public class LocalRegionFactoryDefaultTest extends RegionFactoryDefaultTest {
 
     @Test
     public void testEntity() {
-        final HazelcastInstance hz = getHazelcastInstance();
+        final HazelcastInstance hz = getHazelcastInstance(sf);
         assertNotNull(hz);
-        assertEquals(Hazelcast.getDefaultInstance(), hz);
         final int count = 100;
         final int childCount = 3;
         insertDummyEntities(count, childCount);
@@ -61,7 +61,7 @@ public class LocalRegionFactoryDefaultTest extends RegionFactoryDefaultTest {
         Session session = sf.openSession();
         try {
             for (int i = 0; i < count; i++) {
-                DummyEntity e = (DummyEntity) session.get(DummyEntity.class, new Long(i));
+                DummyEntity e = (DummyEntity) session.get(DummyEntity.class, (long) i);
                 session.evict(e);
                 list.add(e);
             }
@@ -82,6 +82,8 @@ public class LocalRegionFactoryDefaultTest extends RegionFactoryDefaultTest {
         } finally {
             session.close();
         }
+
+        Statistics stats = sf.getStatistics();
         assertEquals((childCount + 1) * count, stats.getEntityInsertCount());
         // twice put of entity and properties (on load and update) and once put of collection
         assertEquals((childCount + 1) * count * 2 + count, stats.getSecondLevelCachePutCount());
