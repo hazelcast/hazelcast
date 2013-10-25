@@ -44,7 +44,7 @@ import static org.junit.Assert.*;
 public class ClientMapTest {
 
     static final String name = "test";
-    static HazelcastInstance hz;
+    static HazelcastInstance client;
     static HazelcastInstance server;
     static IMap map;
 
@@ -52,13 +52,13 @@ public class ClientMapTest {
     public static void init() {
         Config config = new Config();
         server = Hazelcast.newHazelcastInstance(config);
-        hz = HazelcastClient.newHazelcastClient(null);
-        map = hz.getMap(name);
+        client = HazelcastClient.newHazelcastClient(null);
+        map = client.getMap(name);
     }
 
     @AfterClass
     public static void destroy() {
-        hz.getLifecycleService().shutdown();
+        client.getLifecycleService().shutdown();
         Hazelcast.shutdownAll();
     }
 
@@ -539,7 +539,7 @@ public class ClientMapTest {
         map1.put(key, value);
         assertEquals(value, map1.get(key));
 
-        IMap<Object, Object> map2 = hz.getMap(name);
+        IMap<Object, Object> map2 = client.getMap(name);
         assertEquals(value, map2.get(key));
     }
 
@@ -574,7 +574,7 @@ public class ClientMapTest {
         final IMap<Object, Object> serverMap = server.getMap(mapName);
         serverMap.put(3, new Deal(3));
 
-        final IMap<Object, Object> clientMap = hz.getMap(mapName);
+        final IMap<Object, Object> clientMap = client.getMap(mapName);
 
         assertEquals(1, clientMap.size());
 
@@ -643,6 +643,5 @@ public class ClientMapTest {
             this.id = id;
         }
     }
-
 
 }
