@@ -22,10 +22,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.AbstractOperation;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author ali 1/18/13
@@ -78,7 +75,7 @@ public class MultiMapMigrationOperation extends AbstractOperation {
                 Data key = new Data();
                 key.readData(in);
                 int collSize = in.readInt();
-                Collection<MultiMapRecord> coll = new ArrayList<MultiMapRecord>(collSize);
+                Collection<MultiMapRecord> coll = new LinkedList<MultiMapRecord>();
                 for (int k = 0; k < collSize; k++) {
                     MultiMapRecord record = new MultiMapRecord();
                     record.readData(in);
