@@ -85,6 +85,10 @@ public final class HazelcastClientProxy implements HazelcastInstance {
         return getClient().getCluster();
     }
 
+    public Client getLocalEndpoint() {
+        return getClient().getLocalEndpoint();
+    }
+
     public IExecutorService getExecutorService(String name) {
         return getClient().getExecutorService(name);
     }

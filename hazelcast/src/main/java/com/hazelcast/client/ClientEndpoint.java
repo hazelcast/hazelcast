@@ -29,6 +29,7 @@ import com.hazelcast.transaction.TransactionException;
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -96,8 +97,8 @@ public final class ClientEndpoint implements Client {
         return principal;
     }
 
-    public SocketAddress getSocketAddress() {
-        return socketAddress;
+    public InetSocketAddress getSocketAddress() {
+        return (InetSocketAddress) socketAddress;
     }
 
     public ClientType getClientType() {

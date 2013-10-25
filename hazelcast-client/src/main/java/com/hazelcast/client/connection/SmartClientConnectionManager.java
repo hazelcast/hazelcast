@@ -36,6 +36,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.util.ConstructorFunction;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -189,8 +190,8 @@ public class SmartClientConnectionManager implements ClientConnectionManager {
             this.connection = connection;
         }
 
-        public Address getEndpoint() {
-            return connection.getEndpoint();
+        public Address getRemoteEndpoint() {
+            return connection.getRemoteEndpoint();
         }
 
         public boolean write(Data data) throws IOException {
@@ -218,18 +219,22 @@ public class SmartClientConnectionManager implements ClientConnectionManager {
             return connection.getLastReadTime();
         }
 
-        public void setEndpoint(Address address) {
-            connection.setEndpoint(address);
+        public void setRemoteEndpoint(Address address) {
+            connection.setRemoteEndpoint(address);
         }
 
         public String toString() {
             return connection.toString();
         }
+
+        public InetSocketAddress getLocalSocketAddress() {
+            return connection.getLocalSocketAddress();
+        }
     }
 
     private void releaseConnection(ConnectionWrapper connection) {
         if (live) {
-            final ObjectPool<ConnectionWrapper> pool = poolMap.get(connection.getEndpoint());
+            final ObjectPool<ConnectionWrapper> pool = poolMap.get(connection.getRemoteEndpoint());
             if (pool != null) {
                 pool.release(connection);
             } else {

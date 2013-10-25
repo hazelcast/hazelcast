@@ -14,13 +14,30 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cluster;
+package com.hazelcast.core;
 
-import com.hazelcast.nio.serialization.DataSerializable;
+import java.net.SocketAddress;
 
 /**
- * @author mdogan 1/15/13
+ * Endpoint represents a peer in the cluster.
+ * It can be either a member or a client.
+ *
+ * @see Member
+ * @see Client
  */
-public interface Endpoint extends DataSerializable {
+public interface Endpoint {
 
+    /**
+     * Returns unique uuid for this endpoint
+     *
+     * @return unique uuid for this endpoint
+     */
+    String getUuid();
+
+    /**
+     * Returns socket address of this endpoint
+     *
+     * @return socket address of this endpoint
+     */
+    SocketAddress getSocketAddress();
 }

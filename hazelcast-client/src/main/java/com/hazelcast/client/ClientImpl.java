@@ -14,37 +14,38 @@
  * limitations under the License.
  */
 
-package com.hazelcast.core;
+package com.hazelcast.client;
+
+import com.hazelcast.core.Client;
+import com.hazelcast.core.ClientType;
 
 import java.net.InetSocketAddress;
 
 /**
- * Client interface allows to get information about
- * a connected clients socket address, type and uuid.
- *
- * @see ClientService
- * @see ClientListener
+ * @author mdogan 25/10/13
  */
-public interface Client extends Endpoint {
+public class ClientImpl implements Client {
 
-    /**
-     * Returns unique uuid for this client
-     *
-     * @return unique uuid for this client
-     */
-    String getUuid();
+    private final String uuid;
+    private final InetSocketAddress socketAddress;
 
-    /**
-     * Returns socket address of this client
-     *
-     * @return socket address of this client
-     */
-    InetSocketAddress getSocketAddress();
+    public ClientImpl(String uuid, InetSocketAddress socketAddress) {
+        this.uuid = uuid;
+        this.socketAddress = socketAddress;
+    }
 
-    /**
-     * Returns type of this client
-     *
-     * @return type of this client
-     */
-    ClientType getClientType();
+    @Override
+    public String getUuid() {
+        return uuid;
+    }
+
+    @Override
+    public InetSocketAddress getSocketAddress() {
+        return socketAddress;
+    }
+
+    @Override
+    public ClientType getClientType() {
+        return ClientType.JAVA;
+    }
 }

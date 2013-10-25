@@ -242,6 +242,11 @@ public final class HazelcastClient implements HazelcastInstance {
     }
 
     @Override
+    public Client getLocalEndpoint() {
+        return clusterService.getLocalClient();
+    }
+
+    @Override
     public IExecutorService getExecutorService(String name) {
         return getDistributedObject(DistributedExecutorService.SERVICE_NAME, name);
     }

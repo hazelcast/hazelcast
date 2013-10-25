@@ -31,7 +31,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.logging.Level;
 
 public final class MemberImpl implements Member, HazelcastInstanceAware, IdentifiedDataSerializable {
 
@@ -79,6 +78,11 @@ public final class MemberImpl implements Member, HazelcastInstanceAware, Identif
     }
 
     public InetSocketAddress getInetSocketAddress() {
+        return getSocketAddress();
+    }
+
+    @Override
+    public InetSocketAddress getSocketAddress() {
         try {
             return address.getInetSocketAddress();
         } catch (UnknownHostException e) {
