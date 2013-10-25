@@ -153,7 +153,7 @@ public class ClientNearCache {
                 return null;
             }
             if (record.value.equals(NULL_OBJECT)){
-                return record.value;
+                return NULL_OBJECT;
             }
             return inMemoryFormat.equals(InMemoryFormat.BINARY) ? context.getSerializationService().toObject((Data)record.value) : record.value;
         } else {
