@@ -123,13 +123,9 @@ final class SerializationContextImpl implements SerializationContext {
             final ClassDefinitionImpl cd = new ClassDefinitionImpl();
             cd.readData(serializationService.createObjectDataInput(binary));
             cd.setBinary(compressedBinary);
-            final ClassDefinitionImpl currentCD = versionedDefinitions.putIfAbsent(combineToLong(cd.classId, getVersion()), cd);
-            if (currentCD == null) {
-                registerNestedDefinitions(cd);
-                return cd;
-            } else {
-                return currentCD;
-            }
+            registerNestedDefinitions(cd);
+            final ClassDefinitionImpl currentCd = versionedDefinitions.putIfAbsent(combineToLong(cd.classId, getVersion()), cd);
+            return currentCd == null ? cd : currentCd;
         }
 
         ClassDefinition registerClassDefinition(ClassDefinition cd) {
@@ -153,12 +149,9 @@ final class SerializationContextImpl implements SerializationContext {
                 }
             }
             final long versionedClassId = combineToLong(cdImpl.getClassId(), cdImpl.getVersion());
-            final ClassDefinitionImpl currentClassDef = versionedDefinitions.putIfAbsent(versionedClassId, cdImpl);
-            if (currentClassDef == null) {
-                registerNestedDefinitions(cdImpl);
-                return cd;
-            }
-            return currentClassDef;
+            registerNestedDefinitions(cdImpl);
+            final ClassDefinitionImpl currentCd = versionedDefinitions.putIfAbsent(versionedClassId, cdImpl);
+            return currentCd == null ? cdImpl : currentCd;
         }
     }
 

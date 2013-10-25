@@ -83,9 +83,17 @@ final class PortableSerializer implements StreamSerializer<Portable> {
         final BufferObjectDataInput bufferedIn = (BufferObjectDataInput) in;
         if (context.getVersion() == dataVersion) {
             cd = context.lookup(factoryId, dataClassId); // using context.version
+            if (cd == null) {
+                throw new HazelcastSerializationException("Could not find class-definition for " +
+                        "factory-id: " + factoryId + ", class-id: " + dataClassId + ", version: " + dataVersion);
+            }
             reader = new DefaultPortableReader(this, bufferedIn, cd);
         } else {
             cd = context.lookup(factoryId, dataClassId, dataVersion); // registered during read
+            if (cd == null) {
+                throw new HazelcastSerializationException("Could not find class-definition for " +
+                        "factory-id: " + factoryId + ", class-id: " + dataClassId + ", version: " + dataVersion);
+            }
             reader = new MorphingPortableReader(this, bufferedIn, cd);
         }
         portable.readPortable(reader);
