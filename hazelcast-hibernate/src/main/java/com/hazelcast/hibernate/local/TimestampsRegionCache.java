@@ -32,6 +32,11 @@ public class TimestampsRegionCache extends LocalRegionCache implements RegionCac
     }
 
     @Override
+    public boolean put(Object key, Object value, Object currentVersion) {
+        return update(key, value, currentVersion, null, null);
+    }
+
+    @Override
     protected MessageListener<Object> createMessageListener() {
         return new MessageListener<Object>() {
             public void onMessage(final Message<Object> message) {
