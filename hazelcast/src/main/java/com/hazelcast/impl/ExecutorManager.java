@@ -32,6 +32,7 @@ import com.hazelcast.partition.Partition;
 import com.hazelcast.security.SecureCallable;
 import com.hazelcast.util.Clock;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
@@ -44,6 +45,37 @@ import static com.hazelcast.nio.IOUtil.toData;
 import static com.hazelcast.nio.IOUtil.toObject;
 
 public class ExecutorManager extends BaseManager {
+
+    public static class Statistics implements Serializable {
+
+        public final int queryQueueSize;
+        public final int mapLoaderExecutorQueueSize;
+        public final int defaultExecutorQueueSize;
+        public final int asyncExecutorQueueSize;
+        public final int eventExecutorQueueSize;
+        public final int mapStoreExecutorQueueSize;
+
+        public Statistics(ExecutorManager executorManager){
+            mapLoaderExecutorQueueSize = executorManager.mapLoaderExecutorService.getQueueSize();
+            asyncExecutorQueueSize = executorManager.asyncExecutorService.getQueueSize();
+            defaultExecutorQueueSize = executorManager.defaultExecutorService.getQueueSize();
+            queryQueueSize = executorManager.queryExecutorService.getQueueSize();
+            eventExecutorQueueSize = executorManager.eventExecutorService.getQueueSize();
+            mapStoreExecutorQueueSize = executorManager.mapStoreExecutorService.getQueueSize();
+        }
+
+        @Override
+        public String toString() {
+            return "Statistics{" +
+                    "queryQueueSize=" + queryQueueSize +
+                    ", mapLoaderExecutorQueueSize=" + mapLoaderExecutorQueueSize +
+                    ", defaultExecutorQueueSize=" + defaultExecutorQueueSize +
+                    ", asyncExecutorQueueSize=" + asyncExecutorQueueSize +
+                    ", eventExecutorQueueSize=" + eventExecutorQueueSize +
+                    ", mapStoreExecutorQueueSize=" + mapStoreExecutorQueueSize +
+                    '}';
+        }
+    }
 
     private final ConcurrentMap<String, NamedExecutorService> mapExecutors = new ConcurrentHashMap<String, NamedExecutorService>(10);
     private final ConcurrentMap<Thread, CallContext> mapThreadCallContexts = new ConcurrentHashMap<Thread, CallContext>(100);
@@ -127,6 +159,10 @@ public class ExecutorManager extends BaseManager {
         registerPacketProcessor(EXECUTE, new ExecutionOperationHandler());
         registerPacketProcessor(CANCEL_EXECUTION, new ExecutionCancelOperationHandler());
         started = true;
+    }
+
+    public Statistics getStatistics(){
+        return new Statistics(this);
     }
 
     public NamedExecutorService getOrCreateNamedExecutorService(String name) {

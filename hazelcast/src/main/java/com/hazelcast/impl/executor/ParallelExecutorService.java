@@ -93,6 +93,10 @@ public class ParallelExecutorService {
         public int getActiveCount() {
             return 0;
         }
+
+        public int getQueueSize() {
+            return -1;
+        }
     }
 
     private class ParallelExecutorImpl implements ParallelExecutor {
@@ -116,6 +120,14 @@ public class ParallelExecutorService {
             for (int i = 0; i < concurrencyLevel; i++) {
                 executionSegments[i] = new ExecutionSegment(segmentCapacity);
             }
+        }
+
+        public int getQueueSize() {
+            int result = 0;
+            for(ExecutionSegment segment: executionSegments){
+                 result+=segment.q.size();
+            }
+            return result;
         }
 
         public void execute(Runnable command) {

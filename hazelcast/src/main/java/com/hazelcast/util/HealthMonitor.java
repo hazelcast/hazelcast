@@ -4,6 +4,7 @@ import com.hazelcast.cluster.ClusterService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.impl.ExecutorManager;
 import com.hazelcast.impl.GroupProperties;
 import com.hazelcast.impl.Node;
 import com.hazelcast.logging.ILogger;
@@ -40,7 +41,6 @@ public class HealthMonitor extends Thread {
         this.osMxBean = ManagementFactory.getOperatingSystemMXBean();
         this.logLevel = logLevel;
         threadMxBean = ManagementFactory.getThreadMXBean();
-
     }
 
     public void run() {
@@ -91,6 +91,13 @@ public class HealthMonitor extends Thread {
         final int threadCount;
         final int peakThreadCount;
 
+        final int queryQueueSize;
+        final int mapLoaderExecutorQueueSize;
+        final int defaultExecutorQueueSize;
+        final int asyncExecutorQueueSize;
+        final int eventExecutorQueueSize;
+        final int mapStoreExecutorQueueSize;
+
         public HealthMetrics() {
             memoryFree = runtime.freeMemory();
             memoryTotal = runtime.totalMemory();
@@ -109,6 +116,14 @@ public class HealthMonitor extends Thread {
 
             this.threadCount = threadMxBean.getThreadCount();
             this.peakThreadCount = threadMxBean.getPeakThreadCount();
+
+            ExecutorManager.Statistics statistics = node.getExecutorManager().getStatistics();
+            this.queryQueueSize = statistics.queryQueueSize;
+            this.mapLoaderExecutorQueueSize = statistics.mapLoaderExecutorQueueSize;
+            this.defaultExecutorQueueSize = statistics.defaultExecutorQueueSize;
+            this.asyncExecutorQueueSize = statistics.asyncExecutorQueueSize;
+            this.eventExecutorQueueSize = statistics.eventExecutorQueueSize;
+            this.mapStoreExecutorQueueSize = statistics.mapStoreExecutorQueueSize;
         }
 
         public boolean exceedsTreshold() {
@@ -146,7 +161,15 @@ public class HealthMonitor extends Thread {
             sb.append("q.processable.size=").append(processableQueueSize).append(", ");
             sb.append("q.processablePriority.size=").append(processablePriorityQueueSize).append(", ");
             sb.append("thread.count=").append(threadCount).append(", ");
-            sb.append("thread.peakCount=").append(peakThreadCount);
+            sb.append("thread.peakCount=").append(peakThreadCount).append(", ");
+
+            sb.append("q.query.size=").append(queryQueueSize).append(", ");
+            sb.append("q.mapLoader.size=").append(mapLoaderExecutorQueueSize).append(", ");
+            sb.append("q.defaultExecutor.size=").append(defaultExecutorQueueSize).append(", ");
+            sb.append("q.asyncExecutor.size=").append(asyncExecutorQueueSize).append(", ");
+            sb.append("q.eventExecutor.size=").append(eventExecutorQueueSize).append(", ");
+            sb.append("q.mapStoreExecutor.size=").append(mapStoreExecutorQueueSize);
+
             return sb.toString();
         }
     }
