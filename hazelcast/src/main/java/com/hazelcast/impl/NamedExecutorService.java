@@ -49,4 +49,8 @@ public class NamedExecutorService {
     public ExecutionLoadBalancer getExecutionLoadBalancer() {
         return executionLoadBalancer;
     }
+
+    public int getQueueSize(){
+        return parallelExecutor.getQueueSize();
+    }
 }
