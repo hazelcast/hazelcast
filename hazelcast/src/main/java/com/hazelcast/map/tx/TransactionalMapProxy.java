@@ -22,6 +22,7 @@ import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.QueryEntry;
 import com.hazelcast.spi.NodeEngine;
+import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.impl.TransactionSupport;
 import com.hazelcast.util.IterationType;
 import com.hazelcast.util.QueryResultSet;
@@ -69,6 +70,16 @@ public class TransactionalMapProxy extends TransactionalMapProxySupport implemen
             return checkIfRemoved(currentValue);
         }
         return getService().toObject(getInternal(getService().toData(key, partitionStrategy)));
+    }
+
+    public Object getForUpdate(Object key) {
+        checkTransactionState();
+        TxnValueWrapper currentValue = txMap.get(key);
+        if (currentValue != null) {
+            return checkIfRemoved(currentValue);
+        }
+        Data dataKey = getService().toData(key, partitionStrategy);
+        return getService().toObject(getForUpdateInternal(dataKey));
     }
 
     private Object checkIfRemoved(TxnValueWrapper wrapper) {

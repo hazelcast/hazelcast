@@ -40,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotEquals;
 
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
@@ -236,6 +237,49 @@ public class MapTransactionTest extends HazelcastTestSupport {
         IMap map1 = h1.getMap("default");
         assertEquals("value2", map1.get("1"));
         assertEquals("value2", map2.get("1"));
+    }
+
+
+    @Test
+    public void testTxnGetForUpdate() throws TransactionException {
+        Config config = new Config();
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance h2 = factory.newHazelcastInstance(config);
+        final IMap<String, Integer> map = h2.getMap("default");
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        final CountDownLatch latch2 = new CountDownLatch(1);
+        final AtomicBoolean pass = new AtomicBoolean(true);
+
+        map.put("var", 0);
+
+        Runnable incrementor = new Runnable() {
+            public void run() {
+                try {
+                    latch1.await(100, TimeUnit.SECONDS);
+                    pass.set(map.tryPut("var", 1, 0, TimeUnit.SECONDS) == false);
+                    latch2.countDown();
+                } catch (Exception e) {
+                }
+            }
+        };
+        new Thread(incrementor).start();
+        boolean b = h1.executeTransaction(options, new TransactionalTask<Boolean>() {
+            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
+                try {
+                    final TransactionalMap<String, Integer> txMap = context.getMap("default");
+                    txMap.getForUpdate("var");
+                    latch1.countDown();
+                    latch2.await(100, TimeUnit.SECONDS);
+                } catch (Exception e) {
+                }
+                return true;
+            }
+        });
+        assertTrue(b);
+        assertTrue(pass.get());
+        assertTrue(map.tryPut("var", 1, 0, TimeUnit.SECONDS));
+
     }
 
     @Test

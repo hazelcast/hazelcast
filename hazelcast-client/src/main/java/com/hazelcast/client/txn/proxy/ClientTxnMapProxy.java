@@ -21,6 +21,7 @@ import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.map.MapKeySet;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.MapValueCollection;
+import com.hazelcast.map.client.AbstractTxnMapRequest;
 import com.hazelcast.map.client.TxnMapRequest;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
@@ -46,6 +47,11 @@ public class ClientTxnMapProxy<K, V> extends ClientTxnProxy implements Transacti
 
     public V get(Object key) {
         TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.GET, toData(key));
+        return invoke(request);
+    }
+
+    public V getForUpdate(Object key) {
+        TxnMapRequest request = new TxnMapRequest(getName(), TxnMapRequest.TxnMapRequestType.GET_FOR_UPDATE, toData(key));
         return invoke(request);
     }
 

@@ -47,6 +47,13 @@ public interface TransactionalMap<K, V> extends TransactionalObject, BaseMap<K, 
     V get(Object key);
 
     /**
+     * Returns the value to which the specified key is mapped and locks the specified key till to the end of the transaction (either commit or rollback).
+     *
+     * @see IMap#get(Object)
+     */
+    V getForUpdate(Object key);
+
+    /**
      * Transactional implementation of {@link com.hazelcast.core.IMap#size()}.
      *
      * @see com.hazelcast.core.IMap#size()

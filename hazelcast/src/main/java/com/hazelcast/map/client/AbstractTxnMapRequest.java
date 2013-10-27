@@ -86,6 +86,8 @@ public abstract class AbstractTxnMapRequest extends CallableClientRequest implem
                 return map.containsKey(key);
             case GET:
                 return map.get(key);
+            case GET_FOR_UPDATE:
+                return map.getForUpdate(key);
             case SIZE:
                 return map.size();
             case PUT:
@@ -191,7 +193,8 @@ public abstract class AbstractTxnMapRequest extends CallableClientRequest implem
         KEYSET(12),
         KEYSET_BY_PREDICATE(13),
         VALUES(14),
-        VALUES_BY_PREDICATE(15);
+        VALUES_BY_PREDICATE(15),
+        GET_FOR_UPDATE(16);
         int type;
 
         TxnMapRequestType(int i) {

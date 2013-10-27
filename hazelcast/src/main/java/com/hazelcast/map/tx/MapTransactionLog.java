@@ -34,8 +34,6 @@ import java.util.concurrent.Future;
 
 public class MapTransactionLog implements KeyAwareTransactionLog {
 
-    // todo remove version as it is already defined in operation
-    long version;
     String name;
     Data key;
     int threadId = ThreadUtil.getThreadId();
@@ -47,7 +45,6 @@ public class MapTransactionLog implements KeyAwareTransactionLog {
     public MapTransactionLog(String name, Data key, Operation op, long version) {
         this.name = name;
         this.key = key;
-        this.version = version;
         if (!(op instanceof MapTxnOperation)) {
             throw new IllegalArgumentException();
         }
@@ -72,7 +69,6 @@ public class MapTransactionLog implements KeyAwareTransactionLog {
     public Future commit(NodeEngine nodeEngine) {
         MapTxnOperation txnOp = (MapTxnOperation) op;
         txnOp.setThreadId(threadId);
-        txnOp.setVersion(version);
         try {
             int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
             Invocation invocation = nodeEngine.getOperationService()
@@ -99,7 +95,6 @@ public class MapTransactionLog implements KeyAwareTransactionLog {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeUTF(name);
-        out.writeLong(version);
         boolean isNullKey = key == null;
         out.writeBoolean(isNullKey);
         if (!isNullKey) {
@@ -112,7 +107,6 @@ public class MapTransactionLog implements KeyAwareTransactionLog {
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         name = in.readUTF();
-        version = in.readLong();
         boolean isNullKey = in.readBoolean();
         if (!isNullKey) {
             key = new Data();

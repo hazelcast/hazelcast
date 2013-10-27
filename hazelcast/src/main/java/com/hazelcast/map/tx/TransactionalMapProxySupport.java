@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.tx;
 
+import com.hazelcast.concurrent.lock.UnlockOperation;
 import com.hazelcast.core.PartitioningStrategy;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.MapKeySet;
@@ -25,10 +26,7 @@ import com.hazelcast.map.QueryResult;
 import com.hazelcast.map.operation.*;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
-import com.hazelcast.spi.AbstractDistributedObject;
-import com.hazelcast.spi.Invocation;
-import com.hazelcast.spi.NodeEngine;
-import com.hazelcast.spi.OperationService;
+import com.hazelcast.spi.*;
 import com.hazelcast.spi.impl.BinaryOperationFactory;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionNotActiveException;
@@ -102,6 +100,15 @@ public abstract class TransactionalMapProxySupport extends AbstractDistributedOb
         }
     }
 
+    public Object getForUpdateInternal(Data key) {
+        VersionedValue versionedValue = lockAndGet(key, tx.getTimeoutMillis());
+        if (versionedValue == null) {
+            throw new TransactionException("Transaction couldn't obtain lock!");
+        }
+        TxnUnlockOperation operation = new TxnUnlockOperation(name, key, versionedValue.version);
+        tx.addTransactionLog(new MapTransactionLog(name, key, operation, versionedValue.version));
+        return versionedValue.value;
+    }
 
     public int sizeInternal() {
         final NodeEngine nodeEngine = getNodeEngine();
