@@ -49,6 +49,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.core.LifecycleEvent.LifecycleState;
 import static com.hazelcast.util.ExceptionUtil.fixRemoteStackTrace;
 
 /**
@@ -404,6 +405,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     }
                     IOUtil.closeResource(conn);
                     conn = null;
+                    fireConnectionEvent(true);
                 }
                 try {
                     Thread.sleep(1000);
@@ -538,6 +540,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                 try {
                     final Connection connection = getConnectionManager().firstConnection(address, authenticator);
                     active = true;
+                    fireConnectionEvent(false);
                     return connection;
                 } catch (IOException e) {
                     lastError = e;
@@ -565,6 +568,12 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             }
         }
         throw new IllegalStateException("Unable to connect to any address in the config!", lastError);
+    }
+
+    private void fireConnectionEvent(boolean disconnected){
+        final LifecycleServiceImpl lifecycleService = (LifecycleServiceImpl)client.getLifecycleService();
+        final LifecycleState state = disconnected ? LifecycleState.DISCONNECTED : LifecycleState.CONNECTED;
+        lifecycleService.fireLifecycleEvent(state);
     }
 
     private Collection<InetSocketAddress> getConfigAddresses() {
