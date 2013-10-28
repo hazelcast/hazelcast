@@ -42,8 +42,8 @@ public final class LifecycleEvent {
         SHUTDOWN,
         MERGING,
         MERGED,
-        CONNECTED,
-        DISCONNECTED
+        CLIENT_CONNECTED,
+        CLIENT_DISCONNECTED
     }
 
     final LifecycleState state;

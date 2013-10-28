@@ -224,9 +224,9 @@ public class ClientIssueTest {
         final LinkedList<LifecycleState> list = new LinkedList<LifecycleState>();
         list.offer(LifecycleState.STARTING);
         list.offer(LifecycleState.STARTED);
-        list.offer(LifecycleState.CONNECTED);
-        list.offer(LifecycleState.DISCONNECTED);
-        list.offer(LifecycleState.CONNECTED);
+        list.offer(LifecycleState.CLIENT_CONNECTED);
+        list.offer(LifecycleState.CLIENT_DISCONNECTED);
+        list.offer(LifecycleState.CLIENT_CONNECTED);
 
 
         final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
