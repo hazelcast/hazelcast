@@ -743,16 +743,17 @@ public class MapStoreTest extends HazelcastTestSupport {
     @Test
     public void testMapstoreDeleteOnClear() throws Exception {
         Config config = new Config();
-        MapStoreTest.SimpleMapStore store = new MapStoreTest.SimpleMapStore();
+        SimpleMapStore store = new SimpleMapStore();
         config.getMapConfig("testMapstoreDeleteOnClear").setMapStoreConfig(new MapStoreConfig().setEnabled(true).setImplementation(store));
-
-        final HazelcastInstance hz = Hazelcast.newHazelcastInstance(config);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        HazelcastInstance hz = nodeFactory.newHazelcastInstance(config);
         IMap<Object, Object> map = hz.getMap("testMapstoreDeleteOnClear");
         int size = 10;
         for (int i = 0; i < size; i++) {
             map.put(i, i);
         }
         assertEquals(size, map.size());
+        assertEquals(size, store.store.size());
         assertEquals(size, store.loadAllKeys().size());
         map.clear();
         assertEquals(0, map.size());
