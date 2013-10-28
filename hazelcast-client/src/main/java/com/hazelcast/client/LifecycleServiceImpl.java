@@ -17,21 +17,17 @@
 package com.hazelcast.client;
 
 import com.hazelcast.config.ListenerConfig;
-import com.hazelcast.core.DistributedObjectListener;
 import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
-import java.util.Collection;
-import java.util.EventListener;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
 
 import static com.hazelcast.core.LifecycleEvent.LifecycleState.*;
 
@@ -72,7 +68,7 @@ public final class LifecycleServiceImpl implements LifecycleService {
         return lifecycleListeners.remove(registrationId) != null;
     }
 
-    private void fireLifecycleEvent(LifecycleEvent.LifecycleState lifecycleState) {
+    public void fireLifecycleEvent(LifecycleEvent.LifecycleState lifecycleState) {
         final LifecycleEvent lifecycleEvent = new LifecycleEvent(lifecycleState);
         getLogger().info("HazelcastClient[" + client.getName() + "] is " + lifecycleEvent.getState());
         for (LifecycleListener lifecycleListener : lifecycleListeners.values()) {
