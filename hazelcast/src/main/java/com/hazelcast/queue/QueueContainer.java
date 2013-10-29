@@ -292,7 +292,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
                 throw new HazelcastException(e);
             }
         }
-        if (list.isEmpty()){
+        if (!list.isEmpty()){
             getItemQueue().addAll(list);
             cancelEvictionIfExists();
         }
