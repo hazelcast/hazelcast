@@ -293,15 +293,15 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 migrationQueue.offer(new RepartitioningTask());
             }
 
-            // Activate migration back after connectionDropTime x 10 milliseconds,
-            // thinking optimistically that all nodes notice the dead one in this period.
-            final long waitBeforeMigrationActivate = node.groupProperties.CONNECTION_MONITOR_INTERVAL.getLong()
-                    * node.groupProperties.CONNECTION_MONITOR_MAX_FAULTS.getInteger() * 10;
+            // Add a delay before activating migration, to give other nodes time to notice the dead one.
+            long migrationActivationDelaySeconds = node.groupProperties.PARTITION_MIGRATION_ACTIVATION_DELAY_SECONDS.getLong();
+            logger.info("Waiting " + migrationActivationDelaySeconds + " seconds before activating migration...");
+
             nodeEngine.getExecutionService().schedule(new Runnable() {
                 public void run() {
                     migrationActive.set(true);
                 }
-            }, waitBeforeMigrationActivate, TimeUnit.MILLISECONDS);
+            }, migrationActivationDelaySeconds, TimeUnit.SECONDS);
         } finally {
             lock.unlock();
         }
