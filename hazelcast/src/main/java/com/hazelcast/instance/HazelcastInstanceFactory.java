@@ -97,6 +97,7 @@ public final class HazelcastInstanceFactory {
             final boolean firstMember = (iter.hasNext() && iter.next().localMember());
             final int initialWaitSeconds = node.groupProperties.INITIAL_WAIT_SECONDS.getInteger();
             if (initialWaitSeconds > 0) {
+                hazelcastInstance.logger.info("Waiting " + initialWaitSeconds + " seconds before completing HazelcastInstance startup...");
                 try {
                     Thread.sleep(initialWaitSeconds * 1000);
                     if (firstMember) {
