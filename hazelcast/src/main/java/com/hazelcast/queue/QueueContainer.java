@@ -164,6 +164,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         if (!backup) {
             getItemQueue().offerFirst(item);
         }
+        cancelEvictionIfExists();
         return true;
     }
 
@@ -192,6 +193,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
         item.setData(data);
         if (!backup) {
             getItemQueue().offer(item);
+            cancelEvictionIfExists();
         }
         else{
             getBackupMap().put(itemId, item);
@@ -200,7 +202,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
             try {
                 store.store(item.getItemId(), data);
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.warning("Exception during store", e);
             }
         }
         return true;
@@ -260,6 +262,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
             item.setData(data);
         }
         getItemQueue().offer(item);
+        cancelEvictionIfExists();
         return item.getItemId();
     }
 
@@ -273,23 +276,25 @@ public class QueueContainer implements IdentifiedDataSerializable {
 
     public Map<Long, Data> addAll(Collection<Data> dataList) {
         Map<Long, Data> map = new HashMap<Long, Data>(dataList.size());
+        List<QueueItem> list = new ArrayList<QueueItem>(dataList.size());
         for (Data data : dataList) {
             QueueItem item = new QueueItem(this, nextId(), null);
             if (!store.isEnabled() || store.getMemoryLimit() > getItemQueue().size()) {
                 item.setData(data);
             }
-            getItemQueue().offer(item);
             map.put(item.getItemId(), data);
+            list.add(item);
         }
-        if (store.isEnabled()) {
+        if (store.isEnabled() && !map.isEmpty()) {
             try {
                 store.storeAll(map);
             } catch (Exception e) {
-                for (int i = 0; i < dataList.size(); i++) {
-                    getItemQueue().poll();
-                }
                 throw new HazelcastException(e);
             }
+        }
+        if (list.isEmpty()){
+            getItemQueue().addAll(list);
+            cancelEvictionIfExists();
         }
         return map;
     }
@@ -361,7 +366,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
             }
             map.put(item.getItemId(), item.getData());
         }
-        if (store.isEnabled()) {
+        if (store.isEnabled() && maxSize != 0) {
             try {
                 store.deleteAll(map.keySet());
             } catch (Exception e) {
@@ -373,7 +378,9 @@ public class QueueContainer implements IdentifiedDataSerializable {
             QueueItem item = getItemQueue().poll();
             age(item, current); //For Stats
         }
-        scheduleEvictionIfEmpty();
+        if (maxSize != 0){
+            scheduleEvictionIfEmpty();
+        }
         return map;
     }
 
@@ -394,12 +401,12 @@ public class QueueContainer implements IdentifiedDataSerializable {
 
     public Map<Long, Data> clear() {
         long current = Clock.currentTimeMillis();
-        LinkedHashMap<Long, Data> map = new LinkedHashMap<Long, Data>(getBackupMap().size());
-        for (QueueItem item : getBackupMap().values()) {
+        LinkedHashMap<Long, Data> map = new LinkedHashMap<Long, Data>(getItemQueue().size());
+        for (QueueItem item : getItemQueue()) {
             map.put(item.getItemId(), item.getData());
             age(item, current); // For stats
         }
-        if (store.isEnabled()) {
+        if (store.isEnabled() && !map.isEmpty()) {
             try {
                 store.deleteAll(map.keySet());
             } catch (Exception e) {
@@ -668,6 +675,7 @@ public class QueueContainer implements IdentifiedDataSerializable {
                 iterator.remove();
                 if (item.isPollOperation()){
                     getItemQueue().offerFirst(item);
+                    cancelEvictionIfExists();
                 }
             }
         }
