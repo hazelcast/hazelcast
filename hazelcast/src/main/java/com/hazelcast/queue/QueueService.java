@@ -102,7 +102,6 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
                 container.init(fromBackup);
             }
         }
-        container.cancelEvictionIfExists();
         return container;
     }
 
