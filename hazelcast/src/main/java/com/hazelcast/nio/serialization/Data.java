@@ -235,6 +235,10 @@ public final class Data implements IdentifiedDataSerializable {
         return SerializationConstants.CONSTANT_TYPE_PORTABLE == type;
     }
 
+    public boolean isDataSerializable() {
+        return SerializationConstants.CONSTANT_TYPE_DATA == type;
+    }
+
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("Data{");
