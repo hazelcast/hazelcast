@@ -17,8 +17,12 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.*;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.StreamSerializer;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -27,11 +31,13 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 
 @RunWith(HazelcastJUnit4ClassRunner.class)
@@ -157,6 +163,47 @@ public class IssuesTest extends HazelcastTestSupport {
         map.put("key", "value");
         assertTrue(map.containsKey("key"));
         h.getLifecycleService().shutdown();
+    }
+
+    @Test
+    public void testIssue1067GlobalSerializer() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+
+        final Config config = new Config();
+        config.getSerializationConfig().setGlobalSerializerConfig(new GlobalSerializerConfig()
+                .setImplementation(new StreamSerializer() {
+                    public void write(ObjectDataOutput out, Object object) throws IOException {
+                    }
+                    public Object read(ObjectDataInput in) throws IOException {
+                        return new DummyValue();
+                    }
+                    public int getTypeId() {
+                        return 123;
+                    }
+                    public void destroy() {
+                    }
+                }));
+
+        HazelcastInstance hz = factory.newHazelcastInstance(config);
+        IMap<Object, Object> map = hz.getMap("test");
+        for (int i = 0; i < 10; i++) {
+            map.put(i, new DummyValue());
+        }
+        assertEquals(10, map.size());
+
+        HazelcastInstance hz2 = factory.newHazelcastInstance(config);
+        IMap<Object, Object> map2 = hz2.getMap("test");
+        assertEquals(10, map2.size());
+        assertEquals(10, map.size());
+
+        for (int i = 0; i < 10; i++) {
+            Object o = map2.get(i);
+            assertNotNull(o);
+            assertTrue(o instanceof DummyValue);
+        }
+    }
+
+    private static class DummyValue {
     }
 
 }

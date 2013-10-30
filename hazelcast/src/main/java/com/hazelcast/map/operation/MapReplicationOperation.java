@@ -72,9 +72,6 @@ public class MapReplicationOperation extends AbstractOperation {
             for (Entry<Data, Record> recordEntry : recordStore.getReadonlyRecordMap().entrySet()) {
                 Data key = recordEntry.getKey();
                 Record record = recordEntry.getValue();
-                if (record.getValue() == null) {
-                    continue;
-                }
                 RecordReplicationInfo recordReplicationInfo;
                 if (replicaIndex == 0) {
                     recordReplicationInfo = createScheduledRecordState(mapContainer, recordEntry, key);
