@@ -200,6 +200,9 @@ public final class SerializationServiceImpl implements SerializationService {
         if (data == null) {
             return null;
         }
+        if (data.bufferSize() == 0 && data.isDataSerializable()) {
+            return null;
+        }
         try {
             final int typeId = data.type;
             final SerializerAdapter serializer = serializerFor(typeId);

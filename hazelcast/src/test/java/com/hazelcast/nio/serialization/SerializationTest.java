@@ -132,4 +132,11 @@ public class SerializationTest {
             return obj instanceof SingletonValue;
         }
     }
+
+    @Test
+    public void testNullData() {
+        Data data = new Data();
+        SerializationService ss = new SerializationServiceBuilder().build();
+        Assert.assertNull(ss.toObject(data));
+    }
 }
