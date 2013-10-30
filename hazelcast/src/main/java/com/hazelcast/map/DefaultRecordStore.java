@@ -384,7 +384,7 @@ public class DefaultRecordStore implements RecordStore {
 
         if (store != null) {
             store.deleteAll(keysObject);
-            toBeRemovedKeys.clear();
+            toBeRemovedKeys.removeAll(keysToDelete);
         }
 
         clearRecordsMap(lockedRecords);
