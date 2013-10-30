@@ -61,6 +61,8 @@ public class SimpleMapTest {
         this.putPercentage = putPercentage;
         this.load = load;
         Config cfg = new XmlConfigBuilder().build();
+        cfg.getManagementCenterConfig().setEnabled(true);
+
         instance = Hazelcast.newHazelcastInstance(cfg);
         logger = instance.getLoggingService().getLogger("SimpleMapTest");
     }
