@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 The Apache Software Foundation
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,15 @@
 
 package com.hazelcast.osgi;
 
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
+
+import javax.script.*;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.*;
-
-import javax.script.Bindings;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineFactory;
-import javax.script.ScriptEngineManager;
-import javax.script.SimpleBindings;
-
-import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleContext;
 
 /**
  * This class acts as a delegate for all the available ScriptEngineManagers. Unluckily, the standard did not
@@ -64,6 +59,12 @@ import org.osgi.framework.BundleContext;
  * issue, but for the moment it is not needed.
  * </li>
  */
+
+/*
+Imported from Apache Felix project.
+http://svn.apache.org/repos/asf/felix/trunk/mishell/src/main/java/org/apache/felix/mishell/OSGiScriptEngineManager.java
+*/
+
 public class OSGiScriptEngineManager extends ScriptEngineManager {
     private Bindings bindings;
     private Map<ScriptEngineManager, ClassLoader> classLoaders;
