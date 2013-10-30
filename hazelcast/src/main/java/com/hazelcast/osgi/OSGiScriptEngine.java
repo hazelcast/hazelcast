@@ -1,5 +1,5 @@
 /*
- * Copyright 2005 The Apache Software Foundation
+ * Copyright (c) 2008-2013, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,13 @@
 
 package com.hazelcast.osgi;
 
+import javax.script.*;
 import java.io.Reader;
 
-import javax.script.Bindings;
-import javax.script.ScriptContext;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineFactory;
-import javax.script.ScriptException;
-
+/*
+Imported from Apache Felix project.
+http://svn.apache.org/repos/asf/felix/trunk/mishell/src/main/java/org/apache/felix/mishell/OSGiScriptEngine.java
+*/
 public class OSGiScriptEngine implements ScriptEngine{
     private ScriptEngine engine;
     private OSGiScriptEngineFactory factory;
