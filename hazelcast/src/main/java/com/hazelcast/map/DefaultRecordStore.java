@@ -192,7 +192,6 @@ public class DefaultRecordStore implements RecordStore {
         }
         clearRecordsMap(Collections.<Data, Record>emptyMap());
         resetSizeEstimator();
-        cancelAllSchedulers();
     }
 
     private void clearRecordsMap(Map<Data, Record> excludeRecords) {
