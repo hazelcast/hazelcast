@@ -40,6 +40,9 @@ public class SemaphoreReplicationOperation extends AbstractOperation {
 
     public void run() throws Exception {
         SemaphoreService service = getService();
+        for (Permit permit : migrationData.values()) {
+            permit.setInitialized(true);
+        }
         service.insertMigrationData(migrationData);
     }
 
