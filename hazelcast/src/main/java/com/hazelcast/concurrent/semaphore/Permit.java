@@ -40,6 +40,8 @@ public class Permit implements DataSerializable {
 
     private int asyncBackupCount;
 
+    private boolean initialized = false;
+
     public Permit() {
     }
 
@@ -81,10 +83,11 @@ public class Permit implements DataSerializable {
     }
 
     public boolean init(int permitCount) {
-        if (available != 0) {
+        if (initialized || available != 0) {
             return false;
         }
         available = permitCount;
+        initialized = true;
         return true;
     }
 
@@ -143,6 +146,7 @@ public class Permit implements DataSerializable {
     }
 
     public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeBoolean(initialized);
         out.writeInt(available);
         out.writeInt(partitionId);
         out.writeInt(backupCount);
@@ -155,6 +159,7 @@ public class Permit implements DataSerializable {
     }
 
     public void readData(ObjectDataInput in) throws IOException {
+        initialized = in.readBoolean();
         available = in.readInt();
         partitionId = in.readInt();
         backupCount = in.readInt();
