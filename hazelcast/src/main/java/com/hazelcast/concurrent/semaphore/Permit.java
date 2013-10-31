@@ -40,6 +40,8 @@ public class Permit implements DataSerializable {
 
     private int asyncBackupCount;
 
+    private boolean initialized = false;
+
     public Permit() {
     }
 
@@ -81,10 +83,11 @@ public class Permit implements DataSerializable {
     }
 
     public boolean init(int permitCount) {
-        if (available != 0) {
+        if (initialized || available != 0) {
             return false;
         }
         available = permitCount;
+        initialized = true;
         return true;
     }
 

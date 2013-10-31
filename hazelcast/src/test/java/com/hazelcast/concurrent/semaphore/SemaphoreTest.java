@@ -31,6 +31,10 @@ import org.junit.runner.RunWith;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 
 /**
  * User: sancar
@@ -50,7 +54,7 @@ public class SemaphoreTest extends HazelcastTestSupport {
 
         ISemaphore semaphore = instances[0].getSemaphore("test");
         int numberOfPermits = 20;
-        Assert.assertTrue(semaphore.init(numberOfPermits));
+        assertTrue(semaphore.init(numberOfPermits));
         try {
             for (int i = 0; i < numberOfPermits; i++) {
                 Assert.assertEquals(numberOfPermits - i, semaphore.availablePermits());
@@ -94,7 +98,7 @@ public class SemaphoreTest extends HazelcastTestSupport {
         Assert.assertEquals(drainedPermits, numberOfPermits - 5);
         Assert.assertEquals(semaphore.availablePermits(), 0);
 
-        Assert.assertTrue(semaphore.init(numberOfPermits));
+        assertTrue(semaphore.init(numberOfPermits));
         for (int i = 0; i < numberOfPermits; i += 5) {
             Assert.assertEquals(numberOfPermits - i, semaphore.availablePermits());
             semaphore.reducePermits(5);
@@ -103,7 +107,7 @@ public class SemaphoreTest extends HazelcastTestSupport {
         Assert.assertEquals(semaphore.availablePermits(), 0);
 
 
-        Assert.assertTrue(semaphore.init(numberOfPermits));
+        assertTrue(semaphore.init(numberOfPermits));
         for (int i = 0; i < numberOfPermits; i++) {
             Assert.assertEquals(numberOfPermits - i, semaphore.availablePermits());
             Assert.assertEquals(semaphore.tryAcquire(), true);
@@ -111,7 +115,7 @@ public class SemaphoreTest extends HazelcastTestSupport {
 
         Assert.assertEquals(semaphore.availablePermits(), 0);
 
-        Assert.assertTrue(semaphore.init(numberOfPermits));
+        assertTrue(semaphore.init(numberOfPermits));
         for (int i = 0; i < numberOfPermits; i += 5) {
             Assert.assertEquals(numberOfPermits - i, semaphore.availablePermits());
             Assert.assertEquals(semaphore.tryAcquire(5), true);
@@ -137,7 +141,7 @@ public class SemaphoreTest extends HazelcastTestSupport {
         }
         final Counter counter = new Counter();
 
-        Assert.assertTrue(instances[0].getSemaphore("test").init(1));
+        assertTrue(instances[0].getSemaphore("test").init(1));
 
         for (int i = 0; i < k; i++) {
             final ISemaphore semaphore = instances[i].getSemaphore("test");
@@ -164,7 +168,7 @@ public class SemaphoreTest extends HazelcastTestSupport {
             }.start();
         }
         try {
-            Assert.assertTrue(latch.await(60, TimeUnit.SECONDS));
+            assertTrue(latch.await(60, TimeUnit.SECONDS));
             Assert.assertEquals(loopCount * k, counter.get());
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -212,7 +216,7 @@ public class SemaphoreTest extends HazelcastTestSupport {
         final HazelcastInstance instance2 = factory.newHazelcastInstance(config);
         final ISemaphore semaphore = instance1.getSemaphore("test");
         final CountDownLatch countDownLatch = new CountDownLatch(1);
-        Assert.assertTrue(semaphore.init(0));
+        assertTrue(semaphore.init(0));
 
         final Thread thread = new Thread() {
             public void run() {
@@ -235,11 +239,36 @@ public class SemaphoreTest extends HazelcastTestSupport {
         ISemaphore semaphore1 = instance3.getSemaphore("test");
         semaphore1.release();
         try {
-            Assert.assertTrue(countDownLatch.await(15, TimeUnit.SECONDS));
+            assertTrue(countDownLatch.await(15, TimeUnit.SECONDS));
         } catch (InterruptedException e) {
             e.printStackTrace();
         } finally {
             thread.interrupt();
         }
+    }
+
+    @Test
+    public void testSemaphoreInit(){
+        final Config config = new Config();
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
+
+        final HazelcastInstance instance1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+
+        final ISemaphore sm1 = instance1.getSemaphore("sm");
+        assertTrue(sm1.init(5));
+        assertFalse(sm1.init(10));
+        assertEquals(5, sm1.drainPermits());
+        assertFalse(sm1.init(10));
+
+        final ISemaphore sm2 = instance2.getSemaphore("sm");
+        assertFalse(sm2.init(10));
+        assertEquals(0, sm2.availablePermits());
+
+
+        assertTrue(instance1.getSemaphore("test").init(2));
+        assertFalse(instance2.getSemaphore("test").init(4));
+        assertEquals(2, instance2.getSemaphore("test").availablePermits());
+
     }
 }
