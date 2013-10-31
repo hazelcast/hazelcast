@@ -182,6 +182,8 @@ public class NearCache {
     }
 
     public void invalidate(Set<Data> keys) {
+        if (keys == null || keys.isEmpty()) return;
+
         for (Data key : keys) {
             invalidate(key);
         }

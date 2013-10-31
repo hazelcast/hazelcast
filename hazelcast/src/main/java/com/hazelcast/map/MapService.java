@@ -465,7 +465,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         }
 
         // below local invalidation is for the case the data is cached before partition is owned/migrated
-        if (keys != null) {
+        if (keys != null && !keys.isEmpty()) {
             for (final Data key : keys) {
                 invalidateNearCache(mapName, key);
             }
