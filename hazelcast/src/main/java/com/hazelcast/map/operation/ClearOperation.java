@@ -52,7 +52,6 @@ public class ClearOperation extends AbstractMapOperation implements BackupAwareO
         final RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
         if (keys == null) {
             recordStore.removeAll();
-            clearNearCache();
             return;
         }
         if (keys.isEmpty()) {
@@ -69,7 +68,9 @@ public class ClearOperation extends AbstractMapOperation implements BackupAwareO
 
     @Override
     public void afterRun() throws Exception {
-        if (keys != null) {
+        if (keys == null) {
+            clearNearCache();
+        } else {
             invalidateNearCaches(keysToBeRemoved);
         }
     }
@@ -87,7 +88,6 @@ public class ClearOperation extends AbstractMapOperation implements BackupAwareO
             mapService.clearNearCache(name);
         }
     }
-
 
 
     public boolean shouldBackup() {
