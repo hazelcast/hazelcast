@@ -440,8 +440,6 @@ public class DefaultRecordStore implements RecordStore {
             // reduce size
             updateSizeEstimator(-calculateRecordSize(record));
             removeIndex(dataKey);
-            mapContainer.getIdleEvictionScheduler().cancel(dataKey);
-            mapContainer.getTtlEvictionScheduler().cancel(dataKey);
         }
         return oldValue;
     }

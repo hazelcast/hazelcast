@@ -62,6 +62,8 @@ public class ClearOperation extends AbstractMapOperation implements BackupAwareO
         for (Data key : keys) {
             if (!recordStore.isLocked(key)) {
                 recordStore.evict(key);
+                mapContainer.getIdleEvictionScheduler().cancel(key);
+                mapContainer.getTtlEvictionScheduler().cancel(key);
             }
         }
     }
