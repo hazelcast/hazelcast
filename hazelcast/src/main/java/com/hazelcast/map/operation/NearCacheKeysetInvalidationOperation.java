@@ -21,7 +21,6 @@ public class NearCacheKeySetInvalidationOperation extends AbstractOperation {
 
 
     public NearCacheKeySetInvalidationOperation(String mapName, Set<Data> keys) {
-
         this.keys = keys;
         this.mapName = mapName;
     }

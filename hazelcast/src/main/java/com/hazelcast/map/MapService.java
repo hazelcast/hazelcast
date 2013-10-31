@@ -463,7 +463,6 @@ public class MapService implements ManagedService, MigrationAwareService,
                 throw new HazelcastException(throwable);
             }
         }
-
         // below local invalidation is for the case the data is cached before partition is owned/migrated
         if (keys != null && !keys.isEmpty()) {
             for (final Data key : keys) {

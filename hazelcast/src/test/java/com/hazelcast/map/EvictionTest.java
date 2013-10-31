@@ -581,9 +581,6 @@ public class EvictionTest extends HazelcastTestSupport {
     public void testMapRecordIdleEvictionOnMigration() throws InterruptedException {
         Config cfg = new Config();
         final String name = "testMapRecordIdleEvictionOnMigration";
-        NearCacheConfig nearCacheConfig = new NearCacheConfig();
-        nearCacheConfig.setInvalidateOnChange(true);
-        cfg.getMapConfig(name).setNearCacheConfig(nearCacheConfig);
         MapConfig mc = cfg.getMapConfig(name);
         int maxIdleSeconds = 10;
         int size = 100;
