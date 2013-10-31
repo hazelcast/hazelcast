@@ -425,6 +425,16 @@ public class MapService implements ManagedService, MigrationAwareService,
         nearCache.invalidate(key);
     }
 
+    public void invalidateNearCache(String mapName, Set<Data> keys) {
+        NearCache nearCache = getNearCache(mapName);
+        nearCache.invalidate(keys);
+    }
+
+    public void clearNearCache(String mapName) {
+        NearCache nearCache = getNearCache(mapName);
+        nearCache.clear();
+    }
+
     public void invalidateAllNearCaches(String mapName, Data key) {
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         for (MemberImpl member : members) {
@@ -432,14 +442,35 @@ public class MapService implements ManagedService, MigrationAwareService,
                 if (member.localMember())
                     continue;
                 InvalidateNearCacheOperation operation = new InvalidateNearCacheOperation(mapName, key);
-                Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, member.getAddress()).build();
-                invocation.invoke();
+                nodeEngine.getOperationService().send(operation, member.getAddress());
             } catch (Throwable throwable) {
                 throw new HazelcastException(throwable);
             }
         }
         // below local invalidation is for the case the data is cached before partition is owned/migrated
         invalidateNearCache(mapName, key);
+    }
+
+    public void invalidateAllNearCaches(String mapName, Set<Data> keys) {
+        final Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+        for (final MemberImpl member : members) {
+            try {
+                if (member.localMember())
+                    continue;
+                final NearCacheKeySetInvalidationOperation operation = new NearCacheKeySetInvalidationOperation(mapName, keys);
+                nodeEngine.getOperationService().send(operation, member.getAddress());
+            } catch (Throwable throwable) {
+                throw new HazelcastException(throwable);
+            }
+        }
+
+        // below local invalidation is for the case the data is cached before partition is owned/migrated
+        if (keys != null) {
+            for (final Data key : keys) {
+                invalidateNearCache(mapName, key);
+            }
+        }
+
     }
 
     public Object getFromNearCache(String mapName, Data key) {

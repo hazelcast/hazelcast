@@ -34,6 +34,7 @@ public class ClearOperation extends AbstractMapOperation implements BackupAwareO
 
     Set<Data> keys;
     boolean shouldBackup = true;
+    private transient Set<Data> keysToBeRemoved;
 
     public ClearOperation(String name) {
         super(name);
@@ -48,28 +49,53 @@ public class ClearOperation extends AbstractMapOperation implements BackupAwareO
     }
 
     public void run() {
-        RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
-
+        final RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
         if (keys == null) {
             recordStore.removeAll();
+            clearNearCache();
             return;
         }
-        if(keys.isEmpty()) {
+        if (keys.isEmpty()) {
             shouldBackup = false;
         }
+        keysToBeRemoved = new HashSet<Data>();
         for (Data key : keys) {
             if (!recordStore.isLocked(key)) {
                 recordStore.evict(key);
+                keysToBeRemoved.add(key);
             }
         }
     }
+
+    @Override
+    public void afterRun() throws Exception {
+        if (keys != null) {
+            invalidateNearCaches(keysToBeRemoved);
+        }
+    }
+
+    private final void invalidateNearCaches(Set<Data> keys) {
+        if (mapContainer.isNearCacheEnabled()
+                && mapContainer.getMapConfig().getNearCacheConfig().isInvalidateOnChange()) {
+            mapService.invalidateAllNearCaches(name, keys);
+        }
+    }
+
+    private final void clearNearCache() {
+        if (mapContainer.isNearCacheEnabled()
+                && mapContainer.getMapConfig().getNearCacheConfig().isInvalidateOnChange()) {
+            mapService.clearNearCache(name);
+        }
+    }
+
+
 
     public boolean shouldBackup() {
         return shouldBackup;
     }
 
     public int getSyncBackupCount() {
-          return mapService.getMapContainer(name).getBackupCount();
+        return mapService.getMapContainer(name).getBackupCount();
     }
 
     public int getAsyncBackupCount() {

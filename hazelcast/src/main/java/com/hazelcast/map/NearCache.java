@@ -25,6 +25,7 @@ import com.hazelcast.util.Clock;
 import com.hazelcast.util.ExceptionUtil;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -85,7 +86,7 @@ public class NearCache {
             fireEvictCache();
         }
         final Object value;
-        if (data == null){
+        if (data == null) {
             value = NULL_OBJECT;
         } else {
             value = inMemoryFormat.equals(InMemoryFormat.OBJECT) ? mapService.toObject(data) : data;
@@ -177,6 +178,12 @@ public class NearCache {
         if (record != null) // if a mapping exists for the key.
         {
             updateSizeEstimator(-calculateCost(record));
+        }
+    }
+
+    public void invalidate(Set<Data> keys) {
+        for (Data key : keys) {
+            invalidate(key);
         }
     }
 
