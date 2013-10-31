@@ -389,8 +389,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             handleAtomicNumberInc(args);
         } else if ("a.dec".equals(first)) {
             handleAtomicNumberDec(args);
-//        } else if (first.equals("execute")) {
-//            execute(args);
+        } else if (first.equals("execute")) {
+            execute(args);
         } else if (first.equals("partitions")) {
             handlePartitions(args);
 //        } else if (first.equals("txn")) {
@@ -399,22 +399,22 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 //            hazelcast.getTransaction().commit();
 //        } else if (first.equals("rollback")) {
 //            hazelcast.getTransaction().rollback();
-//        } else if (first.equalsIgnoreCase("executeOnKey")) {
-//            executeOnKey(args);
-//        } else if (first.equalsIgnoreCase("executeOnMember")) {
-//            executeOnMember(args);
-//        } else if (first.equalsIgnoreCase("executeOnMembers")) {
-//            executeOnMembers(args);
-//        } else if (first.equalsIgnoreCase("longOther") || first.equalsIgnoreCase("executeLongOther")) {
-//            executeLongTaskOnOtherMember(args);
-//        } else if (first.equalsIgnoreCase("long") || first.equalsIgnoreCase("executeLong")) {
-//            executeLong(args);
+        } else if (first.equalsIgnoreCase("executeOnKey")) {
+            executeOnKey(args);
+        } else if (first.equalsIgnoreCase("executeOnMember")) {
+            executeOnMember(args);
+        } else if (first.equalsIgnoreCase("executeOnMembers")) {
+            executeOnMembers(args);
+       // } else if (first.equalsIgnoreCase("longOther") || first.equalsIgnoreCase("executeLongOther")) {
+       //     executeLongTaskOnOtherMember(args);
+        //} else if (first.equalsIgnoreCase("long") || first.equalsIgnoreCase("executeLong")) {
+        //    executeLong(args);
         } else if (first.equalsIgnoreCase("instances")) {
             handleInstances(args);
         } else if (first.equalsIgnoreCase("quit") || first.equalsIgnoreCase("exit")) {
             System.exit(0);
         }else if(first.startsWith("e1.simulateLoad")){
-             handleExecutorSimulate(getExecutor1Service(),args);
+             handleExecutorSimulate(getExecutor1Service(), args);
         }else if(first.startsWith("e8.simulateLoad")){
             handleExecutorSimulate(getExecutor8Service(),args);
         } else {
@@ -984,8 +984,6 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 //        }
     }
 
-
-
     protected void handleSetAdd(String[] args) {
         println(getSet().add(args[1]));
     }
@@ -1222,129 +1220,133 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println(getQueue().remainingCapacity());
     }
 
-//    private void execute(String[] args) {
-//        // execute <echo-string>
-//        doExecute(false, false, args);
-//    }
-//
-//    private void executeOnKey(String[] args) {
-//        // executeOnKey <echo-string> <key>
-//        doExecute(true, false, args);
-//    }
-//
-//    private void executeOnMember(String[] args) {
-//        // executeOnMember <echo-string> <memberIndex>
-//        doExecute(false, true, args);
-//    }
-//
-//    private void ex(String input) throws Exception {
-//        FutureTask<String> task = new DistributedTask<String>(new Echo(input));
-//        ExecutorService executorService = hazelcast.getExecutorService("default");
-//        executorService.execute(task);
-//        String echoResult = task.get();
-//    }
-//
-//    private void doExecute(boolean onKey, boolean onMember, String[] args) {
-//        // executeOnKey <echo-string> <key>
-//        try {
-//            ExecutorService executorService = hazelcast.getExecutorService("default");
-//            Echo callable = new Echo(args[1]);
-//            FutureTask<String> task = null;
-//            if (onKey) {
-//                String key = args[2];
-//                task = new DistributedTask<String>(callable, key);
-//            } else if (onMember) {
-//                int memberIndex = Integer.parseInt(args[2]);
-//                Member member = (Member) hazelcast.getCluster().getMembers().toArray()[memberIndex];
-//                task = new DistributedTask<String>(callable, member);
-//            } else {
-//                task = new DistributedTask<String>(callable);
-//            }
-//            executorService.execute(task);
-//            println("Result: " + task.get());
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        } catch (ExecutionException e) {
-//            e.printStackTrace();
-//        }
-//    }
-//
-//    private void executeOnMembers(String[] args) {
-//        // executeOnMembers <echo-string>
-//        try {
-//            ExecutorService executorService = hazelcast.getExecutorService("default");
-//            MultiTask<String> echoTask = new MultiTask(new Echo(args[1]), hazelcast.getCluster()
-//                    .getMembers());
-//            executorService.execute(echoTask);
-//            Collection<String> results = echoTask.get();
-//            for (String result : results) {
-//                println(result);
-//            }
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        } catch (ExecutionException e) {
-//            e.printStackTrace();
-//        }
-//    }
-//
-//    private void executeLong(String[] args) {
-//        // executeOnMembers <echo-string>
-//        try {
-//            ExecutorService executorService = hazelcast.getExecutorService("default");
-//            MultiTask<String> echoTask = new MultiTask(new LongTask(args[1]), hazelcast.getCluster()
-//                    .getMembers()) {
-//                @Override
-//                public void setMemberLeft(Member member) {
-//                    println("Member Left " + member);
-//                }
-//
-//                @Override
-//                public void done() {
-//                    println("Done!");
-//                }
-//            };
-//            executorService.execute(echoTask);
-//            Collection<String> results = echoTask.get();
-//            for (String result : results) {
-//                println(result);
-//            }
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//    }
-//
-//    private void executeLongTaskOnOtherMember(String[] args) {
-//        // executeOnMembers <echo-string>
-//        try {
-//            ExecutorService executorService = hazelcast.getExecutorService("default");
-//            Member otherMember = null;
-//            Set<Member> members = hazelcast.getCluster().getMembers();
-//            for (Member member : members) {
-//                if (!member.localMember()) {
-//                    otherMember = member;
-//                }
-//            }
-//            if (otherMember == null) {
-//                otherMember = hazelcast.getCluster().getLocalMember();
-//            }
-//            DistributedTask<String> echoTask = new DistributedTask(new LongTask(args[1]), otherMember) {
-//                @Override
-//                public void setMemberLeft(Member member) {
-//                    println("Member Left " + member);
-//                }
-//
-//                @Override
-//                public void done() {
-//                    println("Done!");
-//                }
-//            };
-//            executorService.execute(echoTask);
-//            Object result = echoTask.get();
-//            println(result);
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//    }
+    private void execute(String[] args) {
+        // execute <echo-string>
+        doExecute(false, false, args);
+    }
+
+    private void executeOnKey(String[] args) {
+        // executeOnKey <echo-string> <key>
+        doExecute(true, false, args);
+    }
+
+    private void executeOnMember(String[] args) {
+        // executeOnMember <echo-string> <memberIndex>
+        doExecute(false, true, args);
+    }
+
+    private void ex(String input) throws Exception {
+        IExecutorService executorService = hazelcast.getExecutorService("default");
+        Future<String> f = executorService.submit(new Echo(input));
+        String echoResult = f.get();
+    }
+
+    private void doExecute(boolean onKey, boolean onMember, String[] args) {
+        // executeOnKey <echo-string> <key>
+        try {
+            IExecutorService executorService = hazelcast.getExecutorService("default");
+            Echo callable = new Echo(args[1]);
+            Future<String> future;
+            if (onKey) {
+                String key = args[2];
+                future = executorService.submitToKeyOwner(callable,key);
+            } else if (onMember) {
+                int memberIndex = Integer.parseInt(args[2]);
+                List<Member> members = new LinkedList(hazelcast.getCluster().getMembers());
+                if(memberIndex>=members.size()){
+                    throw new IndexOutOfBoundsException("Member index: "+memberIndex+" must be smaller than "+members.size());
+                }
+                Member member = members.get(memberIndex);
+                future = executorService.submitToMember(callable,member);
+            } else {
+                future = executorService.submit(callable);
+            }
+            println("Result: " + future.get());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void executeOnMembers(String[] args) {
+        // executeOnMembers <echo-string>
+        try {
+            IExecutorService executorService = hazelcast.getExecutorService("default");
+            Echo task = new Echo(args[1]);
+            Map<Member,Future<String>> results = executorService.submitToAllMembers(task);
+
+            for (Future f : results.values()) {
+                println(f.get());
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void executeLong(String[] args) {
+        // executeOnMembers <echo-string>
+        /*
+        try {
+            ExecutorService executorService = hazelcast.getExecutorService("default");
+
+            MultiTask<String> echoTask = new MultiTask(new LongTask(args[1]), hazelcast.getCluster()
+                    .getMembers()) {
+                @Override
+                public void setMemberLeft(Member member) {
+                    println("Member Left " + member);
+                }
+
+                @Override
+                public void done() {
+                    println("Done!");
+                }
+            };
+            executorService.execute(echoTask);
+            Collection<String> results = echoTask.get();
+            for (String result : results) {
+                println(result);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }  *.
+    }
+
+    private void executeLongTaskOnOtherMember(String[] args) {
+        // executeOnMembers <echo-string>
+    /*
+        try {
+            ExecutorService executorService = hazelcast.getExecutorService("default");
+            Member otherMember = null;
+            Set<Member> members = hazelcast.getCluster().getMembers();
+            for (Member member : members) {
+                if (!member.localMember()) {
+                    otherMember = member;
+                }
+            }
+            if (otherMember == null) {
+                otherMember = hazelcast.getCluster().getLocalMember();
+            }
+            DistributedTask<String> echoTask = new DistributedTask(new LongTask(args[1]), otherMember) {
+                @Override
+                public void setMemberLeft(Member member) {
+                    println("Member Left " + member);
+                }
+
+                @Override
+                public void done() {
+                    println("Done!");
+                }
+            };
+            executorService.execute(echoTask);
+           Object result = echoTask.get();
+           println(result);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }  */
+    }
 
     public void entryAdded(EntryEvent event) {
         println(event);
@@ -1538,12 +1540,12 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         print("");
 
         println("-- Executor Service commands:");
-        println("execute	<echo-input>				//executes an echo task on random member");
-        println("execute0nKey	<echo-input> <key>		//executes an echo task on the member that owns the given key");
-        println("execute0nMember <echo-input> <key>	//executes an echo task on the member with given index");
-        println("execute0nMembers <echo-input> 		//executes an echo task on all of the members");
-        println("e1.simulateLoad <task-count> <delaySeconds> 		//simulates load on executor with 1 thread");
-        println("e8.simulateLoad <task-count> <delaySeconds> 		//simulates load on executor with 8 thread");
+        println("execute <echo-input>                            //executes an echo task on random member");
+        println("executeOnKey <echo-input> <key>                  //executes an echo task on the member that owns the given key");
+        println("executeOnMember <echo-input> <memberIndex>         //executes an echo task on the member with given index");
+        println("executeOnMembers <echo-input>                      //executes an echo task on all of the members");
+        println("e1.simulateLoad <task-count> <delaySeconds>        //simulates load on executor with 1 thread");
+        println("e8.simulateLoad <task-count> <delaySeconds>        //simulates load on executor with 8 thread");
 
         println("");
         silent = silentBefore;
