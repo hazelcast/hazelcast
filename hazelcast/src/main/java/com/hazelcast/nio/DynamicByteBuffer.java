@@ -32,7 +32,7 @@ public final class DynamicByteBuffer {
     }
 
     public DynamicByteBuffer(byte[] array) {
-        buffer = ByteBuffer.wrap(array);
+        buffer = array != null ? ByteBuffer.wrap(array) : ByteBuffer.allocate(0);
     }
 
     public DynamicByteBuffer(byte[] array, int offset, int length) {
