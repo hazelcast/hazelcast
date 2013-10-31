@@ -16,6 +16,7 @@
 
 package com.hazelcast.management.operation;
 
+import com.hazelcast.management.ScriptEngineManagerContext;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.Operation;
@@ -34,8 +35,6 @@ import java.util.Set;
  */
 public class ScriptExecutorOperation extends Operation {
 
-
-    private static final ScriptEngineManager scriptEngineManager = new ScriptEngineManager();
     private String engineName;
     private String script;
     private Map<String, Object> bindings;
@@ -56,6 +55,7 @@ public class ScriptExecutorOperation extends Operation {
     }
 
     public void run() throws Exception {
+        ScriptEngineManager scriptEngineManager = ScriptEngineManagerContext.getScriptEngineManager();
         ScriptEngine engine = scriptEngineManager.getEngineByName(engineName);
         if (engine == null) {
             throw new IllegalArgumentException("Could not find ScriptEngine named '" + engineName + "'.");

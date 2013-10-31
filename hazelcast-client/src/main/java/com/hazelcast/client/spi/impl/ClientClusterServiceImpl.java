@@ -49,6 +49,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.core.LifecycleEvent.LifecycleState;
 import static com.hazelcast.util.ExceptionUtil.fixRemoteStackTrace;
 
 /**
@@ -133,6 +134,12 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
 
     <T> T sendAndReceive(final Address address, Object obj) throws IOException {
         return _sendAndReceive(new TargetConnectionFactory(address), obj);
+    }
+
+    public Client getLocalClient() {
+        ClientPrincipal cp = principal;
+        Connection conn = clusterThread.conn;
+        return new ClientImpl(cp != null ? cp.getUuid() : null, conn != null ? conn.getLocalSocketAddress() : null);
     }
 
     private interface ConnectionFactory {
@@ -398,6 +405,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
                     }
                     IOUtil.closeResource(conn);
                     conn = null;
+                    fireConnectionEvent(true);
                 }
                 try {
                     Thread.sleep(1000);
@@ -520,6 +528,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
     }
 
     private Connection connectToOne(final Collection<InetSocketAddress> socketAddresses) throws Exception {
+        active = false;
         final int connectionAttemptLimit = getClientConfig().getConnectionAttemptLimit();
         final ManagerAuthenticator authenticator = new ManagerAuthenticator();
         int attempt = 0;
@@ -529,7 +538,10 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             for (InetSocketAddress isa : socketAddresses) {
                 Address address = new Address(isa);
                 try {
-                    return getConnectionManager().firstConnection(address, authenticator);
+                    final Connection connection = getConnectionManager().firstConnection(address, authenticator);
+                    active = true;
+                    fireConnectionEvent(false);
+                    return connection;
                 } catch (IOException e) {
                     lastError = e;
                     logger.finest( "IO error during initial connection...", e);
@@ -556,6 +568,12 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
             }
         }
         throw new IllegalStateException("Unable to connect to any address in the config!", lastError);
+    }
+
+    private void fireConnectionEvent(boolean disconnected){
+        final LifecycleServiceImpl lifecycleService = (LifecycleServiceImpl)client.getLifecycleService();
+        final LifecycleState state = disconnected ? LifecycleState.CLIENT_DISCONNECTED : LifecycleState.CLIENT_CONNECTED;
+        lifecycleService.fireLifecycleEvent(state);
     }
 
     private Collection<InetSocketAddress> getConfigAddresses() {
@@ -592,7 +610,7 @@ public final class ClientClusterServiceImpl implements ClientClusterService {
         connection.write(serializationService.toData(auth));
         final Data addressData = connection.read();
         Address address = ErrorHandler.returnResultOrThrowException(serializationService.toObject(addressData));
-        connection.setEndpoint(address);
+        connection.setRemoteEndpoint(address);
 
         final Data data = connection.read();
         return ErrorHandler.returnResultOrThrowException(serializationService.toObject(data));

@@ -21,13 +21,12 @@ import com.hazelcast.nio.serialization.Data;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 
 /**
  * @author mdogan 5/15/13
  */
 public interface Connection extends Closeable {
-
-    Address getEndpoint();
 
     boolean write(Data data) throws IOException;
 
@@ -51,6 +50,10 @@ public interface Connection extends Closeable {
      */
     void close() throws IOException;
 
-    void setEndpoint(Address address);
+    Address getRemoteEndpoint();
+
+    void setRemoteEndpoint(Address address);
+
+    InetSocketAddress getLocalSocketAddress();
 
 }

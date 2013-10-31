@@ -18,6 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -35,7 +36,9 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -269,7 +272,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMapEntryProcessorEntryListeners() {
+    public void testMapEntryProcessorEntryListeners() throws InterruptedException {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(3);
         Config cfg = new Config();
         cfg.getMapConfig("default").setInMemoryFormat(InMemoryFormat.OBJECT);
@@ -284,6 +287,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         final AtomicInteger updateKey1Sum = new AtomicInteger(0);
         final AtomicInteger updateKey1OldSum = new AtomicInteger(0);
         final AtomicInteger removeKey1Sum = new AtomicInteger(0);
+        final CountDownLatch latch = new CountDownLatch(6);
         map.addEntryListener(new EntryListener<Integer, Integer>() {
             @Override
             public void entryAdded(EntryEvent<Integer, Integer> event) {
@@ -291,6 +295,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
                 if (event.getKey() == 1) {
                     addKey1Sum.addAndGet(event.getValue());
                 }
+                latch.countDown();
             }
 
             @Override
@@ -299,6 +304,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
                 if (event.getKey() == 1) {
                     removeKey1Sum.addAndGet(event.getValue());
                 }
+                latch.countDown();
             }
 
             @Override
@@ -308,6 +314,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
                     updateKey1OldSum.addAndGet(event.getOldValue());
                     updateKey1Sum.addAndGet(event.getValue());
                 }
+                latch.countDown();
             }
 
             @Override
@@ -323,9 +330,10 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         map.executeOnKey(1, new ValueSetterEntryProcessor(null));
         assertEquals((Integer) 1, map.get(2));
         assertEquals(null, map.get(1));
+        assertTrue(latch.await(100, TimeUnit.SECONDS));
         assertEquals(2, addCount.get());
         assertEquals(3, updateCount.get());
-        assertEquals(3, updateCount.get());
+        assertEquals(1, removeCount.get());
 
         assertEquals(5, addKey1Sum.get());
         assertEquals(4, updateKey1Sum.get());
@@ -358,7 +366,6 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         final AtomicInteger updateCount = new AtomicInteger(0);
         final AtomicInteger removeCount = new AtomicInteger(0);
         final CountDownLatch latch = new CountDownLatch(3);
-
         map.addEntryListener(new EntryListener<Integer, Integer>() {
             @Override
             public void entryAdded(EntryEvent<Integer, Integer> event) {
@@ -396,7 +403,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         map.executeOnKey(2, valueReaderEntryProcessor);
         assertEquals(2, valueReaderEntryProcessor.getValue().intValue());
 
-        map.put(2,5);
+        map.put(2, 5);
         map.executeOnKey(2, valueReaderEntryProcessor);
         assertEquals(5,valueReaderEntryProcessor.getValue().intValue());
 
@@ -433,20 +440,24 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         final AtomicInteger addCount = new AtomicInteger(0);
         final AtomicInteger updateCount = new AtomicInteger(0);
         final AtomicInteger removeCount = new AtomicInteger(0);
+        final CountDownLatch latch = new CountDownLatch(300);
         map.addEntryListener(new EntryListener<Integer, Integer>() {
             @Override
             public void entryAdded(EntryEvent<Integer, Integer> event) {
                 addCount.incrementAndGet();
+                latch.countDown();
             }
 
             @Override
             public void entryRemoved(EntryEvent<Integer, Integer> event) {
                 removeCount.incrementAndGet();
+                latch.countDown();
             }
 
             @Override
             public void entryUpdated(EntryEvent<Integer, Integer> event) {
                 updateCount.incrementAndGet();
+                latch.countDown();
             }
 
             @Override
@@ -471,6 +482,7 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         map.executeOnEntries(removeEntryProcessor);
 
         assertEquals(0,map.size());
+        assertTrue(latch.await(100, TimeUnit.SECONDS));
 
         assertEquals(100,addCount.get());
         assertEquals(100,removeCount.get());
@@ -522,4 +534,36 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             this.hz = hazelcastInstance;
         }
     }
+
+    @Test
+    public void testIssue1022() throws InterruptedException {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setImplementation(new MapLoader<Integer,Integer>() {
+            public Integer load(Integer key) {
+                return 123;
+            }
+
+            public Map<Integer, Integer> loadAll(Collection<Integer> keys) {
+                return null;
+            }
+
+            public Set<Integer> loadAllKeys() {
+                return null;
+            }
+
+        });
+        cfg.getMapConfig("default").setMapStoreConfig(mapStoreConfig);
+        HazelcastInstance hz = nodeFactory.newHazelcastInstance(cfg);
+
+        EntryProcessor entryProcessor = new IncrementorEntryProcessor();
+        hz.getMap("default").executeOnKey(1,entryProcessor);
+
+        assertEquals(124,hz.getMap("default").get(1));
+
+        hz.getLifecycleService().shutdown();
+    }
+
 }

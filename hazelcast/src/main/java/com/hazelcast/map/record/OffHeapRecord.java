@@ -50,7 +50,7 @@ public class OffHeapRecord extends AbstractRecord<Data> {
     }
 
     public Data getValue() {
-        if (valueRef != null && valueRef.size() > 0 && storage != null) {
+        if (valueRef != null) {
             return storage.get(key.getPartitionHash(), valueRef);
         }
         return null;
@@ -58,13 +58,13 @@ public class OffHeapRecord extends AbstractRecord<Data> {
 
     public void setValue(Data value) {
         invalidate();
-        if (value != null && value.bufferSize() > 0) {
+        if (value != null) {
             valueRef = storage.put(key.getPartitionHash(), value);
         }
     }
 
     public void invalidate() {
-        if (valueRef != null && valueRef.size() > 0) {
+        if (valueRef != null) {
             storage.remove(key.getPartitionHash(), valueRef);
         }
         valueRef = null;

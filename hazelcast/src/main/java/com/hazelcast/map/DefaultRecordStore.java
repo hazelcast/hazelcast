@@ -305,6 +305,21 @@ public class DefaultRecordStore implements RecordStore {
     public Map.Entry<Data, Data> getMapEntryData(Data dataKey) {
         checkIfLoaded();
         Record record = records.get(dataKey);
+        Object value;
+        if (record == null) {
+            if (mapContainer.getStore() != null) {
+                value = mapContainer.getStore().load(mapService.toObject(dataKey));
+                if (value != null) {
+                    record = mapService.createRecord(name, dataKey, value, -1);
+                    records.put(dataKey, record);
+                    saveIndex(record);
+                    updateSizeEstimator(calculateRecordSize(record));
+                }
+            }
+        } else {
+            accessRecord(record);
+        }
+
         Data data = record != null ? mapService.toData(record.getValue()) : null;
         return new AbstractMap.SimpleImmutableEntry<Data, Data>(dataKey, data);
     }
@@ -369,7 +384,7 @@ public class DefaultRecordStore implements RecordStore {
 
         if (store != null) {
             store.deleteAll(keysObject);
-            toBeRemovedKeys.clear();
+            toBeRemovedKeys.removeAll(keysToDelete);
         }
 
         clearRecordsMap(lockedRecords);

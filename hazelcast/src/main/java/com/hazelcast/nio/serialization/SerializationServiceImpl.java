@@ -197,7 +197,10 @@ public final class SerializationServiceImpl implements SerializationService {
     }
 
     public Object toObject(final Data data) {
-        if (data == null || data.bufferSize() == 0) {
+        if (data == null) {
+            return null;
+        }
+        if (data.bufferSize() == 0 && data.isDataSerializable()) {
             return null;
         }
         try {
@@ -346,8 +349,15 @@ public final class SerializationServiceImpl implements SerializationService {
     }
 
     public void registerGlobal(final Serializer serializer) {
-        if (!global.compareAndSet(null, createSerializerAdapter(serializer))) {
-            throw new IllegalStateException("Fallback serializer is already registered!");
+        SerializerAdapter adapter = createSerializerAdapter(serializer);
+        if (!global.compareAndSet(null, adapter)) {
+            throw new IllegalStateException("Global serializer is already registered!");
+        }
+        SerializerAdapter current = idMap.putIfAbsent(serializer.getTypeId(), adapter);
+        if (current != null && current.getImpl().getClass() != adapter.getImpl().getClass()) {
+            global.compareAndSet(adapter, null);
+            throw new IllegalStateException("Serializer [" + current.getImpl() + "] has been already registered for type-id: "
+                    + serializer.getTypeId());
         }
     }
 
@@ -439,11 +449,11 @@ public final class SerializationServiceImpl implements SerializationService {
         }
         SerializerAdapter current = typeMap.putIfAbsent(type, serializer);
         if (current != null && current.getImpl().getClass() != serializer.getImpl().getClass()) {
-            throw new IllegalStateException("Serializer[" + current + "] has been already registered for type: " + type);
+            throw new IllegalStateException("Serializer[" + current.getImpl() + "] has been already registered for type: " + type);
         }
         current = idMap.putIfAbsent(serializer.getTypeId(), serializer);
         if (current != null && current.getImpl().getClass() != serializer.getImpl().getClass()) {
-            throw new IllegalStateException("Serializer [" + current + "] has been already registered for type-id: "
+            throw new IllegalStateException("Serializer [" + current.getImpl() + "] has been already registered for type-id: "
                     + serializer.getTypeId());
         }
     }

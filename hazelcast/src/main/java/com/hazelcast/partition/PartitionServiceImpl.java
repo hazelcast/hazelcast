@@ -377,7 +377,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                                 " => Sender: " + sender + ", Master: " + master + "! ");
                         return;
                     } else {
-                        logger.warning("Received a ClusterRuntimeState, but its sender doesn't seem master!" +
+                        logger.warning("Received a ClusterRuntimeState, but its sender doesn't seem to be master!" +
                                 " => Sender: " + sender + ", Master: " + master + "! " +
                                 "(Ignore if master node has changed recently.)");
                     }
@@ -393,8 +393,8 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                     if (address != null && getMember(address) == null) {
                         if (logger.isFinestEnabled()) {
                             logger.finest(
-                                    "Unknown " + address + " is found in partition table sent from master "
-                                            + sender + ". Probably it's already left the cluster. Partition: " + newPartition);
+                                    "Unknown " + address + " found in partition table sent from master "
+                                            + sender + ". It has probably already left the cluster. Partition: " + newPartition);
                         }
                         unknownAddresses.add(address);
                     }
@@ -405,7 +405,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             if (!unknownAddresses.isEmpty() && logger.isLoggable(Level.WARNING)) {
                 StringBuilder s = new StringBuilder("Following unknown addresses are found in partition table")
                         .append(" sent from master[").append(sender).append("].")
-                        .append(" (Probably they have recently joined to or left the cluster.)")
+                        .append(" (Probably they have recently joined or left the cluster.)")
                         .append(" {");
                 for (Address address : unknownAddresses) {
                     s.append("\n\t").append(address);
@@ -1200,7 +1200,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                     final boolean hasNoTasks = migrationQueue.isEmpty();
                     if (hasNoTasks && migrating) {
                         migrating = false;
-                        logger.info("All migration tasks has been completed, queues are empty.");
+                        logger.info("All migration tasks have completed, queues are empty.");
                     }
                     if (!migrationActive.get() || hasNoTasks) {
                         evictCompletedMigrations();

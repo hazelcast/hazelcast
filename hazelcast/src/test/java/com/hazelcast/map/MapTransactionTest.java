@@ -19,8 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.*;
-import com.hazelcast.query.SampleObjects;
-import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.query.*;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -513,6 +512,54 @@ public class MapTransactionTest extends HazelcastTestSupport {
         assertEquals("value3", map1.get("1"));
         assertEquals("value3", map2.get("1"));
     }
+
+    @Test
+    public void testIssue1076() {
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        final HazelcastInstance inst = factory.newHazelcastInstance(new Config());
+
+        IMap map = inst.getMap("default");
+
+        EntryListener<String, Integer> l = new EntryListener<String, Integer>() {
+            @Override
+            public void entryAdded(EntryEvent<String, Integer> event) {
+            }
+
+
+            @Override
+            public void entryRemoved(EntryEvent<String, Integer> event) {
+            }
+
+
+            @Override
+            public void entryUpdated(EntryEvent<String, Integer> event) {
+            }
+
+
+            @Override
+            public void entryEvicted(EntryEvent<String, Integer> event) {
+            }
+        };
+
+
+        EntryObject e = new PredicateBuilder().getEntryObject();
+        Predicate<String, Integer> p = e.equal(1);
+
+
+        map.addEntryListener(l, p, null, false);
+
+        for (Integer i = 0; i < 100; i++) {
+            TransactionContext context = inst.newTransactionContext();
+            context.beginTransaction();
+            TransactionalMap<String, Integer> txnMap = context.getMap("default");
+            txnMap.remove(i.toString());
+            context.commitTransaction();
+        }
+        assertEquals(0, map.size());
+
+        inst.getLifecycleService().shutdown();
+    }
+
 
     @Ignore
     @Test

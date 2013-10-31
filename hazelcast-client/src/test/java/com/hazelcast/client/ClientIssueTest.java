@@ -18,6 +18,7 @@ package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.*;
@@ -30,7 +31,11 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
+import java.util.LinkedList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.core.LifecycleEvent.LifecycleState;
 import static org.junit.Assert.*;
 
 /**
@@ -212,9 +217,43 @@ public class ClientIssueTest {
         } catch (HazelcastInstanceNotActiveException ignored){
         }
         assertFalse(instance.getLifecycleService().isRunning());
+    }
+
+    @Test
+    public void testClientConnectionEvents() throws InterruptedException {
+        final LinkedList<LifecycleState> list = new LinkedList<LifecycleState>();
+        list.offer(LifecycleState.STARTING);
+        list.offer(LifecycleState.STARTED);
+        list.offer(LifecycleState.CLIENT_CONNECTED);
+        list.offer(LifecycleState.CLIENT_DISCONNECTED);
+        list.offer(LifecycleState.CLIENT_CONNECTED);
 
 
+        final HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        final CountDownLatch latch = new CountDownLatch(list.size());
+        LifecycleListener listener = new LifecycleListener(){
+            public void stateChanged(LifecycleEvent event) {
+                final LifecycleState state = list.poll();
+                if (state != null && state.equals(event.getState())){
+                    latch.countDown();
+                }
+            }
+        };
+        final ListenerConfig listenerConfig = new ListenerConfig(listener);
+        final ClientConfig clientConfig = new ClientConfig();
+        clientConfig.addListenerConfig(listenerConfig);
+        clientConfig.setConnectionAttemptLimit(100);
+        final HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
+        Thread.sleep(100);
+
+        instance.shutdown();
+
+        Thread.sleep(800);
+
+        Hazelcast.newHazelcastInstance();
+
+        assertTrue(latch.await(10, TimeUnit.SECONDS));
     }
 
 }

@@ -238,6 +238,10 @@ public final class HazelcastInstanceImpl implements HazelcastInstance {
         return node.clusterService.getClusterProxy();
     }
 
+    public Member getLocalEndpoint() {
+        return node.clusterService.getLocalMember();
+    }
+
     public Collection<DistributedObject> getDistributedObjects() {
         return node.nodeEngine.getProxyService().getAllDistributedObjects();
     }
