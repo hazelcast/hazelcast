@@ -16,6 +16,7 @@
 
 package com.hazelcast.partition;
 
+import com.hazelcast.cluster.AskMasterConfirmationOperation;
 import com.hazelcast.config.PartitionGroupConfig;
 import com.hazelcast.core.*;
 import com.hazelcast.instance.MemberImpl;
@@ -286,25 +287,67 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             migrationActive.set(false);
             for (PartitionImpl partition : partitions) {
                 // shift partition table up.
-                while (partition.onDeadAddress(deadAddress));
+                while (partition.onDeadAddress(deadAddress)) ;
             }
 
             if (node.isMaster()) {
                 migrationQueue.offer(new RepartitioningTask());
-            }
-
-            // Activate migration back after connectionDropTime x 10 milliseconds,
-            // thinking optimistically that all nodes notice the dead one in this period.
-            final long waitBeforeMigrationActivate = node.groupProperties.CONNECTION_MONITOR_INTERVAL.getLong()
-                    * node.groupProperties.CONNECTION_MONITOR_MAX_FAULTS.getInteger() * 10;
-            nodeEngine.getExecutionService().schedule(new Runnable() {
-                public void run() {
-                    migrationActive.set(true);
+                Collection<MemberImpl> members = node.getClusterService().getMemberList();
+                final Set<MemberImpl> checkList = new HashSet<MemberImpl>();
+                // checking if all members confirmed this member as master
+                for (MemberImpl mem : members) {
+                    if (node.getThisAddress().equals(mem.getAddress())) {
+                        continue;
+                    }
+                    // if the member has not sent confirmation yet, ask for a confirmation proactively
+                    if (!node.getClusterService().checkMasterConfirmation(mem)) {
+                        nodeEngine.getOperationService().send(new AskMasterConfirmationOperation(), mem.getAddress());
+                        checkList.add(mem);
+                    }
                 }
-            }, waitBeforeMigrationActivate, TimeUnit.MILLISECONDS);
+                // check if there are still members that have not sent confirmation
+                if (!checkList.isEmpty()) {
+                    int tryCount = 3;
+                    while (tryCount-- > 0) {
+                        Iterator<MemberImpl> iterator = checkList.iterator();
+                        while (iterator.hasNext()) {
+                            if (node.getClusterService().checkMasterConfirmation(iterator.next())) {
+                                iterator.remove();
+                            }
+                        }
+                        if (checkList.isEmpty()) {
+                            break;
+                        }
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException ignored) {
+                        }
+                    }
+                }
+                if (!checkList.isEmpty()) {
+                    String message = "Something is wrong. There are members do not confirm master still:";
+                    for (MemberImpl mem : checkList) {
+                        message = message + "[" + mem.getAddress() + "]";
+                    }
+                    logger.severe(message);
+                }
+
+                // now sending operation to make migration active
+                for (MemberImpl mem : members) {
+                    if (node.getThisAddress().equals(mem.getAddress())) {
+                        continue;
+                    }
+                    nodeEngine.getOperationService().send(new ActivateMigrationsOperation(), mem.getAddress());
+                }
+                activateMigration();
+            }
         } finally {
             lock.unlock();
         }
+    }
+
+    public void activateMigration() {
+        migrationActive.set(true);
     }
 
     private void rollbackActiveMigrationsFromPreviousMaster(final String currentMasterUuid) {
@@ -373,7 +416,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             } else {
                 if (sender == null || !sender.equals(master)) {
                     if (node.clusterService.getMember(sender) == null) {
-                        logger.severe( "Received a ClusterRuntimeState from an unknown member!" +
+                        logger.severe("Received a ClusterRuntimeState from an unknown member!" +
                                 " => Sender: " + sender + ", Master: " + master + "! ");
                         return;
                     } else {
@@ -514,7 +557,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 if (oldMaster) {
                     logger.info("Finalizing migration instantiated by the old master -> " + oldMigration);
                 } else {
-                    logger.finest( "Finalizing previous migration -> " + oldMigration);
+                    logger.finest("Finalizing previous migration -> " + oldMigration);
                 }
                 finalizeActiveMigration(oldMigration);
                 activeMigrations.put(partitionId, newMigration);
@@ -679,7 +722,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             boolean ok = checkReplicaSyncState();
             timeoutInMillis -= (Clock.currentTimeMillis() - start);
             if (ok) {
-                logger.finest( "Replica sync state before shutdown is OK");
+                logger.finest("Replica sync state before shutdown is OK");
                 return true;
             } else {
                 if (timeoutInMillis < 0) {
@@ -1097,12 +1140,12 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 PartitionImpl partition = partitions[info.getPartitionId()];
                 if (!partition.getOwner().equals(info.getSource())) {
                     logger.severe("ERROR: partition owner is not the source of migration! -> "
-                            +  partition + " -VS- " + info);
+                            + partition + " -VS- " + info);
                 }
                 sendMigrationEvent(migrationInfo, MigrationStatus.STARTED);
                 Boolean result = Boolean.FALSE;
                 MemberImpl fromMember = getMember(migrationInfo.getSource());
-                logger.finest( "Started Migration : " + migrationInfo);
+                logger.finest("Started Migration : " + migrationInfo);
                 systemLogService.logPartition("Started Migration : " + migrationInfo);
                 if (fromMember != null) {
                     Invocation inv = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME,
@@ -1117,11 +1160,11 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                     }
                 } else {
                     // Partition is lost! Assign new owner and exit.
-                    logger.warning( "Partition is lost! Assign new owner and exit...");
+                    logger.warning("Partition is lost! Assign new owner and exit...");
                     result = Boolean.TRUE;
                 }
                 if (Boolean.TRUE.equals(result)) {
-                    logger.finest( "Finished Migration: " + migrationInfo);
+                    logger.finest("Finished Migration: " + migrationInfo);
                     systemLogService.logPartition("Finished Migration: " + migrationInfo);
                     processMigrationResult();
                 } else {
@@ -1208,7 +1251,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                     }
                 }
             } catch (InterruptedException e) {
-                logger.finest( "MigrationThread is interrupted: " + e.getMessage());
+                logger.finest("MigrationThread is interrupted: " + e.getMessage());
             } finally {
                 clearMigrationQueue();
             }
@@ -1220,7 +1263,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
                 migrating = (r instanceof Migrator);
                 r.run();
             } catch (Throwable t) {
-                logger.warning( t);
+                logger.warning(t);
             }
             return true;
         }
@@ -1300,7 +1343,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
     }
 
     public void shutdown() {
-        logger.finest( "Shutting down the partition service");
+        logger.finest("Shutting down the partition service");
         migrationThread.stopNow();
         reset();
     }
@@ -1354,7 +1397,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
 
         if (partitionGroupConfig == null || !partitionGroupConfig.isEnabled()) {
             memberGroupType = PartitionGroupConfig.MemberGroupType.PER_MEMBER;
-        }else{
+        } else {
             memberGroupType = partitionGroupConfig.getGroupType();
         }
 
@@ -1366,7 +1409,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             case PER_MEMBER:
                 return new SingleMemberGroupFactory();
             default:
-                throw new RuntimeException("Unknown MemberGroupType:"+memberGroupType);
+                throw new RuntimeException("Unknown MemberGroupType:" + memberGroupType);
         }
     }
 
