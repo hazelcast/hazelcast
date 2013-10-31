@@ -420,8 +420,8 @@ public class DefaultRecordStore implements RecordStore {
             // reduce size
             updateSizeEstimator(-calculateRecordSize(record));
             deleteRecord(dataKey);
+            cancelAssociatedSchedulers(dataKey);
         }
-        cancelAssociatedSchedulers(dataKey);
         return oldValue;
     }
 
