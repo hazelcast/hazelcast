@@ -483,7 +483,7 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
             nodeEngine.getOperationService()
                     .invokeOnAllPartitions(SERVICE_NAME, new BinaryOperationFactory(clearOperation, nodeEngine));
             //clear all near caches.
-            getService().clearAllNearCaches(mapName);
+            getService().invalidateAllNearCaches(mapName);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }

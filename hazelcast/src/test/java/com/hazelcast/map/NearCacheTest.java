@@ -37,27 +37,30 @@ public class NearCacheTest extends HazelcastTestSupport {
         final NearCacheConfig nearCacheConfig = new NearCacheConfig();
         nearCacheConfig.setInvalidateOnChange(true);
         cfg.getMapConfig(mapName).setNearCacheConfig(nearCacheConfig);
-        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
-        final HazelcastInstance hazelcastInstance = factory.newHazelcastInstance(cfg);
-        final IMap map = hazelcastInstance.getMap(mapName);
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance hazelcastInstance1 = factory.newHazelcastInstance(cfg);
+        final HazelcastInstance hazelcastInstance2 = factory.newHazelcastInstance(cfg);
+        final IMap map1 = hazelcastInstance1.getMap(mapName);
+        final IMap map2 = hazelcastInstance2.getMap(mapName);
         final int size = 10;
         //populate map.
         for (int i = 0; i < size; i++) {
-            map.put(i, i);
+            map1.put(i, i);
         }
         //populate near cache
         for (int i = 0; i < size; i++) {
-            map.get(i);
+            map1.get(i);
+            map2.get(i);
         }
         //clear map should trigger near cache eviction.
-        map.clear();
+        map1.clear();
         for (int i = 0; i < size; i++) {
-            assertNull(map.get(i));
+            assertNull(map1.get(i));
         }
     }
 
     @Test
-    public void testNearCacheEvictionByUsingMapIdleEviction() throws InterruptedException {
+    public void testNearCacheEvictionByUsingMapTTLEviction() throws InterruptedException {
         final Config cfg = new Config();
         final String mapName = "testNearCacheEvictionByUsingMapIdleEviction";
         final NearCacheConfig nearCacheConfig = new NearCacheConfig();
@@ -69,10 +72,10 @@ public class NearCacheTest extends HazelcastTestSupport {
         msc.setMaxSizePolicy(MaxSizeConfig.MaxSizePolicy.PER_NODE);
         msc.setSize(50);
         mc.setMaxSizeConfig(msc);
-        final int maxIdleSeconds = 10;
-        final int size = 100;
+        final int maxTTL = 2;
+        final int size = 100000;
         final int nsize = size / 5;
-        mc.setMaxIdleSeconds(maxIdleSeconds);
+        mc.setTimeToLiveSeconds(maxTTL);
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         final HazelcastInstance instance1 = factory.newHazelcastInstance(cfg);
         final HazelcastInstance instance2 = factory.newHazelcastInstance(cfg);

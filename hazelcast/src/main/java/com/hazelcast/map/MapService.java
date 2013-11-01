@@ -452,20 +452,19 @@ public class MapService implements ManagedService, MigrationAwareService,
         invalidateNearCache(mapName, key);
     }
 
-    public void clearAllNearCaches(String mapName) {
+    public void invalidateAllNearCaches(String mapName) {
         sendNearCacheOperation(new NearCacheClearOperation(mapName));
         // clear local near cache.
         clearNearCache(mapName);
     }
 
     public void invalidateAllNearCaches(String mapName, Set<Data> keys) {
-        if (keys != null && !keys.isEmpty()) {
-            //send operation.
-            sendNearCacheOperation(new NearCacheKeySetInvalidationOperation(mapName, keys));
-            // below local invalidation is for the case the data is cached before partition is owned/migrated
-            for (final Data key : keys) {
-                invalidateNearCache(mapName, key);
-            }
+        if (keys == null || keys.isEmpty()) return;
+        //send operation.
+        sendNearCacheOperation(new NearCacheKeySetInvalidationOperation(mapName, keys));
+        // below local invalidation is for the case the data is cached before partition is owned/migrated
+        for (final Data key : keys) {
+            invalidateNearCache(mapName, key);
         }
     }
 
@@ -872,6 +871,8 @@ public class MapService implements ManagedService, MigrationAwareService,
                             recordSet.add(rec);
                             keySet.add(rec.getKey());
                         }
+
+                        if (keySet.isEmpty()) continue;
                         //add keys for near cache eviction.
                         keysGatheredForNearCacheEviction.addAll(keySet);
                         //prepare local "evict keys" operation.

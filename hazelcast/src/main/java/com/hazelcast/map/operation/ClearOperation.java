@@ -57,7 +57,6 @@ public class ClearOperation extends AbstractMapOperation implements BackupAwareO
 
     @Override
     public boolean returnsResponse() {
-        // keys is not null when this operation is used in eviction, and no need a response while eviction
         return true;
     }
 
