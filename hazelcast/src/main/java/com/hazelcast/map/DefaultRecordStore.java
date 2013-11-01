@@ -909,8 +909,11 @@ public class DefaultRecordStore implements RecordStore {
             MapEntrySet entrySet = new MapEntrySet();
             for (Data dataKey : keys.keySet()) {
                 Object key = keys.get(dataKey);
-                Data dataValue = mapService.toData(values.get(key));
-                entrySet.add(dataKey, dataValue);
+                Object value = values.get(key);
+                if (value != null) {
+                    Data dataValue = mapService.toData(value);
+                    entrySet.add(dataKey, dataValue);
+                }
             }
             PutAllOperation operation = new PutAllOperation(name, entrySet, true);
             operation.setNodeEngine(nodeEngine);
