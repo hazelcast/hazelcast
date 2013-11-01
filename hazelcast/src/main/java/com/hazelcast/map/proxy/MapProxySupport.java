@@ -475,12 +475,15 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
     }
 
     public void clearInternal() {
+        final String mapName = name;
         final NodeEngine nodeEngine = getNodeEngine();
         try {
-            ClearOperation clearOperation = new ClearOperation(name);
+            ClearOperation clearOperation = new ClearOperation(mapName);
             clearOperation.setServiceName(SERVICE_NAME);
             nodeEngine.getOperationService()
                     .invokeOnAllPartitions(SERVICE_NAME, new BinaryOperationFactory(clearOperation, nodeEngine));
+            //clear all near caches.
+            getService().clearAllNearCaches(mapName);
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }

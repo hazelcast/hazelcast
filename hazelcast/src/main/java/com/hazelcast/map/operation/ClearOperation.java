@@ -43,19 +43,6 @@ public class ClearOperation extends AbstractMapOperation implements BackupAwareO
         recordStore.clear();
     }
 
-    @Override
-    public void afterRun() throws Exception {
-        clearNearCache();
-    }
-
-    private final void clearNearCache() {
-        if (mapContainer.isNearCacheEnabled()
-                && mapContainer.getMapConfig().getNearCacheConfig().isInvalidateOnChange()) {
-            mapService.clearNearCache(name);
-        }
-    }
-
-
     public boolean shouldBackup() {
         return shouldBackup;
     }

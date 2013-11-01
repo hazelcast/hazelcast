@@ -363,7 +363,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         final PartitionContainer container = partitionContainers[partitionId];
         if (container != null) {
             for (RecordStore mapPartition : container.getMaps().values()) {
-                mapPartition.clear();
+                mapPartition.clearPartition();
             }
             container.getMaps().clear();
         }
@@ -452,25 +452,34 @@ public class MapService implements ManagedService, MigrationAwareService,
         invalidateNearCache(mapName, key);
     }
 
+    public void clearAllNearCaches(String mapName) {
+        sendNearCacheOperation(new NearCacheClearOperation(mapName));
+        // clear local near cache.
+        clearNearCache(mapName);
+    }
+
     public void invalidateAllNearCaches(String mapName, Set<Data> keys) {
-        final Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
-        for (final MemberImpl member : members) {
+        if (keys != null && !keys.isEmpty()) {
+            //send operation.
+            sendNearCacheOperation(new NearCacheKeySetInvalidationOperation(mapName, keys));
+            // below local invalidation is for the case the data is cached before partition is owned/migrated
+            for (final Data key : keys) {
+                invalidateNearCache(mapName, key);
+            }
+        }
+    }
+
+    private void sendNearCacheOperation(Operation operation) {
+        Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+        for (MemberImpl member : members) {
             try {
                 if (member.localMember())
                     continue;
-                final NearCacheKeySetInvalidationOperation operation = new NearCacheKeySetInvalidationOperation(mapName, keys);
                 nodeEngine.getOperationService().send(operation, member.getAddress());
             } catch (Throwable throwable) {
                 throw new HazelcastException(throwable);
             }
         }
-        // below local invalidation is for the case the data is cached before partition is owned/migrated
-        if (keys != null && !keys.isEmpty()) {
-            for (final Data key : keys) {
-                invalidateNearCache(mapName, key);
-            }
-        }
-
     }
 
     public Object getFromNearCache(String mapName, Data key) {
@@ -883,7 +892,7 @@ public class MapService implements ManagedService, MigrationAwareService,
                 final MapContainer mapContainer = getMapContainer(mapName);
                 if (mapContainer.isNearCacheEnabled()
                         && mapContainer.getMapConfig().getNearCacheConfig().isInvalidateOnChange()) {
-                    invalidateAllNearCaches(mapName,keysGatheredForNearCacheEviction);
+                    invalidateAllNearCaches(mapName, keysGatheredForNearCacheEviction);
                 }
             }
         }
