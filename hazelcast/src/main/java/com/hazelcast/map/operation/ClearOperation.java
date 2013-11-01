@@ -19,67 +19,33 @@ package com.hazelcast.map.operation;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
 
 import static com.hazelcast.map.MapService.SERVICE_NAME;
 
 public class ClearOperation extends AbstractMapOperation implements BackupAwareOperation, PartitionAwareOperation {
 
-    Set<Data> keys;
     boolean shouldBackup = true;
-    private transient Set<Data> keysToBeRemoved;
+
+    public ClearOperation() {
+    }
 
     public ClearOperation(String name) {
         super(name);
     }
 
-    public ClearOperation(String name, Set<Data> keys) {
-        super(name);
-        this.keys = keys;
-    }
-
-    public ClearOperation() {
-    }
-
     public void run() {
         final RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
-        if (keys == null) {
-            recordStore.removeAll();
-            return;
-        }
-        if (keys.isEmpty()) {
-            shouldBackup = false;
-        }
-        keysToBeRemoved = new HashSet<Data>();
-        for (Data key : keys) {
-            if (!recordStore.isLocked(key)) {
-                recordStore.evict(key);
-                keysToBeRemoved.add(key);
-            }
-        }
+        recordStore.clear();
     }
 
     @Override
     public void afterRun() throws Exception {
-        if (keys == null) {
-            clearNearCache();
-        } else {
-            invalidateNearCaches(keysToBeRemoved);
-        }
-    }
-
-    private final void invalidateNearCaches(Set<Data> keys) {
-        if (mapContainer.isNearCacheEnabled()
-                && mapContainer.getMapConfig().getNearCacheConfig().isInvalidateOnChange()) {
-            mapService.invalidateAllNearCaches(name, keys);
-        }
+        clearNearCache();
     }
 
     private final void clearNearCache() {
@@ -105,11 +71,11 @@ public class ClearOperation extends AbstractMapOperation implements BackupAwareO
     @Override
     public boolean returnsResponse() {
         // keys is not null when this operation is used in eviction, and no need a response while eviction
-        return keys == null;
+        return true;
     }
 
     public Operation getBackupOperation() {
-        ClearBackupOperation clearBackupOperation = new ClearBackupOperation(name, keys);
+        ClearBackupOperation clearBackupOperation = new ClearBackupOperation(name);
         clearBackupOperation.setServiceName(SERVICE_NAME);
         return clearBackupOperation;
     }
@@ -123,27 +89,10 @@ public class ClearOperation extends AbstractMapOperation implements BackupAwareO
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        if (keys == null) {
-            out.writeInt(-1);
-        } else {
-            out.writeInt(keys.size());
-            for (Data key : keys) {
-                key.writeData(out);
-            }
-        }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        int size = in.readInt();
-        if (size > -1) {
-            keys = new HashSet<Data>(size);
-            for (int i = 0; i < size; i++) {
-                Data data = new Data();
-                data.readData(in);
-                keys.add(data);
-            }
-        }
     }
 }

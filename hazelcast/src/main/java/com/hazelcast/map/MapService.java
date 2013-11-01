@@ -28,7 +28,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.merge.*;
 import com.hazelcast.map.operation.*;
 import com.hazelcast.map.proxy.MapProxyImpl;
-import com.hazelcast.map.record.*;
+import com.hazelcast.map.record.Record;
+import com.hazelcast.map.record.RecordStatistics;
 import com.hazelcast.map.tx.TransactionalMapProxy;
 import com.hazelcast.map.wan.MapReplicationRemove;
 import com.hazelcast.map.wan.MapReplicationUpdate;
@@ -832,11 +833,13 @@ public class MapService implements ManagedService, MigrationAwareService,
             }
 
             public void run() {
+
+                final Set<Data> keysGatheredForNearCacheEviction = new HashSet<Data>();
                 for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
                     if ((i % ExecutorConfig.DEFAULT_POOL_SIZE) != mod) {
                         continue;
                     }
-                    Address owner = nodeEngine.getPartitionService().getPartitionOwner(i);
+                    final Address owner = nodeEngine.getPartitionService().getPartitionOwner(i);
                     if (nodeEngine.getThisAddress().equals(owner)) {
                         final PartitionContainer pc = partitionContainers[i];
                         final RecordStore recordStore = pc.getRecordStore(mapName);
@@ -860,18 +863,27 @@ public class MapService implements ManagedService, MigrationAwareService,
                             recordSet.add(rec);
                             keySet.add(rec.getKey());
                         }
-                        ClearOperation clearOperation = new ClearOperation(mapName, keySet);
-                        clearOperation.setNodeEngine(nodeEngine);
-                        clearOperation.setServiceName(SERVICE_NAME);
-                        clearOperation.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
-                        clearOperation.setPartitionId(i);
-                        OperationAccessor.setCallerAddress(clearOperation, nodeEngine.getThisAddress());
-                        nodeEngine.getOperationService().executeOperation(clearOperation);
+                        //add keys for near cache eviction.
+                        keysGatheredForNearCacheEviction.addAll(keySet);
+                        //prepare local "evict keys" operation.
+                        EvictKeysOperation evictKeysOperation = new EvictKeysOperation(mapName, keySet);
+                        evictKeysOperation.setNodeEngine(nodeEngine);
+                        evictKeysOperation.setServiceName(SERVICE_NAME);
+                        evictKeysOperation.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
+                        evictKeysOperation.setPartitionId(i);
+                        OperationAccessor.setCallerAddress(evictKeysOperation, nodeEngine.getThisAddress());
+                        nodeEngine.getOperationService().executeOperation(evictKeysOperation);
 
                         for (Record record : recordSet) {
                             publishEvent(nodeEngine.getThisAddress(), mapName, EntryEventType.EVICTED, record.getKey(), toData(record.getValue()), null);
                         }
                     }
+                }
+                //send invalidation request to all members.
+                final MapContainer mapContainer = getMapContainer(mapName);
+                if (mapContainer.isNearCacheEnabled()
+                        && mapContainer.getMapConfig().getNearCacheConfig().isInvalidateOnChange()) {
+                    invalidateAllNearCaches(mapName,keysGatheredForNearCacheEviction);
                 }
             }
         }
