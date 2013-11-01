@@ -60,6 +60,7 @@ import java.util.concurrent.TimeUnit;
  * </li>
  * </ul>
  * </p>
+ * <p>This class does <em>not</em> allow <tt>null</tt> to be used as a key or value.</p>
  *
  * @param <K> key
  * @param <V> value
