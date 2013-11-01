@@ -88,7 +88,7 @@ public class TxnDeleteOperation extends BaseRemoveOperation implements MapTxnOpe
 
     @Override
     public boolean shouldBackup() {
-        return successful;
+        return true;
     }
 
     public WaitNotifyKey getNotifiedKey() {

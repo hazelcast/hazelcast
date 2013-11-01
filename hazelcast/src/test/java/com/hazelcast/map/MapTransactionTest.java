@@ -19,6 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.*;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.query.*;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -45,6 +46,36 @@ import static org.junit.Assert.*;
 public class MapTransactionTest extends HazelcastTestSupport {
 
     private final TransactionOptions options = new TransactionOptions().setTransactionType(TransactionOptions.TransactionType.TWO_PHASE);
+
+    //unfortunately the bug can't be detected by a unit test since the exception is thrown in a background thread (and logged)
+    @Test
+    public void issue_1056s() throws InterruptedException {
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+        final HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        final Thread t = new Thread() {
+            @Override
+            public void run() {
+                TransactionContext ctx = instance2.newTransactionContext();
+                ctx.beginTransaction();
+                TransactionalMap<Integer, Integer> txnMap = ctx.getMap("test");
+                latch.countDown();
+                txnMap.delete(1);
+                ctx.commitTransaction();
+            }
+        };
+
+        t.start();
+
+        TransactionContext ctx = instance2.newTransactionContext();
+        ctx.beginTransaction();
+        TransactionalMap<Integer, Integer> txnMap = ctx.getMap("test");
+        txnMap.delete(1);
+        latch.await();
+        ctx.commitTransaction();
+        t.join();
+    }
 
     @Test
     public void testCommitOrder() throws TransactionException {
