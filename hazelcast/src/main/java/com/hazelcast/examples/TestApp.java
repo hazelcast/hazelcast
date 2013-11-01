@@ -55,10 +55,6 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 
     private IAtomicLong atomicNumber;
 
-    private IExecutorService executor1Service = null;
-
-    private IExecutorService executor8Service = null;
-
     private String namespace = "default";
 
     private boolean silent = false;
@@ -113,8 +109,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         return hazelcast.getExecutorService("e1");
     }
 
-    public IExecutorService getExecutor8Service(){
-        return hazelcast.getExecutorService("e8");
+    public IExecutorService getExecutor2Service(){
+        return hazelcast.getExecutorService("e2");
     }
 
     public ISet<Object> getSet() {
@@ -415,8 +411,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             System.exit(0);
         }else if(first.startsWith("e1.simulateLoad")){
              handleExecutorSimulate(getExecutor1Service(), args);
-        }else if(first.startsWith("e8.simulateLoad")){
-            handleExecutorSimulate(getExecutor8Service(),args);
+        }else if(first.startsWith("e2.simulateLoad")){
+            handleExecutorSimulate(getExecutor2Service(),args);
         } else {
             println("type 'help' for help");
         }
@@ -1545,7 +1541,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("executeOnMember <echo-input> <memberIndex>         //executes an echo task on the member with given index");
         println("executeOnMembers <echo-input>                      //executes an echo task on all of the members");
         println("e1.simulateLoad <task-count> <delaySeconds>        //simulates load on executor with 1 thread");
-        println("e8.simulateLoad <task-count> <delaySeconds>        //simulates load on executor with 8 thread");
+        println("e2.simulateLoad <task-count> <delaySeconds>        //simulates load on executor with 2 thread");
 
         println("");
         silent = silentBefore;
@@ -1565,7 +1561,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         Config config = new Config();
 
         config.addExecutorConfig(new ExecutorConfig("e1").setPoolSize(1));
-        config.addExecutorConfig(new ExecutorConfig("e8").setPoolSize(8));
+        config.addExecutorConfig(new ExecutorConfig("e2").setPoolSize(2));
 
         TestApp testApp = new TestApp(Hazelcast.newHazelcastInstance(config));
         testApp.start(args);
