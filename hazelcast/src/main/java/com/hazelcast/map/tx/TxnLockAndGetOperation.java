@@ -42,7 +42,7 @@ public class TxnLockAndGetOperation extends LockAwareOperation {
     @Override
     public void run() throws Exception {
         if (!recordStore.txnLock(getKey(), getCallerUuid(), getThreadId(), ttl)) {
-            throw new TransactionException("Transaction couldn't obtain lock!");
+            throw new TransactionException("Transaction couldn't obtain lock.");
         }
         Record record = recordStore.getRecord(dataKey);
         Data value = record == null ? null : mapService.toData(record.getValue());

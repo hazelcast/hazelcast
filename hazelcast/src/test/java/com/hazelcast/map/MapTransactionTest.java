@@ -19,6 +19,7 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.*;
+import com.hazelcast.instance.GroupProperties;
 import com.hazelcast.query.*;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -39,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotEquals;
 
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
@@ -236,6 +238,225 @@ public class MapTransactionTest extends HazelcastTestSupport {
         assertEquals("value2", map1.get("1"));
         assertEquals("value2", map2.get("1"));
     }
+
+
+    @Test
+    public void testTxnGetForUpdateAndIncrementStressTest() throws TransactionException, InterruptedException {
+        Config config = new Config();
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance h2 = factory.newHazelcastInstance(config);
+        final IMap<String, Integer> map = h2.getMap("default");
+        final String key = "count";
+        int count1 = 13000;
+        int count2 = 15000;
+        final CountDownLatch latch = new CountDownLatch(count1 + count2);
+        map.put(key, 0);
+        new Thread(new TxnIncrementor(count1, h1, latch)).start();
+        new Thread(new TxnIncrementor(count2, h2, latch)).start();
+        latch.await(100, TimeUnit.SECONDS);
+        assertEquals(new Integer(count1 + count2), map.get(key));
+    }
+
+    static class TxnIncrementor implements Runnable {
+        int count = 0;
+        HazelcastInstance instance;
+        final String key = "count";
+        final CountDownLatch latch;
+
+
+        TxnIncrementor(int count, HazelcastInstance instance, CountDownLatch latch) {
+            this.count = count;
+            this.instance = instance;
+            this.latch = latch;
+        }
+
+        @Override
+        public void run() {
+            for (int i = 0; i < count; i++) {
+                instance.executeTransaction(new TransactionalTask<Boolean>() {
+                    public Boolean execute(TransactionalTaskContext context) throws TransactionException {
+                        final TransactionalMap<String, Integer> txMap = context.getMap("default");
+                        Integer value = txMap.getForUpdate(key);
+                        txMap.put(key, value + 1);
+                        return true;
+                    }
+                });
+                latch.countDown();
+            }
+        }
+    }
+
+
+    @Test
+    public void testTxnGetForUpdate() throws TransactionException {
+        Config config = new Config();
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance h2 = factory.newHazelcastInstance(config);
+        final IMap<String, String> map = h2.getMap("default");
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        final CountDownLatch latch2 = new CountDownLatch(1);
+        final AtomicBoolean pass = new AtomicBoolean(true);
+
+        map.put("var", "value0");
+
+        Runnable updater = new Runnable() {
+            public void run() {
+                try {
+                    latch1.await(100, TimeUnit.SECONDS);
+                    pass.set(map.tryPut("var", "value1", 0, TimeUnit.SECONDS) == false);
+                    latch2.countDown();
+                } catch (Exception e) {
+                }
+            }
+        };
+        new Thread(updater).start();
+        boolean b = h1.executeTransaction(options, new TransactionalTask<Boolean>() {
+            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
+                try {
+                    final TransactionalMap<String, Integer> txMap = context.getMap("default");
+                    assertEquals("value0", txMap.getForUpdate("var"));
+                    latch1.countDown();
+                    latch2.await(100, TimeUnit.SECONDS);
+                } catch (Exception e) {
+                }
+                return true;
+            }
+        });
+        assertTrue(b);
+        assertTrue(pass.get());
+        assertTrue(map.tryPut("var", "value2", 0, TimeUnit.SECONDS));
+
+    }
+
+    @Test
+    public void testTxnGetForUpdateTimeout() throws TransactionException {
+        Config config = new Config();
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance h2 = factory.newHazelcastInstance(config);
+        final IMap<String, String> map = h2.getMap("default");
+        map.put("var", "value0");
+        map.lock("var");
+        TransactionOptions opts = new TransactionOptions();
+        opts.setTimeout(1, TimeUnit.SECONDS);
+
+        try {
+            boolean b = h1.executeTransaction(opts, new TransactionalTask<Boolean>() {
+                public Boolean execute(TransactionalTaskContext context) throws TransactionException {
+                    final TransactionalMap<String, String> txMap = context.getMap("default");
+                    txMap.getForUpdate("var");
+                    fail();
+                    return true;
+                }
+            });
+        } catch (TransactionException e) {
+        }
+        assertTrue(map.isLocked("var"));
+
+    }
+
+    @Test
+    public void testTxnGetForUpdateTxnFails() throws TransactionException {
+        Config config = new Config();
+        config.setProperty(GroupProperties.PROP_OPERATION_CALL_TIMEOUT_MILLIS, "1000");
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance h2 = factory.newHazelcastInstance(config);
+        final IMap<String, String> map = h2.getMap("default");
+        map.put("var", "value");
+        map.lock("varLocked");
+        TransactionOptions opts = new TransactionOptions();
+        opts.setTimeout(1, TimeUnit.SECONDS);
+
+        try {
+            boolean b = h1.executeTransaction(opts, new TransactionalTask<Boolean>() {
+                public Boolean execute(TransactionalTaskContext context) throws TransactionException {
+                    final TransactionalMap<String, String> txMap = context.getMap("default");
+                    txMap.getForUpdate("var");
+                    throw new TransactionException();
+                }
+            });
+        } catch (TransactionException e) {
+        }
+        assertFalse(map.isLocked("var"));
+        assertTrue(map.isLocked("varLocked"));
+
+    }
+
+
+    @Test
+    public void testTxnGetForUpdateMultipleTimes() throws TransactionException {
+        Config config = new Config();
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance h2 = factory.newHazelcastInstance(config);
+        final IMap<String, String> map = h2.getMap("default");
+        map.put("var", "value0");
+
+        boolean b = h1.executeTransaction(options, new TransactionalTask<Boolean>() {
+            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
+                try {
+                    final TransactionalMap<String, String> txMap = context.getMap("default");
+                    assertEquals("value0", txMap.getForUpdate("var"));
+                    assertEquals("value0", txMap.getForUpdate("var"));
+                    assertEquals("value0", txMap.getForUpdate("var"));
+                } catch (Exception e) {
+                }
+                return true;
+            }
+        });
+
+    }
+
+    @Test
+    public void testTxnUpdateThenGetForUpdate() throws TransactionException {
+        Config config = new Config();
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance h2 = factory.newHazelcastInstance(config);
+        final IMap<String, String> map = h2.getMap("default");
+        map.put("var", "value0");
+
+        boolean b = h1.executeTransaction(options, new TransactionalTask<Boolean>() {
+            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
+                try {
+                    final TransactionalMap<String, String> txMap = context.getMap("default");
+                    assertEquals("value0", txMap.put("var", "value1"));
+                    assertEquals("value1", txMap.getForUpdate("var"));
+                } catch (Exception e) {
+                }
+                return true;
+            }
+        });
+
+    }
+
+    @Test
+    public void testTxnGetForUpdateThenUpdate() throws TransactionException {
+        Config config = new Config();
+        final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        final HazelcastInstance h1 = factory.newHazelcastInstance(config);
+        final HazelcastInstance h2 = factory.newHazelcastInstance(config);
+        final IMap<String, String> map = h2.getMap("default");
+        map.put("var", "value0");
+
+        boolean b = h1.executeTransaction(options, new TransactionalTask<Boolean>() {
+            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
+                try {
+                    final TransactionalMap<String, String> txMap = context.getMap("default");
+                    assertEquals("value0", txMap.getForUpdate("var"));
+                    assertEquals("value0", txMap.put("var", "value1"));
+                    assertEquals("value1", txMap.getForUpdate("var"));
+                    assertEquals("value1", txMap.get("var"));
+                } catch (Exception e) {
+                }
+                return true;
+            }
+        });
+    }
+
 
     @Test
     public void testTxnRemove() throws TransactionException {

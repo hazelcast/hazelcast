@@ -17,6 +17,7 @@
 package com.hazelcast.client.txn;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -24,16 +25,24 @@ import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.query.SampleObjects;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.SerialTest;
 import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.transaction.TransactionException;
+import com.hazelcast.transaction.TransactionalTask;
+import com.hazelcast.transaction.TransactionalTaskContext;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author ali 6/10/13
@@ -73,6 +82,43 @@ public class ClientTxnMapTest {
         context.commitTransaction();
 
         assertEquals("value1", hz.getMap(name).get("key1"));
+    }
+
+    @Test
+    public void testGetForUpdate() throws TransactionException {
+        final IMap<String, Integer> map = hz.getMap("testTxnGetForUpdate");
+        final CountDownLatch latch1 = new CountDownLatch(1);
+        final CountDownLatch latch2 = new CountDownLatch(1);
+        map.put("var", 0);
+        final AtomicBoolean pass = new AtomicBoolean(true);
+
+
+        Runnable incrementor = new Runnable() {
+            public void run() {
+                try {
+                    latch1.await(100, TimeUnit.SECONDS);
+                    pass.set(map.tryPut("var", 1, 0, TimeUnit.SECONDS) == false);
+                    latch2.countDown();
+                } catch (Exception e) {
+                }
+            }
+        };
+        new Thread(incrementor).start();
+        boolean b = hz.executeTransaction(new TransactionalTask<Boolean>() {
+            public Boolean execute(TransactionalTaskContext context) throws TransactionException {
+                try {
+                    final TransactionalMap<String, Integer> txMap = context.getMap("testTxnGetForUpdate");
+                    txMap.getForUpdate("var");
+                    latch1.countDown();
+                    latch2.await(100, TimeUnit.SECONDS);
+                } catch (Exception e) {
+                }
+                return true;
+            }
+        });
+        assertTrue(b);
+        assertTrue(pass.get());
+        assertTrue(map.tryPut("var", 1, 0, TimeUnit.SECONDS));
     }
 
 
