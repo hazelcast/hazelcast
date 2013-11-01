@@ -55,10 +55,6 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 
     private IAtomicLong atomicNumber;
 
-    private IExecutorService executor1Service = null;
-
-    private IExecutorService executor8Service = null;
-
     private String namespace = "default";
 
     private boolean silent = false;
@@ -107,14 +103,6 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     public IAtomicLong getAtomicNumber() {
         atomicNumber = hazelcast.getAtomicLong(namespace);
         return atomicNumber;
-    }
-
-    public IExecutorService getExecutor1Service(){
-        return hazelcast.getExecutorService("e1");
-    }
-
-    public IExecutorService getExecutor8Service(){
-        return hazelcast.getExecutorService("e8");
     }
 
     public ISet<Object> getSet() {
@@ -413,24 +401,29 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             handleInstances(args);
         } else if (first.equalsIgnoreCase("quit") || first.equalsIgnoreCase("exit")) {
             System.exit(0);
-        }else if(first.startsWith("e1.simulateLoad")){
-             handleExecutorSimulate(getExecutor1Service(), args);
-        }else if(first.startsWith("e8.simulateLoad")){
-            handleExecutorSimulate(getExecutor8Service(),args);
+        }else if(first.startsWith("e")&&first.endsWith(".simulateLoad")){
+             handleExecutorSimulate(args);
         } else {
             println("type 'help' for help");
         }
     }
 
-    private void handleExecutorSimulate(IExecutorService executorService,String[] args) {
+    private void handleExecutorSimulate(String[] args) {
+        String first = args[0];
+        int threadCount = Integer.parseInt(first.substring(1, first.indexOf(".")));
+        if(threadCount<1||threadCount>16){
+            throw new RuntimeException("threadcount can't be smaller than 1 or larger than 16");
+        }
+
         int taskCount = Integer.parseInt(args[1]);
         int durationSec = Integer.parseInt(args[2]);
 
         long startMs = System.currentTimeMillis();
 
+        IExecutorService executor = hazelcast.getExecutorService("e"+threadCount);
         List<Future> futures = new LinkedList<Future>();
         for(int k=0;k<taskCount;k++){
-            Future f = executorService.submit(new SimulateLoadTask(durationSec, k));
+            Future f = executor.submit(new SimulateLoadTask(durationSec, k));
             futures.add(f);
         }
 
@@ -1544,8 +1537,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("executeOnKey <echo-input> <key>                  //executes an echo task on the member that owns the given key");
         println("executeOnMember <echo-input> <memberIndex>         //executes an echo task on the member with given index");
         println("executeOnMembers <echo-input>                      //executes an echo task on all of the members");
-        println("e1.simulateLoad <task-count> <delaySeconds>        //simulates load on executor with 1 thread");
-        println("e8.simulateLoad <task-count> <delaySeconds>        //simulates load on executor with 8 thread");
+        println("e<threadcount>.simulateLoad <task-count> <delaySeconds>        //simulates load on executor with given number of thread (e1..e16)");
 
         println("");
         silent = silentBefore;
@@ -1564,9 +1556,9 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     public static void main(String[] args) throws Exception {
         Config config = new Config();
 
-        config.addExecutorConfig(new ExecutorConfig("e1").setPoolSize(1));
-        config.addExecutorConfig(new ExecutorConfig("e8").setPoolSize(8));
-
+        for(int k=1;k<=16;k++){
+            config.addExecutorConfig(new ExecutorConfig("e"+k).setPoolSize(k));
+        }
         TestApp testApp = new TestApp(Hazelcast.newHazelcastInstance(config));
         testApp.start(args);
     }
