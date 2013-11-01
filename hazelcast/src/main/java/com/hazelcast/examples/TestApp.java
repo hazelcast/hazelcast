@@ -409,9 +409,9 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             handleInstances(args);
         } else if (first.equalsIgnoreCase("quit") || first.equalsIgnoreCase("exit")) {
             System.exit(0);
-        }else if(first.startsWith("e1.simulateLoad")){
+        }else if(first.equalsIgnoreCase("e1.simulateLoad")){
              handleExecutorSimulate(getExecutor1Service(), args);
-        }else if(first.startsWith("e2.simulateLoad")){
+        }else if(first.equalsIgnoreCase("e2.simulateLoad")){
             handleExecutorSimulate(getExecutor2Service(),args);
         } else {
             println("type 'help' for help");
