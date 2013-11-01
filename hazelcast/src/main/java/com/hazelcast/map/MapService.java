@@ -452,6 +452,12 @@ public class MapService implements ManagedService, MigrationAwareService,
         invalidateNearCache(mapName, key);
     }
 
+    public boolean isNearCacheAndInvalidationEnabled(String mapName){
+        final MapContainer mapContainer = getMapContainer(mapName);
+        return mapContainer.isNearCacheEnabled()
+                && mapContainer.getMapConfig().getNearCacheConfig().isInvalidateOnChange();
+    }
+
     public void invalidateAllNearCaches(String mapName) {
         sendNearCacheOperation(new NearCacheClearOperation(mapName));
         // clear local near cache.
@@ -890,9 +896,7 @@ public class MapService implements ManagedService, MigrationAwareService,
                     }
                 }
                 //send invalidation request to all members.
-                final MapContainer mapContainer = getMapContainer(mapName);
-                if (mapContainer.isNearCacheEnabled()
-                        && mapContainer.getMapConfig().getNearCacheConfig().isInvalidateOnChange()) {
+                if (isNearCacheAndInvalidationEnabled(mapName)) {
                     invalidateAllNearCaches(mapName, keysGatheredForNearCacheEviction);
                 }
             }
