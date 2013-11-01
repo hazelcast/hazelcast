@@ -262,9 +262,6 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     public Future putAsync(final K key, final V value) {
-        if (value == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
         return putAsync(key, value, -1, null);
     }
 
@@ -303,6 +300,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     public void putAll(final Map<? extends K, ? extends V> m) {
+        // Note, putAllInternal() will take care of the null key/value checks.
         putAllInternal(m);
     }
 
