@@ -32,7 +32,12 @@ public class MapValueCollection implements IdentifiedDataSerializable {
 
 
     public MapValueCollection(Collection<Data> values) {
-        this.values = values;
+        this.values = new ArrayList<Data>();
+        for (Data value : values) {
+            if (value != null) {
+                this.values.add(value);
+            }
+        }
     }
 
     public MapValueCollection() {
