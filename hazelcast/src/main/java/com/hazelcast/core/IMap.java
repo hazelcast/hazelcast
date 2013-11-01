@@ -77,11 +77,14 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in <tt>key</tt>'s class.
      * </p>
+     *
+     * @throws NullPointerException if the specified key is null
      */
     boolean containsKey(Object key);
 
     /**
      * {@inheritDoc}
+     * @throws NullPointerException if the specified value is null
      */
     boolean containsValue(Object value);
 
@@ -104,6 +107,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in <tt>key</tt>'s class.
      * <p/>
+     *
+     * @throws NullPointerException if the specified key is null
      */
     V get(Object key);
 
@@ -120,6 +125,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in <tt>key</tt>'s class.
+     *
+     * @throws NullPointerException if the specified key or value is null
      */
     V put(K key, V value);
 
@@ -138,6 +145,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * This method returns a clone of previous value, not the original (identically equal) value
      * previously put into map.
      * </p>
+     *
+     * @throws NullPointerException if the specified key is null
      */
     V remove(Object key);
 
@@ -148,6 +157,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in <tt>key</tt>'s class.
+     *
+     * @throws NullPointerException if the specified key or value is null
      */
     boolean remove(Object key, Object value);
 
@@ -168,8 +179,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param key key whose mapping is to be removed from the map
      * @throws ClassCastException if the key is of an inappropriate type for
      *         this map (optional)
-     * @throws NullPointerException if the specified key is null and this
-     *         map does not permit null keys (optional)
+     * @throws NullPointerException if the specified key is null
      */
     void delete(Object key);
 
@@ -193,6 +203,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *
      * @param keys keys to get
      * @return map of entries
+     * @throws NullPointerException if any of the specified keys are null
      */
     Map<K, V> getAll(Set<K> keys);
 
@@ -223,6 +234,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *
      * @param key the key of the map entry
      * @return Future from which the value of the key can be retrieved.
+     * @throws NullPointerException if the specified key is null
      * @see java.util.concurrent.Future
      */
     Future<V> getAsync(K key);
@@ -255,6 +267,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param key   the key of the map entry
      * @param value the new value of the map entry
      * @return Future from which the old value of the key can be retrieved.
+     * @throws NullPointerException if the specified key or value is null
      * @see java.util.concurrent.Future
      */
     Future<V> putAsync(K key, V value);
@@ -292,6 +305,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *                 0 means infinite.
      * @param timeunit time unit for the ttl
      * @return Future from which the old value of the key can be retrieved.
+     * @throws NullPointerException if the specified key or value is null
      * @see java.util.concurrent.Future
      */
     Future<V> putAsync(K key, V value, long ttl, TimeUnit timeunit);
@@ -307,6 +321,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param key The key of the map entry to remove.
      * @return A {@link java.util.concurrent.Future} from which the value
      *         removed from the map can be retrieved.
+     * @throws NullPointerException if the specified key is null
      */
     Future<V> removeAsync(K key);
 
@@ -333,6 +348,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param timeunit time unit for the timeout
      * @return <tt>true</tt> if the remove is successful, <tt>false</tt>
      *         otherwise.
+     * @throws NullPointerException if the specified key is null
      */
     boolean tryRemove(K key, long timeout, TimeUnit timeunit) ;
 
@@ -353,6 +369,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param timeunit time unit for the timeout
      * @return <tt>true</tt> if the put is successful, <tt>false</tt>
      *         otherwise.
+     * @throws NullPointerException if the specified key or value is null
      */
     boolean tryPut(K key, V value, long timeout, TimeUnit timeunit);
 
@@ -378,6 +395,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *                 0 means infinite.
      * @param timeunit time unit for the ttl
      * @return old value of the entry
+     * @throws NullPointerException if the specified key or value is null
      */
     V put(K key, V value, long ttl, TimeUnit timeunit);
 
@@ -396,6 +414,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param ttl      maximum time for this entry to stay in the map.
      *                 0 means infinite.
      * @param timeunit time unit for the ttl
+     * @throws NullPointerException if the specified key or value is null
      */
     void putTransient(K key, V value, long ttl, TimeUnit timeunit);
 
@@ -412,6 +431,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * This method returns a clone of previous value, not the original (identically equal) value
      * previously put into map.
      * </p>
+     *
+     * @throws NullPointerException if the specified key or value is null
      */
     V putIfAbsent(K key, V value);
 
@@ -436,6 +457,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param ttl      maximum time for this entry to stay in the map
      * @param timeunit time unit for the ttl
      * @return old value of the entry
+     * @throws NullPointerException if the specified key or value is null
      */
     V putIfAbsent(K key, V value, long ttl, TimeUnit timeunit);
 
@@ -446,6 +468,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * This method uses <tt>hashCode</tt> and <tt>equals</tt> of binary form of
      * the <tt>key</tt>, not the actual implementations of <tt>hashCode</tt> and <tt>equals</tt>
      * defined in <tt>key</tt>'s class.
+     *
+     * @throws NullPointerException if any of the specified parameters are null
      */
     boolean replace(K key, V oldValue, V newValue);
 
@@ -462,6 +486,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * This method returns a clone of previous value, not the original (identically equal) value
      * previously put into map.
      * </p>
+     *
+     * @throws NullPointerException if the specified key or value is null
      */
     V replace(K key, V value);
 
@@ -477,6 +503,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *
      * @param key      key of the entry
      * @param value    value of the entry
+     *
+     * @throws NullPointerException if the specified key or value is null
      */
     void set(K key, V value);
 
@@ -497,6 +525,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *                 0 means infinite.
      * @param timeunit time unit for the ttl
      * @return old value of the entry
+     * @throws NullPointerException if the specified key or value is null
      */
     void set(K key, V value, long ttl, TimeUnit timeunit);
 
@@ -518,6 +547,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * defined in <tt>key</tt>'s class.
      *
      * @param key key to lock.
+     * @throws NullPointerException if the specified key is null
      */
     void lock(K key);
 
@@ -543,6 +573,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param key key to lock.
      * @param leaseTime time to wait before releasing the lock.
      * @param timeUnit unit of time to specify lease time.
+     * @throws NullPointerException if the specified key is null
      */
     void lock(K key, long leaseTime, TimeUnit timeUnit);
 
@@ -557,6 +588,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *
      * @param key key to lock to be checked.
      * @return <tt>true</tt> if lock is acquired, <tt>false</tt> otherwise.
+     * @throws NullPointerException if the specified key is null
      */
     boolean isLocked(K key);
 
@@ -572,6 +604,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *
      * @param key key to lock.
      * @return <tt>true</tt> if lock is acquired, <tt>false</tt> otherwise.
+     * @throws NullPointerException if the specified key is null
      */
     boolean tryLock(K key);
 
@@ -595,6 +628,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param timeunit time unit of the <tt>time</tt> argument.
      * @return <tt>true</tt> if the lock was acquired and <tt>false</tt>
      *         if the waiting time elapsed before the lock was acquired.
+     * @throws NullPointerException if the specified key is null
      */
     boolean tryLock(K key, long time, TimeUnit timeunit) throws InterruptedException;
 
@@ -614,6 +648,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * defined in <tt>key</tt>'s class.
      *
      * @param key key to lock.
+     * @throws NullPointerException if the specified key is null
      * @throws IllegalMonitorStateException if the current thread does not hold this lock
      */
     void unlock(K key);
@@ -629,6 +664,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * defined in <tt>key</tt>'s class.
      *
      * @param key key to lock.
+     * @throws NullPointerException if the specified key is null
      */
     void forceUnlock(K key);
 
@@ -704,6 +740,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * @param key          key to listen
      * @param includeValue <tt>true</tt> if <tt>EntryEvent</tt> should
      *                     contain the value.
+     * @throws NullPointerException if the specified key is null
      */
     String addEntryListener(EntryListener<K, V> listener, K key, boolean includeValue);
 
@@ -746,6 +783,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *
      * @param key key of the entry
      * @return <tt>EntryView</tt> of the specified key
+     * @throws NullPointerException if the specified key is null
      * @see EntryView
      */
     EntryView<K,V> getEntryView(K key);
@@ -763,6 +801,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      *
      * @param key key to evict
      * @return <tt>true</tt> if the key is evicted, <tt>false</tt> otherwise.
+     * @throws NullPointerException if the specified key is null
      */
     boolean evict(K key);
 
@@ -932,6 +971,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * <p/>
      *
      * @return result of entry process.
+     * @throws NullPointerException if the specified key is null
      */
     Object executeOnKey(K key, EntryProcessor entryProcessor);
 
