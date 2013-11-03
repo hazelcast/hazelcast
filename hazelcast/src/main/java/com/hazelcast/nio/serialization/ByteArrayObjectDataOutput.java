@@ -48,9 +48,6 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
     }
 
     public void write(int position, int b) {
-        if(position>pos){
-            throw new RuntimeException();
-        }
         buffer[position] = (byte) b;
     }
 
