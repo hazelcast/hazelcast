@@ -47,7 +47,10 @@
                     <literal>customers</literal>
                     map and queue.
                     <programlisting language="java"><![CDATA[
+import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+
 import java.util.Map;
 import java.util.Queue;
 
