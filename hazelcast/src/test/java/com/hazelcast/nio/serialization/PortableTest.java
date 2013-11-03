@@ -16,10 +16,14 @@
 
 package com.hazelcast.nio.serialization;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.config.SerializationConfig;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelTest;
 import org.junit.Assert;
 import org.junit.Test;
@@ -30,18 +34,115 @@ import java.io.IOException;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
+import static org.junit.Assert.fail;
+
 /**
  * @author mdogan 1/4/13
  */
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
-public class PortableTest {
+public class PortableTest extends HazelcastTestSupport{
 
     static final int FACTORY_ID = 1;
 
     @Test
     public void testBasics() {
         testBasics(ByteOrder.BIG_ENDIAN, false);
+    }
+
+    //https://github.com/hazelcast/hazelcast/issues/1096
+    @Test
+    public void test_1096_ByteArrayContentSame(){
+        Config config = new Config();
+        PortableFactory portableFactory = new PortableFactory() {
+            @Override
+            public Portable create(int classId) {
+                return new Key();
+            }
+        };
+        config.getSerializationConfig().addPortableFactory(1, portableFactory);
+        HazelcastInstance hz1 = createHazelcastInstanceFactory(1).newHazelcastInstance(config);
+
+        Key key1 = new Key(1);
+        Key key2 = new Key(2);
+        Key key3 = new Key(3);
+
+        assertRepeatedSerialisationGivesSameByteArrays(hz1, key1);
+        assertRepeatedSerialisationGivesSameByteArrays(hz1, key2);
+        assertRepeatedSerialisationGivesSameByteArrays(hz1, key3);
+    }
+
+    private static void assertRepeatedSerialisationGivesSameByteArrays(HazelcastInstance hz, Key key) {
+        Data data1 = HazelcastTestSupport.getNode(hz).getSerializationService().toData(key);
+        for (int k = 0; k < 100; k++) {
+            Data data2 = HazelcastTestSupport.getNode(hz).getSerializationService().toData(key);
+            if (!data1.equals(data2)) {
+                StringBuffer sb = new StringBuffer();
+                for(int l=0;l<data1.bufferSize();l++){
+                    sb.append(Integer.toHexString(data1.getBuffer()[l]));
+                }
+                sb.append('\n');
+                for(int l=0;l<data2.bufferSize();l++){
+                    System.out.print(Integer.toHexString(data2.getBuffer()[l]));
+                }
+
+                fail("byte content is not the same:"+sb);
+            }
+        }
+    }
+
+    static class Key implements Portable {
+        protected long dataId;
+
+        public Key() {
+            super();
+        }
+
+        public Key(long dataId) {
+            this.dataId = dataId;
+        }
+
+        public int getClassId() {
+            return 1;
+        }
+
+        public int getFactoryId() {
+            return 1;
+        }
+
+        public void readPortable(PortableReader in) throws IOException {
+                dataId = in.readLong("dataId");
+        }
+
+        public void writePortable(PortableWriter out) throws IOException {
+               out.writeLong("dataId", dataId);
+        }
+
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + (int) (dataId ^ (dataId >>> 32));
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            Key other = (Key) obj;
+            if (dataId != other.dataId) {
+                return false;
+            }
+            return true;
+        }
     }
 
     @Test
@@ -234,7 +335,7 @@ public class PortableTest {
 
         try {
             new SerializationServiceBuilder().setConfig(serializationConfig).build();
-            Assert.fail("Should throw HazelcastSerializationException!");
+            fail("Should throw HazelcastSerializationException!");
         } catch (HazelcastSerializationException e) {
         }
 
