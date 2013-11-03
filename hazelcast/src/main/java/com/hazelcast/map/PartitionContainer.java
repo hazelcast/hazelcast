@@ -58,12 +58,12 @@ public class PartitionContainer {
     void destroyMap(String name) {
         RecordStore recordStore = maps.remove(name);
         if (recordStore != null)
-            recordStore.clear();
+            recordStore.clearPartition();
     }
 
     void clear() {
         for (RecordStore recordStore : maps.values()) {
-            recordStore.clear();
+            recordStore.clearPartition();
         }
         maps.clear();
     }

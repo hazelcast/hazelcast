@@ -17,7 +17,6 @@
 package com.hazelcast.map.operation;
 
 import com.hazelcast.map.MapService;
-import com.hazelcast.nio.IOUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -41,7 +40,7 @@ public class InvalidateNearCacheOperation extends AbstractOperation {
     }
 
     public void run() {
-        mapService = (MapService) getService();
+        mapService = getService();
         mapService.invalidateNearCache(mapName, key);
     }
 
@@ -67,6 +66,10 @@ public class InvalidateNearCacheOperation extends AbstractOperation {
     @Override
     public String toString() {
         return "InvalidateNearCacheOperation{}";
+    }
+
+    public final String getServiceName() {
+        return MapService.SERVICE_NAME;
     }
 
 }

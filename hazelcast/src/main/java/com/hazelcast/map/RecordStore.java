@@ -107,7 +107,7 @@ public interface RecordStore {
 
     void flush();
 
-    void removeAll();
+    void clearPartition();
 
     void reset();
 

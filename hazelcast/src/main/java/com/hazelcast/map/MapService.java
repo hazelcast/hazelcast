@@ -28,7 +28,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.merge.*;
 import com.hazelcast.map.operation.*;
 import com.hazelcast.map.proxy.MapProxyImpl;
-import com.hazelcast.map.record.*;
+import com.hazelcast.map.record.Record;
+import com.hazelcast.map.record.RecordStatistics;
 import com.hazelcast.map.tx.TransactionalMapProxy;
 import com.hazelcast.map.wan.MapReplicationRemove;
 import com.hazelcast.map.wan.MapReplicationUpdate;
@@ -362,7 +363,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         final PartitionContainer container = partitionContainers[partitionId];
         if (container != null) {
             for (RecordStore mapPartition : container.getMaps().values()) {
-                mapPartition.clear();
+                mapPartition.clearPartition();
             }
             container.getMaps().clear();
         }
@@ -425,6 +426,16 @@ public class MapService implements ManagedService, MigrationAwareService,
         nearCache.invalidate(key);
     }
 
+    public void invalidateNearCache(String mapName, Set<Data> keys) {
+        NearCache nearCache = getNearCache(mapName);
+        nearCache.invalidate(keys);
+    }
+
+    public void clearNearCache(String mapName) {
+        NearCache nearCache = getNearCache(mapName);
+        nearCache.clear();
+    }
+
     public void invalidateAllNearCaches(String mapName, Data key) {
         Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
         for (MemberImpl member : members) {
@@ -432,14 +443,48 @@ public class MapService implements ManagedService, MigrationAwareService,
                 if (member.localMember())
                     continue;
                 InvalidateNearCacheOperation operation = new InvalidateNearCacheOperation(mapName, key);
-                Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, member.getAddress()).build();
-                invocation.invoke();
+                nodeEngine.getOperationService().send(operation, member.getAddress());
             } catch (Throwable throwable) {
                 throw new HazelcastException(throwable);
             }
         }
         // below local invalidation is for the case the data is cached before partition is owned/migrated
         invalidateNearCache(mapName, key);
+    }
+
+    public boolean isNearCacheAndInvalidationEnabled(String mapName){
+        final MapContainer mapContainer = getMapContainer(mapName);
+        return mapContainer.isNearCacheEnabled()
+                && mapContainer.getMapConfig().getNearCacheConfig().isInvalidateOnChange();
+    }
+
+    public void invalidateAllNearCaches(String mapName) {
+        sendNearCacheOperation(new NearCacheClearOperation(mapName));
+        // clear local near cache.
+        clearNearCache(mapName);
+    }
+
+    public void invalidateAllNearCaches(String mapName, Set<Data> keys) {
+        if (keys == null || keys.isEmpty()) return;
+        //send operation.
+        sendNearCacheOperation(new NearCacheKeySetInvalidationOperation(mapName, keys));
+        // below local invalidation is for the case the data is cached before partition is owned/migrated
+        for (final Data key : keys) {
+            invalidateNearCache(mapName, key);
+        }
+    }
+
+    private void sendNearCacheOperation(Operation operation) {
+        Collection<MemberImpl> members = nodeEngine.getClusterService().getMemberList();
+        for (MemberImpl member : members) {
+            try {
+                if (member.localMember())
+                    continue;
+                nodeEngine.getOperationService().send(operation, member.getAddress());
+            } catch (Throwable throwable) {
+                throw new HazelcastException(throwable);
+            }
+        }
     }
 
     public Object getFromNearCache(String mapName, Data key) {
@@ -802,11 +847,13 @@ public class MapService implements ManagedService, MigrationAwareService,
             }
 
             public void run() {
+
+                final Set<Data> keysGatheredForNearCacheEviction = new HashSet<Data>();
                 for (int i = 0; i < nodeEngine.getPartitionService().getPartitionCount(); i++) {
                     if ((i % ExecutorConfig.DEFAULT_POOL_SIZE) != mod) {
                         continue;
                     }
-                    Address owner = nodeEngine.getPartitionService().getPartitionOwner(i);
+                    final Address owner = nodeEngine.getPartitionService().getPartitionOwner(i);
                     if (nodeEngine.getThisAddress().equals(owner)) {
                         final PartitionContainer pc = partitionContainers[i];
                         final RecordStore recordStore = pc.getRecordStore(mapName);
@@ -830,18 +877,27 @@ public class MapService implements ManagedService, MigrationAwareService,
                             recordSet.add(rec);
                             keySet.add(rec.getKey());
                         }
-                        ClearOperation clearOperation = new ClearOperation(mapName, keySet);
-                        clearOperation.setNodeEngine(nodeEngine);
-                        clearOperation.setServiceName(SERVICE_NAME);
-                        clearOperation.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
-                        clearOperation.setPartitionId(i);
-                        OperationAccessor.setCallerAddress(clearOperation, nodeEngine.getThisAddress());
-                        nodeEngine.getOperationService().executeOperation(clearOperation);
+
+                        if (keySet.isEmpty()) continue;
+                        //add keys for near cache eviction.
+                        keysGatheredForNearCacheEviction.addAll(keySet);
+                        //prepare local "evict keys" operation.
+                        EvictKeysOperation evictKeysOperation = new EvictKeysOperation(mapName, keySet);
+                        evictKeysOperation.setNodeEngine(nodeEngine);
+                        evictKeysOperation.setServiceName(SERVICE_NAME);
+                        evictKeysOperation.setResponseHandler(ResponseHandlerFactory.createEmptyResponseHandler());
+                        evictKeysOperation.setPartitionId(i);
+                        OperationAccessor.setCallerAddress(evictKeysOperation, nodeEngine.getThisAddress());
+                        nodeEngine.getOperationService().executeOperation(evictKeysOperation);
 
                         for (Record record : recordSet) {
                             publishEvent(nodeEngine.getThisAddress(), mapName, EntryEventType.EVICTED, record.getKey(), toData(record.getValue()), null);
                         }
                     }
+                }
+                //send invalidation request to all members.
+                if (isNearCacheAndInvalidationEnabled(mapName)) {
+                    invalidateAllNearCaches(mapName, keysGatheredForNearCacheEviction);
                 }
             }
         }

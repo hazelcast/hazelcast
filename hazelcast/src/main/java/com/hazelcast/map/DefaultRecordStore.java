@@ -18,6 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.operation.PutAllOperation;
@@ -41,8 +42,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import com.hazelcast.config.InMemoryFormat;
 
 /**
  * @author enesakar 1/17/13
@@ -179,7 +178,7 @@ public class DefaultRecordStore implements RecordStore {
         return Collections.unmodifiableMap(records);
     }
 
-    public void clear() {
+    public void clearPartition() {
         final LockService lockService = mapService.getNodeEngine().getSharedService(LockService.SERVICE_NAME);
         if (lockService != null) {
             lockService.clearLockStore(partitionId, new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
@@ -358,7 +357,7 @@ public class DefaultRecordStore implements RecordStore {
         return values;
     }
 
-    public void removeAll() {
+    public void clear() {
         checkIfLoaded();
         resetSizeEstimator();
         final Collection<Data> lockedKeys = lockStore != null ? lockStore.getLockedKeys() : Collections.<Data>emptySet();
