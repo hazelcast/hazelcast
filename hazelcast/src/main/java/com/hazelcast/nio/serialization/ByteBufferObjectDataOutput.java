@@ -73,6 +73,12 @@ final class ByteBufferObjectDataOutput extends OutputStream implements BufferObj
         write(v);
     }
 
+    public void writeZeroBytes(int count){
+        for(int k=0;k<count;k++){
+            write(0);
+        }
+    }
+
     public void writeByte(int position, final int v) throws IOException {
         write(position, v);
     }
