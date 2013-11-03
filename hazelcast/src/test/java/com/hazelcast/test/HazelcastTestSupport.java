@@ -49,7 +49,7 @@ public abstract class HazelcastTestSupport {
         }
     }
 
-    protected static Node getNode(HazelcastInstance hz) {
+    public static Node getNode(HazelcastInstance hz) {
         return TestUtil.getNode(hz);
     }
 

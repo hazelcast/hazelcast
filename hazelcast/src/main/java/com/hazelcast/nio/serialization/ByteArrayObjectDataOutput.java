@@ -48,11 +48,14 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
     }
 
     public void write(int position, int b) {
+        if(position>pos){
+            throw new RuntimeException();
+        }
         buffer[position] = (byte) b;
     }
 
     public void write(byte b[], int off, int len) {
-        if ((off < 0) || (off > b.length) || (len < 0) ||
+       if ((off < 0) || (off > b.length) || (len < 0) ||
                 ((off + len) > b.length) || ((off + len) < 0)) {
             throw new IndexOutOfBoundsException();
         } else if (len == 0) {
@@ -264,6 +267,11 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
     public void position(int newPos) {
         if ((newPos > buffer.length) || (newPos < 0))
             throw new IllegalArgumentException();
+
+        for(int k=pos+1;k<=newPos;k++){
+           buffer[k]=0;
+        }
+
         pos = newPos;
     }
 
@@ -286,6 +294,7 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
 
     public void clear() {
         pos = 0;
+        //buffer = new byte[initialSize];
         if (buffer != null && buffer.length > initialSize * 8) {
             buffer = new byte[initialSize * 8];
         }
