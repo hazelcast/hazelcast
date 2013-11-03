@@ -37,16 +37,18 @@ public class DefaultPortableWriter implements PortableWriter {
     private final Set<String> writtenFields;
     private boolean raw = false;
 
-    public DefaultPortableWriter(PortableSerializer serializer, BufferObjectDataOutput out, ClassDefinition cd) {
+    public DefaultPortableWriter(PortableSerializer serializer, BufferObjectDataOutput out, ClassDefinition cd)throws IOException {
         this.serializer = serializer;
         this.out = out;
         this.cd = cd;
         this.writtenFields = new HashSet<String>(cd.getFieldCount());
         this.begin = out.position();
-        out.position(begin + 4); // room for final offset
+
+        out.writeZeroBytes(4);  // room for final offset
+
         this.offset = out.position();
         final int fieldIndexesLength = (cd.getFieldCount() + 1) * 4; // one additional for raw data
-        out.position(offset + fieldIndexesLength);
+        out.writeZeroBytes(fieldIndexesLength);
     }
 
     public int getVersion() {

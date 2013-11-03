@@ -78,6 +78,12 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
         write(v);
     }
 
+    public void writeZeroBytes(int count){
+        for(int k=0;k<count;k++){
+            write(0);
+        }
+    }
+
     public void writeByte(int position, final int v) throws IOException {
         write(position, v);
     }
@@ -268,10 +274,6 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
         if ((newPos > buffer.length) || (newPos < 0))
             throw new IllegalArgumentException();
 
-        for(int k=pos+1;k<=newPos;k++){
-           buffer[k]=0;
-        }
-
         pos = newPos;
     }
 
@@ -294,7 +296,6 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
 
     public void clear() {
         pos = 0;
-        //buffer = new byte[initialSize];
         if (buffer != null && buffer.length > initialSize * 8) {
             buffer = new byte[initialSize * 8];
         }
