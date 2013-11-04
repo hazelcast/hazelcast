@@ -29,7 +29,7 @@ import static com.hazelcast.map.MapService.SERVICE_NAME;
 
 public class ClearOperation extends AbstractMapOperation implements BackupAwareOperation, PartitionAwareOperation {
 
-    boolean shouldBackup = false;
+    boolean shouldBackup = true;
 
     public ClearOperation() {
     }
