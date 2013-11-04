@@ -29,7 +29,7 @@ import static com.hazelcast.map.MapService.SERVICE_NAME;
 
 public class ClearOperation extends AbstractMapOperation implements BackupAwareOperation, PartitionAwareOperation {
 
-    boolean shouldBackup = true;
+    boolean shouldBackup = false;
 
     public ClearOperation() {
     }
@@ -39,7 +39,12 @@ public class ClearOperation extends AbstractMapOperation implements BackupAwareO
     }
 
     public void run() {
-        final RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
+        final RecordStore recordStore = mapService.getExistingRecordStore(getPartitionId(), name);
+
+        //if there is no recordstore, then there is nothing to clear.
+        if(recordStore == null){
+            return;
+        }
         recordStore.clear();
     }
 

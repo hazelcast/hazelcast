@@ -21,8 +21,10 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.*;
+import com.hazelcast.instance.Node;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -284,7 +286,7 @@ public class BasicTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testMapClear() {
+    public void testMapClear_nonEmptyMap() {
         IMap<String, String> map = getInstance().getMap("testMapClear");
         map.put("key1", "value1");
         map.put("key2", "value2");
@@ -294,6 +296,23 @@ public class BasicTest extends HazelcastTestSupport {
         assertEquals(map.get("key1"), null);
         assertEquals(map.get("key2"), null);
         assertEquals(map.get("key3"), null);
+    }
+
+    @Test
+    public void testMapClear_emptyMap() {
+        String mapName = "testMapClear_emptyMap";
+        HazelcastInstance hz = getInstance();
+        IMap<String, String> map = hz.getMap(mapName);
+        map.clear();
+        assertEquals(map.size(), 0);
+
+        //this test is going to be enabled as soon as the size has been fixed (since it also triggers unwanted recordstore creation)
+        //we need to make sure there are no unwanted recordstores (consumes memory) being created because of the clear.
+        //so we are going to check one of the partitions if it has a recordstore and then we can safely assume that the
+        //rest of the partitions have no record store either.
+        //MapService mapService  = getNode(hz).nodeEngine.getService(MapService.SERVICE_NAME);
+        //mapService.getPartitionContainer(1).getExistingRecordStore(mapName);
+        //assertNull(mapService);
     }
 
     @Test
