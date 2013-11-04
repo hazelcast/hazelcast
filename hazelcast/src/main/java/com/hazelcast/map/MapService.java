@@ -308,6 +308,10 @@ public class MapService implements ManagedService, MigrationAwareService,
         return getPartitionContainer(partitionId).getRecordStore(mapName);
     }
 
+    public RecordStore getExistingRecordStore(int partitionId, String mapName){
+        return getPartitionContainer(partitionId).getExistingRecordStore(mapName);
+    }
+
     public AtomicReference<List<Integer>> getOwnedPartitions() {
         if (ownedPartitions.get() == null) {
             ownedPartitions.set(nodeEngine.getPartitionService().getMemberPartitions(nodeEngine.getThisAddress()));

@@ -39,7 +39,13 @@ public class ClearOperation extends AbstractMapOperation implements BackupAwareO
     }
 
     public void run() {
-        final RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
+        final RecordStore recordStore = mapService.getExistingRecordStore(getPartitionId(), name);
+
+        //if there is no recordstore, then there is nothing to clear.
+        if(recordStore == null){
+            shouldBackup = false;
+            return;
+        }
         recordStore.clear();
     }
 

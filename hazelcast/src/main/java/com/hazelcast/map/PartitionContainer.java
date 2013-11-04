@@ -55,6 +55,10 @@ public class PartitionContainer {
         return ConcurrencyUtil.getOrPutIfAbsent(maps, name, recordStoreConstructor);
     }
 
+    public RecordStore getExistingRecordStore(String mapName) {
+        return maps.get(mapName);
+    }
+
     void destroyMap(String name) {
         RecordStore recordStore = maps.remove(name);
         if (recordStore != null)
@@ -67,4 +71,6 @@ public class PartitionContainer {
         }
         maps.clear();
     }
+
+
 }
