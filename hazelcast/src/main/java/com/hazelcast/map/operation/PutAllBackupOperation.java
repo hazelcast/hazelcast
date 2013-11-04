@@ -18,6 +18,7 @@ package com.hazelcast.map.operation;
 
 import com.hazelcast.map.MapEntrySet;
 import com.hazelcast.map.RecordStore;
+import com.hazelcast.map.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.Data;
@@ -31,6 +32,7 @@ import java.util.Set;
 public class PutAllBackupOperation extends AbstractMapOperation implements PartitionAwareOperation, BackupOperation {
 
     private MapEntrySet entrySet;
+    private RecordStore recordStore;
 
     public PutAllBackupOperation(String name, MapEntrySet entrySet) {
         super(name);
@@ -42,11 +44,30 @@ public class PutAllBackupOperation extends AbstractMapOperation implements Parti
 
     public void run() {
         int partitionId = getPartitionId();
-        RecordStore recordStore = mapService.getRecordStore(partitionId, name);
+        recordStore = mapService.getRecordStore(partitionId, name);
         Set<Map.Entry<Data, Data>> entries = entrySet.getEntrySet();
         for (Map.Entry<Data, Data> entry : entries) {
-            recordStore.set(entry.getKey(), entry.getValue(), -1);
+            Data dataKey = entry.getKey();
+            Data dataValue = entry.getValue();
+            Record record = recordStore.getRecord(dataKey);
+            if (record == null) {
+                record = mapService.createRecord(name, dataKey, dataValue, -1, false);
+                updateSizeEstimator(calculateRecordSize(record));
+                recordStore.putRecord(dataKey, record);
+            } else {
+                updateSizeEstimator(-calculateRecordSize(record));
+                mapContainer.getRecordFactory().setValue(record, dataValue);
+                updateSizeEstimator(calculateRecordSize(record));
+            }
         }
+    }
+
+    private void updateSizeEstimator( long recordSize ) {
+        recordStore.getSizeEstimator().add( recordSize );
+    }
+
+    private long calculateRecordSize( Record record ) {
+        return recordStore.getSizeEstimator().getCost(record);
     }
 
     @Override
