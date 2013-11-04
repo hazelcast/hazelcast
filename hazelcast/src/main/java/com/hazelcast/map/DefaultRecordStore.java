@@ -192,6 +192,8 @@ public class DefaultRecordStore implements RecordStore {
         }
         clearRecordsMap(Collections.<Data, Record>emptyMap());
         resetSizeEstimator();
+        cancelAssociatedSchedulers(records.keySet());
+
     }
 
     private void clearRecordsMap(Map<Data, Record> excludeRecords) {
@@ -901,6 +903,14 @@ public class DefaultRecordStore implements RecordStore {
     private void cancelAssociatedSchedulers(Data key) {
         mapContainer.getIdleEvictionScheduler().cancel(key);
         mapContainer.getTtlEvictionScheduler().cancel(key);
+    }
+
+    private void cancelAssociatedSchedulers(Set<Data> keySet) {
+        if(keySet == null || keySet.isEmpty() ) return;
+
+        for (Data key : keySet ){
+            cancelAssociatedSchedulers(key);
+        }
     }
 
     private void cancelAllSchedulers() {
