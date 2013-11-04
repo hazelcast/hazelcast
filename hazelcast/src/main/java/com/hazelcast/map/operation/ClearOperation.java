@@ -43,6 +43,7 @@ public class ClearOperation extends AbstractMapOperation implements BackupAwareO
 
         //if there is no recordstore, then there is nothing to clear.
         if(recordStore == null){
+            shouldBackup = false;
             return;
         }
         recordStore.clear();
