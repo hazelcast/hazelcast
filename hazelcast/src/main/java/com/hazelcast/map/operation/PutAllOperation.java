@@ -87,8 +87,7 @@ public class PutAllOperation extends AbstractMapOperation implements PartitionAw
 
     // todo optimize below, invalidate method should get the set of keys
     protected final void invalidateNearCaches(Data key) {
-        if (mapContainer.isNearCacheEnabled()
-                && mapContainer.getMapConfig().getNearCacheConfig().isInvalidateOnChange()) {
+        if (mapService.isNearCacheAndInvalidationEnabled(name)) {
             mapService.invalidateAllNearCaches(name, key);
         }
     }

@@ -19,49 +19,34 @@ package com.hazelcast.map.operation;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.spi.BackupAwareOperation;
 import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
 
 import static com.hazelcast.map.MapService.SERVICE_NAME;
 
 public class ClearOperation extends AbstractMapOperation implements BackupAwareOperation, PartitionAwareOperation {
 
-    Set<Data> keys;
     boolean shouldBackup = true;
+
+    public ClearOperation() {
+    }
 
     public ClearOperation(String name) {
         super(name);
     }
 
-    public ClearOperation(String name, Set<Data> keys) {
-        super(name);
-        this.keys = keys;
-    }
-
-    public ClearOperation() {
-    }
-
     public void run() {
-        RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
+        final RecordStore recordStore = mapService.getExistingRecordStore(getPartitionId(), name);
 
-        if (keys == null) {
-            recordStore.removeAll();
+        //if there is no recordstore, then there is nothing to clear.
+        if(recordStore == null){
+            shouldBackup = false;
             return;
         }
-        if(keys.isEmpty()) {
-            shouldBackup = false;
-        }
-        for (Data key : keys) {
-            if (!recordStore.isLocked(key)) {
-                recordStore.evict(key);
-            }
-        }
+        recordStore.clear();
     }
 
     public boolean shouldBackup() {
@@ -69,7 +54,7 @@ public class ClearOperation extends AbstractMapOperation implements BackupAwareO
     }
 
     public int getSyncBackupCount() {
-          return mapService.getMapContainer(name).getBackupCount();
+        return mapService.getMapContainer(name).getBackupCount();
     }
 
     public int getAsyncBackupCount() {
@@ -78,12 +63,11 @@ public class ClearOperation extends AbstractMapOperation implements BackupAwareO
 
     @Override
     public boolean returnsResponse() {
-        // keys is not null when this operation is used in eviction, and no need a response while eviction
-        return keys == null;
+        return true;
     }
 
     public Operation getBackupOperation() {
-        ClearBackupOperation clearBackupOperation = new ClearBackupOperation(name, keys);
+        ClearBackupOperation clearBackupOperation = new ClearBackupOperation(name);
         clearBackupOperation.setServiceName(SERVICE_NAME);
         return clearBackupOperation;
     }
@@ -97,27 +81,10 @@ public class ClearOperation extends AbstractMapOperation implements BackupAwareO
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        if (keys == null) {
-            out.writeInt(-1);
-        } else {
-            out.writeInt(keys.size());
-            for (Data key : keys) {
-                key.writeData(out);
-            }
-        }
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        int size = in.readInt();
-        if (size > -1) {
-            keys = new HashSet<Data>(size);
-            for (int i = 0; i < size; i++) {
-                Data data = new Data();
-                data.readData(in);
-                keys.add(data);
-            }
-        }
     }
 }

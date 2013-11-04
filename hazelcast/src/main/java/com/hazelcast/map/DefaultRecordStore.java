@@ -18,6 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.concurrent.lock.LockService;
 import com.hazelcast.concurrent.lock.LockStore;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryView;
 import com.hazelcast.map.merge.MapMergePolicy;
 import com.hazelcast.map.operation.PutAllOperation;
@@ -41,8 +42,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import com.hazelcast.config.InMemoryFormat;
 
 /**
  * @author enesakar 1/17/13
@@ -179,7 +178,7 @@ public class DefaultRecordStore implements RecordStore {
         return Collections.unmodifiableMap(records);
     }
 
-    public void clear() {
+    public void clearPartition() {
         final LockService lockService = mapService.getNodeEngine().getSharedService(LockService.SERVICE_NAME);
         if (lockService != null) {
             lockService.clearLockStore(partitionId, new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
@@ -192,6 +191,8 @@ public class DefaultRecordStore implements RecordStore {
         }
         clearRecordsMap(Collections.<Data, Record>emptyMap());
         resetSizeEstimator();
+        cancelAssociatedSchedulers(records.keySet());
+
     }
 
     private void clearRecordsMap(Map<Data, Record> excludeRecords) {
@@ -358,7 +359,7 @@ public class DefaultRecordStore implements RecordStore {
         return values;
     }
 
-    public void removeAll() {
+    public void clear() {
         checkIfLoaded();
         resetSizeEstimator();
         final Collection<Data> lockedKeys = lockStore != null ? lockStore.getLockedKeys() : Collections.<Data>emptySet();
@@ -388,12 +389,14 @@ public class DefaultRecordStore implements RecordStore {
         }
 
         clearRecordsMap(lockedRecords);
+        cancelAllSchedulers();
     }
 
     public void reset() {
         checkIfLoaded();
         clearRecordsMap(Collections.<Data, Record>emptyMap());
         resetSizeEstimator();
+        cancelAllSchedulers();
     }
 
     public Object remove(Data dataKey) {
@@ -418,6 +421,7 @@ public class DefaultRecordStore implements RecordStore {
             // reduce size
             updateSizeEstimator(-calculateRecordSize(record));
             deleteRecord(dataKey);
+            cancelAssociatedSchedulers(dataKey);
         }
         return oldValue;
     }
@@ -441,6 +445,7 @@ public class DefaultRecordStore implements RecordStore {
             // reduce size
             updateSizeEstimator(-calculateRecordSize(record));
             removeIndex(dataKey);
+            cancelAssociatedSchedulers(dataKey);
         }
         return oldValue;
     }
@@ -466,6 +471,7 @@ public class DefaultRecordStore implements RecordStore {
             deleteRecord(dataKey);
             // reduce size
             updateSizeEstimator(-calculateRecordSize(record));
+            cancelAssociatedSchedulers(dataKey);
             removed = true;
         }
         return removed;
@@ -892,6 +898,24 @@ public class DefaultRecordStore implements RecordStore {
         accessRecord(record);
         record.onUpdate();
         recordFactory.setValue(record, value);
+    }
+
+    private void cancelAssociatedSchedulers(Data key) {
+        mapContainer.getIdleEvictionScheduler().cancel(key);
+        mapContainer.getTtlEvictionScheduler().cancel(key);
+    }
+
+    private void cancelAssociatedSchedulers(Set<Data> keySet) {
+        if(keySet == null || keySet.isEmpty() ) return;
+
+        for (Data key : keySet ){
+            cancelAssociatedSchedulers(key);
+        }
+    }
+
+    private void cancelAllSchedulers() {
+        mapContainer.getIdleEvictionScheduler().cancelAll();
+        mapContainer.getTtlEvictionScheduler().cancelAll();
     }
 
     private class MapLoadAllTask implements Runnable {
