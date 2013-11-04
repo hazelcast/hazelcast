@@ -814,20 +814,35 @@ public class MapStoreTest extends HazelcastTestSupport {
 
     @Test
     public void testIssue1019() {
-        Config config = new Config();
-        MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setImplementation(new MapStoreAdapter<String,String>());
-        config.getMapConfig("map").setMapStoreConfig(mapStoreConfig);
-        HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
-        final IMap map = instance.getMap("map");
-        for (int i = 0; i < 1000; i++) {
-            map.put(i,i);
-        }
-        for (int i = 10000; i < 10100; i++) {
-            map.get(i);
-        }
-        assertEquals(1000, map.values().size());
+        final String keyWithNullValue = "keyWithNullValue";
+
+        TestEventBasedMapStore testMapStore = new TestEventBasedMapStore() {
+            @Override
+            public Set loadAllKeys() {
+                Set keys = new HashSet(super.loadAllKeys());
+                // Include an extra key that will *not* be returned by loadAll().
+                keys.add(keyWithNullValue);
+                return keys;
+            }
+        };
+
+        Map mapForStore = new HashMap();
+        mapForStore.put("key1", 17);
+        mapForStore.put("key2", 37);
+        mapForStore.put("key3", 47);
+        testMapStore.getStore().putAll(mapForStore);
+
+        Config config = newConfig(testMapStore, 0);
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
+        IMap map = instance.getMap("default");
+
+        assert map.keySet().equals(mapForStore.keySet());
+        assert new HashSet(map.values()).equals(new HashSet(mapForStore.values()));
+        assert map.entrySet().equals(mapForStore.entrySet());
+
+        assert !map.containsKey(keyWithNullValue);
+        assert map.get(keyWithNullValue) == null;
     }
 
     public static Config newConfig(Object storeImpl, int writeDelaySeconds) {
