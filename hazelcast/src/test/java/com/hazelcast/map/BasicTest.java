@@ -311,8 +311,8 @@ public class BasicTest extends HazelcastTestSupport {
         //so we are going to check one of the partitions if it has a recordstore and then we can safely assume that the
         //rest of the partitions have no record store either.
         //MapService mapService  = getNode(hz).nodeEngine.getService(MapService.SERVICE_NAME);
-        //mapService.getPartitionContainer(1).getExistingRecordStore(mapName);
-        //assertNull(mapService);
+        //RecordStore recordStore = mapService.getPartitionContainer(1).getExistingRecordStore(mapName);
+        //assertNull(recordStore);
     }
 
     @Test
