@@ -306,13 +306,31 @@ public class BasicTest extends HazelcastTestSupport {
         map.clear();
         assertEquals(map.size(), 0);
 
-        //this test is going to be enabled as soon as the size has been fixed (since it also triggers unwanted recordstore creation)
         //we need to make sure there are no unwanted recordstores (consumes memory) being created because of the clear.
         //so we are going to check one of the partitions if it has a recordstore and then we can safely assume that the
         //rest of the partitions have no record store either.
-        //MapService mapService  = getNode(hz).nodeEngine.getService(MapService.SERVICE_NAME);
-        //RecordStore recordStore = mapService.getPartitionContainer(1).getExistingRecordStore(mapName);
-        //assertNull(recordStore);
+        MapService mapService = getMapService(hz);
+        RecordStore recordStore = mapService.getPartitionContainer(1).getExistingRecordStore(mapName);
+        assertNull(recordStore);
+    }
+
+    private MapService getMapService(HazelcastInstance hz) {
+        return getNode(hz).nodeEngine.getService(MapService.SERVICE_NAME);
+    }
+
+    @Test
+    public void testMapSize_emptyMap(){
+        String mapName = "testMapClear_emptyMap";
+        HazelcastInstance hz = getInstance();
+        IMap<String, String> map = hz.getMap(mapName);
+        assertEquals(map.size(), 0);
+
+        //we need to make sure there are no unwanted recordstores (consumes memory) being created because of the clear.
+        //so we are going to check one of the partitions if it has a recordstore and then we can safely assume that the
+        //rest of the partitions have no record store either.
+        MapService mapService = getMapService(hz);
+        RecordStore recordStore = mapService.getPartitionContainer(1).getExistingRecordStore(mapName);
+        assertNull(recordStore);
     }
 
     @Test
