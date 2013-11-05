@@ -432,8 +432,7 @@ public class MapService implements ManagedService, MigrationAwareService,
                 if (member.localMember())
                     continue;
                 InvalidateNearCacheOperation operation = new InvalidateNearCacheOperation(mapName, key);
-                Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, member.getAddress()).build();
-                invocation.invoke();
+                nodeEngine.getOperationService().send(operation, member.getAddress());
             } catch (Throwable throwable) {
                 throw new HazelcastException(throwable);
             }
