@@ -16,7 +16,6 @@
 
 package com.hazelcast.multimap.operations.client;
 
-import com.hazelcast.client.InitializingObjectRequest;
 import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.multimap.operations.RemoveOperation;
 import com.hazelcast.nio.ObjectDataInput;
@@ -34,7 +33,7 @@ import java.security.Permission;
 /**
  * @author ali 5/10/13
  */
-public class RemoveRequest extends MultiMapKeyBasedRequest implements InitializingObjectRequest {
+public class RemoveRequest extends MultiMapKeyBasedRequest {
 
     Data value;
 

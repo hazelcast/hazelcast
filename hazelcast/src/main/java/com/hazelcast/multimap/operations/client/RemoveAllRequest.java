@@ -16,7 +16,6 @@
 
 package com.hazelcast.multimap.operations.client;
 
-import com.hazelcast.client.InitializingObjectRequest;
 import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.multimap.MultiMapRecord;
 import com.hazelcast.multimap.operations.MultiMapResponse;
@@ -37,7 +36,7 @@ import java.util.Collection;
 /**
  * @author ali 5/10/13
  */
-public class RemoveAllRequest extends MultiMapKeyBasedRequest implements InitializingObjectRequest {
+public class RemoveAllRequest extends MultiMapKeyBasedRequest {
 
     int threadId = -1;
 

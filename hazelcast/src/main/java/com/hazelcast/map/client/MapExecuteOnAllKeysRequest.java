@@ -17,7 +17,6 @@
 package com.hazelcast.map.client;
 
 import com.hazelcast.client.AllPartitionsClientRequest;
-import com.hazelcast.client.InitializingObjectRequest;
 import com.hazelcast.client.SecureRequest;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapEntrySet;
@@ -39,7 +38,7 @@ import java.security.Permission;
 import java.util.Map;
 import java.util.Set;
 
-public class MapExecuteOnAllKeysRequest extends AllPartitionsClientRequest implements Portable, InitializingObjectRequest, SecureRequest {
+public class MapExecuteOnAllKeysRequest extends AllPartitionsClientRequest implements Portable, SecureRequest {
 
     private String name;
     private EntryProcessor processor;
@@ -75,11 +74,6 @@ public class MapExecuteOnAllKeysRequest extends AllPartitionsClientRequest imple
 
     public String getServiceName() {
         return MapService.SERVICE_NAME;
-    }
-
-    @Override
-    public String getObjectName() {
-        return name;
     }
 
     @Override

@@ -38,7 +38,7 @@ import java.security.Permission;
 /**
  * @author ali 5/10/13
  */
-public class AddEntryListenerRequest extends CallableClientRequest implements Portable, InitializingObjectRequest, SecureRequest {
+public class AddEntryListenerRequest extends CallableClientRequest implements Portable, SecureRequest {
 
     String name;
     Data key;
@@ -92,10 +92,6 @@ public class AddEntryListenerRequest extends CallableClientRequest implements Po
 
     public String getServiceName() {
         return MultiMapService.SERVICE_NAME;
-    }
-
-    public String getObjectName() {
-        return name;
     }
 
     public int getFactoryId() {

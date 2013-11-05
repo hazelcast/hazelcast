@@ -47,7 +47,6 @@ public class ClientSemaphoreTest {
 
     @BeforeClass
     public static void init(){
-
         server = Hazelcast.newHazelcastInstance();
         hz = HazelcastClient.newHazelcastClient(null);
         s = hz.getSemaphore(name);

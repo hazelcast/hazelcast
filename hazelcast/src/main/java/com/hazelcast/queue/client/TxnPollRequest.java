@@ -18,7 +18,6 @@ package com.hazelcast.queue.client;
 
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.InitializingObjectRequest;
 import com.hazelcast.client.SecureRequest;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.nio.serialization.Portable;
@@ -37,7 +36,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author ali 6/7/13
  */
-public class TxnPollRequest extends CallableClientRequest implements Portable, InitializingObjectRequest, SecureRequest {
+public class TxnPollRequest extends CallableClientRequest implements Portable, SecureRequest {
 
     String name;
     long timeout;
@@ -67,10 +66,6 @@ public class TxnPollRequest extends CallableClientRequest implements Portable, I
 
     public int getClassId() {
         return QueuePortableHook.TXN_POLL;
-    }
-
-    public String getObjectName() {
-        return name;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {

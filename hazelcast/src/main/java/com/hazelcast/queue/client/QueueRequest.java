@@ -16,7 +16,6 @@
 
 package com.hazelcast.queue.client;
 
-import com.hazelcast.client.InitializingObjectRequest;
 import com.hazelcast.client.PartitionClientRequest;
 import com.hazelcast.client.SecureRequest;
 import com.hazelcast.nio.serialization.Portable;
@@ -34,7 +33,7 @@ import java.security.Permission;
 /**
  * @author ali 5/8/13
  */
-public abstract class QueueRequest extends PartitionClientRequest implements Portable, InitializingObjectRequest, SecureRequest {
+public abstract class QueueRequest extends PartitionClientRequest implements Portable, SecureRequest {
 
     protected String name;
 
@@ -63,10 +62,6 @@ public abstract class QueueRequest extends PartitionClientRequest implements Por
 
     public String getServiceName() {
         return QueueService.SERVICE_NAME;
-    }
-
-    public String getObjectName() {
-        return name;
     }
 
     public int getFactoryId() {
