@@ -62,30 +62,25 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
     @Test
     public void testPutRemove() throws InterruptedException {
         final String MAP_NAME = "default";
-
         final Config config = new Config();
         config.getMapConfig(MAP_NAME).setBackupCount(1).setInMemoryFormat(InMemoryFormat.BINARY);
         final TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         final HazelcastInstance h[] = factory.newInstances(config);
+        final IMap<String, String> map1 = h[0].getMap(MAP_NAME);
+        final IMap<String, String> map2 = h[1].getMap(MAP_NAME);
         warmUpPartitions(h);
-
-        final IMap<String, String> map = h[0].getMap(MAP_NAME);
-        map.put("key", "value");
-
-        long h1MapCost = h[0].getMap(MAP_NAME).getLocalMapStats().getHeapCost();
-        long h2MapCost = h[1].getMap(MAP_NAME).getLocalMapStats().getHeapCost();
-
-        Assert.assertTrue(h1MapCost > 0);
-        Assert.assertTrue(h2MapCost > 0);
-        // one map is backup. so backup & main map cost must be same.
-        Assert.assertEquals(h1MapCost, h2MapCost);
-        map.remove("key");
-
-        h1MapCost = h[0].getMap(MAP_NAME).getLocalMapStats().getHeapCost();
-        h2MapCost = h[1].getMap(MAP_NAME).getLocalMapStats().getHeapCost();
-
-        Assert.assertEquals(0, h1MapCost);
-        Assert.assertEquals(0, h2MapCost);
+        Assert.assertEquals(0,map1.size());
+        Assert.assertEquals(0,map2.size());
+        //put and check
+        map1.put("key", "value");
+        final long costOfMapOnNode1 = map1.getLocalMapStats().getHeapCost();
+        final long costOfMapOnNode2 = map2.getLocalMapStats().getHeapCost();
+        Assert.assertEquals(costOfMapOnNode1,costOfMapOnNode2);
+        //remove and check
+        map1.remove("key");
+        final long costOfMapOnNode1AfterRemove = map1.getLocalMapStats().getHeapCost();
+        final long costOfMapOnNode2AfterRemove = map2.getLocalMapStats().getHeapCost();
+        Assert.assertEquals(costOfMapOnNode1AfterRemove,costOfMapOnNode2AfterRemove);
     }
 
     @Test
