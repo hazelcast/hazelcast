@@ -17,8 +17,8 @@
 package com.hazelcast.map;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
@@ -69,17 +69,20 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
         final IMap<String, String> map1 = h[0].getMap(MAP_NAME);
         final IMap<String, String> map2 = h[1].getMap(MAP_NAME);
         warmUpPartitions(h);
-        Assert.assertTrue( map1.size() == 0 && (map1.size() == map2.size()) );
+        Assert.assertEquals(0, map1.size());
+        Assert.assertEquals(map1.size(), map2.size());
         //put and check
         map1.put("key", "value");
         final long costOfMapOnNode1AfterPut = map1.getLocalMapStats().getHeapCost();
         final long costOfMapOnNode2AfterPut = map2.getLocalMapStats().getHeapCost();
-        Assert.assertTrue( costOfMapOnNode1AfterPut > 0 && (costOfMapOnNode1AfterPut == costOfMapOnNode2AfterPut));
+        Assert.assertTrue(costOfMapOnNode1AfterPut > 0);
+        Assert.assertEquals(costOfMapOnNode1AfterPut, costOfMapOnNode2AfterPut);
         //remove and check
         map1.remove("key");
         final long costOfMapOnNode1AfterRemove = map1.getLocalMapStats().getHeapCost();
         final long costOfMapOnNode2AfterRemove = map2.getLocalMapStats().getHeapCost();
-        Assert.assertTrue( costOfMapOnNode1AfterRemove == 0 && (costOfMapOnNode1AfterRemove == costOfMapOnNode2AfterRemove));
+        Assert.assertEquals(0, costOfMapOnNode1AfterRemove);
+        Assert.assertEquals(costOfMapOnNode1AfterRemove, costOfMapOnNode2AfterRemove);
     }
 
     @Test
