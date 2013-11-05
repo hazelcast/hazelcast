@@ -42,6 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author enesakar 1/17/13
@@ -69,6 +70,8 @@ public class DefaultRecordStore implements RecordStore {
         this.lockStore = lockService == null ? null :
                 lockService.createLockStore(partitionId, new DefaultObjectNamespace(MapService.SERVICE_NAME, name));
         this.sizeEstimator = SizeEstimators.createMapSizeEstimator();
+        final int mapLoadChunkSize = nodeEngine.getGroupProperties().MAP_LOAD_CHUNK_SIZE.getInteger();
+        final Queue<Map> chunks = new LinkedList<Map>();
         if (nodeEngine.getThisAddress().equals(nodeEngine.getPartitionService().getPartitionOwner(partitionId))) {
             if (mapContainer.getStore() != null && !loaded.get()) {
                 Map<Data, Object> loadedKeys = mapContainer.getInitialKeys();
@@ -80,11 +83,23 @@ public class DefaultRecordStore implements RecordStore {
                         final Data data = entry.getKey();
                         if (partitionId == nodeEngine.getPartitionService().getPartitionId(data)) {
                             partitionKeys.put(data, entry.getValue());
+                            //split into chunks
+                            if (partitionKeys.size() >= mapLoadChunkSize) {
+                                chunks.add(partitionKeys);
+                                partitionKeys = new HashMap<Data, Object>();
+                            }
                             iterator.remove();
                         }
                     }
+                    if (!partitionKeys.isEmpty()) {
+                        chunks.add(partitionKeys);
+                    }
                     try {
-                        nodeEngine.getExecutionService().submit("hz:map-load", new MapLoadAllTask(partitionKeys));
+                        Map<Data, Object> chunkedKeys;
+                        final AtomicInteger checkIfMapLoaded = new AtomicInteger(chunks.size());
+                        while ((chunkedKeys = chunks.poll()) != null) {
+                            nodeEngine.getExecutionService().submit("hz:map-load", new MapLoadAllTask(chunkedKeys, checkIfMapLoaded));
+                        }
                     } catch (Throwable t) {
                         throw ExceptionUtil.rethrow(t);
                     }
@@ -895,9 +910,11 @@ public class DefaultRecordStore implements RecordStore {
 
     private class MapLoadAllTask implements Runnable {
         private Map<Data, Object> keys;
+        private AtomicInteger checkIfMapLoaded;
 
-        private MapLoadAllTask(Map<Data, Object> keys) {
+        private MapLoadAllTask(Map<Data, Object> keys, AtomicInteger checkIfMapLoaded) {
             this.keys = keys;
+            this.checkIfMapLoaded = checkIfMapLoaded;
         }
 
         public void run() {
@@ -916,14 +933,10 @@ public class DefaultRecordStore implements RecordStore {
             operation.setResponseHandler(new ResponseHandler() {
                 @Override
                 public void sendResponse(Object obj) {
-                    if (!(obj instanceof Exception)) {
-                        loaded.set(true);
-                    } else {
-                        Exception e = (Exception) obj;
-                        nodeEngine.getLogger(RecordStore.class).finest(e.getMessage());
+                    if( checkIfMapLoaded.decrementAndGet() == 0 ){
+                       loaded.set(true);
                     }
                 }
-
                 public boolean isLocal() {
                     return true;
                 }

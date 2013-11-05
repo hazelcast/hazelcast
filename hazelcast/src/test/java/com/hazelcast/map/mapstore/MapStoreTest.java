@@ -830,6 +830,47 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertEquals(1000, map.values().size());
     }
 
+    @Test
+    public void testIssue1110() throws InterruptedException {
+        final int mapSize = 10000;
+        final String mapName = "testIssue1110";
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        Config cfg = new Config();
+        cfg.setProperty(GroupProperties.PROP_MAP_LOAD_CHUNK_SIZE, "2000");
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setImplementation(new SimpleMapLoader(mapSize));
+        cfg.getMapConfig(mapName).setMapStoreConfig(mapStoreConfig);
+
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance(cfg);
+        HazelcastInstance instance2 = nodeFactory.newHazelcastInstance(cfg);
+        IMap map = instance1.getMap(mapName);
+        final CountDownLatch latch = new CountDownLatch(mapSize);
+        map.addEntryListener(new EntryListener() {
+            @Override
+            public void entryAdded(EntryEvent event) {
+                latch.countDown();
+            }
+
+            @Override
+            public void entryRemoved(EntryEvent event) {
+            }
+
+            @Override
+            public void entryUpdated(EntryEvent event) {
+            }
+
+            @Override
+            public void entryEvicted(EntryEvent event) {
+            }
+        },true);
+        // create all partition recordstores.
+        map.size();
+        //wait map load.
+        latch.await();
+        assertEquals(mapSize, map.size());
+    }
+
     public static Config newConfig(Object storeImpl, int writeDelaySeconds) {
         return newConfig("default", storeImpl, writeDelaySeconds);
     }
