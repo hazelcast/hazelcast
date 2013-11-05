@@ -975,6 +975,14 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      */
     Object executeOnKey(K key, EntryProcessor entryProcessor);
 
+    /**
+     * Applies the user defined EntryProcessor to the entry mapped by the key.
+     * Returns a Future representing that task.
+     *
+     * @return result of entry process.
+     */
+    Future executeOnKey(K key, EntryProcessor entryProcessor, ExecutionCallback callback);
+
 
     /**
      * Applies the user defined EntryProcessor to the all entries in the map.

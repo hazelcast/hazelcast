@@ -21,6 +21,7 @@ import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapIndexConfig;
 import com.hazelcast.core.*;
+import com.hazelcast.executor.ExecutionCallbackAdapter;
 import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.map.*;
 import com.hazelcast.map.operation.*;
@@ -627,6 +628,19 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                             .build();
             Future future = invocation.invoke();
             return (Data) future.get();
+        } catch (Throwable t) {
+            throw ExceptionUtil.rethrow(t);
+        }
+    }
+    public Future executeOnKeyInternal(Data key, EntryProcessor entryProcessor, ExecutionCallback callback) {
+        final NodeEngine nodeEngine = getNodeEngine();
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(key);
+        EntryOperation operation = new EntryOperation(name, key, entryProcessor);
+        operation.setThreadId(ThreadUtil.getThreadId());
+        try {
+            Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId).setCallback(new ExecutionCallbackAdapter(callback))
+                    .build();
+            return invocation.invoke();
         } catch (Throwable t) {
             throw ExceptionUtil.rethrow(t);
         }
