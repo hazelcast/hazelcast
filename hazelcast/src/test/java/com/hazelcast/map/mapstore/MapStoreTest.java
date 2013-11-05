@@ -760,6 +760,53 @@ public class MapStoreTest extends HazelcastTestSupport {
         assertEquals(0, store.loadAllKeys().size());
     }
 
+    // bug: store is called twice on loadAll
+    @Test
+    public void testIssue1070() throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(1);
+        final NoDuplicateMapStore myMapStore = new NoDuplicateMapStore();
+        myMapStore.store.put(1, 2);
+        Config config = new Config();
+        config
+                .getMapConfig("testIssue1070")
+                .setMapStoreConfig(new MapStoreConfig()
+                        .setImplementation(myMapStore));
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance hc = nodeFactory.newHazelcastInstance(config);
+        HazelcastInstance hc2 = nodeFactory.newHazelcastInstance(config);
+        IMap<Object, Object> map = hc.getMap("testIssue1070");
+        for (int i = 0; i < 271; i++) {
+            map.get(i);
+        }
+        assertFalse(myMapStore.failed);
+    }
+
+    static class NoDuplicateMapStore extends TestMapStore {
+        boolean failed = false;
+
+        @Override
+        public void store(Object key, Object value) {
+            if (store.containsKey(key)) {
+                failed = true;
+                throw new RuntimeException("duplicate is not allowed");
+            }
+            System.err.println("store:"+key);
+            super.store(key, value);
+        }
+
+        @Override
+        public void storeAll(Map map) {
+            for (Object key : map.keySet()) {
+                if (store.containsKey(key)) {
+                    failed = true;
+                    throw new RuntimeException("duplicate is not allowed");
+                }
+            }
+            super.storeAll(map);
+        }
+    }
+
+
     @Test
     public void testIssue806CustomTTLForNull() {
         final ConcurrentMap<String, String> store = new ConcurrentHashMap<String, String>();
@@ -816,13 +863,13 @@ public class MapStoreTest extends HazelcastTestSupport {
     public void testIssue1019() {
         Config config = new Config();
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setImplementation(new MapStoreAdapter<String,String>());
+        mapStoreConfig.setImplementation(new MapStoreAdapter<String, String>());
         config.getMapConfig("map").setMapStoreConfig(mapStoreConfig);
         HazelcastInstance instance = Hazelcast.newHazelcastInstance(config);
         HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
         final IMap map = instance.getMap("map");
         for (int i = 0; i < 1000; i++) {
-            map.put(i,i);
+            map.put(i, i);
         }
         for (int i = 10000; i < 10100; i++) {
             map.get(i);
