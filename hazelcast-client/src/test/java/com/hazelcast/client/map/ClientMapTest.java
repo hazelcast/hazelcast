@@ -20,6 +20,10 @@ import com.hazelcast.client.AuthenticationRequest;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
+import com.hazelcast.map.AbstractEntryProcessor;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.query.SqlPredicate;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
@@ -28,6 +32,7 @@ import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
@@ -465,6 +470,26 @@ public class ClientMapTest {
     }
 
     @Test
+    public void testExecuteOnKeyAsync() throws Exception {
+        map.put(1,1);
+        final CountDownLatch latch = new CountDownLatch(1);
+        ExecutionCallback executionCallback = new ExecutionCallback() {
+            @Override
+            public void onResponse(Object response) {
+                latch.countDown();
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+            }
+        };
+
+        map.executeOnKey(1,new IncrementorEntryProcessor(),executionCallback);
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
+        assertEquals(2,map.get(1));
+    }
+
+    @Test
     public void testListener() throws InterruptedException {
         final CountDownLatch latch1Add = new CountDownLatch(5);
         final CountDownLatch latch1Remove = new CountDownLatch(2);
@@ -679,5 +704,37 @@ public class ClientMapTest {
             this.id = id;
         }
     }
+    private static class IncrementorEntryProcessor extends AbstractEntryProcessor implements DataSerializable {
+        IncrementorEntryProcessor() {
+            super(true);
+        }
+
+        public Object process(Map.Entry entry) {
+            Integer value = (Integer) entry.getValue();
+            if (value == null) {
+                value = 0;
+            }
+            if (value == -1) {
+                entry.setValue(null);
+                return null;
+            }
+            value++;
+            entry.setValue(value);
+            return value;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+        }
+
+        public void processBackup(Map.Entry entry) {
+            entry.setValue((Integer) entry.getValue() + 1);
+        }
+    }
+
 
 }
