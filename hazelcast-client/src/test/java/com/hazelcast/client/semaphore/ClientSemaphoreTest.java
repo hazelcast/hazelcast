@@ -63,7 +63,7 @@ public class ClientSemaphoreTest {
     @After
     public void clear() throws IOException {
         s.reducePermits(100);
-        s.init(10);
+        s.release(10);
     }
 
     @Test
