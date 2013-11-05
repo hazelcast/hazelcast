@@ -73,14 +73,14 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
         Assert.assertEquals(0,map2.size());
         //put and check
         map1.put("key", "value");
-        final long costOfMapOnNode1 = map1.getLocalMapStats().getHeapCost();
-        final long costOfMapOnNode2 = map2.getLocalMapStats().getHeapCost();
-        Assert.assertEquals(costOfMapOnNode1,costOfMapOnNode2);
+        final long costOfMapOnNode1AfterPut = map1.getLocalMapStats().getHeapCost();
+        final long costOfMapOnNode2AfterPut = map2.getLocalMapStats().getHeapCost();
+        Assert.assertTrue( costOfMapOnNode1AfterPut > 0 && (costOfMapOnNode1AfterPut == costOfMapOnNode2AfterPut));
         //remove and check
         map1.remove("key");
         final long costOfMapOnNode1AfterRemove = map1.getLocalMapStats().getHeapCost();
         final long costOfMapOnNode2AfterRemove = map2.getLocalMapStats().getHeapCost();
-        Assert.assertEquals(costOfMapOnNode1AfterRemove,costOfMapOnNode2AfterRemove);
+        Assert.assertTrue( costOfMapOnNode1AfterRemove == 0 && (costOfMapOnNode1AfterRemove == costOfMapOnNode2AfterRemove));
     }
 
     @Test
