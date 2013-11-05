@@ -69,8 +69,7 @@ public class SizeEstimatorTest extends HazelcastTestSupport {
         final IMap<String, String> map1 = h[0].getMap(MAP_NAME);
         final IMap<String, String> map2 = h[1].getMap(MAP_NAME);
         warmUpPartitions(h);
-        Assert.assertEquals(0,map1.size());
-        Assert.assertEquals(0,map2.size());
+        Assert.assertTrue( map1.size() == 0 && (map1.size() == map2.size()) );
         //put and check
         map1.put("key", "value");
         final long costOfMapOnNode1AfterPut = map1.getLocalMapStats().getHeapCost();
