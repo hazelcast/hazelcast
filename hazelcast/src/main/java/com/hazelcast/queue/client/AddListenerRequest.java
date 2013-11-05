@@ -35,7 +35,7 @@ import java.security.Permission;
 /**
  * @author ali 5/9/13
  */
-public class AddListenerRequest extends CallableClientRequest implements Portable, InitializingObjectRequest, SecureRequest {
+public class AddListenerRequest extends CallableClientRequest implements Portable, SecureRequest {
 
     private String name;
     private boolean includeValue;
@@ -50,10 +50,6 @@ public class AddListenerRequest extends CallableClientRequest implements Portabl
 
     public String getServiceName() {
         return QueueService.SERVICE_NAME;
-    }
-
-    public String getObjectName() {
-        return name;
     }
 
     public int getFactoryId() {

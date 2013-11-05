@@ -38,7 +38,7 @@ import com.hazelcast.spi.impl.PortableEntryEvent;
 import java.io.IOException;
 import java.security.Permission;
 
-public class MapAddEntryListenerRequest extends CallableClientRequest implements Portable, InitializingObjectRequest, SecureRequest {
+public class MapAddEntryListenerRequest extends CallableClientRequest implements Portable, SecureRequest {
 
     private String name;
     private Data key;
@@ -120,11 +120,6 @@ public class MapAddEntryListenerRequest extends CallableClientRequest implements
 
     public int getClassId() {
         return MapPortableHook.ADD_ENTRY_LISTENER;
-    }
-
-    @Override
-    public String getObjectName() {
-        return name;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {

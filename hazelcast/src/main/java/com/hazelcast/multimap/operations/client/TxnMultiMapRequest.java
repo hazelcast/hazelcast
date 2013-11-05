@@ -17,7 +17,6 @@
 package com.hazelcast.multimap.operations.client;
 
 import com.hazelcast.client.CallableClientRequest;
-import com.hazelcast.client.InitializingObjectRequest;
 import com.hazelcast.client.SecureRequest;
 import com.hazelcast.multimap.MultiMapPortableHook;
 import com.hazelcast.multimap.MultiMapService;
@@ -34,7 +33,7 @@ import java.security.Permission;
 /**
  * @author ali 6/10/13
  */
-public abstract class TxnMultiMapRequest extends CallableClientRequest implements Portable, InitializingObjectRequest, SecureRequest {
+public abstract class TxnMultiMapRequest extends CallableClientRequest implements Portable, SecureRequest {
 
     String name;
 
@@ -47,10 +46,6 @@ public abstract class TxnMultiMapRequest extends CallableClientRequest implement
 
     public String getServiceName() {
         return MultiMapService.SERVICE_NAME;
-    }
-
-    public String getObjectName() {
-        return name;
     }
 
     public int getFactoryId() {

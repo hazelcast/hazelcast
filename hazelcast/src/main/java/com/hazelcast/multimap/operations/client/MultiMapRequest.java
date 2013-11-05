@@ -51,10 +51,6 @@ public abstract class MultiMapRequest extends PartitionClientRequest implements 
         return MultiMapService.SERVICE_NAME;
     }
 
-    public String getObjectName() {
-        return name;
-    }
-
     public int getFactoryId() {
         return MultiMapPortableHook.F_ID;
     }
