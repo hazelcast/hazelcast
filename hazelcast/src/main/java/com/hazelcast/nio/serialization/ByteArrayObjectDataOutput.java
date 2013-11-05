@@ -52,7 +52,7 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
     }
 
     public void write(byte b[], int off, int len) {
-        if ((off < 0) || (off > b.length) || (len < 0) ||
+       if ((off < 0) || (off > b.length) || (len < 0) ||
                 ((off + len) > b.length) || ((off + len) < 0)) {
             throw new IndexOutOfBoundsException();
         } else if (len == 0) {
@@ -73,6 +73,12 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
 
     public void writeByte(final int v) throws IOException {
         write(v);
+    }
+
+    public void writeZeroBytes(int count){
+        for(int k=0;k<count;k++){
+            write(0);
+        }
     }
 
     public void writeByte(int position, final int v) throws IOException {
@@ -264,6 +270,7 @@ class ByteArrayObjectDataOutput extends OutputStream implements BufferObjectData
     public void position(int newPos) {
         if ((newPos > buffer.length) || (newPos < 0))
             throw new IllegalArgumentException();
+
         pos = newPos;
     }
 
