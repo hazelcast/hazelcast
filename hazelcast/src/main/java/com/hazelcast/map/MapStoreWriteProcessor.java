@@ -18,6 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.Data;
+import com.hazelcast.spi.NodeEngine;
 import com.hazelcast.util.scheduler.EntryTaskScheduler;
 import com.hazelcast.util.scheduler.ScheduledEntry;
 import com.hazelcast.util.scheduler.ScheduledEntryProcessor;
@@ -51,18 +52,26 @@ public class MapStoreWriteProcessor implements ScheduledEntryProcessor<Data, Obj
     public void process(EntryTaskScheduler<Data, Object> scheduler, Collection<ScheduledEntry<Data, Object>> entries) {
         if (entries.isEmpty())
             return;
-
+        NodeEngine nodeEngine = mapService.getNodeEngine();
         final ILogger logger = mapService.getNodeEngine().getLogger(getClass());
         if (entries.size() == 1) {
             ScheduledEntry<Data, Object> entry = entries.iterator().next();
-            Exception exception = tryStore(scheduler, entry);
-            if (exception != null) {
-                logger.severe(exception);
+            int partitionId = nodeEngine.getPartitionService().getPartitionId(entry.getKey());
+            // execute operation if the node is owner of the key (it can be backup)
+            if (nodeEngine.getThisAddress().equals(nodeEngine.getPartitionService().getPartitionOwner(partitionId))) {
+                Exception exception = tryStore(scheduler, entry);
+                if (exception != null) {
+                    logger.severe(exception);
+                }
             }
         } else {   // if entries size > 0, we will call storeAll
             Map map = new HashMap(entries.size());
             for (ScheduledEntry<Data, Object> entry : entries) {
-                map.put(mapService.toObject(entry.getKey()), mapService.toObject(entry.getValue()));
+                int partitionId = nodeEngine.getPartitionService().getPartitionId(entry.getKey());
+                // execute operation if the node is owner of the key (it can be backup)
+                if (nodeEngine.getThisAddress().equals(nodeEngine.getPartitionService().getPartitionOwner(partitionId))) {
+                    map.put(mapService.toObject(entry.getKey()), mapService.toObject(entry.getValue()));
+                }
             }
             Exception exception = null;
             try {

@@ -18,6 +18,7 @@ package com.hazelcast.map;
 
 import com.hazelcast.config.*;
 import com.hazelcast.core.*;
+import com.hazelcast.instance.TestUtil;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -686,6 +687,31 @@ public class EvictionTest extends HazelcastTestSupport {
         }
     }
 
+    @Test
+    public void testIssue1085EvictionBackup() throws InterruptedException {
+        Config config = new Config();
+        config.getMapConfig("testIssue1085EvictionBackup").setTimeToLiveSeconds(3);
+        int size = 1000;
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        HazelcastInstance instance3 = factory.newHazelcastInstance(config);
+        final CountDownLatch latch = new CountDownLatch(size);
+        final IMap map = instance.getMap("testIssue1085EvictionBackup");
+        map.addEntryListener(new EntryAdapter(){
+            @Override
+            public void entryEvicted(EntryEvent event) {
+                super.entryEvicted(event);
+                latch.countDown();
+            }
+        }, false);
+        for (int i = 0; i < size; i++) {
+            map.put(i, i);
+        }
+        instance2.shutdown();
+        instance3.shutdown();
+        assertTrue(latch.await(30, TimeUnit.SECONDS));
+    }
 
     /**
      * Test for the issue 537.
