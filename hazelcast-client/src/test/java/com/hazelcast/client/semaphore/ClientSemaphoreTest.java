@@ -47,7 +47,6 @@ public class ClientSemaphoreTest {
 
     @BeforeClass
     public static void init(){
-
         server = Hazelcast.newHazelcastInstance();
         hz = HazelcastClient.newHazelcastClient(null);
         s = hz.getSemaphore(name);
@@ -63,7 +62,7 @@ public class ClientSemaphoreTest {
     @After
     public void clear() throws IOException {
         s.reducePermits(100);
-        s.init(10);
+        s.release(10);
     }
 
     @Test

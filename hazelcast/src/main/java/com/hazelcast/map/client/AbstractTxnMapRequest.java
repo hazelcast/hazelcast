@@ -17,7 +17,6 @@
 package com.hazelcast.map.client;
 
 import com.hazelcast.client.CallableClientRequest;
-import com.hazelcast.client.InitializingObjectRequest;
 import com.hazelcast.client.SecureRequest;
 import com.hazelcast.core.TransactionalMap;
 import com.hazelcast.map.MapKeySet;
@@ -47,7 +46,7 @@ import java.util.Set;
  * Date: 9/18/13
  * Time: 2:28 PM
  */
-public abstract class AbstractTxnMapRequest extends CallableClientRequest implements Portable, InitializingObjectRequest, SecureRequest {
+public abstract class AbstractTxnMapRequest extends CallableClientRequest implements Portable, SecureRequest {
 
     String name;
     TxnMapRequestType requestType;
@@ -141,11 +140,6 @@ public abstract class AbstractTxnMapRequest extends CallableClientRequest implem
 
     public String getServiceName() {
         return MapService.SERVICE_NAME;
-    }
-
-    @Override
-    public String getObjectName() {
-        return name;
     }
 
     public int getFactoryId() {

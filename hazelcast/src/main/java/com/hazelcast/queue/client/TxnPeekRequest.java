@@ -2,7 +2,6 @@ package com.hazelcast.queue.client;
 
 import com.hazelcast.client.CallableClientRequest;
 import com.hazelcast.client.ClientEndpoint;
-import com.hazelcast.client.InitializingObjectRequest;
 import com.hazelcast.core.TransactionalQueue;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
@@ -19,7 +18,7 @@ import java.util.concurrent.TimeUnit;
  * Date: 10/1/13
  * Time: 10:34 AM
  */
-public class TxnPeekRequest extends CallableClientRequest implements Portable, InitializingObjectRequest {
+public class TxnPeekRequest extends CallableClientRequest implements Portable {
 
     private String name;
 
@@ -44,11 +43,6 @@ public class TxnPeekRequest extends CallableClientRequest implements Portable, I
     @Override
     public String getServiceName() {
         return QueueService.SERVICE_NAME;
-    }
-
-    @Override
-    public String getObjectName() {
-        return name;
     }
 
     @Override

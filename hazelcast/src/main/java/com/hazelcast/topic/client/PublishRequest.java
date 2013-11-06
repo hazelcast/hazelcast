@@ -16,7 +16,6 @@
 
 package com.hazelcast.topic.client;
 
-import com.hazelcast.client.InitializingObjectRequest;
 import com.hazelcast.client.PartitionClientRequest;
 import com.hazelcast.client.SecureRequest;
 import com.hazelcast.nio.ObjectDataInput;
@@ -38,7 +37,7 @@ import java.security.Permission;
 /**
  * @author ali 5/14/13
  */
-public class PublishRequest extends PartitionClientRequest implements Portable, InitializingObjectRequest, SecureRequest {
+public class PublishRequest extends PartitionClientRequest implements Portable, SecureRequest {
 
     String name;
 
@@ -75,10 +74,6 @@ public class PublishRequest extends PartitionClientRequest implements Portable, 
 
     public int getClassId() {
         return TopicPortableHook.PUBLISH;
-    }
-
-    public String getObjectName() {
-        return name;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {

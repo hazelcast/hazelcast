@@ -294,7 +294,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
             final Object response = resolveResponse(waitForResponse(timeout, unit));
             done = true;
             if (response instanceof Response) {
-                if (op instanceof BackupAwareOperation) {
+                if (op instanceof BackupAwareOperation && callback == null) {
                     final Object obj = waitForBackupsAndGetResponse((Response) response);
                     if (obj == RETRY_RESPONSE) {
                         final Future f = resetAndReInvoke();

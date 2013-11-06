@@ -1,5 +1,6 @@
 package com.hazelcast.map.operation;
 
+import com.hazelcast.map.MapKeySet;
 import com.hazelcast.map.MapService;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
@@ -10,7 +11,6 @@ import com.hazelcast.spi.BackupOperation;
 import com.hazelcast.spi.impl.AbstractNamedOperation;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -18,7 +18,7 @@ import java.util.Set;
  * Date: 11/1/13
  */
 public class EvictKeysBackupOperation extends AbstractNamedOperation implements BackupOperation, DataSerializable {
-    Set<Data> keys;
+    MapKeySet mapKeySet;
     MapService mapService;
     RecordStore recordStore;
 
@@ -27,7 +27,7 @@ public class EvictKeysBackupOperation extends AbstractNamedOperation implements 
 
     public EvictKeysBackupOperation(String name, Set<Data> keys) {
         super(name);
-        this.keys = keys;
+        this.mapKeySet = new MapKeySet(keys);
     }
 
     @Override
@@ -37,6 +37,7 @@ public class EvictKeysBackupOperation extends AbstractNamedOperation implements 
     }
 
     public void run() {
+        final Set<Data> keys = mapKeySet.getKeySet();
         for (Data key : keys) {
             if (!recordStore.isLocked(key))
             {
@@ -46,34 +47,22 @@ public class EvictKeysBackupOperation extends AbstractNamedOperation implements 
     }
 
     public Set<Data> getKeys() {
-        return keys;
+        return mapKeySet.getKeySet();
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        if (keys == null)
-            out.writeInt(-1);
-        else {
-            out.writeInt(keys.size());
-            for (Data key : keys) {
-                key.writeData(out);
-            }
-        }
+        mapKeySet.writeData(out);
+
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        int size = in.readInt();
-        if(size > -1) {
-            keys = new HashSet<Data>(size);
-            for (int i = 0; i < size; i++) {
-                Data data = new Data();
-                data.readData(in);
-                keys.add(data);
-            }
-        }
+        mapKeySet = new MapKeySet();
+        mapKeySet.readData(in);
+
     }
 
 

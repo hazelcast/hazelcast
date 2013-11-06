@@ -41,7 +41,7 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.map.MapService.SERVICE_NAME;
 
-abstract class AbstractMapQueryRequest extends InvocationClientRequest implements Portable, RetryableRequest, InitializingObjectRequest, SecureRequest {
+abstract class AbstractMapQueryRequest extends InvocationClientRequest implements Portable, RetryableRequest, SecureRequest {
 
     private String name;
     private IterationType iterationType;
@@ -116,11 +116,6 @@ abstract class AbstractMapQueryRequest extends InvocationClientRequest implement
 
     public final int getFactoryId() {
         return MapPortableHook.F_ID;
-    }
-
-    @Override
-    public String getObjectName() {
-        return name;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {

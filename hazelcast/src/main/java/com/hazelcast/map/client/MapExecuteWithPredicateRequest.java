@@ -1,7 +1,6 @@
 package com.hazelcast.map.client;
 
 import com.hazelcast.client.AllPartitionsClientRequest;
-import com.hazelcast.client.InitializingObjectRequest;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapEntrySet;
 import com.hazelcast.map.MapPortableHook;
@@ -24,7 +23,7 @@ import java.util.Set;
  * date: 9/16/13
  * author: eminn
  */
-public class MapExecuteWithPredicateRequest extends AllPartitionsClientRequest implements Portable, InitializingObjectRequest {
+public class MapExecuteWithPredicateRequest extends AllPartitionsClientRequest implements Portable {
     private String name;
     private EntryProcessor processor;
     private Predicate predicate;
@@ -61,11 +60,6 @@ public class MapExecuteWithPredicateRequest extends AllPartitionsClientRequest i
 
     public String getServiceName() {
         return MapService.SERVICE_NAME;
-    }
-
-    @Override
-    public String getObjectName() {
-        return name;
     }
 
     @Override

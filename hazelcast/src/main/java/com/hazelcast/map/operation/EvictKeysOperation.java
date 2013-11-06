@@ -1,5 +1,6 @@
 package com.hazelcast.map.operation;
 
+import com.hazelcast.map.MapKeySet;
 import com.hazelcast.map.RecordStore;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -9,7 +10,6 @@ import com.hazelcast.spi.Operation;
 import com.hazelcast.spi.PartitionAwareOperation;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Set;
 
 import static com.hazelcast.map.MapService.SERVICE_NAME;
@@ -19,7 +19,7 @@ import static com.hazelcast.map.MapService.SERVICE_NAME;
  * Date: 11/1/13
  */
 public class EvictKeysOperation extends AbstractMapOperation implements BackupAwareOperation, PartitionAwareOperation {
-    Set<Data> keys;
+    MapKeySet mapKeySet;
     boolean shouldBackup = true;
 
     public EvictKeysOperation() {
@@ -27,12 +27,13 @@ public class EvictKeysOperation extends AbstractMapOperation implements BackupAw
 
     public EvictKeysOperation(String name, Set<Data> keys) {
         super(name);
-        this.keys = keys;
+        this.mapKeySet = new MapKeySet(keys);
     }
 
     public void run() {
         final RecordStore recordStore = mapService.getRecordStore(getPartitionId(), name);
 
+        final Set<Data> keys = mapKeySet.getKeySet();
         if (keys.isEmpty()) {
             shouldBackup = false;
         }
@@ -62,7 +63,7 @@ public class EvictKeysOperation extends AbstractMapOperation implements BackupAw
     }
 
     public Operation getBackupOperation() {
-        EvictKeysBackupOperation evictKeysBackupOperation = new EvictKeysBackupOperation(name, keys);
+        EvictKeysBackupOperation evictKeysBackupOperation = new EvictKeysBackupOperation(name, mapKeySet.getKeySet());
         evictKeysBackupOperation.setServiceName(SERVICE_NAME);
         return evictKeysBackupOperation;
     }
@@ -76,27 +77,13 @@ public class EvictKeysOperation extends AbstractMapOperation implements BackupAw
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         super.writeInternal(out);
-        if (keys == null) {
-            out.writeInt(-1);
-        } else {
-            out.writeInt(keys.size());
-            for (Data key : keys) {
-                key.writeData(out);
-            }
-        }
+        mapKeySet.writeData(out);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         super.readInternal(in);
-        int size = in.readInt();
-        if (size > -1) {
-            keys = new HashSet<Data>(size);
-            for (int i = 0; i < size; i++) {
-                Data data = new Data();
-                data.readData(in);
-                keys.add(data);
-            }
-        }
+        mapKeySet = new MapKeySet();
+        mapKeySet.readData(in);
     }
 }
