@@ -34,7 +34,7 @@ import java.security.Permission;
 /**
  * @author ali 5/24/13
  */
-public class AddMessageListenerRequest extends CallableClientRequest implements Portable, InitializingObjectRequest, SecureRequest {
+public class AddMessageListenerRequest extends CallableClientRequest implements Portable, SecureRequest {
 
     private String name;
 
@@ -73,10 +73,6 @@ public class AddMessageListenerRequest extends CallableClientRequest implements 
 
     public int getClassId() {
         return TopicPortableHook.ADD_LISTENER;
-    }
-
-    public String getObjectName() {
-        return name;
     }
 
     public void writePortable(PortableWriter writer) throws IOException {

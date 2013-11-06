@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.client;
 
-import com.hazelcast.client.InitializingObjectRequest;
 import com.hazelcast.client.KeyBasedClientRequest;
 import com.hazelcast.client.SecureRequest;
 import com.hazelcast.map.operation.EntryOperation;
@@ -36,7 +35,7 @@ import com.hazelcast.spi.Operation;
 import java.io.IOException;
 import java.security.Permission;
 
-public class MapExecuteOnKeyRequest extends KeyBasedClientRequest implements Portable, InitializingObjectRequest, SecureRequest {
+public class MapExecuteOnKeyRequest extends KeyBasedClientRequest implements Portable, SecureRequest {
 
     private String name;
     private Data key;
@@ -63,11 +62,6 @@ public class MapExecuteOnKeyRequest extends KeyBasedClientRequest implements Por
 
     public String getServiceName() {
         return MapService.SERVICE_NAME;
-    }
-
-    @Override
-    public String getObjectName() {
-        return name;
     }
 
     @Override

@@ -356,10 +356,6 @@ public class ClientEngineImpl implements ClientEngine, ConnectionListener, CoreS
                             throw new HazelcastInstanceNotActiveException();
                         }
                         request.setService(service);
-                        if (request instanceof InitializingObjectRequest) {
-                            String objectName = ((InitializingObjectRequest) request).getObjectName();
-                            nodeEngine.getProxyService().initializeDistributedObject(serviceName, objectName);
-                        }
                     }
                     request.setClientEngine(ClientEngineImpl.this);
                     final SecurityContext securityContext = getSecurityContext();
