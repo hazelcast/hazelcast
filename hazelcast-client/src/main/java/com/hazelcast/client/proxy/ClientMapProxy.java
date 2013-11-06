@@ -444,11 +444,12 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
                 try {
                     V result =  invoke(request, keyData);
                     callback.onResponse(result);
+                    return  result;
                 }catch (Exception e)
                 {
                     callback.onFailure(e);
+                    return null;
                 }
-                return  null;
             }
         });
         return f;

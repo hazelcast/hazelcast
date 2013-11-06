@@ -43,6 +43,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * @author ali 5/22/13
@@ -484,9 +485,10 @@ public class ClientMapTest {
             }
         };
 
-        map.executeOnKey(1,new IncrementorEntryProcessor(),executionCallback);
+        Future f = map.executeOnKey(1,new IncrementorEntryProcessor(),executionCallback);
         assertTrue(latch.await(5, TimeUnit.SECONDS));
         assertEquals(2,map.get(1));
+        assertEquals(2,f.get());
     }
 
     @Test
