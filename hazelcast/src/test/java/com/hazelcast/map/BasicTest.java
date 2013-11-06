@@ -1191,12 +1191,6 @@ public class BasicTest extends HazelcastTestSupport {
         runnable = new Runnable() { public void run() { map.forceUnlock(null); } };
         assertRunnableThrowsNullPointerException(runnable, "forceUnlock(null)");
 
-        runnable = new Runnable() { public void run() { map.addEntryListener(new EntryAdapter<String, String>(), (String)null, true); } };
-        assertRunnableThrowsNullPointerException(runnable, "addEntryListener(entryAdapter, (String)null, true)");
-
-        runnable = new Runnable() { public void run() { map.addEntryListener(new EntryAdapter<String, String>(), new EqualPredicate(), (String)null, true); } };
-        assertRunnableThrowsNullPointerException(runnable, "addEntryListener(entryAdapter, predicate, (String)null, true)");
-
         runnable = new Runnable() { public void run() { map.getEntryView(null); } };
         assertRunnableThrowsNullPointerException(runnable, "getEntryView(null)");
 
