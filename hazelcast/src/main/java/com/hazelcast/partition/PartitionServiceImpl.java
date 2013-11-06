@@ -375,6 +375,8 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         lock.lock();
         try {
             if (!node.isActive() || !node.joined()) {
+                logger.finest("Node should be active(" + node.isActive() + ") and joined(" + node.joined()
+                        + ") to be able to process partition table!");
                 return;
             }
             final Address sender = partitionState.getEndpoint();
