@@ -253,6 +253,14 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             try {
                 clearMigrationQueue();
                 migrationQueue.offer(new RepartitioningTask());
+
+                if (initialized) {
+                    // send initial partition table to newly joined node.
+                    PartitionStateOperation op = new PartitionStateOperation(node.clusterService.getMemberList(), getPartitions(),
+                            new ArrayList<MigrationInfo>(completedMigrations),
+                            node.getClusterService().getClusterTime(), stateVersion.get());
+                    nodeEngine.getOperationService().send(op, member.getAddress());
+                }
             } finally {
                 lock.unlock();
             }
@@ -283,7 +291,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
             // Let all members notice the dead and fix their own records and indexes.
             // Otherwise new master may take action fast and send new partition state
             // before other members realize the dead one and fix their records.
-            migrationActive.set(false);
+            pauseMigration();
             for (PartitionImpl partition : partitions) {
                 // shift partition table up.
                 while (partition.onDeadAddress(deadAddress));
@@ -304,7 +312,7 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
 
             nodeEngine.getExecutionService().schedule(new Runnable() {
                 public void run() {
-                    migrationActive.set(true);
+                    resumeMigration();
                 }
             }, migrationActivationDelay, TimeUnit.MILLISECONDS);
         } finally {
@@ -1302,6 +1310,14 @@ public class PartitionServiceImpl implements PartitionService, ManagedService,
         } finally {
             lock.unlock();
         }
+    }
+
+    public void pauseMigration() {
+        migrationActive.set(false);
+    }
+
+    public void resumeMigration() {
+        migrationActive.set(true);
     }
 
     public void shutdown() {
