@@ -990,7 +990,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
      * Applies the user defined EntryProcessor to the entry mapped by the key.
      * Returns immediately with a Future representing that task.
      *
-     * EntryProcessor is not cancellable, so calling Future.cancel() method won't cancel the operation of EntryProcossor.
+     * EntryProcessor is not cancellable, so calling Future.cancel() method won't cancel the operation of EntryProcessor.
      *
      * @param key   key to be processed
      * @param entryProcessor processor to process the key
