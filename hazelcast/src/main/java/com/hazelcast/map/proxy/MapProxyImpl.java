@@ -359,9 +359,6 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         if (listener == null) {
             throw new NullPointerException("Listener should not be null!");
         }
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
-        }
         return addEntryListenerInternal(listener, getService().toData(key, partitionStrategy), includeValue);
     }
 
@@ -371,9 +368,6 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         }
         if (predicate == null) {
             throw new NullPointerException("Predicate should not be null!");
-        }
-        if (key == null) {
-            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
         return addEntryListenerInternal(listener, predicate, getService().toData(key, partitionStrategy), includeValue);
     }
