@@ -471,7 +471,21 @@ public class ClientMapTest {
     }
 
     @Test
-    public void testExecuteOnKeyAsync() throws Exception {
+    public void testSubmitToKey() throws Exception {
+        map.put(1,1);
+        Future f = map.submitToKey(1, new IncrementorEntryProcessor());
+        assertEquals(2,f.get());
+        assertEquals(2,map.get(1));
+    }
+    @Test
+    public void testSubmitToNonExistentKey() throws Exception {
+        Future f = map.submitToKey(11, new IncrementorEntryProcessor());
+        assertEquals(1,f.get());
+        assertEquals(1,map.get(11));
+    }
+    @Test
+    public void testSubmitToKeyWithCallback() throws  Exception
+    {
         map.put(1,1);
         final CountDownLatch latch = new CountDownLatch(1);
         ExecutionCallback executionCallback = new ExecutionCallback() {
@@ -485,10 +499,9 @@ public class ClientMapTest {
             }
         };
 
-        Future f = map.executeOnKey(1,new IncrementorEntryProcessor(),executionCallback);
+        map.submitToKey(1,new IncrementorEntryProcessor(),executionCallback);
         assertTrue(latch.await(5, TimeUnit.SECONDS));
         assertEquals(2,map.get(1));
-        assertEquals(2,f.get());
     }
 
     @Test

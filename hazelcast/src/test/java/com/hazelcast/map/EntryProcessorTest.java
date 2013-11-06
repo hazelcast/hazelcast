@@ -40,11 +40,12 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastJUnit4ClassRunner.class)
 @Category(ParallelTest.class)
@@ -567,7 +568,25 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         hz.getLifecycleService().shutdown();
     }
     @Test
-    public void testExecuteOnKeyAsync() throws InterruptedException {
+    public void testSubmitToKey() throws InterruptedException, ExecutionException {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
+        IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
+        map.put(1, 1);
+        Future f = map.submitToKey(1,new IncrementorEntryProcessor());
+        assertEquals(2,f.get());
+        assertEquals(2,(int) map.get(1));
+    }@Test
+    public void testSubmitToNonExistentKey() throws InterruptedException, ExecutionException {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
+        IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
+        Future f = map.submitToKey(11,new IncrementorEntryProcessor());
+        assertEquals(1,f.get());
+        assertEquals(1,(int) map.get(11));
+    }
+    @Test
+    public void testSubmitToKeyWithCallback() throws InterruptedException, ExecutionException {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
         IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
@@ -584,9 +603,9 @@ public class EntryProcessorTest extends HazelcastTestSupport {
             }
         };
 
-        map.executeOnKey(1,new IncrementorEntryProcessor(),executionCallback);
+        map.submitToKey(1,new IncrementorEntryProcessor(),executionCallback);
         assertTrue(latch.await(5, TimeUnit.SECONDS));
-        assertEquals(2,(long)map.get(1));
+        assertEquals(2, (int) map.get(1));
     }
 
 }

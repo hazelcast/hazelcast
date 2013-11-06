@@ -490,12 +490,23 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     @Override
-    public Future executeOnKey(K key, EntryProcessor entryProcessor, ExecutionCallback callback) {
+    public void submitToKey(K key, EntryProcessor entryProcessor, ExecutionCallback callback) {
         if (key == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
         MapService service = getService();
-        return  new DelegatingFuture(executeOnKeyInternal(service.toData(key, partitionStrategy), entryProcessor,callback),service.getSerializationService());
+        Data keyData = service.toData(key, partitionStrategy);
+        executeOnKeyInternal(keyData,entryProcessor,callback);
+    }
+    @Override
+    public Future submitToKey(K key, EntryProcessor entryProcessor) {
+        if (key == null) {
+            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+        }
+        MapService service = getService();
+        Data keyData = service.toData(key, partitionStrategy);
+        Future f = executeOnKeyInternal(keyData,entryProcessor,null);
+        return new DelegatingFuture(f,service.getSerializationService());
     }
 
     protected Object invoke(Operation operation, int partitionId) throws Throwable {

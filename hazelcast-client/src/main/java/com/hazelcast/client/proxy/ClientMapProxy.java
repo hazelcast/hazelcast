@@ -435,11 +435,11 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
     }
 
     @Override
-    public Future executeOnKey(final K key,final EntryProcessor entryProcessor, final ExecutionCallback callback) {
+    public void submitToKey(K key, EntryProcessor entryProcessor,final ExecutionCallback callback) {
         final Data keyData = toData(key);
         final MapExecuteOnKeyRequest request = new MapExecuteOnKeyRequest(name, entryProcessor, keyData);
 
-        return getContext().getExecutionService().submit(new Callable<V>() {
+        getContext().getExecutionService().submit(new Callable<V>() {
             public V call() throws Exception {
                 try {
                     V result =  invoke(request, keyData);
@@ -448,6 +448,24 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
                 }catch (Exception e)
                 {
                     callback.onFailure(e);
+                    throw (e);
+                }
+            }
+        });
+    }
+
+    @Override
+    public Future submitToKey(K key, EntryProcessor entryProcessor) {
+        final Data keyData = toData(key);
+        final MapExecuteOnKeyRequest request = new MapExecuteOnKeyRequest(name, entryProcessor, keyData);
+
+        return getContext().getExecutionService().submit(new Callable<V>() {
+            public V call() throws Exception {
+                try {
+                    V result =  invoke(request, keyData);
+                    return  result;
+                }catch (Exception e)
+                {
                     throw (e);
                 }
             }
