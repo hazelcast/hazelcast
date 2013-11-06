@@ -130,6 +130,13 @@ public class ManagementService implements DistributedObjectListener {
                 } catch (Exception e) {
                     logger.warning("Error while registering " + bean.objectName, e);
                 }
+            } else {
+                try {
+                    bean.preDeregister();
+                    bean.postDeregister();
+                } catch (Exception e) {
+                    logger.finest(e);
+                }
             }
         }
     }
