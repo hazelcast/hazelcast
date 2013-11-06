@@ -87,7 +87,8 @@ public class ProxyServiceImpl implements ProxyService, PostJoinAwareService,
         if (name == null) {
             throw new NullPointerException("Object name is required!");
         }
-        getDistributedObject(serviceName, name);
+        ProxyRegistry registry = ConcurrencyUtil.getOrPutIfAbsent(registries, serviceName, registryConstructor);
+        registry.getProxy(name, true, true);
     }
 
     public DistributedObject getDistributedObject(String serviceName, String name) {
@@ -98,7 +99,7 @@ public class ProxyServiceImpl implements ProxyService, PostJoinAwareService,
             throw new NullPointerException("Object name is required!");
         }
         ProxyRegistry registry = ConcurrencyUtil.getOrPutIfAbsent(registries, serviceName, registryConstructor);
-        return registry.getProxy(name, true);
+        return registry.getProxy(name, true, true);
     }
 
     public void destroyDistributedObject(String serviceName, String name) {
@@ -179,7 +180,7 @@ public class ProxyServiceImpl implements ProxyService, PostJoinAwareService,
             try {
                 final ProxyRegistry registry = ConcurrencyUtil.getOrPutIfAbsent(registries, serviceName, registryConstructor);
                 if (!registry.contains(eventPacket.getName())) {
-                    registry.getProxy(eventPacket.getName(), false); // listeners will be called if proxy is created here.
+                    registry.getProxy(eventPacket.getName(), false, true); // listeners will be called if proxy is created here.
                 }
             } catch (HazelcastInstanceNotActiveException ignored) {
             }
@@ -221,7 +222,7 @@ public class ProxyServiceImpl implements ProxyService, PostJoinAwareService,
             }
         }
 
-        DistributedObject getProxy(final String name, boolean publishEvent) {
+        DistributedObject getProxy(final String name, boolean publishEvent, boolean initialize) {
             DistributedObject proxy = proxies.get(name);
             if (proxy == null) {
                 if (!nodeEngine.isActive()) {
@@ -230,7 +231,7 @@ public class ProxyServiceImpl implements ProxyService, PostJoinAwareService,
                 proxy = service.createDistributedObject(name);
                 DistributedObject current = proxies.putIfAbsent(name, proxy);
                 if (current == null) {
-                    if (proxy instanceof InitializingObject) {
+                    if (initialize && proxy instanceof InitializingObject) {
                         try {
                             ((InitializingObject) proxy).initialize();
                         } catch (Exception e) {
@@ -367,12 +368,32 @@ public class ProxyServiceImpl implements ProxyService, PostJoinAwareService,
         @Override
         public void run() throws Exception {
             if (proxies != null && proxies.size() > 0) {
-                NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
-                ProxyService proxyService = nodeEngine.getProxyService();
+                NodeEngine nodeEngine = getNodeEngine();
+                ProxyServiceImpl proxyService = getService();
                 for (ProxyInfo proxy : proxies) {
+                    final ProxyRegistry registry = ConcurrencyUtil.getOrPutIfAbsent(proxyService.registries, proxy.serviceName, proxyService.registryConstructor);
+                    final DistributedObject object = registry.getProxy(proxy.objectName, false, false);
+
+                    if (object instanceof InitializingObject) {
+                        nodeEngine.getExecutionService().execute(ExecutionService.SYSTEM_EXECUTOR, new Runnable() {
+                            public void run() {
+                                try {
+                                    ((InitializingObject) object).initialize();
+                                } catch (Exception e) {
+                                    getLogger().warning("Error while initializing proxy: " + object, e);
+                                }
+                            }
+                        });
+                    }
+
                     proxyService.getDistributedObject(proxy.serviceName, proxy.objectName);
                 }
             }
+        }
+
+        @Override
+        public String getServiceName() {
+            return ProxyServiceImpl.SERVICE_NAME;
         }
 
         @Override
