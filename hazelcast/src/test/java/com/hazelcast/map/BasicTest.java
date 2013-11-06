@@ -1059,359 +1059,163 @@ public class BasicTest extends HazelcastTestSupport {
 
         Runnable runnable;
 
-        runnable = new Runnable() {
-            public void run() {
-                map.containsKey(null);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.containsKey(null); } };
         assertRunnableThrowsNullPointerException(runnable, "containsKey(null)");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.containsValue(null);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.containsValue(null); } };
         assertRunnableThrowsNullPointerException(runnable, "containsValue(null)");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.get(null);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.get(null); } };
         assertRunnableThrowsNullPointerException(runnable, "get(null)");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.put(null, "value");
-            }
-        };
+        runnable = new Runnable() { public void run() { map.put(null, "value"); } };
         assertRunnableThrowsNullPointerException(runnable, "put(null, \"value\")");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.put("key", null);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.put("key", null); } };
         assertRunnableThrowsNullPointerException(runnable, "put(\"key\", null)");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.remove(null);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.remove(null); } };
         assertRunnableThrowsNullPointerException(runnable, "remove(null)");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.remove(null, "value");
-            }
-        };
+        runnable = new Runnable() { public void run() { map.remove(null, "value"); } };
         assertRunnableThrowsNullPointerException(runnable, "remove(null, \"value\")");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.remove("key", null);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.remove("key", null); } };
         assertRunnableThrowsNullPointerException(runnable, "remove(\"key\", null)");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.delete(null);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.delete(null); } };
         assertRunnableThrowsNullPointerException(runnable, "delete(null)");
 
         final Set<String> keys = new HashSet<String>();
         keys.add("key");
         keys.add(null);
-        runnable = new Runnable() {
-            public void run() {
-                map.getAll(keys);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.getAll(keys); } };
         assertRunnableThrowsNullPointerException(runnable, "remove(keys)");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.getAsync(null);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.getAsync(null); } };
         assertRunnableThrowsNullPointerException(runnable, "getAsync(null)");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.putAsync(null, "value");
-            }
-        };
+        runnable = new Runnable() { public void run() { map.putAsync(null, "value"); } };
         assertRunnableThrowsNullPointerException(runnable, "putAsync(null, \"value\")");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.putAsync("key", null);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.putAsync("key", null); } };
         assertRunnableThrowsNullPointerException(runnable, "putAsync(\"key\", null)");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.putAsync(null, "value", 1, TimeUnit.SECONDS);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.putAsync(null, "value", 1, TimeUnit.SECONDS); } };
         assertRunnableThrowsNullPointerException(runnable, "putAsync(null, \"value\", 1, TimeUnit.SECONDS)");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.putAsync("key", null, 1, TimeUnit.SECONDS);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.putAsync("key", null, 1, TimeUnit.SECONDS); } };
         assertRunnableThrowsNullPointerException(runnable, "putAsync(\"key\", null, 1, TimeUnit.SECONDS)");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.removeAsync(null);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.removeAsync(null); } };
         assertRunnableThrowsNullPointerException(runnable, "removeAsync(null)");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.tryRemove(null, 1, TimeUnit.SECONDS);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.tryRemove(null, 1, TimeUnit.SECONDS); } };
         assertRunnableThrowsNullPointerException(runnable, "tryRemove(null, 1, TimeUnit.SECONDS)");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.tryPut(null, "value", 1, TimeUnit.SECONDS);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.tryPut(null, "value", 1, TimeUnit.SECONDS); } };
         assertRunnableThrowsNullPointerException(runnable, "tryPut(null, \"value\", 1, TimeUnit.SECONDS)");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.tryPut("key", null, 1, TimeUnit.SECONDS);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.tryPut("key", null, 1, TimeUnit.SECONDS); } };
         assertRunnableThrowsNullPointerException(runnable, "tryPut(\"key\", null, 1, TimeUnit.SECONDS)");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.putTransient(null, "value", 1, TimeUnit.SECONDS);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.putTransient(null, "value", 1, TimeUnit.SECONDS); } };
         assertRunnableThrowsNullPointerException(runnable, "putTransient(null, \"value\", 1, TimeUnit.SECONDS)");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.putTransient("key", null, 1, TimeUnit.SECONDS);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.putTransient("key", null, 1, TimeUnit.SECONDS); } };
         assertRunnableThrowsNullPointerException(runnable, "putTransient(\"key\", null, 1, TimeUnit.SECONDS)");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.putIfAbsent(null, "value");
-            }
-        };
+        runnable = new Runnable() { public void run() { map.putIfAbsent(null, "value"); } };
         assertRunnableThrowsNullPointerException(runnable, "putIfAbsent(null, \"value\")");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.putIfAbsent("key", null);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.putIfAbsent("key", null); } };
         assertRunnableThrowsNullPointerException(runnable, "putIfAbsent(\"key\", null)");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.putIfAbsent(null, "value", 1, TimeUnit.SECONDS);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.putIfAbsent(null, "value", 1, TimeUnit.SECONDS); } };
         assertRunnableThrowsNullPointerException(runnable, "putIfAbsent(null, \"value\", 1, TimeUnit.SECONDS)");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.putIfAbsent("key", null, 1, TimeUnit.SECONDS);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.putIfAbsent("key", null, 1, TimeUnit.SECONDS); } };
         assertRunnableThrowsNullPointerException(runnable, "putIfAbsent(\"key\", null, 1, TimeUnit.SECONDS)");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.replace(null, "oldValue", "newValue");
-            }
-        };
+        runnable = new Runnable() { public void run() { map.replace(null, "oldValue", "newValue"); } };
         assertRunnableThrowsNullPointerException(runnable, "replace(null, \"oldValue\", \"newValue\")");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.replace("key", null, "newValue");
-            }
-        };
+        runnable = new Runnable() { public void run() { map.replace("key", null, "newValue"); } };
         assertRunnableThrowsNullPointerException(runnable, "replace(\"key\", null, \"newValue\")");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.replace("key", "oldValue", null);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.replace("key", "oldValue", null); } };
         assertRunnableThrowsNullPointerException(runnable, "replace(\"key\", \"oldValue\", null)");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.replace(null, "value");
-            }
-        };
+        runnable = new Runnable() { public void run() { map.replace(null, "value"); } };
         assertRunnableThrowsNullPointerException(runnable, "replace(null, \"value\")");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.replace("key", null);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.replace("key", null); } };
         assertRunnableThrowsNullPointerException(runnable, "replace(\"key\", null)");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.set(null, "value");
-            }
-        };
+        runnable = new Runnable() { public void run() { map.set(null, "value"); } };
         assertRunnableThrowsNullPointerException(runnable, "set(null, \"value\")");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.set("key", null);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.set("key", null); } };
         assertRunnableThrowsNullPointerException(runnable, "set(\"key\", null)");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.set(null, "value", 1, TimeUnit.SECONDS);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.set(null, "value", 1, TimeUnit.SECONDS); } };
         assertRunnableThrowsNullPointerException(runnable, "set(null, \"value\", 1, TimeUnit.SECONDS)");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.set("key", null, 1, TimeUnit.SECONDS);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.set("key", null, 1, TimeUnit.SECONDS); } };
         assertRunnableThrowsNullPointerException(runnable, "set(\"key\", null, 1, TimeUnit.SECONDS)");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.lock(null);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.lock(null); } };
         assertRunnableThrowsNullPointerException(runnable, "lock(null)");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.lock(null, 1, TimeUnit.SECONDS);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.lock(null, 1, TimeUnit.SECONDS); } };
         assertRunnableThrowsNullPointerException(runnable, "lock(null, 1, TimeUnit.SECONDS)");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.isLocked(null);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.isLocked(null); } };
         assertRunnableThrowsNullPointerException(runnable, "isLocked(null)");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.tryLock(null);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.tryLock(null); } };
         assertRunnableThrowsNullPointerException(runnable, "tryLock(null)");
 
-        runnable = new Runnable() {
-            public void run() {
-                try {
-                    map.tryLock(null, 1, TimeUnit.SECONDS);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
+        runnable = new Runnable() { public void run() {
+            try {
+                map.tryLock(null, 1, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
-        };
+        } };
         assertRunnableThrowsNullPointerException(runnable, "tryLock(null, 1, TimeUnit.SECONDS)");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.unlock(null);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.unlock(null); } };
         assertRunnableThrowsNullPointerException(runnable, "unlock(null)");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.forceUnlock(null);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.forceUnlock(null); } };
         assertRunnableThrowsNullPointerException(runnable, "forceUnlock(null)");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.addEntryListener(new EntryAdapter<String, String>(),
-                                     (String) null,
-                                     true);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.addEntryListener(new EntryAdapter<String, String>(), (String)null, true); } };
         assertRunnableThrowsNullPointerException(runnable, "addEntryListener(entryAdapter, (String)null, true)");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.addEntryListener(new EntryAdapter<String, String>(),
-                                     new EqualPredicate(),
-                                     (String) null,
-                                     true);
-            }
-        };
-        assertRunnableThrowsNullPointerException(runnable,
-                                                 "addEntryListener(entryAdapter, predicate, (String)null, true)");
+        runnable = new Runnable() { public void run() { map.addEntryListener(new EntryAdapter<String, String>(), new EqualPredicate(), (String)null, true); } };
+        assertRunnableThrowsNullPointerException(runnable, "addEntryListener(entryAdapter, predicate, (String)null, true)");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.getEntryView(null);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.getEntryView(null); } };
         assertRunnableThrowsNullPointerException(runnable, "getEntryView(null)");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.evict(null);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.evict(null); } };
         assertRunnableThrowsNullPointerException(runnable, "evict(null)");
 
-        runnable = new Runnable() {
-            public void run() {
-                map.executeOnKey(null, new SampleEntryProcessor());
-            }
-        };
+        runnable = new Runnable() { public void run() { map.executeOnKey(null, new SampleEntryProcessor()); } };
         assertRunnableThrowsNullPointerException(runnable, "executeOnKey(null, entryProcessor)");
 
         final Map<String, String> mapWithNullKey = new HashMap<String, String>();
         mapWithNullKey.put("key", "value");
         mapWithNullKey.put(null, "nullKey");
-        runnable = new Runnable() {
-            public void run() {
-                map.putAll(mapWithNullKey);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.putAll(mapWithNullKey); } };
         assertRunnableThrowsNullPointerException(runnable, "map.putAll(mapWithNullKey)");
 
         final Map<String, String> mapWithNullValue = new HashMap<String, String>();
         mapWithNullValue.put("key", "value");
         mapWithNullValue.put("nullValue", null);
-        runnable = new Runnable() {
-            public void run() {
-                map.putAll(mapWithNullValue);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.putAll(mapWithNullValue); } };
         assertRunnableThrowsNullPointerException(runnable, "map.putAll(mapWithNullValue)");
 
         // We need to run the putAll() tests a second time passing in a map with more than (partitionCount * 3) entries,
@@ -1421,21 +1225,13 @@ public class BasicTest extends HazelcastTestSupport {
         for (int i = 0; i < entryLimit; i++) {
             mapWithNullKey.put("key" + i, "value" + i);
         }
-        runnable = new Runnable() {
-            public void run() {
-                map.putAll(mapWithNullKey);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.putAll(mapWithNullKey); } };
         assertRunnableThrowsNullPointerException(runnable, "map.putAll(mapWithNullKey)");
 
         for (int i = 0; i < entryLimit; i++) {
             mapWithNullValue.put("key" + i, "value" + i);
         }
-        runnable = new Runnable() {
-            public void run() {
-                map.putAll(mapWithNullValue);
-            }
-        };
+        runnable = new Runnable() { public void run() { map.putAll(mapWithNullValue); } };
         assertRunnableThrowsNullPointerException(runnable, "map.putAll(mapWithNullValue)");
     }
 
