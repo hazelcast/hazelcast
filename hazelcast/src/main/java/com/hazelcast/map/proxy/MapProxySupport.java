@@ -383,6 +383,12 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
                 List<Future> flist = new LinkedList<Future>();
                 Map<Integer, MapEntrySet> entryMap = new HashMap<Integer, MapEntrySet>();
                 for (Entry entry : entries.entrySet()) {
+                    if (entry.getKey() == null) {
+                        throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+                    }
+                    if (entry.getValue() == null) {
+                        throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
+                    }
                     int partitionId = partitionService.getPartitionId(entry.getKey());
                     if (!entryMap.containsKey(partitionId)) {
                         entryMap.put(partitionId, new MapEntrySet());
@@ -404,6 +410,9 @@ abstract class MapProxySupport extends AbstractDistributedObject<MapService> imp
 
             } else {
                 for (Entry entry : entries.entrySet()) {
+                    if (entry.getKey() == null) {
+                        throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+                    }
                     if (entry.getValue() == null) {
                         throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
                     }
