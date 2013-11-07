@@ -49,7 +49,7 @@ import static org.junit.Assert.*;
 public class MapStoreTest extends HazelcastTestSupport {
 
     @Test
-    public void testMapGetAll() {
+    public void testMapGetAll() throws InterruptedException {
 
         final Map<String, String> _map = new HashMap<String, String>();
         _map.put("key1", "value1");
@@ -860,7 +860,7 @@ public class MapStoreTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testIssue1019() {
+    public void testIssue1019() throws InterruptedException {
         final String keyWithNullValue = "keyWithNullValue";
 
         TestEventBasedMapStore testMapStore = new TestEventBasedMapStore() {
@@ -894,11 +894,11 @@ public class MapStoreTest extends HazelcastTestSupport {
 
     @Test
     public void testIssue1110() throws InterruptedException {
-        final int mapSize = 10000;
+        final int mapSize = 10;
         final String mapName = "testIssue1110";
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
         Config cfg = new Config();
-        cfg.setProperty(GroupProperties.PROP_MAP_LOAD_CHUNK_SIZE, "2000");
+        cfg.setProperty(GroupProperties.PROP_MAP_LOAD_CHUNK_SIZE, "5");
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setEnabled(true);
         mapStoreConfig.setImplementation(new SimpleMapLoader(mapSize));
