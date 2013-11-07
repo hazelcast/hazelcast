@@ -34,11 +34,11 @@ public class InvalidateEntryProcessor extends AbstractEntryProcessor<String, Obj
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeUTF(sessionId);
+        out.writeUTF(sessionId);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-            sessionId = in.readUTF();
+        sessionId = in.readUTF();
     }
 }

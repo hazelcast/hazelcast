@@ -37,6 +37,8 @@ import java.net.URL;
 import java.util.Properties;
 import java.util.logging.Level;
 
+import static java.lang.String.format;
+
 final class HazelcastInstanceLoader {
 
     private final static ILogger logger = Logger.getLogger(HazelcastInstanceLoader.class);
@@ -62,7 +64,7 @@ final class HazelcastInstanceLoader {
 
         if(useClient) {
             logger.warning(
-                    "Creating HazelcastClient, make sure this node has access to an already running cluster...");
+                    "Creating HazelcastClient for session replication, make sure this client has access to an already running cluster...");
             ClientConfig clientConfig ;
             if (configUrl == null) {
                 clientConfig = new ClientConfig();
@@ -89,9 +91,13 @@ final class HazelcastInstanceLoader {
         }
 
         if (!isEmpty(instanceName)) {
+            if(logger.isLoggable(Level.INFO)){
+                logger.info(format("Getting an existing or creating a new HazelcastInstance for session replication, using name '%s'",instanceName));
+            }
             config.setInstanceName(instanceName);
             return Hazelcast.getOrCreateHazelcastInstance(config);
         } else {
+            logger.info("Creating a new HazelcastInstance for session replication");
             return Hazelcast.newHazelcastInstance(config);
         }
     }
@@ -100,7 +106,7 @@ final class HazelcastInstanceLoader {
         URL configUrl = null;
         try {
             configUrl = filterConfig.getServletContext().getResource(configLocation);
-        } catch (MalformedURLException e) {
+        } catch (MalformedURLException ignore) {
         }
         if (configUrl == null) {
             configUrl = ConfigLoader.locateConfig(configLocation);
