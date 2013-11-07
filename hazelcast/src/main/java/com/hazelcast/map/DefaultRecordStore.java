@@ -94,14 +94,18 @@ public class DefaultRecordStore implements RecordStore {
                     if (!partitionKeys.isEmpty()) {
                         chunks.add(partitionKeys);
                     }
-                    try {
-                        Map<Data, Object> chunkedKeys;
-                        final AtomicInteger checkIfMapLoaded = new AtomicInteger(chunks.size());
-                        while ((chunkedKeys = chunks.poll()) != null) {
-                            nodeEngine.getExecutionService().submit("hz:map-load", new MapLoadAllTask(chunkedKeys, checkIfMapLoaded));
+                    if (!chunks.isEmpty()) {
+                        try {
+                            Map<Data, Object> chunkedKeys;
+                            final AtomicInteger checkIfMapLoaded = new AtomicInteger(chunks.size());
+                            while ((chunkedKeys = chunks.poll()) != null) {
+                                nodeEngine.getExecutionService().submit("hz:map-load", new MapLoadAllTask(chunkedKeys, checkIfMapLoaded));
+                            }
+                        } catch (Throwable t) {
+                            throw ExceptionUtil.rethrow(t);
                         }
-                    } catch (Throwable t) {
-                        throw ExceptionUtil.rethrow(t);
+                    } else {
+                        loaded.set(true);
                     }
                 } else {
                     loaded.set(true);
@@ -921,9 +925,9 @@ public class DefaultRecordStore implements RecordStore {
     }
 
     private void cancelAssociatedSchedulers(Set<Data> keySet) {
-        if(keySet == null || keySet.isEmpty() ) return;
+        if (keySet == null || keySet.isEmpty()) return;
 
-        for (Data key : keySet ){
+        for (Data key : keySet) {
             cancelAssociatedSchedulers(key);
         }
     }
@@ -961,10 +965,11 @@ public class DefaultRecordStore implements RecordStore {
             operation.setResponseHandler(new ResponseHandler() {
                 @Override
                 public void sendResponse(Object obj) {
-                    if( checkIfMapLoaded.decrementAndGet() == 0 ){
-                       loaded.set(true);
+                    if (checkIfMapLoaded.decrementAndGet() == 0) {
+                        loaded.set(true);
                     }
                 }
+
                 public boolean isLocal() {
                     return true;
                 }
