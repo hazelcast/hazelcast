@@ -38,9 +38,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.map.MapService.SERVICE_NAME;
 
-/**
- * @author enesakar 1/17/13
- */
+/** @author enesakar 1/17/13 */
 public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, InitializingObject {
 
     public MapProxyImpl(final String name, final MapService mapService, final NodeEngine nodeEngine) {
@@ -121,6 +119,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     public boolean replace(final K k, final V o, final V v) {
         if (k == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+        }
+        if (o == null) {
+            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
         }
         if (v == null) {
             throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
@@ -262,9 +263,6 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     public Future putAsync(final K key, final V value) {
-        if (value == null) {
-            throw new NullPointerException(NULL_VALUE_IS_NOT_ALLOWED);
-        }
         return putAsync(key, value, -1, null);
     }
 
@@ -278,7 +276,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         MapService service = getService();
         Data k = service.toData(key, partitionStrategy);
         Data v = service.toData(value);
-        return new DelegatingFuture<V>(putAsyncInternal(k, v, ttl, timeunit), getNodeEngine().getSerializationService());
+        return new DelegatingFuture<V>(putAsyncInternal(k, v, ttl, timeunit),
+                                       getNodeEngine().getSerializationService());
     }
 
     public Future removeAsync(final K key) {
@@ -303,6 +302,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
     }
 
     public void putAll(final Map<? extends K, ? extends V> m) {
+        // Note, putAllInternal() will take care of the null key/value checks.
         putAllInternal(m);
     }
 
@@ -361,7 +361,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         return addEntryListenerInternal(listener, getService().toData(key, partitionStrategy), includeValue);
     }
 
-    public String addEntryListener(EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue) {
+    public String addEntryListener(
+            EntryListener<K, V> listener, Predicate<K, V> predicate, K key, boolean includeValue) {
         if (listener == null) {
             throw new NullPointerException("Listener should not be null!");
         }
@@ -392,7 +393,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         if (key == null) {
             throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
         }
-        SimpleEntryView<K, V> entryViewInternal = (SimpleEntryView) getEntryViewInternal(getService().toData(key, partitionStrategy));
+        SimpleEntryView<K, V> entryViewInternal =
+                (SimpleEntryView) getEntryViewInternal(getService().toData(key, partitionStrategy));
         if (entryViewInternal == null) {
             return null;
         }
@@ -435,7 +437,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         Set<Entry<Data, Data>> entries = entrySetInternal();
         Set<Entry<K, V>> resultSet = new HashSet<Entry<K, V>>();
         for (Entry<Data, Data> entry : entries) {
-            resultSet.add(new AbstractMap.SimpleImmutableEntry((K) getService().toObject(entry.getKey()), (V) getService().toObject(entry.getValue())));
+            resultSet.add(new AbstractMap.SimpleImmutableEntry((K) getService().toObject(entry.getKey()),
+                                                               (V) getService().toObject(entry.getValue())));
         }
         return resultSet;
     }
@@ -487,7 +490,8 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
 
     protected Object invoke(Operation operation, int partitionId) throws Throwable {
         NodeEngine nodeEngine = getNodeEngine();
-        Invocation invocation = nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId).build();
+        Invocation invocation =
+                nodeEngine.getOperationService().createInvocationBuilder(SERVICE_NAME, operation, partitionId).build();
         Future f = invocation.invoke();
         Object response = f.get();
         Object returnObj = getService().toObject(response);
