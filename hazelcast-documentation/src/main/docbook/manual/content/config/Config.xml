@@ -27,13 +27,12 @@
             <para>
                 <emphasis role="bold">Xml Configuration</emphasis>
             </para>
-            <para>If you are using default Hazelcast instance
-                (<literal>Hazelcast.getDefaultInstance()</literal>) or creating new Hazelcast
-                instance with passing
+            <para>If you are creating new Hazelcast instance with passing
                 <literal>null</literal>
-                parameter
-                (<literal>Hazelcast.newHazelcastInstance(null)</literal>), Hazelcast will look
-                into two places for the configuration file:
+                parameter to
+                <literal>Hazelcast.newHazelcastInstance(null)</literal> or just using empty factory method
+                <literal>Hazelcast.newHazelcastInstance()</literal>,
+                Hazelcast will look into two places for the configuration file:
                 <itemizedlist>
                     <listitem>
                         <para>
@@ -126,7 +125,7 @@ cfg.setPort(5900);
 cfg.setPortAutoIncrement(false);
         
 NetworkConfig network = cfg.getNetworkConfig();
-Join join = network.getJoin();
+JoinConfig join = network.getJoin();
 join.getMulticastConfig().setEnabled(false);
 join.getTcpIpConfig().addMember("10.45.67.32").addMember("10.45.67.100")
             .setRequiredMember("192.168.10.100").setEnabled(true);
@@ -152,20 +151,12 @@ cfg.addMapConfig(mapCfg);]]></programlisting>
     </orderedlist>
     After creating
     <literal>Config</literal>
-    object, you can use it to initialize
-    default Hazelcast instance or create a new Hazelcast instance.
-    <itemizedlist>
-        <listitem>
-            <para>
-                <code language="java">Hazelcast.init(cfg);</code>
-            </para>
-        </listitem>
-        <listitem>
-            <para>
-                <code language="java">Hazelcast.newHazelcastInstance(cfg);</code>
-            </para>
-        </listitem>
-    </itemizedlist>
+    object, you can use it to create a new Hazelcast instance.
+    <programlisting language="java"><![CDATA[
+HazelcastInstance hazelcast = Hazelcast.newHazelcastInstance(cfg);
+...
+]]></programlisting>
+
     <anchor xml:id="NamedHazelcastInstance"/>
     <itemizedlist>
         <title><link xlink:href="#NamedHazelcastInstance">HazelcastInstance with a name</link>:</title>
