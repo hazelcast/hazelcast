@@ -18,7 +18,7 @@
 <hazelcast xmlns="http://www.hazelcast.com/schema/config"
            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
            xsi:schemaLocation="http://www.hazelcast.com/schema/config
-           http://www.hazelcast.com/schema/config/hazelcast-config-2.1.xsd">
+           http://www.hazelcast.com/schema/config/hazelcast-config-3.2.xsd">
     <group>
         <name>dev-custom</name>
         <password>dev-pass</password>
@@ -38,23 +38,6 @@
             <interface>10.3.17.*</interface>
         </interfaces>
     </network>
-    <executor-service>
-        <core-pool-size>16</core-pool-size>
-        <max-pool-size>64</max-pool-size>
-        <keep-alive-seconds>60</keep-alive-seconds>
-    </executor-service>
-    <queue name="default">
-        <!--
-            Maximum size of the queue. When a JVM's local queue size reaches the maximum,
-            all put/offer operations will get blocked until the queue size
-            of the JVM goes down below the maximum.
-            Any integer between 0 and Integer.MAX_VALUE. 0 means
-            Integer.MAX_VALUE. Default is 0.
-        -->
-        <max-size-per-jvm>10000</max-size-per-jvm>
-
-        <backing-map-ref>default</backing-map-ref>
-    </queue>
     <map name="default">
         <!--
             Number of backups. If 1 is set as the backup-count for example,
