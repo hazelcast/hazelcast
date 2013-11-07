@@ -63,7 +63,7 @@ final class HazelcastInstanceLoader {
         }
 
         if(useClient) {
-            logger.info(
+            logger.warning(
                     "Creating HazelcastClient for session replication, make sure this client has access to an already running cluster...");
             ClientConfig clientConfig ;
             if (configUrl == null) {
@@ -92,7 +92,7 @@ final class HazelcastInstanceLoader {
 
         if (!isEmpty(instanceName)) {
             if(logger.isLoggable(Level.INFO)){
-                logger.info(format("Getting an existing or creating a new HazelcastInstance with name %s for session replication",instanceName));
+                logger.info(format("Getting an existing or creating a new HazelcastInstance for session replication, using name '%s'",instanceName));
             }
             config.setInstanceName(instanceName);
             return Hazelcast.getOrCreateHazelcastInstance(config);
