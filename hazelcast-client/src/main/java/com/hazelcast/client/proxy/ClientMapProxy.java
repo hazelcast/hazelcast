@@ -461,13 +461,7 @@ public final class ClientMapProxy<K, V> extends ClientProxy implements IMap<K, V
 
         return getContext().getExecutionService().submit(new Callable<V>() {
             public V call() throws Exception {
-                try {
-                    V result =  invoke(request, keyData);
-                    return  result;
-                }catch (Exception e)
-                {
-                    throw (e);
-                }
+                    return invoke(request, keyData); 
             }
         });
     }
