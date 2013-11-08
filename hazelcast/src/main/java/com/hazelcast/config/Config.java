@@ -167,7 +167,7 @@ public class Config {
         name = getBaseName(name);
         MapConfig config;
         if ((config = lookupByPattern(mapConfigs, name)) != null) return config;
-        return getMapConfig("default").getReadOnlyMapConfig();
+        return getMapConfig("default").getReadOnly();
     }
 
     public MapConfig getMapConfig(String name) {
@@ -208,6 +208,13 @@ public class Config {
             entry.getValue().setName(entry.getKey());
         }
         return this;
+    }
+
+    public QueueConfig findQueueConfig(String name){
+        name = getBaseName(name);
+        QueueConfig config;
+        if ((config = lookupByPattern(queueConfigs, name)) != null) return config;
+        return getQueueConfig("default").getReadOnly();
     }
 
     public QueueConfig getQueueConfig(String name) {

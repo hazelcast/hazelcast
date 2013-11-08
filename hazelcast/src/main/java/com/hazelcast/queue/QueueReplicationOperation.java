@@ -49,7 +49,7 @@ public class QueueReplicationOperation extends AbstractOperation implements Iden
         for (Map.Entry<String, QueueContainer> entry : migrationData.entrySet()) {
             String name = entry.getKey();
             QueueContainer container = entry.getValue();
-            QueueConfig conf = getNodeEngine().getConfig().getQueueConfig(name);
+            QueueConfig conf = getNodeEngine().getConfig().findQueueConfig(name);
             container.setConfig(conf, getNodeEngine(), service);
             service.addContainer(name, container);
         }

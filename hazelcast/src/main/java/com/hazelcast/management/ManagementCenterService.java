@@ -326,7 +326,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                     }
                 } else if (distributedObject instanceof IQueue) {
                     IQueue queue = (IQueue) distributedObject;
-                    if (config.getQueueConfig(queue.getName()).isStatisticsEnabled()) {
+                    if (config.findQueueConfig(queue.getName()).isStatisticsEnabled()) {
                         memberState.putLocalQueueStats(queue.getName(), (LocalQueueStatsImpl) queue.getLocalQueueStats());
                         count++;
                     }
@@ -381,7 +381,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                     }
                 } else if (distributedObject instanceof IQueue) {
                     IQueue queue = (IQueue) distributedObject;
-                    if (config.getQueueConfig(queue.getName()).isStatisticsEnabled()) {
+                    if (config.findQueueConfig(queue.getName()).isStatisticsEnabled()) {
                         setLongInstanceNames.add("q:" + queue.getName());
                         count++;
                     }

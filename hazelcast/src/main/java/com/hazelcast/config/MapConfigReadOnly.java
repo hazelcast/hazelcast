@@ -24,7 +24,7 @@ import java.util.List;
 public class MapConfigReadOnly extends MapConfig {
 
 
-    public MapConfigReadOnly(MapConfig config) {
+    MapConfigReadOnly(MapConfig config) {
         super(config);
     }
 
