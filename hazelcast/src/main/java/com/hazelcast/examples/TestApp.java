@@ -422,9 +422,27 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
 
         IExecutorService executor = hazelcast.getExecutorService("e"+threadCount);
         List<Future> futures = new LinkedList<Future>();
-        for(int k=0;k<taskCount;k++){
+
+        int totalThreadCount = hazelcast.getCluster().getMembers().size()*threadCount;
+
+        for(int k=1;k<=taskCount;k++){
             Future f = executor.submit(new SimulateLoadTask(durationSec, k));
             futures.add(f);
+
+            //the reason why are syncing here is just for demo purposes. If there are e.g. 4 takes and 2 nodes, it could be
+            //that one node picks up 3 tasks and another node 1. This sucks for demonstrations.
+            if (k > 1 && k % totalThreadCount == 0) {
+                for (Future future : futures) {
+                    try {
+                        future.get();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    } catch (ExecutionException e) {
+                        e.printStackTrace();
+                    }
+                }
+                futures.clear();
+            }
         }
 
         for(Future f: futures){
