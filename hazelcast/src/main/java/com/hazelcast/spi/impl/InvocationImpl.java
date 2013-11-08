@@ -519,7 +519,7 @@ abstract class InvocationImpl implements Invocation, Callback<Object> {
         public void run() throws Exception {
             NodeEngineImpl nodeEngine = (NodeEngineImpl) getNodeEngine();
             OperationServiceImpl operationService = nodeEngine.operationService;
-            boolean executing = operationService.isOperationExecuting(getCallerAddress(), operationCallId);
+            boolean executing = operationService.isOperationExecuting(getCallerAddress(), getCallerUuid(), operationCallId);
             getResponseHandler().sendResponse(executing);
         }
 
