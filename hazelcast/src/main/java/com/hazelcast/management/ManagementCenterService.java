@@ -338,7 +338,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                     }
                 } else if (distributedObject instanceof MultiMap) {
                     MultiMap multiMap = (MultiMap) distributedObject;
-                    if (config.getMultiMapConfig(multiMap.getName()).isStatisticsEnabled()) {
+                    if (config.findMultiMapConfig(multiMap.getName()).isStatisticsEnabled()) {
                         memberState.putLocalMultiMapStats(multiMap.getName(), (LocalMultiMapStatsImpl) multiMap.getLocalMultiMapStats());
                         count++;
                     }
@@ -369,7 +369,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             if (count < maxVisibleInstanceCount) {
                 if (distributedObject instanceof MultiMap) {
                     MultiMap multiMap = (MultiMap) distributedObject;
-                    if (config.getMultiMapConfig(multiMap.getName()).isStatisticsEnabled()) {
+                    if (config.findMultiMapConfig(multiMap.getName()).isStatisticsEnabled()) {
                         setLongInstanceNames.add("m:" + multiMap.getName());
                         count++;
                     }

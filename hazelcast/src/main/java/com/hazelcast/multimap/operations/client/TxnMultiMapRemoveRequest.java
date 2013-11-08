@@ -78,7 +78,7 @@ public class TxnMultiMapRemoveRequest extends TxnMultiMapRequest {
     }
 
     private Collection<Data> createCollection(int size){
-        final MultiMapConfig config = getClientEngine().getConfig().getMultiMapConfig(name);
+        final MultiMapConfig config = getClientEngine().getConfig().findMultiMapConfig(name);
         if (config.getValueCollectionType().equals(MultiMapConfig.ValueCollectionType.SET)){
             return new HashSet<Data>(size);
         }

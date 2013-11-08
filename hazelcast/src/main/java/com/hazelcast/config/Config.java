@@ -333,6 +333,13 @@ public class Config {
         return this;
     }
 
+    public MultiMapConfig findMultiMapConfig(String name){
+        name = getBaseName(name);
+        MultiMapConfig config;
+        if ((config = lookupByPattern(multiMapConfigs, name)) != null) return config;
+        return getMultiMapConfig("default").getReadOnly();
+    }
+
     public MultiMapConfig getMultiMapConfig(String name) {
         name = getBaseName(name);
         MultiMapConfig config;
