@@ -16,12 +16,21 @@
 
 package com.hazelcast.config;
 
-public final class ListConfig extends CollectionConfig<ListConfig> {
+public class ListConfig extends CollectionConfig<ListConfig> {
+
+    private ListConfigReadOnly readOnly;
 
     public ListConfig() {
     }
 
     public ListConfig(ListConfig config) {
         super(config);
+    }
+
+    public ListConfig getReadOnly() {
+        if (readOnly == null){
+            readOnly = new ListConfigReadOnly(this);
+        }
+        return readOnly;
     }
 }

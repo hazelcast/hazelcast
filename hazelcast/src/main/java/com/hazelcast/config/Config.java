@@ -251,6 +251,13 @@ public class Config {
         return this;
     }
 
+    public ListConfig findListConfig(String name){
+        name = getBaseName(name);
+        ListConfig config;
+        if ((config = lookupByPattern(listConfigs, name)) != null) return config;
+        return getListConfig("default").getReadOnly();
+    }
+
     public ListConfig getListConfig(String name) {
         name = getBaseName(name);
         ListConfig config;
@@ -283,6 +290,13 @@ public class Config {
             entry.getValue().setName(entry.getKey());
         }
         return this;
+    }
+
+    public SetConfig findSetConfig(String name){
+        name = getBaseName(name);
+        SetConfig config;
+        if ((config = lookupByPattern(setConfigs, name)) != null) return config;
+        return getSetConfig("default").getReadOnly();
     }
 
     public SetConfig getSetConfig(String name) {

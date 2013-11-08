@@ -44,6 +44,8 @@ public abstract class CollectionConfig<T extends CollectionConfig> {
         this.statisticsEnabled = config.statisticsEnabled;
     }
 
+    public abstract T getReadOnly();
+
     public String getName() {
         return name;
     }

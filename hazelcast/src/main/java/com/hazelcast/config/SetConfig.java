@@ -16,12 +16,21 @@
 
 package com.hazelcast.config;
 
-public final class SetConfig extends CollectionConfig<SetConfig> {
+public class SetConfig extends CollectionConfig<SetConfig> {
+
+    private SetConfigReadOnly readOnly;
 
     public SetConfig() {
     }
 
     public SetConfig(SetConfig config) {
         super(config);
+    }
+
+    public SetConfigReadOnly getReadOnly() {
+        if (readOnly == null){
+            readOnly = new SetConfigReadOnly(this);
+        }
+        return readOnly;
     }
 }
