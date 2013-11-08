@@ -16,10 +16,12 @@
 
 package com.hazelcast.client.map;
 
+import com.hazelcast.client.AuthenticationRequest;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.query.SqlPredicate;
+import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.test.HazelcastJUnit4ClassRunner;
 import com.hazelcast.test.annotation.SerialTest;
 import org.junit.*;
@@ -32,8 +34,10 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author ali 5/22/13
@@ -507,7 +511,39 @@ public class ClientMapTest {
     }
 
     @Test
-    public void testBasicPredicate(){
+    public void testPredicateListenerWithPortableKey() throws InterruptedException {
+        IMap tradeMap = client.getMap("tradeMap");
+        final CountDownLatch countDownLatch = new CountDownLatch(1);
+        final AtomicInteger atomicInteger = new AtomicInteger(0);
+        EntryListener listener = new EntryListener() {
+            @Override
+            public void entryAdded(EntryEvent event) {
+                atomicInteger.incrementAndGet();
+                countDownLatch.countDown();
+            }
+
+            @Override
+            public void entryRemoved(EntryEvent event) {
+            }
+
+            @Override
+            public void entryUpdated(EntryEvent event) {
+            }
+
+            @Override
+            public void entryEvicted(EntryEvent event) {
+            }
+        };
+        final AuthenticationRequest key = new AuthenticationRequest(new UsernamePasswordCredentials("a", "b"));
+        tradeMap.addEntryListener(listener, key, true);
+        final AuthenticationRequest key2 = new AuthenticationRequest(new UsernamePasswordCredentials("a", "c"));
+        tradeMap.put(key2, 1);
+        assertFalse(countDownLatch.await(15, TimeUnit.SECONDS));
+        assertEquals(0,atomicInteger.get());
+    }
+
+    @Test
+    public void testBasicPredicate() {
         fillMap();
         final Collection collection = map.values(new SqlPredicate("this == value1"));
         assertEquals("value1", collection.iterator().next());
