@@ -332,7 +332,7 @@ final class OperationServiceImpl implements OperationService {
     private RemoteCallKey beforeCallExecution(Operation op) {
         RemoteCallKey callKey = null;
         if (op.getCallId() != 0 && op.returnsResponse()) {
-            callKey = new RemoteCallKey(op.getCallerAddress(), op.getCallId());
+            callKey = new RemoteCallKey(op.getCallerAddress(), op.getCallerUuid(), op.getCallId());
             RemoteCallKey current;
             if ((current = executingCalls.put(callKey, callKey)) != null) {
                 logger.severe("Duplicate Call record! -> " + callKey + " / " + current + " == " + op.getClass().getName());
@@ -400,7 +400,7 @@ final class OperationServiceImpl implements OperationService {
     }
 
     private void scheduleBackup(Operation op, Backup backup, int partitionId, int replicaIndex) {
-        final RemoteCallKey key = new RemoteCallKey(op.getCallerAddress(), op.getCallId());
+        final RemoteCallKey key = new RemoteCallKey(op.getCallerAddress(), op.getCallerUuid(), op.getCallId());
         if (logger.isFinestEnabled()) {
             logger.finest( "Scheduling -> " + backup);
         }
@@ -658,8 +658,8 @@ final class OperationServiceImpl implements OperationService {
     }
 
     @PrivateApi
-    boolean isOperationExecuting(Address caller, long operationCallId) {
-        return executingCalls.containsKey(new RemoteCallKey(caller, operationCallId));
+    boolean isOperationExecuting(Address callerAddress, String callerUuid, long operationCallId) {
+        return executingCalls.containsKey(new RemoteCallKey(callerAddress, callerUuid, operationCallId));
     }
 
     void onMemberLeft(final MemberImpl member) {
@@ -797,11 +797,13 @@ final class OperationServiceImpl implements OperationService {
 
     private class RemoteCallKey {
         private final long time = Clock.currentTimeMillis();
-        private final Address caller;
+        private final Address callerAddress; // human readable caller
+        private final String callerUuid;
         private final long callId;
 
-        private RemoteCallKey(Address caller, long callId) {
-            this.caller = caller;
+        private RemoteCallKey(Address callerAddress, String callerUuid, long callId) {
+            this.callerAddress = callerAddress;
+            this.callerUuid = callerUuid;
             this.callId = callId;
         }
 
@@ -811,13 +813,13 @@ final class OperationServiceImpl implements OperationService {
             if (o == null || getClass() != o.getClass()) return false;
             RemoteCallKey callKey = (RemoteCallKey) o;
             if (callId != callKey.callId) return false;
-            if (!caller.equals(callKey.caller)) return false;
+            if (!callerUuid.equals(callKey.callerUuid)) return false;
             return true;
         }
 
         @Override
         public int hashCode() {
-            int result = caller.hashCode();
+            int result = callerUuid.hashCode();
             result = 31 * result + (int) (callId ^ (callId >>> 32));
             return result;
         }
@@ -826,7 +828,8 @@ final class OperationServiceImpl implements OperationService {
         public String toString() {
             final StringBuilder sb = new StringBuilder();
             sb.append("RemoteCallKey");
-            sb.append("{caller=").append(caller);
+            sb.append("{callerAddress=").append(callerAddress);
+            sb.append(", callerUuid=").append(callerUuid);
             sb.append(", callId=").append(callId);
             sb.append(", time=").append(time);
             sb.append('}');
