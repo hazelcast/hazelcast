@@ -320,7 +320,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
             if (count < maxVisibleInstanceCount) {
                 if (distributedObject instanceof IMap) {
                     IMap map = (IMap) distributedObject;
-                    if (config.getMapConfig(map.getName()).isStatisticsEnabled()) {
+                    if (config.findMapConfig(map.getName()).isStatisticsEnabled()) {
                         memberState.putLocalMapStats(map.getName(), (LocalMapStatsImpl) map.getLocalMapStats());
                         count++;
                     }
@@ -375,7 +375,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                     }
                 } else if (distributedObject instanceof IMap) {
                     IMap map = (IMap) distributedObject;
-                    if (config.getMapConfig(map.getName()).isStatisticsEnabled()) {
+                    if (config.findMapConfig(map.getName()).isStatisticsEnabled()) {
                         setLongInstanceNames.add("c:" + map.getName());
                         count++;
                     }

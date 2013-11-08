@@ -163,6 +163,13 @@ public class Config {
         return this;
     }
 
+    public MapConfig findMapConfig(String name){
+        name = getBaseName(name);
+        MapConfig config;
+        if ((config = lookupByPattern(mapConfigs, name)) != null) return config;
+        return getMapConfig("default").getReadOnlyMapConfig();
+    }
+
     public MapConfig getMapConfig(String name) {
         name = getBaseName(name);
         MapConfig config;

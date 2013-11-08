@@ -78,6 +78,8 @@ public class MapConfig {
 
     private PartitioningStrategyConfig partitioningStrategyConfig;
 
+    private MapConfigReadOnly readOnly;
+
     public enum EvictionPolicy {
         LRU, LFU, NONE
     }
@@ -106,6 +108,13 @@ public class MapConfig {
         this.wanReplicationRef = config.wanReplicationRef;
         this.listenerConfigs = new ArrayList<EntryListenerConfig>(config.getEntryListenerConfigs());
         this.partitioningStrategyConfig = config.partitioningStrategyConfig;
+    }
+
+    public MapConfigReadOnly getReadOnlyMapConfig(){
+        if (readOnly == null){
+            readOnly = new MapConfigReadOnly(this);
+        }
+        return readOnly;
     }
 
     /**
