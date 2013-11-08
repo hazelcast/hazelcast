@@ -1592,15 +1592,11 @@ public class QueryTest extends HazelcastTestSupport {
             IMap<Object, Object> map = hz.getMap(name);
             EntryObject e = new PredicateBuilder().getEntryObject();
             Predicate p = e.get("name").equal(FIND_ME);
-            int size = 0;
-            for (int i = 0; i < 250; i++) {
-                size = map.values(p).size();
-                if (size == expected) {
-                    break;
-                }
-                Thread.sleep(100);
+            for (int i = 0; i < 10; i++) {
+                int size = map.values(p).size();
+                Assert.assertEquals(expected, size);
+                Thread.sleep(10);
             }
-            Assert.assertEquals(expected, size);
         }
     }
 
