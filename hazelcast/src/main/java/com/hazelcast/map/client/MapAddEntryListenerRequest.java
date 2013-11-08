@@ -152,12 +152,14 @@ public class MapAddEntryListenerRequest extends CallableClientRequest implements
             final ObjectDataInput in = reader.getRawDataInput();
             predicate = in.readObject();
             if (hasKey) {
-                key = in.readObject();
+                key = new Data();
+                key.readData(in);
             }
         }
         else if (hasKey) {
             final ObjectDataInput in = reader.getRawDataInput();
-            key = in.readObject();
+            key = new Data();
+            key.readData(in);
         }
 
     }
