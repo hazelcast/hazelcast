@@ -18,7 +18,9 @@ package com.hazelcast.map;
 
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.QueryEntry;
 
 import java.io.IOException;
 import java.util.Map;
@@ -27,7 +29,7 @@ public class QueryEventFilter extends EntryEventFilter  {
 
     Predicate predicate = null;
 
-    public QueryEventFilter(boolean includeValue, Object key, Predicate predicate) {
+    public QueryEventFilter(boolean includeValue, Data key, Predicate predicate) {
         super(includeValue, key);
         this.predicate = predicate;
     }
@@ -41,7 +43,9 @@ public class QueryEventFilter extends EntryEventFilter  {
     }
 
     public boolean eval(Object arg) {
-        return (key == null || key.equals(arg)) && predicate.apply((Map.Entry)arg);
+        final QueryEntry entry = (QueryEntry) arg;
+        final Data keyData = entry.getKeyData();
+        return (key == null || key.equals(keyData)) && predicate.apply((Map.Entry)arg);
     }
 
     @Override
