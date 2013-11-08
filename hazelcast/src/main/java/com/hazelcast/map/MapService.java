@@ -38,8 +38,8 @@ import com.hazelcast.nio.Address;
 import com.hazelcast.nio.ClassLoaderUtil;
 import com.hazelcast.nio.serialization.Data;
 import com.hazelcast.nio.serialization.SerializationService;
-import com.hazelcast.partition.MigrationEndpoint;
-import com.hazelcast.partition.PartitionView;
+import com.hazelcast.partition.*;
+import com.hazelcast.partition.PartitionService;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.IndexService;
 import com.hazelcast.query.impl.QueryEntry;
@@ -312,11 +312,19 @@ public class MapService implements ManagedService, MigrationAwareService,
         return getPartitionContainer(partitionId).getExistingRecordStore(mapName);
     }
 
-    public AtomicReference<List<Integer>> getOwnedPartitions() {
-        if (ownedPartitions.get() == null) {
-            ownedPartitions.set(nodeEngine.getPartitionService().getMemberPartitions(nodeEngine.getThisAddress()));
+    public List<Integer> getOwnedPartitions() {
+        List<Integer> partitions = ownedPartitions.get();
+        if (partitions == null) {
+            partitions = getMemberPartitions();
+            ownedPartitions.set(partitions);
         }
-        return ownedPartitions;
+        return partitions;
+    }
+
+    private List<Integer> getMemberPartitions() {
+        PartitionService partitionService = nodeEngine.getPartitionService();
+        List<Integer> partitions = partitionService.getMemberPartitions(nodeEngine.getThisAddress());
+        return Collections.unmodifiableList(partitions);
     }
 
     public void beforeMigration(PartitionMigrationEvent event) {
@@ -333,7 +341,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         if (event.getMigrationEndpoint() == MigrationEndpoint.SOURCE) {
             clearPartitionData(event.getPartitionId());
         }
-        ownedPartitions.set(nodeEngine.getPartitionService().getMemberPartitions(nodeEngine.getThisAddress()));
+        ownedPartitions.set(getMemberPartitions());
     }
 
     private void migrateIndex(PartitionMigrationEvent event) {
@@ -360,7 +368,7 @@ public class MapService implements ManagedService, MigrationAwareService,
         if (event.getMigrationEndpoint() == MigrationEndpoint.DESTINATION) {
             clearPartitionData(event.getPartitionId());
         }
-        ownedPartitions.set(nodeEngine.getPartitionService().getMemberPartitions(nodeEngine.getThisAddress()));
+        ownedPartitions.set(getMemberPartitions());
     }
 
     private void clearPartitionData(final int partitionId) {
