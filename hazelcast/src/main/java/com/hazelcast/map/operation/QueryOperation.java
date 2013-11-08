@@ -56,7 +56,7 @@ public class QueryOperation extends AbstractMapOperation {
 
     @Override
     public void run() throws Exception {
-        List<Integer> initialPartitions = mapService.getOwnedPartitions().get();
+        List<Integer> initialPartitions = mapService.getOwnedPartitions();
         IndexService indexService = mapService.getMapContainer(name).getIndexService();
         Set<QueryableEntry> entries = null;
         // TODO: fix
@@ -72,7 +72,7 @@ public class QueryOperation extends AbstractMapOperation {
             // run in parallel
             runParallel(initialPartitions);
         }
-        List<Integer> finalPartitions = mapService.getOwnedPartitions().get();
+        List<Integer> finalPartitions = mapService.getOwnedPartitions();
         if (initialPartitions.equals(finalPartitions)) {
             result.setPartitionIds(finalPartitions);
         }
