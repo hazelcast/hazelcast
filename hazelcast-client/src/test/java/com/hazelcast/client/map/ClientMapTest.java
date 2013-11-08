@@ -538,7 +538,7 @@ public class ClientMapTest {
         tradeMap.addEntryListener(listener, key, true);
         final AuthenticationRequest key2 = new AuthenticationRequest(new UsernamePasswordCredentials("a", "c"));
         tradeMap.put(key2, 1);
-        assertFalse(countDownLatch.await(1, TimeUnit.SECONDS));
+        assertFalse(countDownLatch.await(15, TimeUnit.SECONDS));
         assertEquals(0,atomicInteger.get());
     }
 
