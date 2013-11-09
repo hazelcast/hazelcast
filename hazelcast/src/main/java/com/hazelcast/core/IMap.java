@@ -977,6 +977,30 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V> {
 
 
     /**
+     * Applies the user defined EntryProcessor to the entry mapped by the key with
+     * specified ExecutionCallback to listen event status and returns immediately.
+     *
+     * @param key   key to be processed
+     * @param entryProcessor processor to process the key
+     * @param callback to listen whether operation is finished or not
+     */
+    void submitToKey(K key, EntryProcessor entryProcessor, ExecutionCallback callback);
+
+    /**
+     * Applies the user defined EntryProcessor to the entry mapped by the key.
+     * Returns immediately with a Future representing that task.
+     *
+     * EntryProcessor is not cancellable, so calling Future.cancel() method won't cancel the operation of EntryProcessor.
+     *
+     * @param key   key to be processed
+     * @param entryProcessor processor to process the key
+     * @return Future from which the result of the operation can be retrieved.
+     * @see java.util.concurrent.Future
+     */
+    Future submitToKey(K key, EntryProcessor entryProcessor);
+
+
+    /**
      * Applies the user defined EntryProcessor to the all entries in the map.
      * Returns the results mapped by each key in the map.
      * <p/>

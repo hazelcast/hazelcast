@@ -18,6 +18,7 @@ package com.hazelcast.map.proxy;
 
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.core.EntryView;
+import com.hazelcast.core.ExecutionCallback;
 import com.hazelcast.core.IMap;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.MapInterceptor;
@@ -486,6 +487,26 @@ public class MapProxyImpl<K, V> extends MapProxySupport implements IMap<K, V>, I
         }
         MapService service = getService();
         return service.toObject(executeOnKeyInternal(service.toData(key, partitionStrategy), entryProcessor));
+    }
+
+    @Override
+    public void submitToKey(K key, EntryProcessor entryProcessor, ExecutionCallback callback) {
+        if (key == null) {
+            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+        }
+        MapService service = getService();
+        Data keyData = service.toData(key, partitionStrategy);
+        executeOnKeyInternal(keyData,entryProcessor,callback);
+    }
+    @Override
+    public Future submitToKey(K key, EntryProcessor entryProcessor) {
+        if (key == null) {
+            throw new NullPointerException(NULL_KEY_IS_NOT_ALLOWED);
+        }
+        MapService service = getService();
+        Data keyData = service.toData(key, partitionStrategy);
+        Future f = executeOnKeyInternal(keyData,entryProcessor,null);
+        return new DelegatingFuture(f,service.getSerializationService());
     }
 
     protected Object invoke(Operation operation, int partitionId) throws Throwable {

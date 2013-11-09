@@ -40,6 +40,8 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -564,6 +566,46 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         assertEquals(124,hz.getMap("default").get(1));
 
         hz.getLifecycleService().shutdown();
+    }
+    @Test
+    public void testSubmitToKey() throws InterruptedException, ExecutionException {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
+        IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
+        map.put(1, 1);
+        Future f = map.submitToKey(1,new IncrementorEntryProcessor());
+        assertEquals(2,f.get());
+        assertEquals(2,(int) map.get(1));
+    }@Test
+    public void testSubmitToNonExistentKey() throws InterruptedException, ExecutionException {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
+        IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
+        Future f = map.submitToKey(11,new IncrementorEntryProcessor());
+        assertEquals(1,f.get());
+        assertEquals(1,(int) map.get(11));
+    }
+    @Test
+    public void testSubmitToKeyWithCallback() throws InterruptedException, ExecutionException {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
+        HazelcastInstance instance1 = nodeFactory.newHazelcastInstance();
+        IMap<Integer, Integer> map = instance1.getMap("testMapEntryProcessor");
+        map.put(1, 1);
+        final CountDownLatch latch = new CountDownLatch(1);
+        ExecutionCallback executionCallback = new ExecutionCallback() {
+            @Override
+            public void onResponse(Object response) {
+                latch.countDown();
+            }
+
+            @Override
+            public void onFailure(Throwable t) {
+            }
+        };
+
+        map.submitToKey(1,new IncrementorEntryProcessor(),executionCallback);
+        assertTrue(latch.await(5, TimeUnit.SECONDS));
+        assertEquals(2, (int) map.get(1));
     }
 
 }
