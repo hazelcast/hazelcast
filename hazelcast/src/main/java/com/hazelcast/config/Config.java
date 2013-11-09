@@ -438,20 +438,18 @@ public class Config {
      */
     public ExecutorConfig getExecutorConfig(String name) {
         name = getBaseName(name);
-        ExecutorConfig ec = lookupByPattern(executorConfigs, name);
-        if (ec != null) {
-            return ec;
+        ExecutorConfig config;
+        if ((config = lookupByPattern(executorConfigs, name)) != null) return config;
+        ExecutorConfig defConfig = executorConfigs.get("default");
+        if (defConfig == null) {
+            defConfig = new ExecutorConfig();
+            defConfig.setName("default");
+            addExecutorConfig(defConfig);
         }
-
-        ExecutorConfig defaultConfig = executorConfigs.get("default");
-        if (defaultConfig != null) {
-            ec = new ExecutorConfig(name, defaultConfig.getPoolSize());
-        }
-        if (ec == null) {
-            ec = new ExecutorConfig(name);
-            executorConfigs.put(name, ec);
-        }
-        return ec;
+        config = new ExecutorConfig(defConfig);
+        config.setName(name);
+        addExecutorConfig(config);
+        return config;
     }
 
     /**
@@ -493,20 +491,18 @@ public class Config {
      */
     public SemaphoreConfig getSemaphoreConfig(String name) {
         name = getBaseName(name);
-        SemaphoreConfig sc = lookupByPattern(semaphoreConfigs, name);
-        if (sc != null) {
-            return sc;
+        SemaphoreConfig config;
+        if ((config = lookupByPattern(semaphoreConfigs, name)) != null) return config;
+        SemaphoreConfig defConfig = semaphoreConfigs.get("default");
+        if (defConfig == null) {
+            defConfig = new SemaphoreConfig();
+            defConfig.setName("default");
+            addSemaphoreConfig(defConfig);
         }
-
-        SemaphoreConfig defaultConfig = semaphoreConfigs.get("default");
-        if (defaultConfig == null) {
-            defaultConfig = new SemaphoreConfig();
-            defaultConfig.setName("default");
-            addSemaphoreConfig(defaultConfig);
-        }
-        sc = new SemaphoreConfig(defaultConfig);
-        addSemaphoreConfig(sc);
-        return sc;
+        config = new SemaphoreConfig(defConfig);
+        config.setName(name);
+        addSemaphoreConfig(config);
+        return config;
     }
 
     /**
@@ -679,7 +675,6 @@ public class Config {
     }
 
     private static <T> T lookupByPattern(Map<String, T> map, String name) {
-        name = getBaseName(name);
         T t = map.get(name);
         if (t == null) {
             final Set<String> tNames = map.keySet();
