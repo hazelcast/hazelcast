@@ -30,6 +30,7 @@ public class SemaphoreConfig {
     private int initialPermits;
     private int backupCount = DEFAULT_SYNC_BACKUP_COUNT;
     private int asyncBackupCount = DEFAULT_ASYNC_BACKUP_COUNT;
+    private SemaphoreConfigReadOnly readOnly;
 
     /**
      * Creates a default configured {@link SemaphoreConfig}.
@@ -49,6 +50,13 @@ public class SemaphoreConfig {
         this.initialPermits = config.getInitialPermits();
         this.backupCount = config.getBackupCount();
         this.asyncBackupCount = config.getAsyncBackupCount();
+    }
+
+    public SemaphoreConfigReadOnly getReadOnly() {
+        if (readOnly == null) {
+            readOnly = new SemaphoreConfigReadOnly(this);
+        }
+        return readOnly;
     }
 
     /**

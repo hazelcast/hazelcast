@@ -478,6 +478,13 @@ public class Config {
         return this;
     }
 
+    public SemaphoreConfig findSemaphoreConfig(String name){
+        name = getBaseName(name);
+        SemaphoreConfig config;
+        if ((config = lookupByPattern(semaphoreConfigs, name)) != null) return config;
+        return getSemaphoreConfig("default").getReadOnly();
+    }
+
     /**
      * Returns the SemaphoreConfig for the given name
      *
