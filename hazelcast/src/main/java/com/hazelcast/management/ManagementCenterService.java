@@ -332,7 +332,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                     }
                 } else if (distributedObject instanceof ITopic) {
                     ITopic topic = (ITopic) distributedObject;
-                    if (config.getTopicConfig(topic.getName()).isStatisticsEnabled()) {
+                    if (config.findTopicConfig(topic.getName()).isStatisticsEnabled()) {
                         memberState.putLocalTopicStats(topic.getName(), (LocalTopicStatsImpl) topic.getLocalTopicStats());
                         count++;
                     }
@@ -344,7 +344,7 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                     }
                 } else if (distributedObject instanceof IExecutorService) {
                     IExecutorService executorService = (IExecutorService) distributedObject;
-                    if (config.getExecutorConfig(executorService.getName()).isStatisticsEnabled()) {
+                    if (config.findExecutorConfig(executorService.getName()).isStatisticsEnabled()) {
                         memberState.putLocalExecutorStats(executorService.getName(), (LocalExecutorStatsImpl) executorService.getLocalExecutorStats());
                         count++;
                     }
@@ -387,13 +387,13 @@ public class ManagementCenterService implements LifecycleListener, MembershipLis
                     }
                 } else if (distributedObject instanceof ITopic) {
                     ITopic topic = (ITopic) distributedObject;
-                    if (config.getTopicConfig(topic.getName()).isStatisticsEnabled()) {
+                    if (config.findTopicConfig(topic.getName()).isStatisticsEnabled()) {
                         setLongInstanceNames.add("t:" + topic.getName());
                         count++;
                     }
                 } else if (distributedObject instanceof IExecutorService) {
                     IExecutorService executorService = (IExecutorService) distributedObject;
-                    if (config.getExecutorConfig(executorService.getName()).isStatisticsEnabled()) {
+                    if (config.findExecutorConfig(executorService.getName()).isStatisticsEnabled()) {
                         setLongInstanceNames.add("e:" + executorService.getName());
                         count++;
                     }

@@ -374,6 +374,13 @@ public class Config {
         return this;
     }
 
+    public TopicConfig findTopicConfig(String name){
+        name = getBaseName(name);
+        TopicConfig config;
+        if ((config = lookupByPattern(topicConfigs, name)) != null) return config;
+        return getTopicConfig("default").getReadOnly();
+    }
+
     public TopicConfig getTopicConfig(String name) {
         name = getBaseName(name);
         TopicConfig config;
@@ -414,6 +421,13 @@ public class Config {
             entry.getValue().setName(entry.getKey());
         }
         return this;
+    }
+
+    public ExecutorConfig findExecutorConfig(String name){
+        name = getBaseName(name);
+        ExecutorConfig config;
+        if ((config = lookupByPattern(executorConfigs, name)) != null) return config;
+        return getExecutorConfig("default").getReadOnly();
     }
 
     /**
