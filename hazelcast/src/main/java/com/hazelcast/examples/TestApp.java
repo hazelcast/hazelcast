@@ -323,6 +323,8 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             handleMapRemoveMany(args);
         } else if (command.equalsIgnoreCase("m.localKeys")) {
             handleMapLocalKeys();
+        } else if (command.equalsIgnoreCase("m.localSize")) {
+            handleMapLocalSize();
         } else if (command.equals("m.keys")) {
             handleMapKeys();
         } else if (command.equals("m.values")) {
@@ -802,6 +804,10 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
             println(it.next());
         }
         println("Total " + count);
+    }
+
+    protected void handleMapLocalSize() {
+        println("Local Size = " + getMap().localKeySet().size());
     }
 
     protected void handleMapKeys() {
@@ -1504,6 +1510,7 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
         println("m.entries                            //iterates the entries of the map");
         println("m.iterator [remove]                  //iterates the keys of the map, remove if specified");
         println("m.size                               //size of the map");
+        println("m.localSize                          //local size of the map");
         println("m.clear                              //clears the map");
         println("m.destroy                            //destroys the map");
         println("m.lock <key>                         //locks the key");
