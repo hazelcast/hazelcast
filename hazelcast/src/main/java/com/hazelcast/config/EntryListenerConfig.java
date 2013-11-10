@@ -24,7 +24,7 @@ public class EntryListenerConfig extends ListenerConfig {
 
     private boolean includeValue = true;
 
-    EntryListenerConfigReadOnly readOnly;
+    private EntryListenerConfigReadOnly readOnly;
 
     public EntryListenerConfig() {
         super();

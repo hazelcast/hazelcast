@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -25,6 +27,15 @@ public class MultiMapConfigReadOnly extends MultiMapConfig {
 
     public MultiMapConfigReadOnly(MultiMapConfig defConfig) {
         super(defConfig);
+    }
+
+    public List<EntryListenerConfig> getEntryListenerConfigs() {
+        final List<EntryListenerConfig> listenerConfigs = super.getEntryListenerConfigs();
+        final List<EntryListenerConfig> readOnlyListenerConfigs = new ArrayList<EntryListenerConfig>(listenerConfigs.size());
+        for (EntryListenerConfig listenerConfig : listenerConfigs) {
+            readOnlyListenerConfigs.add(listenerConfig.getAsReadOnly());
+        }
+        return Collections.unmodifiableList(readOnlyListenerConfigs);
     }
 
     public MultiMapConfig setName(String name) {
