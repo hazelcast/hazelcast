@@ -41,6 +41,7 @@ import static java.lang.String.format;
  */
 public class TestApp implements EntryListener, ItemListener, MessageListener {
 
+    public static final int LOAD_EXECUTORS_COUNT = 16;
     private IQueue<Object> queue = null;
 
     private ITopic<Object> topic = null;
@@ -133,6 +134,17 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     }
 
     public void start(String[] args) throws Exception {
+        getMap().size();
+        getList().size();
+        getSet().size();
+        getQueue().size();
+        getTopic().getLocalTopicStats();
+        getMultiMap().size();
+        hazelcast.getExecutorService("default").getLocalExecutorStats();
+        for(int k=1;k<=LOAD_EXECUTORS_COUNT;k++){
+            hazelcast.getExecutorService("e"+k).getLocalExecutorStats();
+        }
+
         if (lineReader == null) {
             lineReader = new DefaultLineReader();
         }
@@ -1579,13 +1591,33 @@ public class TestApp implements EntryListener, ItemListener, MessageListener {
     }
 
     public static void main(String[] args) throws Exception {
-        Config config = new Config();
+        String version = getVersion();
 
-        for(int k=1;k<=16;k++){
+        Config config = new Config();
+        config.getManagementCenterConfig().setEnabled(true);
+        config.getManagementCenterConfig().setUrl("http://localhost:8080/mancenter-"+version);
+
+        for(int k=1;k<= LOAD_EXECUTORS_COUNT;k++){
             config.addExecutorConfig(new ExecutorConfig("e"+k).setPoolSize(k));
         }
         TestApp testApp = new TestApp(Hazelcast.newHazelcastInstance(config));
         testApp.start(args);
+    }
+
+    private static String getVersion() throws IOException {
+        InputStream in = TestApp.class.getClassLoader().getResourceAsStream("hazelcast-runtime.properties");
+        if (in == null) {
+            throw new IOException("hazelcast-runtime.properties is not found");
+        }
+
+        try {
+            Properties props = new Properties();
+            props.load(in);
+
+            return props.getProperty("hazelcast.version");
+        } finally {
+            in.close();
+        }
     }
 
 }
