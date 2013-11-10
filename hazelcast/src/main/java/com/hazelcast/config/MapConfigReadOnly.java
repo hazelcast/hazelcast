@@ -59,6 +59,14 @@ public class MapConfigReadOnly extends MapConfig {
         return super.getPartitioningStrategyConfig().getAsReadOnly();
     }
 
+    public MapStoreConfig getMapStoreConfig() {
+        return super.getMapStoreConfig().getAsReadOnly();
+    }
+
+    public NearCacheConfig getNearCacheConfig() {
+        return super.getNearCacheConfig().getAsReadOnly();
+    }
+
     public MapConfig setName(String name) {
         throw new UnsupportedOperationException("This config is read-only map: " + getName());
     }
