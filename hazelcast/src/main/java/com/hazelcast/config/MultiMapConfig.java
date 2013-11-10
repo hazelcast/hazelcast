@@ -48,7 +48,7 @@ public class MultiMapConfig {
 //        this.partitionStrategyConfig = defConfig.getPartitioningStrategyConfig();
     }
 
-    public MultiMapConfigReadOnly getReadOnly() {
+    public MultiMapConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new MultiMapConfigReadOnly(this);
         }

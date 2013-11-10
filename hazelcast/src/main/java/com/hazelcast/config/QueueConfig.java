@@ -50,7 +50,7 @@ public class QueueConfig {
         this.listenerConfigs = new ArrayList<ItemListenerConfig>(config.getItemListenerConfigs());
     }
 
-    public QueueConfigReadOnly getReadOnly(){
+    public QueueConfigReadOnly getAsReadOnly(){
         if (readOnly == null){
             readOnly = new QueueConfigReadOnly(this);
         }

@@ -110,7 +110,7 @@ public class MapConfig {
         this.partitioningStrategyConfig = config.partitioningStrategyConfig;
     }
 
-    public MapConfigReadOnly getReadOnly(){
+    public MapConfigReadOnly getAsReadOnly(){
         if (readOnly == null){
             readOnly = new MapConfigReadOnly(this);
         }

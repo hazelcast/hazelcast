@@ -50,7 +50,7 @@ public class ExecutorConfig {
         this.statisticsEnabled = config.statisticsEnabled;
     }
 
-    public ExecutorConfigReadOnly getReadOnly() {
+    public ExecutorConfigReadOnly getAsReadOnly() {
         if (readOnly == null){
             readOnly = new ExecutorConfigReadOnly(this);
         }

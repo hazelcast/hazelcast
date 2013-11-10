@@ -52,7 +52,7 @@ public class SemaphoreConfig {
         this.asyncBackupCount = config.getAsyncBackupCount();
     }
 
-    public SemaphoreConfigReadOnly getReadOnly() {
+    public SemaphoreConfigReadOnly getAsReadOnly() {
         if (readOnly == null) {
             readOnly = new SemaphoreConfigReadOnly(this);
         }

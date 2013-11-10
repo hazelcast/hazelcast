@@ -166,8 +166,8 @@ public class Config {
     public MapConfig findMapConfig(String name){
         name = getBaseName(name);
         MapConfig config;
-        if ((config = lookupByPattern(mapConfigs, name)) != null) return config;
-        return getMapConfig("default").getReadOnly();
+        if ((config = lookupByPattern(mapConfigs, name)) != null) return config.getAsReadOnly();
+        return getMapConfig("default").getAsReadOnly();
     }
 
     public MapConfig getMapConfig(String name) {
@@ -213,8 +213,8 @@ public class Config {
     public QueueConfig findQueueConfig(String name){
         name = getBaseName(name);
         QueueConfig config;
-        if ((config = lookupByPattern(queueConfigs, name)) != null) return config;
-        return getQueueConfig("default").getReadOnly();
+        if ((config = lookupByPattern(queueConfigs, name)) != null) return config.getAsReadOnly();
+        return getQueueConfig("default").getAsReadOnly();
     }
 
     public QueueConfig getQueueConfig(String name) {
@@ -254,8 +254,8 @@ public class Config {
     public ListConfig findListConfig(String name){
         name = getBaseName(name);
         ListConfig config;
-        if ((config = lookupByPattern(listConfigs, name)) != null) return config;
-        return getListConfig("default").getReadOnly();
+        if ((config = lookupByPattern(listConfigs, name)) != null) return config.getAsReadOnly();
+        return getListConfig("default").getAsReadOnly();
     }
 
     public ListConfig getListConfig(String name) {
@@ -295,8 +295,8 @@ public class Config {
     public SetConfig findSetConfig(String name){
         name = getBaseName(name);
         SetConfig config;
-        if ((config = lookupByPattern(setConfigs, name)) != null) return config;
-        return getSetConfig("default").getReadOnly();
+        if ((config = lookupByPattern(setConfigs, name)) != null) return config.getAsReadOnly();
+        return getSetConfig("default").getAsReadOnly();
     }
 
     public SetConfig getSetConfig(String name) {
@@ -336,8 +336,8 @@ public class Config {
     public MultiMapConfig findMultiMapConfig(String name){
         name = getBaseName(name);
         MultiMapConfig config;
-        if ((config = lookupByPattern(multiMapConfigs, name)) != null) return config;
-        return getMultiMapConfig("default").getReadOnly();
+        if ((config = lookupByPattern(multiMapConfigs, name)) != null) return config.getAsReadOnly();
+        return getMultiMapConfig("default").getAsReadOnly();
     }
 
     public MultiMapConfig getMultiMapConfig(String name) {
@@ -377,8 +377,8 @@ public class Config {
     public TopicConfig findTopicConfig(String name){
         name = getBaseName(name);
         TopicConfig config;
-        if ((config = lookupByPattern(topicConfigs, name)) != null) return config;
-        return getTopicConfig("default").getReadOnly();
+        if ((config = lookupByPattern(topicConfigs, name)) != null) return config.getAsReadOnly();
+        return getTopicConfig("default").getAsReadOnly();
     }
 
     public TopicConfig getTopicConfig(String name) {
@@ -426,8 +426,8 @@ public class Config {
     public ExecutorConfig findExecutorConfig(String name){
         name = getBaseName(name);
         ExecutorConfig config;
-        if ((config = lookupByPattern(executorConfigs, name)) != null) return config;
-        return getExecutorConfig("default").getReadOnly();
+        if ((config = lookupByPattern(executorConfigs, name)) != null) return config.getAsReadOnly();
+        return getExecutorConfig("default").getAsReadOnly();
     }
 
     /**
@@ -479,8 +479,8 @@ public class Config {
     public SemaphoreConfig findSemaphoreConfig(String name){
         name = getBaseName(name);
         SemaphoreConfig config;
-        if ((config = lookupByPattern(semaphoreConfigs, name)) != null) return config;
-        return getSemaphoreConfig("default").getReadOnly();
+        if ((config = lookupByPattern(semaphoreConfigs, name)) != null) return config.getAsReadOnly();
+        return getSemaphoreConfig("default").getAsReadOnly();
     }
 
     /**

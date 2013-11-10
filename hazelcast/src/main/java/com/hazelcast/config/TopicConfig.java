@@ -53,7 +53,7 @@ public class TopicConfig {
         this.listenerConfigs = new ArrayList<ListenerConfig>(config.getMessageListenerConfigs());
     }
 
-    public TopicConfigReadOnly getReadOnly() {
+    public TopicConfigReadOnly getAsReadOnly() {
         if (readOnly == null){
             readOnly = new TopicConfigReadOnly(this);
         }

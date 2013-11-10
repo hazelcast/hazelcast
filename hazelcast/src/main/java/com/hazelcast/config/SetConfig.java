@@ -27,7 +27,7 @@ public class SetConfig extends CollectionConfig<SetConfig> {
         super(config);
     }
 
-    public SetConfigReadOnly getReadOnly() {
+    public SetConfigReadOnly getAsReadOnly() {
         if (readOnly == null){
             readOnly = new SetConfigReadOnly(this);
         }
