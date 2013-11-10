@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -25,6 +27,19 @@ public class QueueConfigReadOnly extends QueueConfig {
 
     QueueConfigReadOnly(QueueConfig config) {
         super(config);
+    }
+
+    public List<ItemListenerConfig> getItemListenerConfigs() {
+        final List<ItemListenerConfig> itemListenerConfigs = super.getItemListenerConfigs();
+        final List<ItemListenerConfig> readOnlyItemListenerConfigs = new ArrayList<ItemListenerConfig>(itemListenerConfigs.size());
+        for (ItemListenerConfig itemListenerConfig : itemListenerConfigs) {
+            readOnlyItemListenerConfigs.add(itemListenerConfig.getAsReadOnly());
+        }
+        return Collections.unmodifiableList(readOnlyItemListenerConfigs);
+    }
+
+    public QueueStoreConfig getQueueStoreConfig() {
+        return super.getQueueStoreConfig().getAsReadOnly();
     }
 
     public QueueConfig setEmptyQueueTtl(int emptyQueueTtl) {
