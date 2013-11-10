@@ -16,6 +16,8 @@
 
 package com.hazelcast.config;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -25,6 +27,15 @@ public class SetConfigReadOnly extends SetConfig {
 
     public SetConfigReadOnly(SetConfig config) {
         super(config);
+    }
+
+    public List<ItemListenerConfig> getItemListenerConfigs() {
+        final List<ItemListenerConfig> itemListenerConfigs = super.getItemListenerConfigs();
+        final List<ItemListenerConfig> readOnlyItemListenerConfigs = new ArrayList<ItemListenerConfig>(itemListenerConfigs.size());
+        for (ItemListenerConfig itemListenerConfig : itemListenerConfigs) {
+            readOnlyItemListenerConfigs.add(itemListenerConfig.getAsReadOnly());
+        }
+        return Collections.unmodifiableList(readOnlyItemListenerConfigs);
     }
 
     public SetConfig setName(String name) {
